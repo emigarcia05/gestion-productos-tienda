@@ -101,53 +101,36 @@ export default function TablaProductosFiltrada({ productos, proveedores }: Props
                 <th className="text-left py-2.5 px-4 text-muted-foreground font-medium">Proveedor</th>
                 <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Px Lista Proveedor</th>
                 <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Px Venta Sugerido</th>
-                <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Margen</th>
               </tr>
             </thead>
             <tbody>
-              {productosFiltrados.map((prod) => {
-                const margen =
-                  prod.precioLista > 0
-                    ? (((prod.precioVentaSugerido - prod.precioLista) / prod.precioLista) * 100).toFixed(1)
-                    : null;
-
-                return (
-                  <tr
-                    key={prod.id}
-                    className="border-b border-border/30 hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
-                      {prod.codProdProv}
-                    </td>
-                    <td className="py-3 px-4">
-                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
-                        {prod.codExt}
-                      </code>
-                    </td>
-                    <td className="py-3 px-4 max-w-xs truncate">{prod.descripcion}</td>
-                    <td className="py-3 px-4">
-                      <Badge variant="secondary" className="font-mono text-xs">
-                        {prod.proveedor.sufijo}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-right tabular-nums">
-                      ${prod.precioLista.toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4 text-right tabular-nums">
-                      ${prod.precioVentaSugerido.toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {margen !== null ? (
-                        <span className={parseFloat(margen) >= 0 ? "text-emerald-500" : "text-destructive"}>
-                          {parseFloat(margen) >= 0 ? "+" : ""}{margen}%
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {productosFiltrados.map((prod) => (
+                <tr
+                  key={prod.id}
+                  className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                >
+                  <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
+                    {prod.codProdProv}
+                  </td>
+                  <td className="py-3 px-4">
+                    <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                      {prod.codExt}
+                    </code>
+                  </td>
+                  <td className="py-3 px-4 max-w-xs truncate">{prod.descripcion}</td>
+                  <td className="py-3 px-4">
+                    <Badge variant="secondary" className="font-mono text-xs">
+                      {prod.proveedor.sufijo}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4 text-right tabular-nums">
+                    ${prod.precioLista.toFixed(2)}
+                  </td>
+                  <td className="py-3 px-4 text-right tabular-nums">
+                    ${prod.precioVentaSugerido.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
