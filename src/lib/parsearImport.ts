@@ -139,8 +139,8 @@ export function aplicarMapeo(filas: string[][], mapeo: MapeoColumnas): FilaProdu
     const precioVentaSugerido = parsePrecio(precioVentaRaw);
 
     if (isNaN(precioLista)) throw new Error(`Fila ${rowIdx + 1}: precio lista inválido ("${precioListaRaw}").`);
-    if (isNaN(precioVentaSugerido)) throw new Error(`Fila ${rowIdx + 1}: precio venta inválido ("${precioVentaRaw}").`);
+    const precioVentaFinal = isNaN(precioVentaSugerido) || precioVentaRaw === "" ? 0 : precioVentaSugerido;
 
-    return { codProdProv, descripcion, precioLista, precioVentaSugerido };
+    return { codProdProv, descripcion, precioLista, precioVentaSugerido: precioVentaFinal };
   });
 }

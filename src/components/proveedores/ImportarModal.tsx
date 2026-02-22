@@ -34,7 +34,7 @@ const CAMPOS: { value: CampoDestino; label: string; required: boolean }[] = [
   { value: "codProdProv",          label: "Cod. Producto Proveedor",  required: true },
   { value: "descripcion",          label: "Descripción",              required: true },
   { value: "precioLista",          label: "Px Lista Proveedor",       required: true },
-  { value: "precioVentaSugerido",  label: "Px Venta Sugerido",        required: true },
+  { value: "precioVentaSugerido",  label: "Px Venta Sugerido",        required: false },
   { value: "ignorar",              label: "Ignorar columna",          required: false },
 ];
 
