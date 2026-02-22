@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
-import { parsearContenido, type FilaProducto } from "@/lib/parsearImport";
+import { aplicarMapeo, type FilaProducto, type MapeoColumnas } from "@/lib/parsearImport";
 
-export type { FilaProducto } from "@/lib/parsearImport";
+export type { FilaProducto, MapeoColumnas } from "@/lib/parsearImport";
 
 export interface ImportResult {
   creados: number;
@@ -16,20 +16,20 @@ export interface ImportResult {
 
 export async function importarProductos(
   proveedorId: string,
-  contenido: string,
-  tieneEncabezados: boolean = true
+  filasCrudas: string[][],
+  mapeo: MapeoColumnas
 ): Promise<ImportResult> {
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
-  if (!contenido.trim()) throw new Error("El contenido está vacío.");
+  if (!filasCrudas.length) throw new Error("No hay filas para importar.");
 
   const proveedor = await prisma.proveedor.findUnique({ where: { id: proveedorId } });
   if (!proveedor) throw new Error("Proveedor no encontrado.");
 
   let filas: FilaProducto[];
   try {
-    filas = parsearContenido(contenido, tieneEncabezados);
+    filas = aplicarMapeo(filasCrudas, mapeo);
   } catch (e) {
-    throw new Error(`Error al parsear el archivo: ${e instanceof Error ? e.message : String(e)}`);
+    throw new Error(`Error al procesar datos: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   if (filas.length === 0) throw new Error("No se encontraron filas válidas.");
@@ -48,7 +48,7 @@ export async function importarProductos(
       codExtsEntrantes.add(codExt);
       filasValidas.push({ ...fila, codExt });
     } catch (e) {
-      errores.push(`Fila ${fila.codProdProv}: ${e instanceof Error ? e.message : String(e)}`);
+      errores.push(`${fila.codProdProv}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
