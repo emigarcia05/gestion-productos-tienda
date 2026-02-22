@@ -60,20 +60,20 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
         <Input
           id="sufijo"
           name="sufijo"
-          placeholder="Ej: PIN, DIST, MER"
+          placeholder="Ej: PIN"
           defaultValue={proveedor?.sufijo ?? ""}
           required
-          minLength={2}
-          maxLength={8}
+          minLength={3}
+          maxLength={3}
           disabled={pending}
-          className="uppercase"
+          className="uppercase tracking-widest"
           onChange={(e) => {
-            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, "");
           }}
         />
         <p className="text-xs text-muted-foreground">
-          Solo letras y números. El código externo quedará como{" "}
-          <code className="bg-muted px-1 rounded">SUFIJO-CODPROD</code>
+          Exactamente 3 letras. El código externo quedará como{" "}
+          <code className="bg-muted px-1 rounded">PIN-CODPROD</code>
         </p>
       </div>
 

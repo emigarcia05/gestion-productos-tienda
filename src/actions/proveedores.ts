@@ -38,11 +38,8 @@ export async function crearProveedor(
   if (!nombre || nombre.length < 2) {
     return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
   }
-  if (!sufijo || sufijo.length < 2) {
-    return { ok: false, error: "El sufijo debe tener al menos 2 caracteres." };
-  }
-  if (!/^[A-Z0-9]+$/.test(sufijo)) {
-    return { ok: false, error: "El sufijo solo puede contener letras y números." };
+  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo)) {
+    return { ok: false, error: "El sufijo debe tener exactamente 3 letras (sin números ni símbolos)." };
   }
 
   const sufijoExiste = await prisma.proveedor.findUnique({ where: { sufijo } });
@@ -82,11 +79,8 @@ export async function editarProveedor(
   if (!nombre || nombre.length < 2) {
     return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
   }
-  if (!sufijo || sufijo.length < 2) {
-    return { ok: false, error: "El sufijo debe tener al menos 2 caracteres." };
-  }
-  if (!/^[A-Z0-9]+$/.test(sufijo)) {
-    return { ok: false, error: "El sufijo solo puede contener letras y números." };
+  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo)) {
+    return { ok: false, error: "El sufijo debe tener exactamente 3 letras (sin números ni símbolos)." };
   }
 
   const sufijoExiste = await prisma.proveedor.findFirst({
