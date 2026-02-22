@@ -1,3 +1,43 @@
+/**
+ * Convierte strings de precio con formato variado a número.
+ * Soporta: "$6.399", "6.399,50", "6399.50", "6,399.50"
+ */
+function parsePrecio(raw: string): number {
+  // Quitar símbolo de moneda y espacios
+  let s = raw.replace(/[$\s]/g, "");
+
+  // Detectar formato: si tiene coma Y punto, el último separador es el decimal
+  const tieneComa = s.includes(",");
+  const tienePunto = s.includes(".");
+
+  if (tieneComa && tienePunto) {
+    // Ej: "6.399,50" → separador miles=punto, decimal=coma
+    // Ej: "6,399.50" → separador miles=coma, decimal=punto
+    const ultimaComa = s.lastIndexOf(",");
+    const ultimoPunto = s.lastIndexOf(".");
+    if (ultimaComa > ultimoPunto) {
+      // formato europeo: 6.399,50
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else {
+      // formato anglosajón: 6,399.50
+      s = s.replace(/,/g, "");
+    }
+  } else if (tieneComa) {
+    // Solo coma: puede ser decimal (1,5) o miles (6.399) — asumimos decimal
+    s = s.replace(",", ".");
+  } else if (tienePunto) {
+    // Solo punto: si hay exactamente 3 dígitos después → miles, sino decimal
+    const partes = s.split(".");
+    if (partes.length === 2 && partes[1].length === 3) {
+      // Ej: "6.399" → miles, no decimal
+      s = s.replace(".", "");
+    }
+    // Ej: "6.50" → decimal, no tocar
+  }
+
+  return parseFloat(s);
+}
+
 export interface FilaProducto {
   codProdProv: string;
   descripcion: string;
@@ -16,21 +56,29 @@ function normalizeRow(row: Record<string, unknown>): FilaProducto {
     return "";
   };
 
-  const codProdProv = get("cod prod prov", "codprodprov", "cod_prod_prov", "codigo");
-  const descripcion = get("descripcion", "descripción", "description", "desc");
+  const codProdProv = get(
+    "cod prod prov", "codprodprov", "cod_prod_prov",
+    "cod. proveedor", "cod.proveedor", "cod proveedor", "codproveedor",
+    "codigo", "code", "cod"
+  );
+  const descripcion = get(
+    "descripcion", "descripción", "description", "desc"
+  );
   const precioListaRaw = get(
     "px lista proveedor", "pxlistaproveedor", "px_lista_proveedor",
-    "preciolista", "precio_lista"
+    "px. lista de compra", "px.listadecompra", "px lista de compra",
+    "preciolista", "precio_lista", "precio lista"
   );
   const precioVentaRaw = get(
     "px venta sugerido", "pxventasugerido", "px_venta_sugerido",
-    "precioventasugerido", "precio_venta"
+    "px. venta sugerido", "px.ventasugerido",
+    "precioventasugerido", "precio_venta", "precio venta"
   );
 
   if (!codProdProv) throw new Error(`Fila sin código de producto: ${JSON.stringify(row)}`);
 
-  const precioLista = parseFloat(precioListaRaw.replace(",", "."));
-  const precioVentaSugerido = parseFloat(precioVentaRaw.replace(",", "."));
+  const precioLista = parsePrecio(precioListaRaw);
+  const precioVentaSugerido = parsePrecio(precioVentaRaw);
 
   if (isNaN(precioLista)) throw new Error(`Precio lista inválido en fila: ${codProdProv}`);
   if (isNaN(precioVentaSugerido)) throw new Error(`Precio venta inválido en fila: ${codProdProv}`);
