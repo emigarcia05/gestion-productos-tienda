@@ -25,10 +25,6 @@ export async function importarProductos(
   const proveedor = await prisma.proveedor.findUnique({ where: { id: proveedorId } });
   if (!proveedor) throw new Error("Proveedor no encontrado.");
 
-  // Log de diagnóstico — primeras 3 filas y mapeo aplicado
-  console.log("[importar] mapeo recibido:", JSON.stringify(mapeo));
-  console.log("[importar] primeras 3 filas crudas:", JSON.stringify(filasCrudas.slice(0, 3)));
-
   let filas: FilaProducto[];
   try {
     filas = aplicarMapeo(filasCrudas, mapeo);
