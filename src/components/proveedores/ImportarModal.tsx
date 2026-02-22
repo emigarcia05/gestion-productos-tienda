@@ -31,11 +31,11 @@ type Step = "upload" | "mapear" | "result";
 type CampoDestino = "codProdProv" | "descripcion" | "precioLista" | "precioVentaSugerido" | "ignorar";
 
 const CAMPOS: { value: CampoDestino; label: string; required: boolean }[] = [
-  { value: "codProdProv",          label: "Código de producto",  required: true },
-  { value: "descripcion",          label: "Descripción",         required: true },
-  { value: "precioLista",          label: "Precio lista",        required: true },
-  { value: "precioVentaSugerido",  label: "Precio venta",        required: true },
-  { value: "ignorar",              label: "Ignorar columna",     required: false },
+  { value: "codProdProv",          label: "Cod. Producto Proveedor",  required: true },
+  { value: "descripcion",          label: "Descripción",              required: true },
+  { value: "precioLista",          label: "Px Lista Proveedor",       required: true },
+  { value: "precioVentaSugerido",  label: "Px Venta Sugerido",        required: true },
+  { value: "ignorar",              label: "Ignorar columna",          required: false },
 ];
 
 export default function ImportarModal({ proveedores, proveedorPreseleccionado }: Props) {
