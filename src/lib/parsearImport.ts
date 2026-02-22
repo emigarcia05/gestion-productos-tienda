@@ -88,10 +88,10 @@ function normalizeRow(row: Record<string, unknown>): FilaProducto {
 
 /**
  * Parsea texto CSV o JSON y devuelve filas normalizadas.
- * Columnas CSV esperadas (case-insensitive, orden libre):
- *   COD PROD PROV | DESCRIPCION | PX LISTA PROVEEDOR | PX VENTA SUGERIDO
+ * @param tieneEncabezados - si true, la primera fila se usa como encabezado;
+ *   si false, se asume orden fijo: código, descripción, px lista, px venta
  */
-export function parsearContenido(raw: string): FilaProducto[] {
+export function parsearContenido(raw: string, tieneEncabezados = true): FilaProducto[] {
   const trimmed = raw.trim();
 
   // ── JSON ──────────────────────────────────────────────────────────────────
@@ -103,16 +103,35 @@ export function parsearContenido(raw: string): FilaProducto[] {
 
   // ── CSV ───────────────────────────────────────────────────────────────────
   const lines = trimmed.split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) {
-    throw new Error("El archivo debe tener encabezado y al menos una fila.");
+  if (lines.length < 1) {
+    throw new Error("El archivo está vacío.");
   }
 
-  const headers = lines[0].split(/[,;|\t]/).map((h) => h.trim().toLowerCase());
-
-  return lines.slice(1).map((line) => {
-    const cols = line.split(/[,;|\t]/).map((c) => c.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => { row[h] = cols[i] ?? ""; });
-    return normalizeRow(row);
-  });
+  if (tieneEncabezados) {
+    if (lines.length < 2) {
+      throw new Error("El archivo debe tener encabezado y al menos una fila de datos.");
+    }
+    const headers = lines[0].split(/[,;|\t]/).map((h) => h.trim().toLowerCase());
+    return lines.slice(1).map((line) => {
+      const cols = line.split(/[,;|\t]/).map((c) => c.trim());
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => { row[h] = cols[i] ?? ""; });
+      return normalizeRow(row);
+    });
+  } else {
+    // Sin encabezados: orden fijo col 0=código, 1=descripción, 2=px lista, 3=px venta
+    return lines.map((line) => {
+      const cols = line.split(/[,;|\t]/).map((c) => c.trim());
+      if (cols.length < 4) {
+        throw new Error(`Fila con columnas insuficientes (se esperan 4): "${line}"`);
+      }
+      const row: Record<string, string> = {
+        "cod prod prov": cols[0],
+        "descripcion":   cols[1],
+        "px lista proveedor": cols[2],
+        "px venta sugerido":  cols[3],
+      };
+      return normalizeRow(row);
+    });
+  }
 }

@@ -16,7 +16,8 @@ export interface ImportResult {
 
 export async function importarProductos(
   proveedorId: string,
-  contenido: string
+  contenido: string,
+  tieneEncabezados: boolean = true
 ): Promise<ImportResult> {
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
   if (!contenido.trim()) throw new Error("El contenido está vacío.");
@@ -26,7 +27,7 @@ export async function importarProductos(
 
   let filas: FilaProducto[];
   try {
-    filas = parsearContenido(contenido);
+    filas = parsearContenido(contenido, tieneEncabezados);
   } catch (e) {
     throw new Error(`Error al parsear el archivo: ${e instanceof Error ? e.message : String(e)}`);
   }

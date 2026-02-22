@@ -37,6 +37,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [tieneEncabezados, setTieneEncabezados] = useState(true);
   const [pending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,6 +49,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
     setFileName(null);
     setResult(null);
     setIsDragging(false);
+    setTieneEncabezados(true);
   }
 
   function handleClose(val: boolean) {
@@ -82,7 +84,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
 
     startTransition(async () => {
       try {
-        const res = await importarProductos(proveedorId, contenido);
+        const res = await importarProductos(proveedorId, contenido, tieneEncabezados);
         setResult(res);
         setStep("result");
         if (res.errores.length === 0) {
@@ -212,6 +214,24 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                 />
               </div>
             </div>
+
+            {/* Toggle encabezados */}
+            <button
+              type="button"
+              onClick={() => setTieneEncabezados((v) => !v)}
+              disabled={pending}
+              className="flex items-center gap-3 w-full rounded-lg border border-border/50 bg-card/30 px-4 py-3 text-sm hover:bg-card/60 transition-colors disabled:opacity-50"
+            >
+              <div className={`relative h-5 w-9 rounded-full transition-colors ${tieneEncabezados ? "bg-primary" : "bg-muted"}`}>
+                <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${tieneEncabezados ? "translate-x-4" : "translate-x-0.5"}`} />
+              </div>
+              <span className="font-medium">El archivo tiene encabezados</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {tieneEncabezados
+                  ? "La primera fila se usará para identificar columnas"
+                  : "Se asumirá el orden: código, descripción, px lista, px venta"}
+              </span>
+            </button>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => handleClose(false)} disabled={pending}>
