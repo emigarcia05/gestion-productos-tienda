@@ -35,59 +35,76 @@ export async function importarProductos(
   if (filas.length === 0) throw new Error("No se encontraron filas válidas.");
 
   const errores: string[] = [];
-  let creados = 0;
-  let actualizados = 0;
-  let eliminados = 0;
 
-  const codExtsEntrantes = new Set<string>();
-  const filasValidas: (FilaProducto & { codExt: string })[] = [];
-
+  // Construir mapa codExt → datos para todas las filas entrantes
+  const mapaEntrante = new Map<string, FilaProducto & { codExt: string }>();
   for (const fila of filas) {
     try {
       const codExt = buildCodExt(proveedor.sufijo, fila.codProdProv);
-      codExtsEntrantes.add(codExt);
-      filasValidas.push({ ...fila, codExt });
+      mapaEntrante.set(codExt, { ...fila, codExt });
     } catch (e) {
       errores.push(`${fila.codProdProv}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  await prisma.$transaction(async (tx) => {
-    for (const fila of filasValidas) {
-      const existente = await tx.producto.findUnique({ where: { codExt: fila.codExt } });
+  const codExtsEntrantes = Array.from(mapaEntrante.keys());
 
-      if (existente) {
-        await tx.producto.update({
-          where: { codExt: fila.codExt },
-          data: {
-            descripcion: fila.descripcion,
-            precioLista: fila.precioLista,
-            precioVentaSugerido: fila.precioVentaSugerido,
-          },
-        });
-        actualizados++;
-      } else {
-        await tx.producto.create({
-          data: {
-            codProdProv: fila.codProdProv,
-            codExt: fila.codExt,
-            descripcion: fila.descripcion,
-            precioLista: fila.precioLista,
-            precioVentaSugerido: fila.precioVentaSugerido,
-            proveedorId,
-          },
-        });
-        creados++;
-      }
-    }
+  // Traer todos los productos existentes del proveedor en una sola query
+  const existentes = await prisma.producto.findMany({
+    where: { proveedorId },
+    select: { codExt: true },
+  });
+  const setExistentes = new Set(existentes.map((p) => p.codExt));
 
-    const { count } = await tx.producto.deleteMany({
-      where: {
+  // Separar en crear vs actualizar
+  const paraCrear = codExtsEntrantes
+    .filter((c) => !setExistentes.has(c))
+    .map((c) => {
+      const f = mapaEntrante.get(c)!;
+      return {
+        codProdProv: f.codProdProv,
+        codExt: f.codExt,
+        descripcion: f.descripcion,
+        precioLista: f.precioLista,
+        precioVentaSugerido: f.precioVentaSugerido,
         proveedorId,
-        codExt: { notIn: Array.from(codExtsEntrantes) },
+      };
+    });
+
+  const paraActualizar = codExtsEntrantes.filter((c) => setExistentes.has(c));
+
+  // Ejecutar todo en paralelo con Promise.all — sin transacción interactiva
+  const LOTE = 500;
+
+  // Crear en lotes
+  let creados = 0;
+  for (let i = 0; i < paraCrear.length; i += LOTE) {
+    const lote = paraCrear.slice(i, i + LOTE);
+    const res = await prisma.producto.createMany({ data: lote, skipDuplicates: true });
+    creados += res.count;
+  }
+
+  // Actualizar en lotes (updateMany por codExt)
+  let actualizados = 0;
+  for (const codExt of paraActualizar) {
+    const f = mapaEntrante.get(codExt)!;
+    await prisma.producto.update({
+      where: { codExt },
+      data: {
+        descripcion: f.descripcion,
+        precioLista: f.precioLista,
+        precioVentaSugerido: f.precioVentaSugerido,
       },
     });
-    eliminados = count;
+    actualizados++;
+  }
+
+  // Eliminar productos del proveedor que no estaban en el archivo
+  const { count: eliminados } = await prisma.producto.deleteMany({
+    where: {
+      proveedorId,
+      codExt: { notIn: codExtsEntrantes },
+    },
   });
 
   await prisma.importLog.create({
