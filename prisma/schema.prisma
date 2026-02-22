@@ -25,6 +25,10 @@ model Producto {
   descripcion          String
   precioLista          Float
   precioVentaSugerido  Float
+  descuentoProducto    Float     @default(0)
+  descuentoCantidad    Float     @default(0)
+  cxTransporte         Float     @default(0)
+  disponible           Boolean   @default(true)
   proveedorId          String
   proveedor            Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
   createdAt            DateTime  @default(now())

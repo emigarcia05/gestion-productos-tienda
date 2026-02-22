@@ -84,7 +84,7 @@ export async function importarProductos(
     creados += res.count;
   }
 
-  // Actualizar en lotes (updateMany por codExt)
+  // Actualizar solo los campos que vienen del archivo — los campos manuales se preservan
   let actualizados = 0;
   for (const codExt of paraActualizar) {
     const f = mapaEntrante.get(codExt)!;
@@ -94,6 +94,7 @@ export async function importarProductos(
         descripcion: f.descripcion,
         precioLista: f.precioLista,
         precioVentaSugerido: f.precioVentaSugerido,
+        // descuentoProducto, descuentoCantidad, cxTransporte, disponible NO se tocan
       },
     });
     actualizados++;
