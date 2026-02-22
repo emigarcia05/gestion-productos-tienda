@@ -66,7 +66,7 @@ export default async function ProveedorDetallePage({ params }: Props) {
               proveedores={todosProveedores}
               proveedorPreseleccionado={proveedor.id}
             />
-            <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre }} />
+            <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
             <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
           </div>
         </div>
