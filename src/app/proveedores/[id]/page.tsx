@@ -1,0 +1,219 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Package, Tag, DollarSign } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal";
+import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
+import ImportarModal from "@/components/proveedores/ImportarModal";
+import { getProveedorById, getProveedores } from "@/actions/proveedores";
+
+export const dynamic = "force-dynamic";
+
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ProveedorDetallePage({ params }: Props) {
+  const { id } = await params;
+  const [proveedor, todosProveedores] = await Promise.all([
+    getProveedorById(id),
+    getProveedores(),
+  ]);
+
+  if (!proveedor) notFound();
+
+  const { productos } = proveedor;
+
+  const totalLista = productos.reduce((s, p) => s + p.precioLista, 0);
+  const totalVenta = productos.reduce((s, p) => s + p.precioVentaSugerido, 0);
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link href="/proveedores" className="hover:text-foreground transition-colors flex items-center gap-1">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Proveedores
+          </Link>
+          <span>/</span>
+          <span className="text-foreground font-medium">{proveedor.nombre}</span>
+        </div>
+
+        {/* Header del proveedor */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight">{proveedor.nombre}</h1>
+              <Badge variant="secondary" className="font-mono text-sm">
+                {proveedor.codigoUnico}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {proveedor._count.productos} producto
+              {proveedor._count.productos !== 1 ? "s" : ""} en catálogo
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <ImportarModal
+              proveedores={todosProveedores}
+              proveedorPreseleccionado={proveedor.id}
+            />
+            <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre }} />
+            <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
+          </div>
+        </div>
+
+        <Separator className="opacity-50" />
+
+        {/* Stats rápidas */}
+        {productos.length > 0 && (
+          <div className="grid grid-cols-3 gap-4">
+            <StatMini icon={Package} label="Productos" value={productos.length} />
+            <StatMini
+              icon={DollarSign}
+              label="Precio lista promedio"
+              value={`$${(totalLista / productos.length).toFixed(2)}`}
+            />
+            <StatMini
+              icon={Tag}
+              label="Precio venta promedio"
+              value={`$${(totalVenta / productos.length).toFixed(2)}`}
+            />
+          </div>
+        )}
+
+        {/* Tabla de productos */}
+        <Card className="border-border/50 bg-card/50">
+          <CardHeader>
+            <CardTitle className="text-base">Productos del proveedor</CardTitle>
+            <CardDescription>
+              Código externo = <code className="bg-muted px-1 rounded text-xs">{proveedor.codigoUnico}</code>
+              {" "}+ código del proveedor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {productos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <Package className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Sin productos. Usa &quot;Importar productos&quot; para cargar el catálogo.
+                </p>
+                <ImportarModal
+                  proveedores={todosProveedores}
+                  proveedorPreseleccionado={proveedor.id}
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Cód. Proveedor</th>
+                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Cód. Externo</th>
+                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Descripción</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Px Lista</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Px Venta</th>
+                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Margen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productos.map((prod) => {
+                      const margen =
+                        prod.precioLista > 0
+                          ? (((prod.precioVentaSugerido - prod.precioLista) / prod.precioLista) * 100).toFixed(1)
+                          : "—";
+                      const margenNum = parseFloat(margen);
+
+                      return (
+                        <tr
+                          key={prod.id}
+                          className="border-b border-border/30 hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="py-3 px-3 font-mono text-xs text-muted-foreground">
+                            {prod.codProdProv}
+                          </td>
+                          <td className="py-3 px-3">
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                              {prod.codExt}
+                            </code>
+                          </td>
+                          <td className="py-3 px-3 max-w-xs truncate">{prod.descripcion}</td>
+                          <td className="py-3 px-3 text-right tabular-nums">
+                            ${prod.precioLista.toFixed(2)}
+                          </td>
+                          <td className="py-3 px-3 text-right tabular-nums">
+                            ${prod.precioVentaSugerido.toFixed(2)}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            {margen !== "—" ? (
+                              <span
+                                className={
+                                  margenNum >= 0 ? "text-emerald-500" : "text-destructive"
+                                }
+                              >
+                                {margenNum >= 0 ? "+" : ""}
+                                {margen}%
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border/50 bg-muted/20">
+                      <td colSpan={3} className="py-2.5 px-3 text-xs text-muted-foreground font-medium">
+                        Total ({productos.length} productos)
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-sm font-semibold tabular-nums">
+                        ${totalLista.toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-sm font-semibold tabular-nums">
+                        ${totalVenta.toFixed(2)}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}
+
+function StatMini({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <Card className="border-border/50 bg-card/50">
+      <CardContent className="flex items-center gap-3 py-4 px-4">
+        <div className="rounded-md bg-muted p-2 shrink-0">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-lg font-bold tabular-nums">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

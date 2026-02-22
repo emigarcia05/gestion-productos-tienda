@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Proveedor {
+  id          String     @id @default(cuid())
+  nombre      String
+  codigoUnico String     @unique
+  productos   Producto[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("proveedores")
+}
+
+model Producto {
+  id                   String    @id @default(cuid())
+  codProdProv          String
+  codExt               String    @unique
+  descripcion          String
+  precioLista          Float
+  precioVentaSugerido  Float
+  proveedorId          String
+  proveedor            Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([proveedorId])
+  @@map("productos")
+}
+
+model ImportLog {
+  id          String   @id @default(cuid())
+  filename    String
+  status      String   @default("pending")
+  totalRows   Int      @default(0)
+  creados     Int      @default(0)
+  actualizados Int     @default(0)
+  eliminados  Int      @default(0)
+  errores     Int      @default(0)
+  proveedorId String?
+  createdAt   DateTime @default(now())
+
+  @@map("import_logs")
+}
