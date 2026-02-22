@@ -10,10 +10,10 @@ export function generarCodigoUnico(): string {
 }
 
 /**
- * Construye el codExt combinando el codigoUnico del proveedor
+ * Construye el codExt combinando el sufijo del proveedor
  * con el código de producto del proveedor.
- * Ejemplo: "A3FX-PRD001"
+ * Ejemplo: "PIN-PRD001"
  */
-export function buildCodExt(codigoUnico: string, codProdProv: string): string {
-  return `${codigoUnico.toUpperCase()}-${codProdProv.trim().toUpperCase()}`;
+export function buildCodExt(sufijo: string, codProdProv: string): string {
+  return `${sufijo.toUpperCase()}-${codProdProv.trim().toUpperCase()}`;
 }

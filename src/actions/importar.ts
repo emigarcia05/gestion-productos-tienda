@@ -43,7 +43,7 @@ export async function importarProductos(
 
   for (const fila of filas) {
     try {
-      const codExt = buildCodExt(proveedor.codigoUnico, fila.codProdProv);
+      const codExt = buildCodExt(proveedor.sufijo, fila.codProdProv);
       codExtsEntrantes.add(codExt);
       filasValidas.push({ ...fila, codExt });
     } catch (e) {

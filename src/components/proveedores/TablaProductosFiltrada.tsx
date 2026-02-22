@@ -12,13 +12,14 @@ interface Producto {
   descripcion: string;
   precioLista: number;
   precioVentaSugerido: number;
-  proveedor: { id: string; nombre: string; codigoUnico: string };
+  proveedor: { id: string; nombre: string; codigoUnico: string; sufijo: string };
 }
 
 interface Proveedor {
   id: string;
   nombre: string;
   codigoUnico: string;
+  sufijo: string;
 }
 
 interface Props {
@@ -66,7 +67,7 @@ export default function TablaProductosFiltrada({ productos, proveedores }: Props
             <option value="todos">Todos los proveedores</option>
             {proveedores.map((p) => (
               <option key={p.id} value={p.id}>
-                [{p.codigoUnico}] {p.nombre}
+                [{p.sufijo}] {p.nombre}
               </option>
             ))}
           </select>
@@ -122,7 +123,7 @@ export default function TablaProductosFiltrada({ productos, proveedores }: Props
                     <td className="py-3 px-4 max-w-xs truncate">{prod.descripcion}</td>
                     <td className="py-3 px-4">
                       <Badge variant="secondary" className="font-mono text-xs">
-                        {prod.proveedor.codigoUnico}
+                        {prod.proveedor.sufijo}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right tabular-nums">

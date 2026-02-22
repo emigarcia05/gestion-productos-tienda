@@ -19,6 +19,7 @@ interface Proveedor {
   id: string;
   nombre: string;
   codigoUnico: string;
+  sufijo: string;
 }
 
 interface Props {
@@ -133,7 +134,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p) => (
                     <option key={p.id} value={p.id}>
-                      [{p.codigoUnico}] {p.nombre}
+                      [{p.sufijo}] {p.nombre}
                     </option>
                   ))}
                 </select>
@@ -142,7 +143,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               {proveedorSeleccionado && (
                 <p className="text-xs text-muted-foreground">
                   Los productos se identificarán con el prefijo{" "}
-                  <code className="bg-muted px-1 rounded">{proveedorSeleccionado.codigoUnico}-</code>
+                  <code className="bg-muted px-1 rounded">{proveedorSeleccionado.sufijo}-</code>
                 </p>
               )}
             </div>

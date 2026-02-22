@@ -33,12 +33,23 @@ export async function crearProveedor(
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   const nombre = (formData.get("nombre") as string)?.trim();
+  const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
 
   if (!nombre || nombre.length < 2) {
     return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
   }
+  if (!sufijo || sufijo.length < 2) {
+    return { ok: false, error: "El sufijo debe tener al menos 2 caracteres." };
+  }
+  if (!/^[A-Z0-9]+$/.test(sufijo)) {
+    return { ok: false, error: "El sufijo solo puede contener letras y números." };
+  }
 
-  // Genera un codigoUnico que no exista aún
+  const sufijoExiste = await prisma.proveedor.findUnique({ where: { sufijo } });
+  if (sufijoExiste) {
+    return { ok: false, error: `El sufijo "${sufijo}" ya está en uso.` };
+  }
+
   let codigoUnico = generarCodigoUnico();
   let intentos = 0;
   while (intentos < 10) {
@@ -50,7 +61,7 @@ export async function crearProveedor(
 
   try {
     const proveedor = await prisma.proveedor.create({
-      data: { nombre, codigoUnico },
+      data: { nombre, codigoUnico, sufijo },
     });
     revalidatePath("/proveedores");
     return { ok: true, data: { id: proveedor.id } };
@@ -66,13 +77,27 @@ export async function editarProveedor(
   formData: FormData
 ): Promise<ActionResult> {
   const nombre = (formData.get("nombre") as string)?.trim();
+  const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
 
   if (!nombre || nombre.length < 2) {
     return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
   }
+  if (!sufijo || sufijo.length < 2) {
+    return { ok: false, error: "El sufijo debe tener al menos 2 caracteres." };
+  }
+  if (!/^[A-Z0-9]+$/.test(sufijo)) {
+    return { ok: false, error: "El sufijo solo puede contener letras y números." };
+  }
+
+  const sufijoExiste = await prisma.proveedor.findFirst({
+    where: { sufijo, NOT: { id } },
+  });
+  if (sufijoExiste) {
+    return { ok: false, error: `El sufijo "${sufijo}" ya está en uso.` };
+  }
 
   try {
-    await prisma.proveedor.update({ where: { id }, data: { nombre } });
+    await prisma.proveedor.update({ where: { id }, data: { nombre, sufijo } });
     revalidatePath("/proveedores");
     revalidatePath(`/proveedores/${id}`);
     return { ok: true, data: undefined };

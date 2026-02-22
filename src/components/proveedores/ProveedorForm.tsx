@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
 interface Props {
-  proveedor?: { id: string; nombre: string };
+  proveedor?: { id: string; nombre: string; sufijo: string };
   onSuccess?: () => void;
 }
 
@@ -48,6 +48,33 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
           minLength={2}
           disabled={pending}
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="sufijo">
+          Sufijo{" "}
+          <span className="text-muted-foreground font-normal text-xs">
+            (se usará como prefijo del código externo)
+          </span>
+        </Label>
+        <Input
+          id="sufijo"
+          name="sufijo"
+          placeholder="Ej: PIN, DIST, MER"
+          defaultValue={proveedor?.sufijo ?? ""}
+          required
+          minLength={2}
+          maxLength={8}
+          disabled={pending}
+          className="uppercase"
+          onChange={(e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+          }}
+        />
+        <p className="text-xs text-muted-foreground">
+          Solo letras y números. El código externo quedará como{" "}
+          <code className="bg-muted px-1 rounded">SUFIJO-CODPROD</code>
+        </p>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
