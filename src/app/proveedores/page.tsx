@@ -15,7 +15,6 @@ export default async function ProveedoresPage() {
     prisma.producto.findMany({
       orderBy: { codExt: "asc" },
       include: { proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } } },
-      orderBy: { codExt: "asc" },
     }),
   ]);
 
