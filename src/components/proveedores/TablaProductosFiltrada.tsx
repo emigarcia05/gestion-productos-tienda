@@ -95,11 +95,12 @@ export default function TablaProductosFiltrada({ productos, proveedores }: Props
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
+                <th className="text-left py-2.5 px-4 text-muted-foreground font-medium">Cod. Producto Proveedor</th>
                 <th className="text-left py-2.5 px-4 text-muted-foreground font-medium">Cód. Externo</th>
                 <th className="text-left py-2.5 px-4 text-muted-foreground font-medium">Descripción</th>
                 <th className="text-left py-2.5 px-4 text-muted-foreground font-medium">Proveedor</th>
-                <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Px Lista</th>
-                <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Px Venta</th>
+                <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Px Lista Proveedor</th>
+                <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Px Venta Sugerido</th>
                 <th className="text-right py-2.5 px-4 text-muted-foreground font-medium">Margen</th>
               </tr>
             </thead>
@@ -115,6 +116,9 @@ export default function TablaProductosFiltrada({ productos, proveedores }: Props
                     key={prod.id}
                     className="border-b border-border/30 hover:bg-muted/20 transition-colors"
                   >
+                    <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
+                      {prod.codProdProv}
+                    </td>
                     <td className="py-3 px-4">
                       <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
                         {prod.codExt}
