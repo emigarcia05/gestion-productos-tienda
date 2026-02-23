@@ -17,6 +17,7 @@ interface Props {
   totalProductos: number;
   qActual: string;
   proveedorActual: string;
+  // totalProductos ya representa el total filtrado, se pasa al modal
 }
 
 export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual }: Props) {
@@ -60,7 +61,12 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
         <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       </div>
 
-      <AccionMasivaModal proveedores={proveedores} />
+      <AccionMasivaModal
+        proveedores={proveedores}
+        filtroProveedorActual={proveedorActual}
+        filtroBusquedaActual={qActual}
+        totalFiltrado={totalProductos}
+      />
 
       <p className="text-xs text-muted-foreground whitespace-nowrap">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}

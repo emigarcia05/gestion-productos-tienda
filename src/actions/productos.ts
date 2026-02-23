@@ -32,20 +32,32 @@ export async function editarProducto(
   }
 }
 
-// ─── Acción masiva por proveedor ───────────────────────────────────────────
+// ─── Acción masiva por proveedor (con filtro opcional de búsqueda) ─────────
 
 export type CampoMasivo = "descuentoProducto" | "descuentoCantidad" | "cxTransporte" | "disponible";
 
 export async function aplicarCampoMasivo(
   proveedorId: string,
   campo: CampoMasivo,
-  valor: number | boolean
+  valor: number | boolean,
+  q?: string
 ): Promise<ActionResult<{ afectados: number }>> {
   if (!proveedorId) return { ok: false, error: "Proveedor requerido." };
 
+  const where = {
+    proveedorId,
+    ...(q ? {
+      OR: [
+        { descripcion: { contains: q, mode: "insensitive" as const } },
+        { codExt:      { contains: q, mode: "insensitive" as const } },
+        { codProdProv: { contains: q, mode: "insensitive" as const } },
+      ],
+    } : {}),
+  };
+
   try {
     const { count } = await prisma.producto.updateMany({
-      where: { proveedorId },
+      where,
       data: { [campo]: valor },
     });
     revalidatePath("/proveedores");
