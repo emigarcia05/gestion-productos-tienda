@@ -133,7 +133,7 @@ export function aplicarMapeo(filas: string[][], mapeo: MapeoColumnas): FilaProdu
     const precioListaRaw = get("precioLista");
     const precioVentaRaw = get("precioVentaSugerido");
 
-    if (!codProdProv) throw new Error(`Fila ${rowIdx + 1}: código de producto vacío.`);
+    if (!codProdProv) return null; // fila vacía o de separación — se ignora
 
     const precioLista = parsePrecio(precioListaRaw);
     const precioVentaSugerido = parsePrecio(precioVentaRaw);
@@ -142,5 +142,5 @@ export function aplicarMapeo(filas: string[][], mapeo: MapeoColumnas): FilaProdu
     const precioVentaFinal = (!precioVentaRaw  || precioVentaRaw.trim()  === "" || isNaN(precioVentaSugerido)) ? 0 : precioVentaSugerido;
 
     return { codProdProv, descripcion, precioLista: precioListaFinal, precioVentaSugerido: precioVentaFinal };
-  });
+  }).filter((f): f is FilaProducto => f !== null);
 }
