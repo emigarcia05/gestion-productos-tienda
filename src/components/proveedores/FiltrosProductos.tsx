@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
@@ -19,54 +20,51 @@ interface Props {
   proveedorActual: string;
 }
 
-const CURSOR_KEY = "filtros_q_cursor";
-
 export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual }: Props) {
-  const formRef  = useRef<HTMLFormElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const router   = useRouter();
+  const pathname = usePathname();
+  const [q, setQ] = useState(qActual);
+  const [, startTransition] = useTransition();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
 
-  // Restaurar foco y posición del cursor después de la navegación
-  useEffect(() => {
-    const pos = sessionStorage.getItem(CURSOR_KEY);
-    if (pos !== null && inputRef.current) {
-      inputRef.current.focus();
-      const n = parseInt(pos, 10);
-      inputRef.current.setSelectionRange(n, n);
-      sessionStorage.removeItem(CURSOR_KEY);
-    }
-  }, [qActual]);
+  function navigate(nuevoQ: string, nuevoProveedor: string) {
+    const params = new URLSearchParams();
+    if (nuevoQ)        params.set("q", nuevoQ);
+    if (nuevoProveedor) params.set("proveedor", nuevoProveedor);
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  }
 
-  function submitForm() {
-    // Guardar posición del cursor antes de navegar
-    if (inputRef.current) {
-      sessionStorage.setItem(CURSOR_KEY, String(inputRef.current.selectionStart ?? 0));
-    }
-    formRef.current?.requestSubmit();
+  function handleQ(value: string) {
+    setQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => navigate(value, proveedorActual), 400);
+  }
+
+  function handleProveedor(value: string) {
+    navigate(q, value);
   }
 
   return (
-    <form ref={formRef} action="" method="GET" className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
 
       <div className="relative flex-1">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
-          name="q"
+          value={q}
+          onChange={(e) => handleQ(e.target.value)}
           placeholder="Buscar por descripción o código..."
-          defaultValue={qActual}
-          onChange={() => {
-            clearTimeout((formRef.current as HTMLFormElement & { _t?: ReturnType<typeof setTimeout> })._t);
-            (formRef.current as HTMLFormElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(submitForm, 400);
-          }}
           className="pl-9"
         />
       </div>
 
       <div className="relative sm:w-64">
         <select
-          name="proveedor"
-          defaultValue={proveedorActual}
-          onChange={submitForm}
+          value={proveedorActual}
+          onChange={(e) => handleProveedor(e.target.value)}
           className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">Todos los proveedores</option>
@@ -87,6 +85,6 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
       <p className="text-xs text-muted-foreground whitespace-nowrap">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
       </p>
-    </form>
+    </div>
   );
 }
