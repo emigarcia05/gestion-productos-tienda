@@ -21,20 +21,40 @@ interface Props {
     rubro?: string;
     marca?: string;
     habilitado?: string;
+    mejorPrecio?: string;
     pagina?: string;
   }>;
 }
 
 export default async function TiendaPage({ searchParams }: Props) {
-  const { q = "", rubro = "", marca = "", habilitado = "", pagina = "1" } = await searchParams;
+  const { q = "", rubro = "", marca = "", habilitado = "", mejorPrecio = "", pagina = "1" } = await searchParams;
   const paginaNum = Math.max(1, parseInt(pagina) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
+
+  // IDs de items que tienen al menos un producto vinculado con Px Compra Final < costo
+  // Px Compra Final = precioLista * (1 - dto1/100) * (1 - dto2/100) * (1 + cx/100)
+  const itemsConMejorPrecio = await prisma.$queryRaw<{ item_tienda_id: string }[]>`
+    SELECT DISTINCT itp."itemTiendaId" AS item_tienda_id
+    FROM items_tienda_productos itp
+    JOIN productos p ON p.id = itp."productoId"
+    JOIN items_tienda it ON it.id = itp."itemTiendaId"
+    WHERE it.costo > 0
+      AND (
+        p."precioLista"
+        * (1 - p."descuentoProducto" / 100.0)
+        * (1 - p."descuentoCantidad" / 100.0)
+        * (1 + p."cxTransporte"     / 100.0)
+      ) < it.costo
+  `;
+  const setMejorPrecio = new Set(itemsConMejorPrecio.map((r) => r.item_tienda_id));
 
   const where = {
     ...(rubro ? { rubro } : {}),
     ...(marca ? { marca } : {}),
     ...(habilitado === "true"  ? { habilitado: true }  : {}),
     ...(habilitado === "false" ? { habilitado: false } : {}),
+    ...(mejorPrecio === "true"  ? { id: { in: Array.from(setMejorPrecio) } } : {}),
+    ...(mejorPrecio === "false" ? { id: { notIn: Array.from(setMejorPrecio) } } : {}),
     ...(q ? filtroTexto(q, ["descripcion", "codItem", "codigoExterno", "marca"]) : {}),
   };
 
@@ -117,12 +137,13 @@ export default async function TiendaPage({ searchParams }: Props) {
           rubroActual={rubro}
           marcaActual={marca}
           habilitadoActual={habilitado}
+          mejorPrecioActual={mejorPrecio}
         />
       </div>
 
       {/* Tabla con scroll interno */}
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3">
-        <TablaTienda items={items} />
+        <TablaTienda items={items} setMejorPrecio={setMejorPrecio} />
       </div>
 
       {/* Paginación fija abajo */}
@@ -135,7 +156,7 @@ export default async function TiendaPage({ searchParams }: Props) {
           q={q}
           proveedor=""
           basePath="/tienda"
-          extraParams={{ rubro, marca, habilitado }}
+          extraParams={{ rubro, marca, habilitado, mejorPrecio }}
         />
       </div>
     </div>

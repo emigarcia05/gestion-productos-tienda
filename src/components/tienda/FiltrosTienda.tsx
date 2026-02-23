@@ -13,11 +13,12 @@ interface Props {
   rubroActual: string;
   marcaActual: string;
   habilitadoActual: string;
+  mejorPrecioActual: string;
 }
 
 export default function FiltrosTienda({
   rubros, marcas, totalItems,
-  qActual, rubroActual, marcaActual, habilitadoActual,
+  qActual, rubroActual, marcaActual, habilitadoActual, mejorPrecioActual,
 }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -25,16 +26,18 @@ export default function FiltrosTienda({
   const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function navigate(params: { q?: string; rubro?: string; marca?: string; habilitado?: string }) {
+  function navigate(params: { q?: string; rubro?: string; marca?: string; habilitado?: string; mejorPrecio?: string }) {
     const p = new URLSearchParams();
-    const nuevoQ         = params.q         ?? q;
-    const nuevoRubro     = params.rubro     ?? rubroActual;
-    const nuevaMarca     = params.marca     ?? marcaActual;
+    const nuevoQ          = params.q          ?? q;
+    const nuevoRubro      = params.rubro      ?? rubroActual;
+    const nuevaMarca      = params.marca      ?? marcaActual;
     const nuevoHabilitado = params.habilitado ?? habilitadoActual;
-    if (nuevoQ)          p.set("q",          nuevoQ);
-    if (nuevoRubro)      p.set("rubro",      nuevoRubro);
-    if (nuevaMarca)      p.set("marca",      nuevaMarca);
-    if (nuevoHabilitado) p.set("habilitado", nuevoHabilitado);
+    const nuevoMejorPrecio = params.mejorPrecio ?? mejorPrecioActual;
+    if (nuevoQ)           p.set("q",           nuevoQ);
+    if (nuevoRubro)       p.set("rubro",       nuevoRubro);
+    if (nuevaMarca)       p.set("marca",       nuevaMarca);
+    if (nuevoHabilitado)  p.set("habilitado",  nuevoHabilitado);
+    if (nuevoMejorPrecio) p.set("mejorPrecio", nuevoMejorPrecio);
     startTransition(() => {
       router.push(`${pathname}?${p.toString()}`);
     });
@@ -83,6 +86,16 @@ export default function FiltrosTienda({
           <option value="">Todos</option>
           <option value="true">Habilitados</option>
           <option value="false">Deshabilitados</option>
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      </div>
+
+      <div className="relative sm:w-40">
+        <select value={mejorPrecioActual} onChange={(e) => navigate({ mejorPrecio: e.target.value })}
+          className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+          <option value="">Todos</option>
+          <option value="true">Con mejor precio</option>
+          <option value="false">Sin mejor precio</option>
         </select>
         <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       </div>
