@@ -138,8 +138,8 @@ export function aplicarMapeo(filas: string[][], mapeo: MapeoColumnas): FilaProdu
     const precioLista = parsePrecio(precioListaRaw);
     const precioVentaSugerido = parsePrecio(precioVentaRaw);
 
-    const precioListaFinal = isNaN(precioLista) || precioListaRaw === "" ? 0 : precioLista;
-    const precioVentaFinal  = isNaN(precioVentaSugerido) || precioVentaRaw === "" ? 0 : precioVentaSugerido;
+    const precioListaFinal = (!precioListaRaw || precioListaRaw.trim() === "" || isNaN(precioLista)) ? 0 : precioLista;
+    const precioVentaFinal = (!precioVentaRaw  || precioVentaRaw.trim()  === "" || isNaN(precioVentaSugerido)) ? 0 : precioVentaSugerido;
 
     return { codProdProv, descripcion, precioLista: precioListaFinal, precioVentaSugerido: precioVentaFinal };
   });
