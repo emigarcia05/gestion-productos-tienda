@@ -133,33 +133,44 @@ function mapItem(raw: any) {
   };
 }
 
+const LIMIT = 50; // máximo permitido por la API de Dux
+const BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
+
+async function fetchPagina(token: string, offset: number): Promise<{ results: unknown[]; total: number }> {
+  const url = `${BASE_URL}?limit=${LIMIT}&offset=${offset}`;
+  const res = await fetch(url, {
+    headers: { accept: "application/json", authorization: token },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
+  const json = await res.json();
+  return {
+    results: json.results ?? [],
+    total: Number(json.paging?.total ?? 0),
+  };
+}
+
 async function fetchTodosLosItems(token: string) {
-  const todos = [];
-  let offset = 0;
-  let total = Infinity;
+  // Primera llamada para saber el total
+  const primera = await fetchPagina(token, 0);
+  if (primera.total === 0 && primera.results.length === 0) return [];
 
-  while (offset < total) {
-    const url = `https://erp.duxsoftware.com.ar/WSERP/rest/services/items?limit=1000&offset=${offset}`;
-    const res = await fetch(url, {
-      headers: { accept: "application/json", authorization: token },
-      cache: "no-store",
-    });
+  const total = primera.total || primera.results.length;
+  const todos = [...primera.results];
 
-    if (!res.ok) {
-      throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
-    }
-
-    const json = await res.json();
-    const results: unknown[] = json.results ?? [];
-    total = Number(json.paging?.total ?? results.length);
-
-    if (results.length === 0) break;
-    todos.push(...results.map(mapItem));
-    offset += 1000;
-
-    // Si ya tenemos todos, salir
-    if (todos.length >= total) break;
+  // Calcular los offsets restantes
+  const offsets: number[] = [];
+  for (let offset = LIMIT; offset < total; offset += LIMIT) {
+    offsets.push(offset);
   }
 
-  return todos;
+  // Pedir todas las páginas en paralelo — lotes de 10 simultáneas para no saturar la API
+  const LOTE_FETCH = 10;
+  for (let i = 0; i < offsets.length; i += LOTE_FETCH) {
+    const lote = offsets.slice(i, i + LOTE_FETCH);
+    const resultados = await Promise.all(lote.map((offset) => fetchPagina(token, offset)));
+    for (const r of resultados) todos.push(...r.results);
+  }
+
+  return todos.map(mapItem);
 }
