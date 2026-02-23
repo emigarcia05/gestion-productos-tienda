@@ -1,24 +1,17 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { Link2, Unlink, Wand2, Search, Loader2, X } from "lucide-react";
+import { Link2, Wand2, Search, Loader2, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  getVinculos,
-  buscarProductos,
-  vincularProducto,
-  desvincularProducto,
-  autoVincular,
+  getVinculos, getProveedores, buscarProductos,
+  vincularProducto, desvincularProducto, autoVincular,
 } from "@/actions/vinculos";
 
 type ProductoConProveedor = {
@@ -29,6 +22,8 @@ type ProductoConProveedor = {
   precioLista: number;
   proveedor: { nombre: string; sufijo: string };
 };
+
+type ProveedorSimple = { id: string; nombre: string; sufijo: string };
 
 interface Props {
   itemTiendaId: string;
@@ -42,40 +37,49 @@ function fmtPrecio(n: number) {
 }
 
 export default function VincularModal({
-  itemTiendaId,
-  itemDescripcion,
-  codigoExterno,
-  cantidadVinculos: cantidadInicial,
+  itemTiendaId, itemDescripcion, codigoExterno, cantidadVinculos: cantidadInicial,
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const [vinculados, setVinculados] = useState<ProductoConProveedor[]>([]);
-  const [resultados, setResultados] = useState<ProductoConProveedor[]>([]);
-  const [q, setQ] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [cantidad, setCantidad] = useState(cantidadInicial);
-  const [isPending, startTransition] = useTransition();
+  const [open, setOpen]               = useState(false);
+  const [vinculados, setVinculados]   = useState<ProductoConProveedor[]>([]);
+  const [proveedores, setProveedores] = useState<ProveedorSimple[]>([]);
+  const [proveedorId, setProveedorId] = useState("");
+  const [resultados, setResultados]   = useState<ProductoConProveedor[]>([]);
+  const [q, setQ]                     = useState("");
+  const [cargando, setCargando]       = useState(false);
+  const [cantidad, setCantidad]       = useState(cantidadInicial);
+  const [isPending, startTransition]  = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cargar vínculos al abrir
+  // Cargar vínculos y proveedores al abrir
   useEffect(() => {
     if (!open) return;
     setCargando(true);
-    getVinculos(itemTiendaId).then((data) => {
-      setVinculados(data as ProductoConProveedor[]);
+    Promise.all([
+      getVinculos(itemTiendaId),
+      getProveedores(),
+    ]).then(([vincs, provs]) => {
+      setVinculados(vincs as ProductoConProveedor[]);
+      setProveedores(provs);
       setCargando(false);
     });
   }, [open, itemTiendaId]);
 
-  // Búsqueda con debounce
+  // Búsqueda con debounce, filtrada por proveedor seleccionado
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (q.trim().length < 2) { setResultados([]); return; }
     debounceRef.current = setTimeout(() => {
-      buscarProductos(q, itemTiendaId).then((data) => {
-        setResultados(data as ProductoConProveedor[]);
-      });
+      buscarProductos(q, itemTiendaId, proveedorId || undefined)
+        .then((data) => setResultados(data as ProductoConProveedor[]));
     }, 400);
-  }, [q, itemTiendaId]);
+  }, [q, proveedorId, itemTiendaId]);
+
+  // Limpiar resultados al cambiar de proveedor
+  function handleProveedorChange(id: string) {
+    setProveedorId(id);
+    setQ("");
+    setResultados([]);
+  }
 
   function handleVincular(producto: ProductoConProveedor) {
     startTransition(async () => {
@@ -109,7 +113,6 @@ export default function VincularModal({
       const res = await autoVincular(itemTiendaId);
       if (res.ok) {
         toast.success(`Auto-vinculado: ${res.data.vinculados} producto(s) nuevos`);
-        // Recargar vínculos
         const data = await getVinculos(itemTiendaId);
         setVinculados(data as ProductoConProveedor[]);
         setCantidad(data.length);
@@ -118,6 +121,8 @@ export default function VincularModal({
       }
     });
   }
+
+  const proveedorSeleccionado = proveedores.find((p) => p.id === proveedorId);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -150,7 +155,7 @@ export default function VincularModal({
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
 
-          {/* Productos ya vinculados */}
+          {/* ── Productos ya vinculados ── */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -158,13 +163,15 @@ export default function VincularModal({
               </h3>
               {codigoExterno && (
                 <Button
-                  size="sm"
-                  variant="outline"
+                  size="sm" variant="outline"
                   className="h-7 gap-1.5 text-xs"
                   onClick={handleAutoVincular}
                   disabled={isPending}
                 >
-                  {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                  {isPending
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : <Wand2 className="h-3 w-3" />
+                  }
                   Auto-vincular
                 </Button>
               )}
@@ -175,7 +182,7 @@ export default function VincularModal({
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando...
               </div>
             ) : vinculados.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-3">
+              <p className="text-xs text-muted-foreground py-2">
                 Sin vínculos. Usá el buscador o "Auto-vincular" para agregar.
               </p>
             ) : (
@@ -213,22 +220,55 @@ export default function VincularModal({
 
           <Separator />
 
-          {/* Buscador para agregar nuevos vínculos */}
-          <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          {/* ── Agregar nuevo vínculo ── */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Agregar vínculo
             </h3>
-            <div className="relative mb-3">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por código o descripción..."
-                className="w-full pl-8 pr-3 py-1.5 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+
+            {/* Paso 1: elegir proveedor */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">1. Elegí el proveedor</label>
+              <div className="relative">
+                <select
+                  value={proveedorId}
+                  onChange={(e) => handleProveedorChange(e.target.value)}
+                  className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">Todos los proveedores</option>
+                  {proveedores.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      [{p.sufijo}] {p.nombre}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
 
+            {/* Paso 2: buscar producto */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">
+                2. Buscá el producto
+                {proveedorSeleccionado && (
+                  <span className="ml-1 text-primary">
+                    en [{proveedorSeleccionado.sufijo}] {proveedorSeleccionado.nombre}
+                  </span>
+                )}
+              </label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Escribí código o descripción (mín. 2 caracteres)..."
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            {/* Resultados */}
             {resultados.length > 0 && (
               <div className="space-y-1.5 max-h-52 overflow-y-auto">
                 {resultados.map((prod) => (
@@ -261,8 +301,11 @@ export default function VincularModal({
               </div>
             )}
 
-            {q.trim().length >= 2 && resultados.length === 0 && (
-              <p className="text-xs text-muted-foreground">Sin resultados para "{q}".</p>
+            {q.trim().length >= 2 && resultados.length === 0 && !isPending && (
+              <p className="text-xs text-muted-foreground">
+                Sin resultados para &quot;{q}&quot;
+                {proveedorSeleccionado ? ` en ${proveedorSeleccionado.nombre}` : ""}.
+              </p>
             )}
           </div>
         </div>

@@ -24,7 +24,18 @@ export async function getVinculos(itemTiendaId: string) {
 
 // ─── Buscar productos de Lista Proveedores ────────────────────────────────
 
-export async function buscarProductos(q: string, excluirItemTiendaId: string) {
+export async function getProveedores() {
+  return prisma.proveedor.findMany({
+    select: { id: true, nombre: true, sufijo: true },
+    orderBy: { nombre: "asc" },
+  });
+}
+
+export async function buscarProductos(
+  q: string,
+  excluirItemTiendaId: string,
+  proveedorId?: string
+) {
   if (!q || q.trim().length < 2) return [];
 
   const yaVinculados = await prisma.itemTiendaProducto.findMany({
@@ -36,6 +47,7 @@ export async function buscarProductos(q: string, excluirItemTiendaId: string) {
   return prisma.producto.findMany({
     where: {
       id: { notIn: idsExcluidos },
+      ...(proveedorId ? { proveedorId } : {}),
       OR: [
         { descripcion: { contains: q, mode: "insensitive" } },
         { codExt:      { contains: q, mode: "insensitive" } },
