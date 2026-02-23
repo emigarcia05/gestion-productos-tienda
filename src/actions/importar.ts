@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
 import { aplicarMapeo, type FilaProducto, type MapeoColumnas } from "@/lib/parsearImport";
+import { esEditor } from "@/lib/sesion";
 
 export type { FilaProducto, MapeoColumnas } from "@/lib/parsearImport";
 
@@ -19,6 +20,7 @@ export async function importarProductos(
   filasCrudas: string[][],
   mapeo: MapeoColumnas
 ): Promise<ImportResult> {
+  if (!(await esEditor())) throw new Error("Sin permisos de editor.");
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
   if (!filasCrudas.length) throw new Error("No hay filas para importar.");
 

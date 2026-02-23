@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { esEditor } from "@/lib/sesion";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -20,6 +21,7 @@ export async function editarProducto(
   id: string,
   campos: CamposEditables
 ): Promise<ActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
     await prisma.producto.update({
       where: { id },
@@ -42,6 +44,7 @@ export async function aplicarCampoMasivo(
   valor: number | boolean,
   q?: string
 ): Promise<ActionResult<{ afectados: number }>> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   if (!proveedorId) return { ok: false, error: "Proveedor requerido." };
 
   const where = {

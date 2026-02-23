@@ -9,6 +9,9 @@ import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
 import FiltrosProductos from "@/components/proveedores/FiltrosProductos";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
+import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +25,8 @@ export default async function ProveedoresPage({ searchParams }: Props) {
   const { q = "", proveedor = "", pagina = "1" } = await searchParams;
   const paginaNum = Math.max(1, parseInt(pagina) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
+  const rol = await getRol();
+  const p = PERMISOS.proveedores;
 
   const where = {
     ...(proveedor ? { proveedorId: proveedor } : {}),
@@ -53,8 +58,16 @@ export default async function ProveedoresPage({ searchParams }: Props) {
           <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
             <Link href="/"><ArrowLeft className="h-4 w-4" />Volver</Link>
           </Button>
-          <CrearProveedorModal />
-          <ImportarModal proveedores={proveedores} />
+          {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
+          {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
+          {puede(rol, p.acciones.accionMasiva) && (
+            <AccionMasivaModal
+              proveedores={proveedores}
+              filtroProveedorActual={proveedor}
+              filtroBusquedaActual={q}
+              totalFiltrado={total}
+            />
+          )}
         </div>
         <Separator className="opacity-50" />
         <FiltrosProductos
@@ -67,7 +80,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
       {/* Tabla con scroll interno */}
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3">
-        <TablaProductosFiltrada productos={productos} />
+        <TablaProductosFiltrada productos={productos} rol={rol} />
       </div>
 
       {/* Paginación fija abajo */}

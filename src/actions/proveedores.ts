@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { generarCodigoUnico } from "@/lib/codigos";
+import { esEditor } from "@/lib/sesion";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -32,6 +33,7 @@ export async function getProveedorById(id: string) {
 export async function crearProveedor(
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const nombre = (formData.get("nombre") as string)?.trim();
   const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
 
@@ -73,6 +75,7 @@ export async function editarProveedor(
   id: string,
   formData: FormData
 ): Promise<ActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const nombre = (formData.get("nombre") as string)?.trim();
   const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
 
@@ -103,6 +106,7 @@ export async function editarProveedor(
 // ─── Eliminar ──────────────────────────────────────────────────────────────
 
 export async function eliminarProveedor(id: string): Promise<ActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
     await prisma.proveedor.delete({ where: { id } });
     revalidatePath("/proveedores");

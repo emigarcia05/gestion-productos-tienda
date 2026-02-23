@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
+import { esEditor } from "@/lib/sesion";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -74,6 +75,7 @@ export async function vincularProducto(
   itemTiendaId: string,
   productoId: string
 ): Promise<ActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
     await prisma.itemTiendaProducto.create({
       data: { itemTiendaId, productoId },
@@ -91,6 +93,7 @@ export async function desvincularProducto(
   itemTiendaId: string,
   productoId: string
 ): Promise<ActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
     await prisma.itemTiendaProducto.delete({
       where: { itemTiendaId_productoId: { itemTiendaId, productoId } },
@@ -108,6 +111,7 @@ export async function desvincularProducto(
 export async function autoVincular(
   itemTiendaId: string
 ): Promise<ActionResult<{ vinculados: number }>> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
     const item = await prisma.itemTienda.findUnique({
       where: { id: itemTiendaId },

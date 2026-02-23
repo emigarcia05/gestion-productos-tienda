@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { editarProducto } from "@/actions/productos";
+import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 interface Producto {
   id: string;
@@ -23,6 +24,7 @@ interface Producto {
 
 interface Props {
   productos: Producto[];
+  rol: Rol;
 }
 
 function calcPxCompraFinal(p: Producto): number {
@@ -145,8 +147,9 @@ function CeldaDisponible({
 }
 
 // ─── Tabla principal ───────────────────────────────────────────────────────
-export default function TablaProductosFiltrada({ productos: inicial }: Props) {
+export default function TablaProductosFiltrada({ productos: inicial, rol }: Props) {
   const [productos, setProductos] = useState(inicial);
+  const col = PERMISOS.proveedores.tabla;
 
   function handleUpdate(id: string, campo: string, val: number | boolean) {
     setProductos((prev) =>
@@ -167,75 +170,119 @@ export default function TablaProductosFiltrada({ productos: inicial }: Props) {
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
           <tr className="border-b border-border/50">
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
-              Cod.<br />Prov.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
-              Cód.<br />Externo
-            </th>
-            <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">
-              Descripción
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
-              Prov.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
-              Px<br />Lista
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
-              Px Venta<br />Sug.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
-              Dto.<br />Prod.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
-              Dto.<br />Cant.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
-              Cx<br />Transp.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
-              Px Compra<br />Final
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
-              Disp.
-            </th>
+            {puede(rol, col.codProdProv) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+                Cod.<br />Prov.
+              </th>
+            )}
+            {puede(rol, col.codExt) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+                Cód.<br />Externo
+              </th>
+            )}
+            {puede(rol, col.descripcion) && (
+              <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">
+                Descripción
+              </th>
+            )}
+            {puede(rol, col.proveedor) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
+                Prov.
+              </th>
+            )}
+            {puede(rol, col.precioLista) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
+                Px<br />Lista
+              </th>
+            )}
+            {puede(rol, col.precioVentaSugerido) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
+                Px Venta<br />Sug.
+              </th>
+            )}
+            {puede(rol, col.descuentoProducto) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+                Dto.<br />Prod.
+              </th>
+            )}
+            {puede(rol, col.descuentoCantidad) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+                Dto.<br />Cant.
+              </th>
+            )}
+            {puede(rol, col.cxTransporte) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+                Cx<br />Transp.
+              </th>
+            )}
+            {puede(rol, col.precioCompraFinal) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+                Px Compra<br />Final
+              </th>
+            )}
+            {puede(rol, col.disponible) && (
+              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+                Disp.
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {productos.map((prod) => (
             <tr key={prod.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-              <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
-                {prod.codProdProv}
-              </td>
-              <td className="py-2 px-2 text-center whitespace-nowrap">
-                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{prod.codExt}</code>
-              </td>
-              <td className="py-2 px-3 text-center">{prod.descripcion}</td>
-              <td className="py-2 px-2 text-center">
-                <Badge variant="secondary" className="font-mono text-xs px-1.5">{prod.proveedor.sufijo}</Badge>
-              </td>
-              <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
-                ${fmtPrecio(prod.precioLista)}
-              </td>
-              <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
-                ${fmtPrecio(prod.precioVentaSugerido)}
-              </td>
-              <td className="py-2 px-2 text-center">
-                <CeldaPorcentaje productoId={prod.id} campo="descuentoProducto" valor={prod.descuentoProducto} onUpdate={handleUpdate} />
-              </td>
-              <td className="py-2 px-2 text-center">
-                <CeldaPorcentaje productoId={prod.id} campo="descuentoCantidad" valor={prod.descuentoCantidad} onUpdate={handleUpdate} />
-              </td>
-              <td className="py-2 px-2 text-center">
-                <CeldaPorcentaje productoId={prod.id} campo="cxTransporte" valor={prod.cxTransporte} onUpdate={handleUpdate} />
-              </td>
-              <td className="py-2 px-2 text-center tabular-nums text-xs font-medium whitespace-nowrap">
-                ${fmtPrecio(calcPxCompraFinal(prod))}
-              </td>
-              <td className="py-2 px-2 text-center">
-                <CeldaDisponible productoId={prod.id} valor={prod.disponible} onUpdate={handleUpdate} />
-              </td>
+              {puede(rol, col.codProdProv) && (
+                <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
+                  {prod.codProdProv}
+                </td>
+              )}
+              {puede(rol, col.codExt) && (
+                <td className="py-2 px-2 text-center whitespace-nowrap">
+                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{prod.codExt}</code>
+                </td>
+              )}
+              {puede(rol, col.descripcion) && (
+                <td className="py-2 px-3 text-center">{prod.descripcion}</td>
+              )}
+              {puede(rol, col.proveedor) && (
+                <td className="py-2 px-2 text-center">
+                  <Badge variant="secondary" className="font-mono text-xs px-1.5">{prod.proveedor.sufijo}</Badge>
+                </td>
+              )}
+              {puede(rol, col.precioLista) && (
+                <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
+                  ${fmtPrecio(prod.precioLista)}
+                </td>
+              )}
+              {puede(rol, col.precioVentaSugerido) && (
+                <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
+                  ${fmtPrecio(prod.precioVentaSugerido)}
+                </td>
+              )}
+              {puede(rol, col.descuentoProducto) && (
+                <td className="py-2 px-2 text-center">
+                  <CeldaPorcentaje productoId={prod.id} campo="descuentoProducto" valor={prod.descuentoProducto} onUpdate={handleUpdate} />
+                </td>
+              )}
+              {puede(rol, col.descuentoCantidad) && (
+                <td className="py-2 px-2 text-center">
+                  <CeldaPorcentaje productoId={prod.id} campo="descuentoCantidad" valor={prod.descuentoCantidad} onUpdate={handleUpdate} />
+                </td>
+              )}
+              {puede(rol, col.cxTransporte) && (
+                <td className="py-2 px-2 text-center">
+                  <CeldaPorcentaje productoId={prod.id} campo="cxTransporte" valor={prod.cxTransporte} onUpdate={handleUpdate} />
+                </td>
+              )}
+              {puede(rol, col.precioCompraFinal) && (
+                <td className="py-2 px-2 text-center tabular-nums text-xs font-medium whitespace-nowrap">
+                  ${fmtPrecio(calcPxCompraFinal(prod))}
+                </td>
+              )}
+              {puede(rol, col.disponible) && (
+                <td className="py-2 px-2 text-center">
+                  <CeldaDisponible productoId={prod.id} valor={prod.disponible} onUpdate={handleUpdate} />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

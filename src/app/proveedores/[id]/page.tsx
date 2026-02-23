@@ -10,6 +10,8 @@ import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal"
 import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import { getProveedorById, getProveedores } from "@/actions/proveedores";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +21,16 @@ interface Props {
 
 export default async function ProveedorDetallePage({ params }: Props) {
   const { id } = await params;
-  const [proveedor, todosProveedores] = await Promise.all([
+  const [proveedor, todosProveedores, rol] = await Promise.all([
     getProveedorById(id),
     getProveedores(),
+    getRol(),
   ]);
 
   if (!proveedor) notFound();
 
   const { productos } = proveedor;
+  const p = PERMISOS.proveedorDetalle;
 
   const totalLista = productos.reduce((s, p) => s + p.precioLista, 0);
   const totalVenta = productos.reduce((s, p) => s + p.precioVentaSugerido, 0);
@@ -62,12 +66,18 @@ export default async function ProveedorDetallePage({ params }: Props) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <ImportarModal
-              proveedores={todosProveedores}
-              proveedorPreseleccionado={proveedor.id}
-            />
-            <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
-            <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
+            {puede(rol, p.acciones.importarLista) && (
+              <ImportarModal
+                proveedores={todosProveedores}
+                proveedorPreseleccionado={proveedor.id}
+              />
+            )}
+            {puede(rol, p.acciones.editarProveedor) && (
+              <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
+            )}
+            {puede(rol, p.acciones.eliminarProveedor) && (
+              <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
+            )}
           </div>
         </div>
 
@@ -116,12 +126,12 @@ export default async function ProveedorDetallePage({ params }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/50">
-                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Proveedor</th>
-                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Externo</th>
-                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Descripción</th>
-                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Lista</th>
-                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Venta</th>
-                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Margen</th>
+                      {puede(rol, p.tabla.codProdProv) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Proveedor</th>}
+                      {puede(rol, p.tabla.codExt) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Externo</th>}
+                      {puede(rol, p.tabla.descripcion) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Descripción</th>}
+                      {puede(rol, p.tabla.precioLista) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Lista</th>}
+                      {puede(rol, p.tabla.precioVentaSugerido) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Venta</th>}
+                      {puede(rol, p.tabla.margen) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Margen</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -137,46 +147,67 @@ export default async function ProveedorDetallePage({ params }: Props) {
                           key={prod.id}
                           className="border-b border-border/30 hover:bg-muted/30 transition-colors"
                         >
-                          <td className="py-3 px-3 text-center font-mono text-xs text-muted-foreground">
-                            {prod.codProdProv}
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                              {prod.codExt}
-                            </code>
-                          </td>
-                          <td className="py-3 px-3 text-center max-w-xs truncate">{prod.descripcion}</td>
-                          <td className="py-3 px-3 text-center tabular-nums">
-                            ${Math.round(prod.precioLista).toLocaleString("es-AR")}
-                          </td>
-                          <td className="py-3 px-3 text-center tabular-nums">
-                            ${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            {margen !== "—" ? (
-                              <span className={margenNum >= 0 ? "text-emerald-500" : "text-destructive"}>
-                                {margenNum >= 0 ? "+" : ""}{margen}%
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
+                          {puede(rol, p.tabla.codProdProv) && (
+                            <td className="py-3 px-3 text-center font-mono text-xs text-muted-foreground">
+                              {prod.codProdProv}
+                            </td>
+                          )}
+                          {puede(rol, p.tabla.codExt) && (
+                            <td className="py-3 px-3 text-center">
+                              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {prod.codExt}
+                              </code>
+                            </td>
+                          )}
+                          {puede(rol, p.tabla.descripcion) && (
+                            <td className="py-3 px-3 text-center max-w-xs truncate">{prod.descripcion}</td>
+                          )}
+                          {puede(rol, p.tabla.precioLista) && (
+                            <td className="py-3 px-3 text-center tabular-nums">
+                              ${Math.round(prod.precioLista).toLocaleString("es-AR")}
+                            </td>
+                          )}
+                          {puede(rol, p.tabla.precioVentaSugerido) && (
+                            <td className="py-3 px-3 text-center tabular-nums">
+                              ${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}
+                            </td>
+                          )}
+                          {puede(rol, p.tabla.margen) && (
+                            <td className="py-3 px-3 text-center">
+                              {margen !== "—" ? (
+                                <span className={margenNum >= 0 ? "text-emerald-500" : "text-destructive"}>
+                                  {margenNum >= 0 ? "+" : ""}{margen}%
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t border-border/50 bg-muted/20">
-                      <td colSpan={3} className="py-2.5 px-3 text-center text-xs text-muted-foreground font-medium">
+                      <td
+                        colSpan={
+                          [p.tabla.codProdProv, p.tabla.codExt, p.tabla.descripcion].filter((c) => puede(rol, c)).length
+                        }
+                        className="py-2.5 px-3 text-center text-xs text-muted-foreground font-medium"
+                      >
                         Total ({productos.length} productos)
                       </td>
-                      <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
-                        ${Math.round(totalLista).toLocaleString("es-AR")}
-                      </td>
-                      <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
-                        ${Math.round(totalVenta).toLocaleString("es-AR")}
-                      </td>
-                      <td />
+                      {puede(rol, p.tabla.precioLista) && (
+                        <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
+                          ${Math.round(totalLista).toLocaleString("es-AR")}
+                        </td>
+                      )}
+                      {puede(rol, p.tabla.precioVentaSugerido) && (
+                        <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
+                          ${Math.round(totalVenta).toLocaleString("es-AR")}
+                        </td>
+                      )}
+                      {puede(rol, p.tabla.margen) && <td />}
                     </tr>
                   </tfoot>
                 </table>

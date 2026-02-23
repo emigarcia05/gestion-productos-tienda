@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import UploadZone from "@/components/UploadZone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileSpreadsheet, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 
 const importHistory = [
   { id: "1", filename: "productos_enero.csv", status: "success", rows: 245, imported: 243, errors: 2, date: "22 Feb 2026" },
@@ -36,7 +39,11 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default function ImportarPage() {
+export default async function ImportarPage() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.importar.acceso)) {
+    redirect("/");
+  }
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

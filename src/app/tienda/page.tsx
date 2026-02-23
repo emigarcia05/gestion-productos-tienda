@@ -9,6 +9,8 @@ import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +32,7 @@ export default async function TiendaPage({ searchParams }: Props) {
   const { q = "", rubro = "", subRubro = "", marca = "", habilitado = "", mejorPrecio = "", pagina = "1" } = await searchParams;
   const paginaNum = Math.max(1, parseInt(pagina) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
+  const rol = await getRol();
 
   // IDs de items que tienen al menos un producto vinculado con Px Compra Final < costo
   // Px Compra Final = precioLista * (1 - dto1/100) * (1 - dto2/100) * (1 + cx/100)
@@ -126,7 +129,7 @@ export default async function TiendaPage({ searchParams }: Props) {
               </div>
             )}
           </div>
-          <SyncButton />
+          {puede(rol, PERMISOS.tienda.acciones.sincronizar) && <SyncButton />}
         </div>
 
         <Separator className="opacity-50" />
@@ -147,7 +150,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
       {/* Tabla con scroll interno */}
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3">
-        <TablaTienda items={items} setMejorPrecio={setMejorPrecio} />
+        <TablaTienda items={items} setMejorPrecio={setMejorPrecio} rol={rol} />
       </div>
 
       {/* Paginación fija abajo */}
