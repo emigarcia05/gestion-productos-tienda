@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestión de Productos",
+  title: "TiendaColor — Gestión",
   description: "Sistema de gestión e importación de productos para tienda",
 };
 
