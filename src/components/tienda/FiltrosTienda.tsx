@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Search, ChevronDown, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,22 +23,16 @@ export default function FiltrosTienda({
   marcas, rubros, subRubros, totalItems,
   qActual, marcaActual, rubroActual, subRubroActual, habilitadoActual, mejorPrecioActual,
 }: Props) {
-  const router      = useRouter();
   const pathname    = usePathname();
   const [q, setQ]   = useState(qActual);
-  const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || habilitadoActual || mejorPrecioActual);
 
-  // Cada filtro reemplaza TODOS los demás — navegación limpia con un solo parámetro activo
   function navigateSolo(key: string, value: string) {
     const p = new URLSearchParams();
     if (value) p.set(key, value);
-    startTransition(() => {
-      router.push(`${pathname}?${p.toString()}`);
-      router.refresh();
-    });
+    window.location.href = `${pathname}?${p.toString()}`;
   }
 
   function handleQ(value: string) {
@@ -55,10 +49,7 @@ export default function FiltrosTienda({
 
   function limpiarFiltros() {
     setQ("");
-    startTransition(() => {
-      router.push(pathname);
-      router.refresh();
-    });
+    window.location.href = pathname;
   }
 
   return (

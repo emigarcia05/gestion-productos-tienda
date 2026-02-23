@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -21,10 +21,8 @@ interface Props {
 }
 
 export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual, accionMasivaSlot }: Props) {
-  const router   = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState(qActual);
-  const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
 
@@ -32,10 +30,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
     const params = new URLSearchParams();
     if (nuevoQ)         params.set("q", nuevoQ);
     if (nuevoProveedor) params.set("proveedor", nuevoProveedor);
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`);
-      router.refresh();
-    });
+    window.location.href = `${pathname}?${params.toString()}`;
   }
 
   function handleQ(value: string) {
