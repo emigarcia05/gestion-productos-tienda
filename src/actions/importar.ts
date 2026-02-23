@@ -84,20 +84,25 @@ export async function importarProductos(
     creados += res.count;
   }
 
-  // Actualizar solo los campos que vienen del archivo — los campos manuales se preservan
+  // Actualizar en paralelo por lotes de 200 — preserva campos manuales
   let actualizados = 0;
-  for (const codExt of paraActualizar) {
-    const f = mapaEntrante.get(codExt)!;
-    await prisma.producto.update({
-      where: { codExt },
-      data: {
-        descripcion: f.descripcion,
-        precioLista: f.precioLista,
-        precioVentaSugerido: f.precioVentaSugerido,
-        // descuentoProducto, descuentoCantidad, cxTransporte, disponible NO se tocan
-      },
-    });
-    actualizados++;
+  for (let i = 0; i < paraActualizar.length; i += LOTE) {
+    const lote = paraActualizar.slice(i, i + LOTE);
+    await Promise.all(
+      lote.map((codExt) => {
+        const f = mapaEntrante.get(codExt)!;
+        return prisma.producto.update({
+          where: { codExt },
+          data: {
+            descripcion:         f.descripcion,
+            precioLista:         f.precioLista,
+            precioVentaSugerido: f.precioVentaSugerido,
+            // descuentoProducto, descuentoCantidad, cxTransporte, disponible NO se tocan
+          },
+        });
+      })
+    );
+    actualizados += lote.length;
   }
 
   // Eliminar productos del proveedor que no estaban en el archivo
