@@ -108,7 +108,7 @@ export default async function TiendaPage({ searchParams }: Props) {
             <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
               <Link href="/"><ArrowLeft className="h-4 w-4" />Volver</Link>
             </Button>
-            <h1 className="text-lg font-semibold tracking-tight">Productos Relacionados a Proveedores</h1>
+            <h1 className="text-lg font-semibold tracking-tight">Lista TiendaColor</h1>
             {ultimoSync && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 {ultimoSync.status === "ok"

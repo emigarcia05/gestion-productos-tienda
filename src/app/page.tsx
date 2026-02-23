@@ -23,7 +23,7 @@ export default async function HomePage() {
           <div className="flex-1 flex items-center justify-center w-full">
             <Building2 className="w-16 h-16 text-muted-foreground group-hover:text-foreground transition-colors" />
           </div>
-          <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
+          <span className="text-base font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
             Lista de Proveedores
           </span>
         </Link>
@@ -35,7 +35,7 @@ export default async function HomePage() {
           <div className="flex-1 flex items-center justify-center w-full">
             <ShoppingBag className="w-16 h-16 text-muted-foreground group-hover:text-foreground transition-colors" />
           </div>
-          <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
+          <span className="text-base font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
             Lista TiendaColor
           </span>
         </Link>
