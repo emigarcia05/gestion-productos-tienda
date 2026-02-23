@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, XCircle, Clock, ArrowLeft } from "lucide-react";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
@@ -74,6 +76,9 @@ export default async function TiendaPage({ searchParams }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
+              <Link href="/"><ArrowLeft className="h-4 w-4" />Volver</Link>
+            </Button>
             <h1 className="text-lg font-semibold tracking-tight">Lista TiendaColor</h1>
             {ultimoSync && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

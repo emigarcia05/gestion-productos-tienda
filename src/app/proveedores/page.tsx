@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import CrearProveedorModal from "@/components/proveedores/CrearProveedorModal";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
@@ -52,6 +55,9 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       {/* Controles fijos */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-3 space-y-3">
         <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
+            <Link href="/"><ArrowLeft className="h-4 w-4" />Volver</Link>
+          </Button>
           <CrearProveedorModal />
           <ImportarModal proveedores={proveedores} />
         </div>

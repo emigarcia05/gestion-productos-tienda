@@ -5,17 +5,9 @@ import { prisma } from "@/lib/prisma";
 // Vercel Cron llama a este endpoint con el header Authorization: Bearer <CRON_SECRET>
 // También se puede llamar manualmente desde el Server Action
 
-export const maxDuration = 300; // 5 minutos máximo (plan Pro) — en Hobby es 60s
+export const maxDuration = 60; // Máximo en plan Hobby de Vercel
 
 export async function GET(request: Request) {
-  // Verificar que viene de Vercel Cron o de nuestra propia app
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const result = await ejecutarSync("auto");
     return NextResponse.json({ ok: true, ...result });

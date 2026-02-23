@@ -1,28 +1,36 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sincronizarManual } from "@/actions/tienda";
 
 export default function SyncButton() {
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
-  function handleSync() {
-    startTransition(async () => {
-      toast.loading("Sincronizando con Dux...", { id: "sync" });
-      const res = await sincronizarManual();
-      if (res.ok) {
-        const { creados, actualizados, deshabilitados, totalApi, duracionMs } = res.data;
+  async function handleSync() {
+    setPending(true);
+    toast.loading("Sincronizando con Dux...", { id: "sync" });
+    try {
+      // Llamamos al API Route directamente — tiene maxDuration=300 (sin límite de 10s)
+      const res = await fetch("/api/sync-tienda", { method: "GET" });
+      const data = await res.json();
+      if (data.ok) {
+        const { creados, actualizados, deshabilitados, totalApi, duracionMs } = data;
         toast.success(
           `Sync completado en ${(duracionMs / 1000).toFixed(1)}s — ${totalApi.toLocaleString()} items: ${creados} nuevos, ${actualizados} actualizados, ${deshabilitados} deshabilitados`,
           { id: "sync", duration: 8000 }
         );
+        // Recargar la página para mostrar los datos nuevos
+        window.location.reload();
       } else {
-        toast.error(`Error: ${res.error}`, { id: "sync" });
+        toast.error(`Error: ${data.error}`, { id: "sync" });
       }
-    });
+    } catch {
+      toast.error("Error de conexión al sincronizar.", { id: "sync" });
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
