@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -18,11 +18,23 @@ export default function FiltrosTienda({
   rubros, marcas, totalItems,
   qActual, rubroActual, marcaActual, habilitadoActual,
 }: Props) {
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef    = useRef<HTMLFormElement>(null);
+  const inputRef   = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(qActual);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cursorRef   = useRef<number | null>(null);
+
+  // Restaurar foco y cursor tras navegación
+  useEffect(() => {
+    if (cursorRef.current !== null && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.setSelectionRange(cursorRef.current, cursorRef.current);
+      cursorRef.current = null;
+    }
+  });
 
   function submitForm() {
+    cursorRef.current = inputRef.current?.selectionStart ?? null;
     formRef.current?.requestSubmit();
   }
 
@@ -38,6 +50,7 @@ export default function FiltrosTienda({
       <div className="relative flex-1 min-w-48">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
+          ref={inputRef}
           name="q"
           placeholder="Buscar por descripción, código o marca..."
           value={inputValue}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
@@ -17,24 +17,40 @@ interface Props {
   totalProductos: number;
   qActual: string;
   proveedorActual: string;
-  // totalProductos ya representa el total filtrado, se pasa al modal
 }
 
+const CURSOR_KEY = "filtros_q_cursor";
+
 export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual }: Props) {
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef  = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Restaurar foco y posición del cursor después de la navegación
+  useEffect(() => {
+    const pos = sessionStorage.getItem(CURSOR_KEY);
+    if (pos !== null && inputRef.current) {
+      inputRef.current.focus();
+      const n = parseInt(pos, 10);
+      inputRef.current.setSelectionRange(n, n);
+      sessionStorage.removeItem(CURSOR_KEY);
+    }
+  }, [qActual]);
 
   function submitForm() {
+    // Guardar posición del cursor antes de navegar
+    if (inputRef.current) {
+      sessionStorage.setItem(CURSOR_KEY, String(inputRef.current.selectionStart ?? 0));
+    }
     formRef.current?.requestSubmit();
   }
 
   return (
-    // action="" hace GET a la misma ruta — Next.js lo trata como navegación normal
     <form ref={formRef} action="" method="GET" className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-      {/* Al cambiar de página se resetea, por eso no incluimos "pagina" aquí */}
 
       <div className="relative flex-1">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
+          ref={inputRef}
           name="q"
           placeholder="Buscar por descripción o código..."
           defaultValue={qActual}
