@@ -39,10 +39,13 @@ export default async function ProveedorDetallePage({ params }: Props) {
         titulo={proveedor.nombre}
         subtitulo={`${proveedor._count.productos} producto${proveedor._count.productos !== 1 ? "s" : ""} en catálogo`}
         acciones={
+          <Badge variant="secondary" className="font-mono text-sm">
+            {proveedor.codigoUnico}
+          </Badge>
+        }
+        tabs={[{ label: "Productos del proveedor", active: true }]}
+        accionesBarra={
           <>
-            <Badge variant="secondary" className="font-mono text-sm">
-              {proveedor.codigoUnico}
-            </Badge>
             {puede(rol, p.acciones.importarLista) && (
               <ImportarModal
                 proveedores={todosProveedores}
@@ -57,7 +60,6 @@ export default async function ProveedorDetallePage({ params }: Props) {
             )}
           </>
         }
-        tabs={[{ label: "Productos del proveedor", active: true }]}
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">

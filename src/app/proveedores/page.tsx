@@ -53,13 +53,13 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         volverHref="/"
         titulo="Lista Proveedores"
         subtitulo={`${total.toLocaleString()} producto${total !== 1 ? "s" : ""}`}
-        acciones={
+        tabs={[{ label: "Productos", active: true }]}
+        accionesBarra={
           <>
             {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
             {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
           </>
         }
-        tabs={[{ label: "Productos", active: true }]}
       />
 
       {/* Filtros */}

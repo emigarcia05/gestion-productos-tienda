@@ -119,19 +119,16 @@ export default async function TiendaPage({ searchParams }: Props) {
       <PageHeader
         volverHref="/"
         titulo="Lista TiendaColor"
-        subtitulo={ultimoSync ? undefined : undefined}
-        acciones={
-          <>
-            {syncInfo}
-            {puede(rol, PERMISOS.tienda.acciones.sincronizar) && <SyncButton />}
-          </>
-        }
+        acciones={syncInfo ?? undefined}
         tabs={[
           { label: "Productos Relacionados", active: true },
           ...(puede(rol, PERMISOS.tienda.acciones.sincronizar)
             ? [{ label: "Control de Aumentos", href: "/tienda/aumentos", active: false, icon: <TrendingUp className="h-3.5 w-3.5" /> }]
             : []),
         ]}
+        accionesBarra={
+          puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined
+        }
       />
 
       {/* Filtros */}

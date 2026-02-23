@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Building2, ShoppingBag } from "lucide-react";
 import SelectorRol from "@/components/SelectorRol";
 import { getRol } from "@/lib/sesion";
@@ -11,6 +12,18 @@ export default async function HomePage() {
       {/* Selector de rol — centrado en la parte superior */}
       <div className="flex justify-center pt-6">
         <SelectorRol rolActual={rol} />
+      </div>
+
+      {/* Logo — centrado entre el selector y los botones */}
+      <div className="flex justify-center pt-8 pb-2">
+        <Image
+          src="/logo_tiendacolor_png.png"
+          alt="TiendaColor"
+          width={280}
+          height={100}
+          className="w-64 h-auto object-contain"
+          priority
+        />
       </div>
 
       {/* Botones de navegación — centrados verticalmente en el resto */}
