@@ -60,14 +60,6 @@ export default async function ProveedoresPage({ searchParams }: Props) {
           </Button>
           {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
           {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
-          {puede(rol, p.acciones.accionMasiva) && (
-            <AccionMasivaModal
-              proveedores={proveedores}
-              filtroProveedorActual={proveedor}
-              filtroBusquedaActual={q}
-              totalFiltrado={total}
-            />
-          )}
         </div>
         <Separator className="opacity-50" />
         <FiltrosProductos
@@ -75,6 +67,16 @@ export default async function ProveedoresPage({ searchParams }: Props) {
           totalProductos={total}
           qActual={q}
           proveedorActual={proveedor}
+          accionMasivaSlot={
+            puede(rol, p.acciones.accionMasiva) ? (
+              <AccionMasivaModal
+                proveedores={proveedores}
+                filtroProveedorActual={proveedor}
+                filtroBusquedaActual={q}
+                totalFiltrado={total}
+              />
+            ) : undefined
+          }
         />
       </div>
 

@@ -4,7 +4,6 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 
 interface Proveedor {
   id: string;
@@ -18,9 +17,10 @@ interface Props {
   totalProductos: number;
   qActual: string;
   proveedorActual: string;
+  accionMasivaSlot?: React.ReactNode;
 }
 
-export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual }: Props) {
+export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual, accionMasivaSlot }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState(qActual);
@@ -75,12 +75,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
         <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       </div>
 
-      <AccionMasivaModal
-        proveedores={proveedores}
-        filtroProveedorActual={proveedorActual}
-        filtroBusquedaActual={qActual}
-        totalFiltrado={totalProductos}
-      />
+      {accionMasivaSlot}
 
       <p className="text-xs text-muted-foreground whitespace-nowrap">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
