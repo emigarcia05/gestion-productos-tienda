@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { filtroTexto } from "@/lib/busqueda";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,14 +34,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     ...(marca ? { marca } : {}),
     ...(habilitado === "true"  ? { habilitado: true }  : {}),
     ...(habilitado === "false" ? { habilitado: false } : {}),
-    ...(q ? {
-      OR: [
-        { descripcion:   { contains: q, mode: "insensitive" as const } },
-        { codItem:       { contains: q, mode: "insensitive" as const } },
-        { codigoExterno: { contains: q, mode: "insensitive" as const } },
-        { marca:         { contains: q, mode: "insensitive" as const } },
-      ],
-    } : {}),
+    ...(q ? filtroTexto(q, ["descripcion", "codItem", "codigoExterno", "marca"]) : {}),
   };
 
   const [items, total, rubros, marcas, ultimoSync] = await Promise.all([

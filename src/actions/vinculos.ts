@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { filtroTexto } from "@/lib/busqueda";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -48,11 +49,7 @@ export async function buscarProductos(
     where: {
       id: { notIn: idsExcluidos },
       ...(proveedorId ? { proveedorId } : {}),
-      OR: [
-        { descripcion: { contains: q, mode: "insensitive" } },
-        { codExt:      { contains: q, mode: "insensitive" } },
-        { codProdProv: { contains: q, mode: "insensitive" } },
-      ],
+      ...filtroTexto(q, ["descripcion", "codExt", "codProdProv"]),
     },
     include: { proveedor: { select: { nombre: true, sufijo: true } } },
     take: 20,

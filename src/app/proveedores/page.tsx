@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { filtroTexto } from "@/lib/busqueda";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -24,13 +25,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   const where = {
     ...(proveedor ? { proveedorId: proveedor } : {}),
-    ...(q ? {
-      OR: [
-        { descripcion: { contains: q, mode: "insensitive" as const } },
-        { codExt:      { contains: q, mode: "insensitive" as const } },
-        { codProdProv: { contains: q, mode: "insensitive" as const } },
-      ],
-    } : {}),
+    ...(q ? filtroTexto(q, ["descripcion", "codExt", "codProdProv"]) : {}),
   };
 
   const [proveedores, productos, total] = await Promise.all([
