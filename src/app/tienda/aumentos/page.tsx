@@ -15,8 +15,8 @@ export default async function ControlAumentosPage() {
   const data = await getControlAumentos();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-4 space-y-1">
+    <div className="h-screen flex flex-col overflow-hidden">
+      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-3">
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
             <Link href="/tienda"><ArrowLeft className="h-4 w-4" />Volver</Link>
@@ -28,7 +28,7 @@ export default async function ControlAumentosPage() {
         </div>
       </div>
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8">
+      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-4">
         <TablaAumentos data={data} />
       </div>
     </div>
