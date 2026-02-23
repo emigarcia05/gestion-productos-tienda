@@ -69,33 +69,26 @@ export default async function TiendaPage({ searchParams }: Props) {
       include: { _count: { select: { productos: true } } },
     }),
     prisma.itemTienda.count({ where }),
-    // Marcas: sin filtro (siempre todas)
+    // Marcas: siempre todas
     prisma.itemTienda.findMany({
       select: { marca: true },
       distinct: ["marca"],
       orderBy: { marca: "asc" },
       where: { marca: { not: null } },
     }),
-    // Rubros: filtrados por marca seleccionada
+    // Rubros: siempre todos
     prisma.itemTienda.findMany({
       select: { rubro: true },
       distinct: ["rubro"],
       orderBy: { rubro: "asc" },
-      where: {
-        rubro: { not: null },
-        ...(marca ? { marca } : {}),
-      },
+      where: { rubro: { not: null } },
     }),
-    // Sub-Rubros: filtrados por marca + rubro seleccionados
+    // Sub-Rubros: siempre todos
     prisma.itemTienda.findMany({
       select: { subRubro: true },
       distinct: ["subRubro"],
       orderBy: { subRubro: "asc" },
-      where: {
-        subRubro: { not: null },
-        ...(marca ? { marca } : {}),
-        ...(rubro ? { rubro } : {}),
-      },
+      where: { subRubro: { not: null } },
     }),
     prisma.syncLog.findFirst({ orderBy: { createdAt: "desc" } }),
   ]);

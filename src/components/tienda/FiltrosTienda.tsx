@@ -31,41 +31,24 @@ export default function FiltrosTienda({
 
   const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || habilitadoActual || mejorPrecioActual);
 
-  function navigate(params: {
-    q?: string; marca?: string; rubro?: string; subRubro?: string;
-    habilitado?: string; mejorPrecio?: string;
-  }) {
+  // Cada filtro reemplaza TODOS los demás — navegación limpia con un solo parámetro activo
+  function navigateSolo(key: string, value: string) {
     const p = new URLSearchParams();
-    const nq          = params.q          ?? q;
-    const nMarca      = params.marca      ?? marcaActual;
-    const nRubro      = params.rubro      ?? rubroActual;
-    const nSubRubro   = params.subRubro   ?? subRubroActual;
-    const nHabilitado = params.habilitado ?? habilitadoActual;
-    const nMejor      = params.mejorPrecio ?? mejorPrecioActual;
-    if (nq)          p.set("q",          nq);
-    if (nMarca)      p.set("marca",      nMarca);
-    if (nRubro)      p.set("rubro",      nRubro);
-    if (nSubRubro)   p.set("subRubro",   nSubRubro);
-    if (nHabilitado) p.set("habilitado", nHabilitado);
-    if (nMejor)      p.set("mejorPrecio", nMejor);
+    if (value) p.set(key, value);
     startTransition(() => router.push(`${pathname}?${p.toString()}`));
   }
 
   function handleQ(value: string) {
     setQ(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => navigate({ q: value }), 400);
+    debounceRef.current = setTimeout(() => navigateSolo("q", value), 400);
   }
 
-  // Al cambiar marca: resetear rubro y subRubro
-  function handleMarca(value: string) {
-    navigate({ marca: value, rubro: "", subRubro: "" });
-  }
-
-  // Al cambiar rubro: resetear subRubro
-  function handleRubro(value: string) {
-    navigate({ rubro: value, subRubro: "" });
-  }
+  function handleMarca(value: string)    { navigateSolo("marca",      value); }
+  function handleRubro(value: string)    { navigateSolo("rubro",      value); }
+  function handleSubRubro(value: string) { navigateSolo("subRubro",   value); }
+  function handleHabilitado(value: string) { navigateSolo("habilitado", value); }
+  function handleMejorPrecio(value: string) { navigateSolo("mejorPrecio", value); }
 
   function limpiarFiltros() {
     setQ("");
@@ -118,9 +101,9 @@ export default function FiltrosTienda({
           <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         </div>
 
-        {/* Sub-Rubro — filtrado por marca + rubro */}
+        {/* Sub-Rubro */}
         <div className="relative w-44">
-          <select value={subRubroActual} onChange={(e) => navigate({ subRubro: e.target.value })}
+          <select value={subRubroActual} onChange={(e) => handleSubRubro(e.target.value)}
             className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             <option value="">Todos los sub-rubros</option>
             {subRubros.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -130,7 +113,7 @@ export default function FiltrosTienda({
 
         {/* Oportunidad de Costo */}
         <div className="relative w-52">
-          <select value={mejorPrecioActual} onChange={(e) => navigate({ mejorPrecio: e.target.value })}
+          <select value={mejorPrecioActual} onChange={(e) => handleMejorPrecio(e.target.value)}
             className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             <option value="">Todos</option>
             <option value="true">Menor Costo Disponible</option>
