@@ -4,7 +4,7 @@ import { filtroTexto } from "@/lib/busqueda";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, ArrowLeft, TrendingUp } from "lucide-react";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
@@ -130,6 +130,22 @@ export default async function TiendaPage({ searchParams }: Props) {
             )}
           </div>
           {puede(rol, PERMISOS.tienda.acciones.sincronizar) && <SyncButton />}
+        </div>
+
+        {/* Sub-navegación */}
+        <div className="flex gap-1 border-b border-border/50">
+          <span className="px-4 py-2 text-sm font-medium border-b-2 border-primary text-foreground -mb-px">
+            Productos Relacionados
+          </span>
+          {puede(rol, PERMISOS.tienda.acciones.sincronizar) && (
+            <Link
+              href="/tienda/aumentos"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors -mb-px"
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              Control de Aumentos
+            </Link>
+          )}
         </div>
 
         <Separator className="opacity-50" />

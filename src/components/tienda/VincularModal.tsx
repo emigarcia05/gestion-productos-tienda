@@ -42,6 +42,9 @@ interface Props {
   codigoExterno: string | null;
   cantidadVinculos: number;
   costoTienda: number;
+  /** Si se pasa, el modal se controla desde afuera (fila clickeable) */
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }
 
 function fmtPrecio(n: number) {
@@ -73,8 +76,11 @@ function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompr
 
 export default function VincularModal({
   itemTiendaId, itemDescripcion, codigoExterno, cantidadVinculos: cantidadInicial, costoTienda,
+  open: openProp, onOpenChange,
 }: Props) {
-  const [open, setOpen]                   = useState(false);
+  const [openInterno, setOpenInterno] = useState(false);
+  const open    = openProp    !== undefined ? openProp    : openInterno;
+  const setOpen = onOpenChange !== undefined ? onOpenChange : setOpenInterno;
   const [abrirSelector, setAbrirSelector] = useState(false);
   const [vinculados, setVinculados]       = useState<ProductoConProveedor[]>([]);
   const [cargando, setCargando]           = useState(false);
@@ -155,17 +161,19 @@ export default function VincularModal({
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <button
-            className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-            title="Gestionar vínculos con Lista Proveedores"
-          >
-            <Link2 className="h-3.5 w-3.5" />
-            {cantidad > 0 && (
-              <span className="tabular-nums font-medium text-primary">{cantidad}</span>
-            )}
-          </button>
-        </DialogTrigger>
+        {openProp === undefined && (
+          <DialogTrigger asChild>
+            <button
+              className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+              title="Gestionar vínculos con Lista Proveedores"
+            >
+              <Link2 className="h-3.5 w-3.5" />
+              {cantidad > 0 && (
+                <span className="tabular-nums font-medium text-primary">{cantidad}</span>
+              )}
+            </button>
+          </DialogTrigger>
+        )}
 
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
           <DialogHeader className="px-6 pt-5 pb-3">

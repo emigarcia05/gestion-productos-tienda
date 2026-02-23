@@ -25,6 +25,120 @@ export async function getUltimoSync() {
   });
 }
 
+export interface ItemAumento {
+  itemId:       string;
+  codItem:      string;
+  descripcion:  string;
+  marca:        string | null;
+  rubro:        string | null;
+  subRubro:     string | null;
+  codigoExterno: string;
+  costoTienda:  number;
+  pxCompraFinal: number;
+  pctAumento:   number; // ((pxCompraFinal - costoTienda) / costoTienda) * 100
+}
+
+export interface GrupoAumento {
+  nombre:      string;
+  cantidad:    number;
+  pctPromedio: number;
+  subiendo:    number; // cantidad con pctAumento > 0
+  bajando:     number; // cantidad con pctAumento < 0
+}
+
+export interface ControlAumentosData {
+  porMarca:    GrupoAumento[];
+  porRubro:    GrupoAumento[];
+  porSubRubro: GrupoAumento[];
+  individual:  ItemAumento[];
+}
+
+export async function getControlAumentos(): Promise<ControlAumentosData> {
+  // Traer todos los items con codigoExterno y su producto vinculado que tenga ese codExt
+  const items = await prisma.itemTienda.findMany({
+    where: {
+      codigoExterno: { not: null },
+      costo: { gt: 0 },
+    },
+    select: {
+      id: true,
+      codItem: true,
+      descripcion: true,
+      marca: true,
+      rubro: true,
+      subRubro: true,
+      codigoExterno: true,
+      costo: true,
+    },
+  });
+
+  // Traer todos los productos indexados por codExt
+  const productos = await prisma.producto.findMany({
+    select: {
+      codExt: true,
+      precioLista: true,
+      descuentoProducto: true,
+      descuentoCantidad: true,
+      cxTransporte: true,
+    },
+  });
+  const productosPorCodExt = new Map(productos.map((p) => [p.codExt, p]));
+
+  // Cruzar: solo los items cuyo codigoExterno matchea un producto
+  const itemsAumento: ItemAumento[] = [];
+  for (const item of items) {
+    if (!item.codigoExterno) continue;
+    const prod = productosPorCodExt.get(item.codigoExterno);
+    if (!prod) continue;
+
+    const pxCompraFinal =
+      prod.precioLista *
+      (1 - prod.descuentoProducto / 100) *
+      (1 - prod.descuentoCantidad / 100) *
+      (1 + prod.cxTransporte / 100);
+
+    const pctAumento = ((pxCompraFinal - item.costo) / item.costo) * 100;
+
+    itemsAumento.push({
+      itemId:        item.id,
+      codItem:       item.codItem,
+      descripcion:   item.descripcion,
+      marca:         item.marca,
+      rubro:         item.rubro,
+      subRubro:      item.subRubro,
+      codigoExterno: item.codigoExterno,
+      costoTienda:   item.costo,
+      pxCompraFinal,
+      pctAumento,
+    });
+  }
+
+  function agrupar(clave: keyof Pick<ItemAumento, "marca" | "rubro" | "subRubro">): GrupoAumento[] {
+    const mapa = new Map<string, ItemAumento[]>();
+    for (const item of itemsAumento) {
+      const k = item[clave] ?? "Sin definir";
+      if (!mapa.has(k)) mapa.set(k, []);
+      mapa.get(k)!.push(item);
+    }
+    return Array.from(mapa.entries())
+      .map(([nombre, lista]) => ({
+        nombre,
+        cantidad:    lista.length,
+        pctPromedio: lista.reduce((s, i) => s + i.pctAumento, 0) / lista.length,
+        subiendo:    lista.filter((i) => i.pctAumento > 0.5).length,
+        bajando:     lista.filter((i) => i.pctAumento < -0.5).length,
+      }))
+      .sort((a, b) => b.pctPromedio - a.pctPromedio);
+  }
+
+  return {
+    porMarca:    agrupar("marca"),
+    porRubro:    agrupar("rubro"),
+    porSubRubro: agrupar("subRubro"),
+    individual:  itemsAumento.sort((a, b) => b.pctAumento - a.pctAumento),
+  };
+}
+
 export async function convertirEnProveedor(
   itemTiendaId: string,
   productoId: string
