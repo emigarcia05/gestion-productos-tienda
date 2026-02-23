@@ -26,16 +26,17 @@ export async function getUltimoSync() {
 }
 
 export interface ItemAumento {
-  itemId:       string;
-  codItem:      string;
-  descripcion:  string;
-  marca:        string | null;
-  rubro:        string | null;
-  subRubro:     string | null;
+  itemId:        string;
+  codItem:       string;
+  descripcion:   string;
+  marca:         string | null;
+  rubro:         string | null;
+  subRubro:      string | null;
   codigoExterno: string;
-  costoTienda:  number;
+  proveedorDux:  string | null;
+  costoTienda:   number;
   pxCompraFinal: number;
-  pctAumento:   number; // ((pxCompraFinal - costoTienda) / costoTienda) * 100
+  pctAumento:    number; // ((pxCompraFinal - costoTienda) / costoTienda) * 100
 }
 
 export interface GrupoAumento {
@@ -68,6 +69,7 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
       rubro: true,
       subRubro: true,
       codigoExterno: true,
+      proveedorDux: true,
       costo: true,
     },
   });
@@ -107,6 +109,7 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
       rubro:         item.rubro,
       subRubro:      item.subRubro,
       codigoExterno: item.codigoExterno,
+      proveedorDux:  item.proveedorDux,
       costoTienda:   item.costo,
       pxCompraFinal,
       pctAumento,

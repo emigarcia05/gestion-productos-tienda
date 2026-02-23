@@ -1,8 +1,41 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { TrendingUp, TrendingDown, Minus, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, X, Download } from "lucide-react";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
+
+function exportarXLS(items: ItemAumento[]) {
+  import("xlsx").then((XLSX) => {
+    const filas = items.map((i) => ({
+      "CODIGO":           i.codItem,
+      "CODIGO EXTERNO":   i.codigoExterno,
+      "PROVEEDOR":        i.proveedorDux ?? "",
+      "COSTO":            parseFloat(i.costoTienda.toFixed(2)),
+    }));
+
+    const hoja   = XLSX.utils.json_to_sheet(filas);
+    const libro  = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Control de Aumentos");
+
+    // Ancho de columnas
+    hoja["!cols"] = [
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 30 },
+      { wch: 12 },
+    ];
+
+    const ahora   = new Date();
+    const dd      = String(ahora.getDate()).padStart(2, "0");
+    const mm      = String(ahora.getMonth() + 1).padStart(2, "0");
+    const aa      = String(ahora.getFullYear()).slice(-2);
+    const hh      = String(ahora.getHours()).padStart(2, "0");
+    const min     = String(ahora.getMinutes()).padStart(2, "0");
+    const nombre  = `Act. Costos ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
+
+    XLSX.writeFile(libro, nombre, { bookType: "xls" });
+  });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -142,6 +175,8 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
     }
     return Array.from(mapa.entries())
       .map(([nombre, items]) => ({ nombre, items }))
+      // Solo mostrar grupos que tengan al menos un producto con variación real
+      .filter(({ items }) => items.some((i) => Math.abs(i.pctAumento) > 0.5))
       .sort((a, b) => promedio(b.items) - promedio(a.items));
   }
 
@@ -233,8 +268,16 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
           </div>
         )}
 
-        {/* Stats — empujados a la derecha */}
-        <div className="ml-auto flex items-center gap-4 rounded-lg border border-border/50 bg-card/50 px-4 py-2">
+        {/* Exportar + Stats — empujados a la derecha */}
+        <div className="ml-auto flex items-center gap-3">
+        <button
+          onClick={() => exportarXLS(itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5))}
+          className="flex items-center gap-1.5 text-xs border border-border/60 rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Exportar .xls
+        </button>
+        <div className="flex items-center gap-4 rounded-lg border border-border/50 bg-card/50 px-4 py-2">
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Promedio</p>
             <ColorPct pct={pctGlobal} size="lg" />
@@ -254,6 +297,7 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
             <p className="text-lg font-bold tabular-nums">{itemsFiltrados.length}</p>
           </div>
+        </div>
         </div>
       </div>
 
