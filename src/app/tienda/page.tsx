@@ -1,14 +1,11 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, ArrowLeft, TrendingUp } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, TrendingUp } from "lucide-react";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
+import PageHeader from "@/components/PageHeader";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -97,59 +94,48 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
+  const syncInfo = ultimoSync ? (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {ultimoSync.status === "ok"
+        ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+        : <XCircle className="h-3.5 w-3.5 text-destructive" />
+      }
+      <Clock className="h-3 w-3" />
+      <span>
+        Último sync: {new Date(ultimoSync.createdAt).toLocaleString("es-AR", {
+          day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+        })}
+        {ultimoSync.status === "ok" && (
+          <span className="ml-1 text-muted-foreground/70">
+            ({ultimoSync.totalApi.toLocaleString()} items)
+          </span>
+        )}
+      </span>
+    </div>
+  ) : null;
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Controles fijos */}
-      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-3 space-y-3">
+      <PageHeader
+        volverHref="/"
+        titulo="Lista TiendaColor"
+        subtitulo={ultimoSync ? undefined : undefined}
+        acciones={
+          <>
+            {syncInfo}
+            {puede(rol, PERMISOS.tienda.acciones.sincronizar) && <SyncButton />}
+          </>
+        }
+        tabs={[
+          { label: "Productos Relacionados", active: true },
+          ...(puede(rol, PERMISOS.tienda.acciones.sincronizar)
+            ? [{ label: "Control de Aumentos", href: "/tienda/aumentos", active: false, icon: <TrendingUp className="h-3.5 w-3.5" /> }]
+            : []),
+        ]}
+      />
 
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
-              <Link href="/"><ArrowLeft className="h-4 w-4" />Volver</Link>
-            </Button>
-            <h1 className="text-lg font-semibold tracking-tight">Lista TiendaColor</h1>
-            {ultimoSync && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {ultimoSync.status === "ok"
-                  ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                  : <XCircle className="h-3.5 w-3.5 text-destructive" />
-                }
-                <Clock className="h-3 w-3" />
-                <span>
-                  Último sync: {new Date(ultimoSync.createdAt).toLocaleString("es-AR", {
-                    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
-                  })}
-                  {ultimoSync.status === "ok" && (
-                    <span className="ml-1 text-muted-foreground/70">
-                      ({ultimoSync.totalApi.toLocaleString()} items)
-                    </span>
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
-          {puede(rol, PERMISOS.tienda.acciones.sincronizar) && <SyncButton />}
-        </div>
-
-        {/* Sub-navegación */}
-        <div className="flex gap-1 border-b border-border/50">
-          <span className="px-4 py-2 text-sm font-medium border-b-2 border-accent2 text-accent2 -mb-px">
-            Productos Relacionados
-          </span>
-          {puede(rol, PERMISOS.tienda.acciones.sincronizar) && (
-            <Link
-              href="/tienda/aumentos"
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors -mb-px"
-            >
-              <TrendingUp className="h-3.5 w-3.5" />
-              Control de Aumentos
-            </Link>
-          )}
-        </div>
-
-        <Separator className="opacity-50" />
-
+      {/* Filtros */}
+      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">
         <FiltrosTienda
           marcas={marcas.map((m) => m.marca!)}
           rubros={rubros.map((r) => r.rubro!)}

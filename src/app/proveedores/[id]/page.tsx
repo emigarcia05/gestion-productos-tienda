@@ -1,14 +1,11 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Package, Tag, DollarSign } from "lucide-react";
-import Navbar from "@/components/Navbar";
+import { Package, Tag, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal";
 import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
 import ImportarModal from "@/components/proveedores/ImportarModal";
+import PageHeader from "@/components/PageHeader";
 import { getProveedorById, getProveedores } from "@/actions/proveedores";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -37,35 +34,15 @@ export default async function ProveedorDetallePage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/proveedores" className="hover:text-foreground transition-colors flex items-center gap-1">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Proveedores
-          </Link>
-          <span>/</span>
-          <span className="text-foreground font-medium">{proveedor.nombre}</span>
-        </div>
-
-        {/* Header del proveedor */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">{proveedor.nombre}</h1>
-              <Badge variant="secondary" className="font-mono text-sm">
-                {proveedor.codigoUnico}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {proveedor._count.productos} producto
-              {proveedor._count.productos !== 1 ? "s" : ""} en catálogo
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
+      <PageHeader
+        volverHref="/proveedores"
+        titulo={proveedor.nombre}
+        subtitulo={`${proveedor._count.productos} producto${proveedor._count.productos !== 1 ? "s" : ""} en catálogo`}
+        acciones={
+          <>
+            <Badge variant="secondary" className="font-mono text-sm">
+              {proveedor.codigoUnico}
+            </Badge>
             {puede(rol, p.acciones.importarLista) && (
               <ImportarModal
                 proveedores={todosProveedores}
@@ -78,10 +55,12 @@ export default async function ProveedorDetallePage({ params }: Props) {
             {puede(rol, p.acciones.eliminarProveedor) && (
               <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
             )}
-          </div>
-        </div>
+          </>
+        }
+        tabs={[{ label: "Productos del proveedor", active: true }]}
+      />
 
-        <Separator className="opacity-50" />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* Stats rápidas */}
         {productos.length > 0 && (
