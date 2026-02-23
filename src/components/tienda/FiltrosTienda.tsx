@@ -35,7 +35,10 @@ export default function FiltrosTienda({
   function navigateSolo(key: string, value: string) {
     const p = new URLSearchParams();
     if (value) p.set(key, value);
-    startTransition(() => router.push(`${pathname}?${p.toString()}`));
+    startTransition(() => {
+      router.push(`${pathname}?${p.toString()}`);
+      router.refresh();
+    });
   }
 
   function handleQ(value: string) {
@@ -52,7 +55,10 @@ export default function FiltrosTienda({
 
   function limpiarFiltros() {
     setQ("");
-    startTransition(() => router.push(pathname));
+    startTransition(() => {
+      router.push(pathname);
+      router.refresh();
+    });
   }
 
   return (

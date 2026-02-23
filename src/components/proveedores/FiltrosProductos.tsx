@@ -30,10 +30,11 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
 
   function navigate(nuevoQ: string, nuevoProveedor: string) {
     const params = new URLSearchParams();
-    if (nuevoQ)        params.set("q", nuevoQ);
+    if (nuevoQ)         params.set("q", nuevoQ);
     if (nuevoProveedor) params.set("proveedor", nuevoProveedor);
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
+      router.refresh();
     });
   }
 
