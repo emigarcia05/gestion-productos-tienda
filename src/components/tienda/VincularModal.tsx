@@ -20,8 +20,20 @@ type ProductoConProveedor = {
   codProdProv: string;
   descripcion: string;
   precioLista: number;
+  precioVentaSugerido: number;
+  descuentoProducto: number;
+  descuentoCantidad: number;
+  cxTransporte: number;
   proveedor: { nombre: string; sufijo: string };
 };
+
+function calcPxCompraFinal(p: ProductoConProveedor): number {
+  let precio = p.precioLista;
+  precio = precio * (1 - p.descuentoProducto / 100);
+  precio = precio * (1 - p.descuentoCantidad / 100);
+  precio = precio * (1 + p.cxTransporte / 100);
+  return precio;
+}
 
 interface Props {
   itemTiendaId: string;
@@ -35,20 +47,20 @@ function fmtPrecio(n: number) {
   return Math.round(n).toLocaleString("es-AR");
 }
 
-function DifCosto({ costoTienda, precioProveedor }: { costoTienda: number; precioProveedor: number }) {
-  if (costoTienda <= 0 || precioProveedor <= 0) return <span className="text-muted-foreground text-xs">—</span>;
-  const dif = ((precioProveedor - costoTienda) / costoTienda) * 100;
+function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompraFinal: number }) {
+  if (costoTienda <= 0 || pxCompraFinal <= 0) return <span className="text-muted-foreground text-xs">—</span>;
+  const dif = ((pxCompraFinal - costoTienda) / costoTienda) * 100;
   const abs = Math.abs(dif).toFixed(1);
   if (dif > 0) {
     return (
-      <span className="text-xs font-medium text-red-500" title={`Proveedor es ${abs}% más caro que Tienda`}>
+      <span className="text-xs font-medium text-red-500" title={`Px Compra Final es ${abs}% más caro que Cx Actual`}>
         +{abs}%
       </span>
     );
   }
   if (dif < 0) {
     return (
-      <span className="text-xs font-medium text-emerald-500" title={`Proveedor es ${abs}% más económico que Tienda`}>
+      <span className="text-xs font-medium text-emerald-500" title={`Px Compra Final es ${abs}% más económico que Cx Actual`}>
         -{abs}%
       </span>
     );
@@ -142,7 +154,7 @@ export default function VincularModal({
           <div className="flex items-center gap-3 mt-1">
             {costoTienda > 0 && (
               <p className="text-xs text-muted-foreground">
-                Costo Tienda: <span className="font-medium text-foreground">${fmtPrecio(costoTienda)}</span>
+                Cx Actual: <span className="font-medium text-foreground">${fmtPrecio(costoTienda)}</span>
               </p>
             )}
             {codigoExterno && (
@@ -179,16 +191,16 @@ export default function VincularModal({
                       <code className="text-xs text-muted-foreground shrink-0">{prod.codExt}</code>
                       <span className="text-xs truncate">{prod.descripcion}</span>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      {/* Px Lista del proveedor */}
+                    <div className="flex items-center gap-4 shrink-0">
+                      {/* Px Compra Final del proveedor */}
                       <div className="text-right">
-                        <p className="text-xs tabular-nums">${fmtPrecio(prod.precioLista)}</p>
-                        <p className="text-[10px] text-muted-foreground">px lista prov.</p>
+                        <p className="text-xs tabular-nums font-medium">${fmtPrecio(calcPxCompraFinal(prod))}</p>
+                        <p className="text-[10px] text-muted-foreground">Cx Actual</p>
                       </div>
-                      {/* Comparación vs costo tienda */}
-                      <div className="text-right w-12">
-                        <DifCosto costoTienda={costoTienda} precioProveedor={prod.precioLista} />
-                        <p className="text-[10px] text-muted-foreground">vs tienda</p>
+                      {/* Comparación Px Compra Final vs costo tienda */}
+                      <div className="text-right w-14">
+                        <DifCosto costoTienda={costoTienda} pxCompraFinal={calcPxCompraFinal(prod)} />
+                        <p className="text-[10px] text-muted-foreground">Vs Cx Actual</p>
                       </div>
                       <button
                         onClick={() => handleDesvincular(prod)}

@@ -15,7 +15,18 @@ export async function getVinculos(itemTiendaId: string) {
     where: { itemTiendaId },
     include: {
       producto: {
-        include: { proveedor: { select: { nombre: true, sufijo: true } } },
+        select: {
+          id: true,
+          codExt: true,
+          codProdProv: true,
+          descripcion: true,
+          precioLista: true,
+          precioVentaSugerido: true,
+          descuentoProducto: true,
+          descuentoCantidad: true,
+          cxTransporte: true,
+          proveedor: { select: { nombre: true, sufijo: true } },
+        },
       },
     },
     orderBy: { producto: { codExt: "asc" } },
