@@ -5,7 +5,7 @@ export const maxDuration = 60;
 
 const LIMIT = 50;
 const BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
-const PAUSA_MS = 1200; // pausa entre requests para respetar rate limit
+const PAUSA_MS = 5000; // 5 segundos entre páginas para respetar rate limit
 
 // ─── GET /api/sync-tienda?offset=0 ────────────────────────────────────────
 // Procesa UNA página de la API y devuelve si hay más páginas.

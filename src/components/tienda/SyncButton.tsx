@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const PAUSA_MS = 1200; // igual que en el servidor
+const PAUSA_MS = 5000; // 5 segundos entre páginas para respetar el rate limit
 
 export default function SyncButton() {
   const [pending, setPending] = useState(false);
@@ -14,7 +14,7 @@ export default function SyncButton() {
   async function handleSync() {
     setPending(true);
     setProgreso("");
-    toast.loading("Iniciando sincronización...", { id: "sync" });
+    toast.loading("Iniciando sincronización... Este proceso puede tardar entre 5 y 10 minutos. No cierres esta pestaña.", { id: "sync", duration: Infinity });
 
     try {
       let offset = 0;
@@ -35,7 +35,7 @@ export default function SyncButton() {
         total = data.total;
         const procesados = offset + data.procesados;
         setProgreso(`${procesados} / ${total}`);
-        toast.loading(`Sincronizando... ${procesados} / ${total} items`, { id: "sync" });
+        toast.loading(`Sincronizando... ${procesados} / ${total} items. No cierres esta pestaña.`, { id: "sync", duration: Infinity });
 
         if (!data.hayMas) break;
 
