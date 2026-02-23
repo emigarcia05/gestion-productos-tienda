@@ -88,7 +88,7 @@ export default function TablaTienda({ items, setMejorPrecio }: { items: ItemTien
               </td>
               <td className="py-2 px-2 text-center">
                 {setMejorPrecio.has(item.id)
-                  ? <TrendingDown className="h-4 w-4 text-emerald-500 mx-auto" title="Hay un proveedor con Px Compra Final menor al costo actual" />
+                  ? <span title="Hay un proveedor con Px Compra Final menor al costo actual" className="flex justify-center"><TrendingDown className="h-4 w-4 text-emerald-500" /></span>
                   : <span className="text-muted-foreground text-xs">—</span>
                 }
               </td>
