@@ -1,11 +1,5 @@
 {
   "buildCommand": "prisma generate && next build",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "crons": [
-    {
-      "path": "/api/sync-tienda",
-      "schedule": "*/5 12-22 * * 1-6"
-    }
-  ]
+  "regions": ["iad1"]
 }
