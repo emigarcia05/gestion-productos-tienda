@@ -116,12 +116,12 @@ export default async function ProveedorDetallePage({ params }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/50">
-                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Cód. Proveedor</th>
-                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Cód. Externo</th>
-                      <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Descripción</th>
-                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Px Lista</th>
-                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Px Venta</th>
-                      <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Margen</th>
+                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Proveedor</th>
+                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Externo</th>
+                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Descripción</th>
+                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Lista</th>
+                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Venta</th>
+                      <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Margen</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -137,30 +137,25 @@ export default async function ProveedorDetallePage({ params }: Props) {
                           key={prod.id}
                           className="border-b border-border/30 hover:bg-muted/30 transition-colors"
                         >
-                          <td className="py-3 px-3 font-mono text-xs text-muted-foreground">
+                          <td className="py-3 px-3 text-center font-mono text-xs text-muted-foreground">
                             {prod.codProdProv}
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-3 px-3 text-center">
                             <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
                               {prod.codExt}
                             </code>
                           </td>
-                          <td className="py-3 px-3 max-w-xs truncate">{prod.descripcion}</td>
-                          <td className="py-3 px-3 text-right tabular-nums">
-                            ${prod.precioLista.toFixed(2)}
+                          <td className="py-3 px-3 text-center max-w-xs truncate">{prod.descripcion}</td>
+                          <td className="py-3 px-3 text-center tabular-nums">
+                            ${Math.round(prod.precioLista).toLocaleString("es-AR")}
                           </td>
-                          <td className="py-3 px-3 text-right tabular-nums">
-                            ${prod.precioVentaSugerido.toFixed(2)}
+                          <td className="py-3 px-3 text-center tabular-nums">
+                            ${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}
                           </td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="py-3 px-3 text-center">
                             {margen !== "—" ? (
-                              <span
-                                className={
-                                  margenNum >= 0 ? "text-emerald-500" : "text-destructive"
-                                }
-                              >
-                                {margenNum >= 0 ? "+" : ""}
-                                {margen}%
+                              <span className={margenNum >= 0 ? "text-emerald-500" : "text-destructive"}>
+                                {margenNum >= 0 ? "+" : ""}{margen}%
                               </span>
                             ) : (
                               <span className="text-muted-foreground">—</span>
@@ -172,14 +167,14 @@ export default async function ProveedorDetallePage({ params }: Props) {
                   </tbody>
                   <tfoot>
                     <tr className="border-t border-border/50 bg-muted/20">
-                      <td colSpan={3} className="py-2.5 px-3 text-xs text-muted-foreground font-medium">
+                      <td colSpan={3} className="py-2.5 px-3 text-center text-xs text-muted-foreground font-medium">
                         Total ({productos.length} productos)
                       </td>
-                      <td className="py-2.5 px-3 text-right text-sm font-semibold tabular-nums">
-                        ${totalLista.toFixed(2)}
+                      <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
+                        ${Math.round(totalLista).toLocaleString("es-AR")}
                       </td>
-                      <td className="py-2.5 px-3 text-right text-sm font-semibold tabular-nums">
-                        ${totalVenta.toFixed(2)}
+                      <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
+                        ${Math.round(totalVenta).toLocaleString("es-AR")}
                       </td>
                       <td />
                     </tr>
@@ -205,8 +200,8 @@ function StatMini({
 }) {
   return (
     <Card className="border-border/50 bg-card/50">
-      <CardContent className="flex items-center gap-3 py-4 px-4">
-        <div className="rounded-md bg-muted p-2 shrink-0">
+      <CardContent className="flex flex-col items-center justify-center gap-2 py-4 px-4 text-center">
+        <div className="rounded-md bg-muted p-2">
           <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>

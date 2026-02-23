@@ -83,7 +83,7 @@ function CeldaPorcentaje({
 
   if (editando) {
     return (
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center justify-center gap-1">
         <input
           ref={inputRef}
           value={draft}
@@ -93,7 +93,7 @@ function CeldaPorcentaje({
             if (e.key === "Enter") inputRef.current?.blur();
             if (e.key === "Escape") { setDraft(String(valor)); setEditando(false); }
           }}
-          className="w-12 text-right text-xs bg-background border border-input rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring"
+          className="w-12 text-center text-xs bg-background border border-input rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring"
           autoFocus
         />
         <span className="text-xs text-muted-foreground">%</span>
@@ -105,7 +105,7 @@ function CeldaPorcentaje({
   return (
     <button
       onClick={() => { setDraft(String(valor)); setEditando(true); }}
-      className="w-full text-right text-xs tabular-nums hover:text-primary transition-colors cursor-pointer"
+      className="w-full text-center text-xs tabular-nums hover:text-primary transition-colors cursor-pointer"
       title="Clic para editar"
     >
       {valor > 0 ? fmtPct(valor) : <span className="text-muted-foreground">—</span>}
@@ -205,35 +205,35 @@ export default function TablaProductosFiltrada({ productos: inicial }: Props) {
         <tbody>
           {productos.map((prod) => (
             <tr key={prod.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-              <td className="py-2 px-2 font-mono text-xs text-muted-foreground">
+              <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
                 {prod.codProdProv}
               </td>
-              <td className="py-2 px-2 whitespace-nowrap">
+              <td className="py-2 px-2 text-center whitespace-nowrap">
                 <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{prod.codExt}</code>
               </td>
-              <td className="py-2 px-3">{prod.descripcion}</td>
-              <td className="py-2 px-2">
+              <td className="py-2 px-3 text-center">{prod.descripcion}</td>
+              <td className="py-2 px-2 text-center">
                 <Badge variant="secondary" className="font-mono text-xs px-1.5">{prod.proveedor.sufijo}</Badge>
               </td>
-              <td className="py-2 px-2 text-right tabular-nums text-xs whitespace-nowrap">
+              <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
                 ${fmtPrecio(prod.precioLista)}
               </td>
-              <td className="py-2 px-2 text-right tabular-nums text-xs whitespace-nowrap">
+              <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
                 ${fmtPrecio(prod.precioVentaSugerido)}
               </td>
-              <td className="py-2 px-2">
+              <td className="py-2 px-2 text-center">
                 <CeldaPorcentaje productoId={prod.id} campo="descuentoProducto" valor={prod.descuentoProducto} onUpdate={handleUpdate} />
               </td>
-              <td className="py-2 px-2">
+              <td className="py-2 px-2 text-center">
                 <CeldaPorcentaje productoId={prod.id} campo="descuentoCantidad" valor={prod.descuentoCantidad} onUpdate={handleUpdate} />
               </td>
-              <td className="py-2 px-2">
+              <td className="py-2 px-2 text-center">
                 <CeldaPorcentaje productoId={prod.id} campo="cxTransporte" valor={prod.cxTransporte} onUpdate={handleUpdate} />
               </td>
-              <td className="py-2 px-2 text-right tabular-nums text-xs font-medium whitespace-nowrap">
+              <td className="py-2 px-2 text-center tabular-nums text-xs font-medium whitespace-nowrap">
                 ${fmtPrecio(calcPxCompraFinal(prod))}
               </td>
-              <td className="py-2 px-2">
+              <td className="py-2 px-2 text-center">
                 <CeldaDisponible productoId={prod.id} valor={prod.disponible} onUpdate={handleUpdate} />
               </td>
             </tr>
