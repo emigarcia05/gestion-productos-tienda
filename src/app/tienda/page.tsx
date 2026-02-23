@@ -61,7 +61,10 @@ export default async function TiendaPage({ searchParams }: Props) {
       select: { marca: true },
       distinct: ["marca"],
       orderBy: { marca: "asc" },
-      where: { marca: { not: null } },
+      where: {
+        marca: { not: null },
+        ...(rubro ? { rubro } : {}),
+      },
     }),
     prisma.syncLog.findFirst({ orderBy: { createdAt: "desc" } }),
   ]);
