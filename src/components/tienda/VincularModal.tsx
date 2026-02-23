@@ -116,7 +116,7 @@ export default function VincularModal({
   }
 
   // Llamado desde SeleccionarProductoModal al hacer doble clic
-  async function handleSeleccionar(producto: ProductoConProveedor) {
+  async function handleSeleccionar(producto: { id: string; codExt: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; sufijo: string } }) {
     setAbrirSelector(false);
     startTransition(async () => {
       const res = await vincularProducto(itemTiendaId, producto.id);
