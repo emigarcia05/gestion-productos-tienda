@@ -3,7 +3,16 @@ import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
-export async function GET() {
+const LIMIT = 50;
+const BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
+const PAUSA_MS = 1200; // pausa entre requests para respetar rate limit
+
+// ─── GET /api/sync-tienda?offset=0 ────────────────────────────────────────
+// Procesa UNA página de la API y devuelve si hay más páginas.
+// El cliente llama en loop hasta que "hayMas" sea false.
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
   const inicio = Date.now();
 
   try {
@@ -12,36 +21,45 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: "DUX_API_TOKEN no configurado." }, { status: 500 });
     }
 
-    // 1. Traer todos los items de la API
-    const items = await fetchTodosLosItems(token);
-    if (items.length === 0) {
-      return NextResponse.json({ ok: false, error: "La API no devolvió ningún item." }, { status: 500 });
+    // Traer UNA página de la API
+    const url = `${BASE_URL}?limit=${LIMIT}&offset=${offset}`;
+    const res = await fetch(url, {
+      headers: { accept: "application/json", authorization: token },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
     }
 
-    const codItemsApi = items.map((i) => i.codItem);
+    const json = await res.json();
+    const results: unknown[] = json.results ?? [];
+    const total: number = Number(json.paging?.total ?? results.length);
 
-    // 2. Saber cuáles ya existen en la BD
-    const existentes = await prisma.itemTienda.findMany({ select: { codItem: true } });
+    if (results.length === 0) {
+      return NextResponse.json({ ok: true, hayMas: false, offset, total, procesados: 0, duracionMs: Date.now() - inicio });
+    }
+
+    const items = results.map(mapItem);
+
+    // Upsert esta página en la BD
+    const codItemsLote = items.map((i) => i.codItem);
+    const existentes = await prisma.itemTienda.findMany({
+      where: { codItem: { in: codItemsLote } },
+      select: { codItem: true },
+    });
     const setExistentes = new Set(existentes.map((e) => e.codItem));
 
     const paraCrear     = items.filter((i) => !setExistentes.has(i.codItem));
     const paraActualizar = items.filter((i) =>  setExistentes.has(i.codItem));
 
-    // 3. Crear nuevos en lotes de 500 (createMany es muy rápido)
-    let creados = 0;
-    for (let i = 0; i < paraCrear.length; i += 500) {
-      const lote = paraCrear.slice(i, i + 500);
-      const res = await prisma.itemTienda.createMany({ data: lote, skipDuplicates: true });
-      creados += res.count;
+    if (paraCrear.length > 0) {
+      await prisma.itemTienda.createMany({ data: paraCrear, skipDuplicates: true });
     }
 
-    // 4. Actualizar existentes en paralelo — lotes de 300 para no saturar el pool
-    let actualizados = 0;
-    const LOTE_UPDATE = 300;
-    for (let i = 0; i < paraActualizar.length; i += LOTE_UPDATE) {
-      const lote = paraActualizar.slice(i, i + LOTE_UPDATE);
+    if (paraActualizar.length > 0) {
       await Promise.all(
-        lote.map((item) =>
+        paraActualizar.map((item) =>
           prisma.itemTienda.update({
             where: { codItem: item.codItem },
             data: {
@@ -62,37 +80,77 @@ export async function GET() {
           })
         )
       );
-      actualizados += lote.length;
     }
 
-    // 5. Deshabilitar los que ya no están en la API
-    const { count: deshabilitados } = await prisma.itemTienda.updateMany({
-      where: { codItem: { notIn: codItemsApi }, habilitado: true },
-      data: { habilitado: false },
+    const siguienteOffset = offset + LIMIT;
+    const hayMas = siguienteOffset < total;
+
+    // En la última página: deshabilitar los que no están en la API
+    // (esto lo maneja el cliente llamando a /api/sync-tienda/finalizar)
+
+    return NextResponse.json({
+      ok: true,
+      hayMas,
+      offset: siguienteOffset,
+      total,
+      procesados: items.length,
+      duracionMs: Date.now() - inicio,
     });
-
-    const duracionMs = Date.now() - inicio;
-
-    await prisma.syncLog.create({
-      data: {
-        tipo: "manual", status: "ok",
-        creados, actualizados, deshabilitados,
-        totalApi: items.length, duracionMs,
-      },
-    });
-
-    return NextResponse.json({ ok: true, creados, actualizados, deshabilitados, totalApi: items.length, duracionMs });
 
   } catch (err) {
     const mensaje = err instanceof Error ? err.message : String(err);
-    await prisma.syncLog.create({
-      data: { tipo: "manual", status: "error", error: mensaje },
-    }).catch(() => {});
     return NextResponse.json({ ok: false, error: mensaje }, { status: 500 });
   }
 }
 
-// ─── Cliente API Dux ───────────────────────────────────────────────────────
+// ─── POST /api/sync-tienda — finalizar sync ────────────────────────────────
+// Recibe el timestamp de inicio del sync, deshabilita items no tocados y guarda el log.
+export async function POST(req: Request) {
+  try {
+    const body = await req.json() as {
+      inicioSync: string;  // ISO timestamp del inicio del sync en el cliente
+      totalApi: number;
+      duracionMs: number;
+    };
+
+    const inicioSync = new Date(body.inicioSync);
+
+    // Items habilitados que NO fueron tocados durante este sync = ya no están en la API
+    const { count: deshabilitados } = await prisma.itemTienda.updateMany({
+      where: {
+        habilitado: true,
+        updatedAt: { lt: inicioSync },
+      },
+      data: { habilitado: false },
+    });
+
+    // Contar creados y actualizados desde el inicio del sync
+    const creados = await prisma.itemTienda.count({
+      where: { createdAt: { gte: inicioSync } },
+    });
+    const actualizados = await prisma.itemTienda.count({
+      where: { updatedAt: { gte: inicioSync }, createdAt: { lt: inicioSync } },
+    });
+
+    await prisma.syncLog.create({
+      data: {
+        tipo: "manual", status: "ok",
+        creados,
+        actualizados,
+        deshabilitados,
+        totalApi: body.totalApi,
+        duracionMs: body.duracionMs,
+      },
+    });
+
+    return NextResponse.json({ ok: true, creados, actualizados, deshabilitados });
+  } catch (err) {
+    const mensaje = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: false, error: mensaje }, { status: 500 });
+  }
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
 const ID_PRECIO_LISTA     = 56994;
 const ID_PRECIO_MAYORISTA = 57160;
@@ -118,11 +176,11 @@ function mapItem(raw: any) {
   return {
     codItem:         String(raw.cod_item),
     descripcion:     String(raw.item ?? ""),
-    rubro:           (raw.rubro?.nombre   ?? null) as string | null,
-    subRubro:        (raw.sub_rubro?.nombre ?? null) as string | null,
-    marca:           (raw.marca?.marca    ?? null) as string | null,
+    rubro:           (raw.rubro?.nombre      ?? null) as string | null,
+    subRubro:        (raw.sub_rubro?.nombre  ?? null) as string | null,
+    marca:           (raw.marca?.marca       ?? null) as string | null,
     proveedorDux:    (raw.proveedor?.proveedor ?? null) as string | null,
-    codigoExterno:   (raw.codigo_externo  ?? null) as string | null,
+    codigoExterno:   (raw.codigo_externo     ?? null) as string | null,
     costo:           parseNum(raw.costo),
     porcIva:         parseNum(raw.porc_iva),
     precioLista:     precioMap[ID_PRECIO_LISTA]     ?? 0,
@@ -133,38 +191,4 @@ function mapItem(raw: any) {
   };
 }
 
-const LIMIT = 50; // máximo permitido por la API de Dux
-const BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
-
-async function fetchPagina(token: string, offset: number): Promise<{ results: unknown[]; total: number }> {
-  const url = `${BASE_URL}?limit=${LIMIT}&offset=${offset}`;
-  const res = await fetch(url, {
-    headers: { accept: "application/json", authorization: token },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
-  const json = await res.json();
-  return {
-    results: json.results ?? [],
-    total: Number(json.paging?.total ?? 0),
-  };
-}
-
-async function fetchTodosLosItems(token: string) {
-  // Primera llamada para saber el total
-  const primera = await fetchPagina(token, 0);
-  if (primera.total === 0 && primera.results.length === 0) return [];
-
-  const total = primera.total || primera.results.length;
-  const todos = [...primera.results];
-
-  // Pedir el resto de páginas en secuencia con pausa de 300ms para respetar el rate limit
-  for (let offset = LIMIT; offset < total; offset += LIMIT) {
-    await new Promise((r) => setTimeout(r, 300));
-    const pagina = await fetchPagina(token, offset);
-    todos.push(...pagina.results);
-    if (todos.length >= total) break;
-  }
-
-  return todos.map(mapItem);
-}
+export { PAUSA_MS };
