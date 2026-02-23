@@ -11,17 +11,28 @@ interface Props {
   pageSize: number;
   q: string;
   proveedor: string;
+  basePath?: string;
+  extraParams?: Record<string, string>;
 }
 
-function buildHref(pagina: number, q: string, proveedor: string) {
+function buildHref(
+  pagina: number,
+  q: string,
+  proveedor: string,
+  basePath = "/proveedores",
+  extraParams: Record<string, string> = {}
+) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (proveedor) params.set("proveedor", proveedor);
+  for (const [k, v] of Object.entries(extraParams)) {
+    if (v) params.set(k, v);
+  }
   params.set("pagina", String(pagina));
-  return `/proveedores?${params.toString()}`;
+  return `${basePath}?${params.toString()}`;
 }
 
-export default function PaginacionProductos({ paginaActual, totalPaginas, total, pageSize, q, proveedor }: Props) {
+export default function PaginacionProductos({ paginaActual, totalPaginas, total, pageSize, q, proveedor, basePath, extraParams }: Props) {
   const desde = Math.min((paginaActual - 1) * pageSize + 1, total);
   const hasta = Math.min(paginaActual * pageSize, total);
 
@@ -48,10 +59,10 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
 
       <div className="flex items-center gap-1">
         <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === 1}>
-          <Link href={buildHref(1, q, proveedor)}><ChevronsLeft className="h-3.5 w-3.5" /></Link>
+          <Link href={buildHref(1, q, proveedor, basePath, extraParams)}><ChevronsLeft className="h-3.5 w-3.5" /></Link>
         </Button>
         <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === 1}>
-          <Link href={buildHref(paginaActual - 1, q, proveedor)}><ChevronLeft className="h-3.5 w-3.5" /></Link>
+          <Link href={buildHref(paginaActual - 1, q, proveedor, basePath, extraParams)}><ChevronLeft className="h-3.5 w-3.5" /></Link>
         </Button>
 
         {paginas.map((p, i) =>
@@ -65,16 +76,16 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
               className="h-7 w-7 text-xs"
               asChild
             >
-              <Link href={buildHref(p as number, q, proveedor)}>{p}</Link>
+              <Link href={buildHref(p as number, q, proveedor, basePath, extraParams)}>{p}</Link>
             </Button>
           )
         )}
 
         <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === totalPaginas}>
-          <Link href={buildHref(paginaActual + 1, q, proveedor)}><ChevronRight className="h-3.5 w-3.5" /></Link>
+          <Link href={buildHref(paginaActual + 1, q, proveedor, basePath, extraParams)}><ChevronRight className="h-3.5 w-3.5" /></Link>
         </Button>
         <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === totalPaginas}>
-          <Link href={buildHref(totalPaginas, q, proveedor)}><ChevronsRight className="h-3.5 w-3.5" /></Link>
+          <Link href={buildHref(totalPaginas, q, proveedor, basePath, extraParams)}><ChevronsRight className="h-3.5 w-3.5" /></Link>
         </Button>
       </div>
     </div>

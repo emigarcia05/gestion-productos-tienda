@@ -1,0 +1,134 @@
+import { prisma } from "@/lib/prisma";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import SyncButton from "@/components/tienda/SyncButton";
+import TablaTienda from "@/components/tienda/TablaTienda";
+import FiltrosTienda from "@/components/tienda/FiltrosTienda";
+import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
+
+export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 50;
+
+interface Props {
+  searchParams: Promise<{
+    q?: string;
+    rubro?: string;
+    marca?: string;
+    habilitado?: string;
+    pagina?: string;
+  }>;
+}
+
+export default async function TiendaPage({ searchParams }: Props) {
+  const { q = "", rubro = "", marca = "", habilitado = "", pagina = "1" } = await searchParams;
+  const paginaNum = Math.max(1, parseInt(pagina) || 1);
+  const skip = (paginaNum - 1) * PAGE_SIZE;
+
+  const where = {
+    ...(rubro ? { rubro } : {}),
+    ...(marca ? { marca } : {}),
+    ...(habilitado === "true"  ? { habilitado: true }  : {}),
+    ...(habilitado === "false" ? { habilitado: false } : {}),
+    ...(q ? {
+      OR: [
+        { descripcion:   { contains: q, mode: "insensitive" as const } },
+        { codItem:       { contains: q, mode: "insensitive" as const } },
+        { codigoExterno: { contains: q, mode: "insensitive" as const } },
+        { marca:         { contains: q, mode: "insensitive" as const } },
+      ],
+    } : {}),
+  };
+
+  const [items, total, rubros, marcas, ultimoSync] = await Promise.all([
+    prisma.itemTienda.findMany({
+      where,
+      orderBy: { descripcion: "asc" },
+      skip,
+      take: PAGE_SIZE,
+    }),
+    prisma.itemTienda.count({ where }),
+    prisma.itemTienda.findMany({
+      select: { rubro: true },
+      distinct: ["rubro"],
+      orderBy: { rubro: "asc" },
+      where: { rubro: { not: null } },
+    }),
+    prisma.itemTienda.findMany({
+      select: { marca: true },
+      distinct: ["marca"],
+      orderBy: { marca: "asc" },
+      where: { marca: { not: null } },
+    }),
+    prisma.syncLog.findFirst({ orderBy: { createdAt: "desc" } }),
+  ]);
+
+  const totalPaginas = Math.ceil(total / PAGE_SIZE);
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Controles fijos */}
+      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-3 space-y-3">
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold tracking-tight">Lista TiendaColor</h1>
+            {ultimoSync && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {ultimoSync.status === "ok"
+                  ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  : <XCircle className="h-3.5 w-3.5 text-destructive" />
+                }
+                <Clock className="h-3 w-3" />
+                <span>
+                  Último sync: {new Date(ultimoSync.createdAt).toLocaleString("es-AR", {
+                    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+                  })}
+                  {ultimoSync.status === "ok" && (
+                    <span className="ml-1 text-muted-foreground/70">
+                      ({ultimoSync.totalApi.toLocaleString()} items)
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+          <SyncButton />
+        </div>
+
+        <Separator className="opacity-50" />
+
+        <FiltrosTienda
+          rubros={rubros.map((r) => r.rubro!)}
+          marcas={marcas.map((m) => m.marca!)}
+          totalItems={total}
+          qActual={q}
+          rubroActual={rubro}
+          marcaActual={marca}
+          habilitadoActual={habilitado}
+        />
+      </div>
+
+      {/* Tabla con scroll interno */}
+      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3">
+        <TablaTienda items={items} />
+      </div>
+
+      {/* Paginación fija abajo */}
+      <div className="shrink-0 border-t border-border/50 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
+        <PaginacionProductos
+          paginaActual={paginaNum}
+          totalPaginas={totalPaginas}
+          total={total}
+          pageSize={PAGE_SIZE}
+          q={q}
+          proveedor=""
+          basePath="/tienda"
+          extraParams={{ rubro, marca, habilitado }}
+        />
+      </div>
+    </div>
+  );
+}

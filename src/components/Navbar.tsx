@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Package, Upload, LayoutDashboard, Building2 } from "lucide-react";
+import { Package, Upload, LayoutDashboard, Building2, ShoppingBag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/proveedores", label: "Proveedores", icon: Building2 },
+  { href: "/tienda", label: "TiendaColor", icon: ShoppingBag },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/productos", label: "Productos", icon: Package },
 ];
