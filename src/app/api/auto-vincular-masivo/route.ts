@@ -42,19 +42,22 @@ export async function GET(req: Request) {
       where: { codigoExterno: { not: null }, productos: { none: {} } },
     });
 
-    // Para cada item, buscar productos que coincidan con su codigoExterno
+    // Para cada item, buscar UN SOLO producto con coincidencia exacta en codExt o codProdProv
     const vinculos: { itemTiendaId: string; productoId: string }[] = [];
 
     for (const item of items) {
-      const codExt = item.codigoExterno!.toLowerCase();
-      const matches = productos.filter(
-        (p) =>
-          p.codExt.toLowerCase().includes(codExt) ||
-          codExt.includes(p.codExt.toLowerCase()) ||
-          p.codProdProv.toLowerCase() === codExt
-      );
-      for (const p of matches) {
-        vinculos.push({ itemTiendaId: item.id, productoId: p.id });
+      const codExt = item.codigoExterno!.toLowerCase().trim();
+
+      // Primero intentar coincidencia exacta con codExt
+      let match = productos.find((p) => p.codExt.toLowerCase().trim() === codExt);
+
+      // Si no hay, intentar coincidencia exacta con codProdProv
+      if (!match) {
+        match = productos.find((p) => p.codProdProv.toLowerCase().trim() === codExt);
+      }
+
+      if (match) {
+        vinculos.push({ itemTiendaId: item.id, productoId: match.id });
       }
     }
 
@@ -80,6 +83,87 @@ export async function GET(req: Request) {
       siguienteOffset: hayMas ? procesados : null,
       duracionMs,
     });
+
+  } catch (err) {
+    const mensaje = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: false, error: mensaje }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/auto-vincular-masivo?secret=...
+ * Limpia vínculos múltiples: para cada ItemTienda con más de un vínculo,
+ * conserva solo el que tiene coincidencia exacta con codigoExterno,
+ * o el primero si no hay coincidencia exacta.
+ */
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const secret = searchParams.get("secret");
+
+  if (!secret || secret !== process.env.AUTO_VINCULAR_SECRET) {
+    return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 });
+  }
+
+  try {
+    // Traer items con más de un vínculo
+    const itemsConMultiples = await prisma.itemTiendaProducto.groupBy({
+      by: ["itemTiendaId"],
+      _count: { productoId: true },
+      having: { productoId: { _count: { gt: 1 } } },
+    });
+
+    if (itemsConMultiples.length === 0) {
+      return NextResponse.json({ ok: true, limpiados: 0, mensaje: "No hay vínculos múltiples." });
+    }
+
+    const idsItems = itemsConMultiples.map((i) => i.itemTiendaId);
+
+    // Traer los items con sus codigosExternos y sus vínculos
+    const items = await prisma.itemTienda.findMany({
+      where: { id: { in: idsItems } },
+      select: {
+        id: true,
+        codigoExterno: true,
+        productos: {
+          include: { producto: { select: { id: true, codExt: true, codProdProv: true } } },
+        },
+      },
+    });
+
+    let limpiados = 0;
+
+    for (const item of items) {
+      const vinculos = item.productos;
+      if (vinculos.length <= 1) continue;
+
+      const codExt = item.codigoExterno?.toLowerCase().trim() ?? "";
+
+      // Buscar el vínculo con coincidencia exacta
+      let conservar = vinculos.find(
+        (v) =>
+          v.producto.codExt.toLowerCase().trim() === codExt ||
+          v.producto.codProdProv.toLowerCase().trim() === codExt
+      );
+
+      // Si no hay coincidencia exacta, conservar el primero
+      if (!conservar) conservar = vinculos[0];
+
+      // Eliminar todos los demás
+      const idsEliminar = vinculos
+        .filter((v) => v.productoId !== conservar!.productoId)
+        .map((v) => v.productoId);
+
+      await prisma.itemTiendaProducto.deleteMany({
+        where: {
+          itemTiendaId: item.id,
+          productoId: { in: idsEliminar },
+        },
+      });
+
+      limpiados += idsEliminar.length;
+    }
+
+    return NextResponse.json({ ok: true, limpiados, itemsAfectados: items.length });
 
   } catch (err) {
     const mensaje = err instanceof Error ? err.message : String(err);
