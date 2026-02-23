@@ -19,20 +19,21 @@ model Proveedor {
 }
 
 model Producto {
-  id                   String    @id @default(cuid())
+  id                   String              @id @default(cuid())
   codProdProv          String
-  codExt               String    @unique
+  codExt               String              @unique
   descripcion          String
   precioLista          Float
   precioVentaSugerido  Float
-  descuentoProducto    Float     @default(0)
-  descuentoCantidad    Float     @default(0)
-  cxTransporte         Float     @default(0)
-  disponible           Boolean   @default(true)
+  descuentoProducto    Float               @default(0)
+  descuentoCantidad    Float               @default(0)
+  cxTransporte         Float               @default(0)
+  disponible           Boolean             @default(true)
   proveedorId          String
-  proveedor            Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  proveedor            Proveedor           @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+  itemsTienda          ItemTiendaProducto[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
   @@index([proveedorId])
   @@map("productos")
@@ -56,27 +57,41 @@ model ImportLog {
 // ─── Lista TiendaColor (API Dux Software) ─────────────────────────────────
 
 model ItemTienda {
-  id               String   @id @default(cuid())
-  codItem          String   @unique   // cod_item de Dux
+  id               String               @id @default(cuid())
+  codItem          String               @unique   // cod_item de Dux
   descripcion      String
   rubro            String?
   subRubro         String?
   marca            String?
-  proveedorDux     String?            // nombre del proveedor en Dux
+  proveedorDux     String?              // nombre del proveedor en Dux
   codigoExterno    String?
-  costo            Float    @default(0)
-  porcIva          Float    @default(21)
-  precioLista      Float    @default(0)
-  precioMayorista  Float    @default(0)
-  stockGuaymallen  Float    @default(0)
-  stockMaipu       Float    @default(0)
-  habilitado       Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  costo            Float                @default(0)
+  porcIva          Float                @default(21)
+  precioLista      Float                @default(0)
+  precioMayorista  Float                @default(0)
+  stockGuaymallen  Float                @default(0)
+  stockMaipu       Float                @default(0)
+  habilitado       Boolean              @default(true)
+  productos        ItemTiendaProducto[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
   @@index([rubro])
   @@index([marca])
   @@map("items_tienda")
+}
+
+// ─── Tabla de vínculo ItemTienda <-> Producto (many-to-many) ──────────────
+
+model ItemTiendaProducto {
+  itemTiendaId String
+  productoId   String
+  itemTienda   ItemTienda @relation(fields: [itemTiendaId], references: [id], onDelete: Cascade)
+  producto     Producto   @relation(fields: [productoId],   references: [id], onDelete: Cascade)
+
+  @@id([itemTiendaId, productoId])
+  @@index([productoId])
+  @@map("items_tienda_productos")
 }
 
 model SyncLog {

@@ -49,6 +49,7 @@ export default async function TiendaPage({ searchParams }: Props) {
       orderBy: { descripcion: "asc" },
       skip,
       take: PAGE_SIZE,
+      include: { _count: { select: { productos: true } } },
     }),
     prisma.itemTienda.count({ where }),
     prisma.itemTienda.findMany({

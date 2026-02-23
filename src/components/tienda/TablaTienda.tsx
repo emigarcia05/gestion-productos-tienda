@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import VincularModal from "./VincularModal";
 
 interface ItemTienda {
   id: string;
@@ -18,6 +19,7 @@ interface ItemTienda {
   stockGuaymallen: number;
   stockMaipu: number;
   habilitado: boolean;
+  _count: { productos: number };
 }
 
 function fmtPrecio(n: number) {
@@ -72,11 +74,13 @@ export default function TablaTienda({ items }: { items: ItemTienda[] }) {
             <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
               Estado
             </th>
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
+              Vínculos
+            </th>
           </tr>
         </thead>
         <tbody>
           {items.map((item) => {
-            const stockTotal = item.stockGuaymallen + item.stockMaipu;
             return (
               <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                 <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
@@ -115,6 +119,14 @@ export default function TablaTienda({ items }: { items: ItemTienda[] }) {
                     ? <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Activo</Badge>
                     : <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Inactivo</Badge>
                   }
+                </td>
+                <td className="py-2 px-2 text-center">
+                  <VincularModal
+                    itemTiendaId={item.id}
+                    itemDescripcion={item.descripcion}
+                    codigoExterno={item.codigoExterno}
+                    cantidadVinculos={item._count.productos}
+                  />
                 </td>
               </tr>
             );
