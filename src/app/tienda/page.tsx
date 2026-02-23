@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, ArrowLeft } from "lucide-react";
 import SyncButton from "@/components/tienda/SyncButton";
+import AutoVincularButton from "@/components/tienda/AutoVincularButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
@@ -98,7 +99,12 @@ export default async function TiendaPage({ searchParams }: Props) {
               </div>
             )}
           </div>
-          <SyncButton />
+          <div className="flex items-center gap-2">
+            {process.env.AUTO_VINCULAR_SECRET && (
+              <AutoVincularButton secret={process.env.AUTO_VINCULAR_SECRET} />
+            )}
+            <SyncButton />
+          </div>
         </div>
 
         <Separator className="opacity-50" />

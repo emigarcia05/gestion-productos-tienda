@@ -4,19 +4,16 @@ import { prisma } from "@/lib/prisma";
 export const maxDuration = 60;
 
 /**
- * GET /api/auto-vincular-masivo
- *
- * Proceso de una sola vez: vincula cada ItemTienda con los Productos de Lista
- * Proveedores cuyo codExt coincida con el codigoExterno del item.
- *
- * Ejemplo: ItemTienda.codigoExterno = "ELGARAGE-2161"
- *          Producto.codExt          = "ELG-2161"  ← busca coincidencia parcial
- *
- * Protegido con ?secret=... para evitar ejecuciones accidentales.
+ * GET /api/auto-vincular-masivo?secret=...
+ * Proceso de una sola vez — vincula ItemTienda con Productos por codigoExterno.
+ * Usa paginación interna para procesar en lotes y no superar el timeout.
+ * Llamar varias veces hasta que devuelva { hayMas: false }.
  */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("secret");
+  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const LOTE   = 200;
 
   if (!secret || secret !== process.env.AUTO_VINCULAR_SECRET) {
     return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 });
@@ -25,53 +22,62 @@ export async function GET(req: Request) {
   const inicio = Date.now();
 
   try {
-    // Traer todos los items que tienen codigoExterno y aún no tienen vínculos
+    // Traer todos los Productos de una vez (son pocos miles, caben en memoria)
+    const productos = await prisma.producto.findMany({
+      select: { id: true, codExt: true, codProdProv: true },
+    });
+
+    // Traer items sin vínculos aún, paginados
     const items = await prisma.itemTienda.findMany({
       where: {
         codigoExterno: { not: null },
-        productos: { none: {} }, // solo los que no tienen vínculos aún
+        productos: { none: {} },
       },
-      select: { id: true, codigoExterno: true, descripcion: true },
+      select: { id: true, codigoExterno: true },
+      skip: offset,
+      take: LOTE,
     });
 
-    let vinculados = 0;
-    let sinCoincidencia = 0;
+    const total = await prisma.itemTienda.count({
+      where: { codigoExterno: { not: null }, productos: { none: {} } },
+    });
+
+    // Para cada item, buscar productos que coincidan con su codigoExterno
+    const vinculos: { itemTiendaId: string; productoId: string }[] = [];
 
     for (const item of items) {
-      if (!item.codigoExterno) continue;
-
-      // Buscar productos cuyo codExt contenga el codigoExterno del item
-      // o viceversa (coincidencia parcial en ambas direcciones)
-      const productos = await prisma.producto.findMany({
-        where: {
-          OR: [
-            { codExt:      { contains: item.codigoExterno, mode: "insensitive" } },
-            { codProdProv: { contains: item.codigoExterno, mode: "insensitive" } },
-          ],
-        },
-        select: { id: true },
-      });
-
-      if (productos.length === 0) {
-        sinCoincidencia++;
-        continue;
+      const codExt = item.codigoExterno!.toLowerCase();
+      const matches = productos.filter(
+        (p) =>
+          p.codExt.toLowerCase().includes(codExt) ||
+          codExt.includes(p.codExt.toLowerCase()) ||
+          p.codProdProv.toLowerCase() === codExt
+      );
+      for (const p of matches) {
+        vinculos.push({ itemTiendaId: item.id, productoId: p.id });
       }
-
-      await prisma.itemTiendaProducto.createMany({
-        data: productos.map((p) => ({ itemTiendaId: item.id, productoId: p.id })),
-        skipDuplicates: true,
-      });
-
-      vinculados += productos.length;
     }
 
+    let creados = 0;
+    if (vinculos.length > 0) {
+      const res = await prisma.itemTiendaProducto.createMany({
+        data: vinculos,
+        skipDuplicates: true,
+      });
+      creados = res.count;
+    }
+
+    const procesados = offset + items.length;
+    const hayMas = procesados < total;
     const duracionMs = Date.now() - inicio;
 
     return NextResponse.json({
       ok: true,
-      itemsProcesados: items.length,
-      vinculosCreados: vinculados,
-      sinCoincidencia,
+      procesados,
+      total,
+      vinculosCreados: creados,
+      hayMas,
+      siguienteOffset: hayMas ? procesados : null,
       duracionMs,
     });
 
