@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useTransition } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -10,26 +9,28 @@ interface Props {
   totalPaginas: number;
   total: number;
   pageSize: number;
+  q: string;
+  proveedor: string;
 }
 
-export default function PaginacionProductos({ paginaActual, totalPaginas, total, pageSize }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
+function buildHref(pagina: number, q: string, proveedor: string) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (proveedor) params.set("proveedor", proveedor);
+  params.set("pagina", String(pagina));
+  return `/proveedores?${params.toString()}`;
+}
 
-  function irA(pagina: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("pagina", String(pagina));
-    startTransition(() => router.push(`${pathname}?${params.toString()}`));
-  }
-
+export default function PaginacionProductos({ paginaActual, totalPaginas, total, pageSize, q, proveedor }: Props) {
   const desde = Math.min((paginaActual - 1) * pageSize + 1, total);
   const hasta = Math.min(paginaActual * pageSize, total);
 
-  if (totalPaginas <= 1) return null;
+  if (totalPaginas <= 1) return (
+    <p className="text-xs text-muted-foreground">
+      {total.toLocaleString()} producto{total !== 1 ? "s" : ""}
+    </p>
+  );
 
-  // Páginas visibles alrededor de la actual
   const paginas: (number | "...")[] = [];
   for (let i = 1; i <= totalPaginas; i++) {
     if (i === 1 || i === totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2)) {
@@ -42,18 +43,15 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
   return (
     <div className="flex items-center justify-between gap-4">
       <p className="text-xs text-muted-foreground">
-        {pending
-          ? <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Cargando...</span>
-          : `${desde.toLocaleString()}–${hasta.toLocaleString()} de ${total.toLocaleString()}`
-        }
+        {desde.toLocaleString()}–{hasta.toLocaleString()} de {total.toLocaleString()}
       </p>
 
       <div className="flex items-center gap-1">
-        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => irA(1)} disabled={paginaActual === 1 || pending}>
-          <ChevronsLeft className="h-3.5 w-3.5" />
+        <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === 1}>
+          <Link href={buildHref(1, q, proveedor)}><ChevronsLeft className="h-3.5 w-3.5" /></Link>
         </Button>
-        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => irA(paginaActual - 1)} disabled={paginaActual === 1 || pending}>
-          <ChevronLeft className="h-3.5 w-3.5" />
+        <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === 1}>
+          <Link href={buildHref(paginaActual - 1, q, proveedor)}><ChevronLeft className="h-3.5 w-3.5" /></Link>
         </Button>
 
         {paginas.map((p, i) =>
@@ -65,19 +63,18 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
               variant={p === paginaActual ? "default" : "outline"}
               size="icon"
               className="h-7 w-7 text-xs"
-              onClick={() => irA(p as number)}
-              disabled={pending}
+              asChild
             >
-              {p}
+              <Link href={buildHref(p as number, q, proveedor)}>{p}</Link>
             </Button>
           )
         )}
 
-        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => irA(paginaActual + 1)} disabled={paginaActual === totalPaginas || pending}>
-          <ChevronRight className="h-3.5 w-3.5" />
+        <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === totalPaginas}>
+          <Link href={buildHref(paginaActual + 1, q, proveedor)}><ChevronRight className="h-3.5 w-3.5" /></Link>
         </Button>
-        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => irA(totalPaginas)} disabled={paginaActual === totalPaginas || pending}>
-          <ChevronsRight className="h-3.5 w-3.5" />
+        <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === totalPaginas}>
+          <Link href={buildHref(totalPaginas, q, proveedor)}><ChevronsRight className="h-3.5 w-3.5" /></Link>
         </Button>
       </div>
     </div>

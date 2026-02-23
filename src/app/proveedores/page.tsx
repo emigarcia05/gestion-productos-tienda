@@ -49,14 +49,19 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Controles fijos — nunca se mueven */}
+      {/* Controles fijos */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-3 space-y-3">
         <div className="flex items-center gap-3">
           <CrearProveedorModal />
           <ImportarModal proveedores={proveedores} />
         </div>
         <Separator className="opacity-50" />
-        <FiltrosProductos proveedores={proveedores} totalProductos={total} />
+        <FiltrosProductos
+          proveedores={proveedores}
+          totalProductos={total}
+          qActual={q}
+          proveedorActual={proveedor}
+        />
       </div>
 
       {/* Tabla con scroll interno */}
@@ -66,7 +71,14 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
       {/* Paginación fija abajo */}
       <div className="shrink-0 border-t border-border/50 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
-        <PaginacionProductos paginaActual={paginaNum} totalPaginas={totalPaginas} total={total} pageSize={PAGE_SIZE} />
+        <PaginacionProductos
+          paginaActual={paginaNum}
+          totalPaginas={totalPaginas}
+          total={total}
+          pageSize={PAGE_SIZE}
+          q={q}
+          proveedor={proveedor}
+        />
       </div>
     </div>
   );
