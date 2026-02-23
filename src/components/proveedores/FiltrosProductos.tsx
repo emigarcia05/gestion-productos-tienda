@@ -1,10 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useTransition } from "react";
-import { Search, ChevronDown, Loader2, Settings2 } from "lucide-react";
+import { useCallback, useTransition, useRef, useState } from "react";
+import { Search, ChevronDown, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 
 interface Proveedor {
@@ -28,16 +27,26 @@ export default function FiltrosProductos({ proveedores, totalProductos }: Props)
   const q = searchParams.get("q") ?? "";
   const proveedor = searchParams.get("proveedor") ?? "";
 
-  const updateParam = useCallback((key: string, value: string) => {
+  // Estado local del input para que la escritura sea fluida
+  const [inputValue, setInputValue] = useState(q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const navigate = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
       params.set(key, value);
     } else {
       params.delete(key);
     }
-    params.delete("pagina"); // resetear a página 1 al filtrar
+    params.delete("pagina");
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }, [searchParams, pathname, router]);
+
+  function handleBusqueda(value: string) {
+    setInputValue(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => navigate("q", value), 400);
+  }
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
@@ -46,8 +55,8 @@ export default function FiltrosProductos({ proveedores, totalProductos }: Props)
         {pending && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />}
         <Input
           placeholder="Buscar por descripción o código..."
-          defaultValue={q}
-          onChange={(e) => updateParam("q", e.target.value)}
+          value={inputValue}
+          onChange={(e) => handleBusqueda(e.target.value)}
           className="pl-9 pr-9"
         />
       </div>
@@ -55,7 +64,7 @@ export default function FiltrosProductos({ proveedores, totalProductos }: Props)
       <div className="relative sm:w-64">
         <select
           value={proveedor}
-          onChange={(e) => updateParam("proveedor", e.target.value)}
+          onChange={(e) => navigate("proveedor", e.target.value)}
           className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">Todos los proveedores</option>

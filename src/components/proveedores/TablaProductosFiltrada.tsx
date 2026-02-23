@@ -167,36 +167,34 @@ export default function TablaProductosFiltrada({ productos: inicial }: Props) {
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
           <tr className="border-b border-border/50">
-            {/* Columnas angostas: encabezado en 2 líneas para ahorrar ancho */}
-            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
               Cod.<br />Prov.
             </th>
-            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight whitespace-nowrap">
-              Cód. Externo
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+              Cód.<br />Externo
             </th>
-            {/* Descripción: columna ancha, sin restricción */}
-            <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">
+            <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">
               Descripción
             </th>
-            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
               Prov.
             </th>
-            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight whitespace-nowrap">
-              Px Lista
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
+              Px<br />Lista
             </th>
-            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
               Px Venta<br />Sug.
             </th>
-            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
               Dto.<br />Prod.
             </th>
-            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
               Dto.<br />Cant.
             </th>
-            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
               Cx<br />Transp.
             </th>
-            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
               Px Compra<br />Final
             </th>
             <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
