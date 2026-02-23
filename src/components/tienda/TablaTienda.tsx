@@ -26,10 +26,6 @@ function fmtPrecio(n: number) {
   return Math.round(n).toLocaleString("es-AR");
 }
 
-function fmtStock(n: number) {
-  return Math.round(n).toLocaleString("es-AR");
-}
-
 export default function TablaTienda({ items }: { items: ItemTienda[] }) {
   if (items.length === 0) {
     return (
@@ -45,92 +41,58 @@ export default function TablaTienda({ items }: { items: ItemTienda[] }) {
         <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
           <tr className="border-b border-border/50">
             <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
-              Cód.<br />Item
+              Cód.<br />Tienda
             </th>
             <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">
               Descripción
             </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-28 leading-tight">
-              Rubro
-            </th>
             <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
-              Marca
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
               Costo
             </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
-              Px Lista
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-40 leading-tight">
+              Proveedor Dux
             </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
-              Px<br />Mayorista
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-32 leading-tight">
+              Rubro
             </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
-              Stock<br />Guay.
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
-              Stock<br />Maipú
+            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-32 leading-tight">
+              Sub-Rubro
             </th>
             <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
-              Estado
-            </th>
-            <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
               Vínculos
             </th>
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => {
-            return (
-              <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
-                  {item.codItem}
-                </td>
-                <td className="py-2 px-3 text-center text-xs">{item.descripcion}</td>
-                <td className="py-2 px-2 text-center text-xs text-muted-foreground">
-                  {item.rubro ?? "—"}
-                  {item.subRubro && (
-                    <span className="block text-[10px] opacity-60">{item.subRubro}</span>
-                  )}
-                </td>
-                <td className="py-2 px-2 text-center">
-                  {item.marca
-                    ? <Badge variant="secondary" className="text-xs px-1.5">{item.marca}</Badge>
-                    : <span className="text-muted-foreground text-xs">—</span>
-                  }
-                </td>
-                <td className="py-2 px-2 text-center tabular-nums text-xs">
-                  ${fmtPrecio(item.costo)}
-                </td>
-                <td className="py-2 px-2 text-center tabular-nums text-xs font-medium">
-                  ${fmtPrecio(item.precioLista)}
-                </td>
-                <td className="py-2 px-2 text-center tabular-nums text-xs">
-                  ${fmtPrecio(item.precioMayorista)}
-                </td>
-                <td className={`py-2 px-2 text-center tabular-nums text-xs ${item.stockGuaymallen > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
-                  {fmtStock(item.stockGuaymallen)}
-                </td>
-                <td className={`py-2 px-2 text-center tabular-nums text-xs ${item.stockMaipu > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
-                  {fmtStock(item.stockMaipu)}
-                </td>
-                <td className="py-2 px-2 text-center">
-                  {item.habilitado
-                    ? <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Activo</Badge>
-                    : <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">Inactivo</Badge>
-                  }
-                </td>
-                <td className="py-2 px-2 text-center">
-                  <VincularModal
-                    itemTiendaId={item.id}
-                    itemDescripcion={item.descripcion}
-                    codigoExterno={item.codigoExterno}
-                    cantidadVinculos={item._count.productos}
-                  />
-                </td>
-              </tr>
-            );
-          })}
+          {items.map((item) => (
+            <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+              <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
+                {item.codItem}
+              </td>
+              <td className="py-2 px-3 text-center text-xs">{item.descripcion}</td>
+              <td className="py-2 px-2 text-center tabular-nums text-xs font-medium">
+                ${fmtPrecio(item.costo)}
+              </td>
+              <td className="py-2 px-2 text-center text-xs text-muted-foreground truncate max-w-[160px]">
+                {item.proveedorDux ?? "—"}
+              </td>
+              <td className="py-2 px-2 text-center text-xs text-muted-foreground">
+                {item.rubro ?? "—"}
+              </td>
+              <td className="py-2 px-2 text-center text-xs text-muted-foreground">
+                {item.subRubro ?? "—"}
+              </td>
+              <td className="py-2 px-2 text-center">
+                <VincularModal
+                  itemTiendaId={item.id}
+                  itemDescripcion={item.descripcion}
+                  codigoExterno={item.codigoExterno}
+                  cantidadVinculos={item._count.productos}
+                  costoTienda={item.costo}
+                />
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

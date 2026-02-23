@@ -28,14 +28,36 @@ interface Props {
   itemDescripcion: string;
   codigoExterno: string | null;
   cantidadVinculos: number;
+  costoTienda: number;
 }
 
 function fmtPrecio(n: number) {
   return Math.round(n).toLocaleString("es-AR");
 }
 
+function DifCosto({ costoTienda, precioProveedor }: { costoTienda: number; precioProveedor: number }) {
+  if (costoTienda <= 0 || precioProveedor <= 0) return <span className="text-muted-foreground text-xs">—</span>;
+  const dif = ((precioProveedor - costoTienda) / costoTienda) * 100;
+  const abs = Math.abs(dif).toFixed(1);
+  if (dif > 0) {
+    return (
+      <span className="text-xs font-medium text-red-500" title={`Proveedor es ${abs}% más caro que Tienda`}>
+        +{abs}%
+      </span>
+    );
+  }
+  if (dif < 0) {
+    return (
+      <span className="text-xs font-medium text-emerald-500" title={`Proveedor es ${abs}% más económico que Tienda`}>
+        -{abs}%
+      </span>
+    );
+  }
+  return <span className="text-xs text-muted-foreground">0%</span>;
+}
+
 export default function VincularModal({
-  itemTiendaId, itemDescripcion, codigoExterno, cantidadVinculos: cantidadInicial,
+  itemTiendaId, itemDescripcion, codigoExterno, cantidadVinculos: cantidadInicial, costoTienda,
 }: Props) {
   const [open, setOpen]                   = useState(false);
   const [abrirSelector, setAbrirSelector] = useState(false);
@@ -116,13 +138,19 @@ export default function VincularModal({
             <DialogTitle className="text-base font-semibold leading-tight">
               Vínculos con Lista Proveedores
             </DialogTitle>
-            <p className="text-xs text-muted-foreground mt-1 truncate">{itemDescripcion}</p>
-            {codigoExterno && (
+          <p className="text-xs text-muted-foreground mt-1 truncate">{itemDescripcion}</p>
+          <div className="flex items-center gap-3 mt-1">
+            {costoTienda > 0 && (
               <p className="text-xs text-muted-foreground">
-                Código externo:{" "}
-                <code className="bg-muted px-1 rounded">{codigoExterno}</code>
+                Costo Tienda: <span className="font-medium text-foreground">${fmtPrecio(costoTienda)}</span>
               </p>
             )}
+            {codigoExterno && (
+              <p className="text-xs text-muted-foreground">
+                Cód. externo: <code className="bg-muted px-1 rounded">{codigoExterno}</code>
+              </p>
+            )}
+          </div>
           </DialogHeader>
 
           <Separator />
@@ -152,9 +180,16 @@ export default function VincularModal({
                       <span className="text-xs truncate">{prod.descripcion}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs tabular-nums text-muted-foreground">
-                        ${fmtPrecio(prod.precioLista)}
-                      </span>
+                      {/* Px Lista del proveedor */}
+                      <div className="text-right">
+                        <p className="text-xs tabular-nums">${fmtPrecio(prod.precioLista)}</p>
+                        <p className="text-[10px] text-muted-foreground">px lista prov.</p>
+                      </div>
+                      {/* Comparación vs costo tienda */}
+                      <div className="text-right w-12">
+                        <DifCosto costoTienda={costoTienda} precioProveedor={prod.precioLista} />
+                        <p className="text-[10px] text-muted-foreground">vs tienda</p>
+                      </div>
                       <button
                         onClick={() => handleDesvincular(prod)}
                         disabled={isPending}
