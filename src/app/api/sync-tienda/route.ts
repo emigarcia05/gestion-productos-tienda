@@ -158,18 +158,12 @@ async function fetchTodosLosItems(token: string) {
   const total = primera.total || primera.results.length;
   const todos = [...primera.results];
 
-  // Calcular los offsets restantes
-  const offsets: number[] = [];
+  // Pedir el resto de páginas en secuencia con pausa de 300ms para respetar el rate limit
   for (let offset = LIMIT; offset < total; offset += LIMIT) {
-    offsets.push(offset);
-  }
-
-  // Pedir todas las páginas en paralelo — lotes de 10 simultáneas para no saturar la API
-  const LOTE_FETCH = 10;
-  for (let i = 0; i < offsets.length; i += LOTE_FETCH) {
-    const lote = offsets.slice(i, i + LOTE_FETCH);
-    const resultados = await Promise.all(lote.map((offset) => fetchPagina(token, offset)));
-    for (const r of resultados) todos.push(...r.results);
+    await new Promise((r) => setTimeout(r, 300));
+    const pagina = await fetchPagina(token, offset);
+    todos.push(...pagina.results);
+    if (todos.length >= total) break;
   }
 
   return todos.map(mapItem);
