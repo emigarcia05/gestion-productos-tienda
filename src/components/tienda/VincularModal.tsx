@@ -121,7 +121,15 @@ export default function VincularModal({
     startTransition(async () => {
       const res = await vincularProducto(itemTiendaId, producto.id);
       if (res.ok) {
-        setVinculados((prev) => [...prev, producto]);
+        // Rellenar campos de descuento con 0 — se actualizarán al reabrir el modal
+        const productoCompleto: ProductoConProveedor = {
+          ...producto,
+          precioVentaSugerido: 0,
+          descuentoProducto: 0,
+          descuentoCantidad: 0,
+          cxTransporte: 0,
+        };
+        setVinculados((prev) => [...prev, productoCompleto]);
         setCantidad((c) => c + 1);
         toast.success(`Vinculado: ${producto.codExt}`);
       } else {
