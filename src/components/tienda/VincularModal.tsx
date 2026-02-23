@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { Link2, Wand2, Plus, Loader2, X } from "lucide-react";
+import { Link2, Wand2, Plus, Loader2, X, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   getVinculos, vincularProducto, desvincularProducto, autoVincular,
 } from "@/actions/vinculos";
+import { convertirEnProveedor } from "@/actions/tienda";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
 
 type ProductoConProveedor = {
@@ -103,6 +104,17 @@ export default function VincularModal({
     });
   }
 
+  function handleConvertir(producto: ProductoConProveedor) {
+    startTransition(async () => {
+      const res = await convertirEnProveedor(itemTiendaId, producto.id);
+      if (res.ok) {
+        toast.success(`Proveedor Dux actualizado a "${producto.proveedor.nombre}"`);
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
   function handleAutoVincular() {
     startTransition(async () => {
       const res = await autoVincular(itemTiendaId);
@@ -155,12 +167,12 @@ export default function VincularModal({
           </button>
         </DialogTrigger>
 
-        <DialogContent className="max-w-xl max-h-[80vh] flex flex-col gap-0 p-0">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
           <DialogHeader className="px-6 pt-5 pb-3">
             <DialogTitle className="text-base font-semibold leading-tight">
               Vínculos con Lista Proveedores
             </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{itemDescripcion}</p>
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{itemDescripcion}</p>
           <div className="flex items-center gap-3 mt-1">
             {costoTienda > 0 && (
               <p className="text-xs text-muted-foreground">
@@ -189,40 +201,58 @@ export default function VincularModal({
               </p>
             ) : (
               <div className="space-y-2">
-                {vinculados.map((prod) => (
-                  <div
-                    key={prod.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/50 bg-muted/30 px-3 py-2.5"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Badge variant="secondary" className="font-mono text-xs shrink-0">
-                        {prod.proveedor.sufijo}
-                      </Badge>
-                      <code className="text-xs text-muted-foreground shrink-0">{prod.codExt}</code>
-                      <span className="text-xs truncate">{prod.descripcion}</span>
-                    </div>
-                    <div className="flex items-end gap-4 shrink-0">
-                      {/* Px Compra Final del proveedor */}
-                      <div className="flex flex-col items-end gap-0.5">
-                        <p className="text-xs tabular-nums font-medium leading-none">${fmtPrecio(calcPxCompraFinal(prod))}</p>
-                        <p className="text-[10px] text-muted-foreground leading-none">Cx Actual</p>
+                {vinculados.map((prod) => {
+                  const pxCompra = calcPxCompraFinal(prod);
+                  return (
+                    <div
+                      key={prod.id}
+                      className="rounded-md border border-border/50 bg-muted/30 px-3 py-2.5 space-y-2"
+                    >
+                      {/* Fila 1: badge + código + descripción completa */}
+                      <div className="flex items-start gap-2">
+                        <Badge variant="secondary" className="font-mono text-xs shrink-0 mt-0.5">
+                          {prod.proveedor.sufijo}
+                        </Badge>
+                        <code className="text-xs text-muted-foreground shrink-0 mt-0.5">{prod.codExt}</code>
+                        <span className="text-xs leading-relaxed">{prod.descripcion}</span>
                       </div>
-                      {/* Comparación Px Compra Final vs costo tienda */}
-                      <div className="flex flex-col items-end gap-0.5 w-14">
-                        <div className="leading-none"><DifCosto costoTienda={costoTienda} pxCompraFinal={calcPxCompraFinal(prod)} /></div>
-                        <p className="text-[10px] text-muted-foreground leading-none">Vs Cx Actual</p>
+
+                      {/* Fila 2: precios + acciones */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-start gap-0.5">
+                            <p className="text-xs tabular-nums font-medium leading-none">${fmtPrecio(pxCompra)}</p>
+                            <p className="text-[10px] text-muted-foreground leading-none">Px Compra Final</p>
+                          </div>
+                          <div className="flex flex-col items-start gap-0.5">
+                            <div className="leading-none"><DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} /></div>
+                            <p className="text-[10px] text-muted-foreground leading-none">Vs Cx Actual</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleConvertir(prod)}
+                            disabled={isPending}
+                            title="Actualizar Proveedor Dux, Costo y Cód. Externo del item con este producto"
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/50 rounded px-2 py-1 transition-colors"
+                          >
+                            <ArrowRightLeft className="h-3 w-3" />
+                            Convertir en proveedor
+                          </button>
+                          <button
+                            onClick={() => handleDesvincular(prod)}
+                            disabled={isPending}
+                            className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                            title="Desvincular"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handleDesvincular(prod)}
-                        disabled={isPending}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                        title="Desvincular"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

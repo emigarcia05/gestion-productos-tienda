@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+const FOCUS_KEY = "filtros-proveedores-focus";
 
 interface Proveedor {
   id: string;
@@ -23,20 +25,38 @@ interface Props {
 export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual, accionMasivaSlot }: Props) {
   const pathname = usePathname();
   const [q, setQ] = useState(qActual);
+  const [buscando, setBuscando] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
+
+  // Al montar, si venimos de una búsqueda, restaurar el foco al final del texto
+  useEffect(() => {
+    const shouldFocus = sessionStorage.getItem(FOCUS_KEY);
+    if (shouldFocus === "1") {
+      sessionStorage.removeItem(FOCUS_KEY);
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      }
+    }
+  }, []);
 
   function navigate(nuevoQ: string, nuevoProveedor: string) {
     const params = new URLSearchParams();
     if (nuevoQ)         params.set("q", nuevoQ);
     if (nuevoProveedor) params.set("proveedor", nuevoProveedor);
+    // Marcar que el foco venía del input de búsqueda (no del selector de proveedor)
+    if (document.activeElement === inputRef.current) sessionStorage.setItem(FOCUS_KEY, "1");
     window.location.href = `${pathname}?${params.toString()}`;
   }
 
   function handleQ(value: string) {
     setQ(value);
+    setBuscando(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => navigate(value, proveedorActual), 400);
+    debounceRef.current = setTimeout(() => navigate(value, proveedorActual), 600);
   }
 
   function handleProveedor(value: string) {
@@ -47,7 +67,10 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
 
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+        {buscando
+          ? <Loader2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground animate-spin pointer-events-none" />
+          : <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+        }
         <Input
           ref={inputRef}
           value={q}

@@ -24,3 +24,41 @@ export async function getUltimoSync() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function convertirEnProveedor(
+  itemTiendaId: string,
+  productoId: string
+): Promise<ActionResult> {
+  if (!(await import("@/lib/sesion").then((m) => m.esEditor()))) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const producto = await prisma.producto.findUnique({
+    where: { id: productoId },
+    include: { proveedor: { select: { nombre: true } } },
+  });
+
+  if (!producto) return { ok: false, error: "Producto no encontrado." };
+
+  try {
+    await prisma.itemTienda.update({
+      where: { id: itemTiendaId },
+      data: {
+        proveedorDux:  producto.proveedor.nombre,
+        costo:         parseFloat(
+          (
+            producto.precioLista *
+            (1 - producto.descuentoProducto / 100) *
+            (1 - producto.descuentoCantidad / 100) *
+            (1 + producto.cxTransporte / 100)
+          ).toFixed(2)
+        ),
+        codigoExterno: producto.codExt,
+      },
+    });
+    revalidatePath("/tienda");
+    return { ok: true, data: undefined };
+  } catch {
+    return { ok: false, error: "No se pudo actualizar el item." };
+  }
+}
