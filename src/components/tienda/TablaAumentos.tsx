@@ -31,7 +31,7 @@ function exportarXLS(items: ItemAumento[]) {
     const aa      = String(ahora.getFullYear()).slice(-2);
     const hh      = String(ahora.getHours()).padStart(2, "0");
     const min     = String(ahora.getMinutes()).padStart(2, "0");
-    const nombre  = `Act. Costos ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
+    const nombre  = `Act Px Compra ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
 
     XLSX.writeFile(libro, nombre, { bookType: "xls" });
   });
