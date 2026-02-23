@@ -57,8 +57,8 @@ export default function SelectorRol({ rolActual }: Props) {
       <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-4 py-2.5 shadow-sm">
         {rolActual === "editor" ? (
           <>
-            <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-            <span className="text-sm font-medium">Modo Editor</span>
+            <ShieldCheck className="h-4 w-4 text-accent2 shrink-0" />
+            <span className="text-sm font-medium text-accent2">Modo Editor</span>
             <span className="text-muted-foreground text-xs mx-1">·</span>
             <button
               onClick={handleVolver}
@@ -76,7 +76,7 @@ export default function SelectorRol({ rolActual }: Props) {
             <span className="text-muted-foreground text-xs mx-1">·</span>
             <button
               onClick={handleAbrirModal}
-              className="flex items-center gap-1 text-xs text-primary hover:underline transition-colors"
+              className="flex items-center gap-1 text-xs text-brand hover:text-brand/80 transition-colors"
             >
               <ShieldCheck className="h-3 w-3" />
               Cambiar a Editor
@@ -90,7 +90,7 @@ export default function SelectorRol({ rolActual }: Props) {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-500" />
+              <ShieldCheck className="h-5 w-5 text-accent2" />
               Acceso de Editor
             </DialogTitle>
             <DialogDescription>

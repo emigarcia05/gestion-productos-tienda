@@ -46,40 +46,40 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
     <>
       <div className="h-full overflow-auto rounded-lg border border-border/50">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-            <tr className="border-b border-border/50">
+          <thead className="sticky top-0 z-10 bg-brand backdrop-blur-sm">
+            <tr className="border-b border-brand-fg/20">
               {puede(rol, col.codItem) && (
-                <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
                   Cód.<br />Tienda
                 </th>
               )}
               {puede(rol, col.descripcion) && (
-                <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">
+                <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs">
                   Descripción
                 </th>
               )}
               {puede(rol, col.costo) && (
-                <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-24 leading-tight">
                   Costo
                 </th>
               )}
               {puede(rol, col.proveedorDux) && (
-                <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-40 leading-tight">
+                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-40 leading-tight">
                   Proveedor Dux
                 </th>
               )}
               {puede(rol, col.rubro) && (
-                <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-32 leading-tight">
+                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-32 leading-tight">
                   Rubro
                 </th>
               )}
               {puede(rol, col.subRubro) && (
-                <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-32 leading-tight">
+                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-32 leading-tight">
                   Sub-Rubro
                 </th>
               )}
               {puede(rol, col.mejorPrecio) && (
-                <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
                   Mejor<br />Precio
                 </th>
               )}

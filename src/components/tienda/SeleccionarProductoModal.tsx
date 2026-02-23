@@ -166,12 +166,12 @@ export default function SeleccionarProductoModal({
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm border-b border-border/50">
+              <thead className="sticky top-0 bg-brand backdrop-blur-sm border-b border-brand-fg/20">
                 <tr>
-                  <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium w-20">Prov.</th>
-                  <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium w-28">Cód. Ext.</th>
-                  <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Descripción</th>
-                  <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium w-24">Px Lista</th>
+                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold w-20">Prov.</th>
+                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold w-28">Cód. Ext.</th>
+                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold">Descripción</th>
+                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold w-24">Px Lista</th>
                 </tr>
               </thead>
               <tbody>

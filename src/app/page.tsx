@@ -18,10 +18,10 @@ export default async function HomePage() {
 
         <Link
           href="/proveedores"
-          className="flex flex-col items-center justify-between w-44 h-56 rounded-2xl border border-border/60 bg-card/80 hover:bg-card hover:border-border hover:shadow-lg transition-all duration-200 p-5 group"
+          className="flex flex-col items-center justify-between w-44 h-56 rounded-2xl border-2 border-brand/60 bg-card/80 hover:bg-card hover:border-brand hover:shadow-lg hover:shadow-brand/10 transition-all duration-200 p-5 group"
         >
           <div className="flex-1 flex items-center justify-center w-full">
-            <Building2 className="w-16 h-16 text-muted-foreground group-hover:text-foreground transition-colors" />
+            <Building2 className="w-16 h-16 text-brand/70 group-hover:text-brand transition-colors" />
           </div>
           <span className="text-base font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
             Lista de Proveedores
@@ -30,10 +30,10 @@ export default async function HomePage() {
 
         <Link
           href="/tienda"
-          className="flex flex-col items-center justify-between w-44 h-56 rounded-2xl border border-border/60 bg-card/80 hover:bg-card hover:border-border hover:shadow-lg transition-all duration-200 p-5 group"
+          className="flex flex-col items-center justify-between w-44 h-56 rounded-2xl border-2 border-brand/60 bg-card/80 hover:bg-card hover:border-brand hover:shadow-lg hover:shadow-brand/10 transition-all duration-200 p-5 group"
         >
           <div className="flex-1 flex items-center justify-center w-full">
-            <ShoppingBag className="w-16 h-16 text-muted-foreground group-hover:text-foreground transition-colors" />
+            <ShoppingBag className="w-16 h-16 text-brand/70 group-hover:text-brand transition-colors" />
           </div>
           <span className="text-base font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
             Lista TiendaColor

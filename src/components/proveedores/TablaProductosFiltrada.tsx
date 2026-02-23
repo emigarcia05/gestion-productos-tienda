@@ -168,60 +168,60 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
   return (
     <div className="h-full overflow-auto rounded-lg border border-border/50">
       <table className="w-full text-sm">
-        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-          <tr className="border-b border-border/50">
+        <thead className="sticky top-0 z-10 bg-brand backdrop-blur-sm">
+          <tr className="border-b border-brand-fg/20">
             {puede(rol, col.codProdProv) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
                 Cod.<br />Prov.
               </th>
             )}
             {puede(rol, col.codExt) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-24 leading-tight">
                 Cód.<br />Externo
               </th>
             )}
             {puede(rol, col.descripcion) && (
-              <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">
+              <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs">
                 Descripción
               </th>
             )}
             {puede(rol, col.proveedor) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-14 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-14 leading-tight">
                 Prov.
               </th>
             )}
             {puede(rol, col.precioLista) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-20 leading-tight">
                 Px<br />Lista
               </th>
             )}
             {puede(rol, col.precioVentaSugerido) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-20 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-20 leading-tight">
                 Px Venta<br />Sug.
               </th>
             )}
             {puede(rol, col.descuentoProducto) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-12 leading-tight">
                 Dto.<br />Prod.
               </th>
             )}
             {puede(rol, col.descuentoCantidad) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-12 leading-tight">
                 Dto.<br />Cant.
               </th>
             )}
             {puede(rol, col.cxTransporte) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-12 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-12 leading-tight">
                 Cx<br />Transp.
               </th>
             )}
             {puede(rol, col.precioCompraFinal) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-24 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-24 leading-tight">
                 Px Compra<br />Final
               </th>
             )}
             {puede(rol, col.disponible) && (
-              <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs w-16 leading-tight">
+              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
                 Disp.
               </th>
             )}

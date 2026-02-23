@@ -255,14 +255,14 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
             <div className="rounded-lg border border-border/50 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/50 bg-muted/30">
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium w-1/3">
+                  <tr className="border-b border-brand-fg/20 bg-brand">
+                    <th className="text-left py-2 px-3 text-brand-fg font-semibold w-1/3">
                       Columna del archivo
                     </th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium w-1/3">
+                    <th className="text-left py-2 px-3 text-brand-fg font-semibold w-1/3">
                       Ejemplo
                     </th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium w-1/3">
+                    <th className="text-left py-2 px-3 text-brand-fg font-semibold w-1/3">
                       Asignar a
                     </th>
                   </tr>

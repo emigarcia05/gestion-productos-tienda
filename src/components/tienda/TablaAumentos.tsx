@@ -285,7 +285,7 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
           <div className="w-px h-7 bg-border/50" />
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Subiendo</p>
-            <p className="text-lg font-bold text-red-500 tabular-nums">{subiendo}</p>
+            <p className="text-lg font-bold text-accent2 tabular-nums">{subiendo}</p>
           </div>
           <div className="w-px h-7 bg-border/50" />
           <div className="text-center">
@@ -295,7 +295,7 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
           <div className="w-px h-7 bg-border/50" />
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
-            <p className="text-lg font-bold tabular-nums">{itemsFiltrados.length}</p>
+            <p className="text-lg font-bold text-brand tabular-nums">{itemsFiltrados.length}</p>
           </div>
         </div>
         </div>

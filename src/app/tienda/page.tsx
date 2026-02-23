@@ -134,7 +134,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
         {/* Sub-navegación */}
         <div className="flex gap-1 border-b border-border/50">
-          <span className="px-4 py-2 text-sm font-medium border-b-2 border-primary text-foreground -mb-px">
+          <span className="px-4 py-2 text-sm font-medium border-b-2 border-accent2 text-accent2 -mb-px">
             Productos Relacionados
           </span>
           {puede(rol, PERMISOS.tienda.acciones.sincronizar) && (
