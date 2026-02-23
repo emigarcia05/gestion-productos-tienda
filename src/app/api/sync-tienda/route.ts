@@ -12,21 +12,22 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: "DUX_API_TOKEN no configurado." }, { status: 500 });
     }
 
-    // 1. Traer TODOS los items de la API en una sola pasada
+    // 1. Traer todos los items de la API
     const items = await fetchTodosLosItems(token);
     if (items.length === 0) {
       return NextResponse.json({ ok: false, error: "La API no devolvió ningún item." }, { status: 500 });
     }
 
-    // 2. Traer codItems existentes
+    const codItemsApi = items.map((i) => i.codItem);
+
+    // 2. Saber cuáles ya existen en la BD
     const existentes = await prisma.itemTienda.findMany({ select: { codItem: true } });
     const setExistentes = new Set(existentes.map((e) => e.codItem));
-    const codItemsApi = new Set(items.map((i) => i.codItem));
 
-    const paraCrear = items.filter((i) => !setExistentes.has(i.codItem));
-    const paraActualizar = items.filter((i) => setExistentes.has(i.codItem));
+    const paraCrear     = items.filter((i) => !setExistentes.has(i.codItem));
+    const paraActualizar = items.filter((i) =>  setExistentes.has(i.codItem));
 
-    // 3. Crear nuevos en lotes
+    // 3. Crear nuevos en lotes de 500 (createMany es muy rápido)
     let creados = 0;
     for (let i = 0; i < paraCrear.length; i += 500) {
       const lote = paraCrear.slice(i, i + 500);
@@ -34,28 +35,50 @@ export async function GET() {
       creados += res.count;
     }
 
-    // 4. Actualizar existentes en lotes usando updateMany por codItem
+    // 4. Actualizar existentes en paralelo — lotes de 300 para no saturar el pool
     let actualizados = 0;
-    for (let i = 0; i < paraActualizar.length; i += 100) {
-      const lote = paraActualizar.slice(i, i + 100);
+    const LOTE_UPDATE = 300;
+    for (let i = 0; i < paraActualizar.length; i += LOTE_UPDATE) {
+      const lote = paraActualizar.slice(i, i + LOTE_UPDATE);
       await Promise.all(
         lote.map((item) =>
-          prisma.itemTienda.update({ where: { codItem: item.codItem }, data: item })
+          prisma.itemTienda.update({
+            where: { codItem: item.codItem },
+            data: {
+              descripcion:     item.descripcion,
+              rubro:           item.rubro,
+              subRubro:        item.subRubro,
+              marca:           item.marca,
+              proveedorDux:    item.proveedorDux,
+              codigoExterno:   item.codigoExterno,
+              costo:           item.costo,
+              porcIva:         item.porcIva,
+              precioLista:     item.precioLista,
+              precioMayorista: item.precioMayorista,
+              stockGuaymallen: item.stockGuaymallen,
+              stockMaipu:      item.stockMaipu,
+              habilitado:      item.habilitado,
+            },
+          })
         )
       );
       actualizados += lote.length;
     }
 
-    // 5. Deshabilitar los que ya no están
+    // 5. Deshabilitar los que ya no están en la API
     const { count: deshabilitados } = await prisma.itemTienda.updateMany({
-      where: { codItem: { notIn: Array.from(codItemsApi) }, habilitado: true },
+      where: { codItem: { notIn: codItemsApi }, habilitado: true },
       data: { habilitado: false },
     });
 
     const duracionMs = Date.now() - inicio;
 
     await prisma.syncLog.create({
-      data: { tipo: "manual", status: "ok", creados, actualizados, deshabilitados, totalApi: items.length, duracionMs },
+      data: {
+        tipo: "manual", status: "ok",
+        creados, actualizados, deshabilitados,
+        totalApi: items.length, duracionMs,
+      },
     });
 
     return NextResponse.json({ ok: true, creados, actualizados, deshabilitados, totalApi: items.length, duracionMs });
@@ -69,7 +92,7 @@ export async function GET() {
   }
 }
 
-// ─── Cliente API Dux inline (evita imports que puedan fallar) ──────────────
+// ─── Cliente API Dux ───────────────────────────────────────────────────────
 
 const ID_PRECIO_LISTA     = 56994;
 const ID_PRECIO_MAYORISTA = 57160;
@@ -84,18 +107,22 @@ function parseNum(val: unknown): number {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapItem(raw: any) {
   const precioMap: Record<number, number> = {};
-  if (Array.isArray(raw.precios)) for (const p of raw.precios) precioMap[p.id] = parseNum(p.precio);
+  if (Array.isArray(raw.precios)) {
+    for (const p of raw.precios) precioMap[p.id] = parseNum(p.precio);
+  }
   const stockMap: Record<number, number> = {};
-  if (Array.isArray(raw.stock)) for (const s of raw.stock) stockMap[s.id] = parseNum(s.stock_real);
+  if (Array.isArray(raw.stock)) {
+    for (const s of raw.stock) stockMap[s.id] = parseNum(s.stock_real);
+  }
 
   return {
     codItem:         String(raw.cod_item),
     descripcion:     String(raw.item ?? ""),
-    rubro:           raw.rubro?.nombre ?? null,
-    subRubro:        raw.sub_rubro?.nombre ?? null,
-    marca:           raw.marca?.marca ?? null,
-    proveedorDux:    raw.proveedor?.proveedor ?? null,
-    codigoExterno:   raw.codigo_externo ?? null,
+    rubro:           (raw.rubro?.nombre   ?? null) as string | null,
+    subRubro:        (raw.sub_rubro?.nombre ?? null) as string | null,
+    marca:           (raw.marca?.marca    ?? null) as string | null,
+    proveedorDux:    (raw.proveedor?.proveedor ?? null) as string | null,
+    codigoExterno:   (raw.codigo_externo  ?? null) as string | null,
     costo:           parseNum(raw.costo),
     porcIva:         parseNum(raw.porc_iva),
     precioLista:     precioMap[ID_PRECIO_LISTA]     ?? 0,
@@ -118,15 +145,20 @@ async function fetchTodosLosItems(token: string) {
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
+    }
 
     const json = await res.json();
-    const results = json.results ?? [];
+    const results: unknown[] = json.results ?? [];
     total = Number(json.paging?.total ?? results.length);
 
     if (results.length === 0) break;
     todos.push(...results.map(mapItem));
     offset += 1000;
+
+    // Si ya tenemos todos, salir
+    if (todos.length >= total) break;
   }
 
   return todos;
