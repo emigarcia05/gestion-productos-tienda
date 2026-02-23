@@ -47,25 +47,27 @@ function fmtPrecio(n: number) {
   return Math.round(n).toLocaleString("es-AR");
 }
 
+const UMBRAL_PCT = 1; // diferencia mínima para mostrar como significativa
+
 function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompraFinal: number }) {
   if (costoTienda <= 0 || pxCompraFinal <= 0) return <span className="text-muted-foreground text-xs">—</span>;
   const dif = ((pxCompraFinal - costoTienda) / costoTienda) * 100;
-  const abs = Math.abs(dif).toFixed(1);
+  const abs = Math.abs(dif);
+  // Si la diferencia es menor al umbral, mostrar como neutro
+  if (abs < UMBRAL_PCT) return <span className="text-xs text-muted-foreground">≈0%</span>;
+  const absFmt = abs.toFixed(1);
   if (dif > 0) {
     return (
-      <span className="text-xs font-medium text-red-500" title={`Px Compra Final es ${abs}% más caro que Cx Actual`}>
-        +{abs}%
+      <span className="text-xs font-medium text-red-500" title={`Px Compra Final es ${absFmt}% más caro que Cx Actual`}>
+        +{absFmt}%
       </span>
     );
   }
-  if (dif < 0) {
-    return (
-      <span className="text-xs font-medium text-emerald-500" title={`Px Compra Final es ${abs}% más económico que Cx Actual`}>
-        -{abs}%
-      </span>
-    );
-  }
-  return <span className="text-xs text-muted-foreground">0%</span>;
+  return (
+    <span className="text-xs font-medium text-emerald-500" title={`Px Compra Final es ${absFmt}% más económico que Cx Actual`}>
+      -{absFmt}%
+    </span>
+  );
 }
 
 export default function VincularModal({
@@ -199,16 +201,16 @@ export default function VincularModal({
                       <code className="text-xs text-muted-foreground shrink-0">{prod.codExt}</code>
                       <span className="text-xs truncate">{prod.descripcion}</span>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex items-end gap-4 shrink-0">
                       {/* Px Compra Final del proveedor */}
-                      <div className="text-right">
-                        <p className="text-xs tabular-nums font-medium">${fmtPrecio(calcPxCompraFinal(prod))}</p>
-                        <p className="text-[10px] text-muted-foreground">Cx Actual</p>
+                      <div className="flex flex-col items-end gap-0.5">
+                        <p className="text-xs tabular-nums font-medium leading-none">${fmtPrecio(calcPxCompraFinal(prod))}</p>
+                        <p className="text-[10px] text-muted-foreground leading-none">Cx Actual</p>
                       </div>
                       {/* Comparación Px Compra Final vs costo tienda */}
-                      <div className="text-right w-14">
-                        <DifCosto costoTienda={costoTienda} pxCompraFinal={calcPxCompraFinal(prod)} />
-                        <p className="text-[10px] text-muted-foreground">Vs Cx Actual</p>
+                      <div className="flex flex-col items-end gap-0.5 w-14">
+                        <div className="leading-none"><DifCosto costoTienda={costoTienda} pxCompraFinal={calcPxCompraFinal(prod)} /></div>
+                        <p className="text-[10px] text-muted-foreground leading-none">Vs Cx Actual</p>
                       </div>
                       <button
                         onClick={() => handleDesvincular(prod)}

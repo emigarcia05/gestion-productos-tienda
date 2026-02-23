@@ -19,6 +19,7 @@ interface Props {
   searchParams: Promise<{
     q?: string;
     rubro?: string;
+    subRubro?: string;
     marca?: string;
     habilitado?: string;
     mejorPrecio?: string;
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export default async function TiendaPage({ searchParams }: Props) {
-  const { q = "", rubro = "", marca = "", habilitado = "", mejorPrecio = "", pagina = "1" } = await searchParams;
+  const { q = "", rubro = "", subRubro = "", marca = "", habilitado = "", mejorPrecio = "", pagina = "1" } = await searchParams;
   const paginaNum = Math.max(1, parseInt(pagina) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
@@ -44,13 +45,14 @@ export default async function TiendaPage({ searchParams }: Props) {
         * (1 - p."descuentoProducto" / 100.0)
         * (1 - p."descuentoCantidad" / 100.0)
         * (1 + p."cxTransporte"     / 100.0)
-      ) < it.costo
+      ) < it.costo * 0.99
   `;
   const setMejorPrecio = new Set(itemsConMejorPrecio.map((r) => r.item_tienda_id));
 
   const where = {
-    ...(rubro ? { rubro } : {}),
-    ...(marca ? { marca } : {}),
+    ...(marca    ? { marca }    : {}),
+    ...(rubro    ? { rubro }    : {}),
+    ...(subRubro ? { subRubro } : {}),
     ...(habilitado === "true"  ? { habilitado: true }  : {}),
     ...(habilitado === "false" ? { habilitado: false } : {}),
     ...(mejorPrecio === "true"  ? { id: { in: Array.from(setMejorPrecio) } } : {}),
@@ -58,7 +60,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     ...(q ? filtroTexto(q, ["descripcion", "codItem", "codigoExterno", "marca"]) : {}),
   };
 
-  const [items, total, rubros, marcas, ultimoSync] = await Promise.all([
+  const [items, total, marcas, rubros, subRubros, ultimoSync] = await Promise.all([
     prisma.itemTienda.findMany({
       where,
       orderBy: { descripcion: "asc" },
@@ -67,18 +69,31 @@ export default async function TiendaPage({ searchParams }: Props) {
       include: { _count: { select: { productos: true } } },
     }),
     prisma.itemTienda.count({ where }),
-    prisma.itemTienda.findMany({
-      select: { rubro: true },
-      distinct: ["rubro"],
-      orderBy: { rubro: "asc" },
-      where: { rubro: { not: null } },
-    }),
+    // Marcas: sin filtro (siempre todas)
     prisma.itemTienda.findMany({
       select: { marca: true },
       distinct: ["marca"],
       orderBy: { marca: "asc" },
+      where: { marca: { not: null } },
+    }),
+    // Rubros: filtrados por marca seleccionada
+    prisma.itemTienda.findMany({
+      select: { rubro: true },
+      distinct: ["rubro"],
+      orderBy: { rubro: "asc" },
       where: {
-        marca: { not: null },
+        rubro: { not: null },
+        ...(marca ? { marca } : {}),
+      },
+    }),
+    // Sub-Rubros: filtrados por marca + rubro seleccionados
+    prisma.itemTienda.findMany({
+      select: { subRubro: true },
+      distinct: ["subRubro"],
+      orderBy: { subRubro: "asc" },
+      where: {
+        subRubro: { not: null },
+        ...(marca ? { marca } : {}),
         ...(rubro ? { rubro } : {}),
       },
     }),
@@ -130,12 +145,14 @@ export default async function TiendaPage({ searchParams }: Props) {
         <Separator className="opacity-50" />
 
         <FiltrosTienda
-          rubros={rubros.map((r) => r.rubro!)}
           marcas={marcas.map((m) => m.marca!)}
+          rubros={rubros.map((r) => r.rubro!)}
+          subRubros={subRubros.map((s) => s.subRubro!)}
           totalItems={total}
           qActual={q}
-          rubroActual={rubro}
           marcaActual={marca}
+          rubroActual={rubro}
+          subRubroActual={subRubro}
           habilitadoActual={habilitado}
           mejorPrecioActual={mejorPrecio}
         />
@@ -156,7 +173,7 @@ export default async function TiendaPage({ searchParams }: Props) {
           q={q}
           proveedor=""
           basePath="/tienda"
-          extraParams={{ rubro, marca, habilitado, mejorPrecio }}
+          extraParams={{ marca, rubro, subRubro, habilitado, mejorPrecio }}
         />
       </div>
     </div>
