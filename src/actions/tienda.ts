@@ -90,13 +90,19 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
       mapa.get(k)!.push(item);
     }
     return Array.from(mapa.entries())
-      .map(([nombre, lista]) => ({
-        nombre,
-        cantidad:    lista.length,
-        pctPromedio: lista.reduce((s, i) => s + i.pctAumento, 0) / lista.length,
-        subiendo:    lista.filter((i) => i.pctAumento > 0.5).length,
-        bajando:     lista.filter((i) => i.pctAumento < -0.5).length,
-      }))
+      .map(([nombre, lista]) => {
+        const conVariacion = lista.filter((i) => Math.abs(i.pctAumento) > 0.5);
+        const pctPromedio  = conVariacion.length > 0
+          ? conVariacion.reduce((s, i) => s + i.pctAumento, 0) / conVariacion.length
+          : 0;
+        return {
+          nombre,
+          cantidad:    lista.length,
+          pctPromedio,
+          subiendo:    lista.filter((i) => i.pctAumento > 0.5).length,
+          bajando:     lista.filter((i) => i.pctAumento < -0.5).length,
+        };
+      })
       .sort((a, b) => b.pctPromedio - a.pctPromedio);
   }
 
