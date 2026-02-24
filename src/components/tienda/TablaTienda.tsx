@@ -93,30 +93,30 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                 className={`tabla-row transition-colors ${puedeVincular ? "cursor-pointer" : ""}`}
               >
                 {puede(rol, col.codItem) && (
-                  <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
+                  <td className="py-2 px-2 text-center font-mono text-xs text-white/60">
                     {item.codItem}
                   </td>
                 )}
                 {puede(rol, col.descripcion) && (
-                  <td className="py-2 px-3 text-center text-xs">{item.descripcion}</td>
+                  <td className="py-2 px-3 text-center text-xs text-white font-semibold">{item.descripcion}</td>
                 )}
                 {puede(rol, col.costo) && (
-                  <td className="py-2 px-2 text-center tabular-nums text-xs font-medium">
+                  <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold">
                     ${fmtPrecio(item.costo)}
                   </td>
                 )}
                 {puede(rol, col.proveedorDux) && (
-                  <td className="py-2 px-2 text-center text-xs text-muted-foreground truncate max-w-[160px]">
+                  <td className="py-2 px-2 text-center text-xs text-white/60 truncate max-w-[160px]">
                     {item.proveedorDux ?? "—"}
                   </td>
                 )}
                 {puede(rol, col.rubro) && (
-                  <td className="py-2 px-2 text-center text-xs text-muted-foreground">
+                  <td className="py-2 px-2 text-center text-xs text-white/70">
                     {item.rubro ?? "—"}
                   </td>
                 )}
                 {puede(rol, col.subRubro) && (
-                  <td className="py-2 px-2 text-center text-xs text-muted-foreground">
+                  <td className="py-2 px-2 text-center text-xs text-white/70">
                     {item.subRubro ?? "—"}
                   </td>
                 )}
@@ -124,7 +124,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                   <td className="py-2 px-2 text-center">
                     {setMejorPrecio.has(item.id)
                       ? <span title="Hay un proveedor con Px Compra Final menor al costo actual" className="flex justify-center"><TrendingDown className="h-4 w-4 text-emerald-500" /></span>
-                      : <span className="text-muted-foreground text-xs">—</span>
+                      : <span className="text-white/30 text-xs">—</span>
                     }
                   </td>
                 )}

@@ -107,10 +107,10 @@ function CeldaPorcentaje({
   return (
     <button
       onClick={() => { setDraft(String(valor)); setEditando(true); }}
-      className="w-full text-center text-xs tabular-nums hover:text-primary transition-colors cursor-pointer"
+      className="w-full text-center text-xs tabular-nums text-white/70 hover:text-white transition-colors cursor-pointer"
       title="Clic para editar"
     >
-      {valor > 0 ? fmtPct(valor) : <span className="text-muted-foreground">—</span>}
+      {valor > 0 ? fmtPct(valor) : <span className="text-white/30">—</span>}
     </button>
   );
 }
@@ -231,30 +231,30 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
           {productos.map((prod) => (
             <tr key={prod.id} className="tabla-row transition-colors">
               {puede(rol, col.codProdProv) && (
-                <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
+                <td className="py-2 px-2 text-center font-mono text-xs text-white/60">
                   {prod.codProdProv}
                 </td>
               )}
               {puede(rol, col.codExt) && (
                 <td className="py-2 px-2 text-center whitespace-nowrap">
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{prod.codExt}</code>
+                  <code className="text-xs text-white/60 px-1.5 py-0.5 rounded font-mono">{prod.codExt}</code>
                 </td>
               )}
               {puede(rol, col.descripcion) && (
-                <td className="py-2 px-3 text-center">{prod.descripcion}</td>
+                <td className="py-2 px-3 text-center text-white font-semibold text-xs">{prod.descripcion}</td>
               )}
               {puede(rol, col.proveedor) && (
-                <td className="py-2 px-2 text-center">
-                  <Badge variant="secondary" className="font-mono text-xs px-1.5">{prod.proveedor.sufijo}</Badge>
+                <td className="py-2 px-2 text-center text-white/60 text-xs font-mono">
+                  {prod.proveedor.sufijo}
                 </td>
               )}
               {puede(rol, col.precioLista) && (
-                <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
+                <td className="py-2 px-2 text-center tabular-nums text-xs text-white/70 whitespace-nowrap">
                   ${fmtPrecio(prod.precioLista)}
                 </td>
               )}
               {puede(rol, col.precioVentaSugerido) && (
-                <td className="py-2 px-2 text-center tabular-nums text-xs whitespace-nowrap">
+                <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold whitespace-nowrap">
                   ${fmtPrecio(prod.precioVentaSugerido)}
                 </td>
               )}
@@ -274,7 +274,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
                 </td>
               )}
               {puede(rol, col.precioCompraFinal) && (
-                <td className="py-2 px-2 text-center tabular-nums text-xs font-medium whitespace-nowrap">
+                <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold whitespace-nowrap">
                   ${fmtPrecio(calcPxCompraFinal(prod))}
                 </td>
               )}

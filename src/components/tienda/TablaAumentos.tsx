@@ -103,13 +103,10 @@ function ColumnaGrupo({
               }`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <IconTendencia pct={pct} />
-                <span className="text-xs truncate">{g.nombre}</span>
+                <span className="text-[10px] text-white/50 tabular-nums shrink-0">{g.items.length}</span>
+                <span className="text-xs text-white truncate">{g.nombre}</span>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] text-muted-foreground tabular-nums">{g.items.length}</span>
-                <ColorPct pct={pct} />
-              </div>
+              <ColorPct pct={pct} />
             </button>
           );
         })}

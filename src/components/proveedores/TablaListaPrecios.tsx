@@ -39,13 +39,13 @@ export default function TablaListaPrecios({ productos }: { productos: Producto[]
         <tbody>
           {productos.map((prod) => (
             <tr key={prod.id} className="tabla-row transition-colors">
-              <td className="py-2 px-3 text-center text-xs text-muted-foreground font-medium">
+              <td className="py-2 px-3 text-center text-xs text-white/60 font-mono">
                 {prod.proveedor.sufijo}
               </td>
-              <td className="py-2 px-3 text-center text-xs">
+              <td className="py-2 px-3 text-center text-xs text-white font-semibold">
                 {prod.descripcion}
               </td>
-              <td className="py-2 px-3 text-center tabular-nums text-xs font-semibold">
+              <td className="py-2 px-3 text-center tabular-nums text-xs text-white font-bold">
                 ${fmtPrecio(prod.precioVentaSugerido)}
               </td>
             </tr>
