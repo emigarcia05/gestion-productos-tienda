@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Loader2, ChevronDown, X } from "lucide-react";
+import { Loader2, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -126,10 +126,6 @@ export default function SeleccionarProductoModal({
 
           {/* Buscador */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            {buscando && (
-              <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
-            )}
             <input
               ref={inputRef}
               type="text"
@@ -140,7 +136,7 @@ export default function SeleccionarProductoModal({
                   ? `Buscar en [${proveedorSeleccionado.sufijo}] ${proveedorSeleccionado.nombre}...`
                   : "Buscar por código o descripción..."
               }
-              className="w-full pl-8 pr-7 py-1.5 text-xs bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full px-3 pr-7 py-1.5 text-xs bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {q && (
               <button
