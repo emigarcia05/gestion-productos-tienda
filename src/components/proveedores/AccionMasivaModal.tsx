@@ -89,7 +89,7 @@ export default function AccionMasivaModal({
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 shrink-0">
+        <Button variant="outline" size="sm" className="gap-2 shrink-0 h-9">
           <Settings2 className="h-4 w-4" />
           Acción masiva
         </Button>

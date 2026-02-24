@@ -235,7 +235,7 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
         </div>
 
         {/* Contador de productos con aumento */}
-        <span className="text-xs text-white shrink-0">
+        <span className="text-xs text-accent2 shrink-0">
           {conAumento.length.toLocaleString()} con variación
         </span>
 
@@ -296,7 +296,7 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
         {/* Productos individuales */}
         <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border" style={{ height: "36vh", borderColor: "rgba(0,114,187,0.25)" }}>
           <div className="shrink-0 bg-brand px-3 py-2">
-            <h3 className="text-xs font-semibold text-brand-fg uppercase tracking-wider text-center">
+            <h3 className="text-xs font-semibold text-accent2 uppercase tracking-wider text-center">
               Productos con variación
             </h3>
           </div>

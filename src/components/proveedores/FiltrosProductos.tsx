@@ -101,7 +101,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
 
       {accionMasivaSlot}
 
-      <p className="text-xs text-muted-foreground whitespace-nowrap">
+      <p className="text-xs text-accent2 whitespace-nowrap">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
       </p>
     </div>
