@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const CANTIDADES_RAPIDAS = [1, 2, 3, 4, 5, 6, 12, 15, 50];
+const CANTIDADES_FILA1 = [1, 2, 3, 4, 5];
+const CANTIDADES_FILA2 = [6, 12, 24, 50];
 
 export interface ProductoParaPedido {
   id: string;
@@ -69,50 +70,71 @@ export default function CantidadPedidoModal({
 
           <p className="text-sm font-medium">¿Cuántas unidades desea pedir?</p>
 
-          {/* Cantidades predeterminadas en filas de 3 — al hacer clic se guarda y cierra */}
-          <div className="grid grid-cols-3 gap-2 justify-items-center max-w-[12rem] mx-auto">
-            {CANTIDADES_RAPIDAS.map((n) => (
-              <Button
-                key={n}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full min-w-9"
-                onClick={() => guardar(n)}
-              >
-                {n}
-              </Button>
-            ))}
-          </div>
+          {/* Contenedor fijo para alinear las 3 filas */}
+          <div className="w-[14rem] mx-auto space-y-3">
+            {/* Fila 1: 1, 2, 3, 4, 5 */}
+            <div className="grid grid-cols-5 gap-2">
+              {CANTIDADES_FILA1.map((n) => (
+                <Button
+                  key={n}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0"
+                  onClick={() => guardar(n)}
+                >
+                  {n}
+                </Button>
+              ))}
+            </div>
 
-          {/* Cantidad manual: input sin flechas + botón Agregar */}
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              Otra cantidad:
-            </span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="—"
-              value={otraCantidad}
-              onChange={(e) => setOtraCantidad(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && otraCantidad.trim() !== "" && cantidadFinal >= 1)
-                  guardar(cantidadFinal);
-              }}
-              className="w-20"
-            />
-            <Button
-              onClick={() => guardar(cantidadFinal)}
-              disabled={otraCantidad.trim() === "" || cantidadFinal < 1}
-            >
-              Agregar
-            </Button>
+            {/* Fila 2: 6, 12, 24, 50 — centrada en el mismo ancho */}
+            <div className="flex justify-center gap-2">
+              {CANTIDADES_FILA2.map((n) => (
+                <Button
+                  key={n}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-[2.25rem] min-w-0 shrink-0"
+                  onClick={() => guardar(n)}
+                >
+                  {n}
+                </Button>
+              ))}
+            </div>
+
+            {/* Fila 3: "Otra" / "Cantidad" en dos líneas + input y Agregar */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm text-muted-foreground text-center leading-tight">
+                Otra<br />Cantidad
+              </span>
+              <div className="flex items-center gap-2 w-full justify-center">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="—"
+                  value={otraCantidad}
+                  onChange={(e) => setOtraCantidad(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && otraCantidad.trim() !== "" && cantidadFinal >= 1)
+                      guardar(cantidadFinal);
+                  }}
+                  className="w-20"
+                />
+                <Button
+                  onClick={() => guardar(cantidadFinal)}
+                  disabled={otraCantidad.trim() === "" || cantidadFinal < 1}
+                >
+                  Agregar
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="gap-3 justify-center">
+        <DialogFooter className="gap-3 justify-center pt-8">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

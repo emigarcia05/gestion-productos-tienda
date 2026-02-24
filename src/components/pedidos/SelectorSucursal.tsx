@@ -12,16 +12,17 @@ const SUCURSALES: { value: SucursalPedido; label: string }[] = [
 
 interface Props {
   sucursalActual: SucursalPedido;
-  /** Parámetros actuales a conservar (q, pagina) */
-  paramsActuales: { q?: string; pagina?: string };
+  /** Parámetros actuales a conservar (q, pagina, proveedor) */
+  paramsActuales: { q?: string; pagina?: string; proveedor?: string };
   basePath?: string;
 }
 
-function buildHref(sucursal: SucursalPedido, params: { q?: string; pagina?: string }, basePath: string) {
+function buildHref(sucursal: SucursalPedido, params: { q?: string; pagina?: string; proveedor?: string }, basePath: string) {
   const p = new URLSearchParams();
   p.set("sucursal", sucursal);
   if (params.q) p.set("q", params.q);
   if (params.pagina && params.pagina !== "1") p.set("pagina", params.pagina);
+  if (params.proveedor) p.set("proveedor", params.proveedor);
   return `${basePath}?${p.toString()}`;
 }
 

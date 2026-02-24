@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { fmtPrecio } from "@/lib/format";
 import CantidadPedidoModal, {
   type ProductoParaPedido,
 } from "@/components/pedidos/CantidadPedidoModal";
@@ -60,7 +59,7 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Prop
               Descripción
             </th>
             <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs w-32">
-              Px Sugerido
+              Cantidad Urgente
             </th>
           </tr>
         </thead>
@@ -77,8 +76,8 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Prop
               <td className="py-2 px-3 text-center text-xs text-white font-semibold">
                 {prod.descripcion}
               </td>
-              <td className="py-2 px-3 text-center tabular-nums text-xs text-white font-bold">
-                ${fmtPrecio(prod.precioVentaSugerido)}
+              <td className="py-2 px-3 text-center tabular-nums text-xs text-white/80">
+                —
               </td>
             </tr>
           ))}

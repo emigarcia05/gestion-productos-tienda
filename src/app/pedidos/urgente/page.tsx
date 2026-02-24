@@ -6,6 +6,7 @@ import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import SelectorSucursal from "@/components/pedidos/SelectorSucursal";
+import SelectorProveedor from "@/components/pedidos/SelectorProveedor";
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -17,23 +18,31 @@ const PAGE_SIZE = 50;
 type SucursalPedido = "guaymallen" | "maipu";
 
 interface Props {
-  searchParams: Promise<{ q?: string; pagina?: string; sucursal?: string }>;
+  searchParams: Promise<{ q?: string; pagina?: string; sucursal?: string; proveedor?: string }>;
 }
 
 export default async function PedidoUrgentePage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/");
 
-  const { q = "", pagina = "1", sucursal = "guaymallen" } = await searchParams;
+  const { q = "", pagina = "1", sucursal = "guaymallen", proveedor = "" } = await searchParams;
   const sucursalValida: SucursalPedido = sucursal === "maipu" ? "maipu" : "guaymallen";
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
   const whereSimple = await whereProductoConsultaConTienda(prisma, q);
+  const where = {
+    ...whereSimple,
+    ...(proveedor ? { proveedorId: proveedor } : {}),
+  };
 
-  const [productos, total] = await Promise.all([
+  const [proveedores, productos, total] = await Promise.all([
+    prisma.proveedor.findMany({
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, sufijo: true },
+    }),
     prisma.producto.findMany({
-      where: whereSimple,
+      where,
       orderBy: [{ proveedor: { nombre: "asc" } }, { descripcion: "asc" }],
       skip,
       take: PAGE_SIZE,
@@ -41,7 +50,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
         proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } },
       },
     }),
-    prisma.producto.count({ where: whereSimple }),
+    prisma.producto.count({ where }),
   ]);
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
@@ -59,11 +68,21 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
         <div className="flex items-center gap-4 flex-wrap">
           <SelectorSucursal
             sucursalActual={sucursalValida}
-            paramsActuales={{ q, pagina: pagina === "1" ? undefined : pagina }}
+            paramsActuales={{ q, pagina: pagina === "1" ? undefined : pagina, proveedor: proveedor || undefined }}
+            basePath="/pedidos/urgente"
+          />
+          <SelectorProveedor
+            proveedores={proveedores}
+            proveedorActual={proveedor}
+            paramsActuales={{ q, sucursal: sucursalValida, pagina: pagina === "1" ? undefined : pagina }}
             basePath="/pedidos/urgente"
           />
           <div className="flex-1 min-w-0 flex items-center gap-3">
-            <BuscadorSimple qActual={q} totalProductos={total} extraParams={{ sucursal: sucursalValida }} />
+            <BuscadorSimple
+              qActual={q}
+              totalProductos={total}
+              extraParams={{ sucursal: sucursalValida, proveedor }}
+            />
           </div>
         </div>
       </div>
@@ -79,7 +98,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
           total={total}
           pageSize={PAGE_SIZE}
           q={q}
-          proveedor=""
+          proveedor={proveedor}
           basePath="/pedidos/urgente"
           extraParams={{ sucursal: sucursalValida }}
         />
