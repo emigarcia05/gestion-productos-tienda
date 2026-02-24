@@ -3,7 +3,7 @@ import { filtroTexto } from "@/lib/busqueda";
 import CrearProveedorModal from "@/components/proveedores/CrearProveedorModal";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
-import TablaListaPrecios from "@/components/proveedores/TablaListaPrecios";
+import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
 import FiltrosProductos from "@/components/proveedores/FiltrosProductos";
 import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
@@ -112,7 +112,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
         {esEditor
           ? <TablaProductosFiltrada productos={productos} rol={rol} />
-          : <TablaListaPrecios productos={productos} />
+          : <TablaListaPreciosConPedido productos={productos} />
         }
       </div>
 

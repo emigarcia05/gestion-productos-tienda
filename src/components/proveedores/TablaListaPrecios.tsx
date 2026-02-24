@@ -1,15 +1,42 @@
 "use client";
 
+import { useState } from "react";
 import { fmtPrecio } from "@/lib/format";
+import CantidadPedidoModal, {
+  type ProductoParaPedido,
+} from "@/components/pedidos/CantidadPedidoModal";
 
-interface Producto {
+export interface ProductoListaPrecios {
   id: string;
   descripcion: string;
+  codExt?: string;
   precioVentaSugerido: number;
   proveedor: { nombre: string; sufijo: string };
 }
 
-export default function TablaListaPrecios({ productos }: { productos: Producto[] }) {
+interface Props {
+  productos: ProductoListaPrecios[];
+  onAgregarAlPedido?: (producto: ProductoListaPrecios, cantidad: number) => void;
+}
+
+export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Props) {
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] =
+    useState<ProductoListaPrecios | null>(null);
+
+  function handleDobleClick(prod: ProductoListaPrecios) {
+    if (!onAgregarAlPedido) return;
+    setProductoSeleccionado(prod);
+    setModalAbierto(true);
+  }
+
+  function handleConfirmar(cantidad: number) {
+    if (productoSeleccionado && onAgregarAlPedido) {
+      onAgregarAlPedido(productoSeleccionado, cantidad);
+    }
+    setProductoSeleccionado(null);
+  }
+
   if (productos.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -18,7 +45,10 @@ export default function TablaListaPrecios({ productos }: { productos: Producto[]
     );
   }
 
+  const puedeAgregar = !!onAgregarAlPedido;
+
   return (
+    <>
     <div className="h-full overflow-auto rounded-lg border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-10 bg-brand">
@@ -36,7 +66,11 @@ export default function TablaListaPrecios({ productos }: { productos: Producto[]
         </thead>
         <tbody>
           {productos.map((prod) => (
-            <tr key={prod.id} className="tabla-row transition-colors">
+            <tr
+              key={prod.id}
+              className={`tabla-row transition-colors ${puedeAgregar ? "cursor-pointer hover:bg-white/5" : ""}`}
+              onDoubleClick={() => handleDobleClick(prod)}
+            >
               <td className="py-2 px-3 text-center text-xs text-white/60 font-mono">
                 {prod.proveedor.sufijo}
               </td>
@@ -51,5 +85,13 @@ export default function TablaListaPrecios({ productos }: { productos: Producto[]
         </tbody>
       </table>
     </div>
+
+      <CantidadPedidoModal
+        open={modalAbierto}
+        onOpenChange={setModalAbierto}
+        producto={productoSeleccionado as ProductoParaPedido | null}
+        onConfirmar={handleConfirmar}
+      />
+    </>
   );
 }

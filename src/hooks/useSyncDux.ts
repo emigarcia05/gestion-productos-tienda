@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 
 const PAUSA_MS = 5000;
-const TOAST_ID = "sync-dux";
 const LIMIT    = 50;
 
 export interface SyncDuxResult {
@@ -29,7 +27,6 @@ export function useSyncDux(onSuccess: (result: SyncDuxResult) => void) {
   async function ejecutar() {
     setSyncing(true);
     setProgreso(null);
-    toast.loading("Actualizando base de datos... No cierres esta pestaña.", { id: TOAST_ID, duration: Infinity });
 
     try {
       let offset      = 0;
@@ -45,7 +42,6 @@ export function useSyncDux(onSuccess: (result: SyncDuxResult) => void) {
         const data = await res.json();
 
         if (!data.ok) {
-          toast.error(`Error: ${data.error}`, { id: TOAST_ID });
           setSyncing(false);
           return;
         }
@@ -71,10 +67,6 @@ export function useSyncDux(onSuccess: (result: SyncDuxResult) => void) {
         const segsRestantes   = Math.round(msRestantes / 1000);
 
         setProgreso({ procesados, total, segsRestantes });
-        toast.loading(
-          `Actualizando... ${procesados} / ${total} ítems. No cierres esta pestaña.`,
-          { id: TOAST_ID, duration: Infinity }
-        );
 
         if (!data.hayMas) break;
         offset = data.offset;
@@ -97,11 +89,9 @@ export function useSyncDux(onSuccess: (result: SyncDuxResult) => void) {
         duracionMs,
       };
 
-      toast.dismiss(TOAST_ID);
       onSuccess(result);
 
     } catch {
-      toast.error("Error de conexión al actualizar.", { id: TOAST_ID });
       setSyncing(false);
       setProgreso(null);
     }

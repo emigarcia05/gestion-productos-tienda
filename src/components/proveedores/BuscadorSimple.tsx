@@ -9,9 +9,11 @@ const FOCUS_KEY = "buscador-simple-focus";
 interface Props {
   qActual: string;
   totalProductos: number;
+  /** Parámetros a conservar en la URL al buscar (ej. sucursal) */
+  extraParams?: Record<string, string>;
 }
 
-export default function BuscadorSimple({ qActual, totalProductos }: Props) {
+export default function BuscadorSimple({ qActual, totalProductos, extraParams }: Props) {
   const pathname    = usePathname();
   const [q, setQ]   = useState(qActual);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,6 +39,7 @@ export default function BuscadorSimple({ qActual, totalProductos }: Props) {
       if (document.activeElement === inputRef.current) sessionStorage.setItem(FOCUS_KEY, "1");
       const params = new URLSearchParams();
       if (value) params.set("q", value);
+      if (extraParams) for (const [k, v] of Object.entries(extraParams)) if (v) params.set(k, v);
       window.location.href = `${pathname}?${params.toString()}`;
     }, 400);
   }

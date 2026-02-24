@@ -12,6 +12,7 @@ model Proveedor {
   codigoUnico String     @unique
   sufijo      String     @unique
   productos   Producto[]
+  pedidos     Pedido[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -108,4 +109,35 @@ model SyncLog {
   createdAt    DateTime @default(now())
 
   @@map("sync_logs")
+}
+
+// ─── Pedidos a proveedores ─────────────────────────────────────────────────
+
+model Pedido {
+  id          String       @id @default(cuid())
+  tipo        String       // "urgente" | "reposicion"
+  estado      String       @default("borrador")  // "borrador" | "enviado" | etc.
+  sucursal    String       // "guaymallen" | "maipu"
+  proveedorId String
+  proveedor   Proveedor    @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+  items       PedidoItem[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([proveedorId])
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id                   String  @id @default(cuid())
+  pedidoId             String
+  pedido               Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  codExt               String  // código en lista proveedor
+  codTienda            String  // código en lista tienda
+  descripcionProveedor String
+  descripcionTienda    String
+  cantidad             Int     @default(1)
+
+  @@index([pedidoId])
+  @@map("pedido_items")
 }
