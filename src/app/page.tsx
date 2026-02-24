@@ -43,8 +43,8 @@ export default async function HomePage() {
 
       </div>
 
-      {/* Logo — debajo de los botones, 50% más chico */}
-      <div className="flex justify-center py-6">
+      {/* Logo — ocupa el espacio restante hasta el final, logo centrado */}
+      <div className="flex-1 flex items-center justify-center">
         <Image
           src="/logo_tiendacolor_png.png"
           alt="TiendaColor"

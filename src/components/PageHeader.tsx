@@ -22,13 +22,10 @@ interface Props {
 }
 
 export default function PageHeader({ volverHref, titulo, subtitulo, acciones, accionesBarra, tabs }: Props) {
-  const tabActivo = tabs?.find((t) => t.active);
-  const tabsInactivos = tabs?.filter((t) => !t.active && t.href);
-
   return (
     <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-0">
 
-      {/* Fila principal: Volver | Título + span activo | Logo */}
+      {/* Fila principal: Volver | Título | Logo */}
       <div className="flex items-stretch justify-between gap-4 mb-0">
 
         {/* Izquierda: botón Volver */}
@@ -41,7 +38,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           </Button>
         </div>
 
-        {/* Centro: título + span del tab activo */}
+        {/* Centro: título */}
         <div className="flex flex-col items-center gap-1 pb-2">
           <h1 className="text-3xl font-black tracking-widest uppercase text-brand leading-none">
             {titulo}
@@ -49,17 +46,11 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           {subtitulo && (
             <p className="text-xs text-muted-foreground">{subtitulo}</p>
           )}
-          {tabActivo && (
-            <span className="mt-1 text-sm font-medium text-accent2">
-              {tabActivo.icon && <span className="inline-flex items-center gap-1">{tabActivo.icon}</span>}
-              {tabActivo.label}
-            </span>
-          )}
           {/* Línea decorativa */}
           <div className="mt-2 h-0.5 w-16 rounded-full bg-brand/60" />
         </div>
 
-        {/* Derecha: logo con altura igual al bloque de título + span */}
+        {/* Derecha: logo */}
         <div className="flex items-center shrink-0">
           <Image
             src="/logo_tiendacolor_png.png"
@@ -72,26 +63,36 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
         </div>
       </div>
 
-      {/* Barra inferior: tabs inactivos + acciones + info sync */}
-      <div className="flex items-center justify-between border-b border-border/50">
-        <div className="flex gap-1">
-          {tabsInactivos && tabsInactivos.length > 0 ? (
-            tabsInactivos.map((tab) => (
-              <Link
-                key={tab.label}
-                href={tab.href!}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors -mb-px"
-              >
-                {tab.icon}
-                {tab.label}
-              </Link>
-            ))
-          ) : (
-            <div className="py-2" />
-          )}
+      {/* Barra inferior: todos los tabs + acciones */}
+      <div className="flex items-center justify-between border-b border-border/50 py-2">
+        <div className="flex gap-2">
+          {tabs ? (
+            tabs.map((tab) =>
+              tab.active ? (
+                <span
+                  key={tab.label}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border text-accent2"
+                  style={{ borderColor: "#0072BB", color: "#0072BB", backgroundColor: "rgba(0,114,187,0.08)" }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </span>
+              ) : tab.href ? (
+                <Link
+                  key={tab.label}
+                  href={tab.href}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors hover:text-foreground"
+                  style={{ borderColor: "#0072BB", color: "#0072BB" }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </Link>
+              ) : null
+            )
+          ) : null}
         </div>
 
-        <div className="flex items-center gap-3 pb-1">
+        <div className="flex items-center gap-3">
           {acciones && <div className="flex items-center gap-2">{acciones}</div>}
           {accionesBarra && <div className="flex items-center gap-2">{accionesBarra}</div>}
         </div>
