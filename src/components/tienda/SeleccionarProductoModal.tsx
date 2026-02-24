@@ -136,7 +136,7 @@ export default function SeleccionarProductoModal({
                   ? `Buscar en [${proveedorSeleccionado.sufijo}] ${proveedorSeleccionado.nombre}...`
                   : "Buscar por código o descripción..."
               }
-              className="w-full px-3 pr-7 py-1.5 text-xs bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full px-3 pr-7 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {q && (
               <button
