@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { TrendingUp, TrendingDown, Minus, X, Download } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, X, Download } from "lucide-react";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 
 function exportarXLS(items: ItemAumento[]) {
@@ -48,14 +48,14 @@ function fmtPct(n: number): string {
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
-  if (pct > 0.5)  return <span className={`${cls} text-red-500`}>{fmtPct(pct)}</span>;
-  if (pct < -0.5) return <span className={`${cls} text-emerald-500`}>{fmtPct(pct)}</span>;
+  if (pct > 0.5)  return <span className={`${cls} text-white`}>{fmtPct(pct)}</span>;
+  if (pct < -0.5) return <span className={`${cls} text-white`}>{fmtPct(pct)}</span>;
   return <span className={`${cls} text-white/50`}>≈0%</span>;
 }
 
 function IconTendencia({ pct }: { pct: number }) {
-  if (pct > 0.5)  return <TrendingUp  className="h-3.5 w-3.5 text-red-500 shrink-0" />;
-  if (pct < -0.5) return <TrendingDown className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
+  if (pct > 0.5)  return <ArrowUp   className="h-3.5 w-3.5 text-red-500 shrink-0" />;
+  if (pct < -0.5) return <ArrowDown className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
   return <Minus className="h-3.5 w-3.5 text-white/40 shrink-0" />;
 }
 
@@ -105,9 +105,9 @@ function ColumnaGrupo({
               <div className="flex items-center gap-1.5 min-w-0">
                 <div className="flex items-center gap-0.5 shrink-0">
                   {pct > 0.5
-                    ? <TrendingUp className="h-3 w-3 text-red-500" />
+                    ? <ArrowUp className="h-3 w-3 text-red-500" />
                     : pct < -0.5
-                      ? <TrendingDown className="h-3 w-3 text-emerald-500" />
+                      ? <ArrowDown className="h-3 w-3 text-emerald-500" />
                       : null
                   }
                   <span className="text-[10px] text-white tabular-nums">{g.items.length}</span>
