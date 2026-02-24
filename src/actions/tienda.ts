@@ -179,3 +179,65 @@ export async function convertirEnProveedor(
     return { ok: false, error: "No se pudo actualizar el item." };
   }
 }
+
+// ─── Control de Stock ──────────────────────────────────────────────────────
+
+export type Sucursal = "guaymallen" | "maipu";
+
+export interface ItemStock {
+  id:          string;
+  codItem:     string;
+  descripcion: string;
+  marca:       string | null;
+  rubro:       string | null;
+  subRubro:    string | null;
+  stock:       number;
+}
+
+export interface ControlStockData {
+  items:     ItemStock[];
+  marcas:    string[];
+  rubros:    string[];
+  subRubros: string[];
+}
+
+export async function getControlStock(sucursal: Sucursal): Promise<ControlStockData> {
+  const campo = sucursal === "guaymallen" ? "stockGuaymallen" : "stockMaipu";
+
+  const [todos, marcasRaw, rubrosRaw, subRubrosRaw] = await Promise.all([
+    prisma.itemTienda.findMany({
+      where: { habilitado: true },
+      orderBy: { descripcion: "asc" },
+      select: {
+        id:          true,
+        codItem:     true,
+        descripcion: true,
+        marca:       true,
+        rubro:       true,
+        subRubro:    true,
+        stockGuaymallen: true,
+        stockMaipu:      true,
+      },
+    }),
+    prisma.itemTienda.findMany({ select: { marca: true },    distinct: ["marca"],    orderBy: { marca: "asc" },    where: { marca:    { not: null }, habilitado: true } }),
+    prisma.itemTienda.findMany({ select: { rubro: true },    distinct: ["rubro"],    orderBy: { rubro: "asc" },    where: { rubro:    { not: null }, habilitado: true } }),
+    prisma.itemTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], orderBy: { subRubro: "asc" }, where: { subRubro: { not: null }, habilitado: true } }),
+  ]);
+
+  const items: ItemStock[] = todos.map((i) => ({
+    id:          i.id,
+    codItem:     i.codItem,
+    descripcion: i.descripcion,
+    marca:       i.marca,
+    rubro:       i.rubro,
+    subRubro:    i.subRubro,
+    stock:       campo === "stockGuaymallen" ? i.stockGuaymallen : i.stockMaipu,
+  }));
+
+  return {
+    items,
+    marcas:    marcasRaw.map((m) => m.marca!),
+    rubros:    rubrosRaw.map((r) => r.rubro!),
+    subRubros: subRubrosRaw.map((s) => s.subRubro!),
+  };
+}

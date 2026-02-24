@@ -5,6 +5,7 @@ import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
 import TablaListaPrecios from "@/components/proveedores/TablaListaPrecios";
 import FiltrosProductos from "@/components/proveedores/FiltrosProductos";
+import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 import PageHeader from "@/components/PageHeader";
@@ -83,9 +84,9 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         }
       />
 
-      {/* Filtros — solo en modo editor */}
-      {esEditor && (
-        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">
+      {/* Filtros */}
+      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">
+        {esEditor ? (
           <FiltrosProductos
             proveedores={proveedores}
             totalProductos={total}
@@ -102,8 +103,10 @@ export default async function ProveedoresPage({ searchParams }: Props) {
               ) : undefined
             }
           />
-        </div>
-      )}
+        ) : (
+          <BuscadorSimple qActual={q} totalProductos={total} />
+        )}
+      </div>
 
       {/* Tabla con scroll interno */}
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
