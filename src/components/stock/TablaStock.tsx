@@ -27,11 +27,12 @@ export default function TablaStock({
   const pathname = usePathname();
   const router   = useRouter();
 
-  const [q,        setQ]        = useState(qActual);
-  const [marca,    setMarca]    = useState(marcaActual);
-  const [rubro,    setRubro]    = useState(rubroActual);
-  const [subRubro, setSubRubro] = useState(subRubroActual);
-  const [imprimiendo, setImprimiendo] = useState(false);
+  const [q,            setQ]            = useState(qActual);
+  const [marca,        setMarca]        = useState(marcaActual);
+  const [rubro,        setRubro]        = useState(rubroActual);
+  const [subRubro,     setSubRubro]     = useState(subRubroActual);
+  const [soloNegativo, setSoloNegativo] = useState(false);
+  const [imprimiendo,  setImprimiendo]  = useState(false);
 
   function navigate(params: Record<string, string>) {
     const p = new URLSearchParams();
@@ -54,7 +55,7 @@ export default function TablaStock({
   }
 
   function limpiar() {
-    setQ(""); setMarca(""); setRubro(""); setSubRubro("");
+    setQ(""); setMarca(""); setRubro(""); setSubRubro(""); setSoloNegativo(false);
     router.push(`${pathname}?sucursal=${sucursalActual}`);
   }
 
@@ -65,11 +66,12 @@ export default function TablaStock({
       if (marca    && i.marca    !== marca)    return false;
       if (rubro    && i.rubro    !== rubro)    return false;
       if (subRubro && i.subRubro !== subRubro) return false;
+      if (soloNegativo && i.stock >= 0)        return false;
       return true;
     });
-  }, [data.items, q, marca, rubro, subRubro]);
+  }, [data.items, q, marca, rubro, subRubro, soloNegativo]);
 
-  const hayFiltros = !!(q || marca || rubro || subRubro);
+  const hayFiltros = !!(q || marca || rubro || subRubro || soloNegativo);
   const sucursalLabel = SUCURSALES.find((s) => s.value === sucursalActual)?.label ?? sucursalActual;
 
   return (
@@ -142,6 +144,19 @@ export default function TablaStock({
           >
             <option value="">Todos los sub-rubros</option>
             {data.subRubros.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
+
+        {/* Stock */}
+        <div className="relative shrink-0">
+          <select
+            value={soloNegativo ? "negativo" : "todos"}
+            onChange={(e) => setSoloNegativo(e.target.value === "negativo")}
+            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="todos">Todos</option>
+            <option value="negativo">Stock negativo</option>
           </select>
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         </div>
