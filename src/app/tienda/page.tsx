@@ -114,6 +114,8 @@ export default async function TiendaPage({ searchParams }: Props) {
       <PageHeader
         volverHref="/"
         titulo="Lista TiendaColor"
+        mostrarTienda
+        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
         acciones={syncInfo ?? undefined}
         tabs={[
           { label: "Productos Relacionados", active: true, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NavCentroMini from "@/components/NavCentroMini";
 
 interface Tab {
   label: string;
@@ -14,6 +15,10 @@ interface Props {
   volverHref: string;
   titulo: string;
   subtitulo?: string;
+  /** Mostrar enlace a Tienda en la barra central (miniatura). Por defecto false. */
+  mostrarTienda?: boolean;
+  /** Mostrar enlace a Stock en la barra central (miniatura). Por defecto false. */
+  mostrarStock?: boolean;
   /** Elementos que van en la fila 1, entre el título y el logo (ej: info de sync) */
   acciones?: React.ReactNode;
   /** Botones que van a la derecha de la barra de navegación (fila 2) */
@@ -21,7 +26,7 @@ interface Props {
   tabs?: Tab[];
 }
 
-export default function PageHeader({ volverHref, titulo, subtitulo, acciones, accionesBarra, tabs }: Props) {
+export default function PageHeader({ volverHref, titulo, subtitulo, mostrarTienda, mostrarStock, acciones, accionesBarra, tabs }: Props) {
   return (
     <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-0">
 
@@ -38,16 +43,15 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           </Button>
         </div>
 
-        {/* Centro: título + subtítulo + info extra (sync info, etc.) */}
-        <div className="flex flex-col items-center gap-0.5">
-          <h1 className="text-3xl font-black tracking-widest uppercase text-brand leading-none">
-            {titulo}
-          </h1>
+        {/* Centro: botones miniatura (mismos que index) + subtítulo + acciones */}
+        <div className="flex flex-col items-center gap-1.5">
+          <h1 className="sr-only">{titulo}</h1>
+          <NavCentroMini mostrarTienda={mostrarTienda} mostrarStock={mostrarStock} />
           {subtitulo && (
             <p className="text-xs text-muted-foreground">{subtitulo}</p>
           )}
           {acciones && (
-            <div className="mt-1 flex items-center gap-2">{acciones}</div>
+            <div className="flex items-center gap-2">{acciones}</div>
           )}
         </div>
 

@@ -61,6 +61,8 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       <PageHeader
         volverHref="/"
         titulo="Pedidos a Proveedores"
+        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
+        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
         tabs={tabs}
       />
 

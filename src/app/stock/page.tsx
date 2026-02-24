@@ -26,6 +26,8 @@ export default async function StockPage({ searchParams }: Props) {
       <PageHeader
         volverHref="/"
         titulo="Control Stock"
+        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
+        mostrarStock
         tabs={[{ label: "Control Stock", active: true, icon: <PackageSearch className="h-3.5 w-3.5 text-accent2" /> }]}
       />
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">

@@ -37,6 +37,8 @@ export default async function ProveedorDetallePage({ params }: Props) {
       <PageHeader
         volverHref="/proveedores"
         titulo={proveedor.nombre}
+        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
+        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
         subtitulo={`${proveedor._count.productos} producto${proveedor._count.productos !== 1 ? "s" : ""} en catálogo`}
         acciones={
           <Badge variant="secondary" className="font-mono text-sm">

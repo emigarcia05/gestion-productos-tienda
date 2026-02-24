@@ -14,7 +14,13 @@ export default async function PedidoReposicionPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <PageHeader volverHref="/" titulo="Pedidos a Proveedores" tabs={tabs} />
+      <PageHeader
+        volverHref="/"
+        titulo="Pedidos a Proveedores"
+        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
+        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
+        tabs={tabs}
+      />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Pedido Reposición — en construcción.</p>
       </div>
