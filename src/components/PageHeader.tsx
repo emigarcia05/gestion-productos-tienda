@@ -25,11 +25,11 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
   return (
     <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-0">
 
-      {/* Fila principal: Volver | Título | Logo */}
-      <div className="flex items-stretch justify-between gap-4 mb-0">
+      {/* 1er div: Volver | Título + info extra | Logo */}
+      <div className="flex items-center justify-between gap-4 pb-3">
 
         {/* Izquierda: botón Volver */}
-        <div className="flex items-start pt-1">
+        <div className="flex items-center">
           <Button asChild variant="ghost" size="sm" className="gap-1.5 text-accent2 hover:text-accent2/80 hover:bg-accent2/10">
             <Link href={volverHref}>
               <ArrowLeft className="h-4 w-4" />
@@ -38,15 +38,17 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           </Button>
         </div>
 
-        {/* Centro: título */}
-        <div className="flex flex-col items-center gap-1 pb-2">
+        {/* Centro: título + subtítulo + info extra (sync info, etc.) */}
+        <div className="flex flex-col items-center gap-0.5">
           <h1 className="text-3xl font-black tracking-widest uppercase text-brand leading-none">
             {titulo}
           </h1>
           {subtitulo && (
             <p className="text-xs text-muted-foreground">{subtitulo}</p>
           )}
-          {/* Línea decorativa */}
+          {acciones && (
+            <div className="mt-1 flex items-center gap-2">{acciones}</div>
+          )}
           <div className="mt-2 h-0.5 w-16 rounded-full bg-brand/60" />
         </div>
 
@@ -57,13 +59,13 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
             alt="TiendaColor"
             height={70}
             width={130}
-            className="h-full max-h-20 w-auto object-contain"
+            className="h-16 w-auto object-contain"
             priority
           />
         </div>
       </div>
 
-      {/* Barra inferior: todos los tabs + acciones */}
+      {/* 2do div: tabs de nav + botón de acción (ej: Sincronizar) */}
       <div className="flex items-center justify-between border-b border-border/50 py-2">
         <div className="flex gap-2">
           {tabs ? (
@@ -71,7 +73,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
               tab.active ? (
                 <span
                   key={tab.label}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border text-accent2"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border"
                   style={{ borderColor: "#0072BB", color: "#0072BB", backgroundColor: "rgba(0,114,187,0.08)" }}
                 >
                   {tab.icon}
@@ -81,7 +83,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
                 <Link
                   key={tab.label}
                   href={tab.href}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors hover:text-foreground"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors hover:opacity-80"
                   style={{ borderColor: "#0072BB", color: "#0072BB" }}
                 >
                   {tab.icon}
@@ -92,10 +94,9 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
-          {acciones && <div className="flex items-center gap-2">{acciones}</div>}
-          {accionesBarra && <div className="flex items-center gap-2">{accionesBarra}</div>}
-        </div>
+        {accionesBarra && (
+          <div className="flex items-center gap-2">{accionesBarra}</div>
+        )}
       </div>
 
     </div>
