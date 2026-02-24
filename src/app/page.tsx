@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Handshake, ShoppingBag, ClipboardList, PackageSearch } from "lucide-react";
+import { Handshake, ShoppingBag, ClipboardList } from "lucide-react";
 import SelectorRol from "@/components/SelectorRol";
+import StockCard from "@/components/stock/StockCard";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -43,16 +44,7 @@ export default async function HomePage() {
         )}
 
         {/* 3. Control Stock — simple y editor */}
-        {puede(rol, PERMISOS.stock.acceso) && (
-          <Link href="/stock" className={tarjeta}>
-            <div className="flex-1 flex items-center justify-center w-full">
-              <PackageSearch className="w-16 h-16 text-brand transition-colors" />
-            </div>
-            <span className="text-base font-medium text-accent2 text-center leading-tight">
-              Control Stock
-            </span>
-          </Link>
-        )}
+        {puede(rol, PERMISOS.stock.acceso) && <StockCard />}
 
         {/* 4. Pedidos a Proveedores — simple y editor */}
         <Link href="/pedidos" className={tarjeta}>

@@ -83,7 +83,7 @@ export default function TablaStock({
           <select
             value={sucursalActual}
             onChange={(e) => cambiarSucursal(e.target.value as Sucursal)}
-            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm font-semibold text-brand focus:outline-none focus:ring-1 focus:ring-ring"
+            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm font-semibold text-accent2 focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {SUCURSALES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
@@ -175,9 +175,9 @@ export default function TablaStock({
         <table className="w-full text-sm border-collapse">
           <thead className="sticky top-0 z-10">
             <tr className="bg-brand text-brand-fg">
-              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider w-28">Código</th>
-              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider">Descripción</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider w-28">
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">Código</th>
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider">Descripción</th>
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">
                 Stock {sucursalLabel}
               </th>
             </tr>
@@ -195,9 +195,7 @@ export default function TablaStock({
               >
                 <td className="px-3 py-2 text-xs text-white/70 font-mono">{item.codItem}</td>
                 <td className="px-3 py-2 text-xs text-white">{item.descripcion}</td>
-                <td className={`px-3 py-2 text-xs text-right font-semibold tabular-nums ${
-                  item.stock > 0 ? "text-emerald-400" : "text-white/40"
-                }`}>
+                <td className="px-3 py-2 text-sm text-right font-semibold tabular-nums text-white">
                   {item.stock % 1 === 0 ? item.stock.toFixed(0) : item.stock.toFixed(2)}
                 </td>
               </tr>
