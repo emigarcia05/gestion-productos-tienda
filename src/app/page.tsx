@@ -14,18 +14,6 @@ export default async function HomePage() {
         <SelectorRol rolActual={rol} />
       </div>
 
-      {/* Logo — centrado entre el selector y los botones */}
-      <div className="flex justify-center pt-8 pb-2">
-        <Image
-          src="/logo_tiendacolor_png.png"
-          alt="TiendaColor"
-          width={280}
-          height={100}
-          className="w-64 h-auto object-contain"
-          priority
-        />
-      </div>
-
       {/* Botones de navegación — centrados verticalmente en el resto */}
       <div className="flex-1 flex items-center justify-center gap-6">
 
@@ -53,6 +41,18 @@ export default async function HomePage() {
           </span>
         </Link>
 
+      </div>
+
+      {/* Logo — debajo de los botones, 50% más chico */}
+      <div className="flex justify-center py-6">
+        <Image
+          src="/logo_tiendacolor_png.png"
+          alt="TiendaColor"
+          width={140}
+          height={50}
+          className="w-32 h-auto object-contain"
+          priority
+        />
       </div>
     </div>
   );
