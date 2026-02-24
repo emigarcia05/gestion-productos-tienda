@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const CANTIDADES_RAPIDAS = [1, 2, 3, 4, 5, 6, 12, 50];
+const CANTIDADES_RAPIDAS = [1, 2, 3, 4, 5, 6, 12, 15, 50];
 
 export interface ProductoParaPedido {
   id: string;
@@ -58,9 +58,9 @@ export default function CantidadPedidoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md text-center">
         <DialogHeader>
-          <DialogTitle className="text-base">Agregar al pedido</DialogTitle>
+          <DialogTitle className="text-base text-center text-accent2">Agregar al pedido</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -73,7 +73,7 @@ export default function CantidadPedidoModal({
 
           <p className="text-sm font-medium">¿Cuántas unidades desea pedir?</p>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center">
             {CANTIDADES_RAPIDAS.map((n) => (
               <Button
                 key={n}
@@ -91,7 +91,7 @@ export default function CantidadPedidoModal({
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               Otra cantidad:
             </span>
@@ -106,7 +106,7 @@ export default function CantidadPedidoModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-3 justify-center">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
