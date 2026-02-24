@@ -90,7 +90,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
               <tr
                 key={item.id}
                 onClick={() => puedeVincular && setModalAbierto(item.id)}
-                className={`border-b border-border/30 transition-colors ${puedeVincular ? "hover:bg-muted/30 cursor-pointer" : "hover:bg-muted/20"}`}
+                className={`tabla-row transition-colors ${puedeVincular ? "cursor-pointer" : ""}`}
               >
                 {puede(rol, col.codItem) && (
                   <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">

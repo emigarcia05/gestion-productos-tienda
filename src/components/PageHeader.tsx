@@ -49,7 +49,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           {acciones && (
             <div className="mt-1 flex items-center gap-2">{acciones}</div>
           )}
-          <div className="mt-2 h-0.5 w-16 rounded-full bg-brand/60" />
+          <div className="mt-2 h-0.5 w-16 rounded-full bg-accent2" />
         </div>
 
         {/* Derecha: logo */}
@@ -98,6 +98,9 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           <div className="flex items-center gap-2">{accionesBarra}</div>
         )}
       </div>
+
+      {/* Línea divisoria amarilla entre nav y filtros */}
+      <div className="h-px bg-accent2/60 mx-0 mt-0" />
 
     </div>
   );

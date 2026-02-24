@@ -128,6 +128,22 @@
   }
 }
 
+@layer utilities {
+  /* Filas de tabla con separador azul fino y striping sutil */
+  .tabla-row {
+    border-bottom: 1px solid rgba(0, 114, 187, 0.25);
+  }
+  .tabla-row:nth-child(even) {
+    background-color: rgba(0, 114, 187, 0.04);
+  }
+  .tabla-row:nth-child(odd) {
+    background-color: transparent;
+  }
+  .tabla-row:hover {
+    background-color: rgba(0, 114, 187, 0.10) !important;
+  }
+}
+
 :root, .dark {
   --brand:    #0072BB;
   --brand-fg: #ffffff;

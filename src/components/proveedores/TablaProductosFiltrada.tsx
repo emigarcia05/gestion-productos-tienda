@@ -229,7 +229,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
         </thead>
         <tbody>
           {productos.map((prod) => (
-            <tr key={prod.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+            <tr key={prod.id} className="tabla-row transition-colors">
               {puede(rol, col.codProdProv) && (
                 <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
                   {prod.codProdProv}
