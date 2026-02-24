@@ -104,12 +104,10 @@ export default function CantidadPedidoModal({
               ))}
             </div>
 
-            {/* Fila 3: "Otra" / "Cantidad" en dos líneas + input y Agregar */}
+            {/* Fila 3: Otra Cantidad (una fila) + input y Agregar centrados */}
             <div className="flex flex-col items-center gap-2">
-              <span className="text-sm text-muted-foreground text-center leading-tight">
-                Otra<br />Cantidad
-              </span>
-              <div className="flex items-center gap-2 w-full justify-center">
+              <span className="text-sm text-muted-foreground">Otra Cantidad</span>
+              <div className="flex items-center justify-center gap-2">
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -134,7 +132,7 @@ export default function CantidadPedidoModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-3 justify-center pt-8">
+        <DialogFooter className="flex justify-center pt-8">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

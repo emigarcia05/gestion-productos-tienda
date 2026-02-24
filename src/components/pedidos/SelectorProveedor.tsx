@@ -37,23 +37,20 @@ export default function SelectorProveedor({
   }
 
   return (
-    <div className="flex items-center gap-2 shrink-0">
-      <span className="text-xs text-accent2 font-medium whitespace-nowrap">Proveedor:</span>
-      <div className="relative min-w-[12rem]">
-        <select
-          value={proveedorActual}
-          onChange={(e) => handleChange(e.target.value)}
-          className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">Todos</option>
-          {proveedores.map((p) => (
-            <option key={p.id} value={p.id}>
-              [{p.sufijo}] {p.nombre}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-      </div>
+    <div className="relative sm:w-64 shrink-0">
+      <select
+        value={proveedorActual}
+        onChange={(e) => handleChange(e.target.value)}
+        className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <option value="">Todos los proveedores</option>
+        {proveedores.map((p) => (
+          <option key={p.id} value={p.id}>
+            [{p.sufijo}] {p.nombre}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 
@@ -11,15 +10,16 @@ const SUCURSALES: { value: SucursalPedido; label: string }[] = [
 ];
 
 interface Props {
-  sucursalActual: SucursalPedido;
+  /** Valor actual (vacío = ninguna seleccionada) */
+  sucursalActual: SucursalPedido | "";
   /** Parámetros actuales a conservar (q, pagina, proveedor) */
   paramsActuales: { q?: string; pagina?: string; proveedor?: string };
   basePath?: string;
 }
 
-function buildHref(sucursal: SucursalPedido, params: { q?: string; pagina?: string; proveedor?: string }, basePath: string) {
+function buildHref(sucursal: SucursalPedido | "", params: Props["paramsActuales"], basePath: string) {
   const p = new URLSearchParams();
-  p.set("sucursal", sucursal);
+  if (sucursal) p.set("sucursal", sucursal);
   if (params.q) p.set("q", params.q);
   if (params.pagina && params.pagina !== "1") p.set("pagina", params.pagina);
   if (params.proveedor) p.set("proveedor", params.proveedor);
@@ -31,25 +31,26 @@ export default function SelectorSucursal({
   paramsActuales,
   basePath = "/pedidos/urgente",
 }: Props) {
+  function handleChange(value: string) {
+    const url = buildHref(value as SucursalPedido | "", paramsActuales, basePath);
+    window.location.href = url;
+  }
+
   return (
-    <div className="flex items-center gap-1 shrink-0">
-      <span className="text-xs text-accent2 font-medium mr-1">Sucursal:</span>
-      <div className="flex rounded-md border border-input overflow-hidden">
-        {SUCURSALES.map((s) => {
-          const activo = sucursalActual === s.value;
-          return (
-            <Button
-              key={s.value}
-              variant="ghost"
-              size="sm"
-              className={`h-8 px-3 text-xs rounded-none border-r border-input last:border-r-0 ${activo ? "bg-accent2/20 text-accent2 font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-              asChild
-            >
-              <Link href={buildHref(s.value, paramsActuales, basePath)}>{s.label}</Link>
-            </Button>
-          );
-        })}
-      </div>
+    <div className="relative sm:w-64 shrink-0">
+      <select
+        value={sucursalActual}
+        onChange={(e) => handleChange(e.target.value)}
+        className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <option value="">Sucursal</option>
+        {SUCURSALES.map((s) => (
+          <option key={s.value} value={s.value}>
+            {s.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
     </div>
   );
 }

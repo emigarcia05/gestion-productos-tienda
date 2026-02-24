@@ -25,8 +25,8 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/");
 
-  const { q = "", pagina = "1", sucursal = "guaymallen", proveedor = "" } = await searchParams;
-  const sucursalValida: SucursalPedido = sucursal === "maipu" ? "maipu" : "guaymallen";
+  const { q = "", pagina = "1", sucursal = "", proveedor = "" } = await searchParams;
+  const sucursalValida: SucursalPedido | "" = sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
@@ -74,14 +74,14 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
           <SelectorProveedor
             proveedores={proveedores}
             proveedorActual={proveedor}
-            paramsActuales={{ q, sucursal: sucursalValida, pagina: pagina === "1" ? undefined : pagina }}
+            paramsActuales={{ q, sucursal: sucursalValida || undefined, pagina: pagina === "1" ? undefined : pagina }}
             basePath="/pedidos/urgente"
           />
           <div className="flex-1 min-w-0 flex items-center gap-3">
             <BuscadorSimple
               qActual={q}
               totalProductos={total}
-              extraParams={{ sucursal: sucursalValida, proveedor }}
+              extraParams={{ ...(sucursalValida ? { sucursal: sucursalValida } : {}), ...(proveedor ? { proveedor } : {}) }}
             />
           </div>
         </div>
@@ -100,7 +100,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
           q={q}
           proveedor={proveedor}
           basePath="/pedidos/urgente"
-          extraParams={{ sucursal: sucursalValida }}
+          extraParams={{ ...(sucursalValida ? { sucursal: sucursalValida } : {}) }}
         />
       </div>
     </div>
