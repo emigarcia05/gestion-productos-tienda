@@ -33,24 +33,20 @@ export default function CantidadPedidoModal({
   producto,
   onConfirmar,
 }: Props) {
-  const [cantidad, setCantidad] = useState(1);
   const [otraCantidad, setOtraCantidad] = useState("");
 
   useEffect(() => {
-    if (open && producto) {
-      setCantidad(1);
-      setOtraCantidad("");
-    }
+    if (open && producto) setOtraCantidad("");
   }, [open, producto]);
 
   const cantidadFinal =
     otraCantidad.trim() !== ""
       ? Math.max(0, parseInt(otraCantidad, 10) || 0)
-      : cantidad;
+      : 1;
 
-  function handleConfirmar() {
-    if (cantidadFinal < 1) return;
-    onConfirmar(cantidadFinal);
+  function guardar(cant: number) {
+    if (cant < 1) return;
+    onConfirmar(cant);
     onOpenChange(false);
   }
 
@@ -73,45 +69,52 @@ export default function CantidadPedidoModal({
 
           <p className="text-sm font-medium">¿Cuántas unidades desea pedir?</p>
 
-          <div className="flex flex-wrap gap-2 justify-center">
+          {/* Cantidades predeterminadas en filas de 3 — al hacer clic se guarda y cierra */}
+          <div className="grid grid-cols-3 gap-2 justify-items-center max-w-[12rem] mx-auto">
             {CANTIDADES_RAPIDAS.map((n) => (
               <Button
                 key={n}
                 type="button"
-                variant={cantidad === n && !otraCantidad ? "default" : "outline"}
+                variant="outline"
                 size="sm"
-                className="min-w-9"
-                onClick={() => {
-                  setCantidad(n);
-                  setOtraCantidad("");
-                }}
+                className="w-full min-w-9"
+                onClick={() => guardar(n)}
               >
                 {n}
               </Button>
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2">
+          {/* Cantidad manual: input sin flechas + botón Agregar */}
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               Otra cantidad:
             </span>
             <Input
-              type="number"
-              min={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="—"
               value={otraCantidad}
               onChange={(e) => setOtraCantidad(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              className="w-24"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && otraCantidad.trim() !== "" && cantidadFinal >= 1)
+                  guardar(cantidadFinal);
+              }}
+              className="w-20"
             />
+            <Button
+              onClick={() => guardar(cantidadFinal)}
+              disabled={otraCantidad.trim() === "" || cantidadFinal < 1}
+            >
+              Agregar
+            </Button>
           </div>
         </div>
 
         <DialogFooter className="gap-3 justify-center">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
-          </Button>
-          <Button onClick={handleConfirmar} disabled={cantidadFinal < 1}>
-            Agregar
           </Button>
         </DialogFooter>
       </DialogContent>
