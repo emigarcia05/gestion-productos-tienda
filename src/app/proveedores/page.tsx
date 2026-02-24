@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { filtroTexto } from "@/lib/busqueda";
+import { filtroTexto, whereProductoConsultaConTienda } from "@/lib/busqueda";
 import CrearProveedorModal from "@/components/proveedores/CrearProveedorModal";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
@@ -34,11 +34,8 @@ export default async function ProveedoresPage({ searchParams }: Props) {
     ...(q ? filtroTexto(q, ["descripcion", "codExt", "codProdProv"]) : {}),
   };
 
-  // Vista simple: solo productos con precio sugerido, ordenados por proveedor
-  const whereSimple = {
-    precioVentaSugerido: { gt: 0 },
-    ...(q ? filtroTexto(q, ["descripcion"]) : {}),
-  };
+  // Vista simple: productos con precio sugerido; búsqueda por descripción proveedor o por descripción tienda (vía codExt)
+  const whereSimple = await whereProductoConsultaConTienda(prisma, q);
 
   const [proveedores, productos, total] = await Promise.all([
     prisma.proveedor.findMany({

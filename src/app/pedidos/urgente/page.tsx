@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { filtroTexto } from "@/lib/busqueda";
+import { whereProductoConsultaConTienda } from "@/lib/busqueda";
 import PageHeader from "@/components/PageHeader";
 import { getPedidosTabs } from "@/lib/pedidosTabs";
 import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
@@ -29,10 +29,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  const whereSimple = {
-    precioVentaSugerido: { gt: 0 },
-    ...(q ? filtroTexto(q, ["descripcion"]) : {}),
-  };
+  const whereSimple = await whereProductoConsultaConTienda(prisma, q);
 
   const [productos, total] = await Promise.all([
     prisma.producto.findMany({

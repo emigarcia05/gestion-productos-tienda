@@ -1,3 +1,5 @@
+import type { PrismaClient } from "@prisma/client";
+
 /**
  * Convierte una query de texto en un filtro Prisma AND por tokens.
  * "lox mate" → AND [ contains "lox", contains "mate" ]
@@ -13,5 +15,40 @@ export function filtroTexto(q: string, campos: string[]) {
         [campo]: { contains: token, mode: "insensitive" as const },
       })),
     })),
+  };
+}
+
+/**
+ * Where para lista "Consulta Px" / "Pedido urgente": productos con precio sugerido
+ * que coincidan por descripción de proveedor O por descripción de lista tienda
+ * (vía codigoExterno = codExt).
+ */
+export async function whereProductoConsultaConTienda(
+  prisma: PrismaClient,
+  q: string
+): Promise<{ precioVentaSugerido: { gt: number }; OR?: unknown[] }> {
+  const base = { precioVentaSugerido: { gt: 0 } as const };
+  if (!q || !q.trim()) return base;
+
+  const matchProveedor = filtroTexto(q, ["descripcion"]);
+
+  const itemsTienda = await prisma.itemTienda.findMany({
+    where: {
+      codigoExterno: { not: null },
+      habilitado: true,
+      ...filtroTexto(q, ["descripcion"]),
+    },
+    select: { codigoExterno: true },
+  });
+  const codExtSet = new Set(
+    itemsTienda.map((i) => i.codigoExterno).filter((c): c is string => c != null)
+  );
+  const codExtList = Array.from(codExtSet);
+
+  if (codExtList.length === 0) return { ...base, ...matchProveedor };
+
+  return {
+    ...base,
+    OR: [matchProveedor, { codExt: { in: codExtList } }],
   };
 }
