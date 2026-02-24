@@ -52,6 +52,7 @@ export const PERMISOS = {
 
   // ─── Página /tienda ───────────────────────────────────────────────────────
   tienda: {
+    acceso: { simple: false, editor: true },
     acciones: {
       sincronizar: { simple: false, editor: true },
     },
@@ -65,6 +66,11 @@ export const PERMISOS = {
       mejorPrecio:  { simple: false, editor: true },
       vinculos:     { simple: false, editor: true },
     },
+  },
+
+  // ─── Página /stock ────────────────────────────────────────────────────────
+  stock: {
+    acceso: { simple: true, editor: true },
   },
 
   // ─── Página /pedidos ──────────────────────────────────────────────────────

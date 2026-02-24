@@ -226,7 +226,7 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
       <div className="flex items-center gap-3 flex-wrap">
 
         {/* Buscador de productos */}
-        <div className="relative">
+        <div className="relative flex-1 min-w-0">
           <input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
