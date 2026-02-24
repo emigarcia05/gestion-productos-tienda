@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
-import { CheckCircle2, XCircle, Clock, TrendingUp } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, TrendingUp, Link2 } from "lucide-react";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
@@ -121,9 +121,9 @@ export default async function TiendaPage({ searchParams }: Props) {
         titulo="Lista TiendaColor"
         acciones={syncInfo ?? undefined}
         tabs={[
-          { label: "Productos Relacionados", active: true },
+          { label: "Productos Relacionados", active: true, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },
           ...(puede(rol, PERMISOS.tienda.acciones.sincronizar)
-            ? [{ label: "Control de Aumentos", href: "/tienda/aumentos", active: false, icon: <TrendingUp className="h-3.5 w-3.5" /> }]
+            ? [{ label: "Control de Aumentos", href: "/tienda/aumentos", active: false, icon: <TrendingUp className="h-3.5 w-3.5 text-accent2" /> }]
             : []),
         ]}
         accionesBarra={

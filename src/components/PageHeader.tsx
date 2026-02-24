@@ -28,12 +28,12 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
       {/* 1er div: Volver | Título + info extra | Logo */}
       <div className="flex items-center justify-between gap-4 pb-3">
 
-        {/* Izquierda: botón Volver */}
+        {/* Izquierda: botón Inicio */}
         <div className="flex items-center">
           <Button asChild variant="ghost" size="sm" className="gap-1.5 text-accent2 hover:text-accent2/80 hover:bg-accent2/10">
-            <Link href={volverHref}>
+            <Link href="/">
               <ArrowLeft className="h-4 w-4" />
-              Volver
+              Inicio
             </Link>
           </Button>
         </div>
@@ -72,7 +72,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
               tab.active ? (
                 <span
                   key={tab.label}
-                  className="flex items-center justify-center gap-1.5 w-44 px-3 py-1.5 text-sm font-semibold rounded-md border text-white"
+                  className="inline-flex items-center justify-center gap-1.5 w-44 h-9 px-3 text-sm font-semibold rounded-md border text-white leading-none"
                   style={{ borderColor: "#0072BB", backgroundColor: "#0072BB" }}
                 >
                   {tab.icon}
@@ -82,7 +82,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
                 <Link
                   key={tab.label}
                   href={tab.href}
-                  className="flex items-center justify-center gap-1.5 w-44 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors hover:opacity-80"
+                  className="inline-flex items-center justify-center gap-1.5 w-44 h-9 px-3 text-sm font-medium rounded-md border transition-colors hover:opacity-80 leading-none"
                   style={{ borderColor: "#0072BB", color: "#0072BB" }}
                 >
                   {tab.icon}

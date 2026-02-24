@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Link2 } from "lucide-react";
 import { getRol } from "@/lib/sesion";
 import { getControlAumentos } from "@/actions/tienda";
 import TablaAumentos from "@/components/tienda/TablaAumentos";
@@ -20,8 +20,8 @@ export default async function ControlAumentosPage() {
         titulo="Lista TiendaColor"
         subtitulo={`${data.individual.length} producto${data.individual.length !== 1 ? "s" : ""} con código externo vinculado`}
         tabs={[
-          { label: "Productos Relacionados", href: "/tienda", active: false },
-          { label: "Control de Aumentos", active: true, icon: <TrendingUp className="h-3.5 w-3.5" /> },
+          { label: "Productos Relacionados", href: "/tienda", active: false, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },
+          { label: "Control de Aumentos", active: true, icon: <TrendingUp className="h-3.5 w-3.5 text-accent2" /> },
         ]}
       />
 

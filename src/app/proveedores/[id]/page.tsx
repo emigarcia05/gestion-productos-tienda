@@ -43,7 +43,7 @@ export default async function ProveedorDetallePage({ params }: Props) {
             {proveedor.codigoUnico}
           </Badge>
         }
-        tabs={[{ label: "Productos del proveedor", active: true }]}
+        tabs={[{ label: "Productos del proveedor", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
         accionesBarra={
           <>
             {puede(rol, p.acciones.importarLista) && (

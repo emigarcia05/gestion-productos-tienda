@@ -80,11 +80,14 @@ function ColumnaGrupo({
   onSeleccionar: (nombre: string) => void;
 }) {
   return (
-    <div className="flex flex-col min-h-0">
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-        {titulo}
-      </h3>
-      <div className="flex-1 overflow-y-auto rounded-lg border border-border/50 divide-y divide-border/30">
+    <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
+      {/* Cabecera estilo tabla */}
+      <div className="shrink-0 bg-brand px-3 py-2">
+        <h3 className="text-xs font-semibold text-brand-fg uppercase tracking-wider text-center">
+          {titulo}
+        </h3>
+      </div>
+      <div className="flex-1 overflow-y-auto">
         {grupos.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-6">Sin datos</p>
         )}
@@ -95,8 +98,8 @@ function ColumnaGrupo({
             <button
               key={g.nombre}
               onClick={() => onSeleccionar(g.nombre)}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left transition-colors ${
-                activo ? "bg-primary/10 text-foreground" : "hover:bg-muted/30 text-foreground"
+              className={`tabla-row w-full flex items-center justify-between gap-2 px-3 py-2 text-left transition-colors ${
+                activo ? "!bg-[rgba(0,114,187,0.18)] text-foreground" : "text-foreground"
               }`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
@@ -129,14 +132,14 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
     : conAumento;
 
   return (
-    <div className="flex-1 overflow-y-auto rounded-lg border border-border/50 divide-y divide-border/30">
+    <div className="flex-1 overflow-y-auto rounded-lg overflow-hidden border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
       {filtrados.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-6">Sin resultados</p>
       )}
       {filtrados.map((item) => (
         <div
           key={item.itemId}
-          className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted/20 transition-colors"
+          className="tabla-row flex items-center justify-between gap-3 px-3 py-2 transition-colors"
         >
           <div className="flex items-center gap-1.5 min-w-0">
             <IconTendencia pct={item.pctAumento} />
@@ -312,10 +315,12 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
         </div>
 
         {/* Productos individuales */}
-        <div className="flex flex-col min-h-0" style={{ height: "36vh" }}>
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-            Productos con variación
-          </h3>
+        <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border" style={{ height: "36vh", borderColor: "rgba(0,114,187,0.25)" }}>
+          <div className="shrink-0 bg-brand px-3 py-2">
+            <h3 className="text-xs font-semibold text-brand-fg uppercase tracking-wider text-center">
+              Productos con variación
+            </h3>
+          </div>
           <ListaProductos items={itemsFiltrados} busqueda={busqueda} />
         </div>
 
