@@ -72,6 +72,7 @@ model ItemTienda {
   stockGuaymallen  Float                @default(0)
   stockMaipu       Float                @default(0)
   habilitado       Boolean              @default(true)
+  ultimaImpresion  DateTime?
   productos        ItemTiendaProducto[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt

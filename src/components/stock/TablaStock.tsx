@@ -5,7 +5,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, X, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ControlStockData, Sucursal } from "@/actions/tienda";
+import { registrarImpresion } from "@/actions/stock";
 import PrintStock from "./PrintStock";
+
+function fmtFecha(d: Date | null): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("es-AR", {
+    day:   "2-digit",
+    month: "2-digit",
+    year:  "2-digit",
+  });
+}
 
 interface Props {
   data:           ControlStockData;
@@ -31,8 +41,14 @@ export default function TablaStock({
   const [marca,        setMarca]        = useState(marcaActual);
   const [rubro,        setRubro]        = useState(rubroActual);
   const [subRubro,     setSubRubro]     = useState(subRubroActual);
-  const [soloNegativo, setSoloNegativo] = useState(false);
-  const [imprimiendo,  setImprimiendo]  = useState(false);
+  const [soloNegativo,     setSoloNegativo]     = useState(false);
+  const [imprimiendo,      setImprimiendo]      = useState(false);
+  // Mapa local id → ultimaImpresion para reflejar el registro sin recargar
+  const [impresiones, setImpresiones] = useState<Record<string, Date>>(() => {
+    const m: Record<string, Date> = {};
+    for (const i of data.items) if (i.ultimaImpresion) m[i.id] = new Date(i.ultimaImpresion);
+    return m;
+  });
 
   function navigate(params: Record<string, string>) {
     const p = new URLSearchParams();
@@ -57,6 +73,21 @@ export default function TablaStock({
   function limpiar() {
     setQ(""); setMarca(""); setRubro(""); setSubRubro(""); setSoloNegativo(false);
     router.push(`${pathname}?sucursal=${sucursalActual}`);
+  }
+
+  async function handleImprimir() {
+    setImprimiendo(true);
+    // Registrar en BD (fire-and-forget, no bloquea la impresión)
+    const ids = filtrados.map((i) => i.id);
+    const ahora = new Date();
+    registrarImpresion(ids).then(() => {
+      // Actualizar estado local para reflejar la fecha sin recargar
+      setImpresiones((prev) => {
+        const next = { ...prev };
+        for (const id of ids) next[id] = ahora;
+        return next;
+      });
+    });
   }
 
   const filtrados = useMemo(() => {
@@ -177,7 +208,7 @@ export default function TablaStock({
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => setImprimiendo(true)}
+            onClick={handleImprimir}
           >
             <Printer className="h-3.5 w-3.5" />
             Imprimir
@@ -195,12 +226,13 @@ export default function TablaStock({
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">
                 Stock {sucursalLabel}
               </th>
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">Últ. impresión</th>
             </tr>
           </thead>
           <tbody>
             {filtrados.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center text-xs text-white/50 py-10">Sin resultados</td>
+                <td colSpan={4} className="text-center text-xs text-white/50 py-10">Sin resultados</td>
               </tr>
             )}
             {filtrados.map((item, idx) => (
@@ -212,6 +244,9 @@ export default function TablaStock({
                 <td className="px-3 py-2 text-xs text-white">{item.descripcion}</td>
                 <td className="px-3 py-2 text-sm text-right font-semibold tabular-nums text-white">
                   {item.stock % 1 === 0 ? item.stock.toFixed(0) : item.stock.toFixed(2)}
+                </td>
+                <td className="px-3 py-2 text-xs text-center text-white/50 tabular-nums">
+                  {fmtFecha(impresiones[item.id] ?? item.ultimaImpresion)}
                 </td>
               </tr>
             ))}

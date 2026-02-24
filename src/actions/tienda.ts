@@ -185,13 +185,14 @@ export async function convertirEnProveedor(
 export type Sucursal = "guaymallen" | "maipu";
 
 export interface ItemStock {
-  id:          string;
-  codItem:     string;
-  descripcion: string;
-  marca:       string | null;
-  rubro:       string | null;
-  subRubro:    string | null;
-  stock:       number;
+  id:               string;
+  codItem:          string;
+  descripcion:      string;
+  marca:            string | null;
+  rubro:            string | null;
+  subRubro:         string | null;
+  stock:            number;
+  ultimaImpresion:  Date | null;
 }
 
 export interface ControlStockData {
@@ -209,14 +210,15 @@ export async function getControlStock(sucursal: Sucursal): Promise<ControlStockD
       where: { habilitado: true },
       orderBy: { descripcion: "asc" },
       select: {
-        id:          true,
-        codItem:     true,
-        descripcion: true,
-        marca:       true,
-        rubro:       true,
-        subRubro:    true,
-        stockGuaymallen: true,
-        stockMaipu:      true,
+        id:               true,
+        codItem:          true,
+        descripcion:      true,
+        marca:            true,
+        rubro:            true,
+        subRubro:         true,
+        stockGuaymallen:  true,
+        stockMaipu:       true,
+        ultimaImpresion:  true,
       },
     }),
     prisma.itemTienda.findMany({ select: { marca: true },    distinct: ["marca"],    orderBy: { marca: "asc" },    where: { marca:    { not: null }, habilitado: true } }),
@@ -225,13 +227,14 @@ export async function getControlStock(sucursal: Sucursal): Promise<ControlStockD
   ]);
 
   const items: ItemStock[] = todos.map((i) => ({
-    id:          i.id,
-    codItem:     i.codItem,
-    descripcion: i.descripcion,
-    marca:       i.marca,
-    rubro:       i.rubro,
-    subRubro:    i.subRubro,
-    stock:       campo === "stockGuaymallen" ? i.stockGuaymallen : i.stockMaipu,
+    id:              i.id,
+    codItem:         i.codItem,
+    descripcion:     i.descripcion,
+    marca:           i.marca,
+    rubro:           i.rubro,
+    subRubro:        i.subRubro,
+    stock:           campo === "stockGuaymallen" ? i.stockGuaymallen : i.stockMaipu,
+    ultimaImpresion: i.ultimaImpresion,
   }));
 
   return {
