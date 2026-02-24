@@ -112,7 +112,7 @@ export default function FiltrosTienda({
           <X className="h-3.5 w-3.5" /> Limpiar
         </Button>
       )}
-      <p className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+      <p className="text-xs text-accent2 whitespace-nowrap shrink-0">
         {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
       </p>
 

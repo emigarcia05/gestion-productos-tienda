@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Handshake, ShoppingBag } from "lucide-react";
+import { Handshake, ShoppingBag, ClipboardList } from "lucide-react";
 import SelectorRol from "@/components/SelectorRol";
 import { getRol } from "@/lib/sesion";
 
@@ -26,6 +26,18 @@ export default async function HomePage() {
           </div>
           <span className="text-base font-medium text-accent2 text-center leading-tight">
             Lista Proveedores
+          </span>
+        </Link>
+
+        <Link
+          href="/pedidos"
+          className="flex flex-col items-center justify-between w-44 h-56 rounded-2xl border-2 border-brand bg-card/80 hover:shadow-lg hover:shadow-brand/20 hover:scale-105 transition-all duration-200 p-5 group"
+        >
+          <div className="flex-1 flex items-center justify-center w-full">
+            <ClipboardList className="w-16 h-16 text-brand transition-colors" />
+          </div>
+          <span className="text-base font-medium text-accent2 text-center leading-tight">
+            Pedido a Proveedores
           </span>
         </Link>
 

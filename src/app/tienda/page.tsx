@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
-import { CheckCircle2, XCircle, Clock, TrendingUp, Link2 } from "lucide-react";
+import { TrendingUp, Link2 } from "lucide-react";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
@@ -96,11 +96,6 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   const syncInfo = ultimoSync ? (
     <div className="flex items-center gap-1.5 text-xs text-accent2">
-      {ultimoSync.status === "ok"
-        ? <CheckCircle2 className="h-3.5 w-3.5 text-accent2" />
-        : <XCircle className="h-3.5 w-3.5 text-destructive" />
-      }
-      <Clock className="h-3 w-3 text-accent2" />
       <span>
         Último sync: {new Date(ultimoSync.createdAt).toLocaleString("es-AR", {
           day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"

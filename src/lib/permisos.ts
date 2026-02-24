@@ -67,6 +67,11 @@ export const PERMISOS = {
     },
   },
 
+  // ─── Página /pedidos ──────────────────────────────────────────────────────
+  pedidos: {
+    acceso: { simple: true, editor: true },
+  },
+
   // ─── Página /importar ─────────────────────────────────────────────────────
   importar: {
     acceso: { simple: false, editor: true },

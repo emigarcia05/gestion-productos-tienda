@@ -140,7 +140,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button className="gap-2">
-          <Upload className="h-4 w-4 text-accent2" />
+          <Upload className="h-4 w-4" />
           Importar lista
         </Button>
       </DialogTrigger>
