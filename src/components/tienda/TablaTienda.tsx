@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingDown } from "lucide-react";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
+import { fmtPrecio } from "@/lib/format";
 
 interface ItemTienda {
   id: string;
@@ -23,10 +24,6 @@ interface ItemTienda {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
-}
-
-function fmtPrecio(n: number) {
-  return Math.round(n).toLocaleString("es-AR");
 }
 
 export default function TablaTienda({ items, setMejorPrecio, rol }: { items: ItemTienda[]; setMejorPrecio: Set<string>; rol: Rol }) {

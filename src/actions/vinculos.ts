@@ -4,10 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import { esEditor } from "@/lib/sesion";
+import type { ActionResult } from "@/lib/types";
 
-export type ActionResult<T = void> =
-  | { ok: true; data: T }
-  | { ok: false; error: string };
+export type { ActionResult };
 
 // ─── Obtener productos vinculados a un ItemTienda ─────────────────────────
 

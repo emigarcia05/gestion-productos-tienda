@@ -70,7 +70,7 @@ export function useSyncDux(onSuccess: (result: SyncDuxResult) => void) {
           : 0;
         const segsRestantes   = Math.round(msRestantes / 1000);
 
-        setProgreso({ procesados, total, segsRestantes: loteNum === 1 ? segsRestantes : segsRestantes });
+        setProgreso({ procesados, total, segsRestantes });
         toast.loading(
           `Actualizando... ${procesados} / ${total} ítems. No cierres esta pestaña.`,
           { id: TOAST_ID, duration: Infinity }

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { DUX_BASE_URL, mapItem } from "@/lib/duxApi";
 
 export const maxDuration = 60;
 
 const LIMIT = 50;
-const BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
-const PAUSA_MS = 5000; // 5 segundos entre páginas para respetar rate limit
+export const PAUSA_MS = 5000; // 5 segundos entre páginas para respetar rate limit
 
 // ─── GET /api/sync-tienda?offset=0 ────────────────────────────────────────
 // Procesa UNA página de la API y devuelve si hay más páginas.
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     }
 
     // Traer UNA página de la API
-    const url = `${BASE_URL}?limit=${LIMIT}&offset=${offset}`;
+    const url = `${DUX_BASE_URL}?limit=${LIMIT}&offset=${offset}`;
     const res = await fetch(url, {
       headers: { accept: "application/json", authorization: token },
       cache: "no-store",
@@ -150,45 +150,3 @@ export async function POST(req: Request) {
   }
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-const ID_PRECIO_LISTA     = 56994;
-const ID_PRECIO_MAYORISTA = 57160;
-const ID_STOCK_GUAYMALLEN = 4565;
-const ID_STOCK_MAIPU      = 16923;
-
-function parseNum(val: unknown): number {
-  const n = parseFloat(String(val ?? "0"));
-  return isNaN(n) ? 0 : n;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapItem(raw: any) {
-  const precioMap: Record<number, number> = {};
-  if (Array.isArray(raw.precios)) {
-    for (const p of raw.precios) precioMap[p.id] = parseNum(p.precio);
-  }
-  const stockMap: Record<number, number> = {};
-  if (Array.isArray(raw.stock)) {
-    for (const s of raw.stock) stockMap[s.id] = parseNum(s.stock_real);
-  }
-
-  return {
-    codItem:         String(raw.cod_item),
-    descripcion:     String(raw.item ?? ""),
-    rubro:           (raw.rubro?.nombre      ?? null) as string | null,
-    subRubro:        (raw.sub_rubro?.nombre  ?? null) as string | null,
-    marca:           (raw.marca?.marca       ?? null) as string | null,
-    proveedorDux:    (raw.proveedor?.proveedor ?? null) as string | null,
-    codigoExterno:   (raw.codigo_externo     ?? null) as string | null,
-    costo:           parseNum(raw.costo),
-    porcIva:         parseNum(raw.porc_iva),
-    precioLista:     precioMap[ID_PRECIO_LISTA]     ?? 0,
-    precioMayorista: precioMap[ID_PRECIO_MAYORISTA] ?? 0,
-    stockGuaymallen: stockMap[ID_STOCK_GUAYMALLEN]  ?? 0,
-    stockMaipu:      stockMap[ID_STOCK_MAIPU]        ?? 0,
-    habilitado:      raw.habilitado === "S",
-  };
-}
-
-export { PAUSA_MS };

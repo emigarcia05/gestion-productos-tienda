@@ -13,6 +13,8 @@ import {
   getVinculos, vincularProducto, desvincularProducto, autoVincular,
 } from "@/actions/vinculos";
 import { convertirEnProveedor } from "@/actions/tienda";
+import { calcPxCompraFinal } from "@/lib/calculos";
+import { fmtPrecio } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
 
 type ProductoConProveedor = {
@@ -28,13 +30,6 @@ type ProductoConProveedor = {
   proveedor: { nombre: string; sufijo: string };
 };
 
-function calcPxCompraFinal(p: ProductoConProveedor): number {
-  let precio = p.precioLista;
-  precio = precio * (1 - p.descuentoProducto / 100);
-  precio = precio * (1 - p.descuentoCantidad / 100);
-  precio = precio * (1 + p.cxTransporte / 100);
-  return precio;
-}
 
 interface Props {
   itemTiendaId: string;
@@ -45,10 +40,6 @@ interface Props {
   /** Si se pasa, el modal se controla desde afuera (fila clickeable) */
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
-}
-
-function fmtPrecio(n: number) {
-  return Math.round(n).toLocaleString("es-AR");
 }
 
 const UMBRAL_PCT = 1; // diferencia mínima para mostrar como significativa
@@ -210,7 +201,7 @@ export default function VincularModal({
             ) : (
               <div className="space-y-2">
                 {vinculados.map((prod) => {
-                  const pxCompra = calcPxCompraFinal(prod);
+                  const pxCompra = calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte);
                   return (
                     <div
                       key={prod.id}

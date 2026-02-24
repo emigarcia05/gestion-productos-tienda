@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { ArrowUp, ArrowDown, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
+import { fmtPct } from "@/lib/format";
 
 function exportarXLS(items: ItemAumento[]) {
   import("xlsx").then((XLSX) => {
@@ -39,13 +40,6 @@ function exportarXLS(items: ItemAumento[]) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
-
-function fmtPct(n: number): string {
-  const abs = Math.abs(n).toFixed(1);
-  if (n > 0.5)  return `+${abs}%`;
-  if (n < -0.5) return `-${abs}%`;
-  return "≈0%";
-}
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
@@ -195,9 +189,6 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
   const gruposSubRubro = useMemo(() => agrupar("subRubro"), [itemsFiltrados]);
 
   const conAumento   = itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5);
-  const subiendo     = itemsFiltrados.filter((i) => i.pctAumento > 0.5).length;
-  const bajando      = itemsFiltrados.filter((i) => i.pctAumento < -0.5).length;
-  const pctGlobal    = promedio(itemsFiltrados);
   const hayFiltros   = filtroMarca || filtroRubro || filtroSubRubro;
 
   function handleMarca(nombre: string) {
@@ -289,27 +280,6 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
           <Download className="h-3.5 w-3.5" />
           Exportar .xls
         </Button>
-        <div className="flex items-center gap-4 rounded-lg border border-border/50 bg-card/50 px-4 py-2">
-          <div className="text-center">
-            <p className="text-[10px] text-white/60 uppercase tracking-wide">Promedio</p>
-            <ColorPct pct={pctGlobal} size="lg" />
-          </div>
-          <div className="w-px h-7 bg-border/50" />
-          <div className="text-center">
-            <p className="text-[10px] text-white/60 uppercase tracking-wide">Subiendo</p>
-            <p className="text-lg font-bold text-accent2 tabular-nums">{subiendo}</p>
-          </div>
-          <div className="w-px h-7 bg-border/50" />
-          <div className="text-center">
-            <p className="text-[10px] text-white/60 uppercase tracking-wide">Bajando</p>
-            <p className="text-lg font-bold text-emerald-500 tabular-nums">{bajando}</p>
-          </div>
-          <div className="w-px h-7 bg-border/50" />
-          <div className="text-center">
-            <p className="text-[10px] text-white/60 uppercase tracking-wide">Total</p>
-            <p className="text-lg font-bold text-brand tabular-nums">{itemsFiltrados.length}</p>
-          </div>
-        </div>
         </div>
       </div>
 

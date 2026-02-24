@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { getProveedores, buscarProductos } from "@/actions/vinculos";
+import { fmtPrecio } from "@/lib/format";
 
 type ProductoConProveedor = {
   id: string;
@@ -25,10 +26,6 @@ interface Props {
   onClose: () => void;
   onSeleccionar: (producto: ProductoConProveedor) => void;
   excluirItemTiendaId: string;
-}
-
-function fmtPrecio(n: number) {
-  return Math.round(n).toLocaleString("es-AR");
 }
 
 export default function SeleccionarProductoModal({

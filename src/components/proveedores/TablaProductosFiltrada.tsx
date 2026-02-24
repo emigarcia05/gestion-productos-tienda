@@ -7,6 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { editarProducto } from "@/actions/productos";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
+import { calcPxCompraFinal } from "@/lib/calculos";
+import { fmtPrecio } from "@/lib/format";
+
+function fmtPorcentaje(n: number): string {
+  return `${Math.round(n)}%`;
+}
 
 interface Producto {
   id: string;
@@ -27,23 +33,6 @@ interface Props {
   rol: Rol;
 }
 
-function calcPxCompraFinal(p: Producto): number {
-  let precio = p.precioLista;
-  precio = precio * (1 - p.descuentoProducto / 100);
-  precio = precio * (1 - p.descuentoCantidad / 100);
-  precio = precio * (1 + p.cxTransporte / 100);
-  return precio;
-}
-
-/** Formatea un número como precio: separador de miles con punto, sin decimales. */
-function fmtPrecio(n: number): string {
-  return Math.round(n).toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
-/** Formatea un porcentaje sin decimales. */
-function fmtPct(n: number): string {
-  return `${Math.round(n)}%`;
-}
 
 // ─── Celda editable de porcentaje ──────────────────────────────────────────
 function CeldaPorcentaje({
@@ -110,7 +99,7 @@ function CeldaPorcentaje({
       className="w-full text-center text-xs tabular-nums text-white/70 hover:text-white transition-colors cursor-pointer"
       title="Clic para editar"
     >
-      {valor > 0 ? fmtPct(valor) : <span className="text-white/30">—</span>}
+      {valor > 0 ? fmtPorcentaje(valor) : <span className="text-white/30">—</span>}
     </button>
   );
 }
@@ -275,7 +264,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
               )}
               {puede(rol, col.precioCompraFinal) && (
                 <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold whitespace-nowrap">
-                  ${fmtPrecio(calcPxCompraFinal(prod))}
+                  ${fmtPrecio(calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte))}
                 </td>
               )}
               {puede(rol, col.disponible) && (

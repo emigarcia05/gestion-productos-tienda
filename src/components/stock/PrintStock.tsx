@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { ItemStock } from "@/actions/tienda";
+import type { ItemStock } from "@/actions/stock";
 
 interface Props {
   items:    ItemStock[];

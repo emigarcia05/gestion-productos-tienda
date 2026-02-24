@@ -1,11 +1,10 @@
-const BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
-const LIMIT = 1000;
+export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
 
 // IDs fijos de precios y sucursales en el sistema Dux de TiendaColor
-const ID_PRECIO_LISTA      = 56994;
-const ID_PRECIO_MAYORISTA  = 57160;
-const ID_STOCK_GUAYMALLEN  = 4565;
-const ID_STOCK_MAIPU       = 16923;
+export const ID_PRECIO_LISTA      = 56994;
+export const ID_PRECIO_MAYORISTA  = 57160;
+export const ID_STOCK_GUAYMALLEN  = 4565;
+export const ID_STOCK_MAIPU       = 16923;
 
 export interface ItemDux {
   codItem:         string;
@@ -24,13 +23,13 @@ export interface ItemDux {
   habilitado:      boolean;
 }
 
-function parseNum(val: unknown): number {
+export function parseNum(val: unknown): number {
   const n = parseFloat(String(val ?? "0"));
   return isNaN(n) ? 0 : n;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapItem(raw: any): ItemDux {
+export function mapItem(raw: any): ItemDux {
   const precioMap: Record<number, number> = {};
   if (Array.isArray(raw.precios)) {
     for (const p of raw.precios) precioMap[p.id] = parseNum(p.precio);
@@ -59,6 +58,8 @@ function mapItem(raw: any): ItemDux {
   };
 }
 
+const FETCH_LIMIT = 1000;
+
 export async function fetchTodosLosItems(): Promise<ItemDux[]> {
   const token = process.env.DUX_API_TOKEN;
   if (!token) throw new Error("DUX_API_TOKEN no configurado.");
@@ -73,7 +74,7 @@ export async function fetchTodosLosItems(): Promise<ItemDux[]> {
   let total = Infinity;
 
   while (offset < total) {
-    const url = `${BASE_URL}?limit=${LIMIT}&offset=${offset}`;
+    const url = `${DUX_BASE_URL}?limit=${FETCH_LIMIT}&offset=${offset}`;
     const res = await fetch(url, { headers, cache: "no-store" });
 
     if (!res.ok) {
@@ -87,7 +88,7 @@ export async function fetchTodosLosItems(): Promise<ItemDux[]> {
     if (results.length === 0) break;
 
     todos.push(...results.map(mapItem));
-    offset += LIMIT;
+    offset += FETCH_LIMIT;
 
     // Pequeña pausa entre requests para no saturar la API
     if (offset < total) await new Promise((r) => setTimeout(r, 300));

@@ -1,14 +1,12 @@
 "use client";
 
+import { fmtPrecio } from "@/lib/format";
+
 interface Producto {
   id: string;
   descripcion: string;
   precioVentaSugerido: number;
   proveedor: { nombre: string; sufijo: string };
-}
-
-function fmtPrecio(n: number): string {
-  return Math.round(n).toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 export default function TablaListaPrecios({ productos }: { productos: Producto[] }) {

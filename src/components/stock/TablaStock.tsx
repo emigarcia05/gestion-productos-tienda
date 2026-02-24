@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, X, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ControlStockData, Sucursal } from "@/actions/tienda";
+import type { ControlStockData, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
 import PrintStock from "./PrintStock";
 

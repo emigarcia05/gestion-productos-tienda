@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PackageSearch } from "lucide-react";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getControlStock, type Sucursal } from "@/actions/tienda";
+import { getControlStock, type Sucursal } from "@/actions/stock";
 import PageHeader from "@/components/PageHeader";
 import TablaStock from "@/components/stock/TablaStock";
 

@@ -3,10 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { esEditor } from "@/lib/sesion";
+import type { ActionResult } from "@/lib/types";
 
-export type ActionResult<T = void> =
-  | { ok: true; data: T }
-  | { ok: false; error: string };
+export type { ActionResult };
 
 // ─── Editar campos manuales de un producto ─────────────────────────────────
 
