@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Search, ChevronDown, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
+const FOCUS_KEY = "filtros-tienda-focus";
 
 interface Props {
   marcas: string[];
@@ -26,6 +28,20 @@ export default function FiltrosTienda({
   const pathname    = usePathname();
   const [q, setQ]   = useState(qActual);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const shouldFocus = sessionStorage.getItem(FOCUS_KEY);
+    if (shouldFocus === "1") {
+      sessionStorage.removeItem(FOCUS_KEY);
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      }
+    }
+  }, []);
 
   const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || habilitadoActual || mejorPrecioActual);
 
@@ -38,7 +54,10 @@ export default function FiltrosTienda({
   function handleQ(value: string) {
     setQ(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => navigateSolo("q", value), 400);
+    debounceRef.current = setTimeout(() => {
+      if (document.activeElement === inputRef.current) sessionStorage.setItem(FOCUS_KEY, "1");
+      navigateSolo("q", value);
+    }, 400);
   }
 
   function handleMarca(value: string)    { navigateSolo("marca",      value); }
@@ -57,13 +76,22 @@ export default function FiltrosTienda({
 
       {/* Buscador */}
       <div className="relative flex-1 min-w-0">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <Input
+          ref={inputRef}
           value={q}
           onChange={(e) => handleQ(e.target.value)}
           placeholder="Buscar por descripción, código o marca..."
-          className="pl-9"
+          className="pl-8 pr-7 py-1.5 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
         />
+        {q && (
+          <button
+            onClick={() => handleQ("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
       {/* Marca */}

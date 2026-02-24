@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Search, ChevronDown, Loader2 } from "lucide-react";
+import { Search, ChevronDown, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const FOCUS_KEY = "filtros-proveedores-focus";
@@ -68,16 +68,24 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
 
       <div className="relative flex-1">
         {buscando
-          ? <Loader2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground animate-spin pointer-events-none" />
-          : <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+          ? <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
+          : <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         }
         <Input
           ref={inputRef}
           value={q}
           onChange={(e) => handleQ(e.target.value)}
           placeholder="Buscar por descripción o código..."
-          className="pl-9"
+          className="pl-8 pr-7 py-1.5 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
         />
+        {q && (
+          <button
+            onClick={() => handleQ("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
       <div className="relative sm:w-64">

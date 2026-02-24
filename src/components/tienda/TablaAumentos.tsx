@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ArrowUp, ArrowDown, Minus, X, Download } from "lucide-react";
+import { ArrowUp, ArrowDown, X, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 
 function exportarXLS(items: ItemAumento[]) {
@@ -56,7 +57,7 @@ function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
 function IconTendencia({ pct }: { pct: number }) {
   if (pct > 0.5)  return <ArrowUp   className="h-3.5 w-3.5 text-red-500 shrink-0" />;
   if (pct < -0.5) return <ArrowDown className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
-  return <Minus className="h-3.5 w-3.5 text-white/40 shrink-0" />;
+  return null;
 }
 
 function promedio(items: ItemAumento[]) {
@@ -94,6 +95,7 @@ function ColumnaGrupo({
         {grupos.map((g) => {
           const pct    = promedio(g.items);
           const activo = seleccionado === g.nombre;
+          const conVariacion = g.items.filter((i) => Math.abs(i.pctAumento) > 0.5).length;
           return (
             <button
               key={g.nombre}
@@ -102,19 +104,19 @@ function ColumnaGrupo({
                 activo ? "!bg-[rgba(0,114,187,0.18)] text-foreground" : "text-foreground"
               }`}
             >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {pct > 0.5
-                    ? <ArrowUp className="h-3 w-3 text-red-500" />
-                    : pct < -0.5
-                      ? <ArrowDown className="h-3 w-3 text-emerald-500" />
-                      : null
-                  }
-                  <span className="text-[10px] text-white tabular-nums">{g.items.length}</span>
-                </div>
-                <span className="text-xs text-white truncate">{g.nombre}</span>
+              <span className="text-xs text-white truncate">
+                {g.nombre}
+                <span className="text-white/50 ml-1">({conVariacion})</span>
+              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                <ColorPct pct={pct} />
+                {pct > 0.5
+                  ? <ArrowUp   className="h-3 w-3 text-red-500" />
+                  : pct < -0.5
+                    ? <ArrowDown className="h-3 w-3 text-emerald-500" />
+                    : null
+                }
               </div>
-              <ColorPct pct={pct} />
             </button>
           );
         })}
@@ -146,11 +148,11 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
           key={item.itemId}
           className="tabla-row flex items-center justify-between gap-3 px-3 py-2 transition-colors"
         >
-          <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs text-white truncate">{item.descripcion}</span>
+          <div className="flex items-center gap-1 shrink-0">
+            <ColorPct pct={item.pctAumento} />
             <IconTendencia pct={item.pctAumento} />
-            <span className="text-xs text-white truncate">{item.descripcion}</span>
           </div>
-          <ColorPct pct={item.pctAumento} />
         </div>
       ))}
     </div>
@@ -278,13 +280,15 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
 
         {/* Exportar + Stats — empujados a la derecha */}
         <div className="ml-auto flex items-center gap-3">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => exportarXLS(itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5))}
-          className="flex items-center gap-1.5 text-xs border border-white/20 rounded-md px-3 py-1.5 text-white/70 hover:text-white hover:border-white/40 transition-colors"
+          className="gap-2"
         >
           <Download className="h-3.5 w-3.5" />
           Exportar .xls
-        </button>
+        </Button>
         <div className="flex items-center gap-4 rounded-lg border border-border/50 bg-card/50 px-4 py-2">
           <div className="text-center">
             <p className="text-[10px] text-white/60 uppercase tracking-wide">Promedio</p>
