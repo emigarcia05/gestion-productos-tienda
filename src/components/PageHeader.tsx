@@ -49,7 +49,6 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           {acciones && (
             <div className="mt-1 flex items-center gap-2">{acciones}</div>
           )}
-          <div className="mt-2 h-0.5 w-16 rounded-full bg-accent2" />
         </div>
 
         {/* Derecha: logo */}
@@ -65,16 +64,16 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
         </div>
       </div>
 
-      {/* 2do div: tabs de nav + botón de acción (ej: Sincronizar) */}
-      <div className="flex items-center justify-between border-b border-border/50 py-2">
+      {/* 2do div: tabs de nav + botón de acción — con líneas amarillas arriba y abajo */}
+      <div className="border-y py-2 flex items-center justify-between" style={{ borderColor: "rgba(255,193,7,0.6)" }}>
         <div className="flex gap-2">
           {tabs ? (
             tabs.map((tab) =>
               tab.active ? (
                 <span
                   key={tab.label}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border"
-                  style={{ borderColor: "#0072BB", color: "#0072BB", backgroundColor: "rgba(0,114,187,0.08)" }}
+                  className="flex items-center justify-center gap-1.5 w-44 px-3 py-1.5 text-sm font-semibold rounded-md border text-white"
+                  style={{ borderColor: "#0072BB", backgroundColor: "#0072BB" }}
                 >
                   {tab.icon}
                   {tab.label}
@@ -83,7 +82,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
                 <Link
                   key={tab.label}
                   href={tab.href}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors hover:opacity-80"
+                  className="flex items-center justify-center gap-1.5 w-44 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors hover:opacity-80"
                   style={{ borderColor: "#0072BB", color: "#0072BB" }}
                 >
                   {tab.icon}
@@ -98,9 +97,6 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
           <div className="flex items-center gap-2">{accionesBarra}</div>
         )}
       </div>
-
-      {/* Línea divisoria amarilla entre nav y filtros */}
-      <div className="h-px bg-accent2/60 mx-0 mt-0" />
 
     </div>
   );
