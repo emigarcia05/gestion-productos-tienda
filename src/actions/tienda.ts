@@ -6,8 +6,6 @@ import { esEditor } from "@/lib/sesion";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import type { ActionResult } from "@/lib/types";
 
-export type { ActionResult };
-
 export async function getUltimoSync() {
   return prisma.syncLog.findFirst({
     orderBy: { createdAt: "desc" },

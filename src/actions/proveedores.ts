@@ -6,8 +6,6 @@ import { generarCodigoUnico } from "@/lib/codigos";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 
-export type { ActionResult };
-
 // ─── Listar ────────────────────────────────────────────────────────────────
 
 export async function getProveedores() {

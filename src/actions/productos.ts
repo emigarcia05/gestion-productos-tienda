@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 
-export type { ActionResult };
-
 // ─── Editar campos manuales de un producto ─────────────────────────────────
 
 export interface CamposEditables {

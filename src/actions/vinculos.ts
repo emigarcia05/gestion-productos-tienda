@@ -6,8 +6,6 @@ import { filtroTexto } from "@/lib/busqueda";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 
-export type { ActionResult };
-
 // ─── Obtener productos vinculados a un ItemTienda ─────────────────────────
 
 export async function getVinculos(itemTiendaId: string) {
