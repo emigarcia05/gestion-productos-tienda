@@ -1,4 +1,4 @@
-import type { PrismaClient, ProductoWhereInput } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@prisma/client";
 
 /**
  * Convierte una query de texto en un filtro Prisma AND por tokens.
@@ -26,11 +26,11 @@ export function filtroTexto(q: string, campos: string[]) {
 export async function whereProductoConsultaConTienda(
   prisma: PrismaClient,
   q: string
-): Promise<ProductoWhereInput> {
-  const base: ProductoWhereInput = { precioVentaSugerido: { gt: 0 } };
+): Promise<Prisma.ProductoWhereInput> {
+  const base: Prisma.ProductoWhereInput = { precioVentaSugerido: { gt: 0 } };
   if (!q || !q.trim()) return base;
 
-  const matchProveedor = filtroTexto(q, ["descripcion"]) as ProductoWhereInput;
+  const matchProveedor = filtroTexto(q, ["descripcion"]) as Prisma.ProductoWhereInput;
 
   const itemsTienda = await prisma.itemTienda.findMany({
     where: {
