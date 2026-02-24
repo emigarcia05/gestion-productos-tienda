@@ -70,9 +70,9 @@ export default async function ProveedoresPage({ searchParams }: Props) {
     <div className="h-screen flex flex-col overflow-hidden">
       <PageHeader
         volverHref="/"
-        titulo={esEditor ? "Lista Proveedores" : "Lista de Precios"}
+        titulo={esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos"}
         subtitulo={`${total.toLocaleString()} producto${total !== 1 ? "s" : ""}`}
-        tabs={[{ label: esEditor ? "Productos" : "Lista de Precios", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
+        tabs={[{ label: esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
         accionesBarra={
           esEditor ? (
             <>

@@ -72,7 +72,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
               tab.active ? (
                 <span
                   key={tab.label}
-                  className="inline-flex items-center justify-center gap-1.5 w-44 h-9 px-3 text-sm font-semibold rounded-md border text-white leading-none"
+                  className="inline-flex items-center justify-center gap-1.5 w-52 h-9 px-3 text-sm font-semibold rounded-md border text-white leading-none"
                   style={{ borderColor: "#0072BB", backgroundColor: "#0072BB" }}
                 >
                   {tab.icon}
@@ -82,7 +82,7 @@ export default function PageHeader({ volverHref, titulo, subtitulo, acciones, ac
                 <Link
                   key={tab.label}
                   href={tab.href}
-                  className="inline-flex items-center justify-center gap-1.5 w-44 h-9 px-3 text-sm font-medium rounded-md border transition-colors hover:opacity-80 leading-none"
+                  className="inline-flex items-center justify-center gap-1.5 w-52 h-9 px-3 text-sm font-medium rounded-md border transition-colors hover:opacity-80 leading-none"
                   style={{ borderColor: "#0072BB", color: "#0072BB" }}
                 >
                   {tab.icon}

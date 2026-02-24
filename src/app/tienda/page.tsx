@@ -95,18 +95,18 @@ export default async function TiendaPage({ searchParams }: Props) {
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
   const syncInfo = ultimoSync ? (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+    <div className="flex items-center gap-1.5 text-xs text-accent2">
       {ultimoSync.status === "ok"
-        ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+        ? <CheckCircle2 className="h-3.5 w-3.5 text-accent2" />
         : <XCircle className="h-3.5 w-3.5 text-destructive" />
       }
-      <Clock className="h-3 w-3" />
+      <Clock className="h-3 w-3 text-accent2" />
       <span>
         Último sync: {new Date(ultimoSync.createdAt).toLocaleString("es-AR", {
           day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
         })}
         {ultimoSync.status === "ok" && (
-          <span className="ml-1 text-muted-foreground/70">
+          <span className="ml-1 text-accent2/70">
             ({ultimoSync.totalApi.toLocaleString()} items)
           </span>
         )}
