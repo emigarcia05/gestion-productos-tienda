@@ -19,16 +19,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
 
   const items: NavItem[] = [
-    { href: "/proveedores", label: "Lista de Proveedores", icon: <Handshake className={iconClass} /> },
-    { href: "/tienda", label: "Tienda", icon: <ShoppingBag className={iconClass} /> },
-    { href: "/stock", label: "Stock", icon: <PackageSearch className={iconClass} /> },
-    { href: "/pedidos", label: "Pedidos", icon: <ClipboardList className={iconClass} /> },
+    { href: "/proveedores", label: "Lista Proveedores", icon: <Handshake className={iconClass} /> },
+    { href: "/tienda", label: "Lista Tienda", icon: <ShoppingBag className={iconClass} /> },
+    { href: "/stock", label: "Control Stock", icon: <PackageSearch className={iconClass} /> },
+    { href: "/pedidos", label: "Pedido Mercadería", icon: <ClipboardList className={iconClass} /> },
   ];
 
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col border-r border-slate-200 bg-slate-100">
+    <aside className="w-56 shrink-0 flex flex-col border-r border-slate-200 bg-slate-50">
       <nav className="flex flex-col gap-1 p-4" aria-label="Módulos principales">
         {items.map((item) => {
           const active =
@@ -42,14 +42,14 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
                 active
-                  ? "bg-blue-50/80 text-primary [&_svg]:text-primary"
+                  ? "bg-blue-50/80 text-slate-950 [&_svg]:text-primary"
                   : "text-slate-600 hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
               )}
             >
               {active ? (
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                <span className="h-6 w-[3px] shrink-0 rounded-full bg-primary" aria-hidden />
               ) : (
-                <span className="h-1.5 w-1.5 shrink-0" aria-hidden />
+                <span className="h-6 w-[3px] shrink-0" aria-hidden />
               )}
               {item.icon}
               {item.label}

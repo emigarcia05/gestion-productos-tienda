@@ -9,7 +9,9 @@ import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 import SectionHeader from "@/components/SectionHeader";
+import ProveedoresSubmoduleToolbar from "@/components/proveedores/ProveedoresSubmoduleToolbar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -64,10 +66,10 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
-  const titulo = esEditor ? "Lista de Proveedores" : "Lista de Proveedores";
+  const titulo = "Lista Proveedores";
   const descripcion = esEditor
     ? "Gestiona productos y precios de tus proveedores."
-    : "Gestiona y visualiza los precios sugeridos de tus proveedores.";
+    : "Gestiona y visualiza los precios sugeridos (Px) de tus proveedores.";
 
   const acciones =
     esEditor && (puede(rol, p.acciones.nuevoProveedor) || puede(rol, p.acciones.importarLista)) ? (
@@ -83,6 +85,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         titulo={titulo}
         descripcion={descripcion}
         actions={acciones}
+        submoduleToolbar={<ProveedoresSubmoduleToolbar activo="consulta" />}
       />
 
       {/* Filtros */}
@@ -109,9 +112,11 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         )}
       </div>
 
+      <Separator className="bg-slate-200/60" />
+
       {/* Card con tabla */}
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 flex flex-col">
-        <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-slate-200 shadow-lg overflow-hidden gap-0 py-0">
+        <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             {esEditor
               ? <TablaProductosFiltrada productos={productos} rol={rol} />

@@ -68,10 +68,10 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
           <div className="overflow-auto max-h-[calc(100vh-16rem)]">
             <Table>
               <TableHeader>
-                <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="w-28 text-slate-600 font-medium">Proveedor</TableHead>
-                  <TableHead className="text-slate-600 font-medium">Descripción</TableHead>
-                  <TableHead className="w-36 text-slate-600 font-medium">Cantidad Urgente</TableHead>
+                <TableRow className="border-slate-200/60 hover:bg-transparent">
+                  <TableHead className="w-28">Proveedor</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead className="w-36 text-primary">Cantidad Urgente</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -81,8 +81,8 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
                     <TableRow
                       key={prod.id}
                       className={cn(
-                        "border-border",
-                        puedeAgregar && "cursor-pointer hover:bg-slate-50"
+                        "border-slate-200/60",
+                        puedeAgregar && "cursor-pointer"
                       )}
                       onDoubleClick={() => handleDobleClick(prod)}
                     >
@@ -94,7 +94,7 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
                       </TableCell>
                       <TableCell className="py-4">
                         {valor ? (
-                          <Badge variant="secondary" className="font-mono text-slate-700">
+                          <Badge variant="secondary" className="font-mono bg-primary/10 text-primary border-primary/20">
                             {valor}
                           </Badge>
                         ) : (

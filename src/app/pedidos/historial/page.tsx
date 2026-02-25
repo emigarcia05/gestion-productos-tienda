@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function PedidoTintometricoPage() {
+export default async function HistorialPedidosPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
 
@@ -14,11 +14,11 @@ export default async function PedidoTintometricoPage() {
     <div className="h-screen flex flex-col overflow-hidden">
       <SectionHeader
         titulo="Pedido Mercadería"
-        descripcion="Pedido urgente, tintométrico, reposición e historial."
-        submoduleToolbar={<PedidosSectionActions activo="tintometrico" />}
+        descripcion="Pedidos urgentes, tintométricos, reposición e historial."
+        submoduleToolbar={<PedidosSectionActions activo="historial" />}
       />
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Pedido Tintométrico — en construcción.</p>
+        <p className="text-muted-foreground text-sm">Historial Pedidos — en construcción.</p>
       </div>
     </div>
   );

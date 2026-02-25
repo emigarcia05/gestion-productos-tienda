@@ -13,8 +13,8 @@ export default async function PedidoReposicionPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <SectionHeader
-        titulo="Pedidos a Proveedores"
-        descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
+        titulo="Pedido Mercadería"
+        descripcion="Pedido urgente, tintométrico, reposición e historial."
         submoduleToolbar={<PedidosSectionActions activo="reposicion" />}
       />
       <div className="flex-1 flex items-center justify-center">

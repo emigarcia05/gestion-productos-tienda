@@ -98,8 +98,8 @@ export default async function TiendaPage({ searchParams }: Props) {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <SectionHeader
-        titulo="Tienda"
-        descripcion="Productos relacionados con items de tienda y control de aumentos."
+        titulo="Lista Tienda"
+        descripcion="Comparación Px proveedores con productos vinculados y control de aumentos."
         actions={acciones}
         submoduleToolbar={<TiendaSubmoduleToolbar activo="productos" />}
       />

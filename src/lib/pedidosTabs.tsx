@@ -1,6 +1,6 @@
-import { Zap, RotateCw, Pipette, FileOutput } from "lucide-react";
+import { Zap, RotateCw, Pipette, History } from "lucide-react";
 
-export const PEDIDOS_TAB_KEYS = ["urgente", "reposicion", "tintometrico", "generar"] as const;
+export const PEDIDOS_TAB_KEYS = ["urgente", "tintometrico", "reposicion", "historial"] as const;
 export type PedidosTabKey = (typeof PEDIDOS_TAB_KEYS)[number];
 
 const TAB_CONFIG: Record<
@@ -10,22 +10,22 @@ const TAB_CONFIG: Record<
   urgente: {
     label: "Pedido Urgente",
     href: "/pedidos/urgente",
-    icon: <Zap className="h-3.5 w-3.5 text-accent2" />,
-  },
-  reposicion: {
-    label: "Pedido Reposición",
-    href: "/pedidos/reposicion",
-    icon: <RotateCw className="h-3.5 w-3.5 text-accent2" />,
+    icon: <Zap className="h-3.5 w-3.5 text-[#FFC107]" />,
   },
   tintometrico: {
     label: "Pedido Tintométrico",
     href: "/pedidos/tintometrico",
     icon: <Pipette className="h-3.5 w-3.5 text-accent2" />,
   },
-  generar: {
-    label: "Generar Pedido",
-    href: "/pedidos/generar",
-    icon: <FileOutput className="h-3.5 w-3.5 text-accent2" />,
+  reposicion: {
+    label: "Pedido Reposición",
+    href: "/pedidos/reposicion",
+    icon: <RotateCw className="h-3.5 w-3.5 text-accent2" />,
+  },
+  historial: {
+    label: "Historial Pedidos",
+    href: "/pedidos/historial",
+    icon: <History className="h-3.5 w-3.5 text-accent2" />,
   },
 };
 

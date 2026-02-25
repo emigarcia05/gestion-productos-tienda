@@ -5,6 +5,7 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import SectionHeader from "@/components/SectionHeader";
 import PedidosSectionActions from "@/components/pedidos/PedidosSectionActions";
+import { Separator } from "@/components/ui/separator";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import PedidoUrgenteTablaConToast from "@/components/pedidos/PedidoUrgenteTablaConToast";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
@@ -57,8 +58,8 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   return (
     <div className="flex flex-col min-h-0">
       <SectionHeader
-        titulo="Pedidos a Proveedores"
-        descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
+        titulo="Pedido Mercadería"
+        descripcion="Pedido urgente, tintométrico, reposición e historial."
         submoduleToolbar={<PedidosSectionActions activo="urgente" />}
       />
 
@@ -70,8 +71,10 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
         totalProductos={total}
       />
 
+      <Separator className="bg-slate-200/60" />
+
       <div className="flex-1 min-h-0 px-4 pb-4 max-w-7xl mx-auto w-full">
-        <Card className="min-h-0 flex flex-col rounded-xl border-slate-200 shadow-lg overflow-hidden gap-0 py-0">
+        <Card className="min-h-0 flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             <PedidoUrgenteTablaConToast productos={productos} />
           </CardContent>

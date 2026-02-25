@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Zap, RotateCw, Pipette, FileOutput } from "lucide-react";
+import { Zap, RotateCw, Pipette, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PedidosTabKey } from "@/lib/pedidosTabs";
 
-const TABS: { key: PedidosTabKey; label: string; href: string; icon: React.ElementType; isPrimary?: boolean }[] = [
-  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: Zap },
+const TABS: { key: PedidosTabKey; label: string; href: string; icon: React.ElementType; isUrgente?: boolean }[] = [
+  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: Zap, isUrgente: true },
   { key: "tintometrico", label: "Pedido Tintométrico", href: "/pedidos/tintometrico", icon: Pipette },
   { key: "reposicion", label: "Pedido Reposición", href: "/pedidos/reposicion", icon: RotateCw },
-  { key: "generar", label: "Generar Pedido", href: "/pedidos/generar", icon: FileOutput, isPrimary: true },
+  { key: "historial", label: "Historial Pedidos", href: "/pedidos/historial", icon: History },
 ];
 
 export default function PedidosSectionActions({ activo }: { activo: PedidosTabKey }) {
@@ -19,39 +19,19 @@ export default function PedidosSectionActions({ activo }: { activo: PedidosTabKe
       {TABS.map((tab) => {
         const active = activo === tab.key;
         const Icon = tab.icon;
-        const isUrgente = tab.key === "urgente";
-        const isPrimaryAction = tab.isPrimary;
-
-        if (isPrimaryAction) {
-          return (
-            <Button
-              key={tab.key}
-              variant={active ? "default" : "outline"}
-              size="sm"
-              className={cn(
-                "rounded-lg font-semibold transition-colors duration-150",
-                active ? "" : "border-2 border-slate-300 hover:border-primary hover:text-primary"
-              )}
-              asChild
-            >
-              <Link href={tab.href} className="gap-2">
-                <Icon className="h-4 w-4 shrink-0" />
-                {tab.label}
-              </Link>
-            </Button>
-          );
-        }
+        const isUrgente = tab.isUrgente;
 
         return (
           <Button
             key={tab.key}
-            variant="outline"
+            variant="ghost"
             size="sm"
             className={cn(
-              "rounded-lg border-2 font-semibold transition-colors duration-150",
+              "rounded-lg transition-colors duration-150 relative",
+              isUrgente && "pl-3 border-l-2 border-[#FFC107]",
               active
-                ? "border-primary bg-primary/5 text-primary hover:bg-primary/10"
-                : "border-slate-300 text-slate-700 hover:border-primary hover:text-primary"
+                ? "bg-[#0072BB]/10 text-primary font-semibold hover:bg-[#0072BB]/15"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             )}
             asChild
           >

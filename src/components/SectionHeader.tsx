@@ -21,7 +21,7 @@ export default function SectionHeader({ titulo, descripcion, actions, submoduleT
             aria-hidden
           />
           <div className="min-w-0">
-            <h1 className="text-3xl font-extrabold text-slate-950">{titulo}</h1>
+            <h1 className="text-3xl font-black text-slate-950">{titulo}</h1>
             {descripcion && (
               <p className="mt-1 text-sm text-slate-700">{descripcion}</p>
             )}

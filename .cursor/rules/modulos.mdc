@@ -1,45 +1,52 @@
 ---
-description: Patrón de diseño global para nuevos módulos. Replicar exactamente esta estructura en cada módulo nuevo.
-globs: **/app/**/page.tsx
+description: Jerarquía y contraste sistémico. Reglas CSS/Tailwind y shadcn para Módulos, Submódulos, Filtros y Datos. Paleta: Brand #0072BB, Detalle #FFC107, fondos Slate.
+globs: **/app/**/*.tsx, **/components/**/*.tsx
 ---
 
-# Patrón de módulos — Estructura obligatoria
+# Jerarquía y contraste — Reglas obligatorias
 
-Al crear un **nuevo módulo**, replicar exactamente esta estructura:
+## 1. Navegación: Módulos (Sidebar) vs Submódulos (Sub-Header)
 
-1. **Sidebar lateral**  
-   El ítem del módulo debe existir en `Sidebar.tsx` (aside). La navegación es 100% desde el aside.
+**Sidebar (Módulos — Nivel 1):**
+- Aside: `bg-slate-50`, `border-r border-slate-200`.
+- Ítem activo: indicador vertical **3px** en #0072BB a la izquierda (`w-[3px] h-6 rounded-full bg-primary`), texto `text-slate-950 font-semibold`, icono `text-primary`.
+- Inactivo: `text-slate-600`, hover `hover:bg-primary/10 hover:text-primary`.
 
-2. **Header de sección (Nivel 1)**  
-   Usar siempre `SectionHeader` con:
-   - `titulo`: h1 dinámico (ej. "Lista de Proveedores").
-   - `descripcion`: línea en text-slate-500.
-   - `actions` (opcional): acciones principales a la derecha del título (ej. Crear, Importar, Sincronizar).
-   - `submoduleToolbar` (opcional): **línea horizontal de submódulos (Nivel 2)** debajo del título. Estilo Ghost/Pill Tabs: `variant="ghost"`, activo con `border-b-2 border-primary` y `bg-primary/5`. Separador sutil (`Separator`) entre header y contenido.
+**Nombres de módulos (Sidebar):** Lista Proveedores, Lista Tienda, Control Stock, Pedido Mercadería. Sin "Inicio".
 
-3. **Submódulos (Nivel 2) — Toolbar**  
-   - No usar botones pesados: Ghost o Pill Tabs (`Button variant="ghost"`).
-   - Activo: borde inferior 2px o fondo ligero #0072BB (`border-b-2 border-primary`, `bg-primary/5`).
-   - **Acción principal** del módulo (ej. "Generar Pedido"): botón sólido #0072BB para destacar.
-   - **Alerta** (ej. "Pedido Urgente"): icono Zap en #FFC107.
-   - Otros: iconos Lucide en gris azulado (`text-slate-600`). Usar `flex gap-4` para alinear.
-   - Al cambiar de módulo en la Sidebar, la toolbar de submódulos debe mostrar las opciones de esa sección.
+**Sub-Header (Submódulos — Nivel 2):** Se muestra solo al estar en ese módulo. **Siempre** `Button variant="ghost"` de shadcn.
+- **Lista Proveedores:** Consulta Px Sugerido, Lista Proveedores.
+- **Lista Tienda:** Comparación Px Proveedores (Act. Prod vinculados), Control aumentos.
+- **Pedido Mercadería:** Pedido Urgente (con indicador #FFC107), Pedido Tintométrico, Pedido Reposición, Historial Pedidos.
+- Submódulo activo: `bg-[#0072BB]/10` y `text-primary font-semibold`. Pedido Urgente: borde izquierdo `border-l-2 border-[#FFC107]` e icono Zap `text-[#FFC107]`.
 
-4. **Barra de filtros**  
-   Usar el componente `FilterBar` y los estilos Soft UI:
-   - Input de búsqueda: `Input` de shadcn con icono `Search` (Lucide) al inicio; clases `INPUT_FILTER_CLASS` desde `@/components/FilterBar`.
-   - Selects: `Select` de shadcn con `SelectTrigger` usando `SELECT_TRIGGER_FILTER_CLASS`; bordes `rounded-lg`.
-   - Estética: fondo blanco (`bg-white`), borde gris sutil (`border-slate-200`), al foco borde #0072BB (`focus-visible:border-primary`).
-   - Textos de filtros y contadores en `text-sm`.
+## 2. Botones vs Filtros
 
-5. **Contenido principal**  
-   La tabla (o listado) va **dentro de un Card** de shadcn:
-   - `rounded-xl`, `border-slate-200/60`, `shadow-sm`.
-   - Fondo de página `bg-slate-50` para que el Card resalte.
+**Botones de acción:** Sólidos `bg-[#0072BB]`, `shadow-sm`, `hover:brightness-90` para feedback.
 
-6. **Interacción**  
-   - Botones: hover suave (opacity o border/color).
-   - Filas de tabla: `hover:bg-muted/50` y `transition-colors duration-150` (ya aplicado en `TableRow`).
+**Filtros e inputs:**
+- Fondo blanco puro `bg-white`, bordes definidos `border-slate-300`.
+- **Labels** encima de cada input/select: `text-xs font-bold uppercase tracking-wider text-slate-500` (usar `FILTER_LABEL_CLASS` de `@/components/FilterBar`).
+- Focus: borde sólido #0072BB y ring 20% (`focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`).
 
-Orden visual en la página:
-`SectionHeader` (título + descripción + opcional submoduleToolbar) → `Separator` → `FilterBar` (filtros) → `Card` (tabla/contenido).
+## 3. Tabla de datos
+
+**Card contenedora:** `bg-white`, `rounded-xl`, `border-slate-200`, `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`.
+
+**Header de tabla:** Fondo `bg-slate-50/50`, texto `text-slate-900 font-bold` (TableHead).
+
+**Filas:** `hover:bg-slate-50/80`, transiciones suaves. Columna de dato destacado (ej. Cantidad Urgente): texto o badge en #0072BB (`text-primary` o `bg-primary/10 text-primary border-primary/20`).
+
+## 4. Tipografía y separadores
+
+**Títulos de sección:** `text-3xl font-black text-slate-950` (h1).
+
+**Separadores:** Usar `Separator` de shadcn:
+- Entre encabezado y filtros (ya en SectionHeader).
+- Entre filtros y tabla (añadir `<Separator className="bg-slate-200/60" />` antes del Card).
+
+## Orden en página
+
+`SectionHeader` (título + descripción + actions + submoduleToolbar) → `FilterBar` (con labels) → `Separator` → `Card` (tabla).
+
+Usar Tailwind CSS 4 y mantener contraste accesible (ratio adecuado).

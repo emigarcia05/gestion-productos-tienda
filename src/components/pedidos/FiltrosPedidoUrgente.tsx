@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+import FilterBar, { INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 
@@ -61,38 +61,48 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
 
   return (
     <FilterBar className="px-4">
-      <div className="relative flex-1 min-w-[200px] max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
-        <Input
-          value={qLocal}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Buscar por descripción..."
-          className={`pl-9 ${INPUT_FILTER_CLASS}`}
-        />
+      <div className="flex-1 min-w-[200px] max-w-md space-y-0">
+        <label className={FILTER_LABEL_CLASS} htmlFor="filtro-pedidos-busqueda">Búsqueda</label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
+          <Input
+            id="filtro-pedidos-busqueda"
+            value={qLocal}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Buscar por descripción..."
+            className={`pl-9 ${INPUT_FILTER_CLASS}`}
+          />
+        </div>
       </div>
-      <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
-        <SelectTrigger className={`w-[180px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Sucursal" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Sucursal</SelectItem>
-          {SUCURSALES.map((s) => (
-            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
-        <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Proveedor" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Todos los proveedores</SelectItem>
-          {proveedores.map((p) => (
-            <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span className="text-sm text-slate-500 tabular-nums shrink-0">
+      <div className="space-y-0">
+        <span className={FILTER_LABEL_CLASS}>Sucursal</span>
+        <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
+          <SelectTrigger className={`w-[180px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+            <SelectValue placeholder="Sucursal" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Sucursal</SelectItem>
+            {SUCURSALES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-0">
+        <span className={FILTER_LABEL_CLASS}>Proveedor</span>
+        <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
+          <SelectTrigger className={`w-[220px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+            <SelectValue placeholder="Proveedor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Todos los proveedores</SelectItem>
+            {proveedores.map((p) => (
+              <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <span className="text-sm text-slate-500 tabular-nums shrink-0 self-end pb-1">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
       </span>
     </FilterBar>

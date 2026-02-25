@@ -5,6 +5,7 @@ import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal"
 import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import SectionHeader from "@/components/SectionHeader";
+import ProveedoresSubmoduleToolbar from "@/components/proveedores/ProveedoresSubmoduleToolbar";
 import { getProveedorById, getProveedores } from "@/actions/proveedores";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -55,6 +56,7 @@ export default async function ProveedorDetallePage({ params }: Props) {
         titulo={proveedor.nombre}
         descripcion="Productos y precios del proveedor."
         actions={acciones}
+        submoduleToolbar={<ProveedoresSubmoduleToolbar activo="lista" />}
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
