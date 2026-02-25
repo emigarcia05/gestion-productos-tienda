@@ -21,15 +21,13 @@ interface Props {
   mostrarStock?: boolean;
   /** Elementos que van debajo de los mini botones (ej: info de sync) */
   acciones?: React.ReactNode;
-  /** Botones que van a la derecha de la fila de sub-módulos (ej: Importar, Sync) */
-  accionesBarra?: React.ReactNode;
   tabs?: Tab[];
 }
 
 /** Ancho y alto fijos para todos los botones de sub-módulo (mismo tamaño) */
 const SUBMODULO_BTN = "w-52 h-12 flex items-center justify-center gap-2 rounded-lg text-sm font-medium text-center";
 
-export default function PageHeader({ volverHref, titulo, subtitulo, mostrarTienda, mostrarStock, acciones, accionesBarra, tabs }: Props) {
+export default function PageHeader({ volverHref, titulo, subtitulo, mostrarTienda, mostrarStock, acciones, tabs }: Props) {
   return (
     <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-0">
 
@@ -67,43 +65,35 @@ export default function PageHeader({ volverHref, titulo, subtitulo, mostrarTiend
         </div>
       </div>
 
-      {/* 2do div: sub-módulos — formato rectangular, mismo tamaño, texto + icono centrados */}
+      {/* 2do div: solo botones para redirigir entre sub-módulos (sin acciones del submódulo) */}
       <div
-        className="border-y py-3 flex items-center gap-4 flex-wrap"
+        className="border-y py-3 flex justify-center flex-wrap"
         style={{ borderColor: "rgba(255,193,7,0.6)" }}
       >
-        <div className="flex-1 min-w-0 flex justify-center">
-          {tabs && tabs.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {tabs.map((tab) =>
-                tab.active ? (
-                  <span
-                    key={tab.label}
-                    className={`${SUBMODULO_BTN} shrink-0 border border-brand bg-brand text-white`}
-                  >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                  </span>
-                ) : tab.href ? (
-                  <Link
-                    key={tab.label}
-                    href={tab.href}
-                    className={`${SUBMODULO_BTN} shrink-0 border border-brand text-brand bg-transparent hover:bg-brand/10 transition-colors`}
-                  >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                  </Link>
-                ) : null
-              )}
-            </div>
-          ) : null}
-        </div>
-
-        {accionesBarra && (
-          <div className="flex items-center gap-2 shrink-0">
-            {accionesBarra}
+        {tabs && tabs.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {tabs.map((tab) =>
+              tab.active ? (
+                <span
+                  key={tab.label}
+                  className={`${SUBMODULO_BTN} shrink-0 border border-brand bg-brand text-white`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </span>
+              ) : tab.href ? (
+                <Link
+                  key={tab.label}
+                  href={tab.href}
+                  className={`${SUBMODULO_BTN} shrink-0 border border-brand text-brand bg-transparent hover:bg-brand/10 transition-colors`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </Link>
+              ) : null
+            )}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

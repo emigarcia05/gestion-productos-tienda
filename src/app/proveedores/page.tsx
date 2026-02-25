@@ -73,15 +73,15 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
         mostrarStock={puede(rol, PERMISOS.stock.acceso)}
         tabs={[{ label: esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
-        accionesBarra={
-          esEditor ? (
-            <>
-              {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
-              {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
-            </>
-          ) : undefined
-        }
       />
+
+      {/* Acciones del módulo (fuera de la barra de sub-módulos) */}
+      {esEditor && (puede(rol, p.acciones.nuevoProveedor) || puede(rol, p.acciones.importarLista)) && (
+        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 flex gap-2">
+          {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
+          {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">

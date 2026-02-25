@@ -59,7 +59,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     ...(q ? filtroTexto(q, ["descripcion", "codItem", "codigoExterno", "marca"]) : {}),
   };
 
-  const [items, total, marcas, rubros, subRubros, ultimoSync] = await Promise.all([
+  const [items, total, marcas, rubros, subRubros] = await Promise.all([
     prisma.itemTienda.findMany({
       where,
       orderBy: { descripcion: "asc" },
@@ -89,25 +89,9 @@ export default async function TiendaPage({ searchParams }: Props) {
       orderBy: { subRubro: "asc" },
       where: { subRubro: { not: null } },
     }),
-    prisma.syncLog.findFirst({ orderBy: { createdAt: "desc" } }),
   ]);
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
-
-  const syncInfo = ultimoSync ? (
-    <div className="flex items-center gap-1.5 text-xs text-accent2">
-      <span>
-        Último sync: {new Date(ultimoSync.createdAt).toLocaleString("es-AR", {
-          day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
-        })}
-        {ultimoSync.status === "ok" && (
-          <span className="ml-1 text-accent2/70">
-            ({ultimoSync.totalApi.toLocaleString()} items)
-          </span>
-        )}
-      </span>
-    </div>
-  ) : null;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -116,17 +100,20 @@ export default async function TiendaPage({ searchParams }: Props) {
         titulo="Lista TiendaColor"
         mostrarTienda
         mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        acciones={syncInfo ?? undefined}
         tabs={[
           { label: "Productos Relacionados", active: true, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },
           ...(puede(rol, PERMISOS.tienda.acciones.sincronizar)
             ? [{ label: "Control de Aumentos", href: "/tienda/aumentos", active: false, icon: <TrendingUp className="h-3.5 w-3.5 text-accent2" /> }]
             : []),
         ]}
-        accionesBarra={
-          puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined
-        }
       />
+
+      {/* Acciones del módulo (fuera de la barra de sub-módulos) */}
+      {puede(rol, PERMISOS.tienda.acciones.sincronizar) && (
+        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 flex gap-2">
+          <SyncButton />
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">

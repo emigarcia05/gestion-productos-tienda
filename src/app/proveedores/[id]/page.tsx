@@ -46,23 +46,25 @@ export default async function ProveedorDetallePage({ params }: Props) {
           </Badge>
         }
         tabs={[{ label: "Productos del proveedor", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
-        accionesBarra={
-          <>
-            {puede(rol, p.acciones.importarLista) && (
-              <ImportarModal
-                proveedores={todosProveedores}
-                proveedorPreseleccionado={proveedor.id}
-              />
-            )}
-            {puede(rol, p.acciones.editarProveedor) && (
-              <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
-            )}
-            {puede(rol, p.acciones.eliminarProveedor) && (
-              <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
-            )}
-          </>
-        }
       />
+
+      {/* Acciones del submódulo (fuera de la barra de navegación) */}
+      {(puede(rol, p.acciones.importarLista) || puede(rol, p.acciones.editarProveedor) || puede(rol, p.acciones.eliminarProveedor)) && (
+        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 flex gap-2">
+          {puede(rol, p.acciones.importarLista) && (
+            <ImportarModal
+              proveedores={todosProveedores}
+              proveedorPreseleccionado={proveedor.id}
+            />
+          )}
+          {puede(rol, p.acciones.editarProveedor) && (
+            <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
+          )}
+          {puede(rol, p.acciones.eliminarProveedor) && (
+            <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
+          )}
+        </div>
+      )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
