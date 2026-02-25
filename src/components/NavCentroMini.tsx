@@ -7,9 +7,12 @@ import { Handshake, ShoppingBag, ClipboardList, PackageSearch } from "lucide-rea
 const W = "w-[5.5rem]"; // mismo ancho para todos
 const ITEM_BASE =
   "flex flex-col items-center justify-center gap-0.5 h-14 py-2 px-2 rounded-lg border-2 text-xs font-medium transition-all duration-200 shrink-0";
+/** No seleccionado: fondo azul, letras e icono blanco */
 const ITEM_INACTIVO =
-  "border-brand/40 bg-card/50 text-accent2 hover:border-brand hover:bg-brand/10 hover:shadow-sm";
-const ITEM_ACTIVO = "border-brand bg-brand text-white shadow-md";
+  "border-brand bg-brand text-white hover:opacity-90 hover:shadow-sm";
+/** Seleccionado: fondo negro, logo y letras amarillas */
+const ITEM_ACTIVO =
+  "border-accent2 bg-black text-accent2 shadow-md";
 
 interface Props {
   mostrarTienda?: boolean;
