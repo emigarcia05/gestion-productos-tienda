@@ -21,7 +21,6 @@ export default async function ControlAumentosPage() {
         titulo="Lista TiendaColor"
         mostrarTienda
         mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        subtitulo={`${data.individual.length} producto${data.individual.length !== 1 ? "s" : ""} con código externo vinculado`}
         tabs={[
           { label: "Productos Relacionados", href: "/tienda", active: false, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },
           { label: "Control de Aumentos", active: true, icon: <TrendingUp className="h-3.5 w-3.5 text-accent2" /> },

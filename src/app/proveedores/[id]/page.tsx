@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Package, Tag, DollarSign } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal";
 import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
@@ -39,12 +38,6 @@ export default async function ProveedorDetallePage({ params }: Props) {
         titulo={proveedor.nombre}
         mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
         mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        subtitulo={`${proveedor._count.productos} producto${proveedor._count.productos !== 1 ? "s" : ""} en catálogo`}
-        acciones={
-          <Badge variant="secondary" className="font-mono text-sm">
-            {proveedor.codigoUnico}
-          </Badge>
-        }
         tabs={[{ label: "Productos del proveedor", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
       />
 

@@ -69,7 +69,6 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       <PageHeader
         volverHref="/"
         titulo={esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos"}
-        subtitulo={`${total.toLocaleString()} producto${total !== 1 ? "s" : ""}`}
         mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
         mostrarStock={puede(rol, PERMISOS.stock.acceso)}
         tabs={[{ label: esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
