@@ -2,7 +2,17 @@
 
 import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Loader2, X } from "lucide-react";
+import { Search, Loader2, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import FilterBar, { INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+
 const FOCUS_KEY = "filtros-proveedores-focus";
 
 interface Proveedor {
@@ -62,48 +72,44 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
   }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-
-      <div className="relative flex-1">
-        <input
+    <FilterBar>
+      <div className="relative flex-1 min-w-[200px] max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Input
           ref={inputRef}
           value={q}
           onChange={(e) => handleQ(e.target.value)}
           placeholder="Buscar por descripción o código..."
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring pr-7"
+          className={`pl-9 pr-8 ${INPUT_FILTER_CLASS}`}
         />
         {q && !buscando && (
           <button
+            type="button"
             onClick={() => handleQ("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
         )}
         {buscando && (
-          <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
+          <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 animate-spin pointer-events-none" />
         )}
       </div>
-
-      <div className="relative sm:w-64">
-        <select
-          value={proveedorActual}
-          onChange={(e) => handleProveedor(e.target.value)}
-          className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">Todos los proveedores</option>
+      <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
+        <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectValue placeholder="Proveedor" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Todos los proveedores</SelectItem>
           {proveedores.map((p) => (
-            <option key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</option>
+            <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
           ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-      </div>
-
+        </SelectContent>
+      </Select>
       {accionMasivaSlot}
-
-      <p className="text-xs text-accent2 whitespace-nowrap">
+      <span className="text-sm text-slate-500 tabular-nums shrink-0">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
-      </p>
-    </div>
+      </span>
+    </FilterBar>
   );
 }

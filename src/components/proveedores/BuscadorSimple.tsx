@@ -2,22 +2,23 @@
 
 import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import FilterBar, { INPUT_FILTER_CLASS } from "@/components/FilterBar";
 
 const FOCUS_KEY = "buscador-simple-focus";
 
 interface Props {
   qActual: string;
   totalProductos: number;
-  /** Parámetros a conservar en la URL al buscar (ej. sucursal) */
   extraParams?: Record<string, string>;
 }
 
 export default function BuscadorSimple({ qActual, totalProductos, extraParams }: Props) {
-  const pathname    = usePathname();
-  const [q, setQ]   = useState(qActual);
+  const pathname = usePathname();
+  const [q, setQ] = useState(qActual);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef    = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const shouldFocus = sessionStorage.getItem(FOCUS_KEY);
@@ -45,27 +46,29 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative flex-1 min-w-0">
-        <input
+    <FilterBar>
+      <div className="relative flex-1 min-w-[200px] max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Input
           ref={inputRef}
           value={q}
           onChange={(e) => handleQ(e.target.value)}
           placeholder="Buscar por descripción..."
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring pr-7"
+          className={`pl-9 pr-8 ${INPUT_FILTER_CLASS}`}
         />
         {q && (
           <button
+            type="button"
             onClick={() => handleQ("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
-      <p className="text-xs text-accent2 whitespace-nowrap shrink-0">
+      <span className="text-sm text-slate-500 tabular-nums shrink-0">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
-      </p>
-    </div>
+      </span>
+    </FilterBar>
   );
 }

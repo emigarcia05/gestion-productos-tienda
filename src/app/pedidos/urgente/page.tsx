@@ -3,10 +3,12 @@ import { whereProductoConsultaConTienda } from "@/lib/busqueda";
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import PedidosToolbar from "@/components/pedidos/PedidosToolbar";
+import SectionHeader from "@/components/SectionHeader";
+import PedidosSectionActions from "@/components/pedidos/PedidosSectionActions";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import PedidoUrgenteTablaConToast from "@/components/pedidos/PedidoUrgenteTablaConToast";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,7 @@ interface Props {
 
 export default async function PedidoUrgentePage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
 
   const { q = "", pagina = "1", sucursal = "", proveedor = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" = sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
@@ -54,7 +56,11 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col min-h-0">
-      <PedidosToolbar activo="urgente" />
+      <SectionHeader
+        titulo="Pedidos a Proveedores"
+        descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
+        actions={<PedidosSectionActions activo="urgente" />}
+      />
 
       <FiltrosPedidoUrgente
         q={q}
@@ -64,8 +70,12 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
         totalProductos={total}
       />
 
-      <div className="flex-1 min-h-0 px-4 pb-4">
-        <PedidoUrgenteTablaConToast productos={productos} />
+      <div className="flex-1 min-h-0 px-4 pb-4 max-w-7xl mx-auto w-full">
+        <Card className="min-h-0 flex flex-col rounded-xl border-slate-200/60 shadow-sm overflow-hidden gap-0 py-0">
+          <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+            <PedidoUrgenteTablaConToast productos={productos} />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="shrink-0 border-t border-border bg-card px-4 py-3">

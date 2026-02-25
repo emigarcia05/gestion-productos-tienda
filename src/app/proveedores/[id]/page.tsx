@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal";
 import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
 import ImportarModal from "@/components/proveedores/ImportarModal";
-import PageHeader from "@/components/PageHeader";
+import SectionHeader from "@/components/SectionHeader";
 import { getProveedorById, getProveedores } from "@/actions/proveedores";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -31,33 +31,31 @@ export default async function ProveedorDetallePage({ params }: Props) {
   const totalLista = productos.reduce((s, p) => s + p.precioLista, 0);
   const totalVenta = productos.reduce((s, p) => s + p.precioVentaSugerido, 0);
 
+  const acciones =
+    puede(rol, p.acciones.importarLista) || puede(rol, p.acciones.editarProveedor) || puede(rol, p.acciones.eliminarProveedor) ? (
+      <div className="flex gap-2">
+        {puede(rol, p.acciones.importarLista) && (
+          <ImportarModal
+            proveedores={todosProveedores}
+            proveedorPreseleccionado={proveedor.id}
+          />
+        )}
+        {puede(rol, p.acciones.editarProveedor) && (
+          <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
+        )}
+        {puede(rol, p.acciones.eliminarProveedor) && (
+          <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
+        )}
+      </div>
+    ) : undefined;
+
   return (
     <div className="min-h-screen flex flex-col">
-      <PageHeader
-        volverHref="/proveedores"
+      <SectionHeader
         titulo={proveedor.nombre}
-        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
-        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        tabs={[{ label: "Productos del proveedor", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
+        descripcion="Productos y precios del proveedor."
+        actions={acciones}
       />
-
-      {/* Acciones del submódulo (fuera de la barra de navegación) */}
-      {(puede(rol, p.acciones.importarLista) || puede(rol, p.acciones.editarProveedor) || puede(rol, p.acciones.eliminarProveedor)) && (
-        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 flex gap-2">
-          {puede(rol, p.acciones.importarLista) && (
-            <ImportarModal
-              proveedores={todosProveedores}
-              proveedorPreseleccionado={proveedor.id}
-            />
-          )}
-          {puede(rol, p.acciones.editarProveedor) && (
-            <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
-          )}
-          {puede(rol, p.acciones.eliminarProveedor) && (
-            <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />
-          )}
-        </div>
-      )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 

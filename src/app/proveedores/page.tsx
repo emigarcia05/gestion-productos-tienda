@@ -8,10 +8,10 @@ import FiltrosProductos from "@/components/proveedores/FiltrosProductos";
 import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
-import PageHeader from "@/components/PageHeader";
+import SectionHeader from "@/components/SectionHeader";
+import { Card, CardContent } from "@/components/ui/card";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { Package } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -64,26 +64,29 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
+  const titulo = esEditor ? "Lista de Proveedores" : "Lista de Proveedores";
+  const descripcion = esEditor
+    ? "Gestiona productos y precios de tus proveedores."
+    : "Gestiona y visualiza los precios sugeridos de tus proveedores.";
+
+  const acciones =
+    esEditor && (puede(rol, p.acciones.nuevoProveedor) || puede(rol, p.acciones.importarLista)) ? (
+      <div className="flex gap-2">
+        {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
+        {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
+      </div>
+    ) : undefined;
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <PageHeader
-        volverHref="/"
-        titulo={esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos"}
-        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
-        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        tabs={[{ label: esEditor ? "Lista Proveedores" : "Consulta Px Sugeridos", active: true, icon: <Package className="h-3.5 w-3.5 text-accent2" /> }]}
+      <SectionHeader
+        titulo={titulo}
+        descripcion={descripcion}
+        actions={acciones}
       />
 
-      {/* Acciones del módulo (fuera de la barra de sub-módulos) */}
-      {esEditor && (puede(rol, p.acciones.nuevoProveedor) || puede(rol, p.acciones.importarLista)) && (
-        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 flex gap-2">
-          {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
-          {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
-        </div>
-      )}
-
       {/* Filtros */}
-      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">
+      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
         {esEditor ? (
           <FiltrosProductos
             proveedores={proveedores}
@@ -106,16 +109,20 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         )}
       </div>
 
-      {/* Tabla con scroll interno */}
-      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
-        {esEditor
-          ? <TablaProductosFiltrada productos={productos} rol={rol} />
-          : <TablaListaPreciosConPedido productos={productos} />
-        }
+      {/* Card con tabla */}
+      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 flex flex-col">
+        <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-slate-200/60 shadow-sm overflow-hidden gap-0 py-0">
+          <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+            {esEditor
+              ? <TablaProductosFiltrada productos={productos} rol={rol} />
+              : <TablaListaPreciosConPedido productos={productos} />
+            }
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Paginación fija abajo */}
-      <div className="shrink-0 border-t border-border/50 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
+      {/* Paginación */}
+      <div className="shrink-0 border-t border-slate-200/60 bg-white/80 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
         <PaginacionProductos
           paginaActual={paginaNum}
           totalPaginas={totalPaginas}

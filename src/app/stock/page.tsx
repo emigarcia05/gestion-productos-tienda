@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
-import { PackageSearch } from "lucide-react";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getControlStock, type Sucursal } from "@/actions/stock";
-import PageHeader from "@/components/PageHeader";
+import SectionHeader from "@/components/SectionHeader";
 import TablaStock from "@/components/stock/TablaStock";
 import StockPageSyncGate from "@/components/stock/StockPageSyncGate";
 
@@ -15,7 +14,7 @@ interface Props {
 
 export default async function StockPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.stock.acceso)) redirect("/");
+  if (!puede(rol, PERMISOS.stock.acceso)) redirect("/proveedores");
 
   const { sucursal = "guaymallen", q = "", marca = "", rubro = "", subRubro = "" } = await searchParams;
   const sucursalValida: Sucursal = sucursal === "maipu" ? "maipu" : "guaymallen";
@@ -24,12 +23,9 @@ export default async function StockPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <PageHeader
-        volverHref="/"
+      <SectionHeader
         titulo="Control Stock"
-        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
-        mostrarStock
-        tabs={[{ label: "Control Stock", active: true, icon: <PackageSearch className="h-3.5 w-3.5 text-accent2" /> }]}
+        descripcion="Consultá y gestioná el stock por sucursal."
       />
       <StockPageSyncGate>
         <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">

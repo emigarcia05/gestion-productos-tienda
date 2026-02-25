@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
-import { TrendingUp, Link2 } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp } from "lucide-react";
+import SectionHeader from "@/components/SectionHeader";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
-import PageHeader from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -93,27 +95,26 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
+  const acciones =
+    puede(rol, PERMISOS.tienda.acciones.sincronizar) ? (
+      <div className="flex gap-2">
+        <SyncButton />
+        <Button variant="outline" size="sm" className="border-slate-200" asChild>
+          <Link href="/tienda/aumentos" className="gap-2">
+            <TrendingUp className="h-4 w-4 shrink-0" />
+            Control de Aumentos
+          </Link>
+        </Button>
+      </div>
+    ) : undefined;
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <PageHeader
-        volverHref="/"
-        titulo="Lista TiendaColor"
-        mostrarTienda
-        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        tabs={[
-          { label: "Productos Relacionados", active: true, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },
-          ...(puede(rol, PERMISOS.tienda.acciones.sincronizar)
-            ? [{ label: "Control de Aumentos", href: "/tienda/aumentos", active: false, icon: <TrendingUp className="h-3.5 w-3.5 text-accent2" /> }]
-            : []),
-        ]}
+      <SectionHeader
+        titulo="Tienda"
+        descripcion="Productos relacionados con items de tienda y control de aumentos."
+        actions={acciones}
       />
-
-      {/* Acciones del módulo (fuera de la barra de sub-módulos) */}
-      {puede(rol, PERMISOS.tienda.acciones.sincronizar) && (
-        <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 flex gap-2">
-          <SyncButton />
-        </div>
-      )}
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">

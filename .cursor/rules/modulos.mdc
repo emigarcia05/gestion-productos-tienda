@@ -1,0 +1,42 @@
+---
+description: Patrón de diseño global para nuevos módulos. Replicar exactamente esta estructura en cada módulo nuevo.
+globs: **/app/**/page.tsx
+---
+
+# Patrón de módulos — Estructura obligatoria
+
+Al crear un **nuevo módulo**, replicar exactamente esta estructura:
+
+1. **Sidebar lateral**  
+   El ítem del módulo debe existir en `Sidebar.tsx` (aside). La navegación es 100% desde el aside.
+
+2. **Header de sección**  
+   Usar siempre `SectionHeader` con:
+   - `titulo`: h1 dinámico (ej. "Lista de Proveedores").
+   - `descripcion`: línea en text-slate-500.
+   - `actions`: botones de sub-módulo o acciones principales, **siempre alineados a la derecha** (esquina superior derecha).
+
+3. **Botones de acción (jerarquía)**  
+   - **Principal**: fondo #0072BB, texto blanco (ej. "Generar Pedido").
+   - **Secundaria**: variante `outline`, texto #0072BB (ej. "Pedido Reposición").
+   - **Alerta**: detalle sutil en #FFC107 solo si es estrictamente necesario (ej. "Urgente").
+   - Todos con hover suave (`transition-colors duration-150`).
+
+4. **Barra de filtros**  
+   Usar el componente `FilterBar` y los estilos Soft UI:
+   - Input de búsqueda: `Input` de shadcn con icono `Search` (Lucide) al inicio; clases `INPUT_FILTER_CLASS` desde `@/components/FilterBar`.
+   - Selects: `Select` de shadcn con `SelectTrigger` usando `SELECT_TRIGGER_FILTER_CLASS`; bordes `rounded-lg`.
+   - Estética: fondo blanco (`bg-white`), borde gris sutil (`border-slate-200`), al foco borde #0072BB (`focus-visible:border-primary`).
+   - Textos de filtros y contadores en `text-sm`.
+
+5. **Contenido principal**  
+   La tabla (o listado) va **dentro de un Card** de shadcn:
+   - `rounded-xl`, `border-slate-200/60`, `shadow-sm`.
+   - Fondo de página `bg-slate-50` para que el Card resalte.
+
+6. **Interacción**  
+   - Botones: hover suave (opacity o border/color).
+   - Filas de tabla: `hover:bg-muted/50` y `transition-colors duration-150` (ya aplicado en `TableRow`).
+
+Orden visual en la página:
+`SectionHeader` → `FilterBar` (filtros) → `Card` (tabla/contenido).

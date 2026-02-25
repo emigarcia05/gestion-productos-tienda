@@ -1,20 +1,18 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
+import type { Rol } from "@/lib/permisos";
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
+interface Props {
+  children: React.ReactNode;
+  rol: Rol;
+}
 
-  if (isHome) {
-    return <>{children}</>;
-  }
-
+export default function AppShell({ children, rol }: Props) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-auto bg-background">{children}</main>
+      <Sidebar rol={rol} />
+      <main className="flex-1 overflow-auto bg-slate-50">{children}</main>
     </div>
   );
 }

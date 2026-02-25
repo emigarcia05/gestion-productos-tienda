@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TrendingUp, Link2 } from "lucide-react";
 import { getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
 import { getControlAumentos } from "@/actions/tienda";
+import SectionHeader from "@/components/SectionHeader";
 import TablaAumentos from "@/components/tienda/TablaAumentos";
-import PageHeader from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +17,23 @@ export default async function ControlAumentosPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <PageHeader
-        volverHref="/tienda"
-        titulo="Lista TiendaColor"
-        mostrarTienda
-        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        tabs={[
-          { label: "Productos Relacionados", href: "/tienda", active: false, icon: <Link2 className="h-3.5 w-3.5 text-accent2" /> },
-          { label: "Control de Aumentos", active: true, icon: <TrendingUp className="h-3.5 w-3.5 text-accent2" /> },
-        ]}
+      <SectionHeader
+        titulo="Control de Aumentos"
+        descripcion="Gestioná aumentos de precios de productos vinculados a tienda."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="border-slate-200" asChild>
+              <Link href="/tienda" className="gap-2">
+                <Link2 className="h-4 w-4 shrink-0" />
+                Productos Relacionados
+              </Link>
+            </Button>
+            <Button size="sm" className="pointer-events-none">
+              <TrendingUp className="h-4 w-4 shrink-0" />
+              Control de Aumentos
+            </Button>
+          </div>
+        }
       />
 
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-4">

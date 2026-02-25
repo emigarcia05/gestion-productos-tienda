@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import AppShell from "@/components/layout/AppShell";
+import { getRol } from "@/lib/sesion";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,17 +20,18 @@ export const metadata: Metadata = {
   description: "Sistema de gestión e importación de productos para tienda",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const rol = await getRol();
   return (
     <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
       >
-        <AppShell>{children}</AppShell>
+        <AppShell rol={rol}>{children}</AppShell>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>

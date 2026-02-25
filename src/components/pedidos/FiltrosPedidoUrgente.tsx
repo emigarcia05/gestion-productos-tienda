@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import FilterBar, { INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 
@@ -59,9 +60,18 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-4 px-4 py-3">
+    <FilterBar className="px-4">
+      <div className="relative flex-1 min-w-[200px] max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Input
+          value={qLocal}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Buscar por descripción..."
+          className={`pl-9 ${INPUT_FILTER_CLASS}`}
+        />
+      </div>
       <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
-        <SelectTrigger className="w-[180px] bg-card">
+        <SelectTrigger className={`w-[180px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
           <SelectValue placeholder="Sucursal" />
         </SelectTrigger>
         <SelectContent>
@@ -71,9 +81,8 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
           ))}
         </SelectContent>
       </Select>
-
       <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
-        <SelectTrigger className="w-[220px] bg-card">
+        <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
           <SelectValue placeholder="Proveedor" />
         </SelectTrigger>
         <SelectContent>
@@ -83,20 +92,9 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
           ))}
         </SelectContent>
       </Select>
-
-      <div className="relative flex-1 min-w-[200px] max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <Input
-          value={qLocal}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Buscar por descripción..."
-          className="pl-9 bg-card"
-        />
-      </div>
-
-      <span className="text-sm text-slate-500 tabular-nums">
+      <span className="text-sm text-slate-500 tabular-nums shrink-0">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
       </span>
-    </div>
+    </FilterBar>
   );
 }

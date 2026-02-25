@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Handshake, ShoppingBag, PackageSearch, ClipboardList } from "lucide-react";
+import { Handshake, ShoppingBag, PackageSearch, ClipboardList, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SelectorRol from "@/components/SelectorRol";
+import type { Rol } from "@/lib/permisos";
 
 interface NavItem {
   href: string;
@@ -11,22 +13,28 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-export default function Sidebar() {
+const iconClass = "h-5 w-5 shrink-0";
+
+export default function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
 
   const items: NavItem[] = [
-    { href: "/", label: "Inicio", icon: <Home className="h-5 w-5 shrink-0" /> },
-    { href: "/proveedores", label: "Proveedores", icon: <Handshake className="h-5 w-5 shrink-0" /> },
-    { href: "/tienda", label: "Tienda", icon: <ShoppingBag className="h-5 w-5 shrink-0" /> },
-    { href: "/stock", label: "Stock", icon: <PackageSearch className="h-5 w-5 shrink-0" /> },
-    { href: "/pedidos", label: "Pedidos", icon: <ClipboardList className="h-5 w-5 shrink-0" /> },
+    { href: "/proveedores", label: "Lista de Proveedores", icon: <Handshake className={iconClass} /> },
+    { href: "/tienda", label: "Tienda", icon: <ShoppingBag className={iconClass} /> },
+    { href: "/stock", label: "Stock", icon: <PackageSearch className={iconClass} /> },
+    { href: "/pedidos", label: "Pedidos", icon: <ClipboardList className={iconClass} /> },
   ];
 
+  const perfilNombre = rol === "editor" ? "Editor" : "Simple";
+
   return (
-    <aside className="w-56 shrink-0 border-r border-border bg-card p-4 flex flex-col gap-1">
-      <nav className="flex flex-col gap-1" aria-label="Módulos principales">
+    <aside className="w-56 shrink-0 flex flex-col border-r border-border bg-slate-50">
+      <nav className="flex flex-col gap-1 p-4" aria-label="Módulos principales">
         {items.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const active =
+            item.href === "/proveedores"
+              ? pathname === "/" || pathname.startsWith("/proveedores")
+              : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -34,8 +42,8 @@ export default function Sidebar() {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-blue-50/80 text-primary [&_svg]:text-primary"
+                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
               )}
             >
               {item.icon}
@@ -44,6 +52,20 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      <div className="mt-auto border-t border-border p-4">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-white px-3 py-2.5 shadow-sm">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+            aria-hidden
+          >
+            <User className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-slate-900">{perfilNombre}</p>
+            <SelectorRol rolActual={rol} compact />
+          </div>
+        </div>
+      </div>
     </aside>
   );
 }
