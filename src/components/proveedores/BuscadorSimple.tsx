@@ -63,7 +63,7 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
           </button>
         )}
       </div>
-      <p className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+      <p className="text-xs text-accent2 whitespace-nowrap shrink-0">
         {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
       </p>
     </div>

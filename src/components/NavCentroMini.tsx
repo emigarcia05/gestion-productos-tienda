@@ -6,7 +6,7 @@ import { Handshake, ShoppingBag, ClipboardList, PackageSearch } from "lucide-rea
 
 const W = "w-[5.5rem]"; // mismo ancho para todos
 const ITEM_BASE =
-  "flex flex-col items-center justify-center gap-0.5 h-14 py-2 px-2 rounded-lg border-2 text-xs font-medium transition-all duration-200 shrink-0";
+  "flex flex-col items-center justify-center gap-1 min-h-[4.5rem] py-2.5 px-2 rounded-lg border-2 text-xs font-medium transition-all duration-200 shrink-0";
 /** No seleccionado: fondo azul, letras e icono blanco */
 const ITEM_INACTIVO =
   "border-brand bg-brand text-white hover:opacity-90 hover:shadow-sm";

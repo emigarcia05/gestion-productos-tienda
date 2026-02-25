@@ -37,7 +37,7 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
   const hasta = Math.min(paginaActual * pageSize, total);
 
   if (totalPaginas <= 1) return (
-    <p className="text-xs text-muted-foreground">
+    <p className="text-xs text-accent2">
       {total.toLocaleString()} producto{total !== 1 ? "s" : ""}
     </p>
   );
@@ -53,7 +53,7 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
 
   return (
     <div className="flex items-center justify-between gap-4">
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-accent2">
         {desde.toLocaleString()}–{hasta.toLocaleString()} de {total.toLocaleString()}
       </p>
 

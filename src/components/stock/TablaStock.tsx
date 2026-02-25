@@ -201,7 +201,7 @@ export default function TablaStock({
 
         {/* Contador + Imprimir */}
         <div className="ml-auto flex items-center gap-3 shrink-0">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className="text-xs text-accent2 whitespace-nowrap">
             {filtrados.length.toLocaleString()} ítem{filtrados.length !== 1 ? "s" : ""}
           </span>
           <Button
