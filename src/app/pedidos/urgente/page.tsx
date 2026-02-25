@@ -1,15 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { whereProductoConsultaConTienda } from "@/lib/busqueda";
-import PageHeader from "@/components/PageHeader";
-import { getPedidosTabs } from "@/lib/pedidosTabs";
-import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
-import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
-import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
-import SelectorSucursal from "@/components/pedidos/SelectorSucursal";
-import SelectorProveedor from "@/components/pedidos/SelectorProveedor";
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
+import PedidosToolbar from "@/components/pedidos/PedidosToolbar";
+import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
+import PedidoUrgenteTablaConToast from "@/components/pedidos/PedidoUrgenteTablaConToast";
+import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 
 export const dynamic = "force-dynamic";
 
@@ -54,46 +51,24 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   ]);
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
-  const tabs = getPedidosTabs("urgente");
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <PageHeader
-        volverHref="/"
-        titulo="Pedidos a Proveedores"
-        mostrarTienda={puede(rol, PERMISOS.tienda.acceso)}
-        mostrarStock={puede(rol, PERMISOS.stock.acceso)}
-        tabs={tabs}
+    <div className="flex flex-col min-h-0">
+      <PedidosToolbar activo="urgente" />
+
+      <FiltrosPedidoUrgente
+        q={q}
+        sucursal={sucursalValida}
+        proveedor={proveedor}
+        proveedores={proveedores}
+        totalProductos={total}
       />
 
-      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">
-        <div className="flex items-center gap-4 flex-wrap">
-          <SelectorSucursal
-            sucursalActual={sucursalValida}
-            paramsActuales={{ q, pagina: pagina === "1" ? undefined : pagina, proveedor: proveedor || undefined }}
-            basePath="/pedidos/urgente"
-          />
-          <SelectorProveedor
-            proveedores={proveedores}
-            proveedorActual={proveedor}
-            paramsActuales={{ q, sucursal: sucursalValida || undefined, pagina: pagina === "1" ? undefined : pagina }}
-            basePath="/pedidos/urgente"
-          />
-          <div className="flex-1 min-w-0 flex items-center gap-3">
-            <BuscadorSimple
-              qActual={q}
-              totalProductos={total}
-              extraParams={{ ...(sucursalValida ? { sucursal: sucursalValida } : {}), ...(proveedor ? { proveedor } : {}) }}
-            />
-          </div>
-        </div>
+      <div className="flex-1 min-h-0 px-4 pb-4">
+        <PedidoUrgenteTablaConToast productos={productos} />
       </div>
 
-      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
-        <TablaListaPreciosConPedido productos={productos} />
-      </div>
-
-      <div className="shrink-0 border-t border-border/50 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
+      <div className="shrink-0 border-t border-border bg-card px-4 py-3">
         <PaginacionProductos
           paginaActual={paginaNum}
           totalPaginas={totalPaginas}
