@@ -28,7 +28,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col border-r border-border bg-slate-50">
+    <aside className="w-56 shrink-0 flex flex-col border-r border-slate-200 bg-slate-100">
       <nav className="flex flex-col gap-1 p-4" aria-label="Módulos principales">
         {items.map((item) => {
           const active =
@@ -40,12 +40,17 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
                 active
                   ? "bg-blue-50/80 text-primary [&_svg]:text-primary"
-                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
               )}
             >
+              {active ? (
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+              ) : (
+                <span className="h-1.5 w-1.5 shrink-0" aria-hidden />
+              )}
               {item.icon}
               {item.label}
             </Link>

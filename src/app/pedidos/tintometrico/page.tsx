@@ -15,7 +15,7 @@ export default async function PedidoTintometricoPage() {
       <SectionHeader
         titulo="Pedidos a Proveedores"
         descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
-        actions={<PedidosSectionActions activo="tintometrico" />}
+        submoduleToolbar={<PedidosSectionActions activo="tintometrico" />}
       />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Pedido Tintométrico — en construcción.</p>

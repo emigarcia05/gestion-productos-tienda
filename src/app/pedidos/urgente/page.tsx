@@ -59,7 +59,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       <SectionHeader
         titulo="Pedidos a Proveedores"
         descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
-        actions={<PedidosSectionActions activo="urgente" />}
+        submoduleToolbar={<PedidosSectionActions activo="urgente" />}
       />
 
       <FiltrosPedidoUrgente
@@ -71,7 +71,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       />
 
       <div className="flex-1 min-h-0 px-4 pb-4 max-w-7xl mx-auto w-full">
-        <Card className="min-h-0 flex flex-col rounded-xl border-slate-200/60 shadow-sm overflow-hidden gap-0 py-0">
+        <Card className="min-h-0 flex flex-col rounded-xl border-slate-200 shadow-lg overflow-hidden gap-0 py-0">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             <PedidoUrgenteTablaConToast productos={productos} />
           </CardContent>

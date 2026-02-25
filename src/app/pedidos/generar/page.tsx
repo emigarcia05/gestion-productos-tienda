@@ -15,7 +15,7 @@ export default async function GenerarPedidoPage() {
       <SectionHeader
         titulo="Pedidos a Proveedores"
         descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
-        actions={<PedidosSectionActions activo="generar" />}
+        submoduleToolbar={<PedidosSectionActions activo="generar" />}
       />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Generar Pedido — en construcción.</p>

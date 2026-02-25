@@ -82,7 +82,7 @@ export default function FiltrosTienda({
   return (
     <FilterBar>
       <div className="relative flex-1 min-w-[200px] max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
         <Input
           ref={inputRef}
           value={q}

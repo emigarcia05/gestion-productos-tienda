@@ -10,17 +10,20 @@ Al crear un **nuevo módulo**, replicar exactamente esta estructura:
 1. **Sidebar lateral**  
    El ítem del módulo debe existir en `Sidebar.tsx` (aside). La navegación es 100% desde el aside.
 
-2. **Header de sección**  
+2. **Header de sección (Nivel 1)**  
    Usar siempre `SectionHeader` con:
    - `titulo`: h1 dinámico (ej. "Lista de Proveedores").
    - `descripcion`: línea en text-slate-500.
-   - `actions`: botones de sub-módulo o acciones principales, **siempre alineados a la derecha** (esquina superior derecha).
+   - `actions` (opcional): acciones principales a la derecha del título (ej. Crear, Importar, Sincronizar).
+   - `submoduleToolbar` (opcional): **línea horizontal de submódulos (Nivel 2)** debajo del título. Estilo Ghost/Pill Tabs: `variant="ghost"`, activo con `border-b-2 border-primary` y `bg-primary/5`. Separador sutil (`Separator`) entre header y contenido.
 
-3. **Botones de acción (jerarquía)**  
-   - **Principal**: fondo #0072BB, texto blanco (ej. "Generar Pedido").
-   - **Secundaria**: variante `outline`, texto #0072BB (ej. "Pedido Reposición").
-   - **Alerta**: detalle sutil en #FFC107 solo si es estrictamente necesario (ej. "Urgente").
-   - Todos con hover suave (`transition-colors duration-150`).
+3. **Submódulos (Nivel 2) — Toolbar**  
+   - No usar botones pesados: Ghost o Pill Tabs (`Button variant="ghost"`).
+   - Activo: borde inferior 2px o fondo ligero #0072BB (`border-b-2 border-primary`, `bg-primary/5`).
+   - **Acción principal** del módulo (ej. "Generar Pedido"): botón sólido #0072BB para destacar.
+   - **Alerta** (ej. "Pedido Urgente"): icono Zap en #FFC107.
+   - Otros: iconos Lucide en gris azulado (`text-slate-600`). Usar `flex gap-4` para alinear.
+   - Al cambiar de módulo en la Sidebar, la toolbar de submódulos debe mostrar las opciones de esa sección.
 
 4. **Barra de filtros**  
    Usar el componente `FilterBar` y los estilos Soft UI:
@@ -39,4 +42,4 @@ Al crear un **nuevo módulo**, replicar exactamente esta estructura:
    - Filas de tabla: `hover:bg-muted/50` y `transition-colors duration-150` (ya aplicado en `TableRow`).
 
 Orden visual en la página:
-`SectionHeader` → `FilterBar` (filtros) → `Card` (tabla/contenido).
+`SectionHeader` (título + descripción + opcional submoduleToolbar) → `Separator` → `FilterBar` (filtros) → `Card` (tabla/contenido).

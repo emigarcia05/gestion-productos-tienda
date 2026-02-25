@@ -15,7 +15,7 @@ export default async function PedidoReposicionPage() {
       <SectionHeader
         titulo="Pedidos a Proveedores"
         descripcion="Armá pedidos urgentes, por reposición, tintométricos o generá el archivo para enviar."
-        actions={<PedidosSectionActions activo="reposicion" />}
+        submoduleToolbar={<PedidosSectionActions activo="reposicion" />}
       />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Pedido Reposición — en construcción.</p>

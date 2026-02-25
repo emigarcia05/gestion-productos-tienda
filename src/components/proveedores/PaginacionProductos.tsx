@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   paginaActual: number;
@@ -73,7 +74,7 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
               key={p}
               variant={p === paginaActual ? "default" : "outline"}
               size="icon"
-              className="h-7 w-7 text-xs"
+              className={cn("h-7 w-7 text-xs", p === paginaActual && "font-semibold")}
               asChild
             >
               <Link href={buildHref(p as number, q, proveedor, basePath, extraParams)}>{p}</Link>

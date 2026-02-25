@@ -26,10 +26,10 @@ export default function FilterBar({
   );
 }
 
-/** Clases para Input de búsqueda: fondo blanco, borde sutil, foco marca #0072BB */
+/** Clases para Input de búsqueda: borde definido, foco borde sólido #0072BB y ring 20% */
 export const INPUT_FILTER_CLASS =
-  "bg-white border-slate-200 rounded-lg h-9 text-sm focus-visible:border-primary focus-visible:ring-primary/20";
+  "bg-white border-slate-300 rounded-lg h-9 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
 
-/** Clases para SelectTrigger en filtros: mismo estilo Soft UI */
+/** Clases para SelectTrigger en filtros: mismo estilo */
 export const SELECT_TRIGGER_FILTER_CLASS =
-  "bg-white border-slate-200 rounded-lg h-9 text-sm focus-visible:border-primary focus-visible:ring-primary/20";
+  "bg-white border-slate-300 rounded-lg h-9 text-sm focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";

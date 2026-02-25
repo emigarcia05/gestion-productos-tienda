@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
-import Link from "next/link";
-import { TrendingUp } from "lucide-react";
 import SectionHeader from "@/components/SectionHeader";
 import SyncButton from "@/components/tienda/SyncButton";
+import TiendaSubmoduleToolbar from "@/components/tienda/TiendaSubmoduleToolbar";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
-import { Button } from "@/components/ui/button";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -95,18 +93,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
-  const acciones =
-    puede(rol, PERMISOS.tienda.acciones.sincronizar) ? (
-      <div className="flex gap-2">
-        <SyncButton />
-        <Button variant="outline" size="sm" className="border-slate-200" asChild>
-          <Link href="/tienda/aumentos" className="gap-2">
-            <TrendingUp className="h-4 w-4 shrink-0" />
-            Control de Aumentos
-          </Link>
-        </Button>
-      </div>
-    ) : undefined;
+  const acciones = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -114,6 +101,7 @@ export default async function TiendaPage({ searchParams }: Props) {
         titulo="Tienda"
         descripcion="Productos relacionados con items de tienda y control de aumentos."
         actions={acciones}
+        submoduleToolbar={<TiendaSubmoduleToolbar activo="productos" />}
       />
 
       {/* Filtros */}
