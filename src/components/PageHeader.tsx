@@ -22,7 +22,7 @@ const SUBMODULO_BTN =
 
 export default function PageHeader({ volverHref, titulo, mostrarTienda, mostrarStock, tabs }: Props) {
   return (
-    <header className="shrink-0 w-full px-4 py-4 space-y-3">
+    <header className="shrink-0 w-full px-4 py-4 space-y-3 bg-[#0096FF]">
       <h1 className="sr-only">{titulo}</h1>
 
       {/* Div 1: solo botones de navegación (Inicio + módulos) */}
