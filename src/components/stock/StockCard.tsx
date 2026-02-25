@@ -18,6 +18,7 @@ export default function StockCard() {
       `Base de datos actualizada — ${result.total.toLocaleString()} ítems procesados.`,
       { duration: 3000 }
     );
+    sessionStorage.setItem("stockSyncJustDone", "1");
     router.push("/stock");
   });
 
