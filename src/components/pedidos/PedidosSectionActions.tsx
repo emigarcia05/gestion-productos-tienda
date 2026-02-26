@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Zap, RotateCw, Pipette, History } from "lucide-react";
+import { AlarmClock, RotateCw, Pipette, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PedidosTabKey } from "@/lib/pedidosTabs";
 
 const TABS: { key: PedidosTabKey; label: string; href: string; icon: React.ElementType; isUrgente?: boolean }[] = [
-  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: Zap, isUrgente: true },
+  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: AlarmClock, isUrgente: true },
   { key: "tintometrico", label: "Pedido Tintométrico", href: "/pedidos/tintometrico", icon: Pipette },
   { key: "reposicion", label: "Pedido Reposición", href: "/pedidos/reposicion", icon: RotateCw },
   { key: "historial", label: "Historial Pedidos", href: "/pedidos/historial", icon: History },
@@ -37,7 +37,7 @@ export default function PedidosSectionActions({ activo }: { activo: PedidosTabKe
           >
             <Link href={tab.href} className="gap-2">
               {isUrgente ? (
-                <Zap className="h-4 w-4 shrink-0 text-[#FFC107]" />
+                <AlarmClock className="h-4 w-4 shrink-0 text-[#FFC107]" />
               ) : (
                 <Icon className="h-4 w-4 shrink-0" />
               )}

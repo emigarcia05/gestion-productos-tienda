@@ -9,7 +9,7 @@ import {
   PackageSearch,
   ClipboardList,
   ChevronDown,
-  Zap,
+  AlarmClock,
   FileSearch,
   List,
   Link2,
@@ -76,7 +76,7 @@ const MODULES: {
     label: "Pedido Mercadería",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
-      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <Zap className="h-4 w-4 shrink-0 text-[#FFC107]" />, isUrgente: true },
+      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-[#FFC107]" />, isUrgente: true },
       { href: "/pedidos/tintometrico", label: "Pedido Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" /> },
       { href: "/pedidos/reposicion", label: "Pedido Reposición", icon: <RotateCw className="h-4 w-4 shrink-0" /> },
       { href: "/pedidos/historial", label: "Historial Pedidos", icon: <History className="h-4 w-4 shrink-0" /> },
@@ -141,7 +141,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-slate-200/80 space-y-0.5 py-1">
+                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-[#FFC107] space-y-0.5 py-1 [&_a_svg]:text-[#FFC107]">
                   {module.submodules.map((sub) => {
                     const active = isSubmoduleActive(pathname, sub.href);
                     return (
@@ -152,16 +152,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                           "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm transition-colors",
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
-                            ? "border-primary bg-[#0072BB]/10 font-semibold text-primary"
+                            ? "border-[#FFC107] bg-[#FFC107]/5 font-semibold text-[#FFC107] [&_svg]:text-[#FFC107]"
                             : "border-transparent text-slate-900 hover:bg-slate-100 hover:text-slate-950",
                           sub.isUrgente && "relative"
                         )}
                       >
-                        {sub.isUrgente ? (
-                          <span className="h-4 w-4 shrink-0 rounded-full bg-[#FFC107]" aria-hidden title="Prioridad" />
-                        ) : (
-                          sub.icon
-                        )}
+                        {sub.icon}
                         <span className="min-w-0 truncate">{sub.label}</span>
                       </Link>
                     );

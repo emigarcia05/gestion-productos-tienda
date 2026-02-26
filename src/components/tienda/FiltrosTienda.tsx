@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import FilterBar, { INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
 
 const FOCUS_KEY = "filtros-tienda-focus";
 
@@ -81,7 +81,78 @@ export default function FiltrosTienda({
 
   return (
     <FilterBar>
-      <div className="flex-1 min-w-[200px] max-w-md space-y-0">
+      <FilterRowSelection>
+        <div className="space-y-0">
+          <span className={FILTER_LABEL_CLASS}>Marca</span>
+          <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
+            <SelectTrigger className={`w-[140px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+              <SelectValue placeholder="Marca" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todas las marcas</SelectItem>
+              {marcas.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0">
+          <span className={FILTER_LABEL_CLASS}>Rubro</span>
+          <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
+            <SelectTrigger className={`w-[140px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+              <SelectValue placeholder="Rubro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todos los rubros</SelectItem>
+              {rubros.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0">
+          <span className={FILTER_LABEL_CLASS}>Sub-rubro</span>
+          <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
+            <SelectTrigger className={`w-[140px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+              <SelectValue placeholder="Sub-rubro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todos los sub-rubros</SelectItem>
+              {subRubros.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0">
+          <span className={FILTER_LABEL_CLASS}>Costo</span>
+          <Select value={mejorPrecioActual || "none"} onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}>
+            <SelectTrigger className={`w-[180px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+              <SelectValue placeholder="Costo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todos</SelectItem>
+              <SelectItem value="true">Menor Costo Disponible</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0">
+          <span className={FILTER_LABEL_CLASS}>Estado</span>
+          <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
+            <SelectTrigger className={`w-[120px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todos</SelectItem>
+              <SelectItem value="true">Habilitado</SelectItem>
+              <SelectItem value="false">No habilitado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {hayFiltros && (
+          <Button variant="ghost" size="sm" onClick={limpiarFiltros} className="gap-1.5 text-slate-500 hover:text-slate-700 shrink-0 transition-colors">
+            <X className="h-3.5 w-3.5" /> Limpiar
+          </Button>
+        )}
+        <span className="text-sm text-slate-500 tabular-nums shrink-0 pb-1">
+          {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
+        </span>
+      </FilterRowSelection>
+      <FilterRowSearch>
         <label className={FILTER_LABEL_CLASS} htmlFor="filtro-tienda-busqueda">Búsqueda</label>
         <div className="relative mt-1.5">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
@@ -91,7 +162,7 @@ export default function FiltrosTienda({
             value={q}
             onChange={(e) => handleQ(e.target.value)}
             placeholder="Buscar por descripción, código o marca..."
-            className={`pl-9 pr-8 ${INPUT_FILTER_CLASS}`}
+            className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
           />
           {q && (
             <button
@@ -103,76 +174,7 @@ export default function FiltrosTienda({
             </button>
           )}
         </div>
-      </div>
-      <div className="space-y-0">
-        <span className={FILTER_LABEL_CLASS}>Marca</span>
-        <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
-        <SelectTrigger className={`w-[140px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Marca" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Todas las marcas</SelectItem>
-          {marcas.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      </div>
-      <div className="space-y-0">
-        <span className={FILTER_LABEL_CLASS}>Rubro</span>
-        <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
-        <SelectTrigger className={`w-[140px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Rubro" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Todos los rubros</SelectItem>
-          {rubros.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      </div>
-      <div className="space-y-0">
-        <span className={FILTER_LABEL_CLASS}>Sub-rubro</span>
-        <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
-        <SelectTrigger className={`w-[140px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Sub-rubro" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Todos los sub-rubros</SelectItem>
-          {subRubros.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      </div>
-      <div className="space-y-0">
-        <span className={FILTER_LABEL_CLASS}>Costo</span>
-        <Select value={mejorPrecioActual || "none"} onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}>
-        <SelectTrigger className={`w-[180px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Costo" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Todos</SelectItem>
-          <SelectItem value="true">Menor Costo Disponible</SelectItem>
-        </SelectContent>
-      </Select>
-      </div>
-      <div className="space-y-0">
-        <span className={FILTER_LABEL_CLASS}>Estado</span>
-        <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
-        <SelectTrigger className={`w-[120px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
-          <SelectValue placeholder="Estado" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Todos</SelectItem>
-          <SelectItem value="true">Habilitado</SelectItem>
-          <SelectItem value="false">No habilitado</SelectItem>
-        </SelectContent>
-      </Select>
-      </div>
-      {hayFiltros && (
-        <Button variant="ghost" size="sm" onClick={limpiarFiltros} className="gap-1.5 text-slate-500 hover:text-slate-700 shrink-0 transition-colors">
-          <X className="h-3.5 w-3.5" /> Limpiar
-        </Button>
-      )}
-      <span className="text-sm text-slate-500 tabular-nums shrink-0 self-end pb-1">
-        {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
-      </span>
+      </FilterRowSearch>
     </FilterBar>
   );
 }

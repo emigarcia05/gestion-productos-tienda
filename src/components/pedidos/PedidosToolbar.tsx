@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Zap, RotateCw, Pipette, FileOutput } from "lucide-react";
+import { AlarmClock, RotateCw, Pipette, FileOutput } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: Zap },
+  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: AlarmClock },
   { key: "reposicion", label: "Pedido Reposición", href: "/pedidos/reposicion", icon: RotateCw },
   { key: "tintometrico", label: "Pedido Tintométrico", href: "/pedidos/tintometrico", icon: Pipette },
   { key: "generar", label: "Generar Pedido", href: "/pedidos/generar", icon: FileOutput },

@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import FilterBar, { INPUT_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
 
 const FOCUS_KEY = "buscador-simple-focus";
 
@@ -47,7 +47,12 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
 
   return (
     <FilterBar>
-      <div className="flex-1 min-w-[200px] max-w-md space-y-0">
+      <FilterRowSelection>
+        <span className="text-sm text-slate-500 tabular-nums pb-1">
+          {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
+        </span>
+      </FilterRowSelection>
+      <FilterRowSearch>
         <label className={FILTER_LABEL_CLASS} htmlFor="buscador-simple">Búsqueda</label>
         <div className="relative mt-1.5">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
@@ -57,7 +62,7 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
             value={q}
             onChange={(e) => handleQ(e.target.value)}
             placeholder="Buscar por descripción..."
-            className={`pl-9 pr-8 ${INPUT_FILTER_CLASS}`}
+            className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
           />
           {q && (
             <button
@@ -69,10 +74,7 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
             </button>
           )}
         </div>
-      </div>
-      <span className="text-sm text-slate-500 tabular-nums shrink-0 self-end pb-1">
-        {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
-      </span>
+      </FilterRowSearch>
     </FilterBar>
   );
 }

@@ -1,4 +1,4 @@
-import { Zap, RotateCw, Pipette, History } from "lucide-react";
+import { AlarmClock, RotateCw, Pipette, History } from "lucide-react";
 
 export const PEDIDOS_TAB_KEYS = ["urgente", "tintometrico", "reposicion", "historial"] as const;
 export type PedidosTabKey = (typeof PEDIDOS_TAB_KEYS)[number];
@@ -10,7 +10,7 @@ const TAB_CONFIG: Record<
   urgente: {
     label: "Pedido Urgente",
     href: "/pedidos/urgente",
-    icon: <Zap className="h-3.5 w-3.5 text-[#FFC107]" />,
+    icon: <AlarmClock className="h-3.5 w-3.5 text-[#FFC107]" />,
   },
   tintometrico: {
     label: "Pedido Tintométrico",

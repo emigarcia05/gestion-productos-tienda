@@ -4,7 +4,7 @@ interface Props {
   titulo: string;
   /** Nombre del submódulo actual (menor jerarquía, debajo del título) */
   subtitulo?: string;
-  /** Botones de acción a la derecha; mismo tamaño (size="sm") para coherencia */
+  /** Botones de acción a la derecha; tamaño uniforme obligatorio (h-10 px-4) */
   actions?: React.ReactNode;
 }
 
@@ -22,7 +22,7 @@ export default function SectionHeader({ titulo, subtitulo, actions }: Props) {
           </div>
         </div>
         {actions && (
-          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 [&_button]:h-8 [&_button]:shrink-0">
+          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 [&_button]:!h-10 [&_button]:!px-4 [&_button]:shrink-0">
             {actions}
           </div>
         )}
