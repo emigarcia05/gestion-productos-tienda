@@ -35,13 +35,13 @@ export default async function TiendaPage({ searchParams }: Props) {
   const itemsConMejorPrecio = await prisma.$queryRaw<{ item_tienda_id: string }[]>`
     SELECT it.id AS item_tienda_id
     FROM lista_tienda it
-    JOIN lista_proveedores p ON p.id = it.producto_proveedor_id
-    WHERE it.costo > 0 AND it.producto_proveedor_id IS NOT NULL
+    JOIN lista_proveedores p ON p.id = it."productoProveedorId"
+    WHERE it.costo > 0 AND it."productoProveedorId" IS NOT NULL
       AND (
-        p.precio_lista
-        * (1 - p.descuento_producto / 100.0)
-        * (1 - p.descuento_cantidad / 100.0)
-        * (1 + p.cx_transporte / 100.0)
+        p."precioLista"
+        * (1 - p."descuentoProducto" / 100.0)
+        * (1 - p."descuentoCantidad" / 100.0)
+        * (1 + p."cxTransporte" / 100.0)
       ) < it.costo * 0.99
   `;
   const setMejorPrecio = new Set(itemsConMejorPrecio.map((r) => r.item_tienda_id));
