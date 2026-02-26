@@ -85,7 +85,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
             <SelectValue placeholder="Proveedor" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todos los proveedores</SelectItem>
+            <SelectItem value="none">Proveedores</SelectItem>
             {proveedores.map((p) => (
               <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
             ))}

@@ -86,7 +86,7 @@ export default function FiltrosTienda({
             <SelectValue placeholder="Marca" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todas las marcas</SelectItem>
+            <SelectItem value="none">Marcas</SelectItem>
             {marcas.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -95,7 +95,7 @@ export default function FiltrosTienda({
             <SelectValue placeholder="Rubro" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todos los rubros</SelectItem>
+            <SelectItem value="none">Rubros</SelectItem>
             {rubros.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -104,7 +104,7 @@ export default function FiltrosTienda({
             <SelectValue placeholder="Sub-rubro" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todos los sub-rubros</SelectItem>
+            <SelectItem value="none">Sub-rubros</SelectItem>
             {subRubros.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>

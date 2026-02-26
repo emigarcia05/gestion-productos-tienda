@@ -1,4 +1,4 @@
-import { RotateCcw } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -38,10 +38,10 @@ export function FilterRowSelection({ children, className }: { children: React.Re
   );
 }
 
-/** Fila 2 (Búsqueda): input de texto. Ocupa 75% del ancho; borde #0072BB cuando activo. */
+/** Fila 2 (Búsqueda): input de texto. Ocupa ~75% dejando espacio al botón de limpieza; borde #0072BB cuando activo. */
 export function FilterRowSearch({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("w-[75%] max-w-2xl", className)}>
+    <div className={cn("w-[75%] max-w-2xl min-w-0", className)}>
       {children}
     </div>
   );
@@ -55,7 +55,7 @@ export const INPUT_FILTER_CLASS =
 export const SELECT_TRIGGER_FILTER_CLASS =
   "bg-white border-slate-300 rounded-lg h-9 text-sm text-slate-900 data-[placeholder]:text-slate-400 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
 
-/** Botón para limpiar todos los filtros. Solo visible cuando hayFiltros. Icono #0072BB, alineado con altura del input (h-9). */
+/** Botón de limpieza global (icono basura). A la derecha del input Descripción. Icono #0072BB, alineado h-9 con el input. */
 export function LimpiarFiltrosButton({
   onClick,
   visible,
@@ -75,7 +75,7 @@ export function LimpiarFiltrosButton({
           className="h-9 w-9 shrink-0 text-primary hover:bg-primary/10 hover:text-primary"
           aria-label="Limpiar todos los filtros"
         >
-          <RotateCcw className="h-[18px] w-[18px]" />
+          <Trash2 className="h-[18px] w-[18px]" />
         </Button>
       </TooltipTrigger>
       <TooltipContent>Limpiar todos los filtros</TooltipContent>

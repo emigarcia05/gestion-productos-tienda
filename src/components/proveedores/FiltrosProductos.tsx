@@ -86,7 +86,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
             <SelectValue placeholder="Proveedor" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todos los proveedores</SelectItem>
+            <SelectItem value="none">Proveedores</SelectItem>
             {proveedores.map((p) => (
               <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
             ))}
