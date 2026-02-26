@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "filtros-proveedores-focus";
 
@@ -80,17 +80,19 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
   return (
     <FilterBar>
       <FilterRowSelection>
-        <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="PROVEEDOR" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">PROVEEDORES</SelectItem>
-            {proveedores.map((p) => (
-              <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="PROVEEDOR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">PROVEEDORES</SelectItem>
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <span className={FILTER_COUNT_CLASS}>
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>

@@ -22,7 +22,7 @@ export default function SectionHeader({ titulo, subtitulo, actions }: Props) {
           </div>
         </div>
         {actions && (
-          <div className="action-buttons-header flex flex-wrap items-center justify-end gap-2 shrink-0 [&_button]:shrink-0">
+          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 [&_button]:shrink-0">
             {actions}
           </div>
         )}

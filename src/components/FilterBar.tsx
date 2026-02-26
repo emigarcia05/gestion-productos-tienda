@@ -55,12 +55,18 @@ export const INPUT_FILTER_CLASS =
   `bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} placeholder:text-slate-400 placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
 /**
+ * Wrapper para cada Select de filtros. Con flex-1 min-w-0, hasta 5 desplegables
+ * entran en una fila repartiendo el ancho por igual. Heredable.
+ */
+export const FILTER_SELECT_WRAPPER_CLASS = "min-w-0 flex-1";
+
+/**
  * Estilo maestro para listas desplegables de filtros (SelectTrigger).
- * Heredable: usar solo esta constante en todos los filtros.
- * - Mismo tamaño (w-[200px]), fuente negra, máscara en negrita.
+ * Usar dentro de un div con FILTER_SELECT_WRAPPER_CLASS para que entren 5 en una fila.
+ * Fuente negra, máscara en negrita.
  */
 export const SELECT_TRIGGER_FILTER_CLASS =
-  `w-[200px] min-w-[200px] bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-slate-400 data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
+  `w-full min-w-0 bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-slate-400 data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
 /** Clase para el indicador de cantidad de elementos filtrados (siempre #0072BB). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =

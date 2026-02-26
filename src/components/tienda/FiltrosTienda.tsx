@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "filtros-tienda-focus";
 
@@ -81,52 +81,62 @@ export default function FiltrosTienda({
   return (
     <FilterBar>
       <FilterRowSelection>
-        <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="MARCA" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">MARCAS</SelectItem>
-            {marcas.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="RUBRO" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">RUBROS</SelectItem>
-            {rubros.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="SUB-RUBRO" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">SUB-RUBROS</SelectItem>
-            {subRubros.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={mejorPrecioActual || "none"} onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="COSTO" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">TODOS</SelectItem>
-            <SelectItem value="true">Menor Costo Disponible</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="ESTADO" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">TODOS</SelectItem>
-            <SelectItem value="true">Habilitado</SelectItem>
-            <SelectItem value="false">No habilitado</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="MARCA" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">MARCAS</SelectItem>
+              {marcas.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="RUBRO" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">RUBROS</SelectItem>
+              {rubros.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="SUB-RUBRO" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">SUB-RUBROS</SelectItem>
+              {subRubros.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={mejorPrecioActual || "none"} onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="Costo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">TODOS</SelectItem>
+              <SelectItem value="true">Menor Costo Disponible</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="HABILITADO" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">TODOS</SelectItem>
+              <SelectItem value="true">Habilitado</SelectItem>
+              <SelectItem value="false">No habilitado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <span className={FILTER_COUNT_CLASS}>
           {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
         </span>

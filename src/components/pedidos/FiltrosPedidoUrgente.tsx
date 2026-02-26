@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 
@@ -69,28 +69,32 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
   return (
     <FilterBar className="px-4">
       <FilterRowSelection>
-        <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="SUCURSAL" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">SUCURSAL</SelectItem>
-            {SUCURSALES.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
-          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-            <SelectValue placeholder="PROVEEDOR" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">PROVEEDORES</SelectItem>
-            {proveedores.map((p) => (
-              <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="SUCURSAL" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">SUCURSAL</SelectItem>
+              {SUCURSALES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="PROVEEDOR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">PROVEEDORES</SelectItem>
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <span className={FILTER_COUNT_CLASS}>
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
