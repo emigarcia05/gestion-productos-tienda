@@ -154,11 +154,14 @@
   }
 }
 
-/* ─── Estilos madre: botones ─────────────────────────────────────────────────
+/* ─── Estilos madre: botones (Main Button) ───────────────────────────────────
  * Todo botón dentro de <main> hereda este estilo (navbar/sidebar excluidos).
- * Modificar aquí afecta a toda la app de forma coherente.
+ * Para botones de acción del header (Importar Lista, Acción Masiva, etc.) se
+ * puede usar además la clase .btn-main para garantizar el mismo aspecto.
+ * Dimensiones: 2.5rem; padding 1rem; border-radius 0.5rem; font-weight 600.
  */
-main button {
+main button,
+.btn-main {
   transition: box-shadow 0.15s ease, background-color 0.15s ease, filter 0.15s ease;
   box-shadow: 0 1px 2px #0000000d;
   border-radius: 0.5rem !important;
@@ -167,7 +170,8 @@ main button {
   padding-right: 1rem !important;
   font-weight: 600 !important;
 }
-main button:hover {
+main button:hover,
+.btn-main:hover {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 

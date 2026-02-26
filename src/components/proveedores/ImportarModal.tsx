@@ -143,7 +143,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="outline" size="default" className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}>
+            <Button variant="outline" size="default" className={`btn-main gap-2 ${ACTION_BUTTON_SECONDARY}`}>
               <Upload className="h-4 w-4" />
               Importar Lista
             </Button>
