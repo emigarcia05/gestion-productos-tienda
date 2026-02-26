@@ -259,29 +259,23 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               Los campos marcados con <span className="text-destructive">*</span> son obligatorios.
             </p>
 
-            <div className="rounded-lg border border-border/50 overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="rounded-lg border border-border/50 overflow-hidden bg-white">
+              <table className="tabla-global w-full text-sm">
                 <thead>
-                  <tr className="border-b border-brand-fg/20 bg-brand">
-                    <th className="text-left py-2 px-3 text-brand-fg font-semibold w-1/3">
-                      Columna del archivo
-                    </th>
-                    <th className="text-left py-2 px-3 text-brand-fg font-semibold w-1/3">
-                      Ejemplo
-                    </th>
-                    <th className="text-left py-2 px-3 text-brand-fg font-semibold w-1/3">
-                      Asignar a
-                    </th>
+                  <tr>
+                    <th className="py-2 px-3 text-xs w-1/3">Columna del archivo</th>
+                    <th className="py-2 px-3 text-xs w-1/3">Ejemplo</th>
+                    <th className="py-2 px-3 text-xs w-1/3">Asignar a</th>
                   </tr>
                 </thead>
                 <tbody>
                   {colLabels.map((label, i) => (
-                    <tr key={i} className="border-b border-border/30 last:border-0">
-                      <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground truncate max-w-[150px]">
+                    <tr key={i}>
+                      <td className="py-2.5 px-3 font-mono text-xs truncate max-w-[150px]">
                         {label}
                       </td>
                       <td className="py-2.5 px-3 text-xs truncate max-w-[150px]">
-                        {filaEjemplo[i] ?? <span className="text-muted-foreground italic">—</span>}
+                        {filaEjemplo[i] ?? <span className="text-slate-400 italic">—</span>}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="relative">

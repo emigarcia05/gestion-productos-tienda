@@ -41,42 +41,32 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
 
   return (
     <>
-      <div className="h-full overflow-auto rounded-lg border border-border/50">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-brand backdrop-blur-sm">
-            <tr className="border-b border-brand-fg/20">
+      <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
+        <table className="tabla-global w-full text-sm">
+          <thead className="sticky top-0 z-10">
+            <tr>
               {puede(rol, col.codItem) && (
-                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
+                <th className="w-16 py-2 px-2 text-xs leading-tight">
                   Cód.<br />Tienda
                 </th>
               )}
               {puede(rol, col.descripcion) && (
-                <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs">
-                  Descripción
-                </th>
+                <th className="py-2 px-3 text-xs">Descripción</th>
               )}
               {puede(rol, col.costo) && (
-                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-24 leading-tight">
-                  Costo
-                </th>
+                <th className="w-24 py-2 px-2 text-xs leading-tight">Costo</th>
               )}
               {puede(rol, col.proveedorDux) && (
-                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-40 leading-tight">
-                  Proveedor Dux
-                </th>
+                <th className="w-40 py-2 px-2 text-xs leading-tight">Proveedor Dux</th>
               )}
               {puede(rol, col.rubro) && (
-                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-32 leading-tight">
-                  Rubro
-                </th>
+                <th className="w-32 py-2 px-2 text-xs leading-tight">Rubro</th>
               )}
               {puede(rol, col.subRubro) && (
-                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-32 leading-tight">
-                  Sub-Rubro
-                </th>
+                <th className="w-32 py-2 px-2 text-xs leading-tight">Sub-Rubro</th>
               )}
               {puede(rol, col.mejorPrecio) && (
-                <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
+                <th className="w-16 py-2 px-2 text-xs leading-tight">
                   Mejor<br />Precio
                 </th>
               )}
@@ -87,41 +77,37 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
               <tr
                 key={item.id}
                 onClick={() => puedeVincular && setModalAbierto(item.id)}
-                className={`tabla-row transition-colors ${puedeVincular ? "cursor-pointer" : ""}`}
+                className={puedeVincular ? "cursor-pointer" : ""}
               >
                 {puede(rol, col.codItem) && (
-                  <td className="py-2 px-2 text-center font-mono text-xs text-white/60">
+                  <td className="py-2 px-2 font-mono text-xs">
                     {item.codItem}
                   </td>
                 )}
                 {puede(rol, col.descripcion) && (
-                  <td className="py-2 px-3 text-center text-xs text-white font-semibold">{item.descripcion}</td>
+                  <td className="py-2 px-3 text-xs font-semibold">{item.descripcion}</td>
                 )}
                 {puede(rol, col.costo) && (
-                  <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold">
+                  <td className="py-2 px-2 tabular-nums text-xs font-bold">
                     ${fmtPrecio(item.costo)}
                   </td>
                 )}
                 {puede(rol, col.proveedorDux) && (
-                  <td className="py-2 px-2 text-center text-xs text-white/60 truncate max-w-[160px]">
+                  <td className="py-2 px-2 text-xs truncate max-w-[160px]">
                     {item.proveedorDux ?? "—"}
                   </td>
                 )}
                 {puede(rol, col.rubro) && (
-                  <td className="py-2 px-2 text-center text-xs text-white/70">
-                    {item.rubro ?? "—"}
-                  </td>
+                  <td className="py-2 px-2 text-xs">{item.rubro ?? "—"}</td>
                 )}
                 {puede(rol, col.subRubro) && (
-                  <td className="py-2 px-2 text-center text-xs text-white/70">
-                    {item.subRubro ?? "—"}
-                  </td>
+                  <td className="py-2 px-2 text-xs">{item.subRubro ?? "—"}</td>
                 )}
                 {puede(rol, col.mejorPrecio) && (
                   <td className="py-2 px-2 text-center">
                     {setMejorPrecio.has(item.id)
                       ? <span title="Hay un proveedor con Px Compra Final menor al costo actual" className="flex justify-center"><TrendingDown className="h-4 w-4 text-emerald-500" /></span>
-                      : <span className="text-white/30 text-xs">—</span>
+                      : <span className="text-slate-400 text-xs">—</span>
                     }
                   </td>
                 )}

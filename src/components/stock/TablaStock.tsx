@@ -215,35 +215,30 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
       </div>
 
       {/* ── Tabla ── */}
-      <div className="flex-1 overflow-auto rounded-lg border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
-        <table className="w-full text-sm border-collapse">
+      <div className="flex-1 overflow-auto rounded-lg border bg-white" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
+        <table className="tabla-global w-full text-sm border-collapse">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-brand text-brand-fg">
-              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">Código</th>
-              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider">Descripción</th>
-              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">
-                Stock {sucursalLabel}
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider w-28">Últ. impresión</th>
+            <tr>
+              <th className="px-3 py-2 text-xs w-28">Código</th>
+              <th className="px-3 py-2 text-xs">Descripción</th>
+              <th className="px-3 py-2 text-xs w-28">Stock {sucursalLabel}</th>
+              <th className="px-3 py-2 text-xs w-28">Últ. impresión</th>
             </tr>
           </thead>
           <tbody>
             {filtrados.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center text-xs text-white/50 py-10">Sin resultados</td>
+                <td colSpan={4} className="text-center text-xs text-slate-500 py-10">Sin resultados</td>
               </tr>
             )}
-            {filtrados.map((item, idx) => (
-              <tr
-                key={item.id}
-                className={`tabla-row transition-colors ${idx % 2 === 0 ? "" : "bg-white/[0.02]"}`}
-              >
-                <td className="px-3 py-2 text-xs text-white/70 font-mono">{item.codItem}</td>
-                <td className="px-3 py-2 text-xs text-white">{item.descripcion}</td>
-                <td className="px-3 py-2 text-sm text-right font-semibold tabular-nums text-white">
+            {filtrados.map((item) => (
+              <tr key={item.id}>
+                <td className="px-3 py-2 text-xs font-mono">{item.codItem}</td>
+                <td className="px-3 py-2 text-xs">{item.descripcion}</td>
+                <td className="px-3 py-2 text-sm font-semibold tabular-nums">
                   {item.stock % 1 === 0 ? item.stock.toFixed(0) : item.stock.toFixed(2)}
                 </td>
-                <td className="px-3 py-2 text-xs text-center text-white/50 tabular-nums">
+                <td className="px-3 py-2 text-xs tabular-nums">
                   {fmtFecha(impresiones[item.id] ?? item.ultimaImpresion)}
                 </td>
               </tr>

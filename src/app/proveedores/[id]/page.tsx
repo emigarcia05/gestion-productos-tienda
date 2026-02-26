@@ -94,16 +94,16 @@ export default async function ProveedorDetallePage({ params }: Props) {
                 />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto bg-white rounded-lg border border-border/50">
+                <table className="tabla-global w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border/50">
-                      {puede(rol, p.tabla.codProdProv) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Proveedor</th>}
-                      {puede(rol, p.tabla.codExt) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Cód. Externo</th>}
-                      {puede(rol, p.tabla.descripcion) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Descripción</th>}
-                      {puede(rol, p.tabla.precioLista) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Lista</th>}
-                      {puede(rol, p.tabla.precioVentaSugerido) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Px Venta</th>}
-                      {puede(rol, p.tabla.margen) && <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Margen</th>}
+                    <tr>
+                      {puede(rol, p.tabla.codProdProv) && <th className="py-2.5 px-3 text-xs">Cód. Proveedor</th>}
+                      {puede(rol, p.tabla.codExt) && <th className="py-2.5 px-3 text-xs">Cód. Externo</th>}
+                      {puede(rol, p.tabla.descripcion) && <th className="py-2.5 px-3 text-xs">Descripción</th>}
+                      {puede(rol, p.tabla.precioLista) && <th className="py-2.5 px-3 text-xs">Px Lista</th>}
+                      {puede(rol, p.tabla.precioVentaSugerido) && <th className="py-2.5 px-3 text-xs">Px Venta</th>}
+                      {puede(rol, p.tabla.margen) && <th className="py-2.5 px-3 text-xs">Margen</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -115,43 +115,32 @@ export default async function ProveedorDetallePage({ params }: Props) {
                       const margenNum = parseFloat(margen);
 
                       return (
-                        <tr
-                          key={prod.id}
-                          className="border-b border-border/30 hover:bg-muted/30 transition-colors"
-                        >
+                        <tr key={prod.id}>
                           {puede(rol, p.tabla.codProdProv) && (
-                            <td className="py-3 px-3 text-center font-mono text-xs text-muted-foreground">
-                              {prod.codProdProv}
-                            </td>
+                            <td className="py-3 px-3 font-mono text-xs">{prod.codProdProv}</td>
                           )}
                           {puede(rol, p.tabla.codExt) && (
                             <td className="py-3 px-3 text-center">
-                              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                                {prod.codExt}
-                              </code>
+                              <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{prod.codExt}</code>
                             </td>
                           )}
                           {puede(rol, p.tabla.descripcion) && (
-                            <td className="py-3 px-3 text-center max-w-xs truncate">{prod.descripcion}</td>
+                            <td className="py-3 px-3 max-w-xs truncate">{prod.descripcion}</td>
                           )}
                           {puede(rol, p.tabla.precioLista) && (
-                            <td className="py-3 px-3 text-center tabular-nums">
-                              ${Math.round(prod.precioLista).toLocaleString("es-AR")}
-                            </td>
+                            <td className="py-3 px-3 tabular-nums">${Math.round(prod.precioLista).toLocaleString("es-AR")}</td>
                           )}
                           {puede(rol, p.tabla.precioVentaSugerido) && (
-                            <td className="py-3 px-3 text-center tabular-nums">
-                              ${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}
-                            </td>
+                            <td className="py-3 px-3 tabular-nums">${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}</td>
                           )}
                           {puede(rol, p.tabla.margen) && (
                             <td className="py-3 px-3 text-center">
                               {margen !== "—" ? (
-                                <span className={margenNum >= 0 ? "text-emerald-500" : "text-destructive"}>
+                                <span className={margenNum >= 0 ? "text-emerald-600" : "text-destructive"}>
                                   {margenNum >= 0 ? "+" : ""}{margen}%
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">—</span>
+                                <span className="text-slate-400">—</span>
                               )}
                             </td>
                           )}

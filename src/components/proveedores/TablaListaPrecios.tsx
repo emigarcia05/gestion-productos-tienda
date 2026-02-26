@@ -48,37 +48,25 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Prop
 
   return (
     <>
-    <div className="h-full overflow-auto rounded-lg border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 z-10 bg-brand">
+    <div className="h-full overflow-auto rounded-lg border bg-white" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
+      <table className="tabla-global w-full text-sm">
+        <thead className="sticky top-0 z-10">
           <tr>
-            <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs w-28">
-              Proveedor
-            </th>
-            <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs">
-              Descripción
-            </th>
-            <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs w-32">
-              Cantidad Urgente
-            </th>
+            <th className="py-2 px-3 text-xs w-28">Proveedor</th>
+            <th className="py-2 px-3 text-xs">Descripción</th>
+            <th className="py-2 px-3 text-xs w-32 text-primary">Cantidad Urgente</th>
           </tr>
         </thead>
         <tbody>
           {productos.map((prod) => (
             <tr
               key={prod.id}
-              className={`tabla-row transition-colors ${puedeAgregar ? "cursor-pointer hover:bg-white/5" : ""}`}
+              className={puedeAgregar ? "cursor-pointer" : ""}
               onDoubleClick={() => handleDobleClick(prod)}
             >
-              <td className="py-2 px-3 text-center text-xs text-white/60 font-mono">
-                {prod.proveedor.sufijo}
-              </td>
-              <td className="py-2 px-3 text-center text-xs text-white font-semibold">
-                {prod.descripcion}
-              </td>
-              <td className="py-2 px-3 text-center tabular-nums text-xs text-white/80">
-                —
-              </td>
+              <td className="py-2 px-3 text-xs font-mono">{prod.proveedor.sufijo}</td>
+              <td className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</td>
+              <td className="py-2 px-3 text-center tabular-nums text-xs">—</td>
             </tr>
           ))}
         </tbody>

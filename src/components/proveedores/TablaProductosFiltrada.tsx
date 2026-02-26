@@ -96,10 +96,10 @@ function CeldaPorcentaje({
   return (
     <button
       onClick={() => { setDraft(String(valor)); setEditando(true); }}
-      className="w-full text-center text-xs tabular-nums text-white/70 hover:text-white transition-colors cursor-pointer"
+      className="w-full text-center text-xs tabular-nums text-slate-700 hover:text-black transition-colors cursor-pointer"
       title="Clic para editar"
     >
-      {valor > 0 ? fmtPorcentaje(valor) : <span className="text-white/30">—</span>}
+      {valor > 0 ? fmtPorcentaje(valor) : <span className="text-slate-400">—</span>}
     </button>
   );
 }
@@ -155,97 +155,67 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
   }
 
   return (
-    <div className="h-full overflow-auto rounded-lg border border-border/50">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 z-10 bg-brand backdrop-blur-sm">
-          <tr className="border-b border-brand-fg/20">
+    <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
+      <table className="tabla-global w-full text-sm">
+        <thead className="sticky top-0 z-10">
+          <tr>
             {puede(rol, col.codProdProv) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
-                Cod.<br />Prov.
-              </th>
+              <th className="py-2 px-2 text-xs w-16 leading-tight">Cod.<br />Prov.</th>
             )}
             {puede(rol, col.codExt) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-24 leading-tight">
-                Cód.<br />Externo
-              </th>
+              <th className="py-2 px-2 text-xs w-24 leading-tight">Cód.<br />Externo</th>
             )}
             {puede(rol, col.descripcion) && (
-              <th className="text-center py-2 px-3 text-brand-fg font-semibold text-xs">
-                Descripción
-              </th>
+              <th className="py-2 px-3 text-xs">Descripción</th>
             )}
             {puede(rol, col.proveedor) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-14 leading-tight">
-                Prov.
-              </th>
+              <th className="py-2 px-2 text-xs w-14 leading-tight">Prov.</th>
             )}
             {puede(rol, col.precioLista) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-20 leading-tight">
-                Px<br />Lista
-              </th>
+              <th className="py-2 px-2 text-xs w-20 leading-tight">Px<br />Lista</th>
             )}
             {puede(rol, col.precioVentaSugerido) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-20 leading-tight">
-                Px Venta<br />Sug.
-              </th>
+              <th className="py-2 px-2 text-xs w-20 leading-tight">Px Venta<br />Sug.</th>
             )}
             {puede(rol, col.descuentoProducto) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-12 leading-tight">
-                Dto.<br />Prod.
-              </th>
+              <th className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Prod.</th>
             )}
             {puede(rol, col.descuentoCantidad) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-12 leading-tight">
-                Dto.<br />Cant.
-              </th>
+              <th className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Cant.</th>
             )}
             {puede(rol, col.cxTransporte) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-12 leading-tight">
-                Cx<br />Transp.
-              </th>
+              <th className="py-2 px-2 text-xs w-12 leading-tight">Cx<br />Transp.</th>
             )}
             {puede(rol, col.precioCompraFinal) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-24 leading-tight">
-                Px Compra<br />Final
-              </th>
+              <th className="py-2 px-2 text-xs w-24 leading-tight">Px Compra<br />Final</th>
             )}
             {puede(rol, col.disponible) && (
-              <th className="text-center py-2 px-2 text-brand-fg font-semibold text-xs w-16 leading-tight">
-                Disp.
-              </th>
+              <th className="py-2 px-2 text-xs w-16 leading-tight">Disp.</th>
             )}
           </tr>
         </thead>
         <tbody>
           {productos.map((prod) => (
-            <tr key={prod.id} className="tabla-row transition-colors">
+            <tr key={prod.id}>
               {puede(rol, col.codProdProv) && (
-                <td className="py-2 px-2 text-center font-mono text-xs text-white/60">
-                  {prod.codProdProv}
-                </td>
+                <td className="py-2 px-2 font-mono text-xs">{prod.codProdProv}</td>
               )}
               {puede(rol, col.codExt) && (
-                <td className="py-2 px-2 text-center whitespace-nowrap">
-                  <code className="text-xs text-white/60 px-1.5 py-0.5 rounded font-mono">{prod.codExt}</code>
+                <td className="py-2 px-2 whitespace-nowrap">
+                  <code className="text-xs px-1.5 py-0.5 rounded font-mono bg-slate-100">{prod.codExt}</code>
                 </td>
               )}
               {puede(rol, col.descripcion) && (
-                <td className="py-2 px-3 text-center text-white font-semibold text-xs">{prod.descripcion}</td>
+                <td className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</td>
               )}
               {puede(rol, col.proveedor) && (
-                <td className="py-2 px-2 text-center text-white/60 text-xs font-mono">
-                  {prod.proveedor.sufijo}
-                </td>
+                <td className="py-2 px-2 text-xs font-mono">{prod.proveedor.sufijo}</td>
               )}
               {puede(rol, col.precioLista) && (
-                <td className="py-2 px-2 text-center tabular-nums text-xs text-white/70 whitespace-nowrap">
-                  ${fmtPrecio(prod.precioLista)}
-                </td>
+                <td className="py-2 px-2 tabular-nums text-xs whitespace-nowrap">${fmtPrecio(prod.precioLista)}</td>
               )}
               {puede(rol, col.precioVentaSugerido) && (
-                <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold whitespace-nowrap">
-                  ${fmtPrecio(prod.precioVentaSugerido)}
-                </td>
+                <td className="py-2 px-2 tabular-nums text-xs font-bold whitespace-nowrap">${fmtPrecio(prod.precioVentaSugerido)}</td>
               )}
               {puede(rol, col.descuentoProducto) && (
                 <td className="py-2 px-2 text-center">
@@ -263,7 +233,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
                 </td>
               )}
               {puede(rol, col.precioCompraFinal) && (
-                <td className="py-2 px-2 text-center tabular-nums text-xs text-white font-bold whitespace-nowrap">
+                <td className="py-2 px-2 tabular-nums text-xs font-bold whitespace-nowrap">
                   ${fmtPrecio(calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte))}
                 </td>
               )}

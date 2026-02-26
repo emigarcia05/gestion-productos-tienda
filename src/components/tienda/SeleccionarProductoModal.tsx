@@ -158,13 +158,13 @@ export default function SeleccionarProductoModal({
               {proveedorSeleccionado ? ` en ${proveedorSeleccionado.nombre}` : ""}
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-brand backdrop-blur-sm border-b border-brand-fg/20">
+            <table className="tabla-global w-full text-sm">
+              <thead className="sticky top-0">
                 <tr>
-                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold w-20">Prov.</th>
-                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold w-28">Cód. Ext.</th>
-                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold">Descripción</th>
-                  <th className="text-center py-2 px-3 text-xs text-brand-fg font-semibold w-24">Px Lista</th>
+                  <th className="py-2 px-3 text-xs w-20">Prov.</th>
+                  <th className="py-2 px-3 text-xs w-28">Cód. Ext.</th>
+                  <th className="py-2 px-3 text-xs">Descripción</th>
+                  <th className="py-2 px-3 text-xs w-24">Px Lista</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,11 +174,7 @@ export default function SeleccionarProductoModal({
                     <tr
                       key={prod.id}
                       onClick={() => handleClick(prod)}
-                      className={`border-b border-border/30 cursor-pointer select-none transition-colors ${
-                        seleccionado
-                          ? "bg-primary/10 border-primary/30"
-                          : "hover:bg-muted/30"
-                      }`}
+                      className={`cursor-pointer select-none ${seleccionado ? "!bg-primary/10" : ""}`}
                       title="Doble clic para vincular"
                     >
                       <td className="py-2.5 px-3 text-center">
@@ -187,7 +183,7 @@ export default function SeleccionarProductoModal({
                         </Badge>
                       </td>
                       <td className="py-2.5 px-3 text-center">
-                        <code className="text-xs text-muted-foreground">{prod.codExt}</code>
+                        <code className="text-xs text-slate-600">{prod.codExt}</code>
                       </td>
                       <td className="py-2.5 px-3 text-center text-xs">
                         {seleccionado

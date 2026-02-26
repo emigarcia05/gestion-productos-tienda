@@ -53,11 +53,16 @@ Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha 
 - **Fila 2:** Input de búsqueda en wrapper al **75% de ancho** (`FilterRowSearch`). Placeholder tipo "Buscar por descripción o código..." con `placeholder:text-slate-400`; texto al escribir `text-slate-900`. Borde **#0072BB** cuando activo (`INPUT_FILTER_CLASS`).
 - Contenedor: `gap-y-2 py-2` entre filas para ahorro vertical. Fondo blanco, bordes `border-slate-300`.
 
-## 4. Tabla de datos
+## 4. Tabla de datos — regla obligatoria
+
+**Todas las tablas de la aplicación** (todos los módulos y usuarios) deben tener **exactamente el mismo estilo**. Para garantizarlo solo hay dos formas válidas de implementar una tabla:
+
+1. **Componente shadcn:** Usar `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` de `@/components/ui/table`.
+2. **HTML con clase global:** Usar `<table className="tabla-global ...">` y no añadir estilos propios a `thead`, `tbody`, `tr`, `th`, `td` (ni `bg-brand`, ni `text-white`, ni `text-white/60`, etc.). El contenedor de la tabla debe tener fondo claro (`bg-white`) para que el zebra y el texto negro se vean correctamente.
+
+**Prohibido:** `<table>` con clases propias en encabezados o celdas que anulen el diseño unificado (p. ej. `text-brand-fg`, `text-white/70` en celdas). Cualquier tabla nueva debe usar (1) o (2).
 
 **Card contenedora:** `bg-white`, `rounded-xl`, `border-slate-200`, `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`.
-
-Usar el componente `Table` de shadcn (o clase `tabla-global` en `<table>` HTML) para herencia automática.
 
 **Encabezado (thead):** Fondo color de marca sólido `#0072BB`, texto blanco puro `text-white`, `font-bold`, alineación `text-center`.
 

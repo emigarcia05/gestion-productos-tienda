@@ -1,0 +1,23 @@
+---
+description: Regla obligatoria para que todas las tablas de la app tengan exactamente el mismo estilo. Aplica a todos los módulos y usuarios.
+globs: **/*.tsx, **/*.jsx
+---
+
+# Tablas: estilo unificado obligatorio
+
+En esta aplicación **todas las tablas** deben verse igual: mismo encabezado (#0072BB, texto blanco, centrado), mismas filas (zebra blanco / blue-50), mismo texto de datos (negro, centrado), mismo hover.
+
+## Formas válidas (solo estas dos)
+
+1. **Componente shadcn:** Importar y usar `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` desde `@/components/ui/table`. No añadir clases que anulen el estilo (p. ej. no `text-white` en celdas, no `bg-brand` en thead).
+
+2. **HTML con clase global:** Usar `<table className="tabla-global ...">` y **no** poner en `thead`/`tbody`/`tr`/`th`/`td` estilos que cambien el diseño unificado. El contenedor de la tabla debe tener `bg-white` para que el zebra y el texto negro se vean bien.
+
+## Prohibido
+
+- `<table>` sin `tabla-global` y con estilos propios en encabezados o celdas (p. ej. `text-brand-fg`, `text-white/60`, `bg-brand` en thead sin usar tabla-global).
+- Cualquier tabla que no use (1) o (2).
+
+## Comprobar
+
+Antes de añadir una tabla nueva, verificar que usa `Table` de shadcn o `className="tabla-global"`. Si alguien añade una tabla con `<table className="w-full">` y estilos propios, corregir para usar una de las dos opciones anteriores.
