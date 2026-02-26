@@ -59,7 +59,7 @@ const MODULES: {
     label: "Lista Tienda",
     icon: <ShoppingBag className={iconClass} />,
     submodules: [
-      { href: "/tienda", label: "Comparación Px Proveedores (Act. Prod vinculados)", icon: <Link2 className="h-4 w-4 shrink-0" /> },
+      { href: "/tienda", label: "Comparación Px Proveedores", icon: <Link2 className="h-4 w-4 shrink-0" /> },
       { href: "/tienda/aumentos", label: "Control aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
     ],
   },
@@ -124,19 +124,18 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             >
               <CollapsibleTrigger
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                  isOpen
-                    ? "font-bold text-white [&_svg]:text-white"
-                    : "font-semibold text-white/70 [&_svg]:text-white/70 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white"
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/30",
+                  "[&>span:first-child_svg]:text-[#FFC107]",
+                  !isOpen && "hover:bg-white/10"
                 )}
                 aria-expanded={isOpen}
               >
-                <span className="h-5 w-5 shrink-0 flex items-center justify-center [&_svg]:inherit">
+                <span className="h-5 w-5 shrink-0 flex items-center justify-center">
                   {module.icon}
                 </span>
                 <span className="min-w-0 flex-1 text-left">{module.label}</span>
                 <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
+                  className={cn("h-4 w-4 shrink-0 text-[#FFC107] transition-transform duration-200", isOpen && "rotate-180")}
                   aria-hidden
                 />
               </CollapsibleTrigger>
@@ -149,11 +148,11 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                         key={sub.href}
                         href={sub.href}
                         className={cn(
-                          "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm transition-colors",
+                          "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-white transition-colors",
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
-                            ? "border-[#FFC107] bg-white/10 font-semibold text-[#FFC107] [&_svg]:text-[#FFC107]"
-                            : "border-transparent text-white/70 [&_svg]:text-white/50 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white/80",
+                            ? "border-[#FFC107] bg-white/10 [&_svg]:text-[#FFC107]"
+                            : "border-transparent text-white/90 [&_svg]:text-white/70 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white/90",
                           sub.isUrgente && "relative"
                         )}
                       >
@@ -176,7 +175,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           >
             <User className="h-4 w-4" />
           </div>
-          <div className="min-w-0 flex-1 [&_button]:text-white/80 [&_button:hover]:text-white [&_svg]:text-inherit">
+          <div className="min-w-0 flex-1 [&_button]:!text-white/80 [&_button:hover]:!text-white [&_svg]:text-inherit">
             <p className="text-sm font-medium text-white">{perfilNombre}</p>
             <SelectorRol rolActual={rol} compact />
           </div>

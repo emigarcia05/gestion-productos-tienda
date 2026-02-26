@@ -57,13 +57,15 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
     });
   }
 
+  const switcherClass = "flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors";
+
   const switcher =
     rolActual === "editor" ? (
       <button
         type="button"
         onClick={handleVolver}
         disabled={pending}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className={switcherClass}
       >
         <LogOut className="h-3 w-3" />
         Salir
@@ -72,7 +74,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
       <button
         type="button"
         onClick={handleAbrirModal}
-        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+        className={switcherClass}
       >
         <ShieldCheck className="h-3 w-3" />
         Cambiar a Editor
@@ -137,21 +139,12 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
   return (
     <>
       <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-4 py-2.5 shadow-sm">
-        {rolActual === "editor" ? (
-          <>
-            <ShieldCheck className="h-4 w-4 text-accent2 shrink-0" />
-            <span className="text-sm font-medium text-accent2">Modo Editor</span>
-            <span className="text-muted-foreground text-xs mx-1">·</span>
-            {switcher}
-          </>
-        ) : (
-          <>
-            <User className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-medium text-muted-foreground">Modo Simple</span>
-            <span className="text-muted-foreground text-xs mx-1">·</span>
-            {switcher}
-          </>
-        )}
+        <User className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-medium text-foreground">
+          {rolActual === "editor" ? "Modo Editor" : "Modo Simple"}
+        </span>
+        <span className="text-muted-foreground text-xs mx-1">·</span>
+        {switcher}
       </div>
 
       {/* Modal de clave */}

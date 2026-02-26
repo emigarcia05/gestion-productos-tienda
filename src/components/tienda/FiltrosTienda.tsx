@@ -83,7 +83,7 @@ export default function FiltrosTienda({
       <FilterRowSelection>
         <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Seleccionar marca" />
+            <SelectValue placeholder="Marca" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Todas las marcas</SelectItem>
@@ -92,7 +92,7 @@ export default function FiltrosTienda({
         </Select>
         <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Filtrar por rubro" />
+            <SelectValue placeholder="Rubro" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Todos los rubros</SelectItem>
@@ -101,7 +101,7 @@ export default function FiltrosTienda({
         </Select>
         <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Filtrar por sub-rubro" />
+            <SelectValue placeholder="Sub-rubro" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Todos los sub-rubros</SelectItem>
