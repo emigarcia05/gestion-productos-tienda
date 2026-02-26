@@ -77,7 +77,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo={titulo} subtitulo="Consulta Px Sugerido" actions={acciones} />
+      <SectionHeader titulo={titulo} subtitulo="Lista Proveedores" actions={acciones} />
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">

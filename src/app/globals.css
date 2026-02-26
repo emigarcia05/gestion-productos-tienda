@@ -132,7 +132,7 @@
 @layer utilities {
   /* Tablas globales (raw <table class="tabla-global">): mismo diseño que Table de shadcn */
   .tabla-global thead th {
-    @apply bg-[#0072BB] text-white font-bold text-center align-middle px-3 py-4;
+    @apply bg-[#0072BB] text-white font-bold text-center align-middle px-3 py-4 uppercase;
   }
   .tabla-global tbody td {
     @apply text-black font-medium text-center align-middle px-3 py-4;

@@ -19,7 +19,7 @@ export function filtroTexto(q: string, campos: string[]) {
 }
 
 /**
- * Where para lista "Consulta Px" / "Pedido urgente": productos con precio sugerido
+ * Where para "Lista Proveedores" / "Pedido urgente": productos con precio sugerido
  * que coincidan por descripción de proveedor O por descripción de lista tienda
  * (vía codigoExterno = codExt).
  */

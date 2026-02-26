@@ -50,8 +50,8 @@ const MODULES: {
     label: "Lista Proveedores",
     icon: <Handshake className={iconClass} />,
     submodules: [
-      { href: "/proveedores", label: "Consulta Px Sugerido", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/lista", label: "Lista Proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores", label: "Lista Proveedores", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/lista", label: "Listado de proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
     ],
   },
   {

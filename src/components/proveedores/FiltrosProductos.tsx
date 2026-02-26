@@ -83,10 +83,10 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
       <FilterRowSelection>
         <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Proveedor" />
+            <SelectValue placeholder="PROVEEDOR" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Proveedores</SelectItem>
+            <SelectItem value="none">PROVEEDORES</SelectItem>
             {proveedores.map((p) => (
               <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
             ))}
@@ -106,7 +106,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
               id="filtro-proveedores-busqueda"
               value={q}
               onChange={(e) => handleQ(e.target.value)}
-              placeholder="Buscar por descripción o código..."
+              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
               className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
             />
             {q && !buscando && (

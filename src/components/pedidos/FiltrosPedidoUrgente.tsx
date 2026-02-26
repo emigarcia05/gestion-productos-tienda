@@ -71,10 +71,10 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
       <FilterRowSelection>
         <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
           <SelectTrigger className={`w-[180px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Sucursal" />
+            <SelectValue placeholder="SUCURSAL" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Sucursal</SelectItem>
+            <SelectItem value="none">SUCURSAL</SelectItem>
             {SUCURSALES.map((s) => (
               <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
             ))}
@@ -82,10 +82,10 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
         </Select>
         <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
           <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Proveedor" />
+            <SelectValue placeholder="PROVEEDOR" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Proveedores</SelectItem>
+            <SelectItem value="none">PROVEEDORES</SelectItem>
             {proveedores.map((p) => (
               <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
             ))}
@@ -103,7 +103,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
               id="filtro-pedidos-busqueda"
               value={qLocal}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Buscar por descripción o código..."
+              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
               className={`pl-9 w-full ${INPUT_FILTER_CLASS}`}
             />
           </div>

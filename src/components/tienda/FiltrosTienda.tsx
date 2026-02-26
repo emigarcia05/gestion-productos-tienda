@@ -83,46 +83,46 @@ export default function FiltrosTienda({
       <FilterRowSelection>
         <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Marca" />
+            <SelectValue placeholder="MARCA" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Marcas</SelectItem>
+            <SelectItem value="none">MARCAS</SelectItem>
             {marcas.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Rubro" />
+            <SelectValue placeholder="RUBRO" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Rubros</SelectItem>
+            <SelectItem value="none">RUBROS</SelectItem>
             {rubros.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Sub-rubro" />
+            <SelectValue placeholder="SUB-RUBRO" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Sub-rubros</SelectItem>
+            <SelectItem value="none">SUB-RUBROS</SelectItem>
             {subRubros.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={mejorPrecioActual || "none"} onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[180px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Costo" />
+            <SelectValue placeholder="COSTO" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todos</SelectItem>
+            <SelectItem value="none">TODOS</SelectItem>
             <SelectItem value="true">Menor Costo Disponible</SelectItem>
           </SelectContent>
         </Select>
         <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
           <SelectTrigger className={`w-[120px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
-            <SelectValue placeholder="Estado" />
+            <SelectValue placeholder="ESTADO" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Todos</SelectItem>
+            <SelectItem value="none">TODOS</SelectItem>
             <SelectItem value="true">Habilitado</SelectItem>
             <SelectItem value="false">No habilitado</SelectItem>
           </SelectContent>
@@ -140,7 +140,7 @@ export default function FiltrosTienda({
               id="filtro-tienda-busqueda"
               value={q}
               onChange={(e) => handleQ(e.target.value)}
-              placeholder="Buscar por descripción, código o marca..."
+              placeholder="BUSCAR POR DESCRIPCIÓN, CÓDIGO O MARCA..."
               className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
             />
             {q && (

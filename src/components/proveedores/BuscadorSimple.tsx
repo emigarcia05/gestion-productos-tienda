@@ -70,7 +70,7 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
               id="buscador-simple"
               value={q}
               onChange={(e) => handleQ(e.target.value)}
-              placeholder="Buscar por descripción o código..."
+              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
               className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
             />
             {q && (
