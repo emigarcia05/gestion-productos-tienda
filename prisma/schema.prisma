@@ -41,7 +41,7 @@ model ProductoProveedor {
 
   @@index([proveedorId])
   @@index([codigoExterno])
-  @@map("productos")
+  @@map("lista_proveedores")
 }
 
 model ImportLog {
@@ -88,7 +88,7 @@ model ItemTienda {
   @@index([rubro])
   @@index([marca])
   @@index([habilitado])
-  @@map("items_tienda")
+  @@map("lista_tienda")
 }
 
 model SyncLog {

@@ -34,8 +34,8 @@ export default async function TiendaPage({ searchParams }: Props) {
   // Px Compra Final = precioLista * (1 - dto1/100) * (1 - dto2/100) * (1 + cx/100)
   const itemsConMejorPrecio = await prisma.$queryRaw<{ item_tienda_id: string }[]>`
     SELECT it.id AS item_tienda_id
-    FROM items_tienda it
-    JOIN productos p ON p.id = it."productoProveedorId"
+    FROM lista_tienda it
+    JOIN lista_proveedores p ON p.id = it."productoProveedorId"
     WHERE it.costo > 0 AND it."productoProveedorId" IS NOT NULL
       AND (
         p."precioLista"
