@@ -3,13 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
+import { createProveedorSchema } from "@/lib/validations/proveedor";
+import * as proveedorService from "@/services/proveedor.service";
 
-// ─── MOCK: sin Prisma; datos de prueba ──────────────────────────────────────
-
-const MOCK_PROVEEDORES = [
-  { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM", _count: { productosProveedor: 2 } },
-  { id: "mock-prov-2", nombre: "Otro Proveedor", codigoUnico: "OTR", sufijo: "OTR", _count: { productosProveedor: 0 } },
-];
+// ─── MOCK: productos de prueba (lista de proveedores viene del servicio) ─────
 
 const MOCK_PRODUCTOS = [
   {
@@ -29,11 +26,12 @@ const MOCK_PRODUCTOS = [
 ];
 
 export async function getProveedores() {
-  return MOCK_PROVEEDORES;
+  return proveedorService.getProveedores();
 }
 
 export async function getProveedorById(id: string) {
-  const prov = MOCK_PROVEEDORES.find((p) => p.id === id);
+  const proveedores = await getProveedores();
+  const prov = proveedores.find((p) => p.id === id);
   if (!prov) return null;
   const productosProveedor = MOCK_PRODUCTOS.filter((p) => p.proveedorId === id);
   return { ...prov, codigoUnico: prov.codigoUnico, productosProveedor, _count: { productosProveedor: productosProveedor.length } };
@@ -46,25 +44,41 @@ export async function getProveedoresPageData(params: {
   pagina?: string;
 }) {
   const { pagina = "1" } = params;
+  const proveedores = await getProveedores();
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const PAGE_SIZE = 50;
   const skip = (paginaNum - 1) * PAGE_SIZE;
   const total = MOCK_PRODUCTOS.length;
   const productos = MOCK_PRODUCTOS.slice(skip, skip + PAGE_SIZE);
-  return { proveedores: MOCK_PROVEEDORES, productos, total, totalPaginas: Math.ceil(total / PAGE_SIZE) };
+  return { proveedores, productos, total, totalPaginas: Math.ceil(total / PAGE_SIZE) };
 }
 
-// ─── Crear (mock) ──────────────────────────────────────────────────────────
+// ─── Crear: validación Zod + servicio (unique constraint → error amigable) ───
 
 export async function crearProveedor(formData: FormData): Promise<ActionResult<{ id: string }>> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  const nombre = (formData.get("nombre") as string)?.trim();
-  const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
-  if (!nombre || nombre.length < 2) return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
-  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo))
-    return { ok: false, error: "El sufijo debe tener exactamente 3 letras." };
-  revalidatePath("/proveedores");
-  return { ok: true, data: { id: "mock-new-" + Date.now() } };
+
+  const raw = {
+    nombre: (formData.get("nombre") as string) ?? "",
+    sufijo: (formData.get("sufijo") as string) ?? "",
+  };
+  const parsed = createProveedorSchema.safeParse(raw);
+  if (!parsed.success) {
+    const first = parsed.error.flatten().fieldErrors;
+    const msg = first.nombre?.[0] ?? first.sufijo?.[0] ?? "Datos inválidos.";
+    return { ok: false, error: msg };
+  }
+
+  try {
+    const { id } = await proveedorService.createProveedor(parsed.data);
+    revalidatePath("/proveedores");
+    revalidatePath("/proveedores/lista");
+    revalidatePath("/proveedores/gestion");
+    return { ok: true, data: { id } };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error al crear el proveedor.";
+    return { ok: false, error: message };
+  }
 }
 
 // ─── Editar / Eliminar (mock) ───────────────────────────────────────────────

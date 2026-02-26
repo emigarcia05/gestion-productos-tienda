@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useFormStatus } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,17 @@ import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 interface Props {
   proveedor?: { id: string; nombre: string; sufijo: string };
   onSuccess?: () => void;
+}
+
+function SubmitButton({ isEdit, pending }: { isEdit: boolean; pending: boolean }) {
+  const formStatus = useFormStatus();
+  const loading = pending || formStatus.pending;
+  return (
+    <Button type="submit" disabled={loading} className="gap-2">
+      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+      {isEdit ? "Guardar cambios" : "Guardar"}
+    </Button>
+  );
 }
 
 export default function ProveedorForm({ proveedor, onSuccess }: Props) {
@@ -78,10 +89,7 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="submit" disabled={pending} className="gap-2">
-          {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isEdit ? "Guardar cambios" : "Crear proveedor"}
-        </Button>
+        <SubmitButton isEdit={isEdit} pending={pending} />
       </div>
     </form>
   );
