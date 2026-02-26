@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { SyncDuxProgreso } from "@/hooks/useSyncDux";
 
 interface Props {
@@ -46,23 +47,24 @@ export default function SyncModal({ syncing, progreso, onConfirm, onCancel }: Pr
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="outline"
                 onClick={onCancel}
-                className="flex-1 rounded-lg border border-border py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                className="flex-1"
               >
                 No
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={onConfirm}
-                className="flex-1 rounded-lg bg-brand py-2 text-sm font-semibold text-white hover:bg-brand/90 transition-colors"
+                className="flex-1 bg-primary text-primary-foreground hover:brightness-90"
               >
                 Sí, continuar
-              </button>
+              </Button>
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center gap-4 text-center py-2">
-            <Loader2 className="h-10 w-10 text-brand animate-spin" />
+            <Loader2 className="h-10 w-10 text-primary animate-spin" />
 
             <div className="w-full flex flex-col gap-2">
               <p className="text-sm font-semibold text-foreground">Actualizando base de datos...</p>
@@ -70,9 +72,9 @@ export default function SyncModal({ syncing, progreso, onConfirm, onCancel }: Pr
               {progreso ? (
                 <>
                   {/* Barra de progreso */}
-                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                     <div
-                      className="h-2 rounded-full bg-brand transition-all duration-500"
+                      className="h-2 rounded-full bg-primary transition-all duration-500"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -80,7 +82,7 @@ export default function SyncModal({ syncing, progreso, onConfirm, onCancel }: Pr
                   {/* Ítems + porcentaje */}
                   <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
                     <span>
-                      <span className="text-white font-medium">{progreso.procesados.toLocaleString("es-AR")}</span>
+                      <span className="text-foreground font-medium">{progreso.procesados.toLocaleString("es-AR")}</span>
                       {" / "}
                       {progreso.total.toLocaleString("es-AR")} ítems
                     </span>

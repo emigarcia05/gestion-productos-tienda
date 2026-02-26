@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useImperativeHandle, forwardRef, useRef } from "react";
 import { ArrowUp, ArrowDown, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPct } from "@/lib/format";
 
@@ -257,27 +258,29 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
             {filtroMarca && (
               <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2.5 py-1">
                 {filtroMarca}
-                <button onClick={() => setFiltroMarca(null)}><X className="h-3 w-3" /></button>
+                <Button variant="ghost" size="icon-xs" onClick={() => setFiltroMarca(null)} className="h-5 w-5 shrink-0 rounded-full"><X className="h-3 w-3" /></Button>
               </span>
             )}
             {filtroRubro && (
               <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2.5 py-1">
                 {filtroRubro}
-                <button onClick={() => setFiltroRubro(null)}><X className="h-3 w-3" /></button>
+                <Button variant="ghost" size="icon-xs" onClick={() => setFiltroRubro(null)} className="h-5 w-5 shrink-0 rounded-full"><X className="h-3 w-3" /></Button>
               </span>
             )}
             {filtroSubRubro && (
               <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2.5 py-1">
                 {filtroSubRubro}
-                <button onClick={() => setFiltroSubRubro(null)}><X className="h-3 w-3" /></button>
+                <Button variant="ghost" size="icon-xs" onClick={() => setFiltroSubRubro(null)} className="h-5 w-5 shrink-0 rounded-full"><X className="h-3 w-3" /></Button>
               </span>
             )}
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={limpiarFiltros}
-              className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-2.5 py-1 transition-colors hover:bg-slate-100"
+              className="text-xs rounded-full border-border text-muted-foreground hover:text-foreground hover:bg-accent"
             >
               Borrar filtros
-            </button>
+            </Button>
           </div>
         )}
 

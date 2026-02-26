@@ -136,12 +136,14 @@ export default function SeleccionarProductoModal({
               className="w-full px-3 pr-7 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {q && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => { setQ(""); setResultados([]); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -183,7 +185,7 @@ export default function SeleccionarProductoModal({
                         </Badge>
                       </td>
                       <td className="py-2.5 px-3 text-center">
-                        <code className="text-xs text-slate-600">{prod.codExt}</code>
+                        <code className="text-xs text-muted-foreground">{prod.codExt}</code>
                       </td>
                       <td className="py-2.5 px-3 text-center text-xs">
                         {seleccionado

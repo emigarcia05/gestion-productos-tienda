@@ -152,6 +152,26 @@
   .tabla-global tbody tr:hover {
     @apply bg-blue-100/40;
   }
+
+  /* Modo oscuro: tablas usan variables de tema */
+  .dark .tabla-global thead th {
+    @apply bg-primary text-primary-foreground;
+  }
+  .dark .tabla-global tbody td {
+    @apply text-foreground;
+  }
+  .dark .tabla-global tbody tr {
+    @apply border-border;
+  }
+  .dark .tabla-global tbody tr:nth-child(odd) {
+    @apply bg-card;
+  }
+  .dark .tabla-global tbody tr:nth-child(even) {
+    @apply bg-muted/50;
+  }
+  .dark .tabla-global tbody tr:hover {
+    @apply bg-accent/50;
+  }
 }
 
 /* ─── Estilos madre: botones (Main Button) ───────────────────────────────────

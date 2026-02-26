@@ -39,7 +39,7 @@ export function FilterRowSelection({ children, className }: { children: React.Re
   );
 }
 
-/** Fila 2 (Búsqueda): input de texto. Ocupa ~75% dejando espacio al botón de limpieza; borde #0072BB cuando activo. */
+/** Fila 2 (Búsqueda): input de texto. Ocupa ~75% dejando espacio al botón de limpieza; borde primary cuando activo. */
 export function FilterRowSearch({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("w-[75%] max-w-2xl min-w-0", className)}>
@@ -48,12 +48,12 @@ export function FilterRowSearch({ children, className }: { children: React.React
   );
 }
 
-/** Color de fuente de todos los filtros (heredable). */
-export const FILTER_TEXT_COLOR_CLASS = "text-black";
+/** Color de fuente de todos los filtros (heredable). Usa variable de tema para modo oscuro. */
+export const FILTER_TEXT_COLOR_CLASS = "text-foreground";
 
-/** Input de búsqueda: mismo bloque visual que Main Button (2.5rem, rounded-lg, font-semibold, sombra). Usar con pl-9 pr-8 para icono. Placeholder negrita, fuente negra, foco primary. */
+/** Input de búsqueda: mismo bloque visual que Main Button (2.5rem, rounded-lg, font-semibold, sombra). Usar con pl-9 pr-8 para icono. Variables de tema para modo oscuro. */
 export const INPUT_FILTER_CLASS =
-  `bg-white border border-slate-300 rounded-lg h-10 min-h-10 text-sm font-semibold shadow-sm transition-[box-shadow,border-color] duration-150 ${FILTER_TEXT_COLOR_CLASS} placeholder:text-slate-400 placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
+  `bg-background border border-input rounded-lg h-10 min-h-10 text-sm font-semibold shadow-sm transition-[box-shadow,border-color] duration-150 ${FILTER_TEXT_COLOR_CLASS} placeholder:text-muted-foreground placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
 /**
  * Wrapper para cada Select de filtros. Con flex-1 min-w-0, hasta 5 desplegables
@@ -67,7 +67,7 @@ export const FILTER_SELECT_WRAPPER_CLASS = "min-w-0 flex-1";
  * Fuente negra, máscara en negrita.
  */
 export const SELECT_TRIGGER_FILTER_CLASS =
-  `w-full min-w-0 bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-slate-400 data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
+  `w-full min-w-0 bg-background border border-input rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-muted-foreground data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
 /** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
@@ -93,7 +93,7 @@ export function LimpiarFiltrosButton({
           variant="outline"
           size="icon"
           onClick={onClick}
-          className="h-10 w-10 shrink-0 rounded-lg border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900 shadow-sm transition-[box-shadow] duration-150 hover:shadow-md"
+          className="h-10 w-10 shrink-0 rounded-lg border-border text-muted-foreground hover:bg-accent hover:text-foreground shadow-sm transition-[box-shadow] duration-150 hover:shadow-md"
           aria-label="Limpiar todos los filtros"
         >
           <Trash2 className="h-4 w-4" />

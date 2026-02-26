@@ -96,10 +96,10 @@ function CeldaPorcentaje({
   return (
     <button
       onClick={() => { setDraft(String(valor)); setEditando(true); }}
-      className="w-full text-center text-xs tabular-nums text-slate-700 hover:text-black transition-colors cursor-pointer"
+      className="w-full text-center text-xs tabular-nums text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
       title="Clic para editar"
     >
-      {valor > 0 ? fmtPorcentaje(valor) : <span className="text-slate-400">—</span>}
+      {valor > 0 ? fmtPorcentaje(valor) : <span className="text-muted-foreground">—</span>}
     </button>
   );
 }

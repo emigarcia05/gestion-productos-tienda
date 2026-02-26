@@ -154,15 +154,17 @@ export default function VincularModal({
       <Dialog open={open} onOpenChange={setOpen}>
         {openProp === undefined && (
           <DialogTrigger asChild>
-            <button
-              className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary"
               title="Gestionar vínculos con Lista Proveedores"
             >
               <Link2 className="h-3.5 w-3.5" />
               {cantidad > 0 && (
                 <span className="tabular-nums font-medium text-primary">{cantidad}</span>
               )}
-            </button>
+            </Button>
           </DialogTrigger>
         )}
 
@@ -230,23 +232,27 @@ export default function VincularModal({
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleConvertir(prod)}
                             disabled={isPending}
                             title="Actualizar Proveedor Dux, Costo y Cód. Externo del item con este producto"
-                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/50 rounded px-2 py-1 transition-colors"
+                            className="gap-1 text-xs text-muted-foreground hover:text-primary border-border/60 hover:border-primary/50"
                           >
                             <ArrowRightLeft className="h-3 w-3" />
                             Convertir en proveedor
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleDesvincular(prod)}
                             disabled={isPending}
-                            className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
                             title="Desvincular"
                           >
                             <X className="h-3.5 w-3.5" />
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>

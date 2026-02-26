@@ -141,9 +141,9 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring pr-7"
           />
           {q && (
-            <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground">
               <X className="h-3 w-3" />
-            </button>
+            </Button>
           )}
         </div>
 

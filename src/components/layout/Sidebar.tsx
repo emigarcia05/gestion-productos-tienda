@@ -112,7 +112,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-primary border-r border-white/10 shadow-[2px_0_8px_rgba(0,0,0,0.06)]">
+    <aside className="w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border shadow-[2px_0_8px_rgba(0,0,0,0.06)]">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.map((module) => {
           const isOpen = openId === module.id;
@@ -125,9 +125,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             >
               <CollapsibleTrigger
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                  "[&>span:first-child_svg]:text-accent2",
-                  !isOpen && "hover:bg-white/10"
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                  "[&>span:first-child_svg]:text-sidebar-primary",
+                  !isOpen && "hover:bg-sidebar-accent"
                 )}
                 aria-expanded={isOpen}
               >
@@ -136,12 +136,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 </span>
                 <span className="min-w-0 flex-1 text-left">{module.label}</span>
                 <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 text-accent2 transition-transform duration-200", isOpen && "rotate-180")}
+                  className={cn("h-4 w-4 shrink-0 text-sidebar-accent-foreground transition-transform duration-200", isOpen && "rotate-180")}
                   aria-hidden
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-accent2 space-y-0.5 py-1">
+                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-accent space-y-0.5 py-1">
                   {module.submodules.map((sub) => {
                     const active = isSubmoduleActive(pathname, sub.href);
                     return (
@@ -149,11 +149,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                         key={sub.href}
                         href={sub.href}
                         className={cn(
-                          "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-white transition-colors",
+                          "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
-                            ? "border-accent2 bg-white/10 [&_svg]:text-accent2"
-                            : "border-transparent text-white/90 [&_svg]:text-white/70 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white/90",
+                            ? "border-sidebar-primary bg-sidebar-accent [&_svg]:text-sidebar-accent-foreground"
+                            : "border-transparent text-sidebar-foreground/90 [&_svg]:text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
+                          active && sub.isUrgente && "[&_svg]:text-accent2",
                           sub.isUrgente && "relative"
                         )}
                       >
@@ -170,20 +171,20 @@ export default function Sidebar({ rol }: { rol: Rol }) {
       </nav>
       <div className="mt-auto flex flex-col">
         <div className="p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-2.5 backdrop-blur-sm">
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary-foreground"
               aria-hidden
             >
               <User className="h-4 w-4" />
             </div>
-            <div className="min-w-0 flex-1 [&_button]:!text-white/80 [&_button:hover]:!text-white [&_svg]:text-inherit">
-              <p className="text-sm font-medium text-white">{perfilNombre}</p>
+            <div className="min-w-0 flex-1 [&_button]:!text-sidebar-foreground/80 [&_button:hover]:!text-sidebar-foreground [&_svg]:text-inherit">
+              <p className="text-sm font-medium text-sidebar-foreground">{perfilNombre}</p>
               <SelectorRol rolActual={rol} compact />
             </div>
           </div>
         </div>
-        <hr className="w-full border-0 border-t border-white/20 mx-0 my-0" aria-hidden />
+        <hr className="w-full border-0 border-t border-sidebar-border mx-0 my-0" aria-hidden />
         <div className="px-4 py-4 flex justify-center">
           <div className="w-full max-w-[45%] flex justify-center items-center">
             <Image
