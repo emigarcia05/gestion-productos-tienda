@@ -70,7 +70,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
     <FilterBar className="px-4">
       <FilterRowSelection>
         <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
-          <SelectTrigger className={`w-[180px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="SUCURSAL" />
           </SelectTrigger>
           <SelectContent>
@@ -81,7 +81,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
           </SelectContent>
         </Select>
         <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
-          <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="PROVEEDOR" />
           </SelectTrigger>
           <SelectContent>

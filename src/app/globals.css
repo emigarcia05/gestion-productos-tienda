@@ -151,6 +151,20 @@
   }
 }
 
+/* Botones de acción en tarjetas de título: estilo maestro forzado para que siempre sea igual */
+.action-buttons-header button {
+  height: 2.5rem !important;        /* h-10 */
+  padding-left: 1rem !important;    /* px-4 */
+  padding-right: 1rem !important;
+  border-radius: 0.5rem !important;  /* rounded-lg */
+  font-weight: 600 !important;      /* font-semibold */
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: box-shadow 0.15s ease, background-color 0.15s ease, filter 0.15s ease;
+}
+.action-buttons-header button:hover {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
 :root, .dark {
   --brand:    #0072BB;
   --brand-fg: #ffffff;

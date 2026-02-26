@@ -82,7 +82,7 @@ export default function FiltrosTienda({
     <FilterBar>
       <FilterRowSelection>
         <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
-          <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="MARCA" />
           </SelectTrigger>
           <SelectContent>
@@ -91,7 +91,7 @@ export default function FiltrosTienda({
           </SelectContent>
         </Select>
         <Select value={rubroActual || "none"} onValueChange={(v) => handleRubro(v === "none" ? "" : v)}>
-          <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="RUBRO" />
           </SelectTrigger>
           <SelectContent>
@@ -100,7 +100,7 @@ export default function FiltrosTienda({
           </SelectContent>
         </Select>
         <Select value={subRubroActual || "none"} onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}>
-          <SelectTrigger className={`w-[140px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="SUB-RUBRO" />
           </SelectTrigger>
           <SelectContent>
@@ -109,7 +109,7 @@ export default function FiltrosTienda({
           </SelectContent>
         </Select>
         <Select value={mejorPrecioActual || "none"} onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}>
-          <SelectTrigger className={`w-[180px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="COSTO" />
           </SelectTrigger>
           <SelectContent>
@@ -118,7 +118,7 @@ export default function FiltrosTienda({
           </SelectContent>
         </Select>
         <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
-          <SelectTrigger className={`w-[120px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="ESTADO" />
           </SelectTrigger>
           <SelectContent>

@@ -27,7 +27,7 @@ export default function CrearProveedorModal() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="default" size="sm" className={`gap-2 ${ACTION_BUTTON_PRIMARY}`}>
+            <Button variant="default" size="default" className={`gap-2 ${ACTION_BUTTON_PRIMARY}`}>
               <Plus className="h-4 w-4" />
               Crear Proveedor
             </Button>

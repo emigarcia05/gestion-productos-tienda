@@ -16,7 +16,7 @@ export default function ExportarAumentosButton({ tableRef }: Props) {
       <TooltipTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
+          size="default"
           className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}
           onClick={() => tableRef.current?.triggerExport()}
         >

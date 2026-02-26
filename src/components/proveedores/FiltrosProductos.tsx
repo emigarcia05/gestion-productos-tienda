@@ -81,7 +81,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
     <FilterBar>
       <FilterRowSelection>
         <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
-          <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+          <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
             <SelectValue placeholder="PROVEEDOR" />
           </SelectTrigger>
           <SelectContent>

@@ -2,7 +2,6 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 
 /**
  * Contenedor estándar para la barra de filtros.
@@ -48,19 +47,29 @@ export function FilterRowSearch({ children, className }: { children: React.React
   );
 }
 
-/** Input de búsqueda: placeholder en negrita y gris; texto oscuro al escribir. Foco #0072BB. */
-export const INPUT_FILTER_CLASS =
-  "bg-white border border-slate-300 rounded-lg h-9 text-sm text-slate-900 placeholder:text-slate-400 placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
+/** Color de fuente de todos los filtros (heredable). */
+export const FILTER_TEXT_COLOR_CLASS = "text-black";
 
-/** SelectTrigger en filtros: placeholder en negrita; valor seleccionado texto oscuro. Foco #0072BB. */
+/** Input de búsqueda: placeholder en negrita y gris; fuente negra. Foco #0072BB. */
+export const INPUT_FILTER_CLASS =
+  `bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} placeholder:text-slate-400 placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
+
+/**
+ * Estilo maestro para listas desplegables de filtros (SelectTrigger).
+ * Heredable: usar solo esta constante en todos los filtros.
+ * - Mismo tamaño (w-[200px]), fuente negra, máscara en negrita.
+ */
 export const SELECT_TRIGGER_FILTER_CLASS =
-  "bg-white border-slate-300 rounded-lg h-9 text-sm text-slate-900 data-[placeholder]:text-slate-400 data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
+  `w-[200px] min-w-[200px] bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-slate-400 data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
 /** Clase para el indicador de cantidad de elementos filtrados (siempre #0072BB). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
   "text-sm text-[#0072BB] tabular-nums shrink-0 font-semibold";
 
-/** Botón de limpieza global: icono + texto "Limpiar Filtros". A la derecha del input de búsqueda. Hereda estilo maestro de botones de acción. */
+/**
+ * Botón cuadrado con icono de tacho de basura, al lado del filtro de descripción.
+ * Al apretarlo borra todos los filtros. Heredable: usar en todos los módulos con filtros.
+ */
 export function LimpiarFiltrosButton({
   onClick,
   visible,
@@ -75,13 +84,12 @@ export function LimpiarFiltrosButton({
         <Button
           type="button"
           variant="outline"
-          size="default"
+          size="icon"
           onClick={onClick}
-          className={cn("h-10 px-4 gap-1.5 shrink-0", ACTION_BUTTON_SECONDARY)}
+          className="h-9 w-9 shrink-0 rounded-lg border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           aria-label="Limpiar todos los filtros"
         >
-          <Trash2 className="h-[18px] w-[18px]" />
-          Limpiar Filtros
+          <Trash2 className="h-4 w-4" />
         </Button>
       </TooltipTrigger>
       <TooltipContent>Limpiar todos los filtros</TooltipContent>

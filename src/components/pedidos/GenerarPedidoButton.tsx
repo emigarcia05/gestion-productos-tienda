@@ -10,7 +10,7 @@ export default function GenerarPedidoButton() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="default" size="sm" className={`gap-2 ${ACTION_BUTTON_PRIMARY}`} asChild>
+        <Button variant="default" size="default" className={`gap-2 ${ACTION_BUTTON_PRIMARY}`} asChild>
           <Link href="/pedidos/historial">
             <FileOutput className="h-4 w-4" />
             Generar Pedido
