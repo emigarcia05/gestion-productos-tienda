@@ -22,22 +22,23 @@ model Proveedor {
 }
 
 /// Productos de la lista de proveedores. Vinculados a ItemTienda por codigoExterno.
+/// @map en minúsculas: en PostgreSQL los nombres sin comillas se guardan en lowercase.
 model ProductoProveedor {
   id                   String     @id @default(cuid())
-  codigoExterno        String     @unique
-  codProdProv          String
+  codigoExterno        String     @unique @map("codigoexterno")
+  codProdProv          String     @map("codprodprov")
   descripcion          String
-  precioLista          Float
-  precioVentaSugerido  Float
-  descuentoProducto   Float      @default(0)
-  descuentoCantidad    Float      @default(0)
-  cxTransporte         Float      @default(0)
+  precioLista          Float      @map("preciolista")
+  precioVentaSugerido  Float      @map("precioventasugerido")
+  descuentoProducto   Float      @default(0) @map("descuentoproducto")
+  descuentoCantidad    Float      @default(0) @map("descuentocantidad")
+  cxTransporte         Float      @default(0) @map("cxtransporte")
   disponible           Boolean    @default(true)
-  proveedorId          String
+  proveedorId          String     @map("proveedorid")
   proveedor            Proveedor  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
   tienda               ItemTienda[]
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  createdAt            DateTime   @default(now()) @map("createdat")
+  updatedAt            DateTime   @updatedAt @map("updatedat")
 
   @@index([proveedorId])
   @@index([codigoExterno])
@@ -62,27 +63,28 @@ model ImportLog {
 // ─── Lista Tienda (API Dux / TiendaColor) ──────────────────────────────────
 
 /// Ítems de la lista tienda. Relación formal con ProductoProveedor vía productoProveedorId (codigoExterno).
+/// @map en minúsculas: en PostgreSQL los nombres sin comillas se guardan en lowercase.
 model ItemTienda {
   id                   String             @id @default(cuid())
-  codItem              String             @unique
-  codigoExterno        String?
+  codItem              String             @unique @map("coditem")
+  codigoExterno        String?            @map("codigoexterno")
   descripcion          String
   rubro                String?
-  subRubro             String?
+  subRubro             String?            @map("subrubro")
   marca                String?
-  proveedorDux         String?
+  proveedorDux         String?            @map("proveedordux")
   costo                Float              @default(0)
-  porcIva              Float              @default(21)
-  precioLista          Float              @default(0)
-  precioMayorista      Float              @default(0)
-  stockGuaymallen      Float              @default(0)
-  stockMaipu           Float              @default(0)
+  porcIva              Float              @default(21) @map("porciva")
+  precioLista          Float              @default(0) @map("preciolista")
+  precioMayorista      Float              @default(0) @map("preciomayorista")
+  stockGuaymallen      Float              @default(0) @map("stockguaymallen")
+  stockMaipu           Float              @default(0) @map("stockmaipu")
   habilitado           Boolean            @default(true)
-  ultimaImpresion      DateTime?
-  productoProveedorId  String?
+  ultimaImpresion      DateTime?          @map("ultimaimpresion")
+  productoProveedorId  String?            @map("productoproveedorid")
   productoProveedor    ProductoProveedor? @relation(fields: [productoProveedorId], references: [id], onDelete: SetNull)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt            DateTime           @default(now()) @map("createdat")
+  updatedAt            DateTime           @updatedAt @map("updatedat")
 
   @@index([codigoExterno])
   @@index([rubro])
