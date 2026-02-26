@@ -1,28 +1,8 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-function createPrismaClient() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
-  });
-
-  const adapter = new PrismaPg(pool);
-
-  return new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
-}
-
-const prismaClient = globalForPrisma.prisma ?? createPrismaClient();
-if (!globalForPrisma.prisma) globalForPrisma.prisma = prismaClient;
-
-export const prisma = prismaClient;
+/**
+ * Cliente Prisma – MODO RESET: no se usa en runtime.
+ * Cuando reactive el backend, configurar aquí el cliente con reutilización
+ * para serverless (globalThis) y adapter pg/Neon según acordado.
+ */
+// Placeholder: exportar un objeto que no se usa en modo mock.
+// Para reactivar: descomentar y configurar createPrismaClient + globalForPrisma.
+export const prisma = undefined as unknown as import("@prisma/client").PrismaClient;

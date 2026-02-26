@@ -1,15 +1,66 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
 import { esEditor } from "@/lib/sesion";
-import { calcPxCompraFinal } from "@/lib/calculos";
 import type { ActionResult } from "@/lib/types";
 
+// ─── MOCK: sin Prisma ───────────────────────────────────────────────────────
+
 export async function getUltimoSync() {
-  return prisma.syncLog.findFirst({
-    orderBy: { createdAt: "desc" },
-  });
+  return null;
+}
+
+/** Datos para la página /tienda. MOCK. */
+const MOCK_ITEMS_TIENDA = [
+  {
+    id: "mock-item-1",
+    codItem: "T001",
+    descripcion: "Ítem tienda demo",
+    rubro: null,
+    subRubro: null,
+    marca: null,
+    proveedorDux: null,
+    codigoExterno: null,
+    costo: 0,
+    porcIva: 21,
+    precioLista: 0,
+    precioMayorista: 0,
+    stockGuaymallen: 0,
+    stockMaipu: 0,
+    habilitado: true,
+    ultimaImpresion: null,
+    productoProveedorId: null,
+    productoProveedor: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    _count: { productos: 0 },
+  },
+];
+
+export async function getTiendaPageData(params: {
+  q?: string;
+  rubro?: string;
+  subRubro?: string;
+  marca?: string;
+  habilitado?: string;
+  mejorPrecio?: string;
+  pagina?: string;
+}) {
+  const { pagina = "1" } = params;
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const PAGE_SIZE = 50;
+  const skip = (paginaNum - 1) * PAGE_SIZE;
+  const items = MOCK_ITEMS_TIENDA.slice(skip, skip + PAGE_SIZE);
+  const total = MOCK_ITEMS_TIENDA.length;
+  return {
+    items,
+    total,
+    marcas: [] as { marca: string | null }[],
+    rubros: [] as { rubro: string | null }[],
+    subRubros: [] as { subRubro: string | null }[],
+    setMejorPrecio: new Set<string>(),
+    totalPaginas: Math.ceil(total / PAGE_SIZE),
+  };
 }
 
 // ─── Control de Aumentos ───────────────────────────────────────────────────
@@ -44,108 +95,14 @@ export interface ControlAumentosData {
 }
 
 export async function getControlAumentos(): Promise<ControlAumentosData> {
-  const [items, productos] = await Promise.all([
-    prisma.itemTienda.findMany({
-      where: { codigoExterno: { not: null }, costo: { gt: 0 } },
-      select: {
-        id: true, codItem: true, descripcion: true,
-        marca: true, rubro: true, subRubro: true,
-        codigoExterno: true, proveedorDux: true, costo: true,
-      },
-    }),
-    prisma.productoProveedor.findMany({
-      select: {
-        codigoExterno: true, precioLista: true,
-        descuentoProducto: true, descuentoCantidad: true, cxTransporte: true,
-      },
-    }),
-  ]);
-
-  const productosPorCodExt = new Map(productos.map((p) => [p.codigoExterno, p]));
-
-  const itemsAumento: ItemAumento[] = [];
-  for (const item of items) {
-    if (!item.codigoExterno) continue;
-    const prod = productosPorCodExt.get(item.codigoExterno);
-    if (!prod) continue;
-
-    const pxCompraFinal = calcPxCompraFinal(
-      prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte
-    );
-    const pctAumento = ((pxCompraFinal - item.costo) / item.costo) * 100;
-
-    itemsAumento.push({
-      itemId: item.id, codItem: item.codItem, descripcion: item.descripcion,
-      marca: item.marca, rubro: item.rubro, subRubro: item.subRubro,
-      codigoExterno: item.codigoExterno, proveedorDux: item.proveedorDux,
-      costoTienda: item.costo, pxCompraFinal, pctAumento,
-    });
-  }
-
-  function agrupar(clave: keyof Pick<ItemAumento, "marca" | "rubro" | "subRubro">): GrupoAumento[] {
-    const mapa = new Map<string, ItemAumento[]>();
-    for (const item of itemsAumento) {
-      const k = item[clave] ?? "Sin definir";
-      if (!mapa.has(k)) mapa.set(k, []);
-      mapa.get(k)!.push(item);
-    }
-    return Array.from(mapa.entries())
-      .map(([nombre, lista]) => {
-        const conVariacion = lista.filter((i) => Math.abs(i.pctAumento) > 0.5);
-        const pctPromedio  = conVariacion.length > 0
-          ? conVariacion.reduce((s, i) => s + i.pctAumento, 0) / conVariacion.length
-          : 0;
-        return {
-          nombre,
-          cantidad:    lista.length,
-          pctPromedio,
-          subiendo:    lista.filter((i) => i.pctAumento > 0.5).length,
-          bajando:     lista.filter((i) => i.pctAumento < -0.5).length,
-        };
-      })
-      .sort((a, b) => b.pctPromedio - a.pctPromedio);
-  }
-
-  return {
-    porMarca:    agrupar("marca"),
-    porRubro:    agrupar("rubro"),
-    porSubRubro: agrupar("subRubro"),
-    individual:  itemsAumento.sort((a, b) => b.pctAumento - a.pctAumento),
-  };
+  return { porMarca: [], porRubro: [], porSubRubro: [], individual: [] };
 }
-
-// ─── Convertir producto en proveedor de un item ────────────────────────────
 
 export async function convertirEnProveedor(
   itemTiendaId: string,
   productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-
-  const producto = await prisma.productoProveedor.findUnique({
-    where: { id: productoProveedorId },
-    include: { proveedor: { select: { nombre: true } } },
-  });
-
-  if (!producto) return { ok: false, error: "Producto no encontrado." };
-
-  try {
-    await prisma.itemTienda.update({
-      where: { id: itemTiendaId },
-      data: {
-        proveedorDux:         producto.proveedor.nombre,
-        costo:                parseFloat(calcPxCompraFinal(
-          producto.precioLista, producto.descuentoProducto,
-          producto.descuentoCantidad, producto.cxTransporte
-        ).toFixed(2)),
-        codigoExterno:        producto.codigoExterno,
-        productoProveedorId:  producto.id,
-      },
-    });
-    revalidatePath("/tienda");
-    return { ok: true, data: undefined };
-  } catch (e) {
-    if (process.env.NODE_ENV === "development") console.error("[tienda] convertirEnProveedor", e);
-    return { ok: false, error: "No se pudo actualizar el item." };
-  }
+  revalidatePath("/tienda");
+  return { ok: true, data: undefined };
 }

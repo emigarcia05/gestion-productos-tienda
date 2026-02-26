@@ -1,117 +1,88 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { generarCodigoUnico } from "@/lib/codigos";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 
-// ─── Listar ────────────────────────────────────────────────────────────────
+// ─── MOCK: sin Prisma; datos de prueba ──────────────────────────────────────
+
+const MOCK_PROVEEDORES = [
+  { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM", _count: { productosProveedor: 2 } },
+  { id: "mock-prov-2", nombre: "Otro Proveedor", codigoUnico: "OTR", sufijo: "OTR", _count: { productosProveedor: 0 } },
+];
+
+const MOCK_PRODUCTOS = [
+  {
+    id: "mock-prod-1", codigoExterno: "DEM-001", codProdProv: "001", descripcion: "Producto ejemplo 1",
+    precioLista: 100, precioVentaSugerido: 120, descuentoProducto: 0, descuentoCantidad: 0, cxTransporte: 0,
+    disponible: true, proveedorId: "mock-prov-1",
+    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM" },
+    createdAt: new Date(), updatedAt: new Date(),
+  },
+  {
+    id: "mock-prod-2", codigoExterno: "DEM-002", codProdProv: "002", descripcion: "Producto ejemplo 2",
+    precioLista: 200, precioVentaSugerido: 240, descuentoProducto: 5, descuentoCantidad: 0, cxTransporte: 2,
+    disponible: true, proveedorId: "mock-prov-1",
+    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM" },
+    createdAt: new Date(), updatedAt: new Date(),
+  },
+];
 
 export async function getProveedores() {
-  return prisma.proveedor.findMany({
-    orderBy: { nombre: "asc" },
-    include: { _count: { select: { productosProveedor: true } } },
-  });
+  return MOCK_PROVEEDORES;
 }
 
 export async function getProveedorById(id: string) {
-  return prisma.proveedor.findUnique({
-    where: { id },
-    include: {
-      productosProveedor: { orderBy: { codProdProv: "asc" } },
-      _count: { select: { productosProveedor: true } },
-    },
-  });
+  const prov = MOCK_PROVEEDORES.find((p) => p.id === id);
+  if (!prov) return null;
+  const productosProveedor = MOCK_PRODUCTOS.filter((p) => p.proveedorId === id);
+  return { ...prov, codigoUnico: prov.codigoUnico, productosProveedor, _count: { productosProveedor: productosProveedor.length } };
 }
 
-// ─── Crear ─────────────────────────────────────────────────────────────────
+/** Datos para la página /proveedores (lista + productos + total). MOCK. */
+export async function getProveedoresPageData(params: {
+  q?: string;
+  proveedor?: string;
+  pagina?: string;
+}) {
+  const { pagina = "1" } = params;
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const PAGE_SIZE = 50;
+  const skip = (paginaNum - 1) * PAGE_SIZE;
+  const total = MOCK_PRODUCTOS.length;
+  const productos = MOCK_PRODUCTOS.slice(skip, skip + PAGE_SIZE);
+  return { proveedores: MOCK_PROVEEDORES, productos, total, totalPaginas: Math.ceil(total / PAGE_SIZE) };
+}
 
-export async function crearProveedor(
-  formData: FormData
-): Promise<ActionResult<{ id: string }>> {
+// ─── Crear (mock) ──────────────────────────────────────────────────────────
+
+export async function crearProveedor(formData: FormData): Promise<ActionResult<{ id: string }>> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const nombre = (formData.get("nombre") as string)?.trim();
   const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
-
-  if (!nombre || nombre.length < 2) {
-    return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
-  }
-  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo)) {
-    return { ok: false, error: "El sufijo debe tener exactamente 3 letras (sin números ni símbolos)." };
-  }
-
-  const sufijoExiste = await prisma.proveedor.findUnique({ where: { sufijo } });
-  if (sufijoExiste) {
-    return { ok: false, error: `El sufijo "${sufijo}" ya está en uso.` };
-  }
-
-  let codigoUnico = generarCodigoUnico();
-  let intentos = 0;
-  while (intentos < 10) {
-    const existe = await prisma.proveedor.findUnique({ where: { codigoUnico } });
-    if (!existe) break;
-    codigoUnico = generarCodigoUnico();
-    intentos++;
-  }
-
-  try {
-    const proveedor = await prisma.proveedor.create({
-      data: { nombre, codigoUnico, sufijo },
-    });
-    revalidatePath("/proveedores");
-    return { ok: true, data: { id: proveedor.id } };
-  } catch (e) {
-    if (process.env.NODE_ENV === "development") console.error("[proveedores] crearProveedor", e);
-    return { ok: false, error: "No se pudo crear el proveedor." };
-  }
+  if (!nombre || nombre.length < 2) return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
+  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo))
+    return { ok: false, error: "El sufijo debe tener exactamente 3 letras." };
+  revalidatePath("/proveedores");
+  return { ok: true, data: { id: "mock-new-" + Date.now() } };
 }
 
-// ─── Editar ────────────────────────────────────────────────────────────────
+// ─── Editar / Eliminar (mock) ───────────────────────────────────────────────
 
-export async function editarProveedor(
-  id: string,
-  formData: FormData
-): Promise<ActionResult> {
+export async function editarProveedor(id: string, formData: FormData): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const nombre = (formData.get("nombre") as string)?.trim();
   const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
-
-  if (!nombre || nombre.length < 2) {
-    return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
-  }
-  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo)) {
-    return { ok: false, error: "El sufijo debe tener exactamente 3 letras (sin números ni símbolos)." };
-  }
-
-  const sufijoExiste = await prisma.proveedor.findFirst({
-    where: { sufijo, NOT: { id } },
-  });
-  if (sufijoExiste) {
-    return { ok: false, error: `El sufijo "${sufijo}" ya está en uso.` };
-  }
-
-  try {
-    await prisma.proveedor.update({ where: { id }, data: { nombre, sufijo } });
-    revalidatePath("/proveedores");
-    revalidatePath(`/proveedores/${id}`);
-    return { ok: true, data: undefined };
-  } catch (e) {
-    if (process.env.NODE_ENV === "development") console.error("[proveedores] editarProveedor", e);
-    return { ok: false, error: "No se pudo actualizar el proveedor." };
-  }
+  if (!nombre || nombre.length < 2) return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
+  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo))
+    return { ok: false, error: "El sufijo debe tener exactamente 3 letras." };
+  revalidatePath("/proveedores");
+  revalidatePath(`/proveedores/${id}`);
+  return { ok: true, data: undefined };
 }
-
-// ─── Eliminar ──────────────────────────────────────────────────────────────
 
 export async function eliminarProveedor(id: string): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  try {
-    await prisma.proveedor.delete({ where: { id } });
-    revalidatePath("/proveedores");
-    return { ok: true, data: undefined };
-  } catch (e) {
-    if (process.env.NODE_ENV === "development") console.error("[proveedores] eliminarProveedor", e);
-    return { ok: false, error: "No se pudo eliminar el proveedor." };
-  }
+  revalidatePath("/proveedores");
+  return { ok: true, data: undefined };
 }

@@ -1,5 +1,4 @@
-import { prisma } from "@/lib/prisma";
-import { filtroTexto, whereProductoConsultaConTienda } from "@/lib/busqueda";
+import { getProveedoresPageData } from "@/actions/proveedores";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
 import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
@@ -23,46 +22,12 @@ interface Props {
 
 export default async function ProveedoresPage({ searchParams }: Props) {
   const { q = "", proveedor = "", pagina = "1" } = await searchParams;
-  const paginaNum = Math.max(1, parseInt(pagina) || 1);
-  const skip = (paginaNum - 1) * PAGE_SIZE;
   const rol = await getRol();
   const p = PERMISOS.proveedores;
   const esEditor = rol === "editor";
 
-  const where = {
-    ...(proveedor ? { proveedorId: proveedor } : {}),
-    ...(q ? filtroTexto(q, ["descripcion", "codigoExterno", "codProdProv"]) : {}),
-  };
-
-  // Vista simple: productos con precio sugerido; búsqueda por descripción proveedor o por descripción tienda (vía codigoExterno)
-  const whereSimple = await whereProductoConsultaConTienda(prisma, q);
-
-  const [proveedores, productos, total] = await Promise.all([
-    prisma.proveedor.findMany({
-      orderBy: { nombre: "asc" },
-      include: { _count: { select: { productosProveedor: true } } },
-    }),
-    esEditor
-      ? prisma.productoProveedor.findMany({
-          where,
-          orderBy: { codigoExterno: "asc" },
-          skip,
-          take: PAGE_SIZE,
-          include: { proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } } },
-        })
-      : prisma.productoProveedor.findMany({
-          where: whereSimple,
-          orderBy: [{ proveedor: { nombre: "asc" } }, { descripcion: "asc" }],
-          skip,
-          take: PAGE_SIZE,
-          include: { proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } } },
-        }),
-    esEditor
-      ? prisma.productoProveedor.count({ where })
-      : prisma.productoProveedor.count({ where: whereSimple }),
-  ]);
-
-  const totalPaginas = Math.ceil(total / PAGE_SIZE);
+  const { proveedores, productos, total, totalPaginas } = await getProveedoresPageData({ q, proveedor, pagina });
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   const titulo = "Lista Proveedores";
 

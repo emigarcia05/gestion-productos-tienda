@@ -1,9 +1,6 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
-
 /**
- * Convierte una query de texto en un filtro Prisma AND por tokens.
- * "lox mate" → AND [ contains "lox", contains "mate" ]
- * Así "LOXON INT MATE LARGA DURACIÓN" aparece al buscar "lox mate".
+ * Utilidades de búsqueda. En modo reset solo filtroTexto (sin Prisma).
+ * whereProductoConsultaConTienda se reimplementará al reactivar la BD.
  */
 export function filtroTexto(q: string, campos: string[]) {
   const tokens = q.trim().split(/\s+/).filter(Boolean);
@@ -11,44 +8,9 @@ export function filtroTexto(q: string, campos: string[]) {
 
   return {
     AND: tokens.map((token) => ({
-      OR: campos.map((campo) => ({
+      OR: campos.map((campo: string) => ({
         [campo]: { contains: token, mode: "insensitive" as const },
       })),
     })),
-  };
-}
-
-/**
- * Where para "Lista Proveedores" / "Pedido urgente": productos con precio sugerido
- * que coincidan por descripción de proveedor O por descripción de lista tienda
- * (vía codigoExterno).
- */
-export async function whereProductoConsultaConTienda(
-  prisma: PrismaClient,
-  q: string
-): Promise<Prisma.ProductoProveedorWhereInput> {
-  const base: Prisma.ProductoProveedorWhereInput = { precioVentaSugerido: { gt: 0 } };
-  if (!q || !q.trim()) return base;
-
-  const matchProveedor = filtroTexto(q, ["descripcion"]) as Prisma.ProductoProveedorWhereInput;
-
-  const itemsTienda = await prisma.itemTienda.findMany({
-    where: {
-      codigoExterno: { not: null },
-      habilitado: true,
-      ...filtroTexto(q, ["descripcion"]),
-    },
-    select: { codigoExterno: true },
-  });
-  const codExtSet = new Set(
-    itemsTienda.map((i) => i.codigoExterno).filter((c): c is string => c != null)
-  );
-  const codExtList = Array.from(codExtSet);
-
-  if (codExtList.length === 0) return { ...base, ...matchProveedor };
-
-  return {
-    ...base,
-    OR: [matchProveedor, { codigoExterno: { in: codExtList } }],
   };
 }

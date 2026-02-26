@@ -1,5 +1,4 @@
-import { prisma } from "@/lib/prisma";
-import { filtroTexto } from "@/lib/busqueda";
+import { getTiendaPageData } from "@/actions/tienda";
 import SectionHeader from "@/components/SectionHeader";
 import SyncButton from "@/components/tienda/SyncButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
@@ -26,75 +25,12 @@ interface Props {
 
 export default async function TiendaPage({ searchParams }: Props) {
   const { q = "", rubro = "", subRubro = "", marca = "", habilitado = "", mejorPrecio = "", pagina = "1" } = await searchParams;
-  const paginaNum = Math.max(1, parseInt(pagina) || 1);
-  const skip = (paginaNum - 1) * PAGE_SIZE;
   const rol = await getRol();
 
-  // IDs de items que tienen producto vinculado (productoProveedorId) con Px Compra Final < costo
-  // Px Compra Final = precioLista * (1 - dto1/100) * (1 - dto2/100) * (1 + cx/100)
-  const itemsConMejorPrecio = await prisma.$queryRaw<{ item_tienda_id: string }[]>`
-    SELECT it.id AS item_tienda_id
-    FROM lista_tienda it
-    JOIN lista_proveedores p ON p.id = it.productoproveedorid
-    WHERE it.costo > 0 AND it.productoproveedorid IS NOT NULL
-      AND (
-        p.preciolista
-        * (1 - p.descuentoproducto / 100.0)
-        * (1 - p.descuentocantidad / 100.0)
-        * (1 + p.cxtransporte / 100.0)
-      ) < it.costo * 0.99
-  `;
-  const setMejorPrecio = new Set(itemsConMejorPrecio.map((r) => r.item_tienda_id));
-
-  const where = {
-    ...(marca    ? { marca }    : {}),
-    ...(rubro    ? { rubro }    : {}),
-    ...(subRubro ? { subRubro } : {}),
-    ...(habilitado === "true"  ? { habilitado: true }  : {}),
-    ...(habilitado === "false" ? { habilitado: false } : {}),
-    ...(mejorPrecio === "true"  ? { id: { in: Array.from(setMejorPrecio) } } : {}),
-    ...(mejorPrecio === "false" ? { id: { notIn: Array.from(setMejorPrecio) } } : {}),
-    ...(q ? filtroTexto(q, ["descripcion", "codItem", "codigoExterno", "marca"]) : {}),
-  };
-
-  const [itemsRaw, total, marcas, rubros, subRubros] = await Promise.all([
-    prisma.itemTienda.findMany({
-      where,
-      orderBy: { descripcion: "asc" },
-      skip,
-      take: PAGE_SIZE,
-      include: { productoProveedor: true },
-    }),
-    prisma.itemTienda.count({ where }),
-    // Marcas: siempre todas
-    prisma.itemTienda.findMany({
-      select: { marca: true },
-      distinct: ["marca"],
-      orderBy: { marca: "asc" },
-      where: { marca: { not: null } },
-    }),
-    // Rubros: siempre todos
-    prisma.itemTienda.findMany({
-      select: { rubro: true },
-      distinct: ["rubro"],
-      orderBy: { rubro: "asc" },
-      where: { rubro: { not: null } },
-    }),
-    // Sub-Rubros: siempre todos
-    prisma.itemTienda.findMany({
-      select: { subRubro: true },
-      distinct: ["subRubro"],
-      orderBy: { subRubro: "asc" },
-      where: { subRubro: { not: null } },
-    }),
-  ]);
-
-  const totalPaginas = Math.ceil(total / PAGE_SIZE);
-  // Compatibilidad con TablaTienda: cada item tiene 0 o 1 producto vinculado
-  const items = itemsRaw.map((it) => ({
-    ...it,
-    _count: { productos: it.productoProveedor ? 1 : 0 },
-  }));
+  const { items, total, marcas, rubros, subRubros, setMejorPrecio, totalPaginas } = await getTiendaPageData({
+    q, rubro, subRubro, marca, habilitado, mejorPrecio, pagina,
+  });
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   const acciones = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined;
 

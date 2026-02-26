@@ -1,5 +1,4 @@
-import { prisma } from "@/lib/prisma";
-import { whereProductoConsultaConTienda } from "@/lib/busqueda";
+import { getPedidoUrgenteData } from "@/actions/pedidos";
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -27,33 +26,8 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
 
   const { q = "", pagina = "1", sucursal = "", proveedor = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" = sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
+  const { proveedores, productos, total, totalPaginas } = await getPedidoUrgenteData({ q, pagina, proveedor });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const skip = (paginaNum - 1) * PAGE_SIZE;
-
-  const whereSimple = await whereProductoConsultaConTienda(prisma, q);
-  const where = {
-    ...whereSimple,
-    ...(proveedor ? { proveedorId: proveedor } : {}),
-  };
-
-  const [proveedores, productos, total] = await Promise.all([
-    prisma.proveedor.findMany({
-      orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true, sufijo: true },
-    }),
-    prisma.productoProveedor.findMany({
-      where,
-      orderBy: [{ proveedor: { nombre: "asc" } }, { descripcion: "asc" }],
-      skip,
-      take: PAGE_SIZE,
-      include: {
-        proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } },
-      },
-    }),
-    prisma.productoProveedor.count({ where }),
-  ]);
-
-  const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="flex flex-col min-h-0">
