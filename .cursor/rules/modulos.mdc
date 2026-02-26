@@ -9,11 +9,11 @@ globs: **/app/**/*.tsx, **/components/**/*.tsx
 
 **Toda la navegación** está en el aside. No hay barra superior ni sub-header; el contenido empieza con el título de sección y la tabla/filtros.
 
-**Sidebar:** `bg-slate-50`, `border-r border-slate-200`. Usar `Collapsible` de shadcn para cada módulo.
+**Sidebar:** `bg-slate-50`, borde derecho definido `border-r border-slate-300`. Acordeón vertical con `Collapsible`; al clic en un módulo se despliegan sus submódulos (con sangría). Contraste delicado: texto `text-slate-900` en módulos y submódulos inactivos.
 
-**Módulos (Nivel 1):** No redirigen; solo abren/cierran la lista de submódulos.
-- Abierto: `text-slate-950 font-bold`, icono `#0072BB` (`text-primary`), flecha `ChevronDown` que rota 180° (`rotate-180`).
-- Cerrado: `text-slate-600`, hover `hover:bg-primary/10 hover:text-primary`.
+**Módulos (Nivel 1):** No redirigen; solo abren/cierran.
+- Abierto: `text-slate-900 font-bold`, icono `text-primary` (#0072BB), `ChevronDown` con `rotate-180`.
+- Cerrado: `text-slate-900 font-semibold`, hover `hover:bg-primary/10 hover:text-primary`.
 
 **Submódulos (Nivel 2):** Son los únicos `Link` que cambian de ruta. Con indent (sangría) bajo el módulo.
 - Activo: `bg-[#0072BB]/10`, texto `#0072BB`, línea vertical izquierda 2px `border-l-2 border-primary`.
@@ -54,13 +54,19 @@ Usar el componente `Table` de shadcn (o clase `tabla-global` en `<table>` HTML) 
 
 **Datos (tbody td):** Texto alto contraste `text-slate-900 font-medium`.
 
-**Filas:** Cebra sutil `even:bg-slate-50/50`, borde fino `border-b border-slate-100`, hover `hover:bg-blue-50/40`, `transition-colors`. Fila de encabezado: `hover:bg-transparent`.
+**Filas:** Mucho aire `py-4`, cebra sutil `even:bg-slate-50/50`, borde fino `border-b border-slate-100`, hover sutil `hover:bg-slate-50/80`, `transition-colors`. Fila de encabezado: `hover:bg-transparent`.
 
 **Dato destacado:** Columna especial (ej. Cantidad Urgente) con `text-primary` en el header o badge `bg-primary/10 text-primary border-primary/20` en la celda.
 
-## 5. Tipografía y separadores
+## 5. Header (tarjeta de presentación)
 
-**Títulos de sección:** `text-3xl font-black text-slate-950` (h1).
+**Título:** `text-3xl font-black text-slate-950` con línea decorativa azul a la izquierda (`w-1 h-10 rounded-full bg-primary`). **Subtítulo:** nombre del submódulo debajo con menor jerarquía (`text-sm font-medium text-slate-500`). Botones de acción a la derecha con el mismo tamaño (`h-8`).
+
+## 6. Paleta y layout
+
+**Fondo:** `bg-slate-50` para la página (main). **Cards:** blanco puro (`bg-white` / `--card: #ffffff`). **Marca:** #0072BB para primarios y activos. **Detalle:** #FFC107 solo para el icono/indicador de "Pedido Urgente".
+
+## 7. Tipografía y separadores
 
 **Separadores:** Usar `Separator` de shadcn:
 - Entre encabezado y filtros (ya en SectionHeader).
@@ -68,6 +74,6 @@ Usar el componente `Table` de shadcn (o clase `tabla-global` en `<table>` HTML) 
 
 ## Orden en página
 
-`SectionHeader` (título + actions, sin descripción; `mb-8`) → `FilterBar` (con labels) → `Separator` → `Card` (tabla). Tablas: datos centrados, `text-slate-900`, encabezados con #0072BB.
+`SectionHeader` (título + subtitulo opcional + actions; `mb-8`) → `FilterBar` (con labels) → `Separator` → `Card` (tabla). Tablas: datos centrados, `text-slate-900`, encabezados #0072BB, filas con aire (`py-4`) y hover sutil.
 
 Usar Tailwind CSS 4 y mantener contraste accesible (ratio adecuado).

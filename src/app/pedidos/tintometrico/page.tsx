@@ -11,7 +11,7 @@ export default async function PedidoTintometricoPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo="Pedido Mercadería" />
+      <SectionHeader titulo="Pedido Mercadería" subtitulo="Pedido Tintométrico" />
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Pedido Tintométrico — en construcción.</p>
       </div>

@@ -56,7 +56,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col min-h-0">
-      <SectionHeader titulo="Pedido Mercadería" />
+      <SectionHeader titulo="Pedido Mercadería" subtitulo="Pedido Urgente" />
 
       <FiltrosPedidoUrgente
         q={q}

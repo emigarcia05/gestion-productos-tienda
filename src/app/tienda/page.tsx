@@ -96,7 +96,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo="Lista Tienda" actions={acciones} />
+      <SectionHeader titulo="Lista Tienda" subtitulo="Comparación Px Proveedores (Act. Prod vinculados)" actions={acciones} />
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">

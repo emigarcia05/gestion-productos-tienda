@@ -111,7 +111,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col border-r border-slate-200 bg-slate-50">
+    <aside className="w-60 shrink-0 flex flex-col border-r border-slate-300 bg-slate-50">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.map((module) => {
           const isOpen = openId === module.id;
@@ -126,8 +126,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
                   isOpen
-                    ? "font-bold text-slate-950 [&_svg]:text-primary"
-                    : "font-semibold text-slate-600 hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
+                    ? "font-bold text-slate-900 [&_svg]:text-primary"
+                    : "font-semibold text-slate-900 hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
                 )}
                 aria-expanded={isOpen}
               >
@@ -153,7 +153,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
                             ? "border-primary bg-[#0072BB]/10 font-semibold text-primary"
-                            : "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                            : "border-transparent text-slate-900 hover:bg-slate-100 hover:text-slate-950",
                           sub.isUrgente && "relative"
                         )}
                       >

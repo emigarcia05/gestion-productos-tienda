@@ -23,7 +23,7 @@ export default async function StockPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo="Control Stock" />
+      <SectionHeader titulo="Control Stock" subtitulo="Por sucursal" />
       <StockPageSyncGate>
         <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
           <TablaStock
