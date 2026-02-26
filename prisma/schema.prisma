@@ -1,8 +1,19 @@
-// ─── Reset Backend: schema mínimo. Añadir modelos cuando reactive la BD.
+// ─── Neon / PostgreSQL
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Proveedor {
+  id           String   @id @default(cuid())
+  nombre       String   @unique
+  sufijo       String   @unique
+  codigoUnico  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("proveedores")
 }

@@ -1,8 +1,23 @@
 /**
- * Cliente Prisma – MODO RESET: no se usa en runtime.
- * Cuando reactive el backend, configurar aquí el cliente con reutilización
- * para serverless (globalThis) y adapter pg/Neon según acordado.
+ * Cliente Prisma – Conexión a Neon/PostgreSQL vía adapter pg.
+ * Singleton en desarrollo para evitar múltiples conexiones.
  */
-// Placeholder: exportar un objeto que no se usa en modo mock.
-// Para reactivar: descomentar y configurar createPrismaClient + globalForPrisma.
-export const prisma = undefined as unknown as import("@prisma/client").PrismaClient;
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+function createPrisma(): PrismaClient {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL no está definida. Configurala en Vercel o en .env.");
+  }
+  const adapter = new PrismaPg({ connectionString });
+  return new PrismaClient({ adapter });
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrisma();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}

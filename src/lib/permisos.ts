@@ -33,6 +33,13 @@ export const PERMISOS = {
     },
   },
 
+  // ─── Página /proveedores/lista-precios ──────────────────────────────────────
+  listaPrecios: {
+    acciones: {
+      importarLista: { simple: true, editor: true },
+    },
+  },
+
   // ─── Página /proveedores/[id] ─────────────────────────────────────────────
   proveedorDetalle: {
     acciones: {

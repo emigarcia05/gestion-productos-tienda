@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ListaPreciosPage() {
   const [proveedores, rol] = await Promise.all([getProveedores(), getRol()]);
-  const p = PERMISOS.proveedores;
+  const p = PERMISOS.listaPrecios;
 
   const acciones =
     puede(rol, p.acciones.importarLista) ? (

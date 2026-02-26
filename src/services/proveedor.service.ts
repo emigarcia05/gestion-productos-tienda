@@ -1,8 +1,7 @@
 /**
- * Servicio de Proveedores – Capa de datos.
- * MOCK: datos en memoria; al conectar Neon/Prisma reemplazar por prisma.proveedor.create
- * y capturar P2002 (unique) para mensajes amigables.
+ * Servicio de Proveedores – Capa de datos (Neon/Prisma).
  */
+import { prisma } from "@/lib/prisma";
 
 export interface CreateProveedorInput {
   nombre: string;
@@ -17,30 +16,30 @@ export interface ProveedorListItem {
   _count: { productosProveedor: number };
 }
 
-// ─── MOCK: almacén en memoria (single source para lista + create) ───────────
-
-const store: ProveedorListItem[] = [
-  { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM", _count: { productosProveedor: 2 } },
-  { id: "mock-prov-2", nombre: "Otro Proveedor", codigoUnico: "OTR", sufijo: "OTR", _count: { productosProveedor: 0 } },
-];
-
-/** Códigos de error para constraint unique (Neon/Prisma P2002). */
+/** Códigos de error para constraint unique (Prisma P2002). */
 export const PROVEEDOR_ERROR = {
   NOMBRE_DUPLICADO: "Ya existe un proveedor con ese nombre.",
   SUFIJO_DUPLICADO: "Ya existe un proveedor con ese sufijo.",
 } as const;
 
 /**
- * Lista de proveedores (para reutilizar en acciones y revalidación).
- * Con Prisma: return prisma.proveedor.findMany({ include: { _count: { select: { productosProveedor: true } } } });
+ * Lista de proveedores desde Neon.
  */
 export async function getProveedores(): Promise<ProveedorListItem[]> {
-  return [...store];
+  const list = await prisma.proveedor.findMany({
+    orderBy: { nombre: "asc" },
+  });
+  return list.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    codigoUnico: p.codigoUnico,
+    sufijo: p.sufijo,
+    _count: { productosProveedor: 0 },
+  }));
 }
 
 /**
- * Crea un proveedor. Lanza error con mensaje amigable si nombre o sufijo ya existen (unique).
- * Con Prisma: usar prisma.proveedor.create y en catch (e.code === 'P2002') devolver PROVEEDOR_ERROR según meta.target.
+ * Crea un proveedor en Neon. Lanza error amigable si nombre o sufijo ya existen (unique).
  */
 export async function createProveedor(
   input: CreateProveedorInput
@@ -48,21 +47,22 @@ export async function createProveedor(
   const nombreNorm = input.nombre.trim();
   const sufijoNorm = input.sufijo.trim().toUpperCase();
 
-  const nombreExiste = store.some((p) => p.nombre.toLowerCase() === nombreNorm.toLowerCase());
-  if (nombreExiste) throw new Error(PROVEEDOR_ERROR.NOMBRE_DUPLICADO);
-
-  const sufijoExiste = store.some((p) => p.sufijo === sufijoNorm);
-  if (sufijoExiste) throw new Error(PROVEEDOR_ERROR.SUFIJO_DUPLICADO);
-
-  const id = "mock-prov-" + Date.now();
-  const codigoUnico = sufijoNorm;
-  store.push({
-    id,
-    nombre: nombreNorm,
-    codigoUnico,
-    sufijo: sufijoNorm,
-    _count: { productosProveedor: 0 },
-  });
-
-  return { id, codigoUnico };
+  try {
+    const created = await prisma.proveedor.create({
+      data: {
+        nombre: nombreNorm,
+        sufijo: sufijoNorm,
+        codigoUnico: sufijoNorm,
+      },
+    });
+    return { id: created.id, codigoUnico: created.codigoUnico };
+  } catch (e: unknown) {
+    const prismaError = e as { code?: string; meta?: { target?: string[] } };
+    if (prismaError.code === "P2002" && Array.isArray(prismaError.meta?.target)) {
+      const target = prismaError.meta.target as string[];
+      if (target.includes("nombre")) throw new Error(PROVEEDOR_ERROR.NOMBRE_DUPLICADO);
+      if (target.includes("sufijo")) throw new Error(PROVEEDOR_ERROR.SUFIJO_DUPLICADO);
+    }
+    throw e;
+  }
 }
