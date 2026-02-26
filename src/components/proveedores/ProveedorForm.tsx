@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useFormStatus } from "react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,9 @@ interface Props {
 }
 
 function SubmitButton({ isEdit, pending }: { isEdit: boolean; pending: boolean }) {
-  const formStatus = useFormStatus();
-  const loading = pending || formStatus.pending;
   return (
-    <Button type="submit" disabled={loading} className="gap-2">
-      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+    <Button type="submit" disabled={pending} className="gap-2">
+      {pending && <Loader2 className="h-4 w-4 animate-spin" />}
       {isEdit ? "Guardar cambios" : "Guardar"}
     </Button>
   );
