@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Loader2, ChevronDown, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -65,7 +66,10 @@ export default function SeleccionarProductoModal({
     debounceRef.current = setTimeout(async () => {
       const result = await buscarProductos(q, excluirItemTiendaId, proveedorId || undefined);
       if (result.success) setResultados(result.data);
-      else setResultados([]);
+      else {
+        toast.error(result.error);
+        setResultados([]);
+      }
       setBuscando(false);
     }, 400);
   }, [q, proveedorId, excluirItemTiendaId]);

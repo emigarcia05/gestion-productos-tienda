@@ -144,7 +144,8 @@ export async function convertirEnProveedor(
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[tienda] convertirEnProveedor", e);
     return { ok: false, error: "No se pudo actualizar el item." };
   }
 }

@@ -28,20 +28,45 @@ export function parseNum(val: unknown): number {
   return isNaN(n) ? 0 : n;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapItem(raw: any): ItemDux {
+/** Forma esperada de un ítem en la respuesta JSON de la API Dux (campos opcionales). */
+interface ItemDuxRaw {
+  cod_item?: unknown;
+  item?: unknown;
+  rubro?: { nombre?: string } | null;
+  sub_rubro?: { nombre?: string } | null;
+  marca?: { marca?: string } | null;
+  proveedor?: { proveedor?: string } | null;
+  codigo_externo?: string | null;
+  costo?: unknown;
+  porc_iva?: unknown;
+  precios?: Array<{ id: number; precio?: unknown }>;
+  stock?: Array<{ id: number; stock_real?: unknown }>;
+  habilitado?: string;
+}
+
+function isItemDuxRaw(val: unknown): val is ItemDuxRaw {
+  return val !== null && typeof val === "object";
+}
+
+export function mapItem(raw: unknown): ItemDux {
+  if (!isItemDuxRaw(raw)) {
+    return {
+      codItem: "", descripcion: "", rubro: null, subRubro: null, marca: null,
+      proveedorDux: null, codigoExterno: null, costo: 0, porcIva: 0,
+      precioLista: 0, precioMayorista: 0, stockGuaymallen: 0, stockMaipu: 0,
+      habilitado: false,
+    };
+  }
   const precioMap: Record<number, number> = {};
   if (Array.isArray(raw.precios)) {
     for (const p of raw.precios) precioMap[p.id] = parseNum(p.precio);
   }
-
   const stockMap: Record<number, number> = {};
   if (Array.isArray(raw.stock)) {
     for (const s of raw.stock) stockMap[s.id] = parseNum(s.stock_real);
   }
-
   return {
-    codItem:         String(raw.cod_item),
+    codItem:         String(raw.cod_item ?? ""),
     descripcion:     String(raw.item ?? ""),
     rubro:           raw.rubro?.nombre ?? null,
     subRubro:        raw.sub_rubro?.nombre ?? null,
@@ -53,7 +78,7 @@ export function mapItem(raw: any): ItemDux {
     precioLista:     precioMap[ID_PRECIO_LISTA]     ?? 0,
     precioMayorista: precioMap[ID_PRECIO_MAYORISTA] ?? 0,
     stockGuaymallen: stockMap[ID_STOCK_GUAYMALLEN]  ?? 0,
-    stockMaipu:      stockMap[ID_STOCK_MAIPU]        ?? 0,
+    stockMaipu:      stockMap[ID_STOCK_MAIPU]       ?? 0,
     habilitado:      raw.habilitado === "S",
   };
 }

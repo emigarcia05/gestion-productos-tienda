@@ -13,9 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import CantidadPedidoModal, {
-  type ProductoParaPedido,
-} from "@/components/pedidos/CantidadPedidoModal";
+import CantidadPedidoModal from "@/components/pedidos/CantidadPedidoModal";
 
 export interface ProductoListaPrecios {
   id: string;
@@ -121,7 +119,7 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
       <CantidadPedidoModal
         open={modalAbierto}
         onOpenChange={setModalAbierto}
-        producto={productoSeleccionado as ProductoParaPedido | null}
+        producto={productoSeleccionado}
         onConfirmar={handleConfirmar}
       />
     </>

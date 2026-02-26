@@ -24,20 +24,20 @@ model Proveedor {
 /// Productos de la lista de proveedores. Vinculados a ItemTienda por codigoExterno.
 model ProductoProveedor {
   id                   String     @id @default(cuid())
-  codigoExterno        String     @unique
-  codProdProv          String
+  codigoExterno        String     @unique @map("codigo_externo")
+  codProdProv          String     @map("cod_prod_prov")
   descripcion          String
-  precioLista          Float
-  precioVentaSugerido  Float
-  descuentoProducto   Float      @default(0)
-  descuentoCantidad    Float      @default(0)
-  cxTransporte         Float      @default(0)
+  precioLista          Float      @map("precio_lista")
+  precioVentaSugerido  Float      @map("precio_venta_sugerido")
+  descuentoProducto   Float      @default(0) @map("descuento_producto")
+  descuentoCantidad    Float      @default(0) @map("descuento_cantidad")
+  cxTransporte         Float      @default(0) @map("cx_transporte")
   disponible           Boolean    @default(true)
-  proveedorId          String
+  proveedorId          String     @map("proveedor_id")
   proveedor            Proveedor  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
   tienda               ItemTienda[]
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
 
   @@index([proveedorId])
   @@index([codigoExterno])
@@ -63,26 +63,26 @@ model ImportLog {
 
 /// Ítems de la lista tienda. Relación formal con ProductoProveedor vía productoProveedorId (codigoExterno).
 model ItemTienda {
-  id               String             @id @default(cuid())
-  codItem          String             @unique
-  codigoExterno    String?
-  descripcion      String
-  rubro            String?
-  subRubro         String?
-  marca            String?
-  proveedorDux     String?
-  costo            Float              @default(0)
-  porcIva          Float              @default(21)
-  precioLista      Float              @default(0)
-  precioMayorista  Float              @default(0)
-  stockGuaymallen  Float              @default(0)
-  stockMaipu       Float              @default(0)
-  habilitado       Boolean            @default(true)
-  ultimaImpresion  DateTime?
-  productoProveedorId  String?
+  id                   String             @id @default(cuid())
+  codItem              String             @unique @map("cod_item")
+  codigoExterno        String?            @map("codigo_externo")
+  descripcion          String
+  rubro                String?
+  subRubro             String?            @map("sub_rubro")
+  marca                String?
+  proveedorDux         String?            @map("proveedor_dux")
+  costo                Float              @default(0)
+  porcIva              Float              @default(21) @map("porc_iva")
+  precioLista          Float              @default(0) @map("precio_lista")
+  precioMayorista      Float              @default(0) @map("precio_mayorista")
+  stockGuaymallen      Float              @default(0) @map("stock_guaymallen")
+  stockMaipu           Float              @default(0) @map("stock_maipu")
+  habilitado           Boolean            @default(true)
+  ultimaImpresion      DateTime?          @map("ultima_impresion")
+  productoProveedorId  String?            @map("producto_proveedor_id")
   productoProveedor    ProductoProveedor? @relation(fields: [productoProveedorId], references: [id], onDelete: SetNull)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
 
   @@index([codigoExterno])
   @@index([rubro])

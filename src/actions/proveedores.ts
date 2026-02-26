@@ -61,7 +61,8 @@ export async function crearProveedor(
     });
     revalidatePath("/proveedores");
     return { ok: true, data: { id: proveedor.id } };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[proveedores] crearProveedor", e);
     return { ok: false, error: "No se pudo crear el proveedor." };
   }
 }
@@ -95,7 +96,8 @@ export async function editarProveedor(
     revalidatePath("/proveedores");
     revalidatePath(`/proveedores/${id}`);
     return { ok: true, data: undefined };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[proveedores] editarProveedor", e);
     return { ok: false, error: "No se pudo actualizar el proveedor." };
   }
 }
@@ -108,7 +110,8 @@ export async function eliminarProveedor(id: string): Promise<ActionResult> {
     await prisma.proveedor.delete({ where: { id } });
     revalidatePath("/proveedores");
     return { ok: true, data: undefined };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[proveedores] eliminarProveedor", e);
     return { ok: false, error: "No se pudo eliminar el proveedor." };
   }
 }

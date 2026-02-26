@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { filtroTexto } from "@/lib/busqueda";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 
@@ -26,7 +27,8 @@ export async function editarProducto(
     });
     revalidatePath("/proveedores");
     return { ok: true, data: undefined };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[productos] editarProducto", e);
     return { ok: false, error: "No se pudo actualizar el producto." };
   }
 }
@@ -46,13 +48,7 @@ export async function aplicarCampoMasivo(
 
   const where = {
     proveedorId,
-    ...(q ? {
-      OR: [
-        { descripcion:    { contains: q, mode: "insensitive" as const } },
-        { codigoExterno: { contains: q, mode: "insensitive" as const } },
-        { codProdProv:   { contains: q, mode: "insensitive" as const } },
-      ],
-    } : {}),
+    ...(q?.trim() ? filtroTexto(q, ["descripcion", "codigoExterno", "codProdProv"]) : {}),
   };
 
   try {
@@ -62,7 +58,8 @@ export async function aplicarCampoMasivo(
     });
     revalidatePath("/proveedores");
     return { ok: true, data: { afectados: count } };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[productos] aplicarCampoMasivo", e);
     return { ok: false, error: "No se pudo aplicar la acción masiva." };
   }
 }

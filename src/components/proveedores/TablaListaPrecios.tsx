@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import CantidadPedidoModal, {
-  type ProductoParaPedido,
-} from "@/components/pedidos/CantidadPedidoModal";
+import CantidadPedidoModal from "@/components/pedidos/CantidadPedidoModal";
 
 export interface ProductoListaPrecios {
   id: string;
@@ -76,7 +74,7 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Prop
       <CantidadPedidoModal
         open={modalAbierto}
         onOpenChange={setModalAbierto}
-        producto={productoSeleccionado as ProductoParaPedido | null}
+        producto={productoSeleccionado}
         onConfirmar={handleConfirmar}
       />
     </>

@@ -46,7 +46,7 @@ export async function getProductosVinculadosPorItemTienda(
     if (!producto?.proveedor) {
       return { success: true, data: [] };
     }
-    return { success: true, data: [producto as ProductoCompleto] };
+    return { success: true, data: [producto] };
   } catch (e) {
     console.error("[producto.service] getProductosVinculadosPorItemTienda", e);
     return {
@@ -93,7 +93,7 @@ export async function buscarProductos(
       (p): p is typeof p & { proveedor: NonNullable<typeof p.proveedor> } => p.proveedor != null
     );
 
-    return { success: true, data: withProveedor as ProductoCompleto[] };
+    return { success: true, data: withProveedor };
   } catch (e) {
     console.error("[producto.service] buscarProductos", e);
     return {

@@ -48,7 +48,8 @@ export async function vincularProducto(
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[vinculos] vincularProducto", e);
     return { ok: false, error: "No se pudo crear el vínculo." };
   }
 }
@@ -67,7 +68,8 @@ export async function desvincularProducto(
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[vinculos] desvincularProducto", e);
     return { ok: false, error: "No se pudo eliminar el vínculo." };
   }
 }
@@ -113,7 +115,8 @@ export async function autoVincular(
 
     revalidatePath("/tienda");
     return { ok: true, data: { vinculados: yaVinculado ? 0 : 1 } };
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") console.error("[vinculos] autoVincular", e);
     return { ok: false, error: "Error al auto-vincular." };
   }
 }

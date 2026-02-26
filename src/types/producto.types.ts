@@ -1,28 +1,15 @@
 /**
- * Tipos para Producto + Proveedor (y opcionalmente vínculos con TiendaColor).
- * Garantizan que la UI nunca reciba undefined en relaciones cargadas.
+ * Tipos para Producto + Proveedor. Definidos desde Prisma para evitar casts y mantener
+ * un único contrato entre capa de datos y UI.
  */
+import type { Prisma } from "@prisma/client";
 
-export interface ProveedorResumen {
-  id: string;
-  nombre: string;
-  sufijo: string;
-}
+/** Select mínimo de proveedor para listados y detalle (Single Source of Truth con schema). */
+const PROVEEDOR_SELECT = { id: true, nombre: true, sufijo: true } as const;
 
-/** Producto de Lista Proveedores con proveedor siempre presente (para listados y detalle) */
-export interface ProductoCompleto {
-  id: string;
-  codProdProv: string;
-  codigoExterno: string;
-  descripcion: string;
-  precioLista: number;
-  precioVentaSugerido: number;
-  descuentoProducto: number;
-  descuentoCantidad: number;
-  cxTransporte: number;
-  disponible: boolean;
-  proveedorId: string;
-  proveedor: ProveedorResumen;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type ProveedorResumen = Prisma.ProveedorGetPayload<{ select: typeof PROVEEDOR_SELECT }>;
+
+/** Producto de Lista Proveedores con proveedor siempre presente (inferido del schema Prisma). */
+export type ProductoCompleto = Prisma.ProductoProveedorGetPayload<{
+  include: { proveedor: { select: typeof PROVEEDOR_SELECT } };
+}>;
