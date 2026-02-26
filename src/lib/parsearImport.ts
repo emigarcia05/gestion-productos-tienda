@@ -40,6 +40,72 @@ export interface MapeoColumnas {
   [indiceColumna: number]: CampoDestino;
 }
 
+// ─── Lista de precios proveedores (lista_precios_proveedores) ───────────────
+
+export type CampoDestinoListaPrecios =
+  | "codigoExterno"
+  | "codProdProv"
+  | "descripcion"
+  | "precioLista"
+  | "precioVentaSugerido"
+  | "ignorar";
+
+export interface MapeoColumnasListaPrecios {
+  [indiceColumna: number]: CampoDestinoListaPrecios;
+}
+
+export interface FilaListaPrecio {
+  codigoExterno: string;
+  codProdProv: string;
+  descripcion: string;
+  precioLista: number;
+  precioVentaSugerido: number;
+}
+
+/**
+ * Aplica el mapeo de columnas a filas crudas y devuelve FilaListaPrecio[].
+ * Valores por defecto: precioVentaSugerido 0 si vacío.
+ */
+export function aplicarMapeoListaPrecios(
+  filas: string[][],
+  mapeo: MapeoColumnasListaPrecios
+): FilaListaPrecio[] {
+  const get = (cols: string[], campo: CampoDestinoListaPrecios): string => {
+    const idx = Object.entries(mapeo).find(([, v]) => v === campo)?.[0];
+    if (idx === undefined) return "";
+    return cols[Number(idx)] ?? "";
+  };
+
+  return filas
+    .map((cols) => {
+      const codProdProv = get(cols, "codProdProv").trim();
+      if (!codProdProv) return null;
+
+      const codigoExterno = get(cols, "codigoExterno").trim();
+      const descripcion = get(cols, "descripcion").trim();
+      const precioListaRaw = get(cols, "precioLista");
+      const precioVentaRaw = get(cols, "precioVentaSugerido");
+
+      const precioLista = parsePrecio(precioListaRaw);
+      const precioVentaSugerido = parsePrecio(precioVentaRaw);
+      const precioListaFinal =
+        !precioListaRaw || precioListaRaw.trim() === "" || isNaN(precioLista) ? 0 : precioLista;
+      const precioVentaFinal =
+        !precioVentaRaw || precioVentaRaw.trim() === "" || isNaN(precioVentaSugerido)
+          ? 0
+          : precioVentaSugerido;
+
+      return {
+        codigoExterno: codigoExterno || codProdProv,
+        codProdProv,
+        descripcion,
+        precioLista: precioListaFinal,
+        precioVentaSugerido: precioVentaFinal,
+      };
+    })
+    .filter((f): f is FilaListaPrecio => f !== null);
+}
+
 /**
  * Parsea un CSV y devuelve las filas crudas (arrays de strings).
  * Si tieneEncabezados=true, la primera fila se devuelve como encabezados
