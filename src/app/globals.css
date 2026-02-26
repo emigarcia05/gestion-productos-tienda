@@ -2,8 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-brand:    var(--brand);
   --color-brand-fg: var(--brand-fg);
@@ -76,48 +74,15 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: #ffffff;
-  --sidebar-foreground: #334155;
+  /* Sidebar siempre azul marca (#0072BB); texto e iconos claros para contraste */
+  --sidebar: #0072BB;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #0072BB;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0072BB;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #0072BB;
-}
-
-.dark {
-  --background: #0c2439; /* Misma familia que navbar #0096FF, más oscuro */
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #3D96D0;
-  --primary-foreground: #ffffff;
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: #0072BB40;
-  --input: #0072BB;
-  --ring: #3D96D0;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent: rgba(255, 255, 255, 0.15);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.2);
+  --sidebar-ring: rgba(255, 255, 255, 0.3);
 }
 
 @layer base {
@@ -152,26 +117,6 @@
   .tabla-global tbody tr:hover {
     @apply bg-blue-100/40;
   }
-
-  /* Modo oscuro: tablas usan variables de tema */
-  .dark .tabla-global thead th {
-    @apply bg-primary text-primary-foreground;
-  }
-  .dark .tabla-global tbody td {
-    @apply text-foreground;
-  }
-  .dark .tabla-global tbody tr {
-    @apply border-border;
-  }
-  .dark .tabla-global tbody tr:nth-child(odd) {
-    @apply bg-card;
-  }
-  .dark .tabla-global tbody tr:nth-child(even) {
-    @apply bg-muted/50;
-  }
-  .dark .tabla-global tbody tr:hover {
-    @apply bg-accent/50;
-  }
 }
 
 /* ─── Estilos madre: botones (Main Button) ───────────────────────────────────
@@ -196,7 +141,7 @@ main button:hover,
 }
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */
-:root, .dark {
+:root {
   --brand:    #0072BB;
   --brand-fg: #ffffff;
   --accent2:  #FFC107;
