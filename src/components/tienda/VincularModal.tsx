@@ -78,12 +78,13 @@ export default function VincularModal({
   const [cantidad, setCantidad]           = useState(cantidadInicial);
   const [isPending, startTransition]      = useTransition();
 
-  // Cargar vínculos al abrir
+  // Cargar vínculos al abrir (ServiceResult: success + data | error)
   useEffect(() => {
     if (!open) return;
     setCargando(true);
-    getVinculos(itemTiendaId).then((data) => {
-      setVinculados(data as ProductoConProveedor[]);
+    getVinculos(itemTiendaId).then((result) => {
+      if (result.success) setVinculados(result.data);
+      else toast.error(result.error);
       setCargando(false);
     });
   }, [open, itemTiendaId]);
@@ -117,9 +118,11 @@ export default function VincularModal({
       const res = await autoVincular(itemTiendaId);
       if (res.ok) {
         toast.success(`Auto-vinculado: ${res.data.vinculados} producto(s) nuevos`);
-        const data = await getVinculos(itemTiendaId);
-        setVinculados(data as ProductoConProveedor[]);
-        setCantidad(data.length);
+        const result = await getVinculos(itemTiendaId);
+        if (result.success) {
+          setVinculados(result.data);
+          setCantidad(result.data.length);
+        } else toast.error(result.error);
       } else {
         toast.error(res.error);
       }

@@ -6,37 +6,41 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Lista Proveedores ─────────────────────────────────────────────────────
+
 model Proveedor {
-  id          String     @id @default(cuid())
-  nombre      String
-  codigoUnico String     @unique
-  sufijo      String     @unique
-  productos   Producto[]
-  pedidos     Pedido[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                 String             @id @default(cuid())
+  nombre             String
+  codigoUnico        String             @unique
+  sufijo             String             @unique
+  productosProveedor ProductoProveedor[]
+  pedidos            Pedido[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@map("proveedores")
 }
 
-model Producto {
-  id                   String              @id @default(cuid())
+/// Productos de la lista de proveedores. Vinculados a ItemTienda por codigoExterno.
+model ProductoProveedor {
+  id                   String     @id @default(cuid())
+  codigoExterno        String     @unique
   codProdProv          String
-  codExt               String              @unique
   descripcion          String
   precioLista          Float
   precioVentaSugerido  Float
-  descuentoProducto    Float               @default(0)
-  descuentoCantidad    Float               @default(0)
-  cxTransporte         Float               @default(0)
-  disponible           Boolean             @default(true)
+  descuentoProducto   Float      @default(0)
+  descuentoCantidad    Float      @default(0)
+  cxTransporte         Float      @default(0)
+  disponible           Boolean    @default(true)
   proveedorId          String
-  proveedor            Proveedor           @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
-  itemsTienda          ItemTiendaProducto[]
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  proveedor            Proveedor  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+  tienda               ItemTienda[]
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   @@index([proveedorId])
+  @@index([codigoExterno])
   @@map("productos")
 }
 
@@ -55,58 +59,49 @@ model ImportLog {
   @@map("import_logs")
 }
 
-// ─── Lista TiendaColor (API Dux Software) ─────────────────────────────────
+// ─── Lista Tienda (API Dux / TiendaColor) ──────────────────────────────────
 
+/// Ítems de la lista tienda. Relación formal con ProductoProveedor vía productoProveedorId (codigoExterno).
 model ItemTienda {
-  id               String               @id @default(cuid())
-  codItem          String               @unique   // cod_item de Dux
+  id               String             @id @default(cuid())
+  codItem          String             @unique
+  codigoExterno    String?
   descripcion      String
   rubro            String?
   subRubro         String?
   marca            String?
-  proveedorDux     String?              // nombre del proveedor en Dux
-  codigoExterno    String?
-  costo            Float                @default(0)
-  porcIva          Float                @default(21)
-  precioLista      Float                @default(0)
-  precioMayorista  Float                @default(0)
-  stockGuaymallen  Float                @default(0)
-  stockMaipu       Float                @default(0)
-  habilitado       Boolean              @default(true)
+  proveedorDux     String?
+  costo            Float              @default(0)
+  porcIva          Float              @default(21)
+  precioLista      Float              @default(0)
+  precioMayorista  Float              @default(0)
+  stockGuaymallen  Float              @default(0)
+  stockMaipu       Float              @default(0)
+  habilitado       Boolean            @default(true)
   ultimaImpresion  DateTime?
-  productos        ItemTiendaProducto[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  productoProveedorId  String?
+  productoProveedor    ProductoProveedor? @relation(fields: [productoProveedorId], references: [id], onDelete: SetNull)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
+  @@index([codigoExterno])
   @@index([rubro])
   @@index([marca])
+  @@index([habilitado])
   @@map("items_tienda")
 }
 
-// ─── Tabla de vínculo ItemTienda <-> Producto (many-to-many) ──────────────
-
-model ItemTiendaProducto {
-  itemTiendaId String
-  productoId   String
-  itemTienda   ItemTienda @relation(fields: [itemTiendaId], references: [id], onDelete: Cascade)
-  producto     Producto   @relation(fields: [productoId],   references: [id], onDelete: Cascade)
-
-  @@id([itemTiendaId, productoId])
-  @@index([productoId])
-  @@map("items_tienda_productos")
-}
-
 model SyncLog {
-  id           String   @id @default(cuid())
-  tipo         String   @default("auto")   // "auto" | "manual"
-  status       String   @default("ok")     // "ok" | "error"
-  creados      Int      @default(0)
-  actualizados Int      @default(0)
-  deshabilitados Int    @default(0)
-  totalApi     Int      @default(0)
-  duracionMs   Int      @default(0)
-  error        String?
-  createdAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  tipo           String   @default("auto")
+  status         String   @default("ok")
+  creados        Int      @default(0)
+  actualizados   Int      @default(0)
+  deshabilitados Int      @default(0)
+  totalApi       Int      @default(0)
+  duracionMs     Int      @default(0)
+  error          String?
+  createdAt      DateTime @default(now())
 
   @@map("sync_logs")
 }
@@ -115,9 +110,9 @@ model SyncLog {
 
 model Pedido {
   id          String       @id @default(cuid())
-  tipo        String       // "urgente" | "reposicion"
-  estado      String       @default("borrador")  // "borrador" | "enviado" | etc.
-  sucursal    String       // "guaymallen" | "maipu"
+  tipo        String
+  estado      String       @default("borrador")
+  sucursal    String
   proveedorId String
   proveedor   Proveedor    @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
   items       PedidoItem[]
@@ -132,8 +127,8 @@ model PedidoItem {
   id                   String  @id @default(cuid())
   pedidoId             String
   pedido               Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  codExt               String  // código en lista proveedor
-  codTienda            String  // código en lista tienda
+  codExt               String
+  codTienda            String
   descripcionProveedor String
   descripcionTienda    String
   cantidad             Int     @default(1)

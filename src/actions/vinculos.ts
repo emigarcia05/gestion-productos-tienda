@@ -2,34 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { filtroTexto } from "@/lib/busqueda";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
+import type { ServiceResult } from "@/types";
+import type { ProductoCompleto } from "@/types";
+import {
+  getProductosVinculadosPorItemTienda,
+  buscarProductos as buscarProductosService,
+} from "@/services/producto.service";
 
-// ─── Obtener productos vinculados a un ItemTienda ─────────────────────────
+// ─── Obtener productos vinculados a un ItemTienda (delega al servicio) ─────
 
-export async function getVinculos(itemTiendaId: string) {
-  const vinculos = await prisma.itemTiendaProducto.findMany({
-    where: { itemTiendaId },
-    include: {
-      producto: {
-        select: {
-          id: true,
-          codExt: true,
-          codProdProv: true,
-          descripcion: true,
-          precioLista: true,
-          precioVentaSugerido: true,
-          descuentoProducto: true,
-          descuentoCantidad: true,
-          cxTransporte: true,
-          proveedor: { select: { nombre: true, sufijo: true } },
-        },
-      },
-    },
-    orderBy: { producto: { codExt: "asc" } },
-  });
-  return vinculos.map((v) => v.producto);
+export async function getVinculos(itemTiendaId: string): Promise<ServiceResult<ProductoCompleto[]>> {
+  return getProductosVinculadosPorItemTienda(itemTiendaId);
 }
 
 // ─── Buscar productos de Lista Proveedores ────────────────────────────────
@@ -45,25 +30,8 @@ export async function buscarProductos(
   q: string,
   excluirItemTiendaId: string,
   proveedorId?: string
-) {
-  if (!q || q.trim().length < 2) return [];
-
-  const yaVinculados = await prisma.itemTiendaProducto.findMany({
-    where: { itemTiendaId: excluirItemTiendaId },
-    select: { productoId: true },
-  });
-  const idsExcluidos = yaVinculados.map((v) => v.productoId);
-
-  return prisma.producto.findMany({
-    where: {
-      id: { notIn: idsExcluidos },
-      ...(proveedorId ? { proveedorId } : {}),
-      ...filtroTexto(q, ["descripcion", "codExt", "codProdProv"]),
-    },
-    include: { proveedor: { select: { nombre: true, sufijo: true } } },
-    take: 20,
-    orderBy: { codExt: "asc" },
-  });
+): Promise<ServiceResult<ProductoCompleto[]>> {
+  return buscarProductosService(q, excluirItemTiendaId, proveedorId);
 }
 
 // ─── Vincular un producto a un ItemTienda ─────────────────────────────────

@@ -63,8 +63,9 @@ export default function SeleccionarProductoModal({
     if (q.trim().length < 2) { setResultados([]); return; }
     setBuscando(true);
     debounceRef.current = setTimeout(async () => {
-      const data = await buscarProductos(q, excluirItemTiendaId, proveedorId || undefined);
-      setResultados(data as ProductoConProveedor[]);
+      const result = await buscarProductos(q, excluirItemTiendaId, proveedorId || undefined);
+      if (result.success) setResultados(result.data);
+      else setResultados([]);
       setBuscando(false);
     }, 400);
   }, [q, proveedorId, excluirItemTiendaId]);
