@@ -126,7 +126,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               <CollapsibleTrigger
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                  "[&>span:first-child_svg]:text-sidebar-primary",
+                  "[&>span:first-child_svg]:text-sidebar-foreground",
                   !isOpen && "hover:bg-sidebar-accent"
                 )}
                 aria-expanded={isOpen}
@@ -136,12 +136,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 </span>
                 <span className="min-w-0 flex-1 text-left">{module.label}</span>
                 <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 text-sidebar-accent-foreground transition-transform duration-200", isOpen && "rotate-180")}
+                  className={cn("h-4 w-4 shrink-0 text-sidebar-indicator transition-transform duration-200", isOpen && "rotate-180")}
                   aria-hidden
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-accent space-y-0.5 py-1">
+                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-indicator space-y-0.5 py-1">
                   {module.submodules.map((sub) => {
                     const active = isSubmoduleActive(pathname, sub.href);
                     return (
@@ -152,8 +152,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                           "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
-                            ? "border-sidebar-primary bg-sidebar-accent [&_svg]:text-sidebar-accent-foreground"
-                            : "border-transparent text-sidebar-foreground/90 [&_svg]:text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
+                            ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
+                            : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
                           active && sub.isUrgente && "[&_svg]:text-accent2",
                           sub.isUrgente && "relative"
                         )}
@@ -178,13 +178,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             >
               <User className="h-4 w-4" />
             </div>
-            <div className="min-w-0 flex-1 [&_button]:!text-sidebar-foreground/80 [&_button:hover]:!text-sidebar-foreground [&_svg]:text-inherit">
+            <div className="min-w-0 flex-1 [&_button]:!text-sidebar-foreground [&_button:hover]:!text-sidebar-foreground [&_svg]:text-inherit">
               <p className="text-sm font-medium text-sidebar-foreground">{perfilNombre}</p>
               <SelectorRol rolActual={rol} compact />
             </div>
           </div>
         </div>
-        <hr className="w-full border-0 border-t border-sidebar-border mx-0 my-0" aria-hidden />
         <div className="px-4 py-4 flex justify-center">
           <div className="w-full max-w-[45%] flex justify-center items-center">
             <Image

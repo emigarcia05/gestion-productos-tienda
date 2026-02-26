@@ -90,10 +90,10 @@ export function LimpiarFiltrosButton({
       <TooltipTrigger asChild>
         <Button
           type="button"
-          variant="outline"
-          size="icon"
+          variant="primaryIcon"
+          size="icon-lg"
           onClick={onClick}
-          className="h-10 w-10 shrink-0 rounded-lg border-border text-muted-foreground hover:bg-accent hover:text-foreground shadow-sm transition-[box-shadow] duration-150 hover:shadow-md"
+          className="shrink-0"
           aria-label="Limpiar todos los filtros"
         >
           <Trash2 className="h-4 w-4" />

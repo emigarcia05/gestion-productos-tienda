@@ -10,6 +10,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground shadow-sm hover:brightness-90",
+        /** Botón de acción principal solo icono (ej. Limpiar filtros): primary, icono blanco, rounded-lg, shadow-sm → shadow-md en hover */
+        primaryIcon:
+          "bg-primary text-primary-foreground rounded-lg shadow-sm font-semibold hover:brightness-90 hover:shadow-md transition-[box-shadow] duration-150 [&_svg]:text-primary-foreground",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20",
         outline:
