@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { filtroTexto, whereProductoConsultaConTienda } from "@/lib/busqueda";
-import CrearProveedorModal from "@/components/proveedores/CrearProveedorModal";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
 import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
@@ -68,10 +67,17 @@ export default async function ProveedoresPage({ searchParams }: Props) {
   const titulo = "Lista Proveedores";
 
   const acciones =
-    esEditor && (puede(rol, p.acciones.nuevoProveedor) || puede(rol, p.acciones.importarLista)) ? (
+    esEditor && (puede(rol, p.acciones.importarLista) || puede(rol, p.acciones.accionMasiva)) ? (
       <div className="flex gap-2">
-        {puede(rol, p.acciones.nuevoProveedor) && <CrearProveedorModal />}
         {puede(rol, p.acciones.importarLista) && <ImportarModal proveedores={proveedores} />}
+        {puede(rol, p.acciones.accionMasiva) && (
+          <AccionMasivaModal
+            proveedores={proveedores}
+            filtroProveedorActual={proveedor}
+            filtroBusquedaActual={q}
+            totalFiltrado={total}
+          />
+        )}
       </div>
     ) : undefined;
 
@@ -87,16 +93,6 @@ export default async function ProveedoresPage({ searchParams }: Props) {
             totalProductos={total}
             qActual={q}
             proveedorActual={proveedor}
-            accionMasivaSlot={
-              puede(rol, p.acciones.accionMasiva) ? (
-                <AccionMasivaModal
-                  proveedores={proveedores}
-                  filtroProveedorActual={proveedor}
-                  filtroBusquedaActual={q}
-                  totalFiltrado={total}
-                />
-              ) : undefined
-            }
           />
         ) : (
           <BuscadorSimple qActual={q} totalProductos={total} />

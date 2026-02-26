@@ -91,7 +91,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
             ))}
           </SelectContent>
         </Select>
-        <span className="text-sm text-slate-500 tabular-nums shrink-0">
+        <span className="text-sm text-[#FFC107] tabular-nums shrink-0 font-medium">
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

@@ -27,10 +27,9 @@ interface Props {
   totalProductos: number;
   qActual: string;
   proveedorActual: string;
-  accionMasivaSlot?: React.ReactNode;
 }
 
-export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual, accionMasivaSlot }: Props) {
+export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual }: Props) {
   const pathname = usePathname();
   const [q, setQ] = useState(qActual);
   const [buscando, setBuscando] = useState(false);
@@ -92,8 +91,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
             ))}
           </SelectContent>
         </Select>
-        {accionMasivaSlot}
-        <span className="text-sm text-slate-500 tabular-nums shrink-0">
+        <span className="text-sm text-[#FFC107] tabular-nums shrink-0 font-medium">
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

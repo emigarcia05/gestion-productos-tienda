@@ -42,9 +42,9 @@ function exportarXLS(items: ItemAumento[]) {
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
-  if (pct > 0.5)  return <span className={`${cls} text-white`}>{fmtPct(pct)}</span>;
-  if (pct < -0.5) return <span className={`${cls} text-white`}>{fmtPct(pct)}</span>;
-  return <span className={`${cls} text-white/50`}>≈0%</span>;
+  if (pct > 0.5)  return <span className={`${cls} text-red-600`}>{fmtPct(pct)}</span>;
+  if (pct < -0.5) return <span className={`${cls} text-emerald-600`}>{fmtPct(pct)}</span>;
+  return <span className={`${cls} text-slate-500`}>≈0%</span>;
 }
 
 function IconTendencia({ pct }: { pct: number }) {
@@ -74,32 +74,33 @@ function ColumnaGrupo({
   onSeleccionar: (nombre: string) => void;
 }) {
   return (
-    <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
-      {/* Cabecera estilo tabla */}
-      <div className="shrink-0 bg-brand px-3 py-2">
-        <h3 className="text-xs font-semibold text-brand-fg uppercase tracking-wider text-center">
+    <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border border-slate-200 bg-white">
+      {/* Cabecera estilo tabla global (#0072BB, texto blanco) */}
+      <div className="shrink-0 bg-[#0072BB] px-3 py-2">
+        <h3 className="text-xs font-semibold text-white uppercase tracking-wider text-center">
           {titulo}
         </h3>
       </div>
       <div className="flex-1 overflow-y-auto">
         {grupos.length === 0 && (
-          <p className="text-xs text-white/50 text-center py-6">Sin datos</p>
+          <p className="text-xs text-slate-500 text-center py-6">Sin datos</p>
         )}
-        {grupos.map((g) => {
+        {grupos.map((g, idx) => {
           const pct    = promedio(g.items);
           const activo = seleccionado === g.nombre;
           const conVariacion = g.items.filter((i) => Math.abs(i.pctAumento) > 0.5).length;
+          const zebra = idx % 2 === 1 ? "bg-blue-50/50" : "bg-white";
           return (
             <button
               key={g.nombre}
               onClick={() => onSeleccionar(g.nombre)}
-              className={`tabla-row w-full flex items-center justify-between gap-2 px-3 py-2 text-left transition-colors ${
-                activo ? "!bg-[rgba(0,114,187,0.18)] text-foreground" : "text-foreground"
+              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left transition-colors border-b border-slate-100 hover:bg-blue-100/40 ${zebra} ${
+                activo ? "!bg-blue-100/60" : ""
               }`}
             >
-              <span className="text-xs text-white truncate">
+              <span className="text-xs text-slate-900 truncate">
                 {g.nombre}
-                <span className="text-white/50 ml-1">({conVariacion})</span>
+                <span className="text-slate-500 ml-1">({conVariacion})</span>
               </span>
               <div className="flex items-center gap-1 shrink-0">
                 <ColorPct pct={pct} />
@@ -132,16 +133,16 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
     : conAumento;
 
   return (
-    <div className="flex-1 overflow-y-auto rounded-lg overflow-hidden border" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
+    <div className="flex-1 overflow-y-auto rounded-b-lg border border-t-0 border-slate-200 bg-white">
       {filtrados.length === 0 && (
-        <p className="text-xs text-white/50 text-center py-6">Sin resultados</p>
+        <p className="text-xs text-slate-500 text-center py-6">Sin resultados</p>
       )}
-      {filtrados.map((item) => (
+      {filtrados.map((item, idx) => (
         <div
           key={item.itemId}
-          className="tabla-row flex items-center justify-between gap-3 px-3 py-2 transition-colors"
+          className={`flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-slate-100 hover:bg-blue-100/40 ${idx % 2 === 1 ? "bg-blue-50/50" : "bg-white"}`}
         >
-          <span className="text-xs text-white truncate">{item.descripcion}</span>
+          <span className="text-xs text-slate-900 truncate">{item.descripcion}</span>
           <div className="flex items-center gap-1 shrink-0">
             <ColorPct pct={item.pctAumento} />
             <IconTendencia pct={item.pctAumento} />
@@ -245,8 +246,8 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
           )}
         </div>
 
-        {/* Contador de productos con aumento */}
-        <span className="text-xs text-accent2 shrink-0">
+        {/* Contador de productos con aumento (amarillo estándar) */}
+        <span className="text-xs text-[#FFC107] font-medium shrink-0">
           {conAumento.length.toLocaleString()} con variación
         </span>
 
@@ -273,7 +274,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
             )}
             <button
               onClick={limpiarFiltros}
-              className="text-xs text-white/70 hover:text-white border border-white/20 rounded-full px-2.5 py-1 transition-colors"
+              className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-2.5 py-1 transition-colors hover:bg-slate-100"
             >
               Borrar filtros
             </button>
@@ -294,10 +295,10 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
           <ColumnaGrupo titulo="Sub-Rubro" grupos={gruposSubRubro} seleccionado={filtroSubRubro} onSeleccionar={handleSubRubro} />
         </div>
 
-        {/* Productos individuales */}
-        <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border" style={{ height: "36vh", borderColor: "rgba(0,114,187,0.25)" }}>
-          <div className="shrink-0 bg-brand px-3 py-2">
-            <h3 className="text-xs font-semibold text-accent2 uppercase tracking-wider text-center">
+        {/* Productos individuales (cabecera estándar #0072BB, texto blanco) */}
+        <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border border-slate-200 bg-white" style={{ height: "36vh" }}>
+          <div className="shrink-0 bg-[#0072BB] px-3 py-2">
+            <h3 className="text-xs font-semibold text-white uppercase tracking-wider text-center">
               Productos con variación
             </h3>
           </div>

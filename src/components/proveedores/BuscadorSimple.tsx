@@ -57,7 +57,7 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
   return (
     <FilterBar>
       <FilterRowSelection>
-        <span className="text-sm text-slate-500 tabular-nums">
+        <span className="text-sm text-[#FFC107] tabular-nums font-medium shrink-0">
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

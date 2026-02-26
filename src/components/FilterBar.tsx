@@ -18,7 +18,7 @@ export default function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-y-2 py-2",
+        "filtros-contenedor flex flex-col gap-y-2 py-2",
         className
       )}
       role="search"
@@ -55,7 +55,7 @@ export const INPUT_FILTER_CLASS =
 export const SELECT_TRIGGER_FILTER_CLASS =
   "bg-white border-slate-300 rounded-lg h-9 text-sm text-slate-900 data-[placeholder]:text-slate-400 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
 
-/** Botón de limpieza global (icono basura). A la derecha del input Descripción. Icono #0072BB, alineado h-9 con el input. */
+/** Botón de limpieza global: icono + texto "Limpiar Filtros". Inmediatamente al lado del input de búsqueda. */
 export function LimpiarFiltrosButton({
   onClick,
   visible,
@@ -69,13 +69,14 @@ export function LimpiarFiltrosButton({
       <TooltipTrigger asChild>
         <Button
           type="button"
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={onClick}
-          className="h-9 w-9 shrink-0 text-primary hover:bg-primary/10 hover:text-primary"
+          className="h-9 shrink-0 gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium text-sm"
           aria-label="Limpiar todos los filtros"
         >
           <Trash2 className="h-[18px] w-[18px]" />
+          Limpiar Filtros
         </Button>
       </TooltipTrigger>
       <TooltipContent>Limpiar todos los filtros</TooltipContent>

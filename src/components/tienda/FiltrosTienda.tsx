@@ -127,7 +127,7 @@ export default function FiltrosTienda({
             <SelectItem value="false">No habilitado</SelectItem>
           </SelectContent>
         </Select>
-        <span className="text-sm text-slate-500 tabular-nums shrink-0">
+        <span className="text-sm text-[#FFC107] tabular-nums shrink-0 font-medium">
           {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

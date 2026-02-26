@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Handshake,
   ShoppingBag,
@@ -167,17 +168,31 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           );
         })}
       </nav>
-      <div className="mt-auto border-t border-white/15 p-4">
-        <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur-sm">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white"
-            aria-hidden
-          >
-            <User className="h-4 w-4" />
+      <div className="mt-auto flex flex-col">
+        <div className="p-4">
+          <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur-sm">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white"
+              aria-hidden
+            >
+              <User className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1 [&_button]:!text-white/80 [&_button:hover]:!text-white [&_svg]:text-inherit">
+              <p className="text-sm font-medium text-white">{perfilNombre}</p>
+              <SelectorRol rolActual={rol} compact />
+            </div>
           </div>
-          <div className="min-w-0 flex-1 [&_button]:!text-white/80 [&_button:hover]:!text-white [&_svg]:text-inherit">
-            <p className="text-sm font-medium text-white">{perfilNombre}</p>
-            <SelectorRol rolActual={rol} compact />
+        </div>
+        <hr className="w-full border-0 border-t border-white/20 mx-0 my-0" aria-hidden />
+        <div className="px-4 py-4 flex justify-center">
+          <div className="w-full max-w-[90%] flex justify-center items-center">
+            <Image
+              src="/logo_tiendacolor.png"
+              alt="Logo de la empresa"
+              width={200}
+              height={100}
+              className="w-full h-auto object-contain"
+            />
           </div>
         </div>
       </div>

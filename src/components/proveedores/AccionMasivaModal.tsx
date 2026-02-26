@@ -93,7 +93,7 @@ export default function AccionMasivaModal({
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY}`}>
+            <Button variant="outline" size="default" className={`gap-2 shrink-0 h-10 px-4 ${ACTION_BUTTON_SECONDARY}`}>
               <Settings2 className="h-4 w-4" />
               Acción Masiva
             </Button>
