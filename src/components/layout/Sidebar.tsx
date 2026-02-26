@@ -77,7 +77,7 @@ const MODULES: {
     label: "Pedido Mercadería",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
-      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-[#FFC107]" />, isUrgente: true },
+      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true },
       { href: "/pedidos/tintometrico", label: "Pedido Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" /> },
       { href: "/pedidos/reposicion", label: "Pedido Reposición", icon: <RotateCw className="h-4 w-4 shrink-0" /> },
       { href: "/pedidos/historial", label: "Historial Pedidos", icon: <History className="h-4 w-4 shrink-0" /> },
@@ -112,7 +112,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-[#0072BB] border-r border-white/10 shadow-[2px_0_8px_rgba(0,0,0,0.06)]">
+    <aside className="w-60 shrink-0 flex flex-col bg-primary border-r border-white/10 shadow-[2px_0_8px_rgba(0,0,0,0.06)]">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.map((module) => {
           const isOpen = openId === module.id;
@@ -126,7 +126,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               <CollapsibleTrigger
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                  "[&>span:first-child_svg]:text-[#FFC107]",
+                  "[&>span:first-child_svg]:text-accent2",
                   !isOpen && "hover:bg-white/10"
                 )}
                 aria-expanded={isOpen}
@@ -136,12 +136,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 </span>
                 <span className="min-w-0 flex-1 text-left">{module.label}</span>
                 <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 text-[#FFC107] transition-transform duration-200", isOpen && "rotate-180")}
+                  className={cn("h-4 w-4 shrink-0 text-accent2 transition-transform duration-200", isOpen && "rotate-180")}
                   aria-hidden
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-[#FFC107] space-y-0.5 py-1">
+                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-accent2 space-y-0.5 py-1">
                   {module.submodules.map((sub) => {
                     const active = isSubmoduleActive(pathname, sub.href);
                     return (
@@ -152,7 +152,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                           "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-white transition-colors",
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
-                            ? "border-[#FFC107] bg-white/10 [&_svg]:text-[#FFC107]"
+                            ? "border-accent2 bg-white/10 [&_svg]:text-accent2"
                             : "border-transparent text-white/90 [&_svg]:text-white/70 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white/90",
                           sub.isUrgente && "relative"
                         )}

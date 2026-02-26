@@ -28,16 +28,16 @@ export default function PedidosSectionActions({ activo }: { activo: PedidosTabKe
             size="sm"
             className={cn(
               "rounded-lg transition-colors duration-150 relative",
-              isUrgente && "pl-3 border-l-2 border-[#FFC107]",
+              isUrgente && "pl-3 border-l-2 border-accent2",
               active
-                ? "bg-[#0072BB]/10 text-primary font-semibold hover:bg-[#0072BB]/15"
+                ? "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             )}
             asChild
           >
             <Link href={tab.href} className="gap-2">
               {isUrgente ? (
-                <AlarmClock className="h-4 w-4 shrink-0 text-[#FFC107]" />
+                <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />
               ) : (
                 <Icon className="h-4 w-4 shrink-0" />
               )}

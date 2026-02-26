@@ -130,9 +130,12 @@
 }
 
 @layer utilities {
-  /* Tablas globales (raw <table class="tabla-global">): mismo diseño que Table de shadcn */
+  /* ─── Estilos madre: tablas ─────────────────────────────────────────────────
+   * Tablas: usar Table de @/components/ui/table O <table class="tabla-global">.
+   * Colores y espaciado vienen de aquí; no hardcodear en componentes.
+   */
   .tabla-global thead th {
-    @apply bg-[#0072BB] text-white font-bold text-center align-middle px-3 py-4 uppercase;
+    @apply bg-primary text-white font-bold text-center align-middle px-3 py-4 uppercase;
   }
   .tabla-global tbody td {
     @apply text-black font-normal text-center align-middle px-3 py-4;
@@ -151,7 +154,10 @@
   }
 }
 
-/* Estilo maestro de botones: todo el contenido principal (main), excepto la navbar/sidebar */
+/* ─── Estilos madre: botones ─────────────────────────────────────────────────
+ * Todo botón dentro de <main> hereda este estilo (navbar/sidebar excluidos).
+ * Modificar aquí afecta a toda la app de forma coherente.
+ */
 main button {
   transition: box-shadow 0.15s ease, background-color 0.15s ease, filter 0.15s ease;
   box-shadow: 0 1px 2px #0000000d;
@@ -165,6 +171,7 @@ main button:hover {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
+/* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */
 :root, .dark {
   --brand:    #0072BB;
   --brand-fg: #ffffff;

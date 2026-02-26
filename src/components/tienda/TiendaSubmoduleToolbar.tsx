@@ -16,7 +16,7 @@ export default function TiendaSubmoduleToolbar({ activo }: { activo: TiendaSubmo
         className={cn(
           "rounded-lg transition-colors duration-150",
           activo === "productos"
-            ? "bg-[#0072BB]/10 text-primary font-semibold hover:bg-[#0072BB]/15"
+            ? "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
             : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
         )}
         asChild
@@ -32,7 +32,7 @@ export default function TiendaSubmoduleToolbar({ activo }: { activo: TiendaSubmo
         className={cn(
           "rounded-lg transition-colors duration-150",
           activo === "aumentos"
-            ? "bg-[#0072BB]/10 text-primary font-semibold hover:bg-[#0072BB]/15"
+            ? "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
             : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
         )}
         asChild

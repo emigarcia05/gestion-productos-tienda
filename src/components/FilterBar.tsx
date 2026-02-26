@@ -4,9 +4,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 
 /**
- * Contenedor estándar para la barra de filtros.
- * Sistema de doble fila recomendado: FilterRowSelection (selects) + FilterRowSearch (búsqueda 75%).
- * Patrón: Header → FilterBar → Card (tabla).
+ * FILTROS — Estilo madre reutilizable.
+ * Para nuevos módulos: usar FilterBar > FilterRowSelection (con FILTER_SELECT_WRAPPER_CLASS
+ * en cada Select) + fila con FilterRowSearch (INPUT_FILTER_CLASS) y LimpiarFiltrosButton.
+ * Contador: FILTER_COUNT_CLASS. Colores y tipografía heredan de este archivo.
  */
 export default function FilterBar({
   children,
@@ -68,9 +69,9 @@ export const FILTER_SELECT_WRAPPER_CLASS = "min-w-0 flex-1";
 export const SELECT_TRIGGER_FILTER_CLASS =
   `w-full min-w-0 bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-slate-400 data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
-/** Clase para el indicador de cantidad de elementos filtrados (siempre #0072BB). Reutilizable en todos los filtros. */
+/** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
-  "text-sm text-[#0072BB] tabular-nums shrink-0 font-semibold";
+  "text-sm text-primary tabular-nums shrink-0 font-semibold";
 
 /**
  * Botón cuadrado con icono de tacho de basura, al lado del filtro de descripción.

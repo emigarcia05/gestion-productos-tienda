@@ -39,13 +39,14 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; }
 
-    .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; border-bottom: 2px solid #0072BB; padding-bottom: 6px; }
-    .header h1 { font-size: 16pt; font-weight: 900; color: #0072BB; text-transform: uppercase; letter-spacing: 2px; }
+    :root { --primary: #0072BB; }
+    .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; border-bottom: 2px solid var(--primary); padding-bottom: 6px; }
+    .header h1 { font-size: 16pt; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
     .header .meta { text-align: right; font-size: 8pt; color: #555; line-height: 1.5; }
     .header .meta strong { color: #111; }
 
     table { width: 100%; border-collapse: collapse; }
-    thead tr { background: #0072BB; color: #fff; }
+    thead tr { background: var(--primary); color: #fff; }
     thead th { padding: 5px 6px; text-align: left; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
     thead th.cant { text-align: right; width: 60px; }
 

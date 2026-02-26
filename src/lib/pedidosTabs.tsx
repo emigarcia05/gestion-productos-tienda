@@ -10,7 +10,7 @@ const TAB_CONFIG: Record<
   urgente: {
     label: "Pedido Urgente",
     href: "/pedidos/urgente",
-    icon: <AlarmClock className="h-3.5 w-3.5 text-[#FFC107]" />,
+    icon: <AlarmClock className="h-3.5 w-3.5 text-accent2" />,
   },
   tintometrico: {
     label: "Pedido Tintométrico",

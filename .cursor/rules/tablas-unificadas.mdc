@@ -5,7 +5,7 @@ globs: **/*.tsx, **/*.jsx
 
 # Tablas: estilo unificado obligatorio
 
-En esta aplicación **todas las tablas** deben verse igual: mismo encabezado (#0072BB, texto blanco, centrado), mismas filas (zebra blanco / blue-50), mismo texto de datos (negro, centrado), mismo hover.
+En esta aplicación **todas las tablas** deben verse igual: mismo encabezado (color primario `bg-primary`, texto blanco, centrado), mismas filas (zebra blanco / blue-50), mismo texto de datos (negro, centrado), mismo hover. Los estilos madre están en `globals.css` (`.tabla-global`) y en `@/components/ui/table`.
 
 ## Formas válidas (solo estas dos)
 

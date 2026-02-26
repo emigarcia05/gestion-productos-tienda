@@ -75,8 +75,8 @@ function ColumnaGrupo({
 }) {
   return (
     <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border border-slate-200 bg-white">
-      {/* Cabecera estilo tabla global (#0072BB, texto blanco) */}
-      <div className="shrink-0 bg-[#0072BB] px-3 py-2">
+      {/* Cabecera estilo tabla global (color primario, texto blanco) */}
+      <div className="shrink-0 bg-primary px-3 py-2">
         <h3 className="text-xs font-semibold text-white uppercase tracking-wider text-center">
           {titulo}
         </h3>
@@ -246,8 +246,8 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
           )}
         </div>
 
-        {/* Contador de productos con aumento (amarillo estándar) */}
-        <span className="text-xs text-[#FFC107] font-medium shrink-0">
+        {/* Contador de productos con aumento (acento del tema) */}
+        <span className="text-xs text-accent2 font-medium shrink-0">
           {conAumento.length.toLocaleString()} con variación
         </span>
 
@@ -295,9 +295,9 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
           <ColumnaGrupo titulo="Sub-Rubro" grupos={gruposSubRubro} seleccionado={filtroSubRubro} onSeleccionar={handleSubRubro} />
         </div>
 
-        {/* Productos individuales (cabecera estándar #0072BB, texto blanco) */}
+        {/* Productos individuales (cabecera estándar, color primario) */}
         <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border border-slate-200 bg-white" style={{ height: "36vh" }}>
-          <div className="shrink-0 bg-[#0072BB] px-3 py-2">
+          <div className="shrink-0 bg-primary px-3 py-2">
             <h3 className="text-xs font-semibold text-white uppercase tracking-wider text-center">
               Productos con variación
             </h3>
