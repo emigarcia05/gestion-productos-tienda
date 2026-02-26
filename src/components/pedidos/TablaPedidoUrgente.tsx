@@ -68,7 +68,7 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
           <div className="overflow-auto max-h-[calc(100vh-16rem)]">
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-200/60 hover:bg-transparent">
+                <TableRow className="hover:bg-transparent">
                   <TableHead className="w-28">Proveedor</TableHead>
                   <TableHead>Descripción</TableHead>
                   <TableHead className="w-36 text-primary">Cantidad Urgente</TableHead>
@@ -80,19 +80,16 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
                   return (
                     <TableRow
                       key={prod.id}
-                      className={cn(
-                        "border-slate-200/60",
-                        puedeAgregar && "cursor-pointer"
-                      )}
+                      className={cn(puedeAgregar && "cursor-pointer")}
                       onDoubleClick={() => handleDobleClick(prod)}
                     >
-                      <TableCell className="py-4 font-mono text-sm text-slate-600">
+                      <TableCell className="font-mono text-sm">
                         {prod.proveedor.sufijo}
                       </TableCell>
-                      <TableCell className="py-4 text-sm font-medium text-slate-900">
+                      <TableCell>
                         {prod.descripcion}
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell>
                         {valor ? (
                           <Badge variant="secondary" className="font-mono bg-primary/10 text-primary border-primary/20">
                             {valor}

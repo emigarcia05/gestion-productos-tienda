@@ -121,32 +121,31 @@ export default async function ImportarPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="tabla-global w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/50">
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">Archivo</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Filas</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Importados</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Errores</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">Fecha</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Estado</th>
+                  <tr className="border-b border-slate-200/80">
+                    <th className="!text-left">Archivo</th>
+                    <th>Filas</th>
+                    <th>Importados</th>
+                    <th>Errores</th>
+                    <th className="!text-left">Fecha</th>
+                    <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {importHistory.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-border/30 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="py-3 px-3 font-medium flex items-center gap-2">
-                        <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                        {item.filename}
+                    <tr key={item.id}>
+                      <td className="!text-left">
+                        <span className="flex items-center gap-2">
+                          <FileSpreadsheet className="h-4 w-4 text-slate-500" />
+                          {item.filename}
+                        </span>
                       </td>
-                      <td className="py-3 px-3 text-right text-muted-foreground">{item.rows}</td>
-                      <td className="py-3 px-3 text-right text-emerald-500">{item.imported}</td>
-                      <td className="py-3 px-3 text-right text-destructive">{item.errors}</td>
-                      <td className="py-3 px-3 text-muted-foreground text-xs">{item.date}</td>
-                      <td className="py-3 px-3 text-right">{getStatusBadge(item.status)}</td>
+                      <td>{item.rows}</td>
+                      <td className="text-emerald-600 font-semibold">{item.imported}</td>
+                      <td className="text-destructive font-semibold">{item.errors}</td>
+                      <td className="text-slate-600 text-xs">{item.date}</td>
+                      <td>{getStatusBadge(item.status)}</td>
                     </tr>
                   ))}
                 </tbody>

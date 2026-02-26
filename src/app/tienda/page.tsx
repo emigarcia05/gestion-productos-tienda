@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import SectionHeader from "@/components/SectionHeader";
 import SyncButton from "@/components/tienda/SyncButton";
-import TiendaSubmoduleToolbar from "@/components/tienda/TiendaSubmoduleToolbar";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
@@ -97,12 +96,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader
-        titulo="Lista Tienda"
-        descripcion="Comparación Px proveedores con productos vinculados y control de aumentos."
-        actions={acciones}
-        submoduleToolbar={<TiendaSubmoduleToolbar activo="productos" />}
-      />
+      <SectionHeader titulo="Lista Tienda" actions={acciones} />
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2">

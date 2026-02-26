@@ -130,18 +130,21 @@
 }
 
 @layer utilities {
-  /* Filas de tabla con separador azul fino y striping sutil */
-  .tabla-row {
-    border-bottom: 1px solid rgba(0, 114, 187, 0.25);
+  /* Tablas globales: centrado, contraste y zebra (para tablas que no usen el componente Table) */
+  .tabla-global thead th {
+    @apply bg-primary/10 text-primary font-bold text-center align-middle px-3 py-4;
   }
-  .tabla-row:nth-child(even) {
-    background-color: rgba(0, 114, 187, 0.04);
+  .tabla-global tbody td {
+    @apply text-slate-900 font-medium text-center align-middle px-3 py-4;
   }
-  .tabla-row:nth-child(odd) {
-    background-color: transparent;
+  .tabla-global tbody tr {
+    @apply border-b border-slate-100 transition-colors duration-150;
   }
-  .tabla-row:hover {
-    background-color: rgba(0, 114, 187, 0.10) !important;
+  .tabla-global tbody tr:nth-child(even) {
+    @apply bg-slate-50/50;
+  }
+  .tabla-global tbody tr:hover {
+    @apply bg-blue-50/40;
   }
 }
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { aplicarCampoMasivo, type CampoMasivo } from "@/actions/productos";
 
@@ -88,12 +89,17 @@ export default function AccionMasivaModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 shrink-0 h-9">
-          <Settings2 className="h-4 w-4" />
-          Acción masiva
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 shrink-0 border-slate-400 font-semibold px-4 bg-slate-50/80">
+              <Settings2 className="h-4 w-4" />
+              Acción Masiva
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Aplicar cambios a varios productos</TooltipContent>
+      </Tooltip>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Acción masiva</DialogTitle>

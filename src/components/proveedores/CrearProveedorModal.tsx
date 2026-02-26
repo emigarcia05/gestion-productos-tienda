@@ -11,6 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import ProveedorForm from "./ProveedorForm";
 
 export default function CrearProveedorModal() {
@@ -18,12 +23,17 @@ export default function CrearProveedorModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo proveedor
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button variant="default" size="sm" className="gap-2 shadow-sm hover:brightness-90">
+              <Plus className="h-4 w-4" />
+              Crear Proveedor
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Crear nuevo proveedor</TooltipContent>
+      </Tooltip>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nuevo proveedor</DialogTitle>

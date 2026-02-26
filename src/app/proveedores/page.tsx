@@ -9,7 +9,6 @@ import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 import SectionHeader from "@/components/SectionHeader";
-import ProveedoresSubmoduleToolbar from "@/components/proveedores/ProveedoresSubmoduleToolbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getRol } from "@/lib/sesion";
@@ -67,9 +66,6 @@ export default async function ProveedoresPage({ searchParams }: Props) {
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
 
   const titulo = "Lista Proveedores";
-  const descripcion = esEditor
-    ? "Gestiona productos y precios de tus proveedores."
-    : "Gestiona y visualiza los precios sugeridos (Px) de tus proveedores.";
 
   const acciones =
     esEditor && (puede(rol, p.acciones.nuevoProveedor) || puede(rol, p.acciones.importarLista)) ? (
@@ -81,12 +77,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader
-        titulo={titulo}
-        descripcion={descripcion}
-        actions={acciones}
-        submoduleToolbar={<ProveedoresSubmoduleToolbar activo="consulta" />}
-      />
+      <SectionHeader titulo={titulo} actions={acciones} />
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">

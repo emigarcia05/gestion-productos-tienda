@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, X, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
 import PrintStock from "./PrintStock";
@@ -204,15 +205,20 @@ export default function TablaStock({
           <span className="text-xs text-accent2 whitespace-nowrap">
             {filtrados.length.toLocaleString()} ítem{filtrados.length !== 1 ? "s" : ""}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={handleImprimir}
-          >
-            <Printer className="h-3.5 w-3.5" />
-            Imprimir
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-slate-300 font-semibold px-4"
+                onClick={handleImprimir}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Imprimir
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Imprimir listado de stock</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

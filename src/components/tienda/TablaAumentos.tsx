@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { ArrowUp, ArrowDown, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPct } from "@/lib/format";
 
@@ -271,15 +272,20 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
 
         {/* Exportar + Stats — empujados a la derecha */}
         <div className="ml-auto flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportarXLS(itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5))}
-          className="gap-2"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Exportar .xls
-        </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportarXLS(itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5))}
+                className="gap-2 border-slate-300 font-semibold px-4"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Exportar .xls
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Descargar variaciones en Excel</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

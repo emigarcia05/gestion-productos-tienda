@@ -5,39 +5,60 @@ globs: **/app/**/*.tsx, **/components/**/*.tsx
 
 # Jerarquía y contraste — Reglas obligatorias
 
-## 1. Navegación: Módulos (Sidebar) vs Submódulos (Sub-Header)
+## 1. Navegación: solo Sidebar (accordion vertical)
 
-**Sidebar (Módulos — Nivel 1):**
-- Aside: `bg-slate-50`, `border-r border-slate-200`.
-- Ítem activo: indicador vertical **3px** en #0072BB a la izquierda (`w-[3px] h-6 rounded-full bg-primary`), texto `text-slate-950 font-semibold`, icono `text-primary`.
-- Inactivo: `text-slate-600`, hover `hover:bg-primary/10 hover:text-primary`.
+**Toda la navegación** está en el aside. No hay barra superior ni sub-header; el contenido empieza con el título de sección y la tabla/filtros.
 
-**Nombres de módulos (Sidebar):** Lista Proveedores, Lista Tienda, Control Stock, Pedido Mercadería. Sin "Inicio".
+**Sidebar:** `bg-slate-50`, `border-r border-slate-200`. Usar `Collapsible` de shadcn para cada módulo.
 
-**Sub-Header (Submódulos — Nivel 2):** Se muestra solo al estar en ese módulo. **Siempre** `Button variant="ghost"` de shadcn.
-- **Lista Proveedores:** Consulta Px Sugerido, Lista Proveedores.
-- **Lista Tienda:** Comparación Px Proveedores (Act. Prod vinculados), Control aumentos.
-- **Pedido Mercadería:** Pedido Urgente (con indicador #FFC107), Pedido Tintométrico, Pedido Reposición, Historial Pedidos.
-- Submódulo activo: `bg-[#0072BB]/10` y `text-primary font-semibold`. Pedido Urgente: borde izquierdo `border-l-2 border-[#FFC107]` e icono Zap `text-[#FFC107]`.
+**Módulos (Nivel 1):** No redirigen; solo abren/cierran la lista de submódulos.
+- Abierto: `text-slate-950 font-bold`, icono `#0072BB` (`text-primary`), flecha `ChevronDown` que rota 180° (`rotate-180`).
+- Cerrado: `text-slate-600`, hover `hover:bg-primary/10 hover:text-primary`.
 
-## 2. Botones vs Filtros
+**Submódulos (Nivel 2):** Son los únicos `Link` que cambian de ruta. Con indent (sangría) bajo el módulo.
+- Activo: `bg-[#0072BB]/10`, texto `#0072BB`, línea vertical izquierda 2px `border-l-2 border-primary`.
+- Pedido Urgente: indicador visual `#FFC107` (punto sólido o icono Zap).
 
-**Botones de acción:** Sólidos `bg-[#0072BB]`, `shadow-sm`, `hover:brightness-90` para feedback.
+**Estructura:** Lista Proveedores → Consulta Px Sugerido, Lista Proveedores. Lista Tienda → Comparación Px Proveedores (Act. Prod vinculados), Control aumentos. Control Stock → Control Stock. Pedido Mercadería → Pedido Urgente, Tintométrico, Reposición, Historial Pedidos.
+
+## 2. Header de sección y botones de acción
+
+**Estructura:** Contenedor horizontal `flex justify-between items-center`. Sin descripción bajo el título. Margen generoso bajo la fila del header: `mb-8`.
+
+**Título:** `text-3xl font-black text-slate-950`. Una sola línea; la elegancia viene del espaciado y del contraste de los botones.
+
+**Botones de acción (zona derecha):** Agrupados en `flex gap-2`, compactos (`size="sm"` o `px-4`). Cada uno con **Tooltip** de shadcn al hover.
+- **Estilo base:** `variant="outline"` o `variant="secondary"`, `border-slate-300`, `font-semibold`.
+- **Crear Proveedor (acción principal de creación):** `variant="default"` (fondo #0072BB sólido), icono Plus, `shadow-sm hover:brightness-90`.
+- **Importar Lista / Exportar:** Iconos Upload / Download, estilo outline limpio.
+- **Sincronizar:** Icono RefreshCw, `hover:border-primary`.
+- **Acción Masiva:** Destacar ligeramente (p. ej. `border-slate-400` o `bg-slate-50/80`) para indicar que afecta a varios elementos.
+- **Imprimir:** Icono Printer, diseño sobrio outline.
+
+## 3. Filtros e inputs
 
 **Filtros e inputs:**
 - Fondo blanco puro `bg-white`, bordes definidos `border-slate-300`.
 - **Labels** encima de cada input/select: `text-xs font-bold uppercase tracking-wider text-slate-500` (usar `FILTER_LABEL_CLASS` de `@/components/FilterBar`).
 - Focus: borde sólido #0072BB y ring 20% (`focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`).
 
-## 3. Tabla de datos
+## 4. Tabla de datos
 
 **Card contenedora:** `bg-white`, `rounded-xl`, `border-slate-200`, `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`.
 
-**Header de tabla:** Fondo `bg-slate-50/50`, texto `text-slate-900 font-bold` (TableHead).
+Usar el componente `Table` de shadcn (o clase `tabla-global` en `<table>` HTML) para herencia automática:
 
-**Filas:** `hover:bg-slate-50/80`, transiciones suaves. Columna de dato destacado (ej. Cantidad Urgente): texto o badge en #0072BB (`text-primary` o `bg-primary/10 text-primary border-primary/20`).
+**Alineación:** Celdas centradas (`text-center align-middle`). Padding generoso: `px-3 py-4`.
 
-## 4. Tipografía y separadores
+**Encabezados (thead th):** Fondo marca `bg-primary/10`, texto `text-primary font-bold`.
+
+**Datos (tbody td):** Texto alto contraste `text-slate-900 font-medium`.
+
+**Filas:** Cebra sutil `even:bg-slate-50/50`, borde fino `border-b border-slate-100`, hover `hover:bg-blue-50/40`, `transition-colors`. Fila de encabezado: `hover:bg-transparent`.
+
+**Dato destacado:** Columna especial (ej. Cantidad Urgente) con `text-primary` en el header o badge `bg-primary/10 text-primary border-primary/20` en la celda.
+
+## 5. Tipografía y separadores
 
 **Títulos de sección:** `text-3xl font-black text-slate-950` (h1).
 
@@ -47,6 +68,6 @@ globs: **/app/**/*.tsx, **/components/**/*.tsx
 
 ## Orden en página
 
-`SectionHeader` (título + descripción + actions + submoduleToolbar) → `FilterBar` (con labels) → `Separator` → `Card` (tabla).
+`SectionHeader` (título + actions, sin descripción; `mb-8`) → `FilterBar` (con labels) → `Separator` → `Card` (tabla). Tablas: datos centrados, `text-slate-900`, encabezados con #0072BB.
 
 Usar Tailwind CSS 4 y mantener contraste accesible (ratio adecuado).

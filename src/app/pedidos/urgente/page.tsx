@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import SectionHeader from "@/components/SectionHeader";
-import PedidosSectionActions from "@/components/pedidos/PedidosSectionActions";
 import { Separator } from "@/components/ui/separator";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import PedidoUrgenteTablaConToast from "@/components/pedidos/PedidoUrgenteTablaConToast";
@@ -57,11 +56,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col min-h-0">
-      <SectionHeader
-        titulo="Pedido Mercadería"
-        descripcion="Pedido urgente, tintométrico, reposición e historial."
-        submoduleToolbar={<PedidosSectionActions activo="urgente" />}
-      />
+      <SectionHeader titulo="Pedido Mercadería" />
 
       <FiltrosPedidoUrgente
         q={q}

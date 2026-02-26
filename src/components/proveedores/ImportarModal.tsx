@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { importarProductos, type ImportResult, type MapeoColumnas } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
@@ -138,12 +139,17 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Upload className="h-4 w-4" />
-          Importar lista
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 border-slate-300 font-semibold px-4">
+              <Upload className="h-4 w-4" />
+              Importar Lista
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Importar productos desde CSV</TooltipContent>
+      </Tooltip>
 
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
