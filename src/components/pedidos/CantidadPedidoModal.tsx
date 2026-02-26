@@ -17,7 +17,7 @@ const CANTIDADES_FILA2 = [6, 12, 24, 50];
 export interface ProductoParaPedido {
   id: string;
   descripcion: string;
-  codExt?: string;
+  codigoExterno?: string;
   proveedor?: { nombre: string; sufijo: string };
 }
 

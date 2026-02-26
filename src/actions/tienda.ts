@@ -53,15 +53,15 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
         codigoExterno: true, proveedorDux: true, costo: true,
       },
     }),
-    prisma.producto.findMany({
+    prisma.productoProveedor.findMany({
       select: {
-        codExt: true, precioLista: true,
+        codigoExterno: true, precioLista: true,
         descuentoProducto: true, descuentoCantidad: true, cxTransporte: true,
       },
     }),
   ]);
 
-  const productosPorCodExt = new Map(productos.map((p) => [p.codExt, p]));
+  const productosPorCodExt = new Map(productos.map((p) => [p.codigoExterno, p]));
 
   const itemsAumento: ItemAumento[] = [];
   for (const item of items) {
@@ -118,12 +118,12 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
 
 export async function convertirEnProveedor(
   itemTiendaId: string,
-  productoId: string
+  productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
 
-  const producto = await prisma.producto.findUnique({
-    where: { id: productoId },
+  const producto = await prisma.productoProveedor.findUnique({
+    where: { id: productoProveedorId },
     include: { proveedor: { select: { nombre: true } } },
   });
 
@@ -133,12 +133,13 @@ export async function convertirEnProveedor(
     await prisma.itemTienda.update({
       where: { id: itemTiendaId },
       data: {
-        proveedorDux:  producto.proveedor.nombre,
-        costo:         parseFloat(calcPxCompraFinal(
+        proveedorDux:         producto.proveedor.nombre,
+        costo:                parseFloat(calcPxCompraFinal(
           producto.precioLista, producto.descuentoProducto,
           producto.descuentoCantidad, producto.cxTransporte
         ).toFixed(2)),
-        codigoExterno: producto.codExt,
+        codigoExterno:        producto.codigoExterno,
+        productoProveedorId:  producto.id,
       },
     });
     revalidatePath("/tienda");

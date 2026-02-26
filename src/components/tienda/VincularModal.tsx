@@ -19,7 +19,7 @@ import SeleccionarProductoModal from "./SeleccionarProductoModal";
 
 type ProductoConProveedor = {
   id: string;
-  codExt: string;
+  codigoExterno: string;
   codProdProv: string;
   descripcion: string;
   precioLista: number;
@@ -95,7 +95,7 @@ export default function VincularModal({
       if (res.ok) {
         setVinculados((prev) => prev.filter((p) => p.id !== producto.id));
         setCantidad((c) => Math.max(0, c - 1));
-        toast.success(`Desvinculado: ${producto.codExt}`);
+        toast.success(`Desvinculado: ${producto.codigoExterno}`);
       } else {
         toast.error(res.error);
       }
@@ -130,7 +130,7 @@ export default function VincularModal({
   }
 
   // Llamado desde SeleccionarProductoModal al hacer doble clic
-  async function handleSeleccionar(producto: { id: string; codExt: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; sufijo: string } }) {
+  async function handleSeleccionar(producto: { id: string; codigoExterno: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; sufijo: string } }) {
     setAbrirSelector(false);
     startTransition(async () => {
       const res = await vincularProducto(itemTiendaId, producto.id);
@@ -145,7 +145,7 @@ export default function VincularModal({
         };
         setVinculados((prev) => [...prev, productoCompleto]);
         setCantidad((c) => c + 1);
-        toast.success(`Vinculado: ${producto.codExt}`);
+        toast.success(`Vinculado: ${producto.codigoExterno}`);
       } else {
         toast.error(res.error);
       }
@@ -217,7 +217,7 @@ export default function VincularModal({
                         <Badge variant="secondary" className="font-mono text-xs shrink-0 mt-0.5">
                           {prod.proveedor.sufijo}
                         </Badge>
-                        <code className="text-xs text-muted-foreground shrink-0 mt-0.5">{prod.codExt}</code>
+                        <code className="text-xs text-muted-foreground shrink-0 mt-0.5">{prod.codigoExterno}</code>
                         <span className="text-xs leading-relaxed">{prod.descripcion}</span>
                       </div>
 

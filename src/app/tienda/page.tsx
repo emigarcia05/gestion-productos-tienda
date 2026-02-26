@@ -30,14 +30,13 @@ export default async function TiendaPage({ searchParams }: Props) {
   const skip = (paginaNum - 1) * PAGE_SIZE;
   const rol = await getRol();
 
-  // IDs de items que tienen al menos un producto vinculado con Px Compra Final < costo
+  // IDs de items que tienen producto vinculado (productoProveedorId) con Px Compra Final < costo
   // Px Compra Final = precioLista * (1 - dto1/100) * (1 - dto2/100) * (1 + cx/100)
   const itemsConMejorPrecio = await prisma.$queryRaw<{ item_tienda_id: string }[]>`
-    SELECT DISTINCT itp."itemTiendaId" AS item_tienda_id
-    FROM items_tienda_productos itp
-    JOIN productos p ON p.id = itp."productoId"
-    JOIN items_tienda it ON it.id = itp."itemTiendaId"
-    WHERE it.costo > 0
+    SELECT it.id AS item_tienda_id
+    FROM items_tienda it
+    JOIN productos p ON p.id = it."productoProveedorId"
+    WHERE it.costo > 0 AND it."productoProveedorId" IS NOT NULL
       AND (
         p."precioLista"
         * (1 - p."descuentoProducto" / 100.0)
@@ -58,13 +57,13 @@ export default async function TiendaPage({ searchParams }: Props) {
     ...(q ? filtroTexto(q, ["descripcion", "codItem", "codigoExterno", "marca"]) : {}),
   };
 
-  const [items, total, marcas, rubros, subRubros] = await Promise.all([
+  const [itemsRaw, total, marcas, rubros, subRubros] = await Promise.all([
     prisma.itemTienda.findMany({
       where,
       orderBy: { descripcion: "asc" },
       skip,
       take: PAGE_SIZE,
-      include: { _count: { select: { productos: true } } },
+      include: { productoProveedor: true },
     }),
     prisma.itemTienda.count({ where }),
     // Marcas: siempre todas
@@ -91,6 +90,11 @@ export default async function TiendaPage({ searchParams }: Props) {
   ]);
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
+  // Compatibilidad con TablaTienda: cada item tiene 0 o 1 producto vinculado
+  const items = itemsRaw.map((it) => ({
+    ...it,
+    _count: { productos: it.productoProveedor ? 1 : 0 },
+  }));
 
   const acciones = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined;
 

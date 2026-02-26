@@ -20,7 +20,7 @@ import CantidadPedidoModal, {
 export interface ProductoListaPrecios {
   id: string;
   descripcion: string;
-  codExt?: string;
+  codigoExterno?: string;
   precioVentaSugerido: number;
   proveedor: { nombre: string; sufijo: string };
 }

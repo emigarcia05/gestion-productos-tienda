@@ -12,7 +12,7 @@ import { fmtPrecio } from "@/lib/format";
 
 type ProductoConProveedor = {
   id: string;
-  codExt: string;
+  codigoExterno: string;
   codProdProv: string;
   descripcion: string;
   precioLista: number;
@@ -186,7 +186,7 @@ export default function SeleccionarProductoModal({
                         </Badge>
                       </td>
                       <td className="py-2.5 px-3 text-center">
-                        <code className="text-xs text-muted-foreground">{prod.codExt}</code>
+                        <code className="text-xs text-muted-foreground">{prod.codigoExterno}</code>
                       </td>
                       <td className="py-2.5 px-3 text-center text-xs">
                         {seleccionado

@@ -56,7 +56,7 @@ export default async function ListaProveedoresPage() {
                     </TableCell>
                     <TableCell>{prov.sufijo}</TableCell>
                     <TableCell className="font-mono text-xs">{prov.codigoUnico}</TableCell>
-                    <TableCell>{prov._count.productos}</TableCell>
+                    <TableCell>{prov._count.productosProveedor}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

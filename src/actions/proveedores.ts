@@ -11,7 +11,7 @@ import type { ActionResult } from "@/lib/types";
 export async function getProveedores() {
   return prisma.proveedor.findMany({
     orderBy: { nombre: "asc" },
-    include: { _count: { select: { productos: true } } },
+    include: { _count: { select: { productosProveedor: true } } },
   });
 }
 
@@ -19,8 +19,8 @@ export async function getProveedorById(id: string) {
   return prisma.proveedor.findUnique({
     where: { id },
     include: {
-      productos: { orderBy: { codProdProv: "asc" } },
-      _count: { select: { productos: true } },
+      productosProveedor: { orderBy: { codProdProv: "asc" } },
+      _count: { select: { productosProveedor: true } },
     },
   });
 }

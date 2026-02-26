@@ -20,7 +20,7 @@ export async function editarProducto(
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
-    await prisma.producto.update({
+    await prisma.productoProveedor.update({
       where: { id },
       data: campos,
     });
@@ -48,15 +48,15 @@ export async function aplicarCampoMasivo(
     proveedorId,
     ...(q ? {
       OR: [
-        { descripcion: { contains: q, mode: "insensitive" as const } },
-        { codExt:      { contains: q, mode: "insensitive" as const } },
-        { codProdProv: { contains: q, mode: "insensitive" as const } },
+        { descripcion:    { contains: q, mode: "insensitive" as const } },
+        { codigoExterno: { contains: q, mode: "insensitive" as const } },
+        { codProdProv:   { contains: q, mode: "insensitive" as const } },
       ],
     } : {}),
   };
 
   try {
-    const { count } = await prisma.producto.updateMany({
+    const { count } = await prisma.productoProveedor.updateMany({
       where,
       data: { [campo]: valor },
     });

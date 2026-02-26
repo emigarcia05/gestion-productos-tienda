@@ -17,7 +17,7 @@ function fmtPorcentaje(n: number): string {
 interface Producto {
   id: string;
   codProdProv: string;
-  codExt: string;
+  codigoExterno: string;
   descripcion: string;
   precioLista: number;
   precioVentaSugerido: number;
@@ -202,7 +202,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
               )}
               {puede(rol, col.codExt) && (
                 <td className="py-2 px-2 whitespace-nowrap">
-                  <code className="text-xs px-1.5 py-0.5 rounded font-mono bg-slate-100">{prod.codExt}</code>
+                  <code className="text-xs px-1.5 py-0.5 rounded font-mono bg-slate-100">{prod.codigoExterno}</code>
                 </td>
               )}
               {puede(rol, col.descripcion) && (

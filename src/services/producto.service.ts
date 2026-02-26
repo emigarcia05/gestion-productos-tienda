@@ -21,33 +21,32 @@ export const BASE_QUERY_INCLUDE_PRODUCTO = {
 } as const;
 
 /** Orden por defecto para productos en listados. */
-export const BASE_ORDER_PRODUCTO = { codExt: "asc" as const };
+export const BASE_ORDER_PRODUCTO = { codigoExterno: "asc" as const };
 
-// ─── Query Maestra: productos vinculados a un ItemTienda ───────────────────
+// ─── Query Maestra: producto vinculado a un ItemTienda (relación 1:1 por productoProveedorId) ───────────────────
 
 /**
- * Devuelve los productos de Lista Proveedores vinculados a un ítem de TiendaColor.
- * Incluye siempre proveedor (nombre, sufijo) para la UI.
+ * Devuelve el producto de Lista Proveedores vinculado a un ítem de TiendaColor (vía productoProveedorId).
+ * Incluye siempre proveedor. Retorna array de 0 o 1 elemento para compatibilidad con la UI.
  */
 export async function getProductosVinculadosPorItemTienda(
   itemTiendaId: string
 ): Promise<ServiceResult<ProductoCompleto[]>> {
   try {
-    const vinculos = await prisma.itemTiendaProducto.findMany({
-      where: { itemTiendaId },
+    const item = await prisma.itemTienda.findUnique({
+      where: { id: itemTiendaId },
       include: {
-        producto: {
+        productoProveedor: {
           include: BASE_QUERY_INCLUDE_PRODUCTO,
         },
       },
-      orderBy: { producto: BASE_ORDER_PRODUCTO },
     });
 
-    const productos = vinculos
-      .map((v) => v.producto)
-      .filter((p): p is typeof p & { proveedor: NonNullable<typeof p.proveedor> } => p.proveedor != null);
-
-    return { success: true, data: productos as ProductoCompleto[] };
+    const producto = item?.productoProveedor;
+    if (!producto?.proveedor) {
+      return { success: true, data: [] };
+    }
+    return { success: true, data: [producto as ProductoCompleto] };
   } catch (e) {
     console.error("[producto.service] getProductosVinculadosPorItemTienda", e);
     return {
@@ -60,8 +59,8 @@ export async function getProductosVinculadosPorItemTienda(
 // ─── Búsqueda de productos (para selector de vínculo) ──────────────────────
 
 /**
- * Busca productos por texto (descripción, codExt, codProdProv), opcionalmente por proveedor.
- * Excluye los ya vinculados a un ItemTienda. Límite 20.
+ * Busca productos por texto (descripción, codigoExterno, codProdProv), opcionalmente por proveedor.
+ * Excluye el producto ya vinculado al ItemTienda (si tiene productoProveedorId). Límite 20.
  */
 export async function buscarProductos(
   q: string,
@@ -73,17 +72,17 @@ export async function buscarProductos(
   }
 
   try {
-    const yaVinculados = await prisma.itemTiendaProducto.findMany({
-      where: { itemTiendaId: excluirItemTiendaId },
-      select: { productoId: true },
+    const item = await prisma.itemTienda.findUnique({
+      where: { id: excluirItemTiendaId },
+      select: { productoProveedorId: true },
     });
-    const idsExcluidos = yaVinculados.map((v) => v.productoId);
+    const idExcluido = item?.productoProveedorId ? [item.productoProveedorId] : [];
 
-    const productos = await prisma.producto.findMany({
+    const productos = await prisma.productoProveedor.findMany({
       where: {
-        id: { notIn: idsExcluidos },
+        ...(idExcluido.length ? { id: { notIn: idExcluido } } : {}),
         ...(proveedorId ? { proveedorId } : {}),
-        ...filtroTexto(q, ["descripcion", "codExt", "codProdProv"]),
+        ...filtroTexto(q, ["descripcion", "codigoExterno", "codProdProv"]),
       },
       include: BASE_QUERY_INCLUDE_PRODUCTO,
       take: 20,

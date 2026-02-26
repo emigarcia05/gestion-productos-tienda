@@ -31,26 +31,26 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   const where = {
     ...(proveedor ? { proveedorId: proveedor } : {}),
-    ...(q ? filtroTexto(q, ["descripcion", "codExt", "codProdProv"]) : {}),
+    ...(q ? filtroTexto(q, ["descripcion", "codigoExterno", "codProdProv"]) : {}),
   };
 
-  // Vista simple: productos con precio sugerido; búsqueda por descripción proveedor o por descripción tienda (vía codExt)
+  // Vista simple: productos con precio sugerido; búsqueda por descripción proveedor o por descripción tienda (vía codigoExterno)
   const whereSimple = await whereProductoConsultaConTienda(prisma, q);
 
   const [proveedores, productos, total] = await Promise.all([
     prisma.proveedor.findMany({
       orderBy: { nombre: "asc" },
-      include: { _count: { select: { productos: true } } },
+      include: { _count: { select: { productosProveedor: true } } },
     }),
     esEditor
-      ? prisma.producto.findMany({
+      ? prisma.productoProveedor.findMany({
           where,
-          orderBy: { codExt: "asc" },
+          orderBy: { codigoExterno: "asc" },
           skip,
           take: PAGE_SIZE,
           include: { proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } } },
         })
-      : prisma.producto.findMany({
+      : prisma.productoProveedor.findMany({
           where: whereSimple,
           orderBy: [{ proveedor: { nombre: "asc" } }, { descripcion: "asc" }],
           skip,
@@ -58,8 +58,8 @@ export default async function ProveedoresPage({ searchParams }: Props) {
           include: { proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } } },
         }),
     esEditor
-      ? prisma.producto.count({ where })
-      : prisma.producto.count({ where: whereSimple }),
+      ? prisma.productoProveedor.count({ where })
+      : prisma.productoProveedor.count({ where: whereSimple }),
   ]);
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);

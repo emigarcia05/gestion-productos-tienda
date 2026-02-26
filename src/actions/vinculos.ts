@@ -34,16 +34,17 @@ export async function buscarProductos(
   return buscarProductosService(q, excluirItemTiendaId, proveedorId);
 }
 
-// ─── Vincular un producto a un ItemTienda ─────────────────────────────────
+// ─── Vincular un producto a un ItemTienda (relación 1:1 por productoProveedorId) ─────────────────────────────────
 
 export async function vincularProducto(
   itemTiendaId: string,
-  productoId: string
+  productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
-    await prisma.itemTiendaProducto.create({
-      data: { itemTiendaId, productoId },
+    await prisma.itemTienda.update({
+      where: { id: itemTiendaId },
+      data: { productoProveedorId },
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
@@ -52,16 +53,17 @@ export async function vincularProducto(
   }
 }
 
-// ─── Desvincular un producto de un ItemTienda ─────────────────────────────
+// ─── Desvincular el producto de un ItemTienda ─────────────────────────────
 
 export async function desvincularProducto(
   itemTiendaId: string,
-  productoId: string
+  _productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   try {
-    await prisma.itemTiendaProducto.delete({
-      where: { itemTiendaId_productoId: { itemTiendaId, productoId } },
+    await prisma.itemTienda.update({
+      where: { id: itemTiendaId },
+      data: { productoProveedorId: null },
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
@@ -71,7 +73,7 @@ export async function desvincularProducto(
 }
 
 // ─── Auto-vincular por codigoExterno ─────────────────────────────────────
-// Busca productos cuyo codExt coincida con el codigoExterno del ItemTienda
+// Busca un ProductoProveedor cuyo codigoExterno coincida y asigna itemTienda.productoProveedorId
 
 export async function autoVincular(
   itemTiendaId: string
@@ -80,45 +82,37 @@ export async function autoVincular(
   try {
     const item = await prisma.itemTienda.findUnique({
       where: { id: itemTiendaId },
-      select: { codigoExterno: true },
+      select: { codigoExterno: true, productoProveedorId: true },
     });
 
     if (!item?.codigoExterno) {
       return { ok: false, error: "Este item no tiene código externo para auto-vincular." };
     }
 
-    // Buscar productos que coincidan con el codigoExterno
-    const productos = await prisma.producto.findMany({
+    const producto = await prisma.productoProveedor.findFirst({
       where: {
         OR: [
-          { codExt:      { contains: item.codigoExterno, mode: "insensitive" } },
-          { codProdProv: { contains: item.codigoExterno, mode: "insensitive" } },
+          { codigoExterno: { contains: item.codigoExterno, mode: "insensitive" } },
+          { codProdProv:   { contains: item.codigoExterno, mode: "insensitive" } },
         ],
       },
       select: { id: true },
     });
 
-    if (productos.length === 0) {
-      return { ok: false, error: `No se encontraron productos con código "${item.codigoExterno}".` };
+    if (!producto) {
+      return { ok: false, error: `No se encontró producto con código "${item.codigoExterno}".` };
     }
 
-    // Crear vínculos solo para los que no existen aún
-    const existentes = await prisma.itemTiendaProducto.findMany({
-      where: { itemTiendaId },
-      select: { productoId: true },
-    });
-    const setExistentes = new Set(existentes.map((e) => e.productoId));
-    const nuevos = productos.filter((p) => !setExistentes.has(p.id));
-
-    if (nuevos.length > 0) {
-      await prisma.itemTiendaProducto.createMany({
-        data: nuevos.map((p) => ({ itemTiendaId, productoId: p.id })),
-        skipDuplicates: true,
+    const yaVinculado = item.productoProveedorId === producto.id;
+    if (!yaVinculado) {
+      await prisma.itemTienda.update({
+        where: { id: itemTiendaId },
+        data: { productoProveedorId: producto.id },
       });
     }
 
     revalidatePath("/tienda");
-    return { ok: true, data: { vinculados: nuevos.length } };
+    return { ok: true, data: { vinculados: yaVinculado ? 0 : 1 } };
   } catch {
     return { ok: false, error: "Error al auto-vincular." };
   }

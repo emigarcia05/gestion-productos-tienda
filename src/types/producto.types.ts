@@ -13,7 +13,7 @@ export interface ProveedorResumen {
 export interface ProductoCompleto {
   id: string;
   codProdProv: string;
-  codExt: string;
+  codigoExterno: string;
   descripcion: string;
   precioLista: number;
   precioVentaSugerido: number;

@@ -25,11 +25,11 @@ export default async function ProveedorDetallePage({ params }: Props) {
 
   if (!proveedor) notFound();
 
-  const { productos } = proveedor;
+  const productos = proveedor.productosProveedor;
   const p = PERMISOS.proveedorDetalle;
 
-  const totalLista = productos.reduce((s, p) => s + p.precioLista, 0);
-  const totalVenta = productos.reduce((s, p) => s + p.precioVentaSugerido, 0);
+  const totalLista = productos.reduce((s, prod) => s + prod.precioLista, 0);
+  const totalVenta = productos.reduce((s, prod) => s + prod.precioVentaSugerido, 0);
 
   const acciones =
     puede(rol, p.acciones.importarLista) || puede(rol, p.acciones.editarProveedor) || puede(rol, p.acciones.eliminarProveedor) ? (
@@ -121,7 +121,7 @@ export default async function ProveedorDetallePage({ params }: Props) {
                           )}
                           {puede(rol, p.tabla.codExt) && (
                             <td className="py-3 px-3 text-center">
-                              <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{prod.codExt}</code>
+                              <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{prod.codigoExterno}</code>
                             </td>
                           )}
                           {puede(rol, p.tabla.descripcion) && (

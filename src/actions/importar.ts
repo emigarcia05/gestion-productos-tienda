@@ -38,34 +38,34 @@ export async function importarProductos(
 
   const errores: string[] = [];
 
-  // Construir mapa codExt → datos para todas las filas entrantes
-  const mapaEntrante = new Map<string, FilaProducto & { codExt: string }>();
+  // Construir mapa codigoExterno → datos para todas las filas entrantes
+  const mapaEntrante = new Map<string, FilaProducto & { codigoExterno: string }>();
   for (const fila of filas) {
     try {
-      const codExt = buildCodExt(proveedor.sufijo, fila.codProdProv);
-      mapaEntrante.set(codExt, { ...fila, codExt });
+      const codigoExterno = buildCodExt(proveedor.sufijo, fila.codProdProv);
+      mapaEntrante.set(codigoExterno, { ...fila, codigoExterno });
     } catch (e) {
       errores.push(`${fila.codProdProv}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  const codExtsEntrantes = Array.from(mapaEntrante.keys());
+  const codigosEntrantes = Array.from(mapaEntrante.keys());
 
   // Traer todos los productos existentes del proveedor en una sola query
-  const existentes = await prisma.producto.findMany({
+  const existentes = await prisma.productoProveedor.findMany({
     where: { proveedorId },
-    select: { codExt: true },
+    select: { codigoExterno: true },
   });
-  const setExistentes = new Set(existentes.map((p) => p.codExt));
+  const setExistentes = new Set(existentes.map((p) => p.codigoExterno));
 
   // Separar en crear vs actualizar
-  const paraCrear = codExtsEntrantes
+  const paraCrear = codigosEntrantes
     .filter((c) => !setExistentes.has(c))
     .map((c) => {
       const f = mapaEntrante.get(c)!;
       return {
         codProdProv: f.codProdProv,
-        codExt: f.codExt,
+        codigoExterno: f.codigoExterno,
         descripcion: f.descripcion,
         precioLista: f.precioLista,
         precioVentaSugerido: f.precioVentaSugerido,
@@ -73,7 +73,7 @@ export async function importarProductos(
       };
     });
 
-  const paraActualizar = codExtsEntrantes.filter((c) => setExistentes.has(c));
+  const paraActualizar = codigosEntrantes.filter((c) => setExistentes.has(c));
 
   // Ejecutar todo en paralelo con Promise.all — sin transacción interactiva
   const LOTE = 500;
@@ -82,7 +82,7 @@ export async function importarProductos(
   let creados = 0;
   for (let i = 0; i < paraCrear.length; i += LOTE) {
     const lote = paraCrear.slice(i, i + LOTE);
-    const res = await prisma.producto.createMany({ data: lote, skipDuplicates: true });
+    const res = await prisma.productoProveedor.createMany({ data: lote, skipDuplicates: true });
     creados += res.count;
   }
 
@@ -91,10 +91,10 @@ export async function importarProductos(
   for (let i = 0; i < paraActualizar.length; i += LOTE) {
     const lote = paraActualizar.slice(i, i + LOTE);
     await Promise.all(
-      lote.map((codExt) => {
-        const f = mapaEntrante.get(codExt)!;
-        return prisma.producto.update({
-          where: { codExt },
+      lote.map((codigoExterno) => {
+        const f = mapaEntrante.get(codigoExterno)!;
+        return prisma.productoProveedor.update({
+          where: { codigoExterno },
           data: {
             descripcion:         f.descripcion,
             precioLista:         f.precioLista,
@@ -108,10 +108,10 @@ export async function importarProductos(
   }
 
   // Eliminar productos del proveedor que no estaban en el archivo
-  const { count: eliminados } = await prisma.producto.deleteMany({
+  const { count: eliminados } = await prisma.productoProveedor.deleteMany({
     where: {
       proveedorId,
-      codExt: { notIn: codExtsEntrantes },
+      codigoExterno: { notIn: codigosEntrantes },
     },
   });
 

@@ -21,16 +21,16 @@ export function filtroTexto(q: string, campos: string[]) {
 /**
  * Where para "Lista Proveedores" / "Pedido urgente": productos con precio sugerido
  * que coincidan por descripción de proveedor O por descripción de lista tienda
- * (vía codigoExterno = codExt).
+ * (vía codigoExterno).
  */
 export async function whereProductoConsultaConTienda(
   prisma: PrismaClient,
   q: string
-): Promise<Prisma.ProductoWhereInput> {
-  const base: Prisma.ProductoWhereInput = { precioVentaSugerido: { gt: 0 } };
+): Promise<Prisma.ProductoProveedorWhereInput> {
+  const base: Prisma.ProductoProveedorWhereInput = { precioVentaSugerido: { gt: 0 } };
   if (!q || !q.trim()) return base;
 
-  const matchProveedor = filtroTexto(q, ["descripcion"]) as Prisma.ProductoWhereInput;
+  const matchProveedor = filtroTexto(q, ["descripcion"]) as Prisma.ProductoProveedorWhereInput;
 
   const itemsTienda = await prisma.itemTienda.findMany({
     where: {
@@ -49,6 +49,6 @@ export async function whereProductoConsultaConTienda(
 
   return {
     ...base,
-    OR: [matchProveedor, { codExt: { in: codExtList } }],
+    OR: [matchProveedor, { codigoExterno: { in: codExtList } }],
   };
 }

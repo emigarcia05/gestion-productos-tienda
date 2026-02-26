@@ -41,7 +41,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true, sufijo: true },
     }),
-    prisma.producto.findMany({
+    prisma.productoProveedor.findMany({
       where,
       orderBy: [{ proveedor: { nombre: "asc" } }, { descripcion: "asc" }],
       skip,
@@ -50,7 +50,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
         proveedor: { select: { id: true, nombre: true, codigoUnico: true, sufijo: true } },
       },
     }),
-    prisma.producto.count({ where }),
+    prisma.productoProveedor.count({ where }),
   ]);
 
   const totalPaginas = Math.ceil(total / PAGE_SIZE);
