@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 
@@ -91,7 +91,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
             ))}
           </SelectContent>
         </Select>
-        <span className="text-sm text-[#FFC107] tabular-nums shrink-0 font-medium">
+        <span className={FILTER_COUNT_CLASS}>
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

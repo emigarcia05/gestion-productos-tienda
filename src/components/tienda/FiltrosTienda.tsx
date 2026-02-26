@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "filtros-tienda-focus";
 
@@ -127,7 +127,7 @@ export default function FiltrosTienda({
             <SelectItem value="false">No habilitado</SelectItem>
           </SelectContent>
         </Select>
-        <span className="text-sm text-[#FFC107] tabular-nums shrink-0 font-medium">
+        <span className={FILTER_COUNT_CLASS}>
           {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

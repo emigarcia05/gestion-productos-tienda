@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "buscador-simple-focus";
 
@@ -57,7 +57,7 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
   return (
     <FilterBar>
       <FilterRowSelection>
-        <span className="text-sm text-[#FFC107] tabular-nums font-medium shrink-0">
+        <span className={FILTER_COUNT_CLASS}>
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>

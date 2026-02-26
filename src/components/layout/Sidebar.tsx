@@ -185,7 +185,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         </div>
         <hr className="w-full border-0 border-t border-white/20 mx-0 my-0" aria-hidden />
         <div className="px-4 py-4 flex justify-center">
-          <div className="w-full max-w-[90%] flex justify-center items-center">
+          <div className="w-full max-w-[45%] flex justify-center items-center">
             <Image
               src="/logo_tiendacolor.png"
               alt="Logo de la empresa"
