@@ -8,12 +8,12 @@ datasource db {
 }
 
 model Proveedor {
-  id           String   @id @default(cuid())
-  nombre       String   @unique
-  sufijo       String   @unique
-  codigoUnico  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  sufijo      String   @unique
+  codigoUnico String   @map("codigo_unico")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("proveedores")
 }
