@@ -71,6 +71,13 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
     navigate(q, value);
   }
 
+  const hayFiltros = !!(proveedorActual || q);
+
+  function limpiarFiltros() {
+    setQ("");
+    window.location.href = pathname;
+  }
+
   return (
     <FilterBar>
       <FilterRowSelection>
