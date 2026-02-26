@@ -17,7 +17,7 @@ export default function ExportarAumentosButton({ tableRef }: Props) {
         <Button
           variant="outline"
           size="default"
-          className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}
+          className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY}`}
           onClick={() => tableRef.current?.triggerExport()}
         >
           <Download className="h-4 w-4" />

@@ -29,7 +29,7 @@ export default function SyncButton() {
             onClick={() => setModal(true)}
             variant="outline"
             size="default"
-            className={`gap-2 ${ACTION_BUTTON_SECONDARY} hover:border-primary`}
+            className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY} hover:border-primary`}
           >
             <RefreshCw className="h-4 w-4" />
             Sincronizar

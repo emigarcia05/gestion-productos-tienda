@@ -51,9 +51,9 @@ export function FilterRowSearch({ children, className }: { children: React.React
 /** Color de fuente de todos los filtros (heredable). */
 export const FILTER_TEXT_COLOR_CLASS = "text-black";
 
-/** Input de búsqueda: placeholder en negrita y gris; fuente negra. Foco #0072BB. */
+/** Input de búsqueda: mismo bloque visual que Main Button (2.5rem, rounded-lg, font-semibold, sombra). Usar con pl-9 pr-8 para icono. Placeholder negrita, fuente negra, foco primary. */
 export const INPUT_FILTER_CLASS =
-  `bg-white border border-slate-300 rounded-lg h-9 text-sm ${FILTER_TEXT_COLOR_CLASS} placeholder:text-slate-400 placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
+  `bg-white border border-slate-300 rounded-lg h-10 min-h-10 text-sm font-semibold shadow-sm transition-[box-shadow,border-color] duration-150 ${FILTER_TEXT_COLOR_CLASS} placeholder:text-slate-400 placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
 
 /**
  * Wrapper para cada Select de filtros. Con flex-1 min-w-0, hasta 5 desplegables
@@ -93,7 +93,7 @@ export function LimpiarFiltrosButton({
           variant="outline"
           size="icon"
           onClick={onClick}
-          className="h-9 w-9 shrink-0 rounded-lg border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          className="h-10 w-10 shrink-0 rounded-lg border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900 shadow-sm transition-[box-shadow] duration-150 hover:shadow-md"
           aria-label="Limpiar todos los filtros"
         >
           <Trash2 className="h-4 w-4" />
