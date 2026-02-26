@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useImperativeHandle, forwardRef, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, X, Printer } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
@@ -16,6 +16,10 @@ function fmtFecha(d: Date | null): string {
     month: "2-digit",
     year:  "2-digit",
   });
+}
+
+export interface TablaStockHandle {
+  openPrint: () => void;
 }
 
 interface Props {
@@ -32,9 +36,9 @@ const SUCURSALES: { value: Sucursal; label: string }[] = [
   { value: "maipu",      label: "Maipú" },
 ];
 
-export default function TablaStock({
+const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
   data, sucursalActual, qActual, marcaActual, rubroActual, subRubroActual,
-}: Props) {
+}, ref) {
   const pathname = usePathname();
   const router   = useRouter();
 
@@ -78,11 +82,9 @@ export default function TablaStock({
 
   async function handleImprimir() {
     setImprimiendo(true);
-    // Registrar en BD (fire-and-forget, no bloquea la impresión)
     const ids = filtrados.map((i) => i.id);
     const ahora = new Date();
     registrarImpresion(ids).then(() => {
-      // Actualizar estado local para reflejar la fecha sin recargar
       setImpresiones((prev) => {
         const next = { ...prev };
         for (const id of ids) next[id] = ahora;
@@ -102,6 +104,10 @@ export default function TablaStock({
       return true;
     });
   }, [data.items, q, marca, rubro, subRubro, soloNegativo]);
+
+  const handleImprimirRef = useRef(handleImprimir);
+  handleImprimirRef.current = handleImprimir;
+  useImperativeHandle(ref, () => ({ openPrint: () => handleImprimirRef.current() }), []);
 
   const hayFiltros = !!(q || marca || rubro || subRubro || soloNegativo);
   const sucursalLabel = SUCURSALES.find((s) => s.value === sucursalActual)?.label ?? sucursalActual;
@@ -200,25 +206,11 @@ export default function TablaStock({
           </Button>
         )}
 
-        {/* Contador + Imprimir */}
+        {/* Contador (Imprimir se muestra en el header de la página) */}
         <div className="ml-auto flex items-center gap-3 shrink-0">
           <span className="text-xs text-accent2 whitespace-nowrap">
             {filtrados.length.toLocaleString()} ítem{filtrados.length !== 1 ? "s" : ""}
           </span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-slate-300 font-semibold px-4"
-                onClick={handleImprimir}
-              >
-                <Printer className="h-3.5 w-3.5" />
-                Imprimir
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Imprimir listado de stock</TooltipContent>
-          </Tooltip>
         </div>
       </div>
 
@@ -270,4 +262,6 @@ export default function TablaStock({
       )}
     </div>
   );
-}
+});
+
+export default TablaStock;

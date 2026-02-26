@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSyncDux } from "@/hooks/useSyncDux";
+import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 import SyncModal from "@/components/shared/SyncModal";
 
 export default function SyncButton() {
@@ -28,7 +29,7 @@ export default function SyncButton() {
             onClick={() => setModal(true)}
             variant="outline"
             size="sm"
-            className="gap-2 border-slate-300 font-semibold px-4 hover:border-primary"
+            className={`gap-2 ${ACTION_BUTTON_SECONDARY} hover:border-primary`}
           >
             <RefreshCw className="h-4 w-4" />
             Sincronizar

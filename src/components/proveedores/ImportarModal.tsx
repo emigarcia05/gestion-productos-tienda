@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Badge } from "@/components/ui/badge";
 import { importarProductos, type ImportResult, type MapeoColumnas } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
+import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 
 interface Proveedor {
   id: string;
@@ -142,7 +143,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 border-slate-300 font-semibold px-4">
+            <Button variant="outline" size="sm" className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}>
               <Upload className="h-4 w-4" />
               Importar Lista
             </Button>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import SectionHeader from "@/components/SectionHeader";
+import GenerarPedidoButton from "@/components/pedidos/GenerarPedidoButton";
 import { Separator } from "@/components/ui/separator";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import PedidoUrgenteTablaConToast from "@/components/pedidos/PedidoUrgenteTablaConToast";
@@ -56,7 +57,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col min-h-0">
-      <SectionHeader titulo="Pedido Mercadería" subtitulo="Pedido Urgente" />
+      <SectionHeader titulo="Pedido Mercadería" subtitulo="Pedido Urgente" actions={<GenerarPedidoButton />} />
 
       <FiltrosPedidoUrgente
         q={q}

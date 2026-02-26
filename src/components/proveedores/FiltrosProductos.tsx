@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "filtros-proveedores-focus";
 
@@ -74,51 +74,50 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
   return (
     <FilterBar>
       <FilterRowSelection>
-        <div className="space-y-0">
-          <span className={FILTER_LABEL_CLASS}>Proveedor</span>
-          <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
-            <SelectTrigger className={`w-[220px] mt-1.5 ${SELECT_TRIGGER_FILTER_CLASS}`}>
-              <SelectValue placeholder="Proveedor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Todos los proveedores</SelectItem>
-              {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
+          <SelectTrigger className={`w-[220px] ${SELECT_TRIGGER_FILTER_CLASS}`}>
+            <SelectValue placeholder="Seleccionar proveedor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Todos los proveedores</SelectItem>
+            {proveedores.map((p) => (
+              <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {accionMasivaSlot}
-        <span className="text-sm text-slate-500 tabular-nums shrink-0 pb-1">
+        <span className="text-sm text-slate-500 tabular-nums shrink-0">
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>
-      <FilterRowSearch>
-        <label className={FILTER_LABEL_CLASS} htmlFor="filtro-proveedores-busqueda">Búsqueda</label>
-        <div className="relative mt-1.5">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
-          <Input
-            ref={inputRef}
-            id="filtro-proveedores-busqueda"
-            value={q}
-            onChange={(e) => handleQ(e.target.value)}
-            placeholder="Buscar por descripción o código..."
-            className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
-          />
-          {q && !buscando && (
-            <button
-              type="button"
-              onClick={() => handleQ("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {buscando && (
-            <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 animate-spin pointer-events-none" />
-          )}
-        </div>
-      </FilterRowSearch>
+      <div className="flex items-center gap-2">
+        <FilterRowSearch>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
+            <Input
+              ref={inputRef}
+              id="filtro-proveedores-busqueda"
+              value={q}
+              onChange={(e) => handleQ(e.target.value)}
+              placeholder="Buscar por descripción o código..."
+              className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
+            />
+            {q && !buscando && (
+              <button
+                type="button"
+                onClick={() => handleQ("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {buscando && (
+              <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 animate-spin pointer-events-none" />
+            )}
+          </div>
+        </FilterRowSearch>
+        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+      </div>
     </FilterBar>
   );
 }

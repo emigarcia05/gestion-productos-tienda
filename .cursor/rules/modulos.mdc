@@ -27,9 +27,9 @@ Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha 
 
 **Sidebar:** `bg-slate-50`, borde derecho definido `border-r border-slate-300`. Acordeón vertical con `Collapsible`; al clic en un módulo se despliegan sus submódulos (con sangría). Contraste delicado: texto `text-slate-900` en módulos y submódulos inactivos.
 
-**Módulos (Nivel 1):** No redirigen; solo abren/cierran.
-- Abierto: `text-slate-900 font-bold`, icono `text-primary` (#0072BB), `ChevronDown` con `rotate-180`.
-- Cerrado: `text-slate-900 font-semibold`, hover `hover:bg-primary/10 hover:text-primary`.
+**Módulos (Nivel 1):** No redirigen; solo abren/cierran. **Iconografía:** Todos los iconos de módulo y los chevrons (ChevronDown/ChevronRight) usan siempre el color de marca `text-primary` (#0072BB) para contraste claro sobre el fondo de la sidebar.
+- Abierto: `text-slate-900 font-bold`, icono y chevron `text-primary`, `ChevronDown` con `rotate-180`.
+- Cerrado: `text-slate-900 font-semibold`, icono y chevron `text-primary`, hover `hover:bg-primary/10 hover:text-primary`.
 
 **Submódulos (Nivel 2):** Son los únicos `Link` que cambian de ruta. Con indent (sangría) bajo el módulo.
 - Activo: `bg-[#0072BB]/10`, texto `#0072BB`, línea vertical izquierda 2px `border-l-2 border-primary`.
@@ -43,20 +43,15 @@ Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha 
 
 **Título:** `text-3xl font-black text-slate-950`. Una sola línea; la elegancia viene del espaciado y del contraste de los botones.
 
-**Botones de acción (zona derecha):** Agrupados en `flex gap-2`. **Tamaño uniforme obligatorio:** `h-10 px-4` en todos (SectionHeader lo fuerza con `[&_button]:!h-10 [&_button]:!px-4`). Cada uno con **Tooltip** de shadcn al hover.
-- **Estilo base:** `variant="outline"` o `variant="secondary"`, `border-slate-300`, `font-semibold`.
-- **Crear Proveedor (acción principal de creación):** `variant="default"` (fondo #0072BB sólido), icono Plus, `shadow-sm hover:brightness-90`.
-- **Importar Lista / Exportar:** Iconos Upload / Download, estilo outline limpio.
-- **Sincronizar:** Icono RefreshCw, `hover:border-primary`.
-- **Acción Masiva:** Destacar ligeramente (p. ej. `border-slate-400` o `bg-slate-50/80`) para indicar que afecta a varios elementos.
-- **Imprimir:** Icono Printer, diseño sobrio outline.
+**Botones de acción (zona derecha):** Agrupados en `flex gap-2`. **Ubicación obligatoria:** Importar Lista, Crear Proveedor, Sincronizar, Exportar .csv, Imprimir, Generar Pedido y Acción Masiva se renderizan **solo en el Header (Tarjeta de Título)**, nunca dentro de la tabla ni en el cuerpo de la página. **Tamaño y estilo uniformes:** `h-10 px-4`, `rounded-lg`, `font-semibold`; usar las constantes de `@/lib/actionButtons`: `ACTION_BUTTON_SECONDARY` (outline, `border-slate-300`, `text-slate-900`, `hover:shadow-md`) para acciones secundarias; `ACTION_BUTTON_PRIMARY` (fondo #0072BB, texto blanco, `hover:brightness-90 hover:shadow-md`) para la acción principal (Crear Proveedor, Generar Pedido). Cada botón con **Tooltip** de shadcn al hover.
+- **Pedido Mercadería:** En todos los submódulos (Pedido Urgente, Tintométrico, Reposición, Historial) el botón **Generar Pedido** debe aparecer en el header y ser el más destacado (primario #0072BB).
 
 ## 3. Filtros (doble fila estándar)
 
 **Estructura fija:** `FilterBar` > `FilterRowSelection` (fila 1) > `FilterRowSearch` (fila 2).
-- **Fila 1:** Solo Selects (Sucursal, Proveedor, Rubro, etc.), alineados a la izquierda, `gap-4`.
-- **Fila 2:** Input de búsqueda en wrapper al **75% de ancho** (`FilterRowSearch` aplica `w-[75%] max-w-2xl`). Borde **#0072BB** cuando activo (`INPUT_FILTER_CLASS`).
-- Fondo blanco `bg-white`, bordes `border-slate-300`. Labels: `FILTER_LABEL_CLASS`. Focus: `focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`.
+- **Fila 1:** Solo Selects (Sucursal, Proveedor, Rubro, etc.), alineados a la izquierda, `gap-4`. **Sin labels:** se usan placeholders en el trigger (ej. "Seleccionar sucursal", "Filtrar por rubro"). Placeholder inactivo: `text-slate-400`; valor seleccionado: `text-slate-900` (`SELECT_TRIGGER_FILTER_CLASS`).
+- **Fila 2:** Input de búsqueda en wrapper al **75% de ancho** (`FilterRowSearch`). Placeholder tipo "Buscar por descripción o código..." con `placeholder:text-slate-400`; texto al escribir `text-slate-900`. Borde **#0072BB** cuando activo (`INPUT_FILTER_CLASS`).
+- Contenedor: `gap-y-2 py-2` entre filas para ahorro vertical. Fondo blanco, bordes `border-slate-300`.
 
 ## 4. Tabla de datos
 

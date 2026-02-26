@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { aplicarCampoMasivo, type CampoMasivo } from "@/actions/productos";
+import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 
 interface Proveedor {
   id: string;
@@ -92,7 +93,7 @@ export default function AccionMasivaModal({
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 shrink-0 border-slate-400 font-semibold px-4 bg-slate-50/80">
+            <Button variant="outline" size="sm" className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY}`}>
               <Settings2 className="h-4 w-4" />
               Acción Masiva
             </Button>

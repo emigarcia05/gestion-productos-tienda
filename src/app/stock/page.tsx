@@ -2,9 +2,7 @@ import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getControlStock, type Sucursal } from "@/actions/stock";
-import SectionHeader from "@/components/SectionHeader";
-import TablaStock from "@/components/stock/TablaStock";
-import StockPageSyncGate from "@/components/stock/StockPageSyncGate";
+import StockPageWithActions from "@/components/stock/StockPageWithActions";
 
 export const dynamic = "force-dynamic";
 
@@ -22,20 +20,13 @@ export default async function StockPage({ searchParams }: Props) {
   const data = await getControlStock(sucursalValida);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo="Control Stock" subtitulo="Por sucursal" />
-      <StockPageSyncGate>
-        <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
-          <TablaStock
-            data={data}
-            sucursalActual={sucursalValida}
-            qActual={q}
-            marcaActual={marca}
-            rubroActual={rubro}
-            subRubroActual={subRubro}
-          />
-        </div>
-      </StockPageSyncGate>
-    </div>
+    <StockPageWithActions
+      data={data}
+      sucursalValida={sucursalValida}
+      q={q}
+      marca={marca}
+      rubro={rubro}
+      subRubro={subRubro}
+    />
   );
 }

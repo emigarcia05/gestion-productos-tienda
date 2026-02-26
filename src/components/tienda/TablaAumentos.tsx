@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ArrowUp, ArrowDown, X, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState, useMemo, useImperativeHandle, forwardRef, useRef } from "react";
+import { ArrowUp, ArrowDown, X } from "lucide-react";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPct } from "@/lib/format";
 
@@ -156,7 +154,11 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
 
 // ─── Componente principal ─────────────────────────────────────────────────
 
-export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
+export interface TablaAumentosHandle {
+  triggerExport: () => void;
+}
+
+const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosData }>(function TablaAumentos({ data }, ref) {
   const [filtroMarca,    setFiltroMarca]    = useState<string | null>(null);
   const [filtroRubro,    setFiltroRubro]    = useState<string | null>(null);
   const [filtroSubRubro, setFiltroSubRubro] = useState<string | null>(null);
@@ -191,6 +193,14 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
 
   const conAumento   = itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5);
   const hayFiltros   = filtroMarca || filtroRubro || filtroSubRubro;
+
+  const conAumentoRef = useRef(conAumento);
+  conAumentoRef.current = conAumento;
+  useImperativeHandle(ref, () => ({
+    triggerExport() {
+      exportarXLS(conAumentoRef.current);
+    },
+  }), []);
 
   function handleMarca(nombre: string) {
     setFiltroMarca((p) => p === nombre ? null : nombre);
@@ -270,23 +280,8 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
           </div>
         )}
 
-        {/* Exportar + Stats — empujados a la derecha */}
-        <div className="ml-auto flex items-center gap-3">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportarXLS(itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5))}
-                className="gap-2 border-slate-300 font-semibold px-4"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Exportar .xls
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Descargar variaciones en Excel</TooltipContent>
-          </Tooltip>
-        </div>
+        {/* Stats (Exportar se muestra en el header de la página) */}
+        <div className="ml-auto flex items-center gap-3" />
       </div>
 
       {/* ── Layout: mitad superior (3 columnas) + mitad inferior (productos) ── */}
@@ -312,4 +307,6 @@ export default function TablaAumentos({ data }: { data: ControlAumentosData }) {
       </div>
     </div>
   );
-}
+});
+
+export default TablaAumentos;

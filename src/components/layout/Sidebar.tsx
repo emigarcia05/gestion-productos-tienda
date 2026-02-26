@@ -111,7 +111,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col border-r border-slate-300 bg-slate-50">
+    <aside className="w-60 shrink-0 flex flex-col bg-[#0072BB] border-r border-white/10 shadow-[2px_0_8px_rgba(0,0,0,0.06)]">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.map((module) => {
           const isOpen = openId === module.id;
@@ -124,24 +124,24 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             >
               <CollapsibleTrigger
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/30",
                   isOpen
-                    ? "font-bold text-slate-900 [&_svg]:text-primary"
-                    : "font-semibold text-slate-900 hover:bg-primary/10 hover:text-primary [&_svg]:currentColor"
+                    ? "font-bold text-white [&_svg]:text-white"
+                    : "font-semibold text-white/70 [&_svg]:text-white/70 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white"
                 )}
                 aria-expanded={isOpen}
               >
-                <span className={cn("h-5 w-5 shrink-0 flex items-center justify-center", isOpen && "[&_svg]:text-primary")}>
+                <span className="h-5 w-5 shrink-0 flex items-center justify-center [&_svg]:inherit">
                   {module.icon}
                 </span>
                 <span className="min-w-0 flex-1 text-left">{module.label}</span>
                 <ChevronDown
-                  className={cn("h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200", isOpen && "rotate-180")}
+                  className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
                   aria-hidden
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-[#FFC107] space-y-0.5 py-1 [&_a_svg]:text-[#FFC107]">
+                <div className="mt-0.5 ml-2 pl-4 border-l-2 border-[#FFC107] space-y-0.5 py-1">
                   {module.submodules.map((sub) => {
                     const active = isSubmoduleActive(pathname, sub.href);
                     return (
@@ -152,8 +152,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                           "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm transition-colors",
                           "border-l-2 -ml-[2px] pl-[10px]",
                           active
-                            ? "border-[#FFC107] bg-[#FFC107]/5 font-semibold text-[#FFC107] [&_svg]:text-[#FFC107]"
-                            : "border-transparent text-slate-900 hover:bg-slate-100 hover:text-slate-950",
+                            ? "border-[#FFC107] bg-white/10 font-semibold text-[#FFC107] [&_svg]:text-[#FFC107]"
+                            : "border-transparent text-white/70 [&_svg]:text-white/50 hover:bg-white/10 hover:text-white hover:[&_svg]:text-white/80",
                           sub.isUrgente && "relative"
                         )}
                       >
@@ -168,16 +168,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           );
         })}
       </nav>
-      <div className="mt-auto border-t border-border p-4">
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-white px-3 py-2.5 shadow-sm">
+      <div className="mt-auto border-t border-white/15 p-4">
+        <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur-sm">
           <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white"
             aria-hidden
           >
             <User className="h-4 w-4" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-slate-900">{perfilNombre}</p>
+          <div className="min-w-0 flex-1 [&_button]:text-white/80 [&_button:hover]:text-white [&_svg]:text-inherit">
+            <p className="text-sm font-medium text-white">{perfilNombre}</p>
             <SelectorRol rolActual={rol} compact />
           </div>
         </div>

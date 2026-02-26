@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, FILTER_LABEL_CLASS } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "buscador-simple-focus";
 
@@ -45,36 +45,47 @@ export default function BuscadorSimple({ qActual, totalProductos, extraParams }:
     }, 400);
   }
 
+  const hayFiltros = !!q;
+
+  function limpiarFiltros() {
+    setQ("");
+    const params = new URLSearchParams();
+    if (extraParams) for (const [k, v] of Object.entries(extraParams)) if (v) params.set(k, v);
+    window.location.href = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+  }
+
   return (
     <FilterBar>
       <FilterRowSelection>
-        <span className="text-sm text-slate-500 tabular-nums pb-1">
+        <span className="text-sm text-slate-500 tabular-nums">
           {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>
-      <FilterRowSearch>
-        <label className={FILTER_LABEL_CLASS} htmlFor="buscador-simple">Búsqueda</label>
-        <div className="relative mt-1.5">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
-          <Input
-            ref={inputRef}
-            id="buscador-simple"
-            value={q}
-            onChange={(e) => handleQ(e.target.value)}
-            placeholder="Buscar por descripción..."
-            className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
-          />
-          {q && (
-            <button
-              type="button"
-              onClick={() => handleQ("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </FilterRowSearch>
+      <div className="flex items-center gap-2">
+        <FilterRowSearch>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
+            <Input
+              ref={inputRef}
+              id="buscador-simple"
+              value={q}
+              onChange={(e) => handleQ(e.target.value)}
+              placeholder="Buscar por descripción o código..."
+              className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => handleQ("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </FilterRowSearch>
+        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+      </div>
     </FilterBar>
   );
 }

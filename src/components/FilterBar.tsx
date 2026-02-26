@@ -1,3 +1,6 @@
+import { RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +18,7 @@ export default function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 py-3",
+        "flex flex-col gap-y-2 py-2",
         className
       )}
       role="search"
@@ -26,10 +29,10 @@ export default function FilterBar({
   );
 }
 
-/** Fila 1 (Selección): solo menús desplegables (Select). Alineados a la izquierda, gap-4. */
+/** Fila 1 (Selección): solo menús desplegables (Select). Sin labels; placeholders en el trigger. */
 export function FilterRowSelection({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-wrap items-end gap-4", className)}>
+    <div className={cn("flex flex-wrap items-center gap-4", className)}>
       {children}
     </div>
   );
@@ -44,14 +47,38 @@ export function FilterRowSearch({ children, className }: { children: React.React
   );
 }
 
-/** Clases para Input de búsqueda: fondo blanco, borde definido, foco #0072BB (marca) */
+/** Input de búsqueda: placeholder gris cuando vacío, texto oscuro al escribir. Foco #0072BB. */
 export const INPUT_FILTER_CLASS =
-  "bg-white border border-slate-300 rounded-lg h-9 text-sm text-slate-900 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
+  "bg-white border border-slate-300 rounded-lg h-9 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
 
-/** Clases para SelectTrigger en filtros: mismo estilo, foco #0072BB */
+/** SelectTrigger en filtros: placeholder (inactivo) gris; valor seleccionado texto oscuro. Foco #0072BB. */
 export const SELECT_TRIGGER_FILTER_CLASS =
-  "bg-white border-slate-300 rounded-lg h-9 text-sm text-slate-900 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
+  "bg-white border-slate-300 rounded-lg h-9 text-sm text-slate-900 data-[placeholder]:text-slate-400 focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20";
 
-/** Label encima de cada filtro: contraste y jerarquía */
-export const FILTER_LABEL_CLASS =
-  "text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1.5";
+/** Botón para limpiar todos los filtros. Solo visible cuando hayFiltros. Icono #0072BB, alineado con altura del input (h-9). */
+export function LimpiarFiltrosButton({
+  onClick,
+  visible,
+}: {
+  onClick: () => void;
+  visible: boolean;
+}) {
+  if (!visible) return null;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onClick}
+          className="h-9 w-9 shrink-0 text-primary hover:bg-primary/10 hover:text-primary"
+          aria-label="Limpiar todos los filtros"
+        >
+          <RotateCcw className="h-[18px] w-[18px]" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Limpiar todos los filtros</TooltipContent>
+    </Tooltip>
+  );
+}
