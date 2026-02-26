@@ -1,0 +1,49 @@
+---
+description: Estructura de navegación del frontend. Rutas oficiales por grupo. Respetar esta jerarquía en nuevas páginas, links y lógica de módulos.
+globs: **/app/**/*.tsx, **/components/**/*.tsx, **/components/**/*.ts
+---
+
+# Rutas del Frontend — Índice oficial
+
+Toda nueva página, enlace de sidebar o lógica de módulo debe alinearse con esta jerarquía.
+
+## 1. Grupo: Lista Proveedores
+
+| Ruta | Propósito |
+|------|------------|
+| `/proveedores/sugeridos` | Px Sugeridos Proveedores |
+| `/proveedores/lista-precios` | Lista Px Proveedores |
+| `/proveedores/gestion` | Lista Proveedores (gestión de empresas) |
+
+La lógica de proveedores, listas de precios y empresas vive bajo este grupo.
+
+## 2. Grupo: Lista Tienda
+
+| Ruta | Propósito |
+|------|------------|
+| `/tienda/comparacion` | Comparación Px Proveedores |
+| `/tienda/aumentos` | Control Aumentos |
+
+La lógica de comparación de precios y control de aumentos va aquí.
+
+## 3. Grupo: Control Stock
+
+| Ruta | Propósito |
+|------|------------|
+| `/stock` | Página principal de stock |
+
+Toda la lógica de stock y sucursales se asocia a esta ruta.
+
+## 4. Grupo: Pedido Mercadería
+
+| Ruta | Propósito |
+|------|------------|
+| `/pedidos/urgente` | Pedido Urgente |
+| `/pedidos/reposicion` | Pedido Reposición |
+| `/pedidos/historial` | Historial Pedidos |
+
+La lógica de pedidos (urgente, reposición, historial) pertenece a este grupo.
+
+---
+
+Al crear un módulo nuevo o un enlace de navegación, usar estas rutas exactas. No inventar rutas alternativas (ej. `/proveedores` sin segmento) salvo redirecciones explícitas a una de las anteriores.
