@@ -1,26 +1,11 @@
 /**
- * Servicio lista_precios_proveedores – Capa de datos.
- * MOCK: almacén en memoria; al conectar Neon/Prisma usar upsert por ID compuesto
- * [sufijo]-[codProdProv].
+ * Servicio lista_precios_proveedores – Capa de datos (Neon / Prisma).
+ * Upsert por código externo (cod_ext = [SUFIJO]-[codProdProv]).
  */
 
 import type { FilaListaPrecio } from "@/lib/parsearImport";
-
-export interface ItemListaPrecio {
-  id: string;
-  proveedorId: string;
-  codigoExterno: string;
-  codProdProv: string;
-  descripcion: string;
-  /** Nuevo nombre de columna en BD: lista_precios_proveedores.descripcion_proveedor */
-  descripcionProveedor: string;
-  precioLista: number;
-  precioVentaSugerido: number;
-  descuentoProducto: number;
-  descuentoCantidad: number;
-  cxTransporte: number;
-  disponible: boolean;
-}
+import { prisma } from "@/lib/prisma";
+import { buildCodExt } from "@/lib/codigos";
 
 export interface UpsertListaPreciosResult {
   creados: number;
@@ -28,23 +13,10 @@ export interface UpsertListaPreciosResult {
   errores: string[];
 }
 
-const DEFAULT_DESCUENTO = 0;
-const DEFAULT_CX_TRANSPORTE = 0;
-const DEFAULT_DISPONIBLE = true;
-
-// ─── MOCK: almacén en memoria (reemplazar por Prisma) ───────────────────────
-
-const store = new Map<string, ItemListaPrecio>();
-
-function idCompuesto(sufijo: string, codProdProv: string): string {
-  return `${sufijo}-${codProdProv}`;
-}
-
 /**
  * Upsert de filas en lista_precios_proveedores.
- * ID primario: [sufijo]-[codProdProv].
- * Si existe, actualiza; si no, crea con valores por defecto para
- * descuentoProducto (0), descuentoCantidad (0), cxTransporte (0), disponible (true).
+ * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
+ * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
  */
 export async function upsertListaPrecios(
   proveedorId: string,
@@ -57,32 +29,36 @@ export async function upsertListaPrecios(
 
   for (let i = 0; i < filas.length; i++) {
     const fila = filas[i];
-    const id = idCompuesto(sufijo, fila.codProdProv);
+    const codExt = buildCodExt(sufijo, fila.codProdProv);
 
     try {
-      const existente = store.get(id);
-      const item: ItemListaPrecio = {
-        id,
-        proveedorId,
-        codigoExterno: fila.codigoExterno,
-        codProdProv: fila.codProdProv,
-        descripcion: fila.descripcion,
-        descripcionProveedor: fila.descripcion,
-        precioLista: fila.precioLista,
-        precioVentaSugerido: fila.precioVentaSugerido,
-        descuentoProducto: DEFAULT_DESCUENTO,
-        descuentoCantidad: DEFAULT_DESCUENTO,
-        cxTransporte: DEFAULT_CX_TRANSPORTE,
-        disponible: DEFAULT_DISPONIBLE,
-      };
+      const existente = await prisma.listaPrecioProveedor.findUnique({
+        where: { codExt },
+        select: { id: true },
+      });
 
-      if (existente) {
-        store.set(id, { ...existente, ...item });
-        actualizados++;
-      } else {
-        store.set(id, item);
-        creados++;
-      }
+      await prisma.listaPrecioProveedor.upsert({
+        where: { codExt },
+        create: {
+          idProveedor: proveedorId,
+          codProdProveedor: fila.codProdProv,
+          descripcionProveedor: fila.descripcion,
+          codExt,
+          pxListaProveedor: fila.precioLista,
+          pxVtaSugerido: fila.precioVentaSugerido || null,
+          // dto_producto, dto_cantidad, cx_aprox_transporte usan defaults (0)
+        },
+        update: {
+          idProveedor: proveedorId,
+          codProdProveedor: fila.codProdProv,
+          descripcionProveedor: fila.descripcion,
+          pxListaProveedor: fila.precioLista,
+          pxVtaSugerido: fila.precioVentaSugerido || null,
+        },
+      });
+
+      if (existente) actualizados++;
+      else creados++;
     } catch (e) {
       errores.push(`Fila ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
     }

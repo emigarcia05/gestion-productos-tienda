@@ -54,9 +54,10 @@ type CampoDestinoListaPrecios =
 
 const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolean }[] = [
   { value: "codProdProv", label: "Cod. Proveedor", required: true },          // cod_prod_proveedor
-  { value: "descripcion", label: "Descripcion", required: true },              // descripcion_proveedor
-  { value: "precioLista", label: "Px. Lista", required: true },                // px_lista_proveedor
-  { value: "precioVentaSugerido", label: "Px. Sugerido", required: false },    // px_vta_sugerido
+  { value: "descripcion", label: "Descripcion", required: true },             // descripcion_proveedor
+  { value: "precioLista", label: "Px. Lista", required: true },               // px_lista_proveedor
+  { value: "precioVentaSugerido", label: "Px. Sugerido", required: false },   // px_vta_sugerido
+  { value: "ignorar", label: "Ignorar / (sin asignar)", required: false },
 ];
 
 export default function ImportarListaPreciosModal({ proveedores }: Props) {
