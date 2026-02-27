@@ -24,7 +24,7 @@ export default function SectionHeader({ titulo, subtitulo, actions, compact }: P
           </div>
         </div>
         {actions && (
-          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 [&_button]:shrink-0 [&_button]:!h-10 [&_button]:!px-4">
+          <div className="section-header-actions flex flex-wrap items-center justify-end gap-2 shrink-0">
             {actions}
           </div>
         )}

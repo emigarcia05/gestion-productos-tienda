@@ -52,6 +52,7 @@
 
 /* Tema SaaS: fondo amplio, primario #0072BB, acentos #FFC107 solo críticos */
 :root {
+  --spacing: 0.25rem;
   --radius: 0.5rem;
   --font-weight-semibold: 600;
   --text-sm: 0.875rem;
@@ -136,17 +137,60 @@
 main button,
 .btn-main {
   height: 2.5rem !important;
+  min-height: 2.5rem !important;
   padding: 0 1rem !important;
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold) !important;
+  font-family: var(--font-geist-sans);
   white-space: nowrap;
   border-radius: var(--radius) !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   gap: 0.5rem;
   transition: box-shadow 0.15s, background-color 0.15s;
   box-shadow: 0 1px 2px #0000000d;
+}
+
+/* Tarjeta de título de módulo: todos los botones mismo tamaño y texto centrado */
+.section-header-actions button {
+  height: 2.5rem !important;
+  min-height: 2.5rem !important;
+  padding: 0 1rem !important;
+  font-size: var(--text-sm) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  font-family: var(--font-geist-sans);
+  white-space: nowrap;
+  border-radius: var(--radius) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  transition: box-shadow 0.15s, background-color 0.15s;
+  box-shadow: 0 1px 2px #0000000d;
+}
+.section-header-actions button[data-variant="default"],
+.section-header-actions button:not([data-variant]) {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+.section-header-actions button[data-variant="outline"],
+.section-header-actions button[data-variant="secondary"] {
+  background-color: var(--secondary) !important;
+  color: var(--secondary-foreground) !important;
+  border: 1px solid var(--border);
+}
+.section-header-actions button:hover:not(:disabled) {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.section-header-actions button[data-variant="default"]:hover:not(:disabled),
+.section-header-actions button:not([data-variant]):hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+.section-header-actions button[data-variant="outline"]:hover:not(:disabled),
+.section-header-actions button[data-variant="secondary"]:hover:not(:disabled) {
+  filter: brightness(0.97);
 }
 /* Primario (default): Importar Lista, Guardar, Gestionar, etc. */
 main button[data-variant="default"],
@@ -174,6 +218,20 @@ main button[data-variant="secondary"]:hover:not(:disabled) {
 main button:hover:not(:disabled),
 .btn-main:hover:not(:disabled) {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* ─── Filtros: select trigger alineado al sistema de diseño (cascada) ─────────
+ * El combobox de filtros (ej. PROVEEDOR) hereda altura 2.5rem, fuente Geist y radio.
+ */
+.filtros-contenedor [data-slot="select-trigger"] {
+  height: calc(var(--spacing, 0.25rem) * 10) !important;
+  min-height: calc(var(--spacing, 0.25rem) * 10) !important;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius);
+  padding-inline: calc(var(--spacing, 0.25rem) * 3);
+  padding-block: calc(var(--spacing, 0.25rem) * 1);
 }
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */

@@ -62,10 +62,11 @@ export const FILTER_SELECT_WRAPPER_CLASS = "min-w-0 flex-1";
 
 /**
  * Estilo maestro para listas desplegables de filtros (SelectTrigger).
- * Misma altura (h-10), borde, radio 0.5rem y estados de foco que INPUT_FILTER_CLASS.
+ * Por cascada: misma altura (2.5rem), fuente Geist, radio 0.5rem y foco primary que el sistema de diseño.
+ * !h-10 !min-h-10 sobrescribe data-[size=default]:h-9 del Select.
  */
 export const SELECT_TRIGGER_FILTER_CLASS =
-  `w-full min-w-0 bg-background border border-input rounded-lg h-10 min-h-10 text-sm font-semibold ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-muted-foreground data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 transition-[box-shadow,border-color] duration-150`;
+  `w-full min-w-0 bg-background border border-input rounded-lg !h-10 !min-h-10 text-sm font-semibold font-sans ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-muted-foreground data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 transition-[box-shadow,border-color] duration-150`;
 
 /** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
