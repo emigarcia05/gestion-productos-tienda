@@ -233,7 +233,7 @@
     background-color: var(--card);
   }
   .tabla-gestion-compacta tbody tr:nth-child(even) {
-    background-color: rgba(59, 130, 246, 0.03);
+    background-color: rgba(59, 130, 246, 0.08);
   }
   .tabla-gestion-compacta tbody tr:hover {
     background-color: color-mix(in oklab, var(--primary) 20%, transparent);
@@ -313,10 +313,10 @@
     font-family: var(--font-sans);
     color: var(--foreground);
     background-color: var(--background);
-    border: 1px solid #0072BB;
-    border-style: solid;
+    border: 1px solid #0072BB !important;
+    border-style: solid !important;
     border-radius: calc(var(--radius) - 2px);
-    border-color: #0072BB;
+    border-color: #0072BB !important;
     transition-property: color, box-shadow, border-color;
     transition-timing-function: var(--default-transition-timing-function);
     transition-duration: var(--default-transition-duration);

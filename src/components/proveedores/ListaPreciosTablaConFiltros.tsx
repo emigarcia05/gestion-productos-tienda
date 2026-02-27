@@ -121,7 +121,7 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">Todos</SelectItem>
+                  <SelectItem value="none">PROVEEDOR</SelectItem>
                   {proveedores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.sufijo}] {p.nombre}
