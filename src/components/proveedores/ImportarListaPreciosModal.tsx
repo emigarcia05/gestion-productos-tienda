@@ -28,7 +28,6 @@ import {
   type MapeoColumnasListaPrecios,
 } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
-import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 
 interface Proveedor {
   id: string;
@@ -171,9 +170,12 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button
-          variant="outline"
+          variant="default"
           size="default"
-          className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}
+          className="!bg-[#0072bb] !text-white h-10 !min-h-[2.5rem] !px-4 text-sm font-semibold font-sans rounded-lg shadow-[0_1px_2px_#0000000d] border-none inline-flex items-center justify-center gap-2 whitespace-nowrap hover:!bg-[#0072bb] hover:brightness-90"
+          style={{
+            fontFamily: "var(--font-geist-sans)",
+          }}
         >
           <Upload className="h-4 w-4" />
           Importar Lista Px Proveedor

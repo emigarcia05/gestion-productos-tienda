@@ -22,10 +22,10 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
 
-/** Alto aproximado de una fila tbody (py-1 + text-xs; puede ser 2 líneas en desc). */
-const BODY_ROW_HEIGHT_PX = 26;
-/** Alto del thead (una fila con py-1). */
-const HEADER_HEIGHT_PX = 24;
+/** Alto aproximado de una fila tbody (py-0.5 + text-xs; puede ser 2 líneas en desc). */
+const BODY_ROW_HEIGHT_PX = 20;
+/** Alto del thead (una fila con py-0.5). */
+const HEADER_HEIGHT_PX = 18;
 
 /** Normaliza texto para búsqueda: minúsculas y sin acentos. */
 function normalizeForSearch(s: string): string {
@@ -141,19 +141,16 @@ export default function ListaPreciosTablaConFiltros({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-1.5">
-      <FilterBar className="gap-y-1 py-1">
+    <div className="flex flex-col h-full min-h-0 gap-0.5">
+      <FilterBar className="gap-y-0.5 py-0.5">
         <FilterRowSelection>
-          <div className="grid grid-cols-5 gap-2 flex-1 min-w-0">
+          <div className="grid grid-cols-5 gap-3 flex-1 min-w-0 items-center">
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <label htmlFor="filtro-proveedor" className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">
-                PROVEEDOR
-              </label>
               <Select
                 value={proveedorId || "none"}
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
-                <SelectTrigger id="filtro-proveedor" className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Filtrar por proveedor">
+                <SelectTrigger id="filtro-proveedor" className={SELECT_TRIGGER_FILTER_CLASS}>
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent>
@@ -172,18 +169,14 @@ export default function ListaPreciosTablaConFiltros({
             {filteredFilas.length !== 1 ? "s" : ""}
           </span>
         </FilterRowSelection>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <FilterRowSearch>
-            <label htmlFor="filtro-lista-precios-busqueda" className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">
-              BÚSQUEDA
-            </label>
             <Input
               id="filtro-lista-precios-busqueda"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Términos múltiples (ej: lat blan 20)..."
+              placeholder="BUSCAR POR DESCRIPCION"
               className={`w-full ${INPUT_FILTER_CLASS}`}
-              aria-label="Buscar por descripción proveedor o tienda"
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
@@ -197,26 +190,26 @@ export default function ListaPreciosTablaConFiltros({
         <table className="tabla-global w-full text-xs table-fixed border-collapse">
           <thead className="sticky top-0 z-10 bg-primary">
             <tr>
-              <th className="w-20 py-1 px-2 text-xs">PROVEEDOR</th>
-              <th className="w-28 py-1 px-2 text-xs">COD. EXT.</th>
-              <th className="min-w-0 py-1 px-2 text-xs">DESCRIPCION</th>
-              <th className="w-28 py-1 px-2 text-xs">PX COMPRA FINAL</th>
-              <th className="w-24 py-1 px-2 text-xs">PX LISTA</th>
-              <th className="w-20 py-1 px-2 text-xs">DESC. PROD.</th>
-              <th className="w-20 py-1 px-2 text-xs">DESC. CANT.</th>
-              <th className="w-24 py-1 px-2 text-xs">CX. APROX TRANSPORTE</th>
+              <th className="w-20 py-0.5 px-2 text-xs">PROVEEDOR</th>
+              <th className="w-28 py-0.5 px-2 text-xs">COD. EXT.</th>
+              <th className="min-w-0 py-0.5 px-2 text-xs">DESCRIPCION</th>
+              <th className="w-28 py-0.5 px-2 text-xs">PX COMPRA FINAL</th>
+              <th className="w-24 py-0.5 px-2 text-xs">PX LISTA</th>
+              <th className="w-20 py-0.5 px-2 text-xs">DESC. PROD.</th>
+              <th className="w-20 py-0.5 px-2 text-xs">DESC. CANT.</th>
+              <th className="w-24 py-0.5 px-2 text-xs">CX. APROX TRANSPORTE</th>
             </tr>
           </thead>
           <tbody>
             {filasPagina.map((fila) => (
               <tr key={fila.id}>
-                <td className="py-1 px-2 text-xs font-mono">
+                <td className="py-0.5 px-2 text-xs font-mono">
                   {fila.proveedor?.sufijo ?? "—"}
                 </td>
-                <td className="py-1 px-2 text-xs font-mono whitespace-nowrap">
+                <td className="py-0.5 px-2 text-xs font-mono whitespace-nowrap">
                   {fila.codExt}
                 </td>
-                <td className="py-1 px-2 min-w-0 overflow-hidden align-top">
+                <td className="py-0.5 px-2 min-w-0 overflow-hidden align-top">
                   <div className="text-xs font-bold truncate">
                     {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor
                       ? fila.descripcionTienda
@@ -228,19 +221,19 @@ export default function ListaPreciosTablaConFiltros({
                     </div>
                   )}
                 </td>
-                <td className="py-1 px-2 tabular-nums text-xs font-bold text-right whitespace-nowrap">
+                <td className="py-0.5 px-2 tabular-nums text-xs font-bold text-right whitespace-nowrap">
                   ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
                 </td>
-                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-0.5 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   ${fmtPrecio(Number(fila.pxListaProveedor))}
                 </td>
-                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-0.5 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   {fmtNumero(fila.dtoProducto)}%
                 </td>
-                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-0.5 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   {fmtNumero(fila.dtoCantidad)}%
                 </td>
-                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-0.5 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   {fmtNumero(fila.cxAproxTransporte)}%
                 </td>
               </tr>
@@ -248,7 +241,7 @@ export default function ListaPreciosTablaConFiltros({
             {filasPagina.length === 0 && (
               <tr>
                 <td
-                  className="py-4 px-2 text-xs text-muted-foreground text-center"
+                  className="py-2 px-2 text-xs text-muted-foreground text-center"
                   colSpan={8}
                 >
                   {filas.length === 0
