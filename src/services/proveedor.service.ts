@@ -1,7 +1,7 @@
 /**
- * Servicio de Proveedores – Capa de datos (Neon/Prisma).
+ * Servicio de Proveedores – MODO FRONTEND ONLY (sin base de datos).
+ * Datos estáticos para mantener la UI intacta hasta definir nueva arquitectura de BD.
  */
-import { prisma } from "@/lib/prisma";
 
 export interface CreateProveedorInput {
   nombre: string;
@@ -16,53 +16,31 @@ export interface ProveedorListItem {
   _count: { productosProveedor: number };
 }
 
-/** Códigos de error para constraint unique (Prisma P2002). */
 export const PROVEEDOR_ERROR = {
   NOMBRE_DUPLICADO: "Ya existe un proveedor con ese nombre.",
   SUFIJO_DUPLICADO: "Ya existe un proveedor con ese sufijo.",
 } as const;
 
+/** Lista estática de proveedores para la UI (coherente con productos mock en actions). */
+const MOCK_PROVEEDORES: ProveedorListItem[] = [
+  { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM", _count: { productosProveedor: 2 } },
+  { id: "mock-prov-2", nombre: "Proveedor Ejemplo", codigoUnico: "EJM", sufijo: "EJM", _count: { productosProveedor: 0 } },
+];
+
 /**
- * Lista de proveedores desde Neon.
+ * Lista de proveedores (mock). Sin acceso a base de datos.
  */
 export async function getProveedores(): Promise<ProveedorListItem[]> {
-  const list = await prisma.proveedor.findMany({
-    orderBy: { nombre: "asc" },
-  });
-  return list.map((p) => ({
-    id: p.id,
-    nombre: p.nombre,
-    codigoUnico: p.codigoUnico,
-    sufijo: p.sufijo,
-    _count: { productosProveedor: 0 },
-  }));
+  return [...MOCK_PROVEEDORES];
 }
 
 /**
- * Crea un proveedor en Neon. Lanza error amigable si nombre o sufijo ya existen (unique).
+ * Crear proveedor (mock). No persiste en BD; devuelve éxito para que el formulario no falle.
  */
 export async function createProveedor(
   input: CreateProveedorInput
 ): Promise<{ id: string; codigoUnico: string }> {
-  const nombreNorm = input.nombre.trim();
   const sufijoNorm = input.sufijo.trim().toUpperCase();
-
-  try {
-    const created = await prisma.proveedor.create({
-      data: {
-        nombre: nombreNorm,
-        sufijo: sufijoNorm,
-        codigoUnico: sufijoNorm,
-      },
-    });
-    return { id: created.id, codigoUnico: created.codigoUnico };
-  } catch (e: unknown) {
-    const prismaError = e as { code?: string; meta?: { target?: string[] } };
-    if (prismaError.code === "P2002" && Array.isArray(prismaError.meta?.target)) {
-      const target = prismaError.meta.target as string[];
-      if (target.includes("nombre")) throw new Error(PROVEEDOR_ERROR.NOMBRE_DUPLICADO);
-      if (target.includes("sufijo")) throw new Error(PROVEEDOR_ERROR.SUFIJO_DUPLICADO);
-    }
-    throw e;
-  }
+  const id = `mock-${Date.now()}`;
+  return { id, codigoUnico: sufijoNorm || id };
 }

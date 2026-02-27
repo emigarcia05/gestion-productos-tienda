@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-// Usar SIEMPRE variables de entorno. Nunca dejar credenciales en el repo.
-// En Vercel: Settings → Environment Variables → DATABASE_URL y opcionalmente DIRECT_URL.
+// Modo frontend only: la app no conecta a BD en runtime (datos mock). DATABASE_URL solo
+// se usa para migraciones/studio cuando se reactive la BD.
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
