@@ -53,12 +53,10 @@ type CampoDestinoListaPrecios =
   | "ignorar";
 
 const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolean }[] = [
-  { value: "codigoExterno", label: "Cod. externo (codExt)", required: true },
-  { value: "codProdProv", label: "Cod. producto proveedor", required: true },
-  { value: "descripcion", label: "Descripción", required: true },
-  { value: "precioLista", label: "Px lista proveedor", required: true },
-  { value: "precioVentaSugerido", label: "Px venta sugerido", required: false },
-  { value: "ignorar", label: "Ignorar columna", required: false },
+  { value: "codProdProv", label: "Cod. Proveedor", required: true },          // cod_prod_proveedor
+  { value: "descripcion", label: "Descripcion", required: true },              // descripcion_proveedor
+  { value: "precioLista", label: "Px. Lista", required: true },                // px_lista_proveedor
+  { value: "precioVentaSugerido", label: "Px. Sugerido", required: false },    // px_vta_sugerido
 ];
 
 export default function ImportarListaPreciosModal({ proveedores }: Props) {
