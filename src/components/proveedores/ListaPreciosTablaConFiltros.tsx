@@ -14,8 +14,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
-  INPUT_FILTER_CLASS,
-  SELECT_TRIGGER_FILTER_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
@@ -150,10 +148,15 @@ export default function ListaPreciosTablaConFiltros({
                 value={proveedorId || "none"}
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
-                <SelectTrigger id="filtro-proveedor" className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectTrigger id="filtro-proveedor" className="input-filtro-custom">
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
                   <SelectItem value="none">Todos</SelectItem>
                   {proveedores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -176,7 +179,7 @@ export default function ListaPreciosTablaConFiltros({
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="BUSCAR POR DESCRIPCION"
-              className={`w-full ${INPUT_FILTER_CLASS}`}
+              className="input-filtro-custom"
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
