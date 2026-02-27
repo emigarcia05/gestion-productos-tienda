@@ -106,14 +106,13 @@
 @layer utilities {
   /* ─── Estilos madre: tablas ─────────────────────────────────────────────────
    * Tablas: usar Table de @/components/ui/table O <table class="tabla-global">.
-   * Colores y espaciado vienen de variables de tema; no hardcodear en componentes.
-   * Tipografía: Geist (--font-sans) heredada; códigos en celdas usar font-mono.
+   * Encabezado y filas con poco padding vertical para más filas visibles.
    */
   .tabla-global thead th {
-    @apply bg-primary text-primary-foreground font-bold text-center align-middle px-3 py-4 uppercase;
+    @apply bg-primary text-primary-foreground font-bold text-center align-middle px-3 py-1.5 text-xs uppercase;
   }
   .tabla-global tbody td {
-    @apply text-foreground text-sm font-normal text-center align-middle px-3 py-4;
+    @apply text-foreground text-sm font-normal text-center align-middle px-3 py-1.5;
   }
   .tabla-global tbody tr {
     @apply border-b border-border transition-colors duration-150;
@@ -152,8 +151,9 @@ main button,
   box-shadow: 0 1px 2px #0000000d;
 }
 
-/* Tarjeta de título de módulo: todos los botones mismo tamaño y texto centrado */
-.section-header-actions button {
+/* Tarjeta de título de módulo: todos los botones mismo tamaño y texto centrado.
+ * Selector header + clase para ganar especificidad a Tailwind en producción. */
+header .section-header-actions button {
   height: 2.5rem !important;
   min-height: 2.5rem !important;
   padding: 0 1rem !important;
@@ -170,26 +170,26 @@ main button,
   transition: box-shadow 0.15s, background-color 0.15s;
   box-shadow: 0 1px 2px #0000000d;
 }
-.section-header-actions button[data-variant="default"],
-.section-header-actions button:not([data-variant]) {
+header .section-header-actions button[data-variant="default"],
+header .section-header-actions button:not([data-variant]) {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
-.section-header-actions button[data-variant="outline"],
-.section-header-actions button[data-variant="secondary"] {
+header .section-header-actions button[data-variant="outline"],
+header .section-header-actions button[data-variant="secondary"] {
   background-color: var(--secondary) !important;
   color: var(--secondary-foreground) !important;
   border: 1px solid var(--border);
 }
-.section-header-actions button:hover:not(:disabled) {
+header .section-header-actions button:hover:not(:disabled) {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
-.section-header-actions button[data-variant="default"]:hover:not(:disabled),
-.section-header-actions button:not([data-variant]):hover:not(:disabled) {
+header .section-header-actions button[data-variant="default"]:hover:not(:disabled),
+header .section-header-actions button:not([data-variant]):hover:not(:disabled) {
   filter: brightness(0.9);
 }
-.section-header-actions button[data-variant="outline"]:hover:not(:disabled),
-.section-header-actions button[data-variant="secondary"]:hover:not(:disabled) {
+header .section-header-actions button[data-variant="outline"]:hover:not(:disabled),
+header .section-header-actions button[data-variant="secondary"]:hover:not(:disabled) {
   filter: brightness(0.97);
 }
 /* Primario (default): Importar Lista, Guardar, Gestionar, etc. */
