@@ -301,7 +301,7 @@
     -webkit-tap-highlight-color: transparent;
     min-height: 2.5rem;
     height: calc(var(--spacing) * 10);
-    width: 100%;
+    width: 100% !important;
     min-width: 0;
     padding-inline: calc(var(--spacing) * 3);
     padding-block: calc(var(--spacing) * 1);
@@ -313,10 +313,10 @@
     font-family: var(--font-sans);
     color: var(--foreground);
     background-color: var(--background);
-    border: 1px solid var(--input);
+    border: 1px solid #0072BB;
     border-style: solid;
     border-radius: calc(var(--radius) - 2px);
-    border-color: var(--input);
+    border-color: #0072BB;
     transition-property: color, box-shadow, border-color;
     transition-timing-function: var(--default-transition-timing-function);
     transition-duration: var(--default-transition-duration);
@@ -336,20 +336,22 @@
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
+    width: 100% !important;
     min-width: 0;
+    max-width: 100%;
     box-sizing: border-box;
   }
-  /* ─── Fila de filtros desplegables: 5 por fila, ancho fijo (sin depender del texto) ───
-   * Usar clase .fila-filtros-5 en el contenedor de la primera fila (ej. div con grid grid-cols-5 gap-3).
-   * Cada trigger con .input-filtro-unificado tendrá ancho fijo para que entren 5.
+  /* ─── Fila de filtros desplegables: 5 por fila; trigger y menú = 100% de la columna ───
+   * El contenedor (wrapper) de cada select llena la columna; el trigger y el Content heredan ese ancho.
    */
-  .fila-filtros-5 {
-    --ancho-filtro-select: calc((100% - (var(--filtro-columnas) - 1) * var(--filtro-gap)) / var(--filtro-columnas));
+  .fila-filtros-5 > div {
+    min-width: 0;
+    width: 100%;
   }
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado {
-    width: var(--ancho-filtro-select) !important;
-    min-width: var(--ancho-filtro-select) !important;
-    max-width: var(--ancho-filtro-select) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     overflow: hidden;
   }
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"] {
@@ -358,11 +360,12 @@
     white-space: nowrap;
     min-width: 0;
   }
-  /* Trigger de filtro: mismo aspecto que el input de descripción (fondo, borde, tipografía) */
+  /* Trigger de filtro: mismo aspecto que el input de descripción (fondo, borde #0072BB, tipografía) */
   button.input-filtro-unificado,
   [data-slot="select-trigger"].input-filtro-unificado {
     background-color: var(--background) !important;
-    border-color: var(--input) !important;
+    border: 1px solid #0072BB !important;
+    border-color: #0072BB !important;
     color: var(--foreground) !important;
   }
   button.input-filtro-unificado:focus-visible,
@@ -528,7 +531,8 @@ main button:hover:not(:disabled),
   border-radius: var(--radius);
   height: 2.5rem !important;
   min-height: 2.5rem !important;
-  width: 100%;
+  width: 100% !important;
+  min-width: 0;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
   font-size: var(--text-sm);
@@ -537,12 +541,15 @@ main button:hover:not(:disabled),
   color: var(--foreground);
   transition: box-shadow 0.15s, border-color 0.15s;
 }
-/* Select trigger (desplegable): misma vista que el input (color, fondo, bordes) */
+/* Select trigger (desplegable): misma vista que el input; ancho 100% del contenedor */
 button.input-filtro-custom,
 [data-slot="select-trigger"].input-filtro-custom {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  width: 100% !important;
+  min-width: 0;
+  max-width: 100%;
   background-color: var(--background) !important;
   border: 1px solid var(--input) !important;
   border-radius: var(--radius) !important;
