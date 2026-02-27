@@ -1,11 +1,63 @@
 /**
  * Servicio lista_precios_proveedores – Capa de datos (Neon / Prisma).
  * Upsert por código externo (cod_ext = [SUFIJO]-[codProdProv]).
+ * getListaPreciosConTienda: una sola entrada para la página lista-precios (DRY).
  */
 
 import type { FilaListaPrecio } from "@/lib/parsearImport";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
+
+/** Fila para el cliente (lista-precios): proveedor + descripción tienda si existe. */
+export interface FilaListaPrecioParaCliente {
+  id: string;
+  codExt: string;
+  descripcionProveedor: string;
+  descripcionTienda: string | null;
+  pxListaProveedor: number;
+  dtoProducto: number;
+  dtoCantidad: number;
+  cxAproxTransporte: number;
+  pxCompraFinal: number | null;
+  proveedor: { id: string; sufijo: string } | null;
+}
+
+/**
+ * Obtiene lista de precios proveedor unida con descripciones de lista_precios_tienda.
+ * Una sola función para la página lista-precios: evita repetir la lógica de join.
+ */
+export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCliente[]> {
+  const [filas, tiendaRows] = await Promise.all([
+    prisma.listaPrecioProveedor.findMany({
+      include: { proveedor: true },
+      orderBy: { codExt: "asc" },
+    }),
+    prisma.listaPrecioTienda.findMany({
+      select: { codExterno: true, descripcionTienda: true },
+    }),
+  ]);
+
+  const descripcionPorCodExt = new Map(
+    tiendaRows
+      .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
+      .map((t) => [t.codExterno, t.descripcionTienda as string])
+  );
+
+  return filas.map((f) => ({
+    id: f.id,
+    codExt: f.codExt,
+    descripcionProveedor: f.descripcionProveedor,
+    descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
+    pxListaProveedor: Number(f.pxListaProveedor),
+    dtoProducto: f.dtoProducto,
+    dtoCantidad: f.dtoCantidad,
+    cxAproxTransporte: f.cxAproxTransporte,
+    pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
+    proveedor: f.proveedor
+      ? { id: f.proveedor.id, sufijo: f.proveedor.sufijo }
+      : null,
+  }));
+}
 
 export interface UpsertListaPreciosResult {
   creados: number;

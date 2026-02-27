@@ -169,14 +169,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
-        <Button
-          variant="default"
-          size="default"
-          className="!bg-[#0072bb] !text-white h-10 !min-h-[2.5rem] !px-4 text-sm font-semibold font-sans rounded-lg shadow-[0_1px_2px_#0000000d] border-none inline-flex items-center justify-center gap-2 whitespace-nowrap hover:!bg-[#0072bb] hover:brightness-90"
-          style={{
-            fontFamily: "var(--font-geist-sans)",
-          }}
-        >
+        <Button variant="default" size="default" className="btn-primario-gestion">
           <Upload className="h-4 w-4" />
           Importar Lista Px Proveedor
         </Button>

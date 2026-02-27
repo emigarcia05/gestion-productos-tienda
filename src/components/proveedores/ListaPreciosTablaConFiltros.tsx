@@ -19,36 +19,13 @@ import FilterBar, {
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
+import { matchByMultiTerm } from "@/lib/busqueda";
+import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
-/** Alto aproximado de una fila tbody (py-0 + text-xs; puede ser 2 líneas en desc). */
+/** Alto aproximado de una fila tbody (celda-datos). */
 const BODY_ROW_HEIGHT_PX = 18;
-/** Alto del thead (una fila con py-0). */
+/** Alto del thead (tabla-gestion-compacta). */
 const HEADER_HEIGHT_PX = 16;
-
-/** Normaliza texto para búsqueda: minúsculas y sin acentos. */
-function normalizeForSearch(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
-}
-
-/** Búsqueda cruzada: cada término debe estar en desc_proveedor O desc_tienda (combinados). Insensible a mayúsculas y acentos. */
-function matchMultiTermCross(
-  descripcionProveedor: string,
-  descripcionTienda: string | null,
-  query: string
-): boolean {
-  const terms = query
-    .trim()
-    .split(/\s+/)
-    .map((t) => normalizeForSearch(t))
-    .filter(Boolean);
-  if (terms.length === 0) return true;
-  const combined = [descripcionProveedor, descripcionTienda].filter(Boolean).join(" ");
-  const combinedNorm = normalizeForSearch(combined);
-  return terms.every((term) => combinedNorm.includes(term));
-}
 
 interface ProveedorOption {
   id: string;
@@ -56,21 +33,8 @@ interface ProveedorOption {
   sufijo: string;
 }
 
-interface FilaListaPrecio {
-  id: string;
-  codExt: string;
-  descripcionProveedor: string;
-  descripcionTienda: string | null;
-  pxListaProveedor: number | string;
-  dtoProducto: number;
-  dtoCantidad: number;
-  cxAproxTransporte: number;
-  pxCompraFinal: number | string | null;
-  proveedor: { id: string; sufijo: string } | null;
-}
-
 interface ListaPreciosTablaConFiltrosProps {
-  filas: FilaListaPrecio[];
+  filas: FilaListaPrecioParaCliente[];
   proveedores: ProveedorOption[];
 }
 
@@ -105,7 +69,7 @@ export default function ListaPreciosTablaConFiltros({
     }
     if (busqueda.trim()) {
       result = result.filter((f) =>
-        matchMultiTermCross(f.descripcionProveedor, f.descripcionTienda, busqueda)
+        matchByMultiTerm([f.descripcionProveedor, f.descripcionTienda], busqueda)
       );
     }
     return result;
@@ -140,7 +104,7 @@ export default function ListaPreciosTablaConFiltros({
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-0.5">
-      <FilterBar className="gap-y-0.5 py-1">
+      <FilterBar className="gap-y-0.5 py-2">
         <FilterRowSelection>
           <div className="grid grid-cols-5 gap-3 flex-1 min-w-0 items-center">
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
@@ -148,7 +112,7 @@ export default function ListaPreciosTablaConFiltros({
                 value={proveedorId || "none"}
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
-                <SelectTrigger id="filtro-proveedor" className="input-filtro-custom">
+                <SelectTrigger id="filtro-proveedor" className="input-filtro-unificado">
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent
@@ -167,10 +131,6 @@ export default function ListaPreciosTablaConFiltros({
               </Select>
             </div>
           </div>
-          <span className={FILTER_COUNT_CLASS}>
-            {filteredFilas.length.toLocaleString()} producto
-            {filteredFilas.length !== 1 ? "s" : ""}
-          </span>
         </FilterRowSelection>
         <div className="flex items-center gap-3">
           <FilterRowSearch>
@@ -179,41 +139,42 @@ export default function ListaPreciosTablaConFiltros({
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="BUSCAR POR DESCRIPCION"
-              className="input-filtro-custom"
+              className="input-filtro-unificado"
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <span className={FILTER_COUNT_CLASS}>
+            {filteredFilas.length.toLocaleString()} producto
+            {filteredFilas.length !== 1 ? "s" : ""}
+          </span>
         </div>
       </FilterBar>
 
-      <div
-        ref={tableContainerRef}
-        className="flex-1 min-h-0 overflow-hidden rounded-lg border bg-white shadow-sm flex flex-col"
-      >
-        <table className="tabla-global w-full text-xs table-fixed border-collapse">
-          <thead className="sticky top-0 z-10 bg-primary">
+      <div ref={tableContainerRef} className="contenedor-tabla-gestion">
+        <table className="tabla-gestion-compacta">
+          <thead>
             <tr>
-              <th className="w-20 py-0 px-2 text-xs">PROVEEDOR</th>
-              <th className="w-28 py-0 px-2 text-xs">COD. EXT.</th>
-              <th className="min-w-0 py-0 px-2 text-xs">DESCRIPCION</th>
-              <th className="w-28 py-0 px-2 text-xs">PX COMPRA FINAL</th>
-              <th className="w-24 py-0 px-2 text-xs">PX LISTA</th>
-              <th className="w-20 py-0 px-2 text-xs">DESC. PROD.</th>
-              <th className="w-20 py-0 px-2 text-xs">DESC. CANT.</th>
-              <th className="w-24 py-0 px-2 text-xs">CX. APROX TRANSPORTE</th>
+              <th className="w-20">PROVEEDOR</th>
+              <th className="w-28">COD. EXT.</th>
+              <th className="min-w-0">DESCRIPCION</th>
+              <th className="w-28">PX COMPRA FINAL</th>
+              <th className="w-24">PX LISTA</th>
+              <th className="w-20">DESC. PROD.</th>
+              <th className="w-20">DESC. CANT.</th>
+              <th className="w-24">CX. APROX TRANSPORTE</th>
             </tr>
           </thead>
           <tbody>
             {filasPagina.map((fila) => (
               <tr key={fila.id}>
-                <td className="py-0 px-2 text-xs font-mono">
+                <td className="celda-datos celda-mono">
                   {fila.proveedor?.sufijo ?? "—"}
                 </td>
-                <td className="py-0 px-2 text-xs font-mono whitespace-nowrap">
+                <td className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
                 </td>
-                <td className="py-0 px-2 min-w-0 overflow-hidden align-top">
-                  <div className="text-xs font-bold truncate">
+                <td className="celda-datos min-w-0 overflow-hidden align-top">
+                  <div className="celda-destacado truncate text-xs font-bold">
                     {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor
                       ? fila.descripcionTienda
                       : fila.descripcionProveedor}
@@ -224,19 +185,19 @@ export default function ListaPreciosTablaConFiltros({
                     </div>
                   )}
                 </td>
-                <td className="py-0 px-2 tabular-nums text-xs font-bold text-right whitespace-nowrap">
+                <td className="celda-datos celda-numero celda-destacado">
                   ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
                 </td>
-                <td className="py-0 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="celda-datos celda-numero">
                   ${fmtPrecio(Number(fila.pxListaProveedor))}
                 </td>
-                <td className="py-0 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoProducto)}%
                 </td>
-                <td className="py-0 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoCantidad)}%
                 </td>
-                <td className="py-0 px-2 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="celda-datos celda-numero">
                   {fmtNumero(fila.cxAproxTransporte)}%
                 </td>
               </tr>
@@ -244,7 +205,7 @@ export default function ListaPreciosTablaConFiltros({
             {filasPagina.length === 0 && (
               <tr>
                 <td
-                  className="py-1 px-2 text-xs text-muted-foreground text-center"
+                  className="celda-datos py-1 text-muted-foreground text-center"
                   colSpan={8}
                 >
                   {filas.length === 0
@@ -269,7 +230,6 @@ export default function ListaPreciosTablaConFiltros({
               size="sm"
               onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
               disabled={paginaActual <= 1}
-              aria-label="Página anterior"
             >
               <ChevronLeft className="size-4" />
             </Button>
@@ -284,7 +244,6 @@ export default function ListaPreciosTablaConFiltros({
                 setPaginaActual((p) => Math.min(totalPaginas, p + 1))
               }
               disabled={paginaActual >= totalPaginas}
-              aria-label="Página siguiente"
             >
               <ChevronRight className="size-4" />
             </Button>

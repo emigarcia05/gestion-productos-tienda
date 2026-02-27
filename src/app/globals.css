@@ -103,6 +103,146 @@
   }
 }
 
+@layer components {
+  /* ─── Clases maestras lista-precios / gestión (cascada desde una variable) ─── */
+
+  /* Contenedor de tabla lista-precios (sin scroll interno) */
+  .contenedor-tabla-gestion {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Tabla compacta: estructura y encabezado */
+  .tabla-gestion-compacta {
+    width: 100%;
+    font-size: 0.75rem;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+  .tabla-gestion-compacta thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--primary);
+  }
+  .tabla-gestion-compacta thead th {
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+    color: var(--primary-foreground);
+    text-transform: uppercase;
+  }
+  .tabla-gestion-compacta tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.15s;
+  }
+  .tabla-gestion-compacta tbody tr:nth-child(odd) {
+    background-color: var(--card);
+  }
+  .tabla-gestion-compacta tbody tr:nth-child(even) {
+    background-color: rgba(59, 130, 246, 0.03);
+  }
+  .tabla-gestion-compacta tbody tr:hover {
+    background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  /* Celdas de datos: text-xs, padding mínimo */
+  .celda-datos {
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .celda-datos.celda-mono {
+    font-family: var(--font-mono);
+  }
+  .celda-datos.celda-destacado,
+  .celda-destacado {
+    font-weight: 700;
+  }
+  .celda-datos.celda-numero {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Botón primario gestión (azul #0072bb) */
+  .btn-primario-gestion {
+    height: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-geist-sans);
+    color: var(--primary-foreground);
+    background-color: var(--primary);
+    border: none;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px #0000000d;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    transition: box-shadow 0.15s, background-color 0.15s;
+  }
+  .btn-primario-gestion:hover:not(:disabled) {
+    filter: brightness(0.9);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+
+  /* Input/select de filtro unificado (buscadores y selects) */
+  .input-filtro-unificado {
+    width: 100%;
+    height: 2.5rem;
+    min-height: 2.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-sans);
+    color: var(--foreground);
+    background-color: var(--background);
+    border: 1px solid var(--input);
+    border-radius: var(--radius);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .input-filtro-unificado::placeholder {
+    color: var(--muted-foreground);
+    font-weight: 700;
+  }
+  .input-filtro-unificado:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
+  }
+  button.input-filtro-unificado,
+  [data-slot="select-trigger"].input-filtro-unificado {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  button.input-filtro-unificado:focus-visible,
+  [data-slot="select-trigger"].input-filtro-unificado:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
+  }
+  button.input-filtro-unificado svg,
+  [data-slot="select-trigger"].input-filtro-unificado svg {
+    color: var(--muted-foreground);
+  }
+}
+
 @layer utilities {
   /* ─── Estilos madre: tablas ─────────────────────────────────────────────────
    * Tablas: usar Table de @/components/ui/table O <table class="tabla-global">.
@@ -238,11 +378,26 @@ main button:hover:not(:disabled),
   color: var(--foreground);
   transition: box-shadow 0.15s, border-color 0.15s;
 }
-/* Select trigger (botón): necesita flex para alinear contenido e icono */
-button.input-filtro-custom {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
+/* Select trigger (desplegable): misma vista que el input (color, fondo, bordes) */
+button.input-filtro-custom,
+[data-slot="select-trigger"].input-filtro-custom {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background-color: var(--background) !important;
+  border: 1px solid var(--input) !important;
+  border-radius: var(--radius) !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 1px 2px #0000000d;
+}
+button.input-filtro-custom:focus-visible,
+[data-slot="select-trigger"].input-filtro-custom:focus-visible {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent) !important;
+}
+button.input-filtro-custom svg,
+[data-slot="select-trigger"].input-filtro-custom svg {
+  color: var(--muted-foreground);
 }
 .input-filtro-custom::placeholder {
   color: var(--muted-foreground);

@@ -4,49 +4,22 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import ImportarListaPreciosModal from "@/components/proveedores/ImportarListaPreciosModal";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
-import { prisma } from "@/lib/prisma";
+import { getListaPreciosConTienda } from "@/services/listaPrecios.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function ListaPreciosPage() {
-  const [proveedores, rol] = await Promise.all([getProveedores(), getRol()]);
-  const p = PERMISOS.listaPrecios;
-
-  const [filas, tiendaRows] = await Promise.all([
-    prisma.listaPrecioProveedor.findMany({
-      include: { proveedor: true },
-      orderBy: { codExt: "asc" },
-    }),
-    prisma.listaPrecioTienda.findMany({
-      select: { codExterno: true, descripcionTienda: true },
-    }),
+  const [proveedores, rol, filasParaCliente] = await Promise.all([
+    getProveedores(),
+    getRol(),
+    getListaPreciosConTienda(),
   ]);
-
-  const descripcionPorCodExt = new Map(
-    tiendaRows
-      .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
-      .map((t) => [t.codExterno, t.descripcionTienda as string])
-  );
+  const p = PERMISOS.listaPrecios;
 
   const acciones =
     puede(rol, p.acciones.importarLista) ? (
       <ImportarListaPreciosModal proveedores={proveedores} />
     ) : undefined;
-
-  const filasParaCliente = filas.map((f) => ({
-    id: f.id,
-    codExt: f.codExt,
-    descripcionProveedor: f.descripcionProveedor,
-    descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
-    pxListaProveedor: Number(f.pxListaProveedor),
-    dtoProducto: f.dtoProducto,
-    dtoCantidad: f.dtoCantidad,
-    cxAproxTransporte: f.cxAproxTransporte,
-    pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
-    proveedor: f.proveedor
-      ? { id: f.proveedor.id, sufijo: f.proveedor.sufijo }
-      : null,
-  }));
 
   const proveedoresParaCliente = proveedores.map((p) => ({
     id: p.id,
