@@ -12,10 +12,21 @@ export default async function ListaPreciosPage() {
   const [proveedores, rol] = await Promise.all([getProveedores(), getRol()]);
   const p = PERMISOS.listaPrecios;
 
-  const filas = await prisma.listaPrecioProveedor.findMany({
-    include: { proveedor: true },
-    orderBy: { codExt: "asc" },
-  });
+  const [filas, tiendaRows] = await Promise.all([
+    prisma.listaPrecioProveedor.findMany({
+      include: { proveedor: true },
+      orderBy: { codExt: "asc" },
+    }),
+    prisma.listaPrecioTienda.findMany({
+      select: { codExterno: true, descripcionTienda: true },
+    }),
+  ]);
+
+  const descripcionPorCodExt = new Map(
+    tiendaRows
+      .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
+      .map((t) => [t.codExterno, t.descripcionTienda as string])
+  );
 
   const acciones =
     puede(rol, p.acciones.importarLista) ? (
@@ -26,6 +37,7 @@ export default async function ListaPreciosPage() {
     id: f.id,
     codExt: f.codExt,
     descripcionProveedor: f.descripcionProveedor,
+    descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
     dtoProducto: f.dtoProducto,
     dtoCantidad: f.dtoCantidad,
@@ -48,8 +60,9 @@ export default async function ListaPreciosPage() {
         titulo="Lista Proveedores"
         subtitulo="Lista Px Proveedores"
         actions={acciones}
+        compact
       />
-      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-1.5">
         <ListaPreciosTablaConFiltros
           filas={filasParaCliente}
           proveedores={proveedoresParaCliente}

@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import {
   importarListaPreciosProveedor,
@@ -170,21 +169,16 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="default"
-              className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}
-            >
-              <Upload className="h-4 w-4" />
-              Importar Lista Px Proveedor
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent>Importar lista de precios desde CSV</TooltipContent>
-      </Tooltip>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="default"
+          className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}
+        >
+          <Upload className="h-4 w-4" />
+          Importar Lista Px Proveedor
+        </Button>
+      </DialogTrigger>
 
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>

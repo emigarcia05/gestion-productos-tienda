@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -22,7 +22,35 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
 
-const FILAS_POR_PAGINA = 25;
+/** Alto aproximado de una fila tbody (py-1 + text-xs; puede ser 2 líneas en desc). */
+const BODY_ROW_HEIGHT_PX = 26;
+/** Alto del thead (una fila con py-1). */
+const HEADER_HEIGHT_PX = 24;
+
+/** Normaliza texto para búsqueda: minúsculas y sin acentos. */
+function normalizeForSearch(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+/** Búsqueda cruzada: cada término debe estar en desc_proveedor O desc_tienda (combinados). Insensible a mayúsculas y acentos. */
+function matchMultiTermCross(
+  descripcionProveedor: string,
+  descripcionTienda: string | null,
+  query: string
+): boolean {
+  const terms = query
+    .trim()
+    .split(/\s+/)
+    .map((t) => normalizeForSearch(t))
+    .filter(Boolean);
+  if (terms.length === 0) return true;
+  const combined = [descripcionProveedor, descripcionTienda].filter(Boolean).join(" ");
+  const combinedNorm = normalizeForSearch(combined);
+  return terms.every((term) => combinedNorm.includes(term));
+}
 
 interface ProveedorOption {
   id: string;
@@ -34,6 +62,7 @@ interface FilaListaPrecio {
   id: string;
   codExt: string;
   descripcionProveedor: string;
+  descripcionTienda: string | null;
   pxListaProveedor: number | string;
   dtoProducto: number;
   dtoCantidad: number;
@@ -54,6 +83,22 @@ export default function ListaPreciosTablaConFiltros({
   const [proveedorId, setProveedorId] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const updateRowsPerPage = () => {
+      const h = el.clientHeight;
+      const bodyRows = Math.max(1, Math.floor((h - HEADER_HEIGHT_PX) / BODY_ROW_HEIGHT_PX));
+      setRowsPerPage(bodyRows);
+    };
+    updateRowsPerPage();
+    const ro = new ResizeObserver(updateRowsPerPage);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const filteredFilas = useMemo(() => {
     let result = filas;
@@ -61,9 +106,8 @@ export default function ListaPreciosTablaConFiltros({
       result = result.filter((f) => f.proveedor?.id === proveedorId);
     }
     if (busqueda.trim()) {
-      const q = busqueda.trim().toLowerCase();
       result = result.filter((f) =>
-        f.descripcionProveedor.toLowerCase().includes(q)
+        matchMultiTermCross(f.descripcionProveedor, f.descripcionTienda, busqueda)
       );
     }
     return result;
@@ -71,12 +115,12 @@ export default function ListaPreciosTablaConFiltros({
 
   const totalPaginas = Math.max(
     1,
-    Math.ceil(filteredFilas.length / FILAS_POR_PAGINA)
+    Math.ceil(filteredFilas.length / rowsPerPage)
   );
   const filasPagina = useMemo(() => {
-    const desde = (paginaActual - 1) * FILAS_POR_PAGINA;
-    return filteredFilas.slice(desde, desde + FILAS_POR_PAGINA);
-  }, [filteredFilas, paginaActual]);
+    const desde = (paginaActual - 1) * rowsPerPage;
+    return filteredFilas.slice(desde, desde + rowsPerPage);
+  }, [filteredFilas, paginaActual, rowsPerPage]);
 
   useEffect(() => {
     setPaginaActual(1);
@@ -97,16 +141,19 @@ export default function ListaPreciosTablaConFiltros({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-3">
-      <FilterBar>
+    <div className="flex flex-col h-full min-h-0 gap-1.5">
+      <FilterBar className="gap-y-1 py-1">
         <FilterRowSelection>
           <div className="grid grid-cols-5 gap-2 flex-1 min-w-0">
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
+              <label htmlFor="filtro-proveedor" className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">
+                PROVEEDOR
+              </label>
               <Select
                 value={proveedorId || "none"}
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
-                <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectTrigger id="filtro-proveedor" className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Filtrar por proveedor">
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent>
@@ -127,58 +174,73 @@ export default function ListaPreciosTablaConFiltros({
         </FilterRowSelection>
         <div className="flex items-center gap-2">
           <FilterRowSearch>
+            <label htmlFor="filtro-lista-precios-busqueda" className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">
+              BÚSQUEDA
+            </label>
             <Input
               id="filtro-lista-precios-busqueda"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por descripción..."
+              placeholder="Términos múltiples (ej: lat blan 20)..."
               className={`w-full ${INPUT_FILTER_CLASS}`}
-              aria-label="Buscar por descripción"
+              aria-label="Buscar por descripción proveedor o tienda"
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
         </div>
       </FilterBar>
 
-      <div className="flex-1 min-h-0 overflow-auto rounded-lg border bg-white shadow-sm">
-        <table className="tabla-global w-full text-sm">
-          <thead>
+      <div
+        ref={tableContainerRef}
+        className="flex-1 min-h-0 overflow-hidden rounded-lg border bg-white shadow-sm flex flex-col"
+      >
+        <table className="tabla-global w-full text-xs table-fixed border-collapse">
+          <thead className="sticky top-0 z-10 bg-primary">
             <tr>
-              <th className="w-20">PROVEEDOR</th>
-              <th className="w-32">COD. EXT.</th>
-              <th className="min-w-[20rem]">DESCRIPCION</th>
-              <th className="w-32">PX COMPRA FINAL</th>
-              <th className="w-28">PX LISTA</th>
-              <th className="w-28">DESC. PROD.</th>
-              <th className="w-28">DESC. CANT.</th>
-              <th className="w-32">CX. APROX TRANSPORTE</th>
+              <th className="w-20 py-1 px-2 text-xs">PROVEEDOR</th>
+              <th className="w-28 py-1 px-2 text-xs">COD. EXT.</th>
+              <th className="min-w-0 py-1 px-2 text-xs">DESCRIPCION</th>
+              <th className="w-28 py-1 px-2 text-xs">PX COMPRA FINAL</th>
+              <th className="w-24 py-1 px-2 text-xs">PX LISTA</th>
+              <th className="w-20 py-1 px-2 text-xs">DESC. PROD.</th>
+              <th className="w-20 py-1 px-2 text-xs">DESC. CANT.</th>
+              <th className="w-24 py-1 px-2 text-xs">CX. APROX TRANSPORTE</th>
             </tr>
           </thead>
           <tbody>
             {filasPagina.map((fila) => (
               <tr key={fila.id}>
-                <td className="py-2 px-3 text-xs font-mono">
+                <td className="py-1 px-2 text-xs font-mono">
                   {fila.proveedor?.sufijo ?? "—"}
                 </td>
-                <td className="py-2 px-3 text-xs font-mono whitespace-nowrap">
+                <td className="py-1 px-2 text-xs font-mono whitespace-nowrap">
                   {fila.codExt}
                 </td>
-                <td className="py-2 px-3 text-xs font-bold">
-                  {fila.descripcionProveedor}
+                <td className="py-1 px-2 min-w-0 overflow-hidden align-top">
+                  <div className="text-xs font-bold truncate">
+                    {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor
+                      ? fila.descripcionTienda
+                      : fila.descripcionProveedor}
+                  </div>
+                  {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor && (
+                    <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                      {fila.descripcionProveedor}
+                    </div>
+                  )}
                 </td>
-                <td className="py-2 px-3 tabular-nums text-xs font-bold text-right whitespace-nowrap">
+                <td className="py-1 px-2 tabular-nums text-xs font-bold text-right whitespace-nowrap">
                   ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
                 </td>
-                <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   ${fmtPrecio(Number(fila.pxListaProveedor))}
                 </td>
-                <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   {fmtNumero(fila.dtoProducto)}%
                 </td>
-                <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   {fmtNumero(fila.dtoCantidad)}%
                 </td>
-                <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
+                <td className="py-1 px-2 tabular-nums text-xs text-right whitespace-nowrap">
                   {fmtNumero(fila.cxAproxTransporte)}%
                 </td>
               </tr>
@@ -186,7 +248,7 @@ export default function ListaPreciosTablaConFiltros({
             {filasPagina.length === 0 && (
               <tr>
                 <td
-                  className="py-6 px-3 text-xs text-muted-foreground text-center"
+                  className="py-4 px-2 text-xs text-muted-foreground text-center"
                   colSpan={8}
                 >
                   {filas.length === 0
@@ -198,13 +260,12 @@ export default function ListaPreciosTablaConFiltros({
           </tbody>
         </table>
       </div>
-      {filteredFilas.length > FILAS_POR_PAGINA && (
-        <div className="flex items-center justify-between gap-2 py-2 px-1 border-t bg-muted/30 rounded-b-lg shrink-0">
-          <span className="text-sm text-muted-foreground tabular-nums">
-            Mostrando {(paginaActual - 1) * FILAS_POR_PAGINA + 1}–
-            {Math.min(paginaActual * FILAS_POR_PAGINA, filteredFilas.length)} de{" "}
-            {filteredFilas.length.toLocaleString()}
-          </span>
+      <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-muted/30 rounded-b-lg shrink-0">
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {filteredFilas.length === 0
+            ? "Mostrando 0 de 0"
+            : `Mostrando ${(paginaActual - 1) * rowsPerPage + 1}–${Math.min(paginaActual * rowsPerPage, filteredFilas.length)} de ${filteredFilas.length.toLocaleString()}`}
+        </span>
           <div className="flex items-center gap-1">
             <Button
               type="button"
@@ -233,7 +294,6 @@ export default function ListaPreciosTablaConFiltros({
             </Button>
           </div>
         </div>
-      )}
     </div>
   );
 }

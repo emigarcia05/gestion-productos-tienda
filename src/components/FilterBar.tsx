@@ -1,6 +1,5 @@
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -86,20 +85,15 @@ export function LimpiarFiltrosButton({
 }) {
   if (!visible) return null;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="primaryIcon"
-          size="icon-lg"
-          onClick={onClick}
-          className="shrink-0"
-          aria-label="Limpiar todos los filtros"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>Limpiar todos los filtros</TooltipContent>
-    </Tooltip>
+    <Button
+      type="button"
+      variant="primaryIcon"
+      size="icon-lg"
+      onClick={onClick}
+      className="shrink-0"
+      aria-label="Limpiar todos los filtros"
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
   );
 }
