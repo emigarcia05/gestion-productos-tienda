@@ -28,7 +28,8 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
 
     startTransition(async () => {
       const result = isEdit
@@ -36,7 +37,8 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
         : await crearProveedor(formData);
 
       if (result.ok) {
-        toast.success(isEdit ? "Proveedor actualizado." : "Proveedor creado.");
+        toast.success(isEdit ? "Proveedor actualizado." : "Proveedor guardado con éxito.");
+        if (!isEdit) form.reset();
         onSuccess?.();
       } else {
         toast.error(result.error);

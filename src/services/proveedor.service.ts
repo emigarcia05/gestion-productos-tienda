@@ -1,7 +1,7 @@
 /**
- * Servicio de Proveedores – MODO FRONTEND ONLY (sin base de datos).
- * Datos estáticos para mantener la UI intacta hasta definir nueva arquitectura de BD.
+ * Servicio de Proveedores – Conexión a Neon/PostgreSQL vía Prisma.
  */
+import { prisma } from "@/lib/prisma";
 
 export interface CreateProveedorInput {
   nombre: string;
@@ -21,26 +21,36 @@ export const PROVEEDOR_ERROR = {
   SUFIJO_DUPLICADO: "Ya existe un proveedor con ese sufijo.",
 } as const;
 
-/** Lista estática de proveedores para la UI (coherente con productos mock en actions). */
-const MOCK_PROVEEDORES: ProveedorListItem[] = [
-  { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM", _count: { productosProveedor: 2 } },
-  { id: "mock-prov-2", nombre: "Proveedor Ejemplo", codigoUnico: "EJM", sufijo: "EJM", _count: { productosProveedor: 0 } },
-];
-
 /**
- * Lista de proveedores (mock). Sin acceso a base de datos.
+ * Lista de proveedores desde la base de datos.
  */
 export async function getProveedores(): Promise<ProveedorListItem[]> {
-  return [...MOCK_PROVEEDORES];
+  const rows = await prisma.proveedor.findMany({
+    orderBy: { nombre: "asc" },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    codigoUnico: p.codigoUnico,
+    sufijo: p.sufijo,
+    _count: { productosProveedor: 0 },
+  }));
 }
 
 /**
- * Crear proveedor (mock). No persiste en BD; devuelve éxito para que el formulario no falle.
+ * Crea un proveedor en la base de datos.
+ * codigoUnico se genera a partir del sufijo (normalizado en mayúsculas).
  */
 export async function createProveedor(
   input: CreateProveedorInput
 ): Promise<{ id: string; codigoUnico: string }> {
   const sufijoNorm = input.sufijo.trim().toUpperCase();
-  const id = `mock-${Date.now()}`;
-  return { id, codigoUnico: sufijoNorm || id };
+  const proveedor = await prisma.proveedor.create({
+    data: {
+      nombre: input.nombre.trim(),
+      sufijo: sufijoNorm,
+      codigoUnico: sufijoNorm,
+    },
+  });
+  return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
 }

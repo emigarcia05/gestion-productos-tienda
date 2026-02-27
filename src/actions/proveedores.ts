@@ -75,7 +75,15 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     revalidatePath("/proveedores/lista");
     revalidatePath("/proveedores/gestion");
     return { ok: true, data: { id } };
-  } catch (e) {
+  } catch (e: unknown) {
+    const isPrisma = e && typeof e === "object" && "code" in e;
+    if (isPrisma && (e as { code: string }).code === "P2002") {
+      const target = (e as { meta?: { target?: string[] } }).meta?.target;
+      if (Array.isArray(target) && target.includes("sufijo"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.SUFIJO_DUPLICADO };
+      if (Array.isArray(target) && target.includes("nombre"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.NOMBRE_DUPLICADO };
+    }
     const message = e instanceof Error ? e.message : "Error al crear el proveedor.";
     return { ok: false, error: message };
   }
