@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
@@ -19,6 +21,8 @@ import FilterBar, {
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
+
+const FILAS_POR_PAGINA = 25;
 
 interface ProveedorOption {
   id: string;
@@ -49,6 +53,7 @@ export default function ListaPreciosTablaConFiltros({
 }: ListaPreciosTablaConFiltrosProps) {
   const [proveedorId, setProveedorId] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
+  const [paginaActual, setPaginaActual] = useState(1);
 
   const filteredFilas = useMemo(() => {
     let result = filas;
@@ -64,11 +69,31 @@ export default function ListaPreciosTablaConFiltros({
     return result;
   }, [filas, proveedorId, busqueda]);
 
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(filteredFilas.length / FILAS_POR_PAGINA)
+  );
+  const filasPagina = useMemo(() => {
+    const desde = (paginaActual - 1) * FILAS_POR_PAGINA;
+    return filteredFilas.slice(desde, desde + FILAS_POR_PAGINA);
+  }, [filteredFilas, paginaActual]);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [proveedorId, busqueda]);
+
+  useEffect(() => {
+    if (totalPaginas > 0 && paginaActual > totalPaginas) {
+      setPaginaActual(totalPaginas);
+    }
+  }, [totalPaginas, paginaActual]);
+
   const hayFiltros = !!proveedorId || !!busqueda.trim();
 
   function limpiarFiltros() {
     setProveedorId("");
     setBusqueda("");
+    setPaginaActual(1);
   }
 
   return (
@@ -82,7 +107,7 @@ export default function ListaPreciosTablaConFiltros({
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
                 <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                  <SelectValue placeholder="Proveedor" />
+                  <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Todos</SelectItem>
@@ -130,7 +155,7 @@ export default function ListaPreciosTablaConFiltros({
             </tr>
           </thead>
           <tbody>
-            {filteredFilas.map((fila) => (
+            {filasPagina.map((fila) => (
               <tr key={fila.id}>
                 <td className="py-2 px-3 text-xs font-mono">
                   {fila.proveedor?.sufijo ?? "—"}
@@ -158,7 +183,7 @@ export default function ListaPreciosTablaConFiltros({
                 </td>
               </tr>
             ))}
-            {filteredFilas.length === 0 && (
+            {filasPagina.length === 0 && (
               <tr>
                 <td
                   className="py-6 px-3 text-xs text-muted-foreground text-center"
@@ -173,6 +198,42 @@ export default function ListaPreciosTablaConFiltros({
           </tbody>
         </table>
       </div>
+      {filteredFilas.length > FILAS_POR_PAGINA && (
+        <div className="flex items-center justify-between gap-2 py-2 px-1 border-t bg-muted/30 rounded-b-lg shrink-0">
+          <span className="text-sm text-muted-foreground tabular-nums">
+            Mostrando {(paginaActual - 1) * FILAS_POR_PAGINA + 1}–
+            {Math.min(paginaActual * FILAS_POR_PAGINA, filteredFilas.length)} de{" "}
+            {filteredFilas.length.toLocaleString()}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+              disabled={paginaActual <= 1}
+              aria-label="Página anterior"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="text-sm font-medium min-w-[7rem] text-center tabular-nums">
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPaginaActual((p) => Math.min(totalPaginas, p + 1))
+              }
+              disabled={paginaActual >= totalPaginas}
+              aria-label="Página siguiente"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
