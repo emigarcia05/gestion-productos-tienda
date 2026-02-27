@@ -12,7 +12,10 @@ interface Props {
 
 export default function SectionHeader({ titulo, subtitulo, actions, compact }: Props) {
   return (
-    <header className={`shrink-0 w-full bg-white/80 px-6 pb-0 ${compact ? "pt-3" : "pt-5"}`}>
+    <header
+      data-deploy-check="2025"
+      className={`shrink-0 w-full bg-white/80 px-6 pb-0 border-t-4 border-t-amber-500 ${compact ? "pt-3" : "pt-5"}`}
+    >
       <div className={`flex flex-nowrap items-center justify-between gap-4 ${compact ? "mb-2" : "mb-8"}`}>
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-10 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
