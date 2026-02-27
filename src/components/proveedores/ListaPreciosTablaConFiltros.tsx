@@ -106,7 +106,7 @@ export default function ListaPreciosTablaConFiltros({
     <div className="flex flex-col h-full min-h-0 gap-0.5">
       <FilterBar className="gap-y-0.5 py-2">
         <FilterRowSelection>
-          <div className="grid grid-cols-5 gap-3 flex-1 min-w-0 items-center">
+          <div className="fila-filtros-5 grid grid-cols-5 gap-3 flex-1 min-w-0 items-center">
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
                 value={proveedorId || "none"}
@@ -143,7 +143,7 @@ export default function ListaPreciosTablaConFiltros({
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-          <span className={FILTER_COUNT_CLASS}>
+          <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
             {filteredFilas.length.toLocaleString()} producto
             {filteredFilas.length !== 1 ? "s" : ""}
           </span>

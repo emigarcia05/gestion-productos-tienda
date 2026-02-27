@@ -52,15 +52,62 @@
 
 /* Tema SaaS: fondo amplio, primario #0072BB, acentos #FFC107 solo críticos */
 :root {
-  --spacing: 0.25rem;
-  --radius: 0.5rem;
-  --font-weight-semibold: 600;
+  --font-geist-sans: "Geist", "Geist Fallback";
+  --font-geist-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-black: #000;
+  --color-white: #fff;
+  --container-xs: 20rem;
+  --container-sm: 24rem;
+  --container-md: 28rem;
+  --container-lg: 32rem;
+  --container-2xl: 42rem;
+  --container-7xl: 80rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: calc(1 / 0.75);
   --text-sm: 0.875rem;
-  --background: #f8fafc; /* slate-50 */
-  --foreground: #0f172a; /* slate-900 */
-  --card: #ffffff;
+  --text-sm--line-height: calc(1.25 / 0.875);
+  --text-base: 1rem;
+  --text-base--line-height: calc(1.5 / 1);
+  --text-lg: 1.125rem;
+  --text-lg--line-height: calc(1.75 / 1.125);
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: calc(2 / 1.5);
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: calc(2.25 / 1.875);
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-relaxed: 1.625;
+  --radius-xs: 0.125rem;
+  --radius: 0.5rem;
+  --radius-lg: var(--radius);
+  --animate-spin: spin 1s linear infinite;
+  --blur-sm: 8px;
+  --default-transition-duration: 0.15s;
+  --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --default-font-family: var(--font-geist-sans);
+  --default-mono-font-family: var(--font-geist-mono);
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+
+  --spacing: 0.25rem;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #fff;
   --card-foreground: #0f172a;
-  --popover: #ffffff;
+  --popover: #fff;
   --popover-foreground: #0f172a;
   --primary: #0072bb;
   --primary-foreground: #fff;
@@ -69,29 +116,53 @@
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --accent: #e0f2fe;
-  --accent-foreground: #0072BB;
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent-foreground: #0072bb;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #0072BB;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  /* Sidebar siempre azul marca (#0072BB); texto e iconos claros para contraste */
-  --sidebar: #0072BB;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #0072BB;
-  --sidebar-primary-foreground: #ffffff;
+  --ring: #0072bb;
+  --sidebar: #0072bb;
+  --sidebar-foreground: #fff;
+  --sidebar-primary: #0072bb;
+  --sidebar-primary-foreground: #fff;
   --sidebar-accent: rgba(255, 255, 255, 0.15);
-  --sidebar-accent-foreground: #ffffff;
+  --sidebar-accent-foreground: #fff;
   --sidebar-border: rgba(255, 255, 255, 0.2);
   --sidebar-ring: rgba(255, 255, 255, 0.3);
-  /* Indicadores de navegación en sidebar: amarillo de acento (#FFC107) para chevrones, línea jerárquica e ítem activo */
-  --sidebar-indicator: #FFC107;
-  /* Borde azul tenue de marca para Cards de listados (unifica con sidebar) */
+  --sidebar-indicator: #ffc107;
   --card-border: rgba(0, 114, 187, 0.25);
+  --destructive: lab(48.4493% 77.4328 61.5452);
+  --chart-1: lab(57.1026% 64.2584 89.8886);
+  --chart-2: lab(55.0223% -41.0774 -3.90277);
+  --chart-3: lab(30.372% -13.1853 -18.7887);
+  --chart-4: lab(80.1641% 16.6016 99.2089);
+  --chart-5: lab(72.7183% 31.8672 97.9407);
+  --brand: #0072bb;
+  --brand-fg: #fff;
+  --accent2: #ffc107;
+  --action: #3d96d0;
+  --color-sidebar-indicator: var(--sidebar-indicator);
+  --color-card-border: var(--card-border);
+  --color-red-500: lab(55.4814% 75.0732 48.8528);
+  --color-red-600: lab(48.4493% 77.4328 61.5452);
+  --color-amber-500: lab(72.7183% 31.8672 97.9407);
+  --color-emerald-500: lab(66.9756% -58.27 19.5419);
+  --color-emerald-600: lab(55.0481% -49.9246 15.93);
+  --color-blue-50: lab(96.492% -1.14644 -5.11479);
+  --color-blue-100: lab(92.0301% -2.24757 -11.6453);
+  --color-blue-500: lab(54.1736% 13.3369 -74.6839);
+  --color-slate-50: lab(98.1434% -0.369519 -1.05966);
+  --color-slate-100: lab(96.286% -0.852436 -2.46847);
+  --color-slate-200: lab(91.7353% -0.998765 -4.76968);
+  --color-slate-300: lab(84.7652% -1.94535 -7.93337);
+  --color-slate-400: lab(65.5349% -2.25151 -14.5072);
+  --color-slate-500: lab(48.0876% -2.03595 -16.5814);
+  --color-slate-600: lab(35.5623% -1.74978 -15.4316);
+  --color-slate-700: lab(26.9569% -1.47016 -15.6993);
+  --color-slate-900: lab(7.78673% 1.82345 -15.0537);
+  --color-slate-950: lab(1.76974% 1.32743 -9.28855);
+
+  --filtro-columnas: 5;
+  --filtro-gap: 0.75rem;
 }
 
 @layer base {
@@ -126,6 +197,10 @@
     table-layout: fixed;
     border-collapse: collapse;
   }
+  .tabla-gestion-compacta th,
+  .tabla-gestion-compacta td {
+    text-align: center;
+  }
   .tabla-gestion-compacta thead {
     position: sticky;
     top: 0;
@@ -133,7 +208,7 @@
     background-color: var(--primary);
   }
   .tabla-gestion-compacta thead th {
-    padding: 0 0.5rem;
+    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     font-weight: 700;
     text-align: center;
@@ -157,7 +232,7 @@
 
   /* Celdas de datos: text-xs, padding mínimo */
   .celda-datos {
-    padding: 0 0.5rem;
+    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     text-align: center;
     vertical-align: middle;
@@ -171,7 +246,7 @@
   }
   .celda-datos.celda-numero {
     font-variant-numeric: tabular-nums;
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
   }
 
@@ -200,21 +275,40 @@
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 
-  /* Input/select de filtro unificado (buscadores y selects) */
+  /* Input/select de filtro unificado (buscadores y selects) — variables y estilos unificados */
   .input-filtro-unificado {
-    width: 100%;
-    height: 2.5rem;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    outline: none;
+    outline-style: none;
+    -webkit-tap-highlight-color: transparent;
     min-height: 2.5rem;
+    height: calc(var(--spacing) * 10);
+    width: 100%;
+    min-width: 0;
+    padding-inline: calc(var(--spacing) * 3);
+    padding-block: calc(var(--spacing) * 1);
     padding-left: 0.75rem;
     padding-right: 0.75rem;
     font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
     font-weight: var(--font-weight-semibold);
     font-family: var(--font-sans);
     color: var(--foreground);
     background-color: var(--background);
     border: 1px solid var(--input);
-    border-radius: var(--radius);
-    transition: box-shadow 0.15s, border-color 0.15s;
+    border-style: solid;
+    border-radius: calc(var(--radius) - 2px);
+    border-color: var(--input);
+    transition-property: color, box-shadow, border-color;
+    transition-timing-function: var(--default-transition-timing-function);
+    transition-duration: var(--default-transition-duration);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
   .input-filtro-unificado::placeholder {
     color: var(--muted-foreground);
@@ -222,14 +316,24 @@
   }
   .input-filtro-unificado:focus-visible {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent);
   }
   button.input-filtro-unificado,
   [data-slot="select-trigger"].input-filtro-unificado {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  /* Contenedor de fila con 5 selects: ancho fijo por ítem para que entren 5 con padding */
+  .fila-filtros-5 {
+    --ancho-filtro-select: calc((100% - (var(--filtro-columnas) - 1) * var(--filtro-gap)) / var(--filtro-columnas));
+  }
+  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado {
+    width: var(--ancho-filtro-select) !important;
+    max-width: 100%;
   }
   button.input-filtro-unificado:focus-visible,
   [data-slot="select-trigger"].input-filtro-unificado:focus-visible {
