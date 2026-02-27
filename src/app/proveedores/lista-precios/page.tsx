@@ -34,12 +34,14 @@ export default async function ListaPreciosPage() {
           <table className="tabla-global w-full text-sm">
             <thead>
               <tr>
-                <th className="w-24">PROVEEDOR</th>
-                <th className="w-32">PX LISTA</th>
-                <th className="w-40">DESC. POR PRODUCTO</th>
-                <th className="w-44">DESC. POR CANTIDAD</th>
-                <th className="w-56">CX APROX. TRANSPORTE</th>
-                <th className="w-40">CX. COMPRA FINAL</th>
+                <th className="w-20">PROVEEDOR</th>
+                <th className="w-32">COD. EXT.</th>
+                <th className="min-w-[20rem]">DESCRIPCION</th>
+                <th className="w-28">PX LISTA</th>
+                <th className="w-28">DESC. PROD.</th>
+                <th className="w-28">DESC. CANT.</th>
+                <th className="w-32">CX. APROX TRANSPORTE</th>
+                <th className="w-32">PX COMPRA FINAL</th>
               </tr>
             </thead>
             <tbody>
@@ -48,26 +50,35 @@ export default async function ListaPreciosPage() {
                   <td className="py-2 px-3 text-xs font-mono">
                     {fila.proveedor?.sufijo ?? "—"}
                   </td>
-                  <td className="py-2 px-3 tabular-nums text-xs whitespace-nowrap">
+                  <td className="py-2 px-3 text-xs font-mono whitespace-nowrap">
+                    {fila.codExt}
+                  </td>
+                  <td className="py-2 px-3 text-xs">
+                    {fila.descripcionProveedor}
+                  </td>
+                  <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
                     ${fmtPrecio(Number(fila.pxListaProveedor))}
                   </td>
-                  <td className="py-2 px-3 tabular-nums text-xs whitespace-nowrap">
+                  <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
                     {fmtNumero(fila.dtoProducto)}%
                   </td>
-                  <td className="py-2 px-3 tabular-nums text-xs whitespace-nowrap">
+                  <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
                     {fmtNumero(fila.dtoCantidad)}%
                   </td>
-                  <td className="py-2 px-3 tabular-nums text-xs whitespace-nowrap">
+                  <td className="py-2 px-3 tabular-nums text-xs text-right whitespace-nowrap">
                     {fmtNumero(fila.cxAproxTransporte)}%
                   </td>
-                  <td className="py-2 px-3 tabular-nums text-xs font-bold whitespace-nowrap">
+                  <td className="py-2 px-3 tabular-nums text-xs font-bold text-right whitespace-nowrap">
                     ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
                   </td>
                 </tr>
               ))}
               {filas.length === 0 && (
                 <tr>
-                  <td className="py-6 px-3 text-xs text-muted-foreground text-center" colSpan={6}>
+                  <td
+                    className="py-6 px-3 text-xs text-muted-foreground text-center"
+                    colSpan={8}
+                  >
                     No hay datos de lista de precios para mostrar.
                   </td>
                 </tr>
