@@ -15,5 +15,47 @@ model Proveedor {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  listaPrecios ListaPrecioProveedor[]
+
   @@map("proveedores")
+}
+
+model ListaPrecioProveedor {
+  id                String   @id @default(uuid())
+  idProveedor       String   @map("id_proveedor")
+  codProdProveedor  String   @map("cod_prod_proveedor")
+  descripcionProveedor String  @map("descripcion_proveedor")
+  codExt            String  @map("cod_ext") @unique
+  pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
+  pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
+  dtoProducto       Int      @map("dto_producto") @default(0)
+  dtoCantidad       Int      @map("dto_cantidad") @default(0)
+  cxAproxTransporte Int      @map("cx_aprox_transporte") @default(0)
+  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+
+  @@unique([idProveedor, codProdProveedor])
+  @@map("lista_precios_proveedores")
+}
+
+// Alimentada solo por API externa. Frontend solo lectura; no usar create/update/delete desde UI.
+model ListaPrecioTienda {
+  id              String   @id @default(uuid())
+  codExterno      String   @unique @map("cod_externo")
+  codTienda       String   @map("cod_tienda")
+  rubro           String?
+  subRubro        String?  @map("sub_rubro")
+  marca           String?
+  proveedor       String?  // texto; cruce con proveedores: WHERE proveedores.nombre ILIKE proveedor
+  descripcionTienda String? @map("descripcion_tienda")
+  costoCompra     Decimal  @map("costo_compra") @db.Decimal(14, 4)
+  pxListaTienda   Decimal  @map("px_lista_tienda") @db.Decimal(14, 4)
+  stockMaipu      Int      @map("stock_maipu") @default(0)
+  stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
+  lastSync        DateTime @default(now()) @map("last_sync")
+
+  @@map("lista_precios_tienda")
 }

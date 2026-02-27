@@ -37,7 +37,7 @@ export default function CantidadPedidoModal({
   const [otraCantidad, setOtraCantidad] = useState("");
 
   useEffect(() => {
-    if (open && producto) setOtraCantidad("");
+    if (open && producto) queueMicrotask(() => setOtraCantidad(""));
   }, [open, producto]);
 
   const cantidadFinal =

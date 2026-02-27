@@ -35,11 +35,11 @@ export default function StockPageSyncGate({ children }: Props) {
     const desdeIndex = typeof window !== "undefined" && sessionStorage.getItem(STOCK_SYNC_JUST_DONE);
     if (desdeIndex) {
       sessionStorage.removeItem(STOCK_SYNC_JUST_DONE);
-      setShowModal(false);
+      queueMicrotask(() => setShowModal(false));
     } else {
-      setShowModal(true);
+      queueMicrotask(() => setShowModal(true));
     }
-    setListo(true);
+    queueMicrotask(() => setListo(true));
   }, []);
 
   if (!listo) return <>{children}</>;

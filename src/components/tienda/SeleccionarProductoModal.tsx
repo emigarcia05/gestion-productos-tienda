@@ -49,20 +49,22 @@ export default function SeleccionarProductoModal({
   }, [open]);
 
   // Limpiar al cerrar
-  useEffect(() => {
-    if (!open) {
-      setProveedorId("");
-      setQ("");
-      setResultados([]);
-      setClickedId(null);
-    }
-  }, [open]);
+  function limpiar() {
+    setProveedorId("");
+    setQ("");
+    setResultados([]);
+    setClickedId(null);
+  }
 
   // Búsqueda con debounce
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.trim().length < 2) { setResultados([]); return; }
-    setBuscando(true);
+    if (q.trim().length < 2) {
+      queueMicrotask(() => setResultados([]));
+      queueMicrotask(() => setBuscando(false));
+      return;
+    }
+    queueMicrotask(() => setBuscando(true));
     debounceRef.current = setTimeout(async () => {
       const result = await buscarProductos(q, excluirItemTiendaId, proveedorId || undefined);
       if (result.success) setResultados(result.data);
@@ -98,7 +100,15 @@ export default function SeleccionarProductoModal({
   const proveedorSeleccionado = proveedores.find((p) => p.id === proveedorId);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          limpiar();
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 pt-5 pb-3">
           <DialogTitle className="text-base font-semibold">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useImperativeHandle, forwardRef, useRef } from "react";
+import { useState, useMemo, useImperativeHandle, forwardRef, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -93,20 +93,20 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
     });
   }
 
-  const filtrados = useMemo(() => {
-    return data.items.filter((i) => {
-      if (q        && !i.descripcion.toLowerCase().includes(q.toLowerCase()) &&
-                      !i.codItem.toLowerCase().includes(q.toLowerCase())) return false;
-      if (marca    && i.marca    !== marca)    return false;
-      if (rubro    && i.rubro    !== rubro)    return false;
-      if (subRubro && i.subRubro !== subRubro) return false;
-      if (soloNegativo && i.stock >= 0)        return false;
-      return true;
-    });
-  }, [data.items, q, marca, rubro, subRubro, soloNegativo]);
+  const filtrados = data.items.filter((i) => {
+    if (q        && !i.descripcion.toLowerCase().includes(q.toLowerCase()) &&
+                    !i.codItem.toLowerCase().includes(q.toLowerCase())) return false;
+    if (marca    && i.marca    !== marca)    return false;
+    if (rubro    && i.rubro    !== rubro)    return false;
+    if (subRubro && i.subRubro !== subRubro) return false;
+    if (soloNegativo && i.stock >= 0)        return false;
+    return true;
+  });
 
   const handleImprimirRef = useRef(handleImprimir);
-  handleImprimirRef.current = handleImprimir;
+  useEffect(() => {
+    handleImprimirRef.current = handleImprimir;
+  }, [handleImprimir]);
   useImperativeHandle(ref, () => ({ openPrint: () => handleImprimirRef.current() }), []);
 
   const hayFiltros = !!(q || marca || rubro || subRubro || soloNegativo);

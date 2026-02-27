@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useImperativeHandle, forwardRef, useRef } from "react";
+import { useState, useMemo, useImperativeHandle, forwardRef, useRef, useEffect, useCallback } from "react";
 import { ArrowUp, ArrowDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
@@ -175,7 +175,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
     });
   }, [data.individual, filtroMarca, filtroRubro, filtroSubRubro]);
 
-  function agrupar(clave: "marca" | "rubro" | "subRubro"): GrupoFila[] {
+  const agrupar = useCallback((clave: "marca" | "rubro" | "subRubro"): GrupoFila[] => {
     const mapa = new Map<string, ItemAumento[]>();
     for (const item of itemsFiltrados) {
       const k = item[clave] ?? "Sin definir";
@@ -187,17 +187,19 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
       // Solo mostrar grupos que tengan al menos un producto con variación real
       .filter(({ items }) => items.some((i) => Math.abs(i.pctAumento) > 0.5))
       .sort((a, b) => promedio(b.items) - promedio(a.items));
-  }
+  }, [itemsFiltrados]);
 
-  const gruposMarca    = useMemo(() => agrupar("marca"),    [itemsFiltrados]);
-  const gruposRubro    = useMemo(() => agrupar("rubro"),    [itemsFiltrados]);
-  const gruposSubRubro = useMemo(() => agrupar("subRubro"), [itemsFiltrados]);
+  const gruposMarca    = useMemo(() => agrupar("marca"),    [agrupar]);
+  const gruposRubro    = useMemo(() => agrupar("rubro"),    [agrupar]);
+  const gruposSubRubro = useMemo(() => agrupar("subRubro"), [agrupar]);
 
   const conAumento   = itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5);
   const hayFiltros   = filtroMarca || filtroRubro || filtroSubRubro;
 
   const conAumentoRef = useRef(conAumento);
-  conAumentoRef.current = conAumento;
+  useEffect(() => {
+    conAumentoRef.current = conAumento;
+  }, [conAumento]);
   useImperativeHandle(ref, () => ({
     triggerExport() {
       exportarXLS(conAumentoRef.current);

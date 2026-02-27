@@ -81,7 +81,7 @@ export default function VincularModal({
   // Cargar vínculos al abrir (ServiceResult: success + data | error)
   useEffect(() => {
     if (!open) return;
-    setCargando(true);
+    queueMicrotask(() => setCargando(true));
     getVinculos(itemTiendaId).then((result) => {
       if (result.success) setVinculados(result.data);
       else toast.error(result.error);

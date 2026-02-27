@@ -12,6 +12,8 @@ export interface ItemListaPrecio {
   codigoExterno: string;
   codProdProv: string;
   descripcion: string;
+  /** Nuevo nombre de columna en BD: lista_precios_proveedores.descripcion_proveedor */
+  descripcionProveedor: string;
   precioLista: number;
   precioVentaSugerido: number;
   descuentoProducto: number;
@@ -65,6 +67,7 @@ export async function upsertListaPrecios(
         codigoExterno: fila.codigoExterno,
         codProdProv: fila.codProdProv,
         descripcion: fila.descripcion,
+        descripcionProveedor: fila.descripcion,
         precioLista: fila.precioLista,
         precioVentaSugerido: fila.precioVentaSugerido,
         descuentoProducto: DEFAULT_DESCUENTO,

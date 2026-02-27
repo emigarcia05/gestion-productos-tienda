@@ -1,10 +1,19 @@
 /**
  * Prueba de conexión a Neon/PostgreSQL.
- * Ejecutar: npx tsx scripts/test-connection.ts
- * (o: npm run db:test)
+ * Ejecutar: npm run db:test
  */
-import "dotenv/config";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 import { query } from "../src/lib/db";
+
+const envPath = join(__dirname, "..", ".env");
+if (existsSync(envPath)) {
+  const env = readFileSync(envPath, "utf-8");
+  for (const line of env.split("\n")) {
+    const m = line.match(/^([^#=]+)=(.*)$/);
+    if (m) process.env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, "");
+  }
+}
 
 async function main() {
   console.log("Probando conexión a la base de datos...");
