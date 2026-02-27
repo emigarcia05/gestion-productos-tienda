@@ -161,8 +161,14 @@
   --color-slate-900: lab(7.78673% 1.82345 -15.0537);
   --color-slate-950: lab(1.76974% 1.32743 -9.28855);
 
+  /* Fila de filtros desplegables: 5 por fila, ancho fijo; desplegar solo hacia abajo (side="bottom" en SelectContent) */
   --filtro-columnas: 5;
   --filtro-gap: 0.75rem;
+  --filtro-select-side: bottom;
+  /* Contenedor de filtros: separación entre filas y padding vertical */
+  --filtros-gap-y: 0.75rem;
+  --filtros-py: 0.75rem;
+  --filtros-gap-x: 0.875rem;
 }
 
 @layer base {
@@ -208,7 +214,7 @@
     background-color: var(--primary);
   }
   .tabla-gestion-compacta thead th {
-    padding: 0.25rem 0.5rem;
+    padding: 0.375rem 0.625rem;
     font-size: 0.75rem;
     font-weight: 700;
     text-align: center;
@@ -218,7 +224,10 @@
   }
   .tabla-gestion-compacta tbody tr {
     border-bottom: 1px solid var(--border);
-    transition: background-color 0.15s;
+    transition: background-color 0.2s ease;
+  }
+  .tabla-gestion-compacta tbody tr td {
+    transition: font-size 0.2s ease;
   }
   .tabla-gestion-compacta tbody tr:nth-child(odd) {
     background-color: var(--card);
@@ -227,12 +236,15 @@
     background-color: rgba(59, 130, 246, 0.03);
   }
   .tabla-gestion-compacta tbody tr:hover {
-    background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+    background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+  }
+  .tabla-gestion-compacta tbody tr:hover td {
+    font-size: var(--text-sm);
   }
 
-  /* Celdas de datos: text-xs, padding mínimo */
+  /* Celdas de datos: text-xs, padding un poco más generoso */
   .celda-datos {
-    padding: 0.25rem 0.5rem;
+    padding: 0.375rem 0.625rem;
     font-size: 0.75rem;
     text-align: center;
     vertical-align: middle;
@@ -327,23 +339,66 @@
     min-width: 0;
     box-sizing: border-box;
   }
-  /* Contenedor de fila con 5 selects: ancho fijo por ítem para que entren 5 con padding */
+  /* ─── Fila de filtros desplegables: 5 por fila, ancho fijo (sin depender del texto) ───
+   * Usar clase .fila-filtros-5 en el contenedor de la primera fila (ej. div con grid grid-cols-5 gap-3).
+   * Cada trigger con .input-filtro-unificado tendrá ancho fijo para que entren 5.
+   */
   .fila-filtros-5 {
     --ancho-filtro-select: calc((100% - (var(--filtro-columnas) - 1) * var(--filtro-gap)) / var(--filtro-columnas));
   }
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado {
     width: var(--ancho-filtro-select) !important;
-    max-width: 100%;
+    min-width: var(--ancho-filtro-select) !important;
+    max-width: var(--ancho-filtro-select) !important;
+    overflow: hidden;
+  }
+  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  /* Trigger de filtro: mismo aspecto que el input de descripción (fondo, borde, tipografía) */
+  button.input-filtro-unificado,
+  [data-slot="select-trigger"].input-filtro-unificado {
+    background-color: var(--background) !important;
+    border-color: var(--input) !important;
+    color: var(--foreground) !important;
   }
   button.input-filtro-unificado:focus-visible,
   [data-slot="select-trigger"].input-filtro-unificado:focus-visible {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
+    border-color: var(--ring) !important;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent);
   }
   button.input-filtro-unificado svg,
   [data-slot="select-trigger"].input-filtro-unificado svg {
     color: var(--muted-foreground);
+    flex-shrink: 0;
+  }
+
+  /* ─── Menú desplegable de filtros: mismo ancho que el trigger, solo hacia abajo ───
+   * Usar clase .select-content-filtro en SelectContent.
+   * Para que se abra solo hacia abajo: usar position="popper" side="bottom" align="start" en el componente.
+   */
+  .select-content-filtro {
+    width: var(--radix-select-trigger-width) !important;
+    min-width: var(--radix-select-trigger-width) !important;
+    max-width: var(--radix-select-trigger-width) !important;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+    background-color: var(--popover);
+  }
+
+  /* Contenedor de filtros: más separación entre desplegables, input y botones (variables en :root) */
+  .filtros-contenedor {
+    row-gap: var(--filtros-gap-y) !important;
+    padding-top: var(--filtros-py) !important;
+    padding-bottom: var(--filtros-py) !important;
+  }
+  .filtros-contenedor > div {
+    gap: var(--filtros-gap-x) !important;
   }
 }
 
@@ -517,17 +572,6 @@ button.input-filtro-custom svg,
 .input-filtro-custom [data-placeholder] {
   color: var(--muted-foreground);
   font-weight: 700;
-}
-
-/* ─── Menú desplegable de filtros (#filtro-proveedor y .input-filtro-custom) ─
- * Apertura siempre hacia abajo, mismo ancho que el trigger, alineado al borde izquierdo.
- */
-.select-content-filtro {
-  width: var(--radix-select-trigger-width) !important;
-  min-width: var(--radix-select-trigger-width) !important;
-  max-width: var(--radix-select-trigger-width);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */
