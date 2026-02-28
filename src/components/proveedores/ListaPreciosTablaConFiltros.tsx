@@ -30,7 +30,7 @@ const HEADER_HEIGHT_PX = 16;
 interface ProveedorOption {
   id: string;
   nombre: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface ListaPreciosTablaConFiltrosProps {
@@ -124,7 +124,7 @@ export default function ListaPreciosTablaConFiltros({
                   <SelectItem value="none">PROVEEDOR</SelectItem>
                   {proveedores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      [{p.sufijo}] {p.nombre}
+                      [{p.prefijo}] {p.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -168,7 +168,7 @@ export default function ListaPreciosTablaConFiltros({
             {filasPagina.map((fila) => (
               <tr key={fila.id}>
                 <td className="celda-datos celda-mono">
-                  {fila.proveedor?.sufijo ?? "—"}
+                  {fila.proveedor?.prefijo ?? "—"}
                 </td>
                 <td className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}

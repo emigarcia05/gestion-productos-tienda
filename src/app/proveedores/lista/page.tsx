@@ -41,7 +41,7 @@ export default async function ListaProveedoresPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Proveedor</TableHead>
-                  <TableHead>Sufijo</TableHead>
+                  <TableHead>Prefijo</TableHead>
                   <TableHead>Código</TableHead>
                   <TableHead>Productos</TableHead>
                 </TableRow>
@@ -54,7 +54,7 @@ export default async function ListaProveedoresPage() {
                         {prov.nombre}
                       </Link>
                     </TableCell>
-                    <TableCell>{prov.sufijo}</TableCell>
+                    <TableCell>{prov.prefijo}</TableCell>
                     <TableCell className="font-mono text-xs">{prov.codigoUnico}</TableCell>
                     <TableCell>{prov._count.productosProveedor}</TableCell>
                   </TableRow>

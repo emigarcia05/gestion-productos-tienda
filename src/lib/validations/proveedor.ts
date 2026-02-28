@@ -6,11 +6,11 @@ export const createProveedorSchema = z.object({
     .min(1, "El nombre es obligatorio.")
     .transform((s) => s.trim())
     .refine((s) => s.length >= 2, "El nombre debe tener al menos 2 caracteres."),
-  sufijo: z
+  prefijo: z
     .string()
-    .min(1, "El sufijo es obligatorio.")
+    .min(1, "El prefijo es obligatorio.")
     .transform((s) => s.trim().toUpperCase())
-    .refine((s) => /^[A-Z]{3}$/.test(s), "El sufijo debe tener exactamente 3 letras (A-Z)."),
+    .refine((s) => /^[A-Z]{3}$/.test(s), "El prefijo debe tener exactamente 3 letras (A-Z)."),
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;

@@ -13,8 +13,8 @@ import {
 // ─── MOCK: sin Prisma; respuestas de prueba ─────────────────────────────────
 
 const MOCK_PROVEEDORES = [
-  { id: "mock-prov-1", nombre: "Proveedor A", sufijo: "PVA" },
-  { id: "mock-prov-2", nombre: "Proveedor B", sufijo: "PVB" },
+  { id: "mock-prov-1", nombre: "Proveedor A", prefijo: "PVA" },
+  { id: "mock-prov-2", nombre: "Proveedor B", prefijo: "PVB" },
 ];
 
 export async function getVinculos(itemTiendaId: string): Promise<ServiceResult<ProductoCompleto[]>> {

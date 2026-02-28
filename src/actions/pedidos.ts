@@ -3,8 +3,8 @@
 // ─── MOCK: datos para página Pedido Urgente ─────────────────────────────────
 
 const MOCK_PROVEEDORES_PEDIDO = [
-  { id: "mock-prov-1", nombre: "Proveedor Demo", sufijo: "DEM" },
-  { id: "mock-prov-2", nombre: "Otro Proveedor", sufijo: "OTR" },
+  { id: "mock-prov-1", nombre: "Proveedor Demo", prefijo: "DEM" },
+  { id: "mock-prov-2", nombre: "Otro Proveedor", prefijo: "OTR" },
 ];
 
 const MOCK_PRODUCTOS_PEDIDO = [
@@ -16,7 +16,7 @@ const MOCK_PRODUCTOS_PEDIDO = [
     precioLista: 100,
     precioVentaSugerido: 120,
     proveedorId: "mock-prov-1",
-    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM" },
+    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", prefijo: "DEM" },
   },
   {
     id: "mock-prod-2",
@@ -26,7 +26,7 @@ const MOCK_PRODUCTOS_PEDIDO = [
     precioLista: 200,
     precioVentaSugerido: 240,
     proveedorId: "mock-prov-1",
-    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM" },
+    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", prefijo: "DEM" },
   },
 ];
 

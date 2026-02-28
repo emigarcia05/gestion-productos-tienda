@@ -1,6 +1,7 @@
 /**
  * Sincronización de lista_precios_tienda desde la API DUX ERP.
- * Loop paginado (50 ítems por petición), mapeo, upsert por lotes y logs de progreso.
+ * Fase 1: bucle paginado (50 ítems por petición) acumulando todos en memoria.
+ * Fase 2: bulk upsert en Neon por chunks de 500 (cod_ext como conflicto) para evitar timeout.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -10,11 +11,14 @@ import {
   type ItemDux,
 } from "@/lib/duxApi";
 
-/** Pausa entre peticiones para evitar 429 Too Many Requests (configurable por env). */
+/** Pausa entre peticiones a la API para evitar 429 Too Many Requests (configurable por env). */
 const DELAY_MS = Number(process.env.DUX_SYNC_DELAY_MS) || 4000;
 const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 
-/** Segundos aproximados por lote de 50 ítems (delay + petición + DB), para estimar tiempo restante. */
+/** Tamaño de cada chunk al persistir en Neon (evitar timeout). */
+const CHUNK_PERSIST_SIZE = 500;
+
+/** Segundos aproximados por lote de 50 ítems (delay + petición), para estimar tiempo restante. */
 export const SYNC_SECONDS_PER_BATCH = DELAY_MS / 1000 + 1.5;
 
 export interface SyncListaPrecioTiendaResult {
@@ -26,10 +30,12 @@ export interface SyncListaPrecioTiendaResult {
   errores: string[];
 }
 
-function itemDuxToRecord(item: ItemDux) {
-  const codExterno = (item.codigoExterno ?? item.codItem).trim() || item.codItem;
+type RecordTienda = ReturnType<typeof itemDuxToRecord>;
+
+function itemDuxToRecord(item: ItemDux): RecordTienda {
+  const codExt = (item.codigoExterno ?? item.codItem).trim() || item.codItem;
   return {
-    codExterno,
+    codExt,
     codTienda: COD_TIENDA,
     rubro: item.rubro ?? null,
     subRubro: item.subRubro ?? null,
@@ -49,21 +55,24 @@ export interface SyncProgressCallback {
 
 /**
  * Sincroniza productos desde la API DUX hacia lista_precios_tienda.
- * Bucle: consultar (50) -> mapear -> upsert en lote -> delay -> repetir hasta no haber más.
- * Si se pasa onProgress, se invoca en cada iteración con (procesados, total).
+ * 1) Acumula todos los productos en memoria (array) recorriendo la API de 50 en 50.
+ * 2) Al finalizar el bucle, persiste en Neon por chunks de 500 (ON CONFLICT cod_ext DO UPDATE).
+ * totalProcesados = largo del array acumulado.
  */
 export async function syncListaPrecioTiendaFromDux(
   options?: SyncProgressCallback
 ): Promise<SyncListaPrecioTiendaResult> {
   const inicioMs = Date.now();
-  let offset = 0;
-  let totalApi = 0;
-  let totalProcesados = 0;
   const errores: string[] = [];
   const onProgress = options?.onProgress;
 
+  const todosLosProductos: RecordTienda[] = [];
+  let offset = 0;
+  let totalApi = 0;
+
   const countBefore = await prisma.listaPrecioTienda.count();
 
+  // ─── Fase 1: recorrer API y acumular en memoria (sin guardar en DB) ───
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const { results, total, hasMore } = await fetchItemsPage(offset, DUX_API_PAGE_LIMIT);
@@ -71,22 +80,33 @@ export async function syncListaPrecioTiendaFromDux(
     if (total > 0 && totalApi === 0) totalApi = total;
     if (results.length === 0) break;
 
-    const procesadosHastaAhora = offset + results.length;
+    const batch = results.map(itemDuxToRecord).filter((r) => r.codExt);
+    todosLosProductos.push(...batch);
+
+    const procesadosHastaAhora = todosLosProductos.length;
     if (onProgress && totalApi > 0) onProgress(procesadosHastaAhora, totalApi);
-    const pct =
-      totalApi > 0 ? Math.round((procesadosHastaAhora / totalApi) * 100) : 0;
+    const pct = totalApi > 0 ? Math.round((procesadosHastaAhora / totalApi) * 100) : 0;
     console.log(
       `Procesando offset ${offset} de un total de ${totalApi}... (${pct}% completado)`
     );
 
-    const batch = results.map(itemDuxToRecord).filter((r) => r.codExterno);
+    if (!hasMore || results.length === 0) break;
 
-    if (batch.length > 0) {
+    offset += DUX_API_PAGE_LIMIT;
+    await new Promise((r) => setTimeout(r, DELAY_MS));
+  }
+
+  const totalSincronizados = todosLosProductos.length;
+
+  // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
+  if (totalSincronizados > 0) {
+    for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
+      const chunk = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
       try {
         await prisma.$transaction(
-          batch.map((row) =>
+          chunk.map((row) =>
             prisma.listaPrecioTienda.upsert({
-              where: { codExterno: row.codExterno },
+              where: { codExt: row.codExt },
               create: {
                 ...row,
                 costoCompra: row.costoCompra,
@@ -110,29 +130,26 @@ export async function syncListaPrecioTiendaFromDux(
             })
           )
         );
-        totalProcesados += batch.length;
+        console.log(
+          `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${i + chunk.length}/${totalSincronizados})`
+        );
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        errores.push(`Offset ${offset}: ${msg}`);
-        console.error(`Error en lote offset ${offset}:`, msg);
+        errores.push(`Chunk offset ${i}: ${msg}`);
+        console.error(`Error persistiendo chunk en offset ${i}:`, msg);
       }
     }
-
-    if (!hasMore || results.length === 0) break;
-
-    offset += DUX_API_PAGE_LIMIT;
-    await new Promise((r) => setTimeout(r, DELAY_MS));
   }
 
   const duracionMs = Date.now() - inicioMs;
   const countAfter = await prisma.listaPrecioTienda.count();
   const creados = Math.max(0, countAfter - countBefore);
-  const actualizados = Math.max(0, totalProcesados - creados);
+  const actualizados = Math.max(0, totalSincronizados - creados);
 
   return {
     creados,
     actualizados,
-    totalProcesados,
+    totalProcesados: totalSincronizados,
     totalApi,
     duracionMs,
     errores,

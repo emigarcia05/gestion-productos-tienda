@@ -15,7 +15,7 @@ import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 interface Proveedor {
   id: string;
   nombre: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface Props {
@@ -134,7 +134,7 @@ export default function AccionMasivaModal({
                   >
                     <option value="">Seleccionar proveedor...</option>
                     {proveedores.map((p) => (
-                      <option key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</option>
+                      <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
                     ))}
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -165,8 +165,8 @@ export default function AccionMasivaModal({
                   <Filter className="h-3 w-3" />
                   <span>
                     {usarFiltroQ && hayFiltroQ
-                      ? <>Afectará aprox. <strong className="text-foreground">{totalFiltrado}</strong> productos filtrados de [{proveedorNombre?.sufijo}]</>
-                      : <>Afectará <strong className="text-foreground">todos</strong> los productos de [{proveedorNombre?.sufijo}]</>
+                      ? <>Afectará aprox. <strong className="text-foreground">{totalFiltrado}</strong> productos filtrados de [{proveedorNombre?.prefijo}]</>
+                      : <>Afectará <strong className="text-foreground">todos</strong> los productos de [{proveedorNombre?.prefijo}]</>
                     }
                   </span>
                 </div>

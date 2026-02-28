@@ -10,7 +10,7 @@ datasource db {
 model Proveedor {
   id          String   @id @default(cuid())
   nombre      String   @unique
-  sufijo      String   @unique
+  prefijo     String   @unique
   codigoUnico String   @map("codigo_unico")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -44,7 +44,7 @@ model ListaPrecioProveedor {
 // Alimentada solo por API externa. Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
   id              String   @id @default(uuid())
-  codExterno      String   @unique @map("cod_externo")
+  codExt          String   @unique @map("cod_ext")
   codTienda       String   @map("cod_tienda")
   rubro           String?
   subRubro        String?  @map("sub_rubro")

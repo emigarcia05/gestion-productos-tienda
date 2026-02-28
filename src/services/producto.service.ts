@@ -4,7 +4,7 @@
 import type { ServiceResult } from "@/types";
 import type { ProductoCompleto } from "@/types";
 
-const MOCK_PROVEEDOR = { id: "mock-prov-1", nombre: "Proveedor Demo", sufijo: "DEM" };
+const MOCK_PROVEEDOR = { id: "mock-prov-1", nombre: "Proveedor Demo", prefijo: "DEM" };
 
 function mockProducto(overrides?: Partial<ProductoCompleto>): ProductoCompleto {
   return {

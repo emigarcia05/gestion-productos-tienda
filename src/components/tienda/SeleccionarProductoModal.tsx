@@ -17,10 +17,10 @@ type ProductoConProveedor = {
   codProdProv: string;
   descripcion: string;
   precioLista: number;
-  proveedor: { nombre: string; sufijo: string };
+  proveedor: { nombre: string; prefijo: string };
 };
 
-type ProveedorSimple = { id: string; nombre: string; sufijo: string };
+type ProveedorSimple = { id: string; nombre: string; prefijo: string };
 
 interface Props {
   open: boolean;
@@ -131,7 +131,7 @@ export default function SeleccionarProductoModal({
             >
               <option value="">Todos los proveedores</option>
               {proveedores.map((p) => (
-                <option key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</option>
+                <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
               ))}
             </select>
           </div>
@@ -145,7 +145,7 @@ export default function SeleccionarProductoModal({
               onChange={(e) => setQ(e.target.value)}
               placeholder={
                 proveedorSeleccionado
-                  ? `Buscar en [${proveedorSeleccionado.sufijo}] ${proveedorSeleccionado.nombre}...`
+                  ? `Buscar en [${proveedorSeleccionado.prefijo}] ${proveedorSeleccionado.nombre}...`
                   : "Buscar por código o descripción..."
               }
               className="w-full px-3 pr-7 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
@@ -196,7 +196,7 @@ export default function SeleccionarProductoModal({
                     >
                       <td className="py-2.5 px-3 text-center">
                         <Badge variant={seleccionado ? "default" : "secondary"} className="font-mono text-xs">
-                          {prod.proveedor.sufijo}
+                          {prod.proveedor.prefijo}
                         </Badge>
                       </td>
                       <td className="py-2.5 px-3 text-center">

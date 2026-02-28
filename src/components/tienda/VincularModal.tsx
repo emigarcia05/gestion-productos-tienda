@@ -27,7 +27,7 @@ type ProductoConProveedor = {
   descuentoProducto: number;
   descuentoCantidad: number;
   cxTransporte: number;
-  proveedor: { nombre: string; sufijo: string };
+  proveedor: { nombre: string; prefijo: string };
 };
 
 
@@ -130,7 +130,7 @@ export default function VincularModal({
   }
 
   // Llamado desde SeleccionarProductoModal al hacer doble clic
-  async function handleSeleccionar(producto: { id: string; codigoExterno: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; sufijo: string } }) {
+  async function handleSeleccionar(producto: { id: string; codigoExterno: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; prefijo: string } }) {
     setAbrirSelector(false);
     startTransition(async () => {
       const res = await vincularProducto(itemTiendaId, producto.id);
@@ -215,7 +215,7 @@ export default function VincularModal({
                       {/* Fila 1: badge + código + descripción completa */}
                       <div className="flex items-start gap-2">
                         <Badge variant="secondary" className="font-mono text-xs shrink-0 mt-0.5">
-                          {prod.proveedor.sufijo}
+                          {prod.proveedor.prefijo}
                         </Badge>
                         <code className="text-xs text-muted-foreground shrink-0 mt-0.5">{prod.codigoExterno}</code>
                         <span className="text-xs leading-relaxed">{prod.descripcion}</span>

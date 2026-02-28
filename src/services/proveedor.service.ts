@@ -5,20 +5,20 @@ import { prisma } from "@/lib/prisma";
 
 export interface CreateProveedorInput {
   nombre: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 export interface ProveedorListItem {
   id: string;
   nombre: string;
   codigoUnico: string;
-  sufijo: string;
+  prefijo: string;
   _count: { productosProveedor: number };
 }
 
 export const PROVEEDOR_ERROR = {
   NOMBRE_DUPLICADO: "Ya existe un proveedor con ese nombre.",
-  SUFIJO_DUPLICADO: "Ya existe un proveedor con ese sufijo.",
+  PREFIJO_DUPLICADO: "Ya existe un proveedor con ese prefijo.",
 } as const;
 
 /**
@@ -32,24 +32,24 @@ export async function getProveedores(): Promise<ProveedorListItem[]> {
     id: p.id,
     nombre: p.nombre,
     codigoUnico: p.codigoUnico,
-    sufijo: p.sufijo,
+    prefijo: p.prefijo,
     _count: { productosProveedor: 0 },
   }));
 }
 
 /**
  * Crea un proveedor en la base de datos.
- * codigoUnico se genera a partir del sufijo (normalizado en mayúsculas).
+ * codigoUnico se genera a partir del prefijo (normalizado en mayúsculas).
  */
 export async function createProveedor(
   input: CreateProveedorInput
 ): Promise<{ id: string; codigoUnico: string }> {
-  const sufijoNorm = input.sufijo.trim().toUpperCase();
+  const prefijoNorm = input.prefijo.trim().toUpperCase();
   const proveedor = await prisma.proveedor.create({
     data: {
       nombre: input.nombre.trim(),
-      sufijo: sufijoNorm,
-      codigoUnico: sufijoNorm,
+      prefijo: prefijoNorm,
+      codigoUnico: prefijoNorm,
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };

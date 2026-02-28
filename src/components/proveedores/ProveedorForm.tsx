@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
 interface Props {
-  proveedor?: { id: string; nombre: string; sufijo: string };
+  proveedor?: { id: string; nombre: string; prefijo: string };
   onSuccess?: () => void;
 }
 
@@ -62,17 +62,17 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="sufijo">
-          Sufijo{" "}
+        <Label htmlFor="prefijo">
+          Prefijo{" "}
           <span className="text-muted-foreground font-normal text-xs">
             (se usará como prefijo del código externo)
           </span>
         </Label>
         <Input
-          id="sufijo"
-          name="sufijo"
+          id="prefijo"
+          name="prefijo"
           placeholder="Ej: PIN"
-          defaultValue={proveedor?.sufijo ?? ""}
+          defaultValue={proveedor?.prefijo ?? ""}
           required
           minLength={3}
           maxLength={3}

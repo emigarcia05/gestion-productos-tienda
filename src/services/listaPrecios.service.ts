@@ -19,7 +19,7 @@ export interface FilaListaPrecioParaCliente {
   dtoCantidad: number;
   cxAproxTransporte: number;
   pxCompraFinal: number | null;
-  proveedor: { id: string; sufijo: string } | null;
+  proveedor: { id: string; prefijo: string } | null;
 }
 
 /**
@@ -33,14 +33,14 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
       orderBy: { codExt: "asc" },
     }),
     prisma.listaPrecioTienda.findMany({
-      select: { codExterno: true, descripcionTienda: true },
+      select: { codExt: true, descripcionTienda: true },
     }),
   ]);
 
   const descripcionPorCodExt = new Map(
     tiendaRows
       .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
-      .map((t) => [t.codExterno, t.descripcionTienda as string])
+      .map((t) => [t.codExt, t.descripcionTienda as string])
   );
 
   return filas.map((f) => ({
@@ -54,7 +54,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     cxAproxTransporte: f.cxAproxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor
-      ? { id: f.proveedor.id, sufijo: f.proveedor.sufijo }
+      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo }
       : null,
   }));
 }
@@ -72,7 +72,7 @@ export interface UpsertListaPreciosResult {
  */
 export async function upsertListaPrecios(
   proveedorId: string,
-  sufijo: string,
+  prefijo: string,
   filas: FilaListaPrecio[]
 ): Promise<UpsertListaPreciosResult> {
   let creados = 0;
@@ -81,7 +81,7 @@ export async function upsertListaPrecios(
 
   for (let i = 0; i < filas.length; i++) {
     const fila = filas[i];
-    const codExt = buildCodExt(sufijo, fila.codProdProv);
+    const codExt = buildCodExt(prefijo, fila.codProdProv);
 
     try {
       const existente = await prisma.listaPrecioProveedor.findUnique({

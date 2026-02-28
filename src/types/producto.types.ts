@@ -5,7 +5,7 @@
 export interface ProveedorResumen {
   id: string;
   nombre: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 export interface ProductoCompleto {

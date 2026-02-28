@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 interface Proveedor {
   id: string;
   nombre: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface Props {
@@ -46,7 +46,7 @@ export default function SelectorProveedor({
         <option value="">Todos los proveedores</option>
         {proveedores.map((p) => (
           <option key={p.id} value={p.id}>
-            [{p.sufijo}] {p.nombre}
+            [{p.prefijo}] {p.nombre}
           </option>
         ))}
       </select>

@@ -13,14 +13,14 @@ const MOCK_PRODUCTOS = [
     id: "mock-prod-1", codigoExterno: "DEM-001", codProdProv: "001", descripcion: "Producto ejemplo 1",
     precioLista: 100, precioVentaSugerido: 120, descuentoProducto: 0, descuentoCantidad: 0, cxTransporte: 0,
     disponible: true, proveedorId: "mock-prov-1",
-    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM" },
+    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", prefijo: "DEM" },
     createdAt: new Date(), updatedAt: new Date(),
   },
   {
     id: "mock-prod-2", codigoExterno: "DEM-002", codProdProv: "002", descripcion: "Producto ejemplo 2",
     precioLista: 200, precioVentaSugerido: 240, descuentoProducto: 5, descuentoCantidad: 0, cxTransporte: 2,
     disponible: true, proveedorId: "mock-prov-1",
-    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", sufijo: "DEM" },
+    proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", prefijo: "DEM" },
     createdAt: new Date(), updatedAt: new Date(),
   },
 ];
@@ -60,12 +60,12 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
 
   const raw = {
     nombre: (formData.get("nombre") as string) ?? "",
-    sufijo: (formData.get("sufijo") as string) ?? "",
+    prefijo: (formData.get("prefijo") as string) ?? "",
   };
   const parsed = createProveedorSchema.safeParse(raw);
   if (!parsed.success) {
     const first = parsed.error.flatten().fieldErrors;
-    const msg = first.nombre?.[0] ?? first.sufijo?.[0] ?? "Datos inválidos.";
+    const msg = first.nombre?.[0] ?? first.prefijo?.[0] ?? "Datos inválidos.";
     return { ok: false, error: msg };
   }
 
@@ -79,8 +79,8 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     const isPrisma = e && typeof e === "object" && "code" in e;
     if (isPrisma && (e as { code: string }).code === "P2002") {
       const target = (e as { meta?: { target?: string[] } }).meta?.target;
-      if (Array.isArray(target) && target.includes("sufijo"))
-        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.SUFIJO_DUPLICADO };
+      if (Array.isArray(target) && target.includes("prefijo"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.PREFIJO_DUPLICADO };
       if (Array.isArray(target) && target.includes("nombre"))
         return { ok: false, error: proveedorService.PROVEEDOR_ERROR.NOMBRE_DUPLICADO };
     }
@@ -94,10 +94,10 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
 export async function editarProveedor(id: string, formData: FormData): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const nombre = (formData.get("nombre") as string)?.trim();
-  const sufijo = (formData.get("sufijo") as string)?.trim().toUpperCase();
+  const prefijo = (formData.get("prefijo") as string)?.trim().toUpperCase();
   if (!nombre || nombre.length < 2) return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
-  if (!sufijo || sufijo.length !== 3 || !/^[A-Z]{3}$/.test(sufijo))
-    return { ok: false, error: "El sufijo debe tener exactamente 3 letras." };
+  if (!prefijo || prefijo.length !== 3 || !/^[A-Z]{3}$/.test(prefijo))
+    return { ok: false, error: "El prefijo debe tener exactamente 3 letras." };
   revalidatePath("/proveedores");
   revalidatePath(`/proveedores/${id}`);
   return { ok: true, data: undefined };

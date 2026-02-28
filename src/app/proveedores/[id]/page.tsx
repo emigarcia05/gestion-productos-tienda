@@ -41,7 +41,7 @@ export default async function ProveedorDetallePage({ params }: Props) {
           />
         )}
         {puede(rol, p.acciones.editarProveedor) && (
-          <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, sufijo: proveedor.sufijo }} />
+          <EditarProveedorModal proveedor={{ id: proveedor.id, nombre: proveedor.nombre, prefijo: proveedor.prefijo }} />
         )}
         {puede(rol, p.acciones.eliminarProveedor) && (
           <EliminarProveedorBtn id={proveedor.id} nombre={proveedor.nombre} redirectOnDelete />

@@ -18,7 +18,7 @@ export interface ProductoParaPedido {
   id: string;
   descripcion: string;
   codigoExterno?: string;
-  proveedor?: { nombre: string; sufijo: string };
+  proveedor?: { nombre: string; prefijo: string };
 }
 
 interface Props {

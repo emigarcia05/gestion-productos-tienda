@@ -20,7 +20,7 @@ interface Proveedor {
   id: string;
   nombre: string;
   codigoUnico: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface Props {
@@ -89,7 +89,7 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
             <SelectContent>
               <SelectItem value="none">PROVEEDORES</SelectItem>
               {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</SelectItem>
               ))}
             </SelectContent>
           </Select>

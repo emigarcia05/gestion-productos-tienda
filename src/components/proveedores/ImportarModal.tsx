@@ -20,7 +20,7 @@ interface Proveedor {
   id: string;
   nombre: string;
   codigoUnico: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface Props {
@@ -182,7 +182,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p) => (
-                    <option key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</option>
+                    <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
                   ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -190,7 +190,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               {proveedorSeleccionado && (
                 <p className="text-xs text-muted-foreground">
                   Prefijo del código externo:{" "}
-                  <code className="bg-muted px-1 rounded">{proveedorSeleccionado.sufijo}-</code>
+                  <code className="bg-muted px-1 rounded">{proveedorSeleccionado.prefijo}-</code>
                 </p>
               )}
             </div>

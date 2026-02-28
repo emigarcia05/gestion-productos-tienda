@@ -23,7 +23,7 @@ const SUCURSALES: { value: SucursalPedido; label: string }[] = [
 interface Proveedor {
   id: string;
   nombre: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface Props {
@@ -90,7 +90,7 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
             <SelectContent>
               <SelectItem value="none">PROVEEDORES</SelectItem>
               {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>[{p.sufijo}] {p.nombre}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</SelectItem>
               ))}
             </SelectContent>
           </Select>

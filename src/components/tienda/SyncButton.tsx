@@ -9,31 +9,41 @@ import { Button } from "@/components/ui/button";
 const TOAST_SYNC_ID = "sync-dux";
 const POLL_INTERVAL_MS = 2000;
 
-/** Arma el mensaje del toast: progreso (X de Y) + tiempo estimado (aprox. Z min o seg). */
-function formatMensajeProgreso(data: {
+/** Tercera línea del toast: solo el tiempo estimado. */
+function textoTiempoEstimado(data: {
+  remainingSeconds: number;
+  remainingMinutes: number;
+}): string {
+  const { remainingSeconds, remainingMinutes } = data;
+  if (remainingSeconds > 0 && remainingSeconds < 60) {
+    return `Tiempo estimado: ${remainingSeconds} seg`;
+  }
+  if (remainingMinutes === 1) {
+    return "Tiempo estimado: 1 min";
+  }
+  if (remainingMinutes > 1) {
+    return `Tiempo estimado: ${remainingMinutes} min`;
+  }
+  return "Tiempo estimado: …";
+}
+
+/** Mensaje del toast en 3 filas: título, progreso (X de Y), tiempo estimado. */
+function mensajeProgresoToast(data: {
   total: number;
   processed: number;
   remainingSeconds: number;
   remainingMinutes: number;
-}): string {
-  const { total, processed, remainingSeconds, remainingMinutes } = data;
-  const base = "Sincronizando datos";
-  if (total > 0 && processed >= 0) {
-    const progreso = `${processed.toLocaleString()} de ${total.toLocaleString()} productos`;
-    if (remainingMinutes <= 0 && remainingSeconds <= 0) {
-      return `${base}: ${progreso}.`;
-    }
-    if (remainingSeconds > 0 && remainingSeconds < 60) {
-      return `${base}: ${progreso}. Faltan aprox. ${remainingSeconds} seg.`;
-    }
-    if (remainingMinutes === 1) {
-      return `${base}: ${progreso}. Faltan aprox. 1 minuto.`;
-    }
-    if (remainingMinutes > 1) {
-      return `${base}: ${progreso}. Faltan aprox. ${remainingMinutes} minutos.`;
-    }
-  }
-  return `${base}… (calculando tiempo estimado…)`;
+}) {
+  const fila2 = data.total > 0
+    ? `${data.processed.toLocaleString()} de ${data.total.toLocaleString()}.`
+    : "…";
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="font-semibold">Sincronizando Datos!</span>
+      <span className="text-sm">{fila2}</span>
+      <span className="text-sm text-muted-foreground">{textoTiempoEstimado(data)}</span>
+    </div>
+  );
 }
 
 export default function SyncButton() {
@@ -43,7 +53,7 @@ export default function SyncButton() {
 
   async function handleClick() {
     setSyncing(true);
-    toast.loading(formatMensajeProgreso({ total: 0, processed: 0, remainingSeconds: 0, remainingMinutes: 0 }), {
+    toast.loading(mensajeProgresoToast({ total: 0, processed: 0, remainingSeconds: 0, remainingMinutes: 0 }), {
       id: TOAST_SYNC_ID,
       duration: Infinity,
     });
@@ -64,16 +74,14 @@ export default function SyncButton() {
           const res = await fetch("/api/sync-lista-precios-tienda/status");
           const data = await res.json();
           toast.loading(
-            formatMensajeProgreso({
+            mensajeProgresoToast({
               total: data.total ?? 0,
               processed: data.processed ?? 0,
               remainingSeconds: data.remainingSeconds ?? 0,
               remainingMinutes: data.remainingMinutes ?? 0,
             }),
-            {
-            id: TOAST_SYNC_ID,
-            duration: Infinity,
-          });
+            { id: TOAST_SYNC_ID, duration: Infinity }
+          );
           if (data.done) {
             if (pollRef.current) {
               clearInterval(pollRef.current);

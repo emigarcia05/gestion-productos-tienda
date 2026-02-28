@@ -25,7 +25,7 @@ interface Producto {
   descuentoCantidad: number;
   cxTransporte: number;
   disponible: boolean;
-  proveedor: { id: string; nombre: string; codigoUnico: string; sufijo: string };
+  proveedor: { id: string; nombre: string; codigoUnico: string; prefijo: string };
 }
 
 interface Props {
@@ -209,7 +209,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
                 <td className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</td>
               )}
               {puede(rol, col.proveedor) && (
-                <td className="py-2 px-2 text-xs font-mono">{prod.proveedor.sufijo}</td>
+                <td className="py-2 px-2 text-xs font-mono">{prod.proveedor.prefijo}</td>
               )}
               {puede(rol, col.precioLista) && (
                 <td className="py-2 px-2 tabular-nums text-xs whitespace-nowrap">${fmtPrecio(prod.precioLista)}</td>

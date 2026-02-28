@@ -24,7 +24,7 @@ export default async function ListaPreciosPage() {
   const proveedoresParaCliente = proveedores.map((p) => ({
     id: p.id,
     nombre: p.nombre,
-    sufijo: p.sufijo,
+    prefijo: p.prefijo,
   }));
 
   return (

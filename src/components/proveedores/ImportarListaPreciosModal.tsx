@@ -33,7 +33,7 @@ interface Proveedor {
   id: string;
   nombre: string;
   codigoUnico: string;
-  sufijo: string;
+  prefijo: string;
 }
 
 interface Props {
@@ -207,7 +207,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p) => (
                     <option key={p.id} value={p.id}>
-                      [{p.sufijo}] {p.nombre}
+                      [{p.prefijo}] {p.nombre}
                     </option>
                   ))}
                 </select>
@@ -217,7 +217,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <p className="text-xs text-muted-foreground">
                   ID compuesto:{" "}
                   <code className="bg-muted px-1 rounded">
-                    {proveedorSeleccionado.sufijo}-[codProdProv]
+                    {proveedorSeleccionado.prefijo}-[codProdProv]
                   </code>
                 </p>
               )}

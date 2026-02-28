@@ -8,7 +8,7 @@ export interface ProductoListaPrecios {
   descripcion: string;
   codigoExterno?: string;
   precioVentaSugerido: number;
-  proveedor: { nombre: string; sufijo: string };
+  proveedor: { nombre: string; prefijo: string };
 }
 
 interface Props {
@@ -62,7 +62,7 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Prop
               className={puedeAgregar ? "cursor-pointer" : ""}
               onDoubleClick={() => handleDobleClick(prod)}
             >
-              <td className="py-2 px-3 text-xs font-mono">{prod.proveedor.sufijo}</td>
+              <td className="py-2 px-3 text-xs font-mono">{prod.proveedor.prefijo}</td>
               <td className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</td>
               <td className="py-2 px-3 text-center tabular-nums text-xs">—</td>
             </tr>

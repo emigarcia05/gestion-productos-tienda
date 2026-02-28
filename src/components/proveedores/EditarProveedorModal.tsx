@@ -14,7 +14,7 @@ import {
 import ProveedorForm from "./ProveedorForm";
 
 interface Props {
-  proveedor: { id: string; nombre: string; sufijo: string };
+  proveedor: { id: string; nombre: string; prefijo: string };
 }
 
 export default function EditarProveedorModal({ proveedor }: Props) {

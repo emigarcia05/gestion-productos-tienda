@@ -49,14 +49,14 @@ export async function importarListaPreciosProveedor(
   const proveedores = await getProveedores();
   const proveedor = proveedores.find((p) => p.id === proveedorId);
   if (!proveedor) throw new Error("Proveedor no encontrado.");
-  const sufijo = proveedor.sufijo;
+  const prefijo = proveedor.prefijo;
 
   const filas = aplicarMapeoListaPrecios(filasCrudas, mapeo);
   if (filas.length === 0) throw new Error("No hay filas válidas para importar.");
 
   const { creados, actualizados, errores } = await listaPreciosService.upsertListaPrecios(
     proveedorId,
-    sufijo,
+    prefijo,
     filas
   );
 

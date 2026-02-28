@@ -20,7 +20,7 @@ export interface ProductoListaPrecios {
   descripcion: string;
   codigoExterno?: string;
   precioVentaSugerido: number;
-  proveedor: { nombre: string; sufijo: string };
+  proveedor: { nombre: string; prefijo: string };
 }
 
 interface Props {
@@ -82,7 +82,7 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
                       onDoubleClick={() => handleDobleClick(prod)}
                     >
                       <TableCell className="font-mono text-sm">
-                        {prod.proveedor.sufijo}
+                        {prod.proveedor.prefijo}
                       </TableCell>
                       <TableCell>
                         {prod.descripcion}
