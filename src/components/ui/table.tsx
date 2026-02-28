@@ -4,8 +4,17 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
-  const useCompacta = className?.includes("tabla-gestion-compacta");
+export type TableVariant = "default" | "compact"
+
+interface TableProps extends React.ComponentProps<"table"> {
+  variant?: TableVariant
+}
+
+function Table({ className, variant = "default", ...props }: TableProps) {
+  const tableClass =
+    variant === "compact"
+      ? cn("tabla-gestion-compacta", className)
+      : cn("tabla-global", className)
   return (
     <div
       data-slot="table-container"
@@ -13,7 +22,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", useCompacta ? className : cn("tabla-global", className))}
+        className={cn("w-full caption-bottom text-sm", tableClass)}
         {...props}
       />
     </div>
@@ -121,3 +130,4 @@ export {
   TableCell,
   TableCaption,
 }
+export type { TableVariant }

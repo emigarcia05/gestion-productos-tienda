@@ -5,19 +5,22 @@ globs: **/*.tsx, **/*.jsx
 
 # Tablas: estilo unificado obligatorio
 
-En esta aplicación **todas las tablas** deben verse igual: mismo encabezado (color primario `bg-primary`, texto blanco, centrado), mismas filas (zebra blanco / blue-50), mismo texto de datos (negro, centrado), mismo hover. Los estilos madre están en `globals.css` (`.tabla-global`) y en `@/components/ui/table`.
+En esta aplicación **todas las tablas** usan el mismo patrón para que un solo cambio en el CSS global aplique a todo el proyecto.
 
-## Formas válidas (solo estas dos)
+## Estándar único (obligatorio)
 
-1. **Componente shadcn:** Importar y usar `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` desde `@/components/ui/table`. No añadir clases que anulen el estilo (p. ej. no `text-white` en celdas, no `bg-brand` en thead).
+Usar **siempre** el componente de `@/components/ui/table`:
 
-2. **HTML con clase global:** Usar `<table className="tabla-global ...">` y **no** poner en `thead`/`tbody`/`tr`/`th`/`td` estilos que cambien el diseño unificado. El contenedor de la tabla debe tener `bg-white` para que el zebra y el texto negro se vean bien.
+- **Tabla compacta (estilo por defecto en la app):** `<Table variant="compact">` con `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`. Los estilos se definen en `globals.css` (`.tabla-gestion-compacta`); al cambiar ese bloque, todas las tablas se actualizan.
+- **Tabla estándar (si se necesita):** `<Table>` sin variant (o `variant="default"`) usa `.tabla-global` en `globals.css`.
+
+Importar desde `@/components/ui/table`: `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` y, si aplica, `TableFooter`. No usar `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>` en crudo para tablas de datos.
 
 ## Prohibido
 
-- `<table>` sin `tabla-global` y con estilos propios en encabezados o celdas (p. ej. `text-brand-fg`, `text-white/60`, `bg-brand` en thead sin usar tabla-global).
-- Cualquier tabla que no use (1) o (2).
+- `<table className="tabla-gestion-compacta">` o `<table className="tabla-global">` en HTML crudo: usar siempre el componente `Table` con la prop `variant`.
+- Tablas con estilos propios en encabezados o celdas que anulen el diseño unificado.
 
 ## Comprobar
 
-Antes de añadir una tabla nueva, verificar que usa `Table` de shadcn o `className="tabla-global"`. Si alguien añade una tabla con `<table className="w-full">` y estilos propios, corregir para usar una de las dos opciones anteriores.
+Al añadir una tabla nueva: importar desde `@/components/ui/table` y usar `<Table variant="compact">` (o `variant="default"`). Para cambiar el aspecto de todas las tablas, editar solo `globals.css` (bloque `.tabla-gestion-compacta` o `.tabla-global`).

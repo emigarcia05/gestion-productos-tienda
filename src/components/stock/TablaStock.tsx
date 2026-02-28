@@ -5,6 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
 import PrintStock from "./PrintStock";
@@ -216,35 +224,35 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
 
       {/* ── Tabla ── */}
       <div className="flex-1 overflow-auto rounded-lg border bg-white" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
-        <table className="tabla-gestion-compacta">
-          <thead className="sticky top-0 z-10">
-            <tr>
-              <th className="px-3 py-2 text-xs w-28">Código</th>
-              <th className="px-3 py-2 text-xs">Descripción</th>
-              <th className="px-3 py-2 text-xs w-28">Stock {sucursalLabel}</th>
-              <th className="px-3 py-2 text-xs w-28">Últ. impresión</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table variant="compact">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-3 py-2 text-xs w-28">Código</TableHead>
+              <TableHead className="px-3 py-2 text-xs">Descripción</TableHead>
+              <TableHead className="px-3 py-2 text-xs w-28">Stock {sucursalLabel}</TableHead>
+              <TableHead className="px-3 py-2 text-xs w-28">Últ. impresión</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filtrados.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-center text-xs text-slate-500 py-10">Sin resultados</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-xs text-slate-500 py-10">Sin resultados</TableCell>
+              </TableRow>
             )}
             {filtrados.map((item) => (
-              <tr key={item.id}>
-                <td className="px-3 py-2 text-xs font-mono">{item.codItem}</td>
-                <td className="px-3 py-2 text-xs">{item.descripcion}</td>
-                <td className="px-3 py-2 text-sm font-semibold tabular-nums">
+              <TableRow key={item.id}>
+                <TableCell className="px-3 py-2 text-xs font-mono">{item.codItem}</TableCell>
+                <TableCell className="px-3 py-2 text-xs">{item.descripcion}</TableCell>
+                <TableCell className="px-3 py-2 text-sm font-semibold tabular-nums">
                   {item.stock % 1 === 0 ? item.stock.toFixed(0) : item.stock.toFixed(2)}
-                </td>
-                <td className="px-3 py-2 text-xs tabular-nums">
+                </TableCell>
+                <TableCell className="px-3 py-2 text-xs tabular-nums">
                   {fmtFecha(impresiones[item.id] ?? item.ultimaImpresion)}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* ── Modal de impresión ── */}

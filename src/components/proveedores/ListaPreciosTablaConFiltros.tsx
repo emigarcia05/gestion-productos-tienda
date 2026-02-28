@@ -18,13 +18,21 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 /** Alto aproximado de una fila tbody (celda-datos). */
 const BODY_ROW_HEIGHT_PX = 18;
-/** Alto del thead (tabla-gestion-compacta). */
+/** Alto del thead (Table variant="compact"). */
 const HEADER_HEIGHT_PX = 16;
 
 interface ProveedorOption {
@@ -151,29 +159,29 @@ export default function ListaPreciosTablaConFiltros({
       </FilterBar>
 
       <div ref={tableContainerRef} className="contenedor-tabla-gestion">
-        <table className="tabla-gestion-compacta">
-          <thead>
-            <tr>
-              <th className="w-20">PROVEEDOR</th>
-              <th className="w-28">COD. EXT.</th>
-              <th className="min-w-0">DESCRIPCION</th>
-              <th className="w-28">PX COMPRA FINAL</th>
-              <th className="w-24">PX LISTA</th>
-              <th className="w-20">DESC. PROD.</th>
-              <th className="w-20">DESC. CANT.</th>
-              <th className="w-24">CX. APROX TRANSPORTE</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table variant="compact">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-20">PROVEEDOR</TableHead>
+              <TableHead className="w-28">COD. EXT.</TableHead>
+              <TableHead className="min-w-0">DESCRIPCION</TableHead>
+              <TableHead className="w-28">PX COMPRA FINAL</TableHead>
+              <TableHead className="w-24">PX LISTA</TableHead>
+              <TableHead className="w-20">DESC. PROD.</TableHead>
+              <TableHead className="w-20">DESC. CANT.</TableHead>
+              <TableHead className="w-24">CX. APROX TRANSPORTE</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filasPagina.map((fila) => (
-              <tr key={fila.id}>
-                <td className="celda-datos celda-mono">
+              <TableRow key={fila.id}>
+                <TableCell className="celda-datos celda-mono">
                   {fila.proveedor?.prefijo ?? "—"}
-                </td>
-                <td className="celda-datos celda-mono whitespace-nowrap">
+                </TableCell>
+                <TableCell className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
-                </td>
-                <td className="celda-datos min-w-0 overflow-hidden align-top">
+                </TableCell>
+                <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
                   <div className="celda-destacado truncate text-xs font-bold">
                     {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor
                       ? fila.descripcionTienda
@@ -184,38 +192,38 @@ export default function ListaPreciosTablaConFiltros({
                       {fila.descripcionProveedor}
                     </div>
                   )}
-                </td>
-                <td className="celda-datos celda-numero celda-destacado">
+                </TableCell>
+                <TableCell className="celda-datos celda-numero celda-destacado">
                   ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
-                </td>
-                <td className="celda-datos celda-numero">
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
                   ${fmtPrecio(Number(fila.pxListaProveedor))}
-                </td>
-                <td className="celda-datos celda-numero">
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoProducto)}%
-                </td>
-                <td className="celda-datos celda-numero">
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoCantidad)}%
-                </td>
-                <td className="celda-datos celda-numero">
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.cxAproxTransporte)}%
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {filasPagina.length === 0 && (
-              <tr>
-                <td
+              <TableRow>
+                <TableCell
                   className="celda-datos py-1 text-muted-foreground text-center"
                   colSpan={8}
                 >
                   {filas.length === 0
                     ? "No hay datos de lista de precios para mostrar."
                     : "Ningún producto coincide con los filtros."}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-muted/30 rounded-b-lg shrink-0">
         <span className="text-sm text-muted-foreground tabular-nums">

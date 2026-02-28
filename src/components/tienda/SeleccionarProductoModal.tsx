@@ -8,6 +8,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getProveedores, buscarProductos } from "@/actions/vinculos";
 import { fmtPrecio } from "@/lib/format";
 
@@ -175,47 +183,47 @@ export default function SeleccionarProductoModal({
               {proveedorSeleccionado ? ` en ${proveedorSeleccionado.nombre}` : ""}
             </div>
           ) : (
-            <table className="tabla-gestion-compacta">
-              <thead className="sticky top-0">
-                <tr>
-                  <th className="py-2 px-3 text-xs w-20">Prov.</th>
-                  <th className="py-2 px-3 text-xs w-28">Cód. Ext.</th>
-                  <th className="py-2 px-3 text-xs">Descripción</th>
-                  <th className="py-2 px-3 text-xs w-24">Px Lista</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table variant="compact">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="py-2 px-3 text-xs w-20">Prov.</TableHead>
+                  <TableHead className="py-2 px-3 text-xs w-28">Cód. Ext.</TableHead>
+                  <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
+                  <TableHead className="py-2 px-3 text-xs w-24">Px Lista</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {resultados.map((prod) => {
                   const seleccionado = clickedId === prod.id;
                   return (
-                    <tr
+                    <TableRow
                       key={prod.id}
                       onClick={() => handleClick(prod)}
                       className={`cursor-pointer select-none ${seleccionado ? "!bg-primary/10" : ""}`}
                       title="Doble clic para vincular"
                     >
-                      <td className="py-2.5 px-3 text-center">
+                      <TableCell className="py-2.5 px-3 text-center">
                         <Badge variant={seleccionado ? "default" : "secondary"} className="font-mono text-xs">
                           {prod.proveedor.prefijo}
                         </Badge>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-center">
                         <code className="text-xs text-muted-foreground">{prod.codigoExterno}</code>
-                      </td>
-                      <td className="py-2.5 px-3 text-center text-xs">
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-center text-xs">
                         {seleccionado
                           ? <span className="font-medium">{prod.descripcion} <span className="text-primary text-[10px]">← clic de nuevo para vincular</span></span>
                           : prod.descripcion
                         }
-                      </td>
-                      <td className="py-2.5 px-3 text-center tabular-nums text-xs">
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-center tabular-nums text-xs">
                         ${fmtPrecio(prod.precioLista)}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </div>
 

@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { TrendingDown } from "lucide-react";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
@@ -42,79 +50,79 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
   return (
     <>
       <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
-        <table className="tabla-gestion-compacta">
-          <thead className="sticky top-0 z-10">
-            <tr>
+        <Table variant="compact">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
               {puede(rol, col.codItem) && (
-                <th className="w-16 py-2 px-2 text-xs leading-tight">
+                <TableHead className="w-16 py-2 px-2 text-xs leading-tight">
                   Cód.<br />Tienda
-                </th>
+                </TableHead>
               )}
               {puede(rol, col.descripcion) && (
-                <th className="py-2 px-3 text-xs">Descripción</th>
+                <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               )}
               {puede(rol, col.costo) && (
-                <th className="w-24 py-2 px-2 text-xs leading-tight">Costo</th>
+                <TableHead className="w-24 py-2 px-2 text-xs leading-tight">Costo</TableHead>
               )}
               {puede(rol, col.proveedorDux) && (
-                <th className="w-40 py-2 px-2 text-xs leading-tight">Proveedor Dux</th>
+                <TableHead className="w-40 py-2 px-2 text-xs leading-tight">Proveedor Dux</TableHead>
               )}
               {puede(rol, col.rubro) && (
-                <th className="w-32 py-2 px-2 text-xs leading-tight">Rubro</th>
+                <TableHead className="w-32 py-2 px-2 text-xs leading-tight">Rubro</TableHead>
               )}
               {puede(rol, col.subRubro) && (
-                <th className="w-32 py-2 px-2 text-xs leading-tight">Sub-Rubro</th>
+                <TableHead className="w-32 py-2 px-2 text-xs leading-tight">Sub-Rubro</TableHead>
               )}
               {puede(rol, col.mejorPrecio) && (
-                <th className="w-16 py-2 px-2 text-xs leading-tight">
+                <TableHead className="w-16 py-2 px-2 text-xs leading-tight">
                   Mejor<br />Precio
-                </th>
+                </TableHead>
               )}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {items.map((item) => (
-              <tr
+              <TableRow
                 key={item.id}
                 onClick={() => puedeVincular && setModalAbierto(item.id)}
                 className={puedeVincular ? "cursor-pointer" : ""}
               >
                 {puede(rol, col.codItem) && (
-                  <td className="py-2 px-2 font-mono text-xs">
+                  <TableCell className="py-2 px-2 font-mono text-xs">
                     {item.codItem}
-                  </td>
+                  </TableCell>
                 )}
                 {puede(rol, col.descripcion) && (
-                  <td className="py-2 px-3 text-xs font-semibold">{item.descripcion}</td>
+                  <TableCell className="py-2 px-3 text-xs font-semibold">{item.descripcion}</TableCell>
                 )}
                 {puede(rol, col.costo) && (
-                  <td className="py-2 px-2 tabular-nums text-xs font-bold">
+                  <TableCell className="py-2 px-2 tabular-nums text-xs font-bold">
                     ${fmtPrecio(item.costo)}
-                  </td>
+                  </TableCell>
                 )}
                 {puede(rol, col.proveedorDux) && (
-                  <td className="py-2 px-2 text-xs truncate max-w-[160px]">
+                  <TableCell className="py-2 px-2 text-xs truncate max-w-[160px]">
                     {item.proveedorDux ?? "—"}
-                  </td>
+                  </TableCell>
                 )}
                 {puede(rol, col.rubro) && (
-                  <td className="py-2 px-2 text-xs">{item.rubro ?? "—"}</td>
+                  <TableCell className="py-2 px-2 text-xs">{item.rubro ?? "—"}</TableCell>
                 )}
                 {puede(rol, col.subRubro) && (
-                  <td className="py-2 px-2 text-xs">{item.subRubro ?? "—"}</td>
+                  <TableCell className="py-2 px-2 text-xs">{item.subRubro ?? "—"}</TableCell>
                 )}
                 {puede(rol, col.mejorPrecio) && (
-                  <td className="py-2 px-2 text-center">
+                  <TableCell className="py-2 px-2 text-center">
                     {setMejorPrecio.has(item.id)
                       ? <span title="Hay un proveedor con Px Compra Final menor al costo actual" className="flex justify-center"><TrendingDown className="h-4 w-4 text-emerald-500" /></span>
                       : <span className="text-slate-400 text-xs">—</span>
                     }
-                  </td>
+                  </TableCell>
                 )}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Modales de vínculos — uno por item, se monta solo el que está abierto */}

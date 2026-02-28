@@ -3,6 +3,14 @@ import Navbar from "@/components/Navbar";
 import UploadZone from "@/components/UploadZone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { FileSpreadsheet, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -121,35 +129,35 @@ export default async function ImportarPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="tabla-gestion-compacta">
-                <thead>
-                  <tr className="border-b border-slate-200/80">
-                    <th className="!text-left">Archivo</th>
-                    <th>Filas</th>
-                    <th>Importados</th>
-                    <th>Errores</th>
-                    <th className="!text-left">Fecha</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table variant="compact">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-b border-slate-200/80">
+                    <TableHead className="!text-left">Archivo</TableHead>
+                    <TableHead>Filas</TableHead>
+                    <TableHead>Importados</TableHead>
+                    <TableHead>Errores</TableHead>
+                    <TableHead className="!text-left">Fecha</TableHead>
+                    <TableHead>Estado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {importHistory.map((item) => (
-                    <tr key={item.id}>
-                      <td className="!text-left">
+                    <TableRow key={item.id}>
+                      <TableCell className="!text-left">
                         <span className="flex items-center gap-2">
                           <FileSpreadsheet className="h-4 w-4 text-slate-500" />
                           {item.filename}
                         </span>
-                      </td>
-                      <td>{item.rows}</td>
-                      <td className="text-emerald-600 font-semibold">{item.imported}</td>
-                      <td className="text-destructive font-semibold">{item.errors}</td>
-                      <td className="text-slate-600 text-xs">{item.date}</td>
-                      <td>{getStatusBadge(item.status)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>{item.rows}</TableCell>
+                      <TableCell className="text-emerald-600 font-semibold">{item.imported}</TableCell>
+                      <TableCell className="text-destructive font-semibold">{item.errors}</TableCell>
+                      <TableCell className="text-slate-600 text-xs">{item.date}</TableCell>
+                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>

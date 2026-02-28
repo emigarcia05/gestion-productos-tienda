@@ -1,6 +1,15 @@
 import { notFound } from "next/navigation";
 import { Package, Tag, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import EditarProveedorModal from "@/components/proveedores/EditarProveedorModal";
 import EliminarProveedorBtn from "@/components/proveedores/EliminarProveedorBtn";
 import ImportarModal from "@/components/proveedores/ImportarModal";
@@ -95,18 +104,18 @@ export default async function ProveedorDetallePage({ params }: Props) {
               </div>
             ) : (
               <div className="overflow-x-auto bg-white rounded-lg border border-border/50">
-                <table className="tabla-gestion-compacta">
-                  <thead>
-                    <tr>
-                      {puede(rol, p.tabla.codProdProv) && <th className="py-2.5 px-3 text-xs">Cód. Proveedor</th>}
-                      {puede(rol, p.tabla.codExt) && <th className="py-2.5 px-3 text-xs">Cód. Externo</th>}
-                      {puede(rol, p.tabla.descripcion) && <th className="py-2.5 px-3 text-xs">Descripción</th>}
-                      {puede(rol, p.tabla.precioLista) && <th className="py-2.5 px-3 text-xs">Px Lista</th>}
-                      {puede(rol, p.tabla.precioVentaSugerido) && <th className="py-2.5 px-3 text-xs">Px Venta</th>}
-                      {puede(rol, p.tabla.margen) && <th className="py-2.5 px-3 text-xs">Margen</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table variant="compact">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      {puede(rol, p.tabla.codProdProv) && <TableHead className="py-2.5 px-3 text-xs">Cód. Proveedor</TableHead>}
+                      {puede(rol, p.tabla.codExt) && <TableHead className="py-2.5 px-3 text-xs">Cód. Externo</TableHead>}
+                      {puede(rol, p.tabla.descripcion) && <TableHead className="py-2.5 px-3 text-xs">Descripción</TableHead>}
+                      {puede(rol, p.tabla.precioLista) && <TableHead className="py-2.5 px-3 text-xs">Px Lista</TableHead>}
+                      {puede(rol, p.tabla.precioVentaSugerido) && <TableHead className="py-2.5 px-3 text-xs">Px Venta</TableHead>}
+                      {puede(rol, p.tabla.margen) && <TableHead className="py-2.5 px-3 text-xs">Margen</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {productos.map((prod) => {
                       const margen =
                         prod.precioLista > 0
@@ -115,26 +124,26 @@ export default async function ProveedorDetallePage({ params }: Props) {
                       const margenNum = parseFloat(margen);
 
                       return (
-                        <tr key={prod.id}>
+                        <TableRow key={prod.id}>
                           {puede(rol, p.tabla.codProdProv) && (
-                            <td className="py-3 px-3 font-mono text-xs">{prod.codProdProv}</td>
+                            <TableCell className="py-3 px-3 font-mono text-xs">{prod.codProdProv}</TableCell>
                           )}
                           {puede(rol, p.tabla.codExt) && (
-                            <td className="py-3 px-3 text-center">
+                            <TableCell className="py-3 px-3 text-center">
                               <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{prod.codigoExterno}</code>
-                            </td>
+                            </TableCell>
                           )}
                           {puede(rol, p.tabla.descripcion) && (
-                            <td className="py-3 px-3 max-w-xs truncate">{prod.descripcion}</td>
+                            <TableCell className="py-3 px-3 max-w-xs truncate">{prod.descripcion}</TableCell>
                           )}
                           {puede(rol, p.tabla.precioLista) && (
-                            <td className="py-3 px-3 tabular-nums">${Math.round(prod.precioLista).toLocaleString("es-AR")}</td>
+                            <TableCell className="py-3 px-3 tabular-nums">${Math.round(prod.precioLista).toLocaleString("es-AR")}</TableCell>
                           )}
                           {puede(rol, p.tabla.precioVentaSugerido) && (
-                            <td className="py-3 px-3 tabular-nums">${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}</td>
+                            <TableCell className="py-3 px-3 tabular-nums">${Math.round(prod.precioVentaSugerido).toLocaleString("es-AR")}</TableCell>
                           )}
                           {puede(rol, p.tabla.margen) && (
-                            <td className="py-3 px-3 text-center">
+                            <TableCell className="py-3 px-3 text-center">
                               {margen !== "—" ? (
                                 <span className={margenNum >= 0 ? "text-emerald-600" : "text-destructive"}>
                                   {margenNum >= 0 ? "+" : ""}{margen}%
@@ -142,36 +151,36 @@ export default async function ProveedorDetallePage({ params }: Props) {
                               ) : (
                                 <span className="text-slate-400">—</span>
                               )}
-                            </td>
+                            </TableCell>
                           )}
-                        </tr>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-border/50 bg-muted/20">
-                      <td
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="border-t border-border/50 bg-muted/20">
+                      <TableCell
                         colSpan={
                           [p.tabla.codProdProv, p.tabla.codExt, p.tabla.descripcion].filter((c) => puede(rol, c)).length
                         }
                         className="py-2.5 px-3 text-center text-xs text-muted-foreground font-medium"
                       >
                         Total ({productos.length} productos)
-                      </td>
+                      </TableCell>
                       {puede(rol, p.tabla.precioLista) && (
-                        <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
+                        <TableCell className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
                           ${Math.round(totalLista).toLocaleString("es-AR")}
-                        </td>
+                        </TableCell>
                       )}
                       {puede(rol, p.tabla.precioVentaSugerido) && (
-                        <td className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
+                        <TableCell className="py-2.5 px-3 text-center text-sm font-semibold tabular-nums">
                           ${Math.round(totalVenta).toLocaleString("es-AR")}
-                        </td>
+                        </TableCell>
                       )}
-                      {puede(rol, p.tabla.margen) && <td />}
-                    </tr>
-                  </tfoot>
-                </table>
+                      {puede(rol, p.tabla.margen) && <TableCell />}
+                    </TableRow>
+                  </TableFooter>
+                </Table>
               </div>
             )}
           </CardContent>

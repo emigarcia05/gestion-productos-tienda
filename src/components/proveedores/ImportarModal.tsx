@@ -12,6 +12,14 @@ import {
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { importarProductos, type ImportResult, type MapeoColumnas } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
@@ -260,24 +268,24 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
             </p>
 
             <div className="rounded-lg border border-border/50 overflow-hidden bg-white">
-              <table className="tabla-gestion-compacta">
-                <thead>
-                  <tr>
-                    <th className="py-2 px-3 text-xs w-1/3">Columna del archivo</th>
-                    <th className="py-2 px-3 text-xs w-1/3">Ejemplo</th>
-                    <th className="py-2 px-3 text-xs w-1/3">Asignar a</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table variant="compact">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="py-2 px-3 text-xs w-1/3">Columna del archivo</TableHead>
+                    <TableHead className="py-2 px-3 text-xs w-1/3">Ejemplo</TableHead>
+                    <TableHead className="py-2 px-3 text-xs w-1/3">Asignar a</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {colLabels.map((label, i) => (
-                    <tr key={i}>
-                      <td className="py-2.5 px-3 font-mono text-xs truncate max-w-[150px]">
+                    <TableRow key={i}>
+                      <TableCell className="py-2.5 px-3 font-mono text-xs truncate max-w-[150px]">
                         {label}
-                      </td>
-                      <td className="py-2.5 px-3 text-xs truncate max-w-[150px]">
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-xs truncate max-w-[150px]">
                         {filaEjemplo[i] ?? <span className="text-slate-400 italic">—</span>}
-                      </td>
-                      <td className="py-2.5 px-3">
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3">
                         <div className="relative">
                           <select
                             value={mapeo[i] ?? "ignorar"}
@@ -292,11 +300,11 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Estado de campos requeridos */}
