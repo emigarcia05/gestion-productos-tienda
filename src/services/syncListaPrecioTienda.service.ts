@@ -30,9 +30,7 @@ export interface SyncListaPrecioTiendaResult {
   errores: string[];
 }
 
-type RecordTienda = ReturnType<typeof itemDuxToRecord>;
-
-function itemDuxToRecord(item: ItemDux): RecordTienda {
+function itemDuxToRecord(item: ItemDux) {
   const codExt = (item.codigoExterno ?? item.codItem).trim() || item.codItem;
   return {
     codExt,
@@ -48,6 +46,8 @@ function itemDuxToRecord(item: ItemDux): RecordTienda {
     stockGuaymallen: item.stockGuaymallen,
   };
 }
+
+type RecordTienda = ReturnType<typeof itemDuxToRecord>;
 
 export interface SyncProgressCallback {
   onProgress?(processed: number, total: number): void;
