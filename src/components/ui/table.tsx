@@ -130,4 +130,3 @@ export {
   TableCell,
   TableCaption,
 }
-export type { TableVariant }
