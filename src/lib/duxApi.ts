@@ -94,13 +94,25 @@ export interface FetchItemsPageResult {
   hasMore: boolean;
 }
 
-const MAX_RETRIES_429 = 4;
-const RETRY_429_BASE_MS = 5000;
+const MAX_RETRIES_429 = 5;
+const RETRY_429_BASE_MS = 10000;
+
+/**
+ * Consume el body de la respuesta para liberar la conexión (evita fugas y cierres incorrectos).
+ */
+async function consumeBody(res: Response): Promise<void> {
+  try {
+    await res.text();
+  } catch {
+    // ignorar si el body ya fue consumido o hay error de lectura
+  }
+}
 
 /**
  * Obtiene una página de ítems de la API DUX (limit=50 por restricción de la API).
  * Para sincronización paginada con lista_precios_tienda.
- * Ante 429 Too Many Requests: reintenta con backoff (5s, 10s, 20s, 40s).
+ * Ante 429 Too Many Requests: consume el body, respeta Retry-After si viene en la respuesta,
+ * y reintenta con backoff exponencial (10s, 20s, 40s, 80s, 160s).
  */
 export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAGE_LIMIT): Promise<FetchItemsPageResult> {
   const token = process.env.DUX_API_TOKEN;
@@ -129,11 +141,19 @@ export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAG
       };
     }
 
+    await consumeBody(res);
     lastError = new Error(`Error API Dux: ${res.status} ${res.statusText}`);
 
     if (res.status === 429 && attempt < MAX_RETRIES_429) {
-      const waitMs = RETRY_429_BASE_MS * Math.pow(2, attempt);
-      console.warn(`[DUX API] 429 Too Many Requests — reintento en ${waitMs / 1000}s (intento ${attempt + 1}/${MAX_RETRIES_429})`);
+      let waitMs = RETRY_429_BASE_MS * Math.pow(2, attempt);
+      const retryAfter = res.headers.get("Retry-After");
+      if (retryAfter) {
+        const seconds = parseInt(retryAfter, 10);
+        if (!Number.isNaN(seconds)) waitMs = Math.max(waitMs, seconds * 1000);
+      }
+      console.warn(
+        `[DUX API] 429 Too Many Requests (offset ${offset}) — reintento en ${Math.round(waitMs / 1000)}s (intento ${attempt + 1}/${MAX_RETRIES_429})`
+      );
       await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }

@@ -11,8 +11,11 @@ import {
 } from "@/lib/duxApi";
 
 /** Pausa entre peticiones para evitar 429 Too Many Requests (configurable por env). */
-const DELAY_MS = Number(process.env.DUX_SYNC_DELAY_MS) || 2500;
+const DELAY_MS = Number(process.env.DUX_SYNC_DELAY_MS) || 4000;
 const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
+
+/** Segundos aproximados por lote de 50 ítems (delay + petición + DB), para estimar tiempo restante. */
+export const SYNC_SECONDS_PER_BATCH = DELAY_MS / 1000 + 1.5;
 
 export interface SyncListaPrecioTiendaResult {
   creados: number;
@@ -40,16 +43,24 @@ function itemDuxToRecord(item: ItemDux) {
   };
 }
 
+export interface SyncProgressCallback {
+  onProgress?(processed: number, total: number): void;
+}
+
 /**
  * Sincroniza productos desde la API DUX hacia lista_precios_tienda.
- * Bucle: consultar (50) -> mapear -> upsert en lote -> delay 1s -> repetir hasta no haber más.
+ * Bucle: consultar (50) -> mapear -> upsert en lote -> delay -> repetir hasta no haber más.
+ * Si se pasa onProgress, se invoca en cada iteración con (procesados, total).
  */
-export async function syncListaPrecioTiendaFromDux(): Promise<SyncListaPrecioTiendaResult> {
+export async function syncListaPrecioTiendaFromDux(
+  options?: SyncProgressCallback
+): Promise<SyncListaPrecioTiendaResult> {
   const inicioMs = Date.now();
   let offset = 0;
   let totalApi = 0;
   let totalProcesados = 0;
   const errores: string[] = [];
+  const onProgress = options?.onProgress;
 
   const countBefore = await prisma.listaPrecioTienda.count();
 
@@ -61,6 +72,7 @@ export async function syncListaPrecioTiendaFromDux(): Promise<SyncListaPrecioTie
     if (results.length === 0) break;
 
     const procesadosHastaAhora = offset + results.length;
+    if (onProgress && totalApi > 0) onProgress(procesadosHastaAhora, totalApi);
     const pct =
       totalApi > 0 ? Math.round((procesadosHastaAhora / totalApi) * 100) : 0;
     console.log(
