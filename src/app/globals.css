@@ -181,6 +181,28 @@
 }
 
 @layer components {
+  /* ─── Barra de filtros Tienda / lista-precios (contenedor principal) ─── */
+  .filtros-contenedor-tienda {
+    @apply flex flex-col gap-y-2 py-2;
+  }
+
+  /* ─── Clase maestra inputs y selects de filtro: ancho 100%, h-10, colores y bordes ─── */
+  .input-filtro-unificado {
+    @apply w-full flex items-center justify-between gap-2 px-3;
+    @apply bg-background border border-input rounded-lg shadow-sm;
+    @apply transition-[box-shadow,border-color] duration-150;
+    @apply text-sm font-semibold text-foreground;
+    @apply h-10 min-h-[2.5rem];
+  }
+  .input-filtro-unificado::placeholder,
+  .input-filtro-unificado[data-placeholder] {
+    @apply text-muted-foreground font-bold;
+  }
+  .input-filtro-unificado:focus-visible,
+  .input-filtro-unificado[data-state="open"] {
+    @apply border-primary outline-none ring-[3px] ring-primary/20;
+  }
+
   /* ─── Clases maestras lista-precios / gestión (cascada desde una variable) ─── */
 
   /* Contenedor de tabla lista-precios (sin scroll interno) */

@@ -94,9 +94,13 @@ export interface FetchItemsPageResult {
   hasMore: boolean;
 }
 
+const MAX_RETRIES_429 = 4;
+const RETRY_429_BASE_MS = 5000;
+
 /**
  * Obtiene una página de ítems de la API DUX (limit=50 por restricción de la API).
  * Para sincronización paginada con lista_precios_tienda.
+ * Ante 429 Too Many Requests: reintenta con backoff (5s, 10s, 20s, 40s).
  */
 export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAGE_LIMIT): Promise<FetchItemsPageResult> {
   const token = process.env.DUX_API_TOKEN;
@@ -108,22 +112,36 @@ export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAG
   };
 
   const url = `${DUX_BASE_URL}?limit=${limit}&offset=${offset}`;
-  const res = await fetch(url, { headers, cache: "no-store" });
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
+  for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
+    const res = await fetch(url, { headers, cache: "no-store" });
+
+    if (res.ok) {
+      const json = await res.json();
+      const rawResults: unknown[] = json.results ?? [];
+      const total = Number(json.paging?.total ?? 0);
+      const results = rawResults.map(mapItem);
+      return {
+        results,
+        total,
+        hasMore: rawResults.length > 0 && offset + rawResults.length < total,
+      };
+    }
+
+    lastError = new Error(`Error API Dux: ${res.status} ${res.statusText}`);
+
+    if (res.status === 429 && attempt < MAX_RETRIES_429) {
+      const waitMs = RETRY_429_BASE_MS * Math.pow(2, attempt);
+      console.warn(`[DUX API] 429 Too Many Requests — reintento en ${waitMs / 1000}s (intento ${attempt + 1}/${MAX_RETRIES_429})`);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    throw lastError;
   }
 
-  const json = await res.json();
-  const rawResults: unknown[] = json.results ?? [];
-  const total = Number(json.paging?.total ?? 0);
-  const results = rawResults.map(mapItem);
-
-  return {
-    results,
-    total,
-    hasMore: rawResults.length > 0 && offset + rawResults.length < total,
-  };
+  throw lastError ?? new Error("Error API Dux: desconocido");
 }
 
 export async function fetchTodosLosItems(): Promise<ItemDux[]> {

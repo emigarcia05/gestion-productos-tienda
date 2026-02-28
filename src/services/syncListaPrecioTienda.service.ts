@@ -10,7 +10,8 @@ import {
   type ItemDux,
 } from "@/lib/duxApi";
 
-const DELAY_MS = 1000;
+/** Pausa entre peticiones para evitar 429 Too Many Requests (configurable por env). */
+const DELAY_MS = Number(process.env.DUX_SYNC_DELAY_MS) || 2500;
 const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 
 export interface SyncListaPrecioTiendaResult {
