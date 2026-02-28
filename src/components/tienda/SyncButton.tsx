@@ -4,48 +4,38 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useSyncDux } from "@/hooks/useSyncDux";
-import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
-import SyncModal from "@/components/shared/SyncModal";
+import { sincronizarListaPrecioTiendaDux } from "@/actions/syncListaPrecioTienda";
 
 export default function SyncButton() {
-  const [modal, setModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  const { syncing, progreso, ejecutar } = useSyncDux((result) => {
-    toast.success(
-      `Sync completado en ${(result.duracionMs / 1000).toFixed(1)}s — ${result.total.toLocaleString()} items: ${result.creados} nuevos, ${result.actualizados} actualizados, ${result.deshabilitados} deshabilitados`,
-      { duration: 8000 }
-    );
-    setModal(false);
-    window.location.reload();
-  });
+  async function handleClick() {
+    setSyncing(true);
+    try {
+      const result = await sincronizarListaPrecioTiendaDux();
+      toast.success(
+        `¡Sincronización completa! Se procesaron ${result.totalProcesados.toLocaleString()} productos.`
+      );
+      if (typeof window !== "undefined") window.location.reload();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(`Error al sincronizar: ${message}`);
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   return (
-    <>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            onClick={() => setModal(true)}
-            variant="outline"
-            size="default"
-            className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY} hover:border-primary`}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Sincronizar
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Sincronizar items de tienda con DUX</TooltipContent>
-      </Tooltip>
-
-      {modal && (
-        <SyncModal
-          syncing={syncing}
-          progreso={progreso}
-          onConfirm={ejecutar}
-          onCancel={() => setModal(false)}
-        />
-      )}
-    </>
+    <Button
+      type="button"
+      variant="default"
+      size="default"
+      className="btn-primario-gestion gap-2 shrink-0"
+      onClick={handleClick}
+      disabled={syncing}
+    >
+      <RefreshCw className={`h-4 w-4 shrink-0 ${syncing ? "animate-spin" : ""}`} />
+      {syncing ? "Sincronizando..." : "Actualizar Datos con Dux"}
+    </Button>
   );
 }

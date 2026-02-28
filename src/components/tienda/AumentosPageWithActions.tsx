@@ -4,6 +4,7 @@ import { useRef } from "react";
 import SectionHeader from "@/components/SectionHeader";
 import TablaAumentos from "@/components/tienda/TablaAumentos";
 import ExportarAumentosButton from "@/components/tienda/ExportarAumentosButton";
+import SyncButton from "@/components/tienda/SyncButton";
 import type { ControlAumentosData } from "@/actions/tienda";
 import type { TablaAumentosHandle } from "./TablaAumentos";
 
@@ -19,7 +20,12 @@ export default function AumentosPageWithActions({ data }: Props) {
       <SectionHeader
         titulo="Lista Tienda"
         subtitulo="Control aumentos"
-        actions={<ExportarAumentosButton tableRef={tableRef} />}
+        actions={
+          <div className="flex items-center justify-end gap-2">
+            <SyncButton />
+            <ExportarAumentosButton tableRef={tableRef} />
+          </div>
+        }
       />
 
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-4">

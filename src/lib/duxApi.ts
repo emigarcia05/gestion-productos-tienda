@@ -85,6 +85,47 @@ export function mapItem(raw: unknown): ItemDux {
 
 const FETCH_LIMIT = 1000;
 
+/** Límite máximo por petición que permite la API DUX (50 ítems). */
+export const DUX_API_PAGE_LIMIT = 50;
+
+export interface FetchItemsPageResult {
+  results: ItemDux[];
+  total: number;
+  hasMore: boolean;
+}
+
+/**
+ * Obtiene una página de ítems de la API DUX (limit=50 por restricción de la API).
+ * Para sincronización paginada con lista_precios_tienda.
+ */
+export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAGE_LIMIT): Promise<FetchItemsPageResult> {
+  const token = process.env.DUX_API_TOKEN;
+  if (!token) throw new Error("DUX_API_TOKEN no configurado.");
+
+  const headers: HeadersInit = {
+    accept: "application/json",
+    Authorization: token,
+  };
+
+  const url = `${DUX_BASE_URL}?limit=${limit}&offset=${offset}`;
+  const res = await fetch(url, { headers, cache: "no-store" });
+
+  if (!res.ok) {
+    throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
+  }
+
+  const json = await res.json();
+  const rawResults: unknown[] = json.results ?? [];
+  const total = Number(json.paging?.total ?? 0);
+  const results = rawResults.map(mapItem);
+
+  return {
+    results,
+    total,
+    hasMore: rawResults.length > 0 && offset + rawResults.length < total,
+  };
+}
+
 export async function fetchTodosLosItems(): Promise<ItemDux[]> {
   const token = process.env.DUX_API_TOKEN;
   if (!token) throw new Error("DUX_API_TOKEN no configurado.");
