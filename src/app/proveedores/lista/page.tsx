@@ -35,7 +35,7 @@ export default async function ListaProveedoresPage() {
       <Separator className="bg-slate-200/60" />
 
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
-        <Card className="h-full flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <Card className="card-contenedor-tabla h-full flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             <Table variant="compact">
               <TableHeader>
