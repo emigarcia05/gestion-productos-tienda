@@ -156,7 +156,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
 
   return (
     <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
-      <table className="tabla-global w-full text-sm">
+      <table className="tabla-gestion-compacta">
         <thead className="sticky top-0 z-10">
           <tr>
             {puede(rol, col.codProdProv) && (

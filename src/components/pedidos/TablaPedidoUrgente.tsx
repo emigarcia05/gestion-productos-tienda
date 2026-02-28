@@ -64,7 +64,7 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
       <Card className="rounded-xl shadow-sm border-border overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-auto max-h-[calc(100vh-16rem)]">
-            <Table>
+            <Table className="tabla-gestion-compacta">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-28">Proveedor</TableHead>

@@ -175,7 +175,7 @@ export default function SeleccionarProductoModal({
               {proveedorSeleccionado ? ` en ${proveedorSeleccionado.nombre}` : ""}
             </div>
           ) : (
-            <table className="tabla-global w-full text-sm">
+            <table className="tabla-gestion-compacta">
               <thead className="sticky top-0">
                 <tr>
                   <th className="py-2 px-3 text-xs w-20">Prov.</th>

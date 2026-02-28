@@ -9,10 +9,31 @@ import { Button } from "@/components/ui/button";
 const TOAST_SYNC_ID = "sync-dux";
 const POLL_INTERVAL_MS = 2000;
 
-function formatMensajeProgreso(remainingMinutes: number): string {
-  if (remainingMinutes <= 0) return "Sincronizando datos…";
-  if (remainingMinutes === 1) return "Sincronizando datos. Faltan aprox. 1 minuto.";
-  return `Sincronizando datos. Faltan aprox. ${remainingMinutes} minutos.`;
+/** Arma el mensaje del toast: progreso (X de Y) + tiempo estimado (aprox. Z min o seg). */
+function formatMensajeProgreso(data: {
+  total: number;
+  processed: number;
+  remainingSeconds: number;
+  remainingMinutes: number;
+}): string {
+  const { total, processed, remainingSeconds, remainingMinutes } = data;
+  const base = "Sincronizando datos";
+  if (total > 0 && processed >= 0) {
+    const progreso = `${processed.toLocaleString()} de ${total.toLocaleString()} productos`;
+    if (remainingMinutes <= 0 && remainingSeconds <= 0) {
+      return `${base}: ${progreso}.`;
+    }
+    if (remainingSeconds > 0 && remainingSeconds < 60) {
+      return `${base}: ${progreso}. Faltan aprox. ${remainingSeconds} seg.`;
+    }
+    if (remainingMinutes === 1) {
+      return `${base}: ${progreso}. Faltan aprox. 1 minuto.`;
+    }
+    if (remainingMinutes > 1) {
+      return `${base}: ${progreso}. Faltan aprox. ${remainingMinutes} minutos.`;
+    }
+  }
+  return `${base}… (calculando tiempo estimado…)`;
 }
 
 export default function SyncButton() {
@@ -22,7 +43,7 @@ export default function SyncButton() {
 
   async function handleClick() {
     setSyncing(true);
-    toast.loading(formatMensajeProgreso(0), {
+    toast.loading(formatMensajeProgreso({ total: 0, processed: 0, remainingSeconds: 0, remainingMinutes: 0 }), {
       id: TOAST_SYNC_ID,
       duration: Infinity,
     });
@@ -42,7 +63,14 @@ export default function SyncButton() {
         try {
           const res = await fetch("/api/sync-lista-precios-tienda/status");
           const data = await res.json();
-          toast.loading(formatMensajeProgreso(data.remainingMinutes ?? 0), {
+          toast.loading(
+            formatMensajeProgreso({
+              total: data.total ?? 0,
+              processed: data.processed ?? 0,
+              remainingSeconds: data.remainingSeconds ?? 0,
+              remainingMinutes: data.remainingMinutes ?? 0,
+            }),
+            {
             id: TOAST_SYNC_ID,
             duration: Infinity,
           });

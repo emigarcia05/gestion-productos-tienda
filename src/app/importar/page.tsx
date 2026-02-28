@@ -121,7 +121,7 @@ export default async function ImportarPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="tabla-global w-full text-sm">
+              <table className="tabla-gestion-compacta">
                 <thead>
                   <tr className="border-b border-slate-200/80">
                     <th className="!text-left">Archivo</th>

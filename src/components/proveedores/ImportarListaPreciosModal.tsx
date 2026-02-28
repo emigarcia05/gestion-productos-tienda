@@ -315,7 +315,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             </p>
 
             <div className="rounded-lg border border-border/50 overflow-hidden bg-white">
-              <table className="tabla-global w-full text-sm">
+              <table className="tabla-gestion-compacta">
                 <thead>
                   <tr>
                     <th className="py-2 px-3 text-xs w-1/3">Columna del archivo</th>

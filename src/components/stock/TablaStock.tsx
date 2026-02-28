@@ -216,7 +216,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
 
       {/* ── Tabla ── */}
       <div className="flex-1 overflow-auto rounded-lg border bg-white" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
-        <table className="tabla-global w-full text-sm border-collapse">
+        <table className="tabla-gestion-compacta">
           <thead className="sticky top-0 z-10">
             <tr>
               <th className="px-3 py-2 text-xs w-28">Código</th>

@@ -95,7 +95,7 @@ export default async function ProveedorDetallePage({ params }: Props) {
               </div>
             ) : (
               <div className="overflow-x-auto bg-white rounded-lg border border-border/50">
-                <table className="tabla-global w-full text-sm">
+                <table className="tabla-gestion-compacta">
                   <thead>
                     <tr>
                       {puede(rol, p.tabla.codProdProv) && <th className="py-2.5 px-3 text-xs">Cód. Proveedor</th>}

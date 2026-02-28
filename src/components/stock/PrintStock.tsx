@@ -71,7 +71,7 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
     </div>
   </div>
 
-  <table>
+  <table class="tabla-gestion-compacta">
     <thead>
       <tr>
         <th style="width:80px">Código</th>

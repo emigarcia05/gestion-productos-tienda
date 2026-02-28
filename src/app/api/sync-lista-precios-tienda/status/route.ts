@@ -15,9 +15,11 @@ export async function GET() {
   const remainingSeconds = progress.running && !progress.done
     ? remainingBatches * SYNC_SECONDS_PER_BATCH
     : 0;
+  const remainingMinutes = Math.ceil(remainingSeconds / 60);
   return NextResponse.json({
     ...progress,
     secondsPerBatch: SYNC_SECONDS_PER_BATCH,
-    remainingMinutes: Math.ceil(remainingSeconds / 60),
+    remainingSeconds: Math.round(remainingSeconds),
+    remainingMinutes,
   });
 }
