@@ -55,7 +55,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
               <TableHead className="py-2 px-2 text-xs leading-tight">Cod. Tienda</TableHead>
               <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               <TableHead className="py-2 px-2 text-xs leading-tight">Px Compra Final</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight">Mejor Px disponible</TableHead>
+              <TableHead className="py-2 px-2 text-xs leading-tight" title="Mejor Px disponible">✓</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -64,12 +64,14 @@ export async function getTiendaPageData(params: {
   if (marca) andParts.push({ marca });
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
-  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { rubro: { not: null } };
-  if (marca) whereRubros.marca = marca;
-
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { subRubro: { not: null } };
-  if (marca) whereSubRubros.marca = marca;
-  if (rubro) whereSubRubros.rubro = rubro;
+  /* Opciones de filtros encadenadas: cada desplegable solo muestra valores que existen
+   * en el conjunto que cumple TODOS los filtros actuales (q, marca, rubro, subRubro). */
+  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput =
+    andParts.length ? { AND: [...andParts, { marca: { not: null } }] } : { marca: { not: null } };
+  const whereRubros: Prisma.ListaPrecioTiendaWhereInput =
+    andParts.length ? { AND: [...andParts, { rubro: { not: null } }] } : { rubro: { not: null } };
+  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput =
+    andParts.length ? { AND: [...andParts, { subRubro: { not: null } }] } : { subRubro: { not: null } };
 
   const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
@@ -82,7 +84,7 @@ export async function getTiendaPageData(params: {
     prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: whereRubros, orderBy: { rubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: whereSubRubros, orderBy: { subRubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: whereMarcas, orderBy: { marca: "asc" } }),
   ]);
 
   const nombreToPrefijo = new Map(proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo]));
