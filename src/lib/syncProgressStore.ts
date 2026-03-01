@@ -33,6 +33,11 @@ export function setSyncRunning(running: boolean): void {
   state.running = running;
 }
 
+export function setSyncProgress(processed: number, total: number): void {
+  state.processed = processed;
+  state.total = total;
+}
+
 export function runSyncWithProgress(): void {
   if (state.running) return;
   state = {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncListaPrecioTiendaFromDux } from "@/services/syncListaPrecioTienda.service";
-import { getSyncProgress, setSyncRunning } from "@/lib/syncProgressStore";
+import { getSyncProgress, setSyncRunning, setSyncProgress } from "@/lib/syncProgressStore";
 
 /** Evita ejecutar dos sincronizaciones a la vez (p. ej. doble clic). */
 let syncInProgress = false;
@@ -35,7 +35,11 @@ export async function POST() {
   syncInProgress = true;
   setSyncRunning(true);
   try {
-    const result = await syncListaPrecioTiendaFromDux();
+    const result = await syncListaPrecioTiendaFromDux({
+      onProgress(processed, total) {
+        setSyncProgress(processed, total);
+      },
+    });
     setSyncRunning(false);
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {

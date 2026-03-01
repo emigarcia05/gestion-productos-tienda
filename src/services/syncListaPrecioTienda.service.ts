@@ -19,6 +19,9 @@ const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 /** Tamaño de cada chunk al persistir en Neon (evitar timeout). */
 const CHUNK_PERSIST_SIZE = 500;
 
+/** Timeout (ms) de la transacción interactiva por chunk (500 upserts pueden superar 5s por defecto). */
+const TRANSACTION_TIMEOUT_MS = 60_000;
+
 /** Máximo segundos por petición de página; si no hay respuesta, se da por trabado. */
 const PAGINA_TIMEOUT_MS = 15_000;
 
@@ -133,40 +136,45 @@ export async function syncListaPrecioTiendaFromDux(
         if (i === 0) fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'syncListaPrecioTienda.service.ts:first_chunk',message:'first persist chunk',data:{chunkSize:chunk.length},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
         // #endregion
         await prisma.$transaction(
-          chunk.map((row) =>
-            prisma.listaPrecioTienda.upsert({
-              where: { codExt: row.codExt },
-              create: {
-                codExt: row.codExt,
-                codTienda: row.codTienda,
-                rubro: row.rubro,
-                subRubro: row.subRubro,
-                marca: row.marca,
-                proveedor: row.proveedor,
-                descripcionTienda: row.descripcionTienda,
-                costoCompra: new Prisma.Decimal(row.costoCompra),
-                pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
-                stockMaipu: row.stockMaipu,
-                stockGuaymallen: row.stockGuaymallen,
-              },
-              update: {
-                codTienda: row.codTienda,
-                rubro: row.rubro,
-                subRubro: row.subRubro,
-                marca: row.marca,
-                proveedor: row.proveedor,
-                descripcionTienda: row.descripcionTienda,
-                costoCompra: new Prisma.Decimal(row.costoCompra),
-                pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
-                stockMaipu: row.stockMaipu,
-                stockGuaymallen: row.stockGuaymallen,
-                lastSync: new Date(),
-              },
-            })
-          )
+          async (tx) => {
+            for (const row of chunk) {
+              await tx.listaPrecioTienda.upsert({
+                where: { codExt: row.codExt },
+                create: {
+                  codExt: row.codExt,
+                  codTienda: row.codTienda,
+                  rubro: row.rubro,
+                  subRubro: row.subRubro,
+                  marca: row.marca,
+                  proveedor: row.proveedor,
+                  descripcionTienda: row.descripcionTienda,
+                  costoCompra: new Prisma.Decimal(row.costoCompra),
+                  pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
+                  stockMaipu: row.stockMaipu,
+                  stockGuaymallen: row.stockGuaymallen,
+                },
+                update: {
+                  codTienda: row.codTienda,
+                  rubro: row.rubro,
+                  subRubro: row.subRubro,
+                  marca: row.marca,
+                  proveedor: row.proveedor,
+                  descripcionTienda: row.descripcionTienda,
+                  costoCompra: new Prisma.Decimal(row.costoCompra),
+                  pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
+                  stockMaipu: row.stockMaipu,
+                  stockGuaymallen: row.stockGuaymallen,
+                  lastSync: new Date(),
+                },
+              });
+            }
+          },
+          { timeout: TRANSACTION_TIMEOUT_MS }
         );
+        const persistedSoFar = Math.min(i + chunk.length, totalSincronizados);
+        if (onProgress) onProgress(persistedSoFar, totalSincronizados);
         console.log(
-          `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${i + chunk.length}/${totalSincronizados})`
+          `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${persistedSoFar}/${totalSincronizados})`
         );
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
