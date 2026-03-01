@@ -29,6 +29,10 @@ export function getSyncProgress(): SyncProgressState {
   return { ...state };
 }
 
+export function setSyncRunning(running: boolean): void {
+  state.running = running;
+}
+
 export function runSyncWithProgress(): void {
   if (state.running) return;
   state = {

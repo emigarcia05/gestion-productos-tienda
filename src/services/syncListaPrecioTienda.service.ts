@@ -19,6 +19,9 @@ const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 /** Tamaño de cada chunk al persistir en Neon (evitar timeout). */
 const CHUNK_PERSIST_SIZE = 500;
 
+/** Máximo segundos por petición de página; si no hay respuesta, se da por trabado. */
+const PAGINA_TIMEOUT_MS = 15_000;
+
 /** Segundos aproximados por lote de 50 ítems (delay + petición), para estimar tiempo restante. */
 export const SYNC_SECONDS_PER_BATCH = DELAY_MS / 1000 + 1.5;
 
@@ -77,9 +80,20 @@ export async function syncListaPrecioTiendaFromDux(
   const countBefore = await prisma.listaPrecioTienda.count();
 
   // ─── Fase 1: recorrer API y acumular en memoria (sin guardar en DB) ───
+  const timeoutPromise = (): Promise<never> =>
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("La petición a DUX no respondió a tiempo (15 s). Reintentá más tarde.")),
+        PAGINA_TIMEOUT_MS
+      )
+    );
+
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const { results, total, hasMore } = await fetchItemsPage(offset, DUX_API_PAGE_LIMIT);
+    const { results, total, hasMore } = await Promise.race([
+      fetchItemsPage(offset, DUX_API_PAGE_LIMIT),
+      timeoutPromise(),
+    ]);
 
     if (total > 0 && totalApi === 0) totalApi = total;
     if (results.length === 0) break;
