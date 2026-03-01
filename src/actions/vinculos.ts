@@ -54,9 +54,3 @@ export async function desvincularProducto(
   revalidatePath("/tienda");
   return { ok: true, data: undefined };
 }
-
-export async function autoVincular(itemTiendaId: string): Promise<ActionResult<{ vinculados: number }>> {
-  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  revalidatePath("/tienda");
-  return { ok: true, data: { vinculados: 0 } };
-}

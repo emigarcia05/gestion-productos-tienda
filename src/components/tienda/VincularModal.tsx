@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { Link2, Wand2, Plus, Loader2, X, ArrowRightLeft } from "lucide-react";
+import { Link2, Plus, Loader2, X, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,9 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  getVinculos, vincularProducto, desvincularProducto, autoVincular,
-} from "@/actions/vinculos";
+import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
 import { convertirEnProveedor } from "@/actions/tienda";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
@@ -107,22 +105,6 @@ export default function VincularModal({
       const res = await convertirEnProveedor(itemTiendaId, producto.id);
       if (res.ok) {
         toast.success(`Proveedor Dux actualizado a "${producto.proveedor.nombre}"`);
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
-
-  function handleAutoVincular() {
-    startTransition(async () => {
-      const res = await autoVincular(itemTiendaId);
-      if (res.ok) {
-        toast.success(`Auto-vinculado: ${res.data.vinculados} producto(s) nuevos`);
-        const result = await getVinculos(itemTiendaId);
-        if (result.success) {
-          setVinculados(result.data);
-          setCantidad(result.data.length);
-        } else toast.error(result.error);
       } else {
         toast.error(res.error);
       }
@@ -266,21 +248,7 @@ export default function VincularModal({
           </div>
 
           {/* Acciones */}
-          <div className="px-6 py-3 border-t border-border/50 flex items-center justify-between gap-2">
-            {codigoExterno && (
-              <Button
-                size="sm" variant="ghost"
-                className="gap-1.5 text-xs text-muted-foreground"
-                onClick={handleAutoVincular}
-                disabled={isPending}
-              >
-                {isPending
-                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  : <Wand2 className="h-3.5 w-3.5" />
-                }
-                Auto-vincular por código externo
-              </Button>
-            )}
+          <div className="px-6 py-3 border-t border-border/50 flex items-center justify-end gap-2">
             <Button
               size="sm"
               className="gap-1.5 ml-auto"
