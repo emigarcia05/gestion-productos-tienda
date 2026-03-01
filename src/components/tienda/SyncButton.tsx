@@ -50,9 +50,12 @@ export default function SyncButton() {
   const [syncing, setSyncing] = useState(false);
   const router = useRouter();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Último progreso válido (evita que otra instancia serverless con state en 0 sobreescriba el toast). */
+  const lastProgressRef = useRef({ total: 0, processed: 0, remainingSeconds: 0, remainingMinutes: 0 });
 
   async function handleClick() {
     setSyncing(true);
+    lastProgressRef.current = { total: 0, processed: 0, remainingSeconds: 0, remainingMinutes: 0 };
     toast.loading(mensajeProgresoToast({ total: 0, processed: 0, remainingSeconds: 0, remainingMinutes: 0 }), {
       id: TOAST_SYNC_ID,
       duration: Infinity,
@@ -73,15 +76,14 @@ export default function SyncButton() {
         try {
           const res = await fetch("/api/sync-lista-precios-tienda/status");
           const data = await res.json();
-          toast.loading(
-            mensajeProgresoToast({
-              total: data.total ?? 0,
-              processed: data.processed ?? 0,
-              remainingSeconds: data.remainingSeconds ?? 0,
-              remainingMinutes: data.remainingMinutes ?? 0,
-            }),
-            { id: TOAST_SYNC_ID, duration: Infinity }
-          );
+          const total = data.total ?? 0;
+          const processed = data.processed ?? 0;
+          const remainingSeconds = data.remainingSeconds ?? 0;
+          const remainingMinutes = data.remainingMinutes ?? 0;
+          const tieneProgreso = total > 0 || processed > 0;
+          if (tieneProgreso) {
+            lastProgressRef.current = { total, processed, remainingSeconds, remainingMinutes };
+          }
           if (data.done) {
             if (pollRef.current) {
               clearInterval(pollRef.current);
@@ -108,6 +110,9 @@ export default function SyncButton() {
               }
               router.refresh();
             }
+          } else {
+            const p = tieneProgreso ? { total, processed, remainingSeconds, remainingMinutes } : lastProgressRef.current;
+            toast.loading(mensajeProgresoToast(p), { id: TOAST_SYNC_ID, duration: Infinity });
           }
         } catch {
           // Si falla el polling, mantener el toast y seguir intentando

@@ -13,6 +13,7 @@ Todos los scripts se ejecutan **desde la terminal** en la raíz del proyecto. So
 | `npm run db:create-lista-precios` | Crea la tabla `lista_precios_proveedores` en Neon (FK a `proveedores` ON DELETE CASCADE, trigger para `cod_ext`, columna generada `px_compra_final`). |
 | `npm run db:create-lista-precios-tienda` | Crea la tabla `lista_precios_tienda` (columna `cod_ext`; sin FK; índice en `cod_ext`). |
 | `npm run db:fix-lista-precios-tienda-cod-ext` | Solo para tablas creadas con versión antigua: renombra `cod_externo` → `cod_ext`. |
+| `npm run db:fix-lista-precios-proveedores-columnas` | Si falla `listaPrecioProveedor.updateMany()` por columna inexistente: renombra `descuento_*` / `cx_transporte` a `dto_producto`, `dto_cantidad`, `cx_aprox_transporte`. |
 | `npm run db:simulate-api-tienda` | Simula llegada de datos de la API: hace upsert de filas de prueba en `lista_precios_tienda`. |
 | `npm run db:generate` | Regenera el cliente Prisma. |
 | `npm run db:push` | Sincroniza el schema de Prisma con la BD (crea/actualiza tablas). |
@@ -32,6 +33,13 @@ Si al usar la app o la sincronización DUX ves **"The column (not available) doe
 
 1. **Recomendado:** `npx prisma migrate deploy` (aplica todas las migraciones pendientes, incluyendo el renombrado).
 2. **Solo esta tabla:** `npm run db:fix-lista-precios-tienda-cod-ext` (renombra `cod_externo` → `cod_ext` si existe).
+
+## Error P2022 en lista_precios_proveedores (edición masiva)
+
+Si al usar **edición masiva** en Lista Px Proveedores ves **"The column (not available) does not exist"** en `listaPrecioProveedor.updateMany()`, la tabla puede tener nombres de columnas distintos a los que espera Prisma (`dto_producto`, `dto_cantidad`, `cx_aprox_transporte`). Ejecutá **una** de estas opciones:
+
+1. **Recomendado:** `npx prisma migrate deploy` (aplica la migración que renombra columnas alternativas).
+2. **Diagnóstico y corrección manual:** `npm run db:fix-lista-precios-proveedores-columnas` (muestra las columnas actuales y renombra `descuento_producto` → `dto_producto`, etc., si aplica).
 
 ## Seguridad: lista_precios_tienda
 
