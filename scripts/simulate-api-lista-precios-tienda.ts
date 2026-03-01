@@ -50,10 +50,10 @@ export interface FilaListaPreciosTienda {
 
 const UPSERT_SQL = `
 INSERT INTO lista_precios_tienda (
-  cod_externo, cod_tienda, rubro, sub_rubro, marca, proveedor, descripcion_tienda,
+  cod_ext, cod_tienda, rubro, sub_rubro, marca, proveedor, descripcion_tienda,
   costo_compra, px_lista_tienda, stock_maipu, stock_guaymallen
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-ON CONFLICT (cod_externo) DO UPDATE SET
+ON CONFLICT (cod_ext) DO UPDATE SET
   cod_tienda       = EXCLUDED.cod_tienda,
   rubro            = EXCLUDED.rubro,
   sub_rubro        = EXCLUDED.sub_rubro,

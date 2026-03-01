@@ -1,5 +1,5 @@
 /**
- * Crea la tabla lista_precios_tienda en Neon (sin FK; índice cod_externo; solo API escribe).
+ * Crea la tabla lista_precios_tienda en Neon (sin FK; índice cod_ext; solo API escribe).
  * Ejecutar desde la raíz: npm run db:create-lista-precios-tienda
  */
 import { readFileSync, existsSync } from "fs";
@@ -40,7 +40,7 @@ async function main() {
   const client = await getClient();
   try {
     await client.query(sql);
-    console.log("✓ Tabla lista_precios_tienda creada (sin FK; índice cod_externo; updated_at por trigger).");
+    console.log("✓ Tabla lista_precios_tienda creada (sin FK; índice cod_ext; last_sync por trigger).");
   } finally {
     client.release();
   }

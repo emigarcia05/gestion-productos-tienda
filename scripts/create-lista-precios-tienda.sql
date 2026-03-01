@@ -1,6 +1,6 @@
 -- Tabla lista_precios_tienda – Alimentada exclusivamente por API externa
--- Sin FK; índice en cod_externo para cruces rápidos con lista_precios_proveedores (cod_ext = cod_externo).
--- Upsert por cod_externo. last_sync se actualiza en cada escritura.
+-- Sin FK; índice en cod_ext para cruces rápidos con lista_precios_proveedores.cod_ext.
+-- Upsert por cod_ext. last_sync se actualiza en cada escritura.
 -- Solo la lógica de sincronización API debe escribir; frontend solo lectura.
 -- Ejecutar: npm run db:create-lista-precios-tienda
 
@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS lista_precios_tienda (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cod_tienda        TEXT NOT NULL,
-  cod_externo       TEXT NOT NULL UNIQUE,
+  cod_ext           TEXT NOT NULL UNIQUE,
   rubro             TEXT,
   sub_rubro         TEXT,
   marca             TEXT,
@@ -23,16 +23,16 @@ CREATE TABLE IF NOT EXISTS lista_precios_tienda (
   last_sync         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Índice en cod_externo para JOINs rápidos con lista_precios_proveedores.cod_ext
-CREATE INDEX IF NOT EXISTS idx_lista_precios_tienda_cod_externo
-  ON lista_precios_tienda (cod_externo);
+-- Índice en cod_ext para JOINs rápidos con lista_precios_proveedores.cod_ext
+CREATE INDEX IF NOT EXISTS idx_lista_precios_tienda_cod_ext
+  ON lista_precios_tienda (cod_ext);
 
 -- Índice para búsquedas por proveedor (texto); cruce con proveedores.nombre por ILIKE/=
 CREATE INDEX IF NOT EXISTS idx_lista_precios_tienda_proveedor
   ON lista_precios_tienda (proveedor);
 
 COMMENT ON TABLE lista_precios_tienda IS 'Precios tienda desde API externa; solo sincronización API escribe. Frontend solo lectura.';
-COMMENT ON COLUMN lista_precios_tienda.cod_externo IS 'Llave para relacionar con lista_precios_proveedores.cod_ext';
+COMMENT ON COLUMN lista_precios_tienda.cod_ext IS 'Llave para relacionar con lista_precios_proveedores.cod_ext';
 COMMENT ON COLUMN lista_precios_tienda.proveedor IS 'Texto libre; para cruce con proveedores usar: JOIN proveedores p ON p.nombre ILIKE t.proveedor OR p.nombre = t.proveedor';
 COMMENT ON COLUMN lista_precios_tienda.descripcion_tienda IS 'Descripción provista por la API de tienda';
 COMMENT ON COLUMN lista_precios_tienda.last_sync IS 'Última vez que la API actualizó este registro';
