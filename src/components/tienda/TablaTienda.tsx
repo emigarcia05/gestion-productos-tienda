@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import { fmtPrecio } from "@/lib/format";
@@ -76,8 +76,8 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                 </TableCell>
                 <TableCell className="py-2 px-2 text-center">
                   {setMejorPrecio.has(item.id) ? (
-                    <span title="El proveedor principal no es el del mejor precio" className="flex justify-center">
-                      <Check className="h-4 w-4 text-emerald-500" />
+                    <span title="Oportunidad de mejora: hay un proveedor con mejor precio" className="flex justify-center">
+                      <Lightbulb className="h-4 w-4 text-amber-500" />
                     </span>
                   ) : (
                     <span className="text-slate-400 text-xs">—</span>

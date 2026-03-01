@@ -205,7 +205,7 @@ export default function VincularModal({
             ) : vinculados.length === 0 ? (
               <p className="modal-mensaje-vacio">Sin vínculos aún.</p>
             ) : (
-              <div className="px-6 py-3">
+              <div className="modal-vinculos-listado-contenedor">
                 {vinculados.map((prod, idx) => {
                   const pxCompra = calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte);
                   const esMenorCosto = vinculados.length > 1 && pxCompra <= minCxVinculados;
@@ -216,7 +216,7 @@ export default function VincularModal({
                       className={`modal-vinculos-fila ${zebra} ${esMenorCosto ? "modal-vinculos-fila--destacado" : ""}`}
                     >
                       <div className="modal-vinculos-celda">
-                        <Badge variant="secondary" className="font-mono text-xs">
+                        <Badge variant="secondary" className="modal-vinculos-prefijo">
                           {prod.proveedor.prefijo}
                         </Badge>
                       </div>
@@ -226,7 +226,7 @@ export default function VincularModal({
                       <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
                         <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
                       </div>
-                      <div className="modal-vinculos-celda flex items-center gap-1 justify-center">
+                      <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
                         <Button
                           variant="outline"
                           size="sm"

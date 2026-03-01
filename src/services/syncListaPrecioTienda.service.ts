@@ -39,9 +39,10 @@ export interface SyncListaPrecioTiendaResult {
 
 function itemDuxToRecord(item: ItemDux) {
   const codExt = (item.codigoExterno ?? item.codItem).trim() || item.codItem;
+  const codTienda = (item.codItem ?? "").trim() || COD_TIENDA;
   return {
     codExt,
-    codTienda: COD_TIENDA,
+    codTienda,
     rubro: item.rubro ?? null,
     subRubro: item.subRubro ?? null,
     marca: item.marca ?? null,
