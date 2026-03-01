@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const PAGE_SIZE = 50;
@@ -54,7 +55,7 @@ export async function getTiendaPageData(params: {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  const where: Parameters<typeof prisma.listaPrecioTienda.findMany>[0]["where"] = {};
+  const where: Prisma.ListaPrecioTiendaWhereInput = {};
   if (q.trim()) {
     const term = q.trim();
     where.OR = [
