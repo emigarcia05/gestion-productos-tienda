@@ -34,10 +34,11 @@ export async function POST() {
   }
   syncInProgress = true;
   setSyncRunning(true);
+  setSyncProgress(0, 0, "sincronizando");
   try {
     const result = await syncListaPrecioTiendaFromDux({
-      onProgress(processed, total) {
-        setSyncProgress(processed, total);
+      onProgress(processed, total, phase) {
+        setSyncProgress(processed, total, phase);
       },
     });
     setSyncRunning(false);

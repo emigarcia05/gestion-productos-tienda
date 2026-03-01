@@ -34,9 +34,6 @@ function buildHref(
 }
 
 export default function PaginacionProductos({ paginaActual, totalPaginas, total, pageSize, q, proveedor, basePath, extraParams }: Props) {
-  const desde = Math.min((paginaActual - 1) * pageSize + 1, total);
-  const hasta = Math.min(paginaActual * pageSize, total);
-
   if (totalPaginas <= 1) return null;
 
   const paginas: (number | "...")[] = [];
@@ -49,12 +46,7 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
   }
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <p className="text-xs text-accent2">
-        {desde.toLocaleString()}–{hasta.toLocaleString()} de {total.toLocaleString()}
-      </p>
-
-      <div className="flex items-center gap-1">
+    <div className="flex items-center justify-end gap-1">
         <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === 1}>
           <Link href={buildHref(1, q, proveedor, basePath, extraParams)}><ChevronsLeft className="h-3.5 w-3.5" /></Link>
         </Button>
@@ -84,7 +76,6 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
         <Button variant="outline" size="icon" className="h-7 w-7" asChild disabled={paginaActual === totalPaginas}>
           <Link href={buildHref(totalPaginas, q, proveedor, basePath, extraParams)}><ChevronsRight className="h-3.5 w-3.5" /></Link>
         </Button>
-      </div>
     </div>
   );
 }

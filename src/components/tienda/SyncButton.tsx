@@ -14,6 +14,7 @@ export default function SyncButton() {
   const [syncing, setSyncing] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [total, setTotal] = useState(0);
+  const [phase, setPhase] = useState<"sincronizando" | "guardando" | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
 
@@ -24,6 +25,7 @@ export default function SyncButton() {
       const data = await res.json();
       setProcessed(data.processed ?? 0);
       setTotal(data.total ?? 0);
+      setPhase(data.phase ?? null);
     } catch {
       // ignore
     }
@@ -33,10 +35,7 @@ export default function SyncButton() {
     setSyncing(true);
     setProcessed(0);
     setTotal(0);
-    toast.loading(
-      "Sincronizando datos con DUX. Esto puede tardar varios minutos…",
-      { id: TOAST_SYNC_ID, duration: Infinity }
-    );
+    setPhase("sincronizando");
 
     pollRef.current = setInterval(fetchProgress, POLL_INTERVAL_MS);
 
@@ -76,14 +75,6 @@ export default function SyncButton() {
         const primerError = data.errores[0];
         toast.error(
           `Sincronización con errores al guardar: ${primerError}${data.errores.length > 1 ? ` (y ${data.errores.length - 1} más)` : ""}`,
-          { id: TOAST_SYNC_ID }
-        );
-      } else {
-        const guardados = (Number(data.creados) ?? 0) + (Number(data.actualizados) ?? 0);
-        toast.success(
-          guardados > 0
-            ? `Sincronización completa. ${guardados.toLocaleString()} productos guardados.`
-            : "Sincronización completa. Sin nuevos datos que guardar.",
           { id: TOAST_SYNC_ID }
         );
       }
@@ -126,12 +117,15 @@ export default function SyncButton() {
         {syncing ? "Sincronizando…" : "Actualizar Datos con Dux"}
       </Button>
       {syncing && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-slate-800"
-        >
-          Sincronizando datos… {total > 0 ? `${processed.toLocaleString()} de ${total.toLocaleString()} productos` : "…"}
+        <div role="status" aria-live="polite" className="mensaje-proceso">
+          {phase === "guardando" ? "Guardando! " : "Sincronizando! "}
+          {total > 0 ? (
+            <span className="mensaje-proceso__detalle">
+              {processed.toLocaleString()} de {total.toLocaleString()}
+            </span>
+          ) : (
+            "…"
+          )}
         </div>
       )}
     </div>

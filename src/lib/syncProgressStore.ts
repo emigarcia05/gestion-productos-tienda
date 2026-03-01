@@ -7,10 +7,13 @@ import {
   type SyncListaPrecioTiendaResult,
 } from "@/services/syncListaPrecioTienda.service";
 
+export type SyncPhase = "sincronizando" | "guardando";
+
 export interface SyncProgressState {
   running: boolean;
   total: number;
   processed: number;
+  phase: SyncPhase | null;
   done: boolean;
   error: string | null;
   result: SyncListaPrecioTiendaResult | null;
@@ -20,6 +23,7 @@ let state: SyncProgressState = {
   running: false,
   total: 0,
   processed: 0,
+  phase: null,
   done: false,
   error: null,
   result: null,
@@ -33,9 +37,10 @@ export function setSyncRunning(running: boolean): void {
   state.running = running;
 }
 
-export function setSyncProgress(processed: number, total: number): void {
+export function setSyncProgress(processed: number, total: number, phase?: SyncPhase | null): void {
   state.processed = processed;
   state.total = total;
+  if (phase !== undefined) state.phase = phase;
 }
 
 export function runSyncWithProgress(): void {
@@ -44,14 +49,16 @@ export function runSyncWithProgress(): void {
     running: true,
     total: 0,
     processed: 0,
+    phase: "sincronizando",
     done: false,
     error: null,
     result: null,
   };
   syncListaPrecioTiendaFromDux({
-    onProgress(processed, total) {
+    onProgress(processed, total, phase) {
       state.processed = processed;
       state.total = total;
+      if (phase !== undefined) state.phase = phase;
     },
   })
     .then((result) => {

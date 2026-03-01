@@ -56,8 +56,10 @@ function itemDuxToRecord(item: ItemDux) {
 
 type RecordTienda = ReturnType<typeof itemDuxToRecord>;
 
+export type SyncPhase = "sincronizando" | "guardando";
+
 export interface SyncProgressCallback {
-  onProgress?(processed: number, total: number): void;
+  onProgress?(processed: number, total: number, phase?: SyncPhase): void;
 }
 
 /**
@@ -105,7 +107,7 @@ export async function syncListaPrecioTiendaFromDux(
     todosLosProductos.push(...batch);
 
     const procesadosHastaAhora = todosLosProductos.length;
-    if (onProgress && totalApi > 0) onProgress(procesadosHastaAhora, totalApi);
+    if (onProgress && totalApi > 0) onProgress(procesadosHastaAhora, totalApi, "sincronizando");
     const pct = totalApi > 0 ? Math.round((procesadosHastaAhora / totalApi) * 100) : 0;
     console.log(
       `Procesando offset ${offset} de un total de ${totalApi}... (${pct}% completado)`
@@ -126,6 +128,7 @@ export async function syncListaPrecioTiendaFromDux(
   // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
   // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
   if (totalSincronizados > 0) {
+    if (onProgress) onProgress(0, totalSincronizados, "guardando");
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
       const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
       const byCodExt = new Map<string, RecordTienda>();
@@ -172,7 +175,7 @@ export async function syncListaPrecioTiendaFromDux(
           { timeout: TRANSACTION_TIMEOUT_MS }
         );
         const persistedSoFar = Math.min(i + chunk.length, totalSincronizados);
-        if (onProgress) onProgress(persistedSoFar, totalSincronizados);
+        if (onProgress) onProgress(persistedSoFar, totalSincronizados, "guardando");
         console.log(
           `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${persistedSoFar}/${totalSincronizados})`
         );

@@ -626,3 +626,18 @@ button.input-filtro-custom svg,
   --accent2:  #FFC107;
   --action:   #3D96D0;
 }
+
+/* Mensaje de proceso en curso (Guardando, Sincronizando, Importando, etc.). */
+.mensaje-proceso {
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in oklch, var(--accent2) 50%, transparent);
+  background-color: color-mix(in oklch, var(--accent2) 12%, var(--background));
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+.mensaje-proceso__detalle {
+  color: var(--accent2);
+  font-weight: 600;
+}
