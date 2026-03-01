@@ -174,6 +174,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
               <TableHead className="w-28">PX COMPRA FINAL</TableHead>
               <TableHead className="w-24">PX LISTA</TableHead>
+              <TableHead className="w-20">DESC. MARCA</TableHead>
               <TableHead className="w-20">DESC. PROD.</TableHead>
               <TableHead className="w-20">DESC. CANT.</TableHead>
               <TableHead className="w-24">CX. APROX TRANSPORTE</TableHead>
@@ -207,6 +208,9 @@ export default function ListaPreciosTablaConFiltros({
                   ${fmtPrecio(Number(fila.pxListaProveedor))}
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
+                  {fmtNumero(fila.dtoMarca)}%
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoProducto)}%
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
@@ -221,7 +225,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableRow>
                 <TableCell
                   className="celda-datos py-1 text-muted-foreground text-center"
-                  colSpan={8}
+                  colSpan={9}
                 >
                   {filas.length === 0
                     ? "No hay datos de lista de precios para mostrar."

@@ -39,6 +39,7 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; }
 
+    /* Token alineado con globals.css :root --primary (SSOT) */
     :root { --primary: #0072BB; }
     .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; border-bottom: 2px solid var(--primary); padding-bottom: 6px; }
     .header h1 { font-size: 16pt; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }

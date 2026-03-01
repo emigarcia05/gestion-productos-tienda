@@ -50,7 +50,7 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* Tema SaaS: fondo amplio, primario #0072BB, acentos #FFC107 solo críticos */
+/* Tema SaaS: fondo amplio, primario var(--primary), acentos var(--accent2). SSOT: solo variables. */
 :root {
   --font-geist-sans: "Geist", "Geist Fallback";
   --font-geist-mono: "Geist Mono", "Geist Mono Fallback";
@@ -186,21 +186,28 @@
     @apply flex flex-col gap-y-2 py-2;
   }
 
-  /* ─── Clase maestra inputs y selects de filtro: ancho 100%, h-10, colores y bordes ─── */
-  .input-filtro-unificado {
+  /* ─── Clase maestra inputs y selects de filtro (SSOT): una sola clase, variables de tema ─── */
+  .input-filtro-unificado,
+  .input-filtro-custom {
     @apply w-full flex items-center justify-between gap-2 px-3;
-    @apply bg-background border border-input rounded-lg shadow-sm;
+    @apply bg-background border rounded-lg shadow-sm;
+    border-color: var(--primary);
     @apply transition-[box-shadow,border-color] duration-150;
     @apply text-sm font-semibold text-foreground;
     @apply h-10 min-h-[2.5rem];
   }
   .input-filtro-unificado::placeholder,
-  .input-filtro-unificado[data-placeholder] {
+  .input-filtro-unificado[data-placeholder],
+  .input-filtro-custom::placeholder,
+  .input-filtro-custom[data-placeholder] {
     @apply text-muted-foreground font-bold;
   }
   .input-filtro-unificado:focus-visible,
-  .input-filtro-unificado[data-state="open"] {
-    @apply border-primary outline-none ring-[3px] ring-primary/20;
+  .input-filtro-unificado[data-state="open"],
+  .input-filtro-custom:focus-visible,
+  .input-filtro-custom[data-state="open"] {
+    @apply outline-none ring-[3px] ring-primary/20;
+    border-color: var(--ring);
   }
 
   /* ─── Clases maestras lista-precios / gestión (cascada desde una variable) ─── */
@@ -263,8 +270,9 @@
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 
-  /* Input/select de filtro unificado (buscadores y selects) — variables y estilos unificados */
-  .input-filtro-unificado {
+  /* Input/select de filtro (SSOT): una sola definición; bordes/colores desde :root */
+  .input-filtro-unificado,
+  .input-filtro-custom {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -289,26 +297,28 @@
     font-family: var(--font-sans);
     color: var(--foreground);
     background-color: var(--background);
-    border: 1px solid #0072BB !important;
-    border-style: solid !important;
+    border: 1px solid var(--primary);
     border-radius: calc(var(--radius) - 2px);
-    border-color: #0072BB !important;
     transition-property: color, box-shadow, border-color;
     transition-timing-function: var(--default-transition-timing-function);
     transition-duration: var(--default-transition-duration);
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
-  .input-filtro-unificado::placeholder {
+  .input-filtro-unificado::placeholder,
+  .input-filtro-custom::placeholder {
     color: var(--muted-foreground);
     font-weight: 700;
   }
-  .input-filtro-unificado:focus-visible {
+  .input-filtro-unificado:focus-visible,
+  .input-filtro-custom:focus-visible {
     outline: none;
     border-color: var(--ring);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent);
   }
   button.input-filtro-unificado,
-  [data-slot="select-trigger"].input-filtro-unificado {
+  button.input-filtro-custom,
+  [data-slot="select-trigger"].input-filtro-unificado,
+  [data-slot="select-trigger"].input-filtro-custom {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
@@ -317,41 +327,44 @@
     max-width: 100%;
     box-sizing: border-box;
   }
-  /* ─── Fila de filtros desplegables: 5 por fila; trigger y menú = 100% de la columna ───
-   * El contenedor (wrapper) de cada select llena la columna; el trigger y el Content heredan ese ancho.
-   */
   .fila-filtros-5 > div {
     min-width: 0;
     width: 100%;
   }
-  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado {
+  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado,
+  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-custom {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
     overflow: hidden;
   }
-  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"] {
+  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
+  .fila-filtros-5 [data-slot="select-trigger"].input-filtro-custom [data-slot="select-value"] {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
   }
-  /* Trigger de filtro: mismo aspecto que el input de descripción (fondo, borde #0072BB, tipografía) */
   button.input-filtro-unificado,
-  [data-slot="select-trigger"].input-filtro-unificado {
+  button.input-filtro-custom,
+  [data-slot="select-trigger"].input-filtro-unificado,
+  [data-slot="select-trigger"].input-filtro-custom {
     background-color: var(--background) !important;
-    border: 1px solid #0072BB !important;
-    border-color: #0072BB !important;
+    border: 1px solid var(--primary) !important;
     color: var(--foreground) !important;
   }
   button.input-filtro-unificado:focus-visible,
-  [data-slot="select-trigger"].input-filtro-unificado:focus-visible {
+  button.input-filtro-custom:focus-visible,
+  [data-slot="select-trigger"].input-filtro-unificado:focus-visible,
+  [data-slot="select-trigger"].input-filtro-custom:focus-visible {
     outline: none;
     border-color: var(--ring) !important;
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent);
   }
   button.input-filtro-unificado svg,
-  [data-slot="select-trigger"].input-filtro-unificado svg {
+  button.input-filtro-custom svg,
+  [data-slot="select-trigger"].input-filtro-unificado svg,
+  [data-slot="select-trigger"].input-filtro-custom svg {
     color: var(--muted-foreground);
     flex-shrink: 0;
   }
@@ -442,12 +455,12 @@
 .tabla-gestion-compacta thead,
 .tabla-gestion-compacta thead tr,
 .tabla-gestion-compacta thead th {
-  background-color: #0072BB !important;
+  background-color: var(--primary) !important;
   transition: none;
 }
 .tabla-gestion-compacta thead tr:hover,
 .tabla-gestion-compacta thead tr:hover th {
-  background-color: #0072BB !important;
+  background-color: var(--primary) !important;
 }
 .tabla-gestion-compacta thead th {
   padding: 0.375rem 0.625rem !important;
@@ -779,6 +792,7 @@ header .section-header-actions button[data-variant="secondary"] {
   color: var(--secondary-foreground) !important;
   border: 1px solid var(--border);
 }
+/* Nota: colores desde :root (--primary, --secondary). Evitar especificidad mayor. */
 header .section-header-actions button:hover:not(:disabled) {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
@@ -818,64 +832,7 @@ main button:hover:not(:disabled),
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-/* ─── Inputs y selects de filtrado: clase global unificada ───────────────────
- * Usar class="input-filtro-custom" en input y en SelectTrigger para código limpio.
- */
-.input-filtro-custom {
-  background-color: var(--background);
-  border: 1px solid var(--input);
-  border-radius: var(--radius);
-  height: 2.5rem !important;
-  min-height: 2.5rem !important;
-  width: 100% !important;
-  min-width: 0;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  font-family: var(--font-sans);
-  color: var(--foreground);
-  transition: box-shadow 0.15s, border-color 0.15s;
-}
-/* Select trigger (desplegable): misma vista que el input; ancho 100% del contenedor */
-button.input-filtro-custom,
-[data-slot="select-trigger"].input-filtro-custom {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  min-width: 0;
-  max-width: 100%;
-  background-color: var(--background) !important;
-  border: 1px solid var(--input) !important;
-  border-radius: var(--radius) !important;
-  color: var(--foreground) !important;
-  box-shadow: 0 1px 2px #0000000d;
-}
-button.input-filtro-custom:focus-visible,
-[data-slot="select-trigger"].input-filtro-custom:focus-visible {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent) !important;
-}
-button.input-filtro-custom svg,
-[data-slot="select-trigger"].input-filtro-custom svg {
-  color: var(--muted-foreground);
-}
-.input-filtro-custom::placeholder {
-  color: var(--muted-foreground);
-  font-weight: 700;
-}
-.input-filtro-custom:focus-visible {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 20%, transparent);
-}
-/* Placeholder del select (trigger sin valor) */
-.input-filtro-custom [data-slot="select-value"]:empty,
-.input-filtro-custom [data-placeholder] {
-  color: var(--muted-foreground);
-  font-weight: 700;
-}
+/* Input/select de filtro: SSOT en @layer components (.input-filtro-unificado, .input-filtro-custom). */
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */
 :root {

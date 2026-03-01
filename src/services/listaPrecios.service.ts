@@ -17,6 +17,7 @@ export interface FilaListaPrecioParaCliente {
   descripcionProveedor: string;
   descripcionTienda: string | null;
   pxListaProveedor: number;
+  dtoMarca: number;
   dtoProducto: number;
   dtoCantidad: number;
   cxAproxTransporte: number;
@@ -51,6 +52,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
+    dtoMarca: f.dtoMarca,
     dtoProducto: f.dtoProducto,
     dtoCantidad: f.dtoCantidad,
     cxAproxTransporte: f.cxAproxTransporte,
@@ -163,6 +165,7 @@ export async function upsertListaPrecios(
 }
 
 export interface ActualizacionMasivaListaPrecios {
+  dtoMarca?: number;
   dtoProducto?: number;
   dtoCantidad?: number;
   cxAproxTransporte?: number;
@@ -181,10 +184,13 @@ export async function actualizarListaPreciosMasivo(
   if (ids.length === 0) return { actualizados: 0 };
 
   const updatePayload: {
+    dtoMarca?: number;
     dtoProducto?: number;
     dtoCantidad?: number;
     cxAproxTransporte?: number;
   } = {};
+  if (data.dtoMarca !== undefined)
+    updatePayload.dtoMarca = Math.round(Math.max(0, Math.min(100, data.dtoMarca)));
   if (data.dtoProducto !== undefined)
     updatePayload.dtoProducto = Math.round(Math.max(0, Math.min(100, data.dtoProducto)));
   if (data.dtoCantidad !== undefined)
@@ -196,6 +202,10 @@ export async function actualizarListaPreciosMasivo(
 
   const setClauses: string[] = [];
   const params: (number | string[])[] = [];
+  if (updatePayload.dtoMarca !== undefined) {
+    setClauses.push(`dto_marca = $${params.length + 1}`);
+    params.push(updatePayload.dtoMarca);
+  }
   if (updatePayload.dtoProducto !== undefined) {
     setClauses.push(`dto_producto = $${params.length + 1}`);
     params.push(updatePayload.dtoProducto);

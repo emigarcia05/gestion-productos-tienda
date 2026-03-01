@@ -28,6 +28,7 @@ model ListaPrecioProveedor {
   codExt            String   @map("cod_ext") // ya no unique: varios proveedores pueden compartir el mismo cod_ext (1 tienda → N proveedores)
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
+  dtoMarca          Int      @map("dto_marca") @default(0)
   dtoProducto       Int      @map("dto_producto") @default(0)
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
   cxAproxTransporte Int      @map("cx_aprox_transporte") @default(0)

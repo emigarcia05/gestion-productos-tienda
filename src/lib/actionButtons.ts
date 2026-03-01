@@ -1,17 +1,17 @@
 /**
- * Estilo maestro para botones de acción en tarjetas de título (Header).
- * MAIN_BUTTON_* se aplican como clases Tailwind para que ganen sobre las variantes
- * del componente Button (evita que h-9 del size="default" pise el estilo).
+ * Botones de acción: referencian clases/tokens globales (SSOT en globals.css).
+ * main button y header .section-header-actions button ya aplican dimensiones y variantes.
+ * Estas constantes añaden solo lo necesario para variante primary/secondary sin duplicar estilos.
  */
 
-/** Dimensiones y efectos del "Main Button": 2.5rem, 1rem padding, rounded-lg, font-semibold, sombra */
+/** Dimensiones base (alineado con globals: .btn-main / main button). */
 export const MAIN_BUTTON_CLASSES =
   "h-10 min-h-10 px-4 rounded-lg font-semibold shadow-sm transition-[box-shadow,background-color,filter] duration-150 hover:shadow-md";
 
-/** Secundarios (Importar Lista, Acción Masiva, etc.): borde, texto oscuro */
+/** Secundarios: borde y texto desde variables (--border, --secondary-foreground). */
 export const ACTION_BUTTON_SECONDARY =
-  `${MAIN_BUTTON_CLASSES} border border-slate-300 text-slate-900 hover:bg-slate-50`;
+  `${MAIN_BUTTON_CLASSES} border border-border text-secondary-foreground bg-secondary hover:brightness-[0.97]`;
 
-/** Principal (Crear Proveedor, Generar Pedido): fondo primario, texto blanco */
+/** Principal: colores desde :root (--primary, --primary-foreground). */
 export const ACTION_BUTTON_PRIMARY =
   `${MAIN_BUTTON_CLASSES} bg-primary text-primary-foreground hover:brightness-90`;

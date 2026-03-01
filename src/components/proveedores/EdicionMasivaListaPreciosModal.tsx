@@ -16,9 +16,10 @@ import { Label } from "@/components/ui/label";
 import { actualizarListaPreciosMasivoAction, type ActualizacionMasivaListaPrecios } from "@/actions/listaPrecios";
 
 const CAMPOS: { key: keyof ActualizacionMasivaListaPrecios; label: string }[] = [
-  { key: "dtoProducto", label: "Desc. prod. (%)" },
-  { key: "dtoCantidad", label: "Desc. cant. (%)" },
-  { key: "cxAproxTransporte", label: "Cx. aprox. transporte (%)" },
+  { key: "dtoMarca", label: "Desc. Marca (%)" },
+  { key: "dtoProducto", label: "Desc. Producto (%)" },
+  { key: "dtoCantidad", label: "Desc. Cantidad (%)" },
+  { key: "cxAproxTransporte", label: "Cx. Aprox Transporte (%)" },
 ];
 
 interface Props {
@@ -35,6 +36,7 @@ export default function EdicionMasivaListaPreciosModal({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [values, setValues] = useState<ActualizacionMasivaListaPrecios>({
+    dtoMarca: undefined,
     dtoProducto: undefined,
     dtoCantidad: undefined,
     cxAproxTransporte: undefined,
@@ -47,6 +49,7 @@ export default function EdicionMasivaListaPreciosModal({
 
   async function handleGuardar() {
     const data: ActualizacionMasivaListaPrecios = {};
+    if (values.dtoMarca !== undefined && !Number.isNaN(values.dtoMarca)) data.dtoMarca = values.dtoMarca;
     if (values.dtoProducto !== undefined && !Number.isNaN(values.dtoProducto)) data.dtoProducto = values.dtoProducto;
     if (values.dtoCantidad !== undefined && !Number.isNaN(values.dtoCantidad)) data.dtoCantidad = values.dtoCantidad;
     if (values.cxAproxTransporte !== undefined && !Number.isNaN(values.cxAproxTransporte)) data.cxAproxTransporte = values.cxAproxTransporte;
@@ -64,7 +67,7 @@ export default function EdicionMasivaListaPreciosModal({
       }
       toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
       setOpen(false);
-      setValues({ dtoProducto: undefined, dtoCantidad: undefined, cxAproxTransporte: undefined });
+      setValues({ dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, cxAproxTransporte: undefined });
       onSuccess?.();
     } finally {
       setPending(false);
@@ -87,39 +90,43 @@ export default function EdicionMasivaListaPreciosModal({
           Edición masiva
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edición masiva</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 pt-5 pb-2">
+          <DialogTitle className="text-base font-semibold leading-tight">
+            Edición masiva
+          </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
-        </p>
-        <div className="grid gap-4 py-2">
-          {CAMPOS.map(({ key, label }) => (
-            <div key={key} className="grid grid-cols-2 gap-4 items-center">
-              <Label htmlFor={key} className="text-right">
-                {label}
-              </Label>
-              <Input
-                id={key}
-                type="number"
-                min={0}
-                max={100}
-                placeholder="—"
-                value={values[key] ?? ""}
-                onChange={(e) => handleChange(key, e.target.value)}
-                className="tabular-nums"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleGuardar} disabled={pending}>
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
-          </Button>
+        <div className="px-6 pb-6 flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
+          </p>
+          <div className="grid gap-4 py-2">
+            {CAMPOS.map(({ key, label }) => (
+              <div key={key} className="grid grid-cols-2 gap-4 items-center">
+                <Label htmlFor={key} className="text-right">
+                  {label}
+                </Label>
+                <Input
+                  id={key}
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="—"
+                  value={values[key] ?? ""}
+                  onChange={(e) => handleChange(key, e.target.value)}
+                  className="tabular-nums"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleGuardar} disabled={pending}>
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

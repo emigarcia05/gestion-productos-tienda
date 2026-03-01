@@ -47,12 +47,14 @@ export function FilterRowSearch({ children, className }: { children: React.React
   );
 }
 
-/** Color de fuente de todos los filtros (heredable). Usa variable de tema para modo oscuro. */
+/** Color de fuente de todos los filtros (heredable). Usa variable de tema. */
 export const FILTER_TEXT_COLOR_CLASS = "text-foreground";
 
-/** Input de búsqueda: h-10, border 0.5rem, text-sm font-semibold, focus primary. Estandarizado con selects. */
-export const INPUT_FILTER_CLASS =
-  `bg-background border border-input rounded-lg h-10 min-h-10 text-sm font-semibold shadow-sm transition-[box-shadow,border-color] duration-150 ${FILTER_TEXT_COLOR_CLASS} placeholder:text-muted-foreground placeholder:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20`;
+/**
+ * Clase global única para input y SelectTrigger de filtros (SSOT en globals.css).
+ * Un cambio en .input-filtro-unificado se propaga a todos los filtros.
+ */
+export const INPUT_FILTER_CLASS = "input-filtro-unificado";
 
 /**
  * Wrapper para cada Select de filtros. Con flex-1 min-w-0, hasta 5 desplegables
@@ -60,13 +62,8 @@ export const INPUT_FILTER_CLASS =
  */
 export const FILTER_SELECT_WRAPPER_CLASS = "min-w-0 flex-1";
 
-/**
- * Estilo maestro para listas desplegables de filtros (SelectTrigger).
- * Por cascada: misma altura (2.5rem), fuente Geist, radio 0.5rem y foco primary que el sistema de diseño.
- * !h-10 !min-h-10 sobrescribe data-[size=default]:h-9 del Select.
- */
-export const SELECT_TRIGGER_FILTER_CLASS =
-  `w-full min-w-0 bg-background border border-input rounded-lg !h-10 !min-h-10 text-sm font-semibold font-sans ${FILTER_TEXT_COLOR_CLASS} data-[placeholder]:text-muted-foreground data-[placeholder]:font-bold focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 transition-[box-shadow,border-color] duration-150`;
+/** Misma clase global que INPUT_FILTER_CLASS: un solo estilo para input y trigger. */
+export const SELECT_TRIGGER_FILTER_CLASS = "input-filtro-unificado";
 
 /** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
