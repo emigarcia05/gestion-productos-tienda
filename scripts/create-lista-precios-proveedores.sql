@@ -1,5 +1,5 @@
 -- Tabla lista_precios_proveedores – Integridad referencial con proveedores
--- cod_ext = sufijo del proveedor + '-' + cod_prod_proveedor (trigger)
+-- cod_ext = prefijo del proveedor + '-' + cod_prod_proveedor (trigger)
 -- px_compra_final = fórmula automática (columna generada)
 -- Ejecutar: npm run db:create-lista-precios
 
@@ -32,14 +32,14 @@ CREATE TABLE IF NOT EXISTS lista_precios_proveedores (
 
 COMMENT ON TABLE lista_precios_proveedores IS 'Lista de precios por proveedor; px_compra_final se recalcula al actualizar porcentajes';
 COMMENT ON COLUMN lista_precios_proveedores.descripcion_proveedor IS 'Descripción informada por el proveedor (importada desde su lista)';
-COMMENT ON COLUMN lista_precios_proveedores.cod_ext IS 'sufijo del proveedor + ''-'' + cod_prod_proveedor (actualizado por trigger, único)';
+COMMENT ON COLUMN lista_precios_proveedores.cod_ext IS 'prefijo del proveedor + ''-'' + cod_prod_proveedor (actualizado por trigger, único)';
 COMMENT ON COLUMN lista_precios_proveedores.px_compra_final IS 'px_lista_proveedor * (1 - dto_producto/100) * (1 - dto_cantidad/100) * (1 + cx_aprox_transporte/100)';
 
--- Trigger: cod_ext = sufijo + '-' + cod_prod_proveedor; updated_at siempre al escribir
+-- Trigger: cod_ext = prefijo + '-' + cod_prod_proveedor; updated_at siempre al escribir
 CREATE OR REPLACE FUNCTION trg_lista_precios_set_cod_ext()
 RETURNS TRIGGER AS $$
 BEGIN
-  SELECT p.sufijo || '-' || NEW.cod_prod_proveedor
+  SELECT p.prefijo || '-' || NEW.cod_prod_proveedor
   INTO NEW.cod_ext
   FROM proveedores p
   WHERE p.id = NEW.id_proveedor;

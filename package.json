@@ -9,6 +9,8 @@
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate-deploy": "prisma migrate deploy",
+    "db:baseline": "prisma migrate resolve --applied \"20260227000000_rename_sufijo_cod_externo\" && prisma migrate resolve --applied \"20260228000000_fix_lista_precios_proveedores_columnas\"",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:test": "tsx scripts/test-connection.ts",
