@@ -142,7 +142,7 @@ export default function SeleccionarProductoModal({
     {
       key: "prefijo",
       label: "PREFIJO",
-      className: "py-2.5 px-3 text-xs w-24 text-center",
+      className: "py-2.5 px-3 text-xs w-28 shrink-0 text-center",
       render: (row: ProductoProveedorParaVincular) => (
         <Badge variant="secondary" className="font-mono text-xs">
           {row.proveedor.prefijo}
@@ -152,9 +152,9 @@ export default function SeleccionarProductoModal({
     {
       key: "descripcion",
       label: "DESCRIPCIÓN",
-      className: "py-2.5 px-3 text-xs",
+      className: "py-2.5 px-3 text-xs min-w-0 w-full",
       render: (row: ProductoProveedorParaVincular) => (
-        <span className="text-xs">{row.descripcionProveedor}</span>
+        <span className="text-xs block truncate" title={row.descripcionProveedor}>{row.descripcionProveedor}</span>
       ),
     },
   ];
@@ -163,6 +163,7 @@ export default function SeleccionarProductoModal({
     <ModalTablaConFiltros<ProductoProveedorParaVincular>
       open={open}
       onClose={onClose}
+      contentClassName="max-w-[84rem]"
       title="Vincular nuevo producto"
       subtitle="Filtrá por proveedor y descripción. Doble clic en una fila para vincular."
       filterContent={filterContent}

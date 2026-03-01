@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface ColumnaModalTabla<T> {
   key: string;
@@ -39,6 +40,8 @@ interface ModalTablaConFiltrosProps<T> {
   count?: number;
   /** Contenido a la derecha del footer (ej. botón Cancelar). */
   footerRight?: React.ReactNode;
+  /** Clase adicional para el contenedor del modal (ej. max-w-5xl para más ancho). */
+  contentClassName?: string;
 }
 
 /**
@@ -59,6 +62,7 @@ export default function ModalTablaConFiltros<T>({
   emptyMessage = "Sin resultados",
   count,
   footerRight,
+  contentClassName,
 }: ModalTablaConFiltrosProps<T>) {
   return (
     <Dialog
@@ -67,7 +71,7 @@ export default function ModalTablaConFiltros<T>({
         if (!v) onClose();
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+      <DialogContent className={cn("max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0", contentClassName)}>
         <DialogHeader className="px-6 pt-5 pb-3">
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
           {subtitle && (

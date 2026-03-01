@@ -135,6 +135,10 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
             codigoExterno={item.codigoExterno}
             cantidadVinculos={item._count.productos}
             costoTienda={item.costo}
+            marca={item.marca}
+            rubro={item.rubro}
+            subRubro={item.subRubro}
+            prefijoProveedor={item.proveedorDux}
             open={modalAbierto === item.id}
             onOpenChange={(v) => !v && setModalAbierto(null)}
           />
