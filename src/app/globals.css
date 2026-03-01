@@ -417,11 +417,11 @@
 .tabla-gestion-compacta td {
   text-align: center;
 }
-.tabla-gestion-compacta thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #0072BB;
+.tabla-gestion-compacta thead,
+.tabla-gestion-compacta thead tr,
+.tabla-gestion-compacta thead th {
+  background-color: #0072BB !important;
+  transition: none;
 }
 .tabla-gestion-compacta thead tr:hover,
 .tabla-gestion-compacta thead tr:hover th {

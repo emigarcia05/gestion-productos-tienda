@@ -1,5 +1,7 @@
 export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
 
+/** Rate limit DUX: 1 petición cada 5 segundos. Respetar en el cliente (ej. sync service) con delay >= 5s entre llamadas. */
+
 // IDs fijos de precios y sucursales en el sistema Dux de TiendaColor
 export const ID_PRECIO_LISTA      = 56994;
 export const ID_PRECIO_MAYORISTA  = 57160;

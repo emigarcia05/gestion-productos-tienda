@@ -11,8 +11,8 @@ import {
   type ItemDux,
 } from "@/lib/duxApi";
 
-/** Pausa entre peticiones a la API para evitar 429 Too Many Requests (configurable por env). */
-const DELAY_MS = Number(process.env.DUX_SYNC_DELAY_MS) || 4000;
+/** Pausa entre peticiones (mínimo 5s según rate limit DUX: 1 petición cada 5 segundos). */
+const DELAY_MS = Math.max(5000, Number(process.env.DUX_SYNC_DELAY_MS) || 5000);
 const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 
 /** Tamaño de cada chunk al persistir en Neon (evitar timeout). */

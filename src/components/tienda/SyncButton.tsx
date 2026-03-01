@@ -27,7 +27,7 @@ function textoTiempoEstimado(data: {
   return "Tiempo estimado: …";
 }
 
-/** Mensaje del toast en 3 filas: título, progreso (X de Y), tiempo estimado. */
+/** Mensaje del toast: "Sincronizando Datos." y "X de Y productos." */
 function mensajeProgresoToast(data: {
   total: number;
   processed: number;
@@ -35,11 +35,11 @@ function mensajeProgresoToast(data: {
   remainingMinutes: number;
 }) {
   const fila2 = data.total > 0
-    ? `${data.processed.toLocaleString()} de ${data.total.toLocaleString()}.`
+    ? `${data.processed.toLocaleString()} de ${data.total.toLocaleString()} productos.`
     : "…";
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-semibold">Sincronizando Datos!</span>
+      <span className="font-semibold">Sincronizando Datos.</span>
       <span className="text-sm">{fila2}</span>
       <span className="text-sm text-muted-foreground">{textoTiempoEstimado(data)}</span>
     </div>
