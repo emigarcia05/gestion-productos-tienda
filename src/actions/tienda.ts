@@ -64,12 +64,23 @@ export async function getTiendaPageData(params: {
   if (marca) andParts.push({ marca });
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
+  // Filtros conectados en todas las direcciones: cada lista de opciones se limita por el resto de filtros + búsqueda por descripción
+  const filtroTextoParts = textFilter.AND?.length ? [textFilter] : [];
+
+  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = { marca: { not: null } };
+  if (filtroTextoParts.length) whereMarcas.AND = [...filtroTextoParts];
+  if (rubro) (whereMarcas.AND ??= []).push({ rubro });
+  if (subRubro) (whereMarcas.AND ??= []).push({ subRubro });
+
   const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { rubro: { not: null } };
-  if (marca) whereRubros.marca = marca;
+  if (filtroTextoParts.length) whereRubros.AND = [...filtroTextoParts];
+  if (marca) (whereRubros.AND ??= []).push({ marca });
+  if (subRubro) (whereRubros.AND ??= []).push({ subRubro });
 
   const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { subRubro: { not: null } };
-  if (marca) whereSubRubros.marca = marca;
-  if (rubro) whereSubRubros.rubro = rubro;
+  if (filtroTextoParts.length) whereSubRubros.AND = [...filtroTextoParts];
+  if (marca) (whereSubRubros.AND ??= []).push({ marca });
+  if (rubro) (whereSubRubros.AND ??= []).push({ rubro });
 
   const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
@@ -82,7 +93,7 @@ export async function getTiendaPageData(params: {
     prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: whereRubros, orderBy: { rubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: whereSubRubros, orderBy: { subRubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: whereMarcas, orderBy: { marca: "asc" } }),
   ]);
 
   const nombreToPrefijo = new Map(proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo]));

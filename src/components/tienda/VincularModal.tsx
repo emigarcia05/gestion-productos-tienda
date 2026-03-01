@@ -176,8 +176,8 @@ export default function VincularModal({
 
           {/* Primer div: resumen del producto */}
           <div className="px-6 pb-4 border-b border-border/50 space-y-3">
-            <p className="text-sm font-medium text-foreground leading-relaxed">{itemDescripcion}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
+            <p className="text-sm font-medium text-foreground leading-relaxed text-center">{itemDescripcion}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs text-center">
               <div>
                 <span className="text-muted-foreground block">Prefijo proveedor</span>
                 <span className="font-medium">{prefijoProveedor ?? "—"}</span>
@@ -207,13 +207,6 @@ export default function VincularModal({
               <p className="text-sm text-muted-foreground py-8 text-center">Sin vínculos aún.</p>
             ) : (
               <div className="px-6 py-3">
-                {/* Encabezado de tabla */}
-                <div className="grid grid-cols-4 gap-2 px-3 py-2 rounded-t-md bg-primary/10 text-primary text-xs font-bold">
-                  <div>Prefijo proveedor</div>
-                  <div className="text-right">Cx Final Compra</div>
-                  <div className="text-right">Variación Cx Actual</div>
-                  <div />
-                </div>
                 {vinculados.map((prod, idx) => {
                   const pxCompra = calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte);
                   const esMenorCosto = vinculados.length > 1 && pxCompra <= minCxVinculados;
@@ -221,30 +214,34 @@ export default function VincularModal({
                   return (
                     <div
                       key={prod.id}
-                      className={`grid grid-cols-4 gap-2 items-center px-3 py-2.5 border-x border-b border-border/50 ${zebra} ${esMenorCosto ? "ring-2 ring-amber-400 ring-inset bg-amber-50/70" : ""}`}
+                      className={`grid gap-2 items-center px-3 py-2.5 border-x border-b border-border/50 ${zebra} ${esMenorCosto ? "ring-2 ring-amber-400 ring-inset bg-amber-50/70" : ""}`}
+                      style={{ gridTemplateColumns: "20% 25% 20% 35%" }}
                     >
-                      <div>
+                      <div className="text-center">
                         <Badge variant="secondary" className="font-mono text-xs">
                           {prod.proveedor.prefijo}
                         </Badge>
                       </div>
-                      <div className="text-right text-xs tabular-nums font-medium">
+                      <div className="text-center text-xs tabular-nums font-medium">
                         ${fmtPrecio(pxCompra)}
                       </div>
-                      <div className="text-right">
+                      <div className="text-center">
                         <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
                       </div>
-                      <div className="flex items-center gap-1 justify-end">
+                      <div className="flex items-center gap-1 justify-center">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleConvertir(prod)}
                           disabled={isPending}
                           title="Marcar como proveedor principal del ítem"
-                          className="gap-1 text-xs"
+                          className="gap-1 text-xs text-center leading-tight whitespace-normal h-auto py-2"
                         >
-                          <ArrowRightLeft className="h-3 w-3" />
-                          Convertir en Proveedor Principal
+                          <ArrowRightLeft className="h-3 w-3 shrink-0" />
+                          <span className="block">
+                            <span className="block">Convertir en</span>
+                            <span className="block font-bold">Proveedor Principal</span>
+                          </span>
                         </Button>
                         <Button
                           variant="ghost"
