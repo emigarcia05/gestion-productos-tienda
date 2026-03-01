@@ -99,6 +99,9 @@ export interface FetchItemsPageResult {
 const MAX_RETRIES_429 = 5;
 const RETRY_429_BASE_MS = 10000;
 
+/** Timeout por petición a la API DUX (evita que el sync quede trabado si la API no responde). Configurable con DUX_FETCH_TIMEOUT_MS. */
+const FETCH_TIMEOUT_MS = Number(process.env.DUX_FETCH_TIMEOUT_MS) || 10_000;
+
 /**
  * Consume el body de la respuesta para liberar la conexión (evita fugas y cierres incorrectos).
  */
@@ -129,15 +132,19 @@ export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAG
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     // #region agent log
     let res: Response;
     try {
-      res = await fetch(url, { headers, cache: "no-store" });
+      res = await fetch(url, { headers, cache: "no-store", signal: controller.signal });
     } catch (fetchErr) {
+      clearTimeout(timeoutId);
       const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
       fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'duxApi.ts:fetchItemsPage',message:'fetch to DUX API threw',data:{offset,attempt,error:msg},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
       throw fetchErr;
     }
+    clearTimeout(timeoutId);
     // #endregion
 
     if (res.ok) {
