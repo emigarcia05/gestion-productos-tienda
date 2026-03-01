@@ -34,14 +34,58 @@ model ListaPrecioProveedor {
   cxAproxTransporte Int      @map("cx_aprox_transporte") @default(0)
   pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
+  idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   listaPrecioTienda ListaPrecioTienda? @relation(fields: [idListaPrecioTienda], references: [id], onDelete: SetNull)
+  presentacion      PresentacionComparacion? @relation(fields: [idPresentacion], references: [id], onDelete: SetNull)
 
   @@unique([idProveedor, codProdProveedor])
   @@map("lista_precios_proveedores")
+}
+
+// ─── Comparación por categorías (Categoria → Subcategoria → Presentacion) ───
+model CategoriaComparacion {
+  id             String   @id @default(cuid())
+  nombre         String
+  orden          Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  subcategorias  SubcategoriaComparacion[]
+
+  @@map("categorias_comparacion")
+}
+
+model SubcategoriaComparacion {
+  id             String   @id @default(cuid())
+  categoriaId    String   @map("categoria_id")
+  nombre         String
+  orden          Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  categoria      CategoriaComparacion  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  presentaciones PresentacionComparacion[]
+
+  @@map("subcategorias_comparacion")
+}
+
+model PresentacionComparacion {
+  id                   String    @id @default(cuid())
+  subcategoriaId        String    @map("subcategoria_id")
+  nombre               String
+  orden                 Int       @default(0)
+  costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
+  listaPrecios  ListaPrecioProveedor[]
+
+  @@map("presentaciones_comparacion")
 }
 
 // Alimentada solo por API externa. Frontend solo lectura; no usar create/update/delete desde UI.

@@ -41,6 +41,12 @@ export const PERMISOS = {
     },
   },
 
+  // ─── Página /proveedores/comparacion-categorias ─────────────────────────────
+  comparacionCategorias: {
+    acceso:  { simple: true,  editor: true },
+    editar:  { simple: false, editor: true }, // CRUD categorías/subcategorías/presentaciones y asignar productos
+  },
+
   // ─── Página /proveedores/[id] ─────────────────────────────────────────────
   proveedorDetalle: {
     acciones: {

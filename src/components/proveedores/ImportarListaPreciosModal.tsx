@@ -183,9 +183,9 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
+      <DialogContent className="modal-app">
+        <DialogHeader className="modal-app__header">
+          <DialogTitle className="modal-app__title flex items-center gap-3">
             Importar lista de precios
             <div className="flex items-center gap-1.5 ml-auto">
               {(["upload", "mapear", "result"] as Step[]).map((s, i) => (
@@ -202,6 +202,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
           </DialogTitle>
         </DialogHeader>
 
+        <div className="px-6 pb-6">
         {step === "upload" && (
           <div className="space-y-5 pt-2">
             <div className="space-y-1.5">
@@ -454,6 +455,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             </div>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

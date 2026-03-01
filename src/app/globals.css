@@ -517,6 +517,24 @@
   padding-bottom: 0 !important;
 }
 
+/* Modal estándar de la app (SSOT): mismo aspecto en Tienda y Lista Proveedores */
+.modal-app {
+  max-width: 42rem;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+.modal-app__header {
+  padding: 1.25rem 1.5rem 0.5rem;
+}
+.modal-app__title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25;
+}
+
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
 .modal-resumen-producto {
   padding: 0 1.5rem 1rem;

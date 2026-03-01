@@ -166,9 +166,9 @@ export default function VincularModal({
           </DialogTrigger>
         )}
 
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
-          <DialogHeader className="px-6 pt-5 pb-2">
-            <DialogTitle className="text-base font-semibold leading-tight">
+        <DialogContent className="modal-app">
+          <DialogHeader className="modal-app__header">
+            <DialogTitle className="modal-app__title">
               Vínculos con Lista Proveedores
             </DialogTitle>
           </DialogHeader>
