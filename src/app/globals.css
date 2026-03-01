@@ -397,7 +397,7 @@
 @layer utilities {
   /* ─── Estilos madre: tablas ─────────────────────────────────────────────────
    * Tablas: usar Table de @/components/ui/table O <table class="tabla-global">.
-   * Encabezado fijo (sticky), altura fija, máximo 2 líneas con truncado, centrado.
+   * Encabezado fijo (sticky), altura fija, centrado. Sin -webkit-box en th para evitar rotura del layout.
    */
   .tabla-global thead {
     position: sticky;
@@ -410,10 +410,6 @@
     min-height: 3.5rem !important;
     max-height: 3.5rem !important;
     box-sizing: border-box;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
     white-space: normal !important;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -446,7 +442,7 @@
 .tabla-gestion-compacta td {
   text-align: center;
 }
-/* Encabezado fijo al hacer scroll; altura fija; máximo 2 líneas, texto truncado; centrado. */
+/* Encabezado fijo al hacer scroll; altura fija; centrado. Sin -webkit-box en th para evitar distorsión del layout. */
 .tabla-gestion-compacta thead {
   position: sticky;
   top: 0;
@@ -475,10 +471,6 @@
   text-transform: uppercase;
   line-height: 1.25;
   box-sizing: border-box;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
   white-space: normal !important;
   word-wrap: break-word;
   overflow-wrap: break-word;
