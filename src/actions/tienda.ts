@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
+import { filtroTexto } from "@/lib/busqueda";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -55,17 +56,20 @@ export async function getTiendaPageData(params: {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  const where: Prisma.ListaPrecioTiendaWhereInput = {};
-  if (q.trim()) {
-    const term = q.trim();
-    where.OR = [
-      { descripcionTienda: { contains: term, mode: "insensitive" } },
-      { codTienda: { contains: term, mode: "insensitive" } },
-    ];
-  }
-  if (rubro) where.rubro = rubro;
-  if (subRubro) where.subRubro = subRubro;
-  if (marca) where.marca = marca;
+  const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
+  const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
+  if (textFilter.AND?.length) andParts.push(textFilter);
+  if (rubro) andParts.push({ rubro });
+  if (subRubro) andParts.push({ subRubro });
+  if (marca) andParts.push({ marca });
+  const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
+
+  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { rubro: { not: null } };
+  if (marca) whereRubros.marca = marca;
+
+  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { subRubro: { not: null } };
+  if (marca) whereSubRubros.marca = marca;
+  if (rubro) whereSubRubros.rubro = rubro;
 
   const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
@@ -76,8 +80,8 @@ export async function getTiendaPageData(params: {
     }),
     prisma.listaPrecioTienda.count({ where }),
     prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
-    prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: whereRubros, orderBy: { rubro: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: whereSubRubros, orderBy: { subRubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
   ]);
 

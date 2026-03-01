@@ -5,6 +5,7 @@ import { ArrowUp, ArrowDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPct } from "@/lib/format";
+import { matchByMultiTerm } from "@/lib/busqueda";
 
 function exportarXLS(items: ItemAumento[]) {
   import("xlsx").then((XLSX) => {
@@ -127,10 +128,7 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
   const conAumento = items.filter((i) => Math.abs(i.pctAumento) > 0.5);
 
   const filtrados = busqueda.trim()
-    ? conAumento.filter((i) =>
-        i.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
-        i.codigoExterno.toLowerCase().includes(busqueda.toLowerCase())
-      )
+    ? conAumento.filter((i) => matchByMultiTerm([i.descripcion, i.codigoExterno], busqueda))
     : conAumento;
 
   return (

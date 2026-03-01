@@ -53,9 +53,20 @@ export default function FiltrosTienda({
 
   const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || habilitadoActual || mejorPrecioActual);
 
-  function navigateSolo(key: string, value: string) {
+  function navigate(updates: { q?: string; marca?: string; rubro?: string; subRubro?: string; habilitado?: string; mejorPrecio?: string }) {
     const p = new URLSearchParams();
-    if (value) p.set(key, value);
+    const qVal = updates.q !== undefined ? updates.q : q;
+    const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
+    const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
+    const subRubroVal = updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
+    const habVal = updates.habilitado !== undefined ? updates.habilitado : habilitadoActual;
+    const mejorVal = updates.mejorPrecio !== undefined ? updates.mejorPrecio : mejorPrecioActual;
+    if (qVal) p.set("q", qVal);
+    if (marcaVal) p.set("marca", marcaVal);
+    if (rubroVal) p.set("rubro", rubroVal);
+    if (subRubroVal) p.set("subRubro", subRubroVal);
+    if (habVal) p.set("habilitado", habVal);
+    if (mejorVal) p.set("mejorPrecio", mejorVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
 
@@ -64,15 +75,25 @@ export default function FiltrosTienda({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       if (document.activeElement === inputRef.current) sessionStorage.setItem(FOCUS_KEY, "1");
-      navigateSolo("q", value);
+      navigate({ q: value });
     }, 400);
   }
 
-  function handleMarca(value: string)    { navigateSolo("marca",      value); }
-  function handleRubro(value: string)    { navigateSolo("rubro",      value); }
-  function handleSubRubro(value: string) { navigateSolo("subRubro",   value); }
-  function handleHabilitado(value: string) { navigateSolo("habilitado", value); }
-  function handleMejorPrecio(value: string) { navigateSolo("mejorPrecio", value); }
+  function handleMarca(value: string) {
+    navigate({ marca: value, rubro: "", subRubro: "" });
+  }
+  function handleRubro(value: string) {
+    navigate({ rubro: value, subRubro: "" });
+  }
+  function handleSubRubro(value: string) {
+    navigate({ subRubro: value });
+  }
+  function handleHabilitado(value: string) {
+    navigate({ habilitado: value });
+  }
+  function handleMejorPrecio(value: string) {
+    navigate({ mejorPrecio: value });
+  }
 
   function limpiarFiltros() {
     setQ("");

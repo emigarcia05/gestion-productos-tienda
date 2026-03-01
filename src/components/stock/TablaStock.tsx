@@ -13,9 +13,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ControlStockData, Sucursal } from "@/actions/stock";
+import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
+import { matchByMultiTerm } from "@/lib/busqueda";
 import PrintStock from "./PrintStock";
+
+function distinctStrings(items: ItemStock[], getVal: (i: ItemStock) => string | null): string[] {
+  const set = new Set<string>();
+  for (const i of items) {
+    const v = getVal(i);
+    if (v != null && v.trim() !== "") set.add(v);
+  }
+  return Array.from(set).sort();
+}
 
 function fmtFecha(d: Date | null): string {
   if (!d) return "—";
@@ -63,13 +73,23 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
     return m;
   });
 
+  useEffect(() => {
+    setMarca(marcaActual);
+    setRubro(rubroActual);
+    setSubRubro(subRubroActual);
+  }, [marcaActual, rubroActual, subRubroActual]);
+
   function navigate(params: Record<string, string>) {
     const p = new URLSearchParams();
     p.set("sucursal", sucursalActual);
-    if (params.q        ?? q)        p.set("q",        params.q        ?? q);
-    if (params.marca    ?? marca)    p.set("marca",    params.marca    ?? marca);
-    if (params.rubro    ?? rubro)    p.set("rubro",    params.rubro    ?? rubro);
-    if (params.subRubro ?? subRubro) p.set("subRubro", params.subRubro ?? subRubro);
+    const qVal = params.q !== undefined ? params.q : q;
+    const marcaVal = params.marca !== undefined ? params.marca : marca;
+    const rubroVal = params.rubro !== undefined ? params.rubro : rubro;
+    const subRubroVal = params.subRubro !== undefined ? params.subRubro : subRubro;
+    if (qVal) p.set("q", qVal);
+    if (marcaVal) p.set("marca", marcaVal);
+    if (rubroVal) p.set("rubro", rubroVal);
+    if (subRubroVal) p.set("subRubro", subRubroVal);
     router.push(`${pathname}?${p.toString()}`);
   }
 
@@ -101,9 +121,21 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
     });
   }
 
+  const itemsPorMarca = useMemo(() => {
+    if (!marca) return data.items;
+    return data.items.filter((i) => i.marca === marca);
+  }, [data.items, marca]);
+
+  const itemsPorMarcaRubro = useMemo(() => {
+    if (!rubro) return itemsPorMarca;
+    return itemsPorMarca.filter((i) => i.rubro === rubro);
+  }, [itemsPorMarca, rubro]);
+
+  const opcionesRubros = useMemo(() => distinctStrings(itemsPorMarca, (i) => i.rubro), [itemsPorMarca]);
+  const opcionesSubRubros = useMemo(() => distinctStrings(itemsPorMarcaRubro, (i) => i.subRubro), [itemsPorMarcaRubro]);
+
   const filtrados = data.items.filter((i) => {
-    if (q        && !i.descripcion.toLowerCase().includes(q.toLowerCase()) &&
-                    !i.codItem.toLowerCase().includes(q.toLowerCase())) return false;
+    if (q.trim() && !matchByMultiTerm([i.descripcion, i.codItem], q)) return false;
     if (marca    && i.marca    !== marca)    return false;
     if (rubro    && i.rubro    !== rubro)    return false;
     if (subRubro && i.subRubro !== subRubro) return false;
@@ -159,7 +191,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
         <div className="relative shrink-0">
           <select
             value={marca}
-            onChange={(e) => setMarca(e.target.value)}
+            onChange={(e) => navigate({ marca: e.target.value, rubro: "", subRubro: "" })}
             className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="">Todas las marcas</option>
@@ -168,28 +200,28 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         </div>
 
-        {/* Rubro */}
+        {/* Rubro (solo opciones de la marca seleccionada) */}
         <div className="relative shrink-0">
           <select
             value={rubro}
-            onChange={(e) => setRubro(e.target.value)}
+            onChange={(e) => navigate({ rubro: e.target.value, subRubro: "" })}
             className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="">Todos los rubros</option>
-            {data.rubros.map((r) => <option key={r} value={r}>{r}</option>)}
+            {opcionesRubros.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         </div>
 
-        {/* Sub-Rubro */}
+        {/* Sub-Rubro (solo opciones de marca + rubro seleccionados) */}
         <div className="relative shrink-0">
           <select
             value={subRubro}
-            onChange={(e) => setSubRubro(e.target.value)}
+            onChange={(e) => navigate({ subRubro: e.target.value })}
             className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="">Todos los sub-rubros</option>
-            {data.subRubros.map((s) => <option key={s} value={s}>{s}</option>)}
+            {opcionesSubRubros.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         </div>
