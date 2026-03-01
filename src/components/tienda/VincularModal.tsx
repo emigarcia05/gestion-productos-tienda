@@ -237,8 +237,8 @@ export default function VincularModal({
                         >
                           <ArrowRightLeft className="h-3 w-3 shrink-0" />
                           <span className="block">
-                            <span className="block">Convertir en</span>
-                            <span className="block">Proveedor Principal</span>
+                            <span className="block">Proveedor</span>
+                            <span className="block">Principal</span>
                           </span>
                         </Button>
                         <Button
