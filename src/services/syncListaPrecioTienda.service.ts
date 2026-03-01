@@ -19,6 +19,9 @@ const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 /** Tamaño de cada chunk al persistir en Neon (evitar timeout). */
 const CHUNK_PERSIST_SIZE = 500;
 
+/** Timeout de la transacción Prisma por chunk (500 upserts pueden superar el default de 5s). */
+const TRANSACTION_TIMEOUT_MS = 60_000;
+
 /** Máximo segundos por petición de página; si no hay respuesta, se da por trabado. */
 const PAGINA_TIMEOUT_MS = 15_000;
 
@@ -163,7 +166,8 @@ export async function syncListaPrecioTiendaFromDux(
                 lastSync: new Date(),
               },
             })
-          )
+          ),
+          { timeout: TRANSACTION_TIMEOUT_MS }
         );
         console.log(
           `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${i + chunk.length}/${totalSincronizados})`

@@ -3,40 +3,44 @@
 import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
+import { prisma } from "@/lib/prisma";
 
-// ─── MOCK: sin Prisma ───────────────────────────────────────────────────────
+const PAGE_SIZE = 50;
 
+/** Última sincronización (max last_sync de lista_precios_tienda). */
 export async function getUltimoSync() {
-  return null;
+  const row = await prisma.listaPrecioTienda.findFirst({
+    orderBy: { lastSync: "desc" },
+    select: { lastSync: true },
+  });
+  return row?.lastSync ?? null;
 }
 
-/** Datos para la página /tienda. MOCK. */
-const MOCK_ITEMS_TIENDA = [
-  {
-    id: "mock-item-1",
-    codItem: "T001",
-    descripcion: "Ítem tienda demo",
-    rubro: null,
-    subRubro: null,
-    marca: null,
-    proveedorDux: null,
-    codigoExterno: null,
-    costo: 0,
-    porcIva: 21,
-    precioLista: 0,
-    precioMayorista: 0,
-    stockGuaymallen: 0,
-    stockMaipu: 0,
-    habilitado: true,
-    ultimaImpresion: null,
-    productoProveedorId: null,
-    productoProveedor: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    _count: { productos: 0 },
-  },
-];
+/** Tipo de ítem que espera la tabla /tienda (mapeado desde ListaPrecioTienda). */
+export interface ItemTiendaParaTabla {
+  id: string;
+  codItem: string;
+  descripcion: string;
+  rubro: string | null;
+  subRubro: string | null;
+  marca: string | null;
+  proveedorDux: string | null;  // prefijo de proveedores o texto proveedor
+  codigoExterno: string | null;
+  costo: number;
+  porcIva: number;
+  precioLista: number;
+  precioMayorista: number;
+  stockGuaymallen: number;
+  stockMaipu: number;
+  habilitado: boolean;
+  _count: { productos: number };
+}
 
+/**
+ * Datos para la página /tienda desde lista_precios_tienda.
+ * Mapeo: cod_tienda → codItem, descripcion_tienda → descripcion, costo_compra → costo,
+ * proveedor → proveedorDux (resuelto a prefijo de proveedores cuando hay match).
+ */
 export async function getTiendaPageData(params: {
   q?: string;
   rubro?: string;
@@ -46,18 +50,67 @@ export async function getTiendaPageData(params: {
   mejorPrecio?: string;
   pagina?: string;
 }) {
-  const { pagina = "1" } = params;
+  const { q = "", rubro = "", subRubro = "", marca = "", pagina = "1" } = params;
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const PAGE_SIZE = 50;
   const skip = (paginaNum - 1) * PAGE_SIZE;
-  const items = MOCK_ITEMS_TIENDA.slice(skip, skip + PAGE_SIZE);
-  const total = MOCK_ITEMS_TIENDA.length;
+
+  const where: Parameters<typeof prisma.listaPrecioTienda.findMany>[0]["where"] = {};
+  if (q.trim()) {
+    const term = q.trim();
+    where.OR = [
+      { descripcionTienda: { contains: term, mode: "insensitive" } },
+      { codTienda: { contains: term, mode: "insensitive" } },
+    ];
+  }
+  if (rubro) where.rubro = rubro;
+  if (subRubro) where.subRubro = subRubro;
+  if (marca) where.marca = marca;
+
+  const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+    prisma.listaPrecioTienda.findMany({
+      where,
+      orderBy: [{ descripcionTienda: "asc" }],
+      skip,
+      take: PAGE_SIZE,
+    }),
+    prisma.listaPrecioTienda.count({ where }),
+    prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
+    prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
+  ]);
+
+  const nombreToPrefijo = new Map(proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo]));
+
+  const items: ItemTiendaParaTabla[] = rows.map((r) => {
+    const proveedorTexto = r.proveedor?.trim() ?? null;
+    const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
+    return {
+      id: r.id,
+      codItem: r.codTienda,
+      descripcion: r.descripcionTienda ?? "",
+      rubro: r.rubro,
+      subRubro: r.subRubro,
+      marca: r.marca,
+      proveedorDux: prefijo,
+      codigoExterno: r.codExt,
+      costo: Number(r.costoCompra),
+      porcIva: 21,
+      precioLista: Number(r.pxListaTienda),
+      precioMayorista: 0,
+      stockGuaymallen: r.stockGuaymallen,
+      stockMaipu: r.stockMaipu,
+      habilitado: true,
+      _count: { productos: 0 },
+    };
+  });
+
   return {
     items,
     total,
-    marcas: [] as { marca: string | null }[],
-    rubros: [] as { rubro: string | null }[],
-    subRubros: [] as { subRubro: string | null }[],
+    marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
+    rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
+    subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     setMejorPrecio: new Set<string>(),
     totalPaginas: Math.ceil(total / PAGE_SIZE),
   };
