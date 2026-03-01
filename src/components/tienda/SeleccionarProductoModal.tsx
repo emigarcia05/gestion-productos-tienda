@@ -1,25 +1,31 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, ChevronDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getProveedores, buscarProductos } from "@/actions/vinculos";
-import { fmtPrecio } from "@/lib/format";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import FilterBar, {
+  FilterRowSelection,
+  FilterRowSearch,
+  FILTER_SELECT_WRAPPER_CLASS,
+  INPUT_FILTER_CLASS,
+  SELECT_TRIGGER_FILTER_CLASS,
+  LimpiarFiltrosButton,
+} from "@/components/FilterBar";
+import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
+import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
+import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 
-type ProductoConProveedor = {
+/** Forma que espera VincularModal al seleccionar (id + datos para lista y toast). */
+export type ProductoConProveedor = {
   id: string;
   codigoExterno: string;
   codProdProv: string;
@@ -28,7 +34,7 @@ type ProductoConProveedor = {
   proveedor: { nombre: string; prefijo: string };
 };
 
-type ProveedorSimple = { id: string; nombre: string; prefijo: string };
+type ProveedorOption = { id: string; nombre: string; prefijo: string };
 
 interface Props {
   open: boolean;
@@ -38,203 +44,140 @@ interface Props {
 }
 
 export default function SeleccionarProductoModal({
-  open, onClose, onSeleccionar, excluirItemTiendaId,
+  open,
+  onClose,
+  onSeleccionar,
+  excluirItemTiendaId: _excluirItemTiendaId,
 }: Props) {
-  const [proveedores, setProveedores] = useState<ProveedorSimple[]>([]);
+  const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
   const [proveedorId, setProveedorId] = useState("");
-  const [q, setQ]                     = useState("");
-  const [resultados, setResultados]   = useState<ProductoConProveedor[]>([]);
-  const [buscando, setBuscando]       = useState(false);
-  const [clickedId, setClickedId]     = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<ProductoProveedorParaVincular[]>([]);
+  const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef    = useRef<HTMLInputElement>(null);
 
-  // Cargar proveedores al abrir
   useEffect(() => {
     if (!open) return;
     getProveedores().then(setProveedores);
-    setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
-  // Limpiar al cerrar
+  useEffect(() => {
+    if (!open) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setLoading(true);
+    const run = async () => {
+      const result = await listarProductosParaVincular(
+        proveedorId || undefined,
+        q.trim() || undefined
+      );
+      setLoading(false);
+      if (result.success) setRows(result.data);
+      else {
+        toast.error(result.error);
+        setRows([]);
+      }
+    };
+    debounceRef.current = setTimeout(run, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [open, proveedorId, q]);
+
   function limpiar() {
     setProveedorId("");
     setQ("");
-    setResultados([]);
-    setClickedId(null);
   }
 
-  // Búsqueda con debounce
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.trim().length < 2) {
-      queueMicrotask(() => setResultados([]));
-      queueMicrotask(() => setBuscando(false));
-      return;
-    }
-    queueMicrotask(() => setBuscando(true));
-    debounceRef.current = setTimeout(async () => {
-      const result = await buscarProductos(q, excluirItemTiendaId, proveedorId || undefined);
-      if (result.success) setResultados(result.data);
-      else {
-        toast.error(result.error);
-        setResultados([]);
-      }
-      setBuscando(false);
-    }, 400);
-  }, [q, proveedorId, excluirItemTiendaId]);
-
-  function handleProveedorChange(id: string) {
-    setProveedorId(id);
-    setQ("");
-    setResultados([]);
-    setTimeout(() => inputRef.current?.focus(), 50);
+  function handleRowDoubleClick(row: ProductoProveedorParaVincular) {
+    const producto: ProductoConProveedor = {
+      id: row.id,
+      codigoExterno: row.codExt,
+      codProdProv: row.codProdProv,
+      descripcion: row.descripcionProveedor,
+      precioLista: 0,
+      proveedor: { nombre: row.proveedor.nombre, prefijo: row.proveedor.prefijo },
+    };
+    onSeleccionar(producto);
   }
 
-  // Doble clic = vincular
-  function handleClick(prod: ProductoConProveedor) {
-    if (clickedId === prod.id) {
-      // Segundo clic = confirmar
-      onSeleccionar(prod);
-      setClickedId(null);
-    } else {
-      // Primer clic = seleccionar
-      setClickedId(prod.id);
-      // Si no hay segundo clic en 600ms, deseleccionar
-      setTimeout(() => setClickedId((prev) => (prev === prod.id ? null : prev)), 600);
-    }
-  }
+  const hayFiltros = !!proveedorId || !!q.trim();
 
-  const proveedorSeleccionado = proveedores.find((p) => p.id === proveedorId);
+  const filterContent = (
+    <FilterBar>
+      <FilterRowSelection>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select
+            value={proveedorId || "none"}
+            onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+          >
+            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectValue placeholder="PROVEEDOR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todos los proveedores</SelectItem>
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  [{p.prefijo}] {p.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </FilterRowSelection>
+      <div className="flex items-center gap-2 flex-wrap">
+        <FilterRowSearch className="flex-1 min-w-[200px]">
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por descripción o código..."
+            className={INPUT_FILTER_CLASS}
+          />
+        </FilterRowSearch>
+        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
+      </div>
+    </FilterBar>
+  );
+
+  const columns = [
+    {
+      key: "prefijo",
+      label: "PREFIJO",
+      className: "py-2.5 px-3 text-xs w-24 text-center",
+      render: (row: ProductoProveedorParaVincular) => (
+        <Badge variant="secondary" className="font-mono text-xs">
+          {row.proveedor.prefijo}
+        </Badge>
+      ),
+    },
+    {
+      key: "descripcion",
+      label: "DESCRIPCIÓN",
+      className: "py-2.5 px-3 text-xs",
+      render: (row: ProductoProveedorParaVincular) => (
+        <span className="text-xs">{row.descripcionProveedor}</span>
+      ),
+    },
+  ];
 
   return (
-    <Dialog
+    <ModalTablaConFiltros<ProductoProveedorParaVincular>
       open={open}
-      onOpenChange={(v) => {
-        if (!v) {
-          limpiar();
-          onClose();
-        }
-      }}
-    >
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col gap-0 p-0">
-        <DialogHeader className="px-6 pt-5 pb-3">
-          <DialogTitle className="text-base font-semibold">
-            Seleccionar producto
-          </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Filtrá por proveedor, buscá y hacé <strong>doble clic</strong> para vincular.
-          </p>
-        </DialogHeader>
-
-        {/* Filtros */}
-        <div className="px-6 pb-3 space-y-2 border-b border-border/50">
-          {/* Selector de proveedor */}
-          <div className="relative">
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <select
-              value={proveedorId}
-              onChange={(e) => handleProveedorChange(e.target.value)}
-              className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">Todos los proveedores</option>
-              {proveedores.map((p) => (
-                <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Buscador */}
-          <div className="relative">
-            <input
-              ref={inputRef}
-              type="text"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={
-                proveedorSeleccionado
-                  ? `Buscar en [${proveedorSeleccionado.prefijo}] ${proveedorSeleccionado.nombre}...`
-                  : "Buscar por código o descripción..."
-              }
-              className="w-full px-3 pr-7 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            {q && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => { setQ(""); setResultados([]); }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Tabla de resultados */}
-        <div className="flex-1 overflow-y-auto">
-          {q.trim().length < 2 ? (
-            <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-              Escribí al menos 2 caracteres para buscar
-            </div>
-          ) : resultados.length === 0 && !buscando ? (
-            <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-              Sin resultados para &quot;{q}&quot;
-              {proveedorSeleccionado ? ` en ${proveedorSeleccionado.nombre}` : ""}
-            </div>
-          ) : (
-            <Table variant="compact">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="py-2 px-3 text-xs w-20">Prov.</TableHead>
-                  <TableHead className="py-2 px-3 text-xs w-28">Cód. Ext.</TableHead>
-                  <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
-                  <TableHead className="py-2 px-3 text-xs w-24">Px Lista</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {resultados.map((prod) => {
-                  const seleccionado = clickedId === prod.id;
-                  return (
-                    <TableRow
-                      key={prod.id}
-                      onClick={() => handleClick(prod)}
-                      className={`cursor-pointer select-none ${seleccionado ? "!bg-primary/10" : ""}`}
-                      title="Doble clic para vincular"
-                    >
-                      <TableCell className="py-2.5 px-3 text-center">
-                        <Badge variant={seleccionado ? "default" : "secondary"} className="font-mono text-xs">
-                          {prod.proveedor.prefijo}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-3 text-center">
-                        <code className="text-xs text-muted-foreground">{prod.codigoExterno}</code>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-3 text-center text-xs">
-                        {seleccionado
-                          ? <span className="font-medium">{prod.descripcion} <span className="text-primary text-[10px]">← clic de nuevo para vincular</span></span>
-                          : prod.descripcion
-                        }
-                      </TableCell>
-                      <TableCell className="py-2.5 px-3 text-center tabular-nums text-xs">
-                        ${fmtPrecio(prod.precioLista)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-border/50 flex justify-between items-center">
-          <p className="text-xs text-muted-foreground">
-            {resultados.length > 0 && `${resultados.length} resultado(s)`}
-          </p>
-          <Button variant="outline" size="sm" onClick={onClose}>Cancelar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      onClose={onClose}
+      title="Vincular nuevo producto"
+      subtitle="Filtrá por proveedor y descripción. Doble clic en una fila para vincular."
+      filterContent={filterContent}
+      columns={columns}
+      rows={rows}
+      getRowId={(row) => row.id}
+      onRowDoubleClick={handleRowDoubleClick}
+      loading={loading}
+      emptyMessage="No hay productos o no coinciden los filtros."
+      count={rows.length}
+      footerRight={
+        <Button variant="outline" size="sm" onClick={onClose}>
+          Cancelar
+        </Button>
+      }
+    />
   );
 }

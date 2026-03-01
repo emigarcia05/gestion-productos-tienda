@@ -7,6 +7,8 @@
 import type { FilaListaPrecio } from "@/lib/parsearImport";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
+import { filtroTexto } from "@/lib/busqueda";
+import type { Prisma } from "@prisma/client";
 
 /** Fila para el cliente (lista-precios): proveedor + descripción tienda si existe. */
 export interface FilaListaPrecioParaCliente {
@@ -59,6 +61,47 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
   }));
 }
 
+/** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. */
+export interface ProductoProveedorParaVincular {
+  id: string;
+  codExt: string;
+  codProdProv: string;
+  descripcionProveedor: string;
+  proveedor: { prefijo: string; nombre: string };
+}
+
+const MAX_PRODUCTOS_VINCULAR = 500;
+
+/**
+ * Lista ítems de lista_precios_proveedores para el modal "Vincular nuevo producto".
+ * Filtros: proveedor (opcional), descripción/código (q, multi-término).
+ */
+export async function listarProductosProveedoresParaVincular(
+  proveedorId?: string,
+  q?: string
+): Promise<ProductoProveedorParaVincular[]> {
+  const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
+  if (proveedorId) andParts.push({ idProveedor: proveedorId });
+  const textFilter = filtroTexto(q ?? "", ["descripcionProveedor", "codExt"]);
+  if (textFilter.AND?.length) andParts.push(textFilter);
+  const where: Prisma.ListaPrecioProveedorWhereInput = andParts.length ? { AND: andParts } : {};
+
+  const rows = await prisma.listaPrecioProveedor.findMany({
+    where,
+    include: { proveedor: { select: { prefijo: true, nombre: true } } },
+    orderBy: { codExt: "asc" },
+    take: MAX_PRODUCTOS_VINCULAR,
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    codExt: r.codExt,
+    codProdProv: r.codProdProveedor,
+    descripcionProveedor: r.descripcionProveedor,
+    proveedor: { prefijo: r.proveedor.prefijo, nombre: r.proveedor.nombre },
+  }));
+}
+
 export interface UpsertListaPreciosResult {
   creados: number;
   actualizados: number;
@@ -85,12 +128,12 @@ export async function upsertListaPrecios(
 
     try {
       const existente = await prisma.listaPrecioProveedor.findUnique({
-        where: { codExt },
+        where: { idProveedor_codProdProveedor: { idProveedor: proveedorId, codProdProveedor: fila.codProdProv } },
         select: { id: true },
       });
 
       await prisma.listaPrecioProveedor.upsert({
-        where: { codExt },
+        where: { idProveedor_codProdProveedor: { idProveedor: proveedorId, codProdProveedor: fila.codProdProv } },
         create: {
           idProveedor: proveedorId,
           codProdProveedor: fila.codProdProv,

@@ -25,17 +25,19 @@ model ListaPrecioProveedor {
   idProveedor       String   @map("id_proveedor")
   codProdProveedor  String   @map("cod_prod_proveedor")
   descripcionProveedor String  @map("descripcion_proveedor")
-  codExt            String  @map("cod_ext") @unique
+  codExt            String   @map("cod_ext") // ya no unique: varios proveedores pueden compartir el mismo cod_ext (1 tienda → N proveedores)
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
   dtoProducto       Int      @map("dto_producto") @default(0)
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
   cxAproxTransporte Int      @map("cx_aprox_transporte") @default(0)
   pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD
+  idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  listaPrecioTienda ListaPrecioTienda? @relation(fields: [idListaPrecioTienda], references: [id], onDelete: SetNull)
 
   @@unique([idProveedor, codProdProveedor])
   @@map("lista_precios_proveedores")
@@ -56,6 +58,8 @@ model ListaPrecioTienda {
   stockMaipu      Int      @map("stock_maipu") @default(0)
   stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
   lastSync        DateTime @default(now()) @map("last_sync")
+
+  listaPreciosProveedores ListaPrecioProveedor[] // 1 tienda → N proveedores (vinculados por id_lista_precios_tienda)
 
   @@map("lista_precios_tienda")
 }
