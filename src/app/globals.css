@@ -462,6 +462,20 @@
   font-size: var(--text-sm) !important;
 }
 
+/* Tabla Lista Tienda: Cod. Tienda 15%, Descripción 65%, Px Compra Final 15%, Mejor Px disponible 5%. */
+.tabla-tienda-listado {
+  table-layout: fixed;
+  width: 100%;
+}
+.tabla-tienda-listado thead th:nth-child(1),
+.tabla-tienda-listado tbody td:nth-child(1) { width: 15%; }
+.tabla-tienda-listado thead th:nth-child(2),
+.tabla-tienda-listado tbody td:nth-child(2) { width: 65%; }
+.tabla-tienda-listado thead th:nth-child(3),
+.tabla-tienda-listado tbody td:nth-child(3) { width: 15%; }
+.tabla-tienda-listado thead th:nth-child(4),
+.tabla-tienda-listado tbody td:nth-child(4) { width: 5%; }
+
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */
 .card-contenedor-tabla {
   padding-top: 0 !important;
