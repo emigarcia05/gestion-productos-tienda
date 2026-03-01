@@ -63,6 +63,9 @@ export interface SyncProgressCallback {
 export async function syncListaPrecioTiendaFromDux(
   options?: SyncProgressCallback
 ): Promise<SyncListaPrecioTiendaResult> {
+  // #region agent log
+  fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'syncListaPrecioTienda.service.ts:syncListaPrecioTiendaFromDux',message:'sync started',data:{},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
   const inicioMs = Date.now();
   const errores: string[] = [];
   const onProgress = options?.onProgress;
@@ -99,6 +102,10 @@ export async function syncListaPrecioTiendaFromDux(
 
   const totalSincronizados = todosLosProductos.length;
 
+  // #region agent log
+  fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'syncListaPrecioTienda.service.ts:phase2_start',message:'phase 1 done, starting persist',data:{totalSincronizados,totalApi},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+  // #endregion
+
   // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
   // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
   if (totalSincronizados > 0) {
@@ -108,6 +115,9 @@ export async function syncListaPrecioTiendaFromDux(
       for (const row of chunkRaw) byCodExt.set(row.codExt, row);
       const chunk = Array.from(byCodExt.values());
       try {
+        // #region agent log
+        if (i === 0) fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'syncListaPrecioTienda.service.ts:first_chunk',message:'first persist chunk',data:{chunkSize:chunk.length},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
         await prisma.$transaction(
           chunk.map((row) =>
             prisma.listaPrecioTienda.upsert({
@@ -157,6 +167,10 @@ export async function syncListaPrecioTiendaFromDux(
   const countAfter = await prisma.listaPrecioTienda.count();
   const creados = Math.max(0, countAfter - countBefore);
   const actualizados = Math.max(0, totalSincronizados - creados);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'syncListaPrecioTienda.service.ts:sync_success',message:'sync completed',data:{creados,actualizados,totalProcesados:totalSincronizados,duracionMs},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
 
   return {
     creados,

@@ -129,7 +129,16 @@ export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAG
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
-    const res = await fetch(url, { headers, cache: "no-store" });
+    // #region agent log
+    let res: Response;
+    try {
+      res = await fetch(url, { headers, cache: "no-store" });
+    } catch (fetchErr) {
+      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+      fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'duxApi.ts:fetchItemsPage',message:'fetch to DUX API threw',data:{offset,attempt,error:msg},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+      throw fetchErr;
+    }
+    // #endregion
 
     if (res.ok) {
       const json = await res.json();

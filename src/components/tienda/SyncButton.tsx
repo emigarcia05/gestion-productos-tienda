@@ -91,6 +91,9 @@ export default function SyncButton() {
             }
             setSyncing(false);
             if (data.error) {
+              // #region agent log
+              fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'SyncButton.tsx:done_with_error',message:'error from server (data.error)',data:{error:data.error},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+              // #endregion
               toast.error(`Error al sincronizar: ${data.error}`, { id: TOAST_SYNC_ID });
             } else if (data.result) {
               const r = data.result;
@@ -123,6 +126,9 @@ export default function SyncButton() {
       poll();
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
+      // #region agent log
+      fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'SyncButton.tsx:catch',message:'client fetch failed',data:{error:message},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
       toast.error(`Error al sincronizar: ${message}`, { id: TOAST_SYNC_ID });
       setSyncing(false);
       if (pollRef.current) {

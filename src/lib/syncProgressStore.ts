@@ -51,8 +51,12 @@ export function runSyncWithProgress(): void {
       state.running = false;
     })
     .catch((e) => {
+      const errMsg = e instanceof Error ? e.message : String(e);
       state.done = true;
-      state.error = e instanceof Error ? e.message : String(e);
+      state.error = errMsg;
       state.running = false;
+      // #region agent log
+      fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'syncProgressStore.ts:catch',message:'sync promise rejected',data:{error:errMsg,stack:e instanceof Error ? e.stack : undefined},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
     });
 }
