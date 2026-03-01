@@ -128,6 +128,7 @@ export interface ActualizacionMasivaListaPrecios {
 /**
  * Actualiza dto_producto, dto_cantidad y/o cx_aprox_transporte en los registros con id en la lista.
  * Valores en porcentaje (0-100). Solo actualiza los campos presentes en data.
+ * Usa SQL crudo para evitar fallos con Prisma 7 + adapter-pg ("column not available").
  * Un solo UPDATE en BD; eficiente para 100–10.000 filas.
  */
 export async function actualizarListaPreciosMasivo(
@@ -150,12 +151,26 @@ export async function actualizarListaPreciosMasivo(
 
   if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
 
+  const setClauses: string[] = [];
+  const params: (number | string[])[] = [];
+  if (updatePayload.dtoProducto !== undefined) {
+    setClauses.push(`dto_producto = $${params.length + 1}`);
+    params.push(updatePayload.dtoProducto);
+  }
+  if (updatePayload.dtoCantidad !== undefined) {
+    setClauses.push(`dto_cantidad = $${params.length + 1}`);
+    params.push(updatePayload.dtoCantidad);
+  }
+  if (updatePayload.cxAproxTransporte !== undefined) {
+    setClauses.push(`cx_aprox_transporte = $${params.length + 1}`);
+    params.push(updatePayload.cxAproxTransporte);
+  }
+  params.push(ids);
+
   try {
-    const result = await prisma.listaPrecioProveedor.updateMany({
-      where: { id: { in: ids } },
-      data: updatePayload,
-    });
-    return { actualizados: result.count };
+    const sql = `UPDATE lista_precios_proveedores SET ${setClauses.join(", ")} WHERE id = ANY($${params.length}::uuid[])`;
+    const actualizados = await prisma.$executeRawUnsafe(sql, ...params);
+    return { actualizados: Number(actualizados) };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { actualizados: 0, error: msg };
