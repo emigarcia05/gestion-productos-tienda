@@ -16,8 +16,6 @@ import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
   FILTER_SELECT_WRAPPER_CLASS,
-  INPUT_FILTER_CLASS,
-  SELECT_TRIGGER_FILTER_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
@@ -110,7 +108,7 @@ export default function SeleccionarProductoModal({
             value={proveedorId || "none"}
             onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
           >
-            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+            <SelectTrigger className="input-filtro-unificado">
               <SelectValue placeholder="PROVEEDOR" />
             </SelectTrigger>
             <SelectContent>
@@ -130,7 +128,7 @@ export default function SeleccionarProductoModal({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por descripción o código..."
-            className={INPUT_FILTER_CLASS}
+            className="input-filtro-unificado"
           />
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
@@ -141,7 +139,7 @@ export default function SeleccionarProductoModal({
   const columns = [
     {
       key: "prefijo",
-      label: "PREFIJO",
+      label: "PROVEEDOR",
       className: "py-2.5 px-3 text-xs w-28 shrink-0 text-center",
       render: (row: ProductoProveedorParaVincular) => (
         <Badge variant="secondary" className="font-mono text-xs">

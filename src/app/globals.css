@@ -468,6 +468,195 @@
   padding-bottom: 0 !important;
 }
 
+/* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
+.modal-resumen-producto {
+  padding: 0 1.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.modal-resumen-producto__titulo {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.625;
+  text-align: center;
+  color: var(--foreground);
+}
+.modal-resumen-producto__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .modal-resumen-producto__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.modal-resumen-producto__label {
+  display: block;
+  color: var(--muted-foreground);
+}
+.modal-resumen-producto__valor {
+  font-weight: 500;
+}
+
+.modal-panel-scroll {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+}
+.modal-panel-scroll--borde-primary {
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  margin: 0 1rem;
+}
+
+.modal-mensaje-carga,
+.modal-mensaje-vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  padding: 2rem 0;
+}
+.modal-mensaje-vacio {
+  font-size: 0.875rem;
+}
+
+/* Filas de tabla de vínculos: columnas 15% 20% 20% 45%, centrado, zebra */
+.modal-vinculos-fila {
+  display: grid;
+  grid-template-columns: 15% 20% 20% 45%;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.modal-vinculos-fila--zebra-impar {
+  background-color: #fff;
+}
+.modal-vinculos-fila--zebra-par {
+  background-color: rgba(248, 250, 252, 0.8);
+}
+.modal-vinculos-fila--destacado {
+  box-shadow: inset 0 0 0 2px rgba(251, 191, 36, 1);
+  background-color: rgba(254, 243, 199, 0.7);
+}
+.modal-vinculos-celda {
+  text-align: center;
+}
+.modal-vinculos-celda--numero {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.modal-vinculos-celda--variacion {
+  font-weight: 700;
+}
+
+.btn-convertir-proveedor-principal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  text-align: center;
+  line-height: 1.25;
+  white-space: normal;
+  height: auto;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.btn-convertir-proveedor-principal span {
+  display: block;
+}
+.btn-desvincular-icono {
+  height: 1.75rem;
+  width: 1.75rem;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+.btn-desvincular-icono:hover {
+  color: var(--destructive);
+}
+
+/* Variación de costo (positiva/negativa/neutra) */
+.variacion-costo--neutra {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.variacion-costo--positiva {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-red-500);
+}
+.variacion-costo--negativa {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-emerald-500);
+}
+
+/* ─── Modal tabla con filtros: header sticky, estructura ─── */
+.modal-tabla-thead-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--primary);
+}
+.modal-tabla-thead-sticky tr {
+  background-color: var(--primary);
+}
+.modal-tabla-thead-sticky th {
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+.modal-tabla-thead-sticky tr:hover {
+  background-color: var(--primary);
+}
+.modal-tabla-header {
+  padding: 1.25rem 1.5rem 0.75rem;
+}
+.modal-tabla-filtros {
+  padding: 0 1.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.modal-tabla-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+}
+.modal-tabla-footer {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.modal-tabla-footer__count {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.modal-tabla-footer__count strong {
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.modal-vinculos-footer {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
 /* ─── Estilos madre: botones (sistema de diseño unificado) ───────────────────
  * Variables: --primary #0072bb, --primary-foreground #fff, --radius .5rem.
  * Todo botón de acción en <main>: dimensiones fijas, tipografía y forma unificadas.

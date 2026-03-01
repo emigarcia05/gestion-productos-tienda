@@ -72,7 +72,7 @@ export default function ModalTablaConFiltros<T>({
       }}
     >
       <DialogContent className={cn("max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0", contentClassName)}>
-        <DialogHeader className="px-6 pt-5 pb-3">
+        <DialogHeader className="modal-tabla-header">
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
           {subtitle && (
             <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
@@ -80,22 +80,22 @@ export default function ModalTablaConFiltros<T>({
         </DialogHeader>
 
         {/* Filtros: slot reutilizable (FilterBar + proveedor/descripción u otros) */}
-        <div className="px-6 pb-3 border-b border-border/50">{filterContent}</div>
+        <div className="modal-tabla-filtros">{filterContent}</div>
 
         {/* Tabla */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="modal-tabla-body">
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-12 justify-center">
+            <div className="modal-mensaje-carga">
               <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
             </div>
           ) : rows.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+            <div className="modal-mensaje-vacio">
               {emptyMessage}
             </div>
           ) : (
             <Table variant="compact">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
+              <TableHeader className="modal-tabla-thead-sticky">
+                <TableRow className="hover:bg-transparent border-b-0">
                   {columns.map((col) => (
                     <TableHead
                       key={col.key}
@@ -130,14 +130,14 @@ export default function ModalTablaConFiltros<T>({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-border/50 flex justify-between items-center shrink-0">
-          <p className="text-xs text-muted-foreground">
+        <div className="modal-tabla-footer">
+          <p className="modal-tabla-footer__count">
             {count !== undefined && (
-              <span className="text-primary tabular-nums font-semibold">
-                {count.toLocaleString()}
-              </span>
+              <>
+                <strong>{count.toLocaleString()}</strong>
+                {" resultado(s)"}
+              </>
             )}
-            {count !== undefined && " resultado(s)"}
           </p>
           {footerRight}
         </div>
