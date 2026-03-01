@@ -215,7 +215,7 @@ export default function VincularModal({
                     <div
                       key={prod.id}
                       className={`grid gap-2 items-center px-3 py-2.5 border-x border-b border-border/50 ${zebra} ${esMenorCosto ? "ring-2 ring-amber-400 ring-inset bg-amber-50/70" : ""}`}
-                      style={{ gridTemplateColumns: "20% 25% 20% 35%" }}
+                      style={{ gridTemplateColumns: "15% 20% 20% 45%" }}
                     >
                       <div className="text-center">
                         <Badge variant="secondary" className="font-mono text-xs">
@@ -225,7 +225,7 @@ export default function VincularModal({
                       <div className="text-center text-xs tabular-nums font-medium">
                         ${fmtPrecio(pxCompra)}
                       </div>
-                      <div className="text-center">
+                      <div className="text-center font-bold">
                         <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
                       </div>
                       <div className="flex items-center gap-1 justify-center">
@@ -240,7 +240,7 @@ export default function VincularModal({
                           <ArrowRightLeft className="h-3 w-3 shrink-0" />
                           <span className="block">
                             <span className="block">Convertir en</span>
-                            <span className="block font-bold">Proveedor Principal</span>
+                            <span className="block">Proveedor Principal</span>
                           </span>
                         </Button>
                         <Button

@@ -59,13 +59,19 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                 </TableHead>
               )}
               {puede(rol, col.descripcion) && (
-                <TableHead className="py-2 px-3 text-xs min-w-[200px] w-full">Descripción</TableHead>
+                <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               )}
               {puede(rol, col.costo) && (
                 <TableHead className="w-24 py-2 px-2 text-xs leading-tight">Costo</TableHead>
               )}
               {puede(rol, col.proveedorDux) && (
                 <TableHead className="w-40 py-2 px-2 text-xs leading-tight">Proveedor Dux</TableHead>
+              )}
+              {puede(rol, col.rubro) && (
+                <TableHead className="w-32 py-2 px-2 text-xs leading-tight">Rubro</TableHead>
+              )}
+              {puede(rol, col.subRubro) && (
+                <TableHead className="w-32 py-2 px-2 text-xs leading-tight">Sub-Rubro</TableHead>
               )}
               {puede(rol, col.mejorPrecio) && (
                 <TableHead className="w-16 py-2 px-2 text-xs leading-tight">
@@ -87,7 +93,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                   </TableCell>
                 )}
                 {puede(rol, col.descripcion) && (
-                  <TableCell className="py-2 px-3 text-xs font-semibold min-w-[200px]">{item.descripcion}</TableCell>
+                  <TableCell className="py-2 px-3 text-xs font-semibold">{item.descripcion}</TableCell>
                 )}
                 {puede(rol, col.costo) && (
                   <TableCell className="py-2 px-2 tabular-nums text-xs font-bold">
@@ -98,6 +104,12 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                   <TableCell className="py-2 px-2 text-xs truncate max-w-[160px]">
                     {item.proveedorDux ?? "—"}
                   </TableCell>
+                )}
+                {puede(rol, col.rubro) && (
+                  <TableCell className="py-2 px-2 text-xs">{item.rubro ?? "—"}</TableCell>
+                )}
+                {puede(rol, col.subRubro) && (
+                  <TableCell className="py-2 px-2 text-xs">{item.subRubro ?? "—"}</TableCell>
                 )}
                 {puede(rol, col.mejorPrecio) && (
                   <TableCell className="py-2 px-2 text-center">
