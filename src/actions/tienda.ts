@@ -66,21 +66,23 @@ export async function getTiendaPageData(params: {
 
   // Filtros conectados en todas las direcciones: cada lista de opciones se limita por el resto de filtros + búsqueda por descripción
   const filtroTextoParts = textFilter.AND?.length ? [textFilter] : [];
+  const andArray = (parts: Prisma.ListaPrecioTiendaWhereInput[]) =>
+    parts.length > 0 ? ({ AND: parts } as const) : {};
 
-  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = { marca: { not: null } };
-  if (filtroTextoParts.length) whereMarcas.AND = [...filtroTextoParts];
-  if (rubro) (whereMarcas.AND ??= []).push({ rubro });
-  if (subRubro) (whereMarcas.AND ??= []).push({ subRubro });
+  const andMarcas: Prisma.ListaPrecioTiendaWhereInput[] = [...filtroTextoParts];
+  if (rubro) andMarcas.push({ rubro });
+  if (subRubro) andMarcas.push({ subRubro });
+  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = { marca: { not: null }, ...andArray(andMarcas) };
 
-  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { rubro: { not: null } };
-  if (filtroTextoParts.length) whereRubros.AND = [...filtroTextoParts];
-  if (marca) (whereRubros.AND ??= []).push({ marca });
-  if (subRubro) (whereRubros.AND ??= []).push({ subRubro });
+  const andRubros: Prisma.ListaPrecioTiendaWhereInput[] = [...filtroTextoParts];
+  if (marca) andRubros.push({ marca });
+  if (subRubro) andRubros.push({ subRubro });
+  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { rubro: { not: null }, ...andArray(andRubros) };
 
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { subRubro: { not: null } };
-  if (filtroTextoParts.length) whereSubRubros.AND = [...filtroTextoParts];
-  if (marca) (whereSubRubros.AND ??= []).push({ marca });
-  if (rubro) (whereSubRubros.AND ??= []).push({ rubro });
+  const andSubRubros: Prisma.ListaPrecioTiendaWhereInput[] = [...filtroTextoParts];
+  if (marca) andSubRubros.push({ marca });
+  if (rubro) andSubRubros.push({ rubro });
+  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { subRubro: { not: null }, ...andArray(andSubRubros) };
 
   const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
