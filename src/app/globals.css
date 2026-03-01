@@ -641,3 +641,12 @@ button.input-filtro-custom svg,
   color: var(--accent2);
   font-weight: 600;
 }
+
+/* Variante discreta para barra lateral (siempre visible). */
+.mensaje-proceso--sidebar {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-md);
+  border-color: color-mix(in oklch, var(--accent2) 35%, transparent);
+  background-color: color-mix(in oklch, var(--accent2) 8%, var(--background));
+}

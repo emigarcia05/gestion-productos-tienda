@@ -27,6 +27,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import SelectorRol from "@/components/SelectorRol";
+import SyncStatusIndicator from "@/components/layout/SyncStatusIndicator";
 import type { Rol } from "@/lib/permisos";
 
 const iconClass = "h-5 w-5 shrink-0";
@@ -171,6 +172,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         })}
       </nav>
       <div className="mt-auto flex flex-col">
+        <div className="px-4 pb-2">
+          <SyncStatusIndicator />
+        </div>
         <div className="p-4">
           <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-2.5 backdrop-blur-sm">
             <div
