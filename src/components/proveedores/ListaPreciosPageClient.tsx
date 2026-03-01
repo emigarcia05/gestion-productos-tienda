@@ -13,7 +13,7 @@ interface ProveedorParaCliente {
   id: string;
   nombre: string;
   prefijo: string;
-  codigoUnico?: string;
+  codigoUnico: string;
 }
 
 interface Props {
