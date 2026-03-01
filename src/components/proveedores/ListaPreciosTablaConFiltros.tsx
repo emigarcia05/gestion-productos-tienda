@@ -44,11 +44,14 @@ interface ProveedorOption {
 interface ListaPreciosTablaConFiltrosProps {
   filas: FilaListaPrecioParaCliente[];
   proveedores: ProveedorOption[];
+  /** Se invoca con los id de las filas actualmente filtradas (para edición masiva). */
+  onFilteredIdsChange?: (ids: string[]) => void;
 }
 
 export default function ListaPreciosTablaConFiltros({
   filas,
   proveedores,
+  onFilteredIdsChange,
 }: ListaPreciosTablaConFiltrosProps) {
   const [proveedorId, setProveedorId] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
@@ -82,6 +85,10 @@ export default function ListaPreciosTablaConFiltros({
     }
     return result;
   }, [filas, proveedorId, busqueda]);
+
+  useEffect(() => {
+    onFilteredIdsChange?.(filteredFilas.map((f) => f.id));
+  }, [filteredFilas, onFilteredIdsChange]);
 
   const totalPaginas = Math.max(
     1,

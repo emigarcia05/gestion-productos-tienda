@@ -118,3 +118,35 @@ export async function upsertListaPrecios(
 
   return { creados, actualizados, errores };
 }
+
+export interface ActualizacionMasivaListaPrecios {
+  dtoProducto?: number;
+  dtoCantidad?: number;
+  cxAproxTransporte?: number;
+}
+
+/**
+ * Actualiza dto_producto, dto_cantidad y/o cx_aprox_transporte en los registros con id en la lista.
+ * Valores en porcentaje (0-100). Solo actualiza los campos presentes en data.
+ */
+export async function actualizarListaPreciosMasivo(
+  ids: string[],
+  data: ActualizacionMasivaListaPrecios
+): Promise<{ actualizados: number; error?: string }> {
+  if (ids.length === 0) return { actualizados: 0 };
+  const updatePayload: { dtoProducto?: number; dtoCantidad?: number; cxAproxTransporte?: number } = {};
+  if (data.dtoProducto !== undefined) updatePayload.dtoProducto = Math.round(Math.max(0, Math.min(100, data.dtoProducto)));
+  if (data.dtoCantidad !== undefined) updatePayload.dtoCantidad = Math.round(Math.max(0, Math.min(100, data.dtoCantidad)));
+  if (data.cxAproxTransporte !== undefined) updatePayload.cxAproxTransporte = Math.round(Math.max(0, Math.min(100, data.cxAproxTransporte)));
+  if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
+  try {
+    const result = await prisma.listaPrecioProveedor.updateMany({
+      where: { id: { in: ids } },
+      data: updatePayload,
+    });
+    return { actualizados: result.count };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { actualizados: 0, error: msg };
+  }
+}

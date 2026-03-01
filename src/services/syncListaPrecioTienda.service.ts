@@ -4,6 +4,7 @@
  * Fase 2: bulk upsert en Neon por chunks de 500 (cod_ext como conflicto) para evitar timeout.
  */
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   fetchItemsPage,
@@ -40,10 +41,10 @@ function itemDuxToRecord(item: ItemDux) {
     marca: item.marca ?? null,
     proveedor: item.proveedorDux ?? null,
     descripcionTienda: item.descripcion ?? null,
-    costoCompra: item.costo,
-    pxListaTienda: item.precioLista,
-    stockMaipu: item.stockMaipu,
-    stockGuaymallen: item.stockGuaymallen,
+    costoCompra: Number(item.costo) || 0,
+    pxListaTienda: Number(item.precioLista) || 0,
+    stockMaipu: Math.round(Number(item.stockMaipu) || 0),
+    stockGuaymallen: Math.round(Number(item.stockGuaymallen) || 0),
   };
 }
 
@@ -99,18 +100,28 @@ export async function syncListaPrecioTiendaFromDux(
   const totalSincronizados = todosLosProductos.length;
 
   // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
+  // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
   if (totalSincronizados > 0) {
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
-      const chunk = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
+      const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
+      const byCodExt = new Map<string, RecordTienda>();
+      for (const row of chunkRaw) byCodExt.set(row.codExt, row);
+      const chunk = Array.from(byCodExt.values());
       try {
         await prisma.$transaction(
           chunk.map((row) =>
             prisma.listaPrecioTienda.upsert({
               where: { codExt: row.codExt },
               create: {
-                ...row,
-                costoCompra: row.costoCompra,
-                pxListaTienda: row.pxListaTienda,
+                codExt: row.codExt,
+                codTienda: row.codTienda,
+                rubro: row.rubro,
+                subRubro: row.subRubro,
+                marca: row.marca,
+                proveedor: row.proveedor,
+                descripcionTienda: row.descripcionTienda,
+                costoCompra: new Prisma.Decimal(row.costoCompra),
+                pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
                 stockMaipu: row.stockMaipu,
                 stockGuaymallen: row.stockGuaymallen,
               },
@@ -121,8 +132,8 @@ export async function syncListaPrecioTiendaFromDux(
                 marca: row.marca,
                 proveedor: row.proveedor,
                 descripcionTienda: row.descripcionTienda,
-                costoCompra: row.costoCompra,
-                pxListaTienda: row.pxListaTienda,
+                costoCompra: new Prisma.Decimal(row.costoCompra),
+                pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
                 stockMaipu: row.stockMaipu,
                 stockGuaymallen: row.stockGuaymallen,
                 lastSync: new Date(),
@@ -135,8 +146,9 @@ export async function syncListaPrecioTiendaFromDux(
         );
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        const stack = e instanceof Error ? e.stack : "";
         errores.push(`Chunk offset ${i}: ${msg}`);
-        console.error(`Error persistiendo chunk en offset ${i}:`, msg);
+        console.error(`Error persistiendo chunk en offset ${i}:`, msg, stack);
       }
     }
   }

@@ -91,10 +91,21 @@ export default function SyncButton() {
             if (data.error) {
               toast.error(`Error al sincronizar: ${data.error}`, { id: TOAST_SYNC_ID });
             } else if (data.result) {
-              toast.success(
-                `¡Sincronización completa! Se procesaron ${Number(data.result.totalProcesados).toLocaleString()} productos.`,
-                { id: TOAST_SYNC_ID }
-              );
+              const r = data.result;
+              const hayErrores = Array.isArray(r.errores) && r.errores.length > 0;
+              if (hayErrores) {
+                const primerError = r.errores[0];
+                toast.error(
+                  `Sincronización con errores al guardar: ${primerError}${r.errores.length > 1 ? ` (y ${r.errores.length - 1} más)` : ""}`,
+                  { id: TOAST_SYNC_ID }
+                );
+              } else {
+                const guardados = (Number(r.creados) || 0) + (Number(r.actualizados) || 0);
+                toast.success(
+                  `¡Sincronización completa! ${guardados > 0 ? `${guardados.toLocaleString()} productos guardados en la base de datos.` : "Sin nuevos datos que guardar."}`,
+                  { id: TOAST_SYNC_ID }
+                );
+              }
               router.refresh();
             }
           }

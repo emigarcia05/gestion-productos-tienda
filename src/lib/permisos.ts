@@ -36,7 +36,8 @@ export const PERMISOS = {
   // ─── Página /proveedores/lista-precios ──────────────────────────────────────
   listaPrecios: {
     acciones: {
-      importarLista: { simple: true, editor: true },
+      importarLista:   { simple: true,  editor: true },
+      edicionMasiva:  { simple: false, editor: true },
     },
   },
 

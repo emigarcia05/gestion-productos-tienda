@@ -37,11 +37,7 @@ export default function PaginacionProductos({ paginaActual, totalPaginas, total,
   const desde = Math.min((paginaActual - 1) * pageSize + 1, total);
   const hasta = Math.min(paginaActual * pageSize, total);
 
-  if (totalPaginas <= 1) return (
-    <p className="text-xs text-accent2">
-      {total.toLocaleString()} producto{total !== 1 ? "s" : ""}
-    </p>
-  );
+  if (totalPaginas <= 1) return null;
 
   const paginas: (number | "...")[] = [];
   for (let i = 1; i <= totalPaginas; i++) {
