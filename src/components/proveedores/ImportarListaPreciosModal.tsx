@@ -202,7 +202,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 pb-6">
+        <div className="modal-app__body px-6 pb-6">
         {step === "upload" && (
           <div className="space-y-5 pt-2">
             <div className="space-y-1.5">

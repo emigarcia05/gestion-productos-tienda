@@ -36,6 +36,8 @@ export interface ItemTiendaParaTabla {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
+  /** Si hay un proveedor vinculado con precio final más bajo que el actual: diferencia positiva (costo - mejor precio). Null si ya tiene el mejor precio o no hay vínculos. */
+  diferenciaMejorPrecio: number | null;
 }
 
 /**
@@ -79,6 +81,7 @@ export async function getTiendaPageData(params: {
       orderBy: [{ descripcionTienda: "asc" }],
       skip,
       take: PAGE_SIZE,
+      include: { _count: { select: { listaPreciosProveedores: true } } },
     }),
     prisma.listaPrecioTienda.count({ where }),
     prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
@@ -87,11 +90,33 @@ export async function getTiendaPageData(params: {
     prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: whereMarcas, orderBy: { marca: "asc" } }),
   ]);
 
+  const linkedPrices =
+    rows.length > 0
+      ? await prisma.listaPrecioProveedor.findMany({
+          where: { idListaPrecioTienda: { in: rows.map((r) => r.id) } },
+          select: { idListaPrecioTienda: true, pxCompraFinal: true },
+        })
+      : [];
+
+  // Mínimo px_compra_final por ítem tienda (entre proveedores vinculados)
+  const minPxPorTienda = new Map<string, number>();
+  for (const lp of linkedPrices) {
+    if (!lp.idListaPrecioTienda) continue;
+    const n = lp.pxCompraFinal != null ? Number(lp.pxCompraFinal) : null;
+    if (n == null) continue;
+    const prev = minPxPorTienda.get(lp.idListaPrecioTienda);
+    if (prev === undefined || n < prev) minPxPorTienda.set(lp.idListaPrecioTienda, n);
+  }
+
   const nombreToPrefijo = new Map(proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo]));
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
     const proveedorTexto = r.proveedor?.trim() ?? null;
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
+    const costo = Number(r.costoCompra);
+    const minPx = minPxPorTienda.get(r.id);
+    const diferenciaMejorPrecio =
+      minPx != null && minPx < costo ? Math.round((costo - minPx) * 100) / 100 : null;
     return {
       id: r.id,
       codItem: r.codTienda,
@@ -101,14 +126,15 @@ export async function getTiendaPageData(params: {
       marca: r.marca,
       proveedorDux: prefijo,
       codigoExterno: r.codExt,
-      costo: Number(r.costoCompra),
+      costo,
       porcIva: 21,
       precioLista: Number(r.pxListaTienda),
       precioMayorista: 0,
       stockGuaymallen: r.stockGuaymallen,
       stockMaipu: r.stockMaipu,
       habilitado: true,
-      _count: { productos: 0 },
+      _count: { productos: r._count.listaPreciosProveedores },
+      diferenciaMejorPrecio,
     };
   });
 

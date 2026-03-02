@@ -534,6 +534,13 @@
   font-weight: var(--font-weight-semibold);
   line-height: 1.25;
 }
+/* Cuerpo del modal: líneas divisoras superior e inferior amarillas (accent2), mismo aspecto en todos los modales */
+.modal-app__body {
+  border: none;
+  border-top: 2px solid var(--accent2);
+  border-bottom: 2px solid var(--accent2);
+  margin: 0 1rem;
+}
 
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
 .modal-resumen-producto {

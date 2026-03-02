@@ -1,17 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import FilterBar, {
+  FilterRowSelection,
+  FilterRowSearch,
+  FILTER_SELECT_WRAPPER_CLASS,
+  LimpiarFiltrosButton,
+} from "@/components/FilterBar";
+import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
+import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
+import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 
 interface Props {
   open: boolean;
@@ -20,12 +29,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-interface ProductoOption {
-  id: string;
-  codExt: string;
-  descripcion: string;
-  label: string;
-}
+type ProveedorOption = { id: string; nombre: string; prefijo: string };
 
 export default function AsignarProductosModal({
   open,
@@ -33,139 +37,137 @@ export default function AsignarProductosModal({
   presentacionId,
   onSuccess,
 }: Props) {
-  const [busqueda, setBusqueda] = useState("");
-  const [lista, setLista] = useState<ProductoOption[]>([]);
+  const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
+  const [proveedorId, setProveedorId] = useState("");
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<ProductoProveedorParaVincular[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [asignando, setAsignando] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setBusqueda("");
-    setSelectedIds(new Set());
-    setLista([]);
+    getProveedores().then(setProveedores);
   }, [open]);
 
-  const handleBuscar = async () => {
+  useEffect(() => {
+    if (!open) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setLoading(true);
-    try {
-      const res = await buscarProductosParaAsignarAction(busqueda.trim());
-      if (res.ok && res.data) {
-        setLista(res.data);
-      } else {
-        setLista([]);
-      }
-    } finally {
+    const run = async () => {
+      const result = await buscarProductosParaAsignarAction(
+        proveedorId || undefined,
+        q.trim() || undefined
+      );
       setLoading(false);
-    }
-  };
+      if (result.ok && result.data) setRows(result.data);
+      else setRows([]);
+    };
+    debounceRef.current = setTimeout(run, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [open, proveedorId, q]);
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  function limpiar() {
+    setProveedorId("");
+    setQ("");
+  }
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === lista.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(lista.map((p) => p.id)));
-    }
-  };
-
-  const handleAsignar = async () => {
-    if (selectedIds.size === 0) {
-      toast.error("Seleccioná al menos un producto.");
-      return;
-    }
+  async function handleConfirm(ids: string[]) {
     setAsignando(true);
     try {
-      const res = await asignarProductosAPresentacionAction(presentacionId, Array.from(selectedIds));
+      const res = await asignarProductosAPresentacionAction(presentacionId, ids);
       if (!res.ok) {
         toast.error(res.error ?? "Error al asignar.");
-        return;
+        throw new Error(res.error);
       }
       toast.success(`Se asignaron ${res.count} productos.`);
       onSuccess();
-      onOpenChange(false);
     } finally {
       setAsignando(false);
     }
-  };
+  }
+
+  const hayFiltros = !!proveedorId || !!q.trim();
+
+  const filterContent = (
+    <FilterBar>
+      <FilterRowSelection>
+        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <Select
+            value={proveedorId || "none"}
+            onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+          >
+            <SelectTrigger className="input-filtro-unificado">
+              <SelectValue placeholder="PROVEEDOR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Todos los proveedores</SelectItem>
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  [{p.prefijo}] {p.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </FilterRowSelection>
+      <div className="flex items-center gap-2 flex-wrap">
+        <FilterRowSearch className="flex-1 min-w-[200px]">
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por descripción o código..."
+            className="input-filtro-unificado"
+          />
+        </FilterRowSearch>
+        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
+      </div>
+    </FilterBar>
+  );
+
+  const columns = [
+    {
+      key: "prefijo",
+      label: "PROVEEDOR",
+      className: "py-2.5 px-3 text-xs w-28 shrink-0 text-center",
+      render: (row: ProductoProveedorParaVincular) => (
+        <Badge variant="secondary" className="font-mono text-xs">
+          {row.proveedor.prefijo}
+        </Badge>
+      ),
+    },
+    {
+      key: "descripcion",
+      label: "DESCRIPCIÓN",
+      className: "py-2.5 px-3 text-xs min-w-0 w-full",
+      render: (row: ProductoProveedorParaVincular) => (
+        <span className="text-xs block truncate" title={row.descripcionProveedor}>
+          {row.descripcionProveedor}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Asignar productos a esta categoría</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-2">
-          <Label htmlFor="buscar-prod">Buscar por código o descripción</Label>
-          <div className="flex gap-2">
-            <Input
-              id="buscar-prod"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-              placeholder="Escribí y presioná Enter"
-            />
-            <Button type="button" variant="secondary" onClick={handleBuscar} disabled={loading}>
-              {loading ? "Buscando…" : "Buscar"}
-            </Button>
-          </div>
-        </div>
-        <div className="flex-1 min-h-0 overflow-auto border rounded-md">
-          {lista.length === 0 && !loading && (
-            <p className="text-sm text-muted-foreground p-4">
-              Ejecutá una búsqueda para ver productos de la lista de precios (máx. 500 resultados).
-            </p>
-          )}
-          {lista.length > 0 && (
-            <div className="p-2 space-y-1">
-              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === lista.length}
-                  onChange={toggleSelectAll}
-                  className="rounded border-input"
-                />
-                Seleccionar todos ({lista.length})
-              </label>
-              <ul className="space-y-0.5 max-h-60 overflow-y-auto">
-                {lista.map((p) => (
-                  <li key={p.id}>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(p.id)}
-                        onChange={() => toggleSelect(p.id)}
-                        className="rounded border-input"
-                      />
-                      <span className="truncate">{p.label}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 pt-2 border-t">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={asignando}>
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleAsignar}
-            disabled={asignando || selectedIds.size === 0}
-          >
-            {asignando ? "Asignando…" : `Asignar ${selectedIds.size} producto(s)`}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <ModalTablaConFiltros<ProductoProveedorParaVincular>
+      open={open}
+      onClose={() => onOpenChange(false)}
+      selectionMode="multi"
+      title="Asignar productos a esta categoría"
+      subtitle="Filtrá por proveedor y descripción. Marcá los productos y presioná Asignar."
+      filterContent={filterContent}
+      columns={columns}
+      rows={rows}
+      getRowId={(row) => row.id}
+      onConfirm={handleConfirm}
+      confirmLabel={(n) => `Asignar ${n} producto(s)`}
+      confirmPending={asignando}
+      loading={loading}
+      emptyMessage="No hay productos o no coinciden los filtros."
+      count={rows.length}
+      contentClassName="max-w-[84rem]"
+    />
   );
 }

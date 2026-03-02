@@ -15,11 +15,13 @@ CREATE TABLE IF NOT EXISTS lista_precios_proveedores (
   cod_ext               TEXT NOT NULL,
   px_lista_proveedor    NUMERIC(14,4) NOT NULL DEFAULT 0,
   px_vta_sugerido       NUMERIC(14,4),
+  dto_marca             INTEGER NOT NULL DEFAULT 0 CHECK (dto_marca >= 0 AND dto_marca <= 100),
   dto_producto          INTEGER NOT NULL DEFAULT 0 CHECK (dto_producto >= 0 AND dto_producto <= 100),
   dto_cantidad          INTEGER NOT NULL DEFAULT 0 CHECK (dto_cantidad >= 0 AND dto_cantidad <= 100),
   cx_aprox_transporte   INTEGER NOT NULL DEFAULT 0 CHECK (cx_aprox_transporte >= 0 AND cx_aprox_transporte <= 100),
   px_compra_final       NUMERIC(14,4) GENERATED ALWAYS AS (
     px_lista_proveedor
+    * (1 - COALESCE(dto_marca, 0)::numeric / 100)
     * (1 - COALESCE(dto_producto, 0)::numeric / 100)
     * (1 - COALESCE(dto_cantidad, 0)::numeric / 100)
     * (1 + COALESCE(cx_aprox_transporte, 0)::numeric / 100)
@@ -33,7 +35,7 @@ CREATE TABLE IF NOT EXISTS lista_precios_proveedores (
 COMMENT ON TABLE lista_precios_proveedores IS 'Lista de precios por proveedor; px_compra_final se recalcula al actualizar porcentajes';
 COMMENT ON COLUMN lista_precios_proveedores.descripcion_proveedor IS 'Descripción informada por el proveedor (importada desde su lista)';
 COMMENT ON COLUMN lista_precios_proveedores.cod_ext IS 'prefijo del proveedor + ''-'' + cod_prod_proveedor (actualizado por trigger, único)';
-COMMENT ON COLUMN lista_precios_proveedores.px_compra_final IS 'px_lista_proveedor * (1 - dto_producto/100) * (1 - dto_cantidad/100) * (1 + cx_aprox_transporte/100)';
+COMMENT ON COLUMN lista_precios_proveedores.px_compra_final IS 'px_lista_proveedor * (1 - dto_marca/100) * (1 - dto_producto/100) * (1 - dto_cantidad/100) * (1 + cx_aprox_transporte/100)';
 
 -- Trigger: cod_ext = prefijo + '-' + cod_prod_proveedor; updated_at siempre al escribir
 CREATE OR REPLACE FUNCTION trg_lista_precios_set_cod_ext()

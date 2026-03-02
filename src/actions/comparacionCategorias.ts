@@ -65,19 +65,13 @@ export async function getPresentacionesConLabelAction() {
   return { ok: true, data };
 }
 
-/** Buscar productos de lista precios para asignar a una categoría (modal). */
-export async function buscarProductosParaAsignarAction(q?: string) {
+/** Buscar productos de lista precios para asignar a una categoría (modal). Misma forma que Vincular nuevo producto. */
+export async function buscarProductosParaAsignarAction(proveedorId?: string, q?: string) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
     return { ok: false, data: [] };
   }
-  const list = await listarProductosProveedoresParaVincular(undefined, q ?? "");
-  const data = list.map((p) => ({
-    id: p.id,
-    codExt: p.codExt,
-    descripcion: p.descripcionProveedor,
-    label: `[${p.codExt}] ${p.descripcionProveedor}`,
-  }));
+  const data = await listarProductosProveedoresParaVincular(proveedorId, q ?? "");
   return { ok: true, data };
 }
 

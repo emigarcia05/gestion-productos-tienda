@@ -197,7 +197,7 @@ export default function VincularModal({
           </div>
 
           {/* Segundo div: tabla de productos vinculados */}
-          <div className="modal-panel-scroll modal-panel-scroll--borde-primary">
+          <div className="modal-panel-scroll modal-app__body">
             {cargando ? (
               <div className="modal-mensaje-carga">
                 <Loader2 className="h-4 w-4 animate-spin" /> Cargando...

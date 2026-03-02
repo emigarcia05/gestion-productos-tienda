@@ -96,7 +96,7 @@ export default function EdicionMasivaListaPreciosModal({
             Edición masiva
           </DialogTitle>
         </DialogHeader>
-        <div className="px-6 pb-6 flex flex-col gap-4">
+        <div className="modal-app__body px-6 pb-6 flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
             Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
           </p>

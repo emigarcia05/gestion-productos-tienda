@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Lightbulb } from "lucide-react";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import { fmtPrecio } from "@/lib/format";
@@ -31,6 +30,7 @@ interface ItemTienda {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
+  diferenciaMejorPrecio: number | null;
 }
 
 export default function TablaTienda({ items, setMejorPrecio, rol }: { items: ItemTienda[]; setMejorPrecio: Set<string>; rol: Rol }) {
@@ -55,7 +55,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
               <TableHead className="py-2 px-2 text-xs leading-tight">Cod. Tienda</TableHead>
               <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               <TableHead className="py-2 px-2 text-xs leading-tight">Px Compra Final</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight" title="Mejor Px disponible">✓</TableHead>
+              <TableHead className="py-2 px-2 text-xs leading-tight" title="Mejor Px: ✓ = ya tiene el mejor precio; +$ = ahorro posible con otro proveedor vinculado">✓</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -74,13 +74,13 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                 <TableCell className="py-2 px-2 tabular-nums text-xs font-bold">
                   ${fmtPrecio(item.costo)}
                 </TableCell>
-                <TableCell className="py-2 px-2 text-center">
-                  {setMejorPrecio.has(item.id) ? (
-                    <span title="Oportunidad de mejora: hay un proveedor con mejor precio" className="flex justify-center">
-                      <Lightbulb className="h-4 w-4 text-amber-500" />
+                <TableCell className="py-2 px-2 text-center tabular-nums text-xs">
+                  {item.diferenciaMejorPrecio != null && item.diferenciaMejorPrecio > 0 ? (
+                    <span title="Hay un proveedor vinculado con precio final más bajo; ahorro posible">
+                      +${fmtPrecio(item.diferenciaMejorPrecio)}
                     </span>
                   ) : (
-                    <span className="text-slate-400 text-xs">—</span>
+                    <span title="Mejor precio o sin proveedores vinculados para comparar">✓</span>
                   )}
                 </TableCell>
               </TableRow>
