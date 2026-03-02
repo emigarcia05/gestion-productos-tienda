@@ -569,15 +569,15 @@
 }
 
 /* Modal estándar de la app (SSOT): título azul, zona central e inferior gris, datos en blanco.
- * Título = igual. Div central = fondo gris y bloque de datos en blanco. Div inferior = fondo gris, sin línea; botones resaltan por color.
- * Contorno #0072BB para todos los modales. overflow: hidden para evitar divs que sobresalgan.
+ * Forzar flex y altura mínima: DialogContent usa "grid" por defecto y sin min-height el cuerpo se contrae a 0.
  */
 .modal-app {
   max-width: 42rem;
   max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  min-height: 55vh;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
   padding: 0;
   background-color: var(--muted);
   border: 2px solid #0072BB;
