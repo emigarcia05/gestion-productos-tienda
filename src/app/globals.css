@@ -555,13 +555,14 @@
 }
 .modal-app__header {
   padding: 1.25rem 1.5rem 0.5rem;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 .modal-app__title {
   font-size: var(--text-base);
   font-weight: var(--font-weight-semibold);
   line-height: 1.25;
-  border-bottom: 2px solid var(--primary);
-  padding-bottom: 0.5rem;
+  color: var(--primary-foreground);
 }
 /* Cuerpo del modal: líneas divisoras superior e inferior amarillas (accent2), mismo aspecto en todos los modales */
 .modal-app__body {
