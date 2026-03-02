@@ -18,7 +18,7 @@ export default function FilterBar({
   return (
     <div
       className={cn(
-        "filtros-contenedor flex flex-col gap-y-2 py-2",
+        "seccion-filtros filtros-contenedor flex flex-col gap-y-2",
         className
       )}
       role="search"

@@ -186,22 +186,29 @@
     @apply flex flex-col gap-y-2 py-2;
   }
 
-  /* ─── Clase maestra inputs y selects de filtro (SSOT): misma apariencia para desplegables y filtro descripción ─── */
+  /* ─── Clase maestra inputs y selects de filtro (SSOT): misma apariencia para desplegables y filtro descripción ───
+   * Un solo estilo: mismo contorno (border primary), fondo, tipografía y altura para todos los filtros.
+   */
   .input-filtro-unificado,
   .input-filtro-custom {
     @apply w-full flex items-center justify-between gap-2 px-3;
-    @apply bg-background border rounded-lg shadow-sm;
-    border-color: var(--primary);
+    background-color: var(--card);
+    border: 1px solid var(--primary);
+    border-radius: calc(var(--radius) - 2px);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     @apply transition-[box-shadow,border-color] duration-150;
-    @apply text-sm font-semibold text-foreground;
-    @apply h-10 min-h-[2.5rem];
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-sans);
+    color: var(--foreground);
+    min-height: 2.5rem;
+    height: 2.5rem;
   }
-  /* Input de texto (filtro descripción): mismo recuadro #0072BB que los selects desplegables (sobreescribe border-input del UI) */
+  /* Input de texto: mismo recuadro que los selects (borde primary, fondo card) */
   input.input-filtro-unificado,
   input.input-filtro-custom {
     border-color: var(--primary) !important;
-    border-width: 1px;
-    border-style: solid;
+    background-color: var(--card) !important;
   }
   .input-filtro-unificado::placeholder,
   .input-filtro-unificado[data-placeholder],
@@ -296,7 +303,7 @@
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 
-  /* Input/select de filtro (SSOT): una sola definición; bordes/colores desde :root */
+  /* Input/select de filtro (SSOT): una sola definición; misma altura, borde, fondo y tipografía */
   .input-filtro-unificado,
   .input-filtro-custom {
     box-sizing: border-box;
@@ -309,9 +316,8 @@
     outline: none;
     outline-style: none;
     -webkit-tap-highlight-color: transparent;
-    /* Altura más compacta (~50% menos área visual que antes) para todos los filtros y selects de modales */
-    min-height: 2rem;
-    height: calc(var(--spacing) * 8);
+    min-height: 2.5rem;
+    height: 2.5rem;
     width: 100% !important;
     min-width: 0;
     padding-inline: calc(var(--spacing) * 3);
@@ -323,7 +329,7 @@
     font-weight: var(--font-weight-semibold);
     font-family: var(--font-sans);
     color: var(--foreground);
-    background-color: var(--background);
+    background-color: var(--card);
     border: 1px solid var(--primary);
     border-radius: calc(var(--radius) - 2px);
     transition-property: color, box-shadow, border-color;
@@ -376,7 +382,7 @@
   button.input-filtro-custom,
   [data-slot="select-trigger"].input-filtro-unificado,
   [data-slot="select-trigger"].input-filtro-custom {
-    background-color: var(--background) !important;
+    background-color: var(--card) !important;
     border: 1px solid var(--primary) !important;
     color: var(--foreground) !important;
   }
@@ -408,6 +414,19 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--border);
     background-color: var(--popover);
+  }
+
+  /* ─── Sección de filtros: contenedor visual que identifica la zona de filtros ───
+   * Fondo distinto al resto de la página, borde sutil y sombra para separarla.
+   * Usar en el contenedor principal de FilterBar para que toda la barra de filtros
+   * se perciba como una sección única y coherente.
+   */
+  .seccion-filtros {
+    background-color: color-mix(in oklch, var(--primary) 6%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    padding: var(--filtros-py) var(--filtros-gap-x);
   }
 
   /* Contenedor de filtros: más separación entre desplegables, input y botones (variables en :root) */
