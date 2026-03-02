@@ -30,13 +30,22 @@ const MOCK_PRODUCTOS_PEDIDO = [
   },
 ];
 
-/** Datos para la página /pedidos/urgente. MOCK. */
+/** Datos para la página /pedidos/urgente. Sin filtros no se cargan productos para navegación más rápida. MOCK. */
 export async function getPedidoUrgenteData(params: {
   q?: string;
   pagina?: string;
   proveedor?: string;
 }) {
-  const { pagina = "1" } = params;
+  const { q = "", proveedor = "", pagina = "1" } = params;
+  const sinFiltros = !q && !proveedor;
+  if (sinFiltros) {
+    return {
+      proveedores: MOCK_PROVEEDORES_PEDIDO,
+      productos: [],
+      total: 0,
+      totalPaginas: 0,
+    };
+  }
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const PAGE_SIZE = 50;
   const skip = (paginaNum - 1) * PAGE_SIZE;

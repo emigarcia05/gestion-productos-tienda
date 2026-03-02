@@ -28,6 +28,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   const { proveedores, productos, total, totalPaginas } = await getProveedoresPageData({ q, proveedor, pagina });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const hasFiltros = !!(q || proveedor);
 
   const titulo = "Lista Proveedores";
 
@@ -71,8 +72,8 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             {esEditor
-              ? <TablaProductosFiltrada productos={productos} rol={rol} />
-              : <TablaListaPreciosConPedido productos={productos} />
+              ? <TablaProductosFiltrada productos={productos} rol={rol} sinFiltros={!hasFiltros} />
+              : <TablaListaPreciosConPedido productos={productos} sinFiltros={!hasFiltros} />
             }
           </CardContent>
         </Card>

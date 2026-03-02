@@ -23,12 +23,16 @@ export interface ProductoListaPrecios {
   proveedor: { nombre: string; prefijo: string };
 }
 
+const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Proveedor o búsqueda) para ver los productos.";
+const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
+
 interface Props {
   productos: ProductoListaPrecios[];
   onAgregarAlPedido?: (producto: ProductoListaPrecios, cantidad: number) => void;
+  sinFiltros?: boolean;
 }
 
-export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Props) {
+export default function TablaPedidoUrgente({ productos, onAgregarAlPedido, sinFiltros = false }: Props) {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoListaPrecios | null>(null);
   const [cantidadUrgente, setCantidadUrgente] = useState<Record<string, string>>({});
@@ -53,7 +57,9 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido }: Pro
     return (
       <Card className="rounded-xl shadow-sm">
         <CardContent className="flex items-center justify-center py-16">
-          <p className="text-sm text-slate-500">No se encontraron productos.</p>
+          <p className="text-sm text-slate-500 text-center max-w-md px-4">
+            {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+          </p>
         </CardContent>
       </Card>
     );

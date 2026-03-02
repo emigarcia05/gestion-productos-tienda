@@ -31,6 +31,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     q, rubro, subRubro, marca, habilitado, mejorPrecio, pagina,
   });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const hasFiltros = !!(q || rubro || subRubro || marca || habilitado || mejorPrecio);
 
   const acciones = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined;
 
@@ -56,7 +57,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
       {/* Tabla con scroll interno */}
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3">
-        <TablaTienda items={items} setMejorPrecio={setMejorPrecio} rol={rol} />
+        <TablaTienda items={items} setMejorPrecio={setMejorPrecio} rol={rol} sinFiltros={!hasFiltros} />
       </div>
 
       {/* Paginación fija abajo */}

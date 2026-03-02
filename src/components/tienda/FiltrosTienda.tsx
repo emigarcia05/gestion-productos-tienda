@@ -144,7 +144,7 @@ export default function FiltrosTienda({
               </SelectTrigger>
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
                 <SelectItem value="none">COSTO</SelectItem>
-                <SelectItem value="true">Menor Costo Disponible</SelectItem>
+                <SelectItem value="true">Menor Cx Disponible</SelectItem>
               </SelectContent>
             </Select>
           </div>

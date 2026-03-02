@@ -54,7 +54,7 @@ export async function getTiendaPageData(params: {
   mejorPrecio?: string;
   pagina?: string;
 }) {
-  const { q = "", rubro = "", subRubro = "", marca = "", pagina = "1" } = params;
+  const { q = "", rubro = "", subRubro = "", marca = "", mejorPrecio = "", pagina = "1" } = params;
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
@@ -64,16 +64,63 @@ export async function getTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
+
+  /* Filtro "Menor Cx Disponible": solo ítems con ≥2 proveedores vinculados y el principal no es el de menor costo. */
+  let idsMenorCxDisponible: string[] = [];
+  if (mejorPrecio === "true") {
+    const rows = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT lpt.id
+      FROM lista_precios_tienda lpt
+      WHERE (SELECT COUNT(*) FROM lista_precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
+        AND (SELECT MIN(lpp.px_compra_final) FROM lista_precios_proveedores lpp
+             WHERE lpp.id_lista_precios_tienda = lpt.id AND lpp.px_compra_final IS NOT NULL) < lpt.costo_compra
+    `;
+    idsMenorCxDisponible = rows.map((r) => r.id);
+    if (idsMenorCxDisponible.length === 0) {
+      const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+        prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
+        prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
+        prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
+      ]);
+      return {
+        items: [],
+        total: 0,
+        marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
+        rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
+        subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
+        setMejorPrecio: new Set<string>(),
+        totalPaginas: 0,
+      };
+    }
+    andParts.push({ id: { in: idsMenorCxDisponible } });
+  }
+
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
+
+  /* Sin filtros: no cargar ítems para que la navegación sea más rápida; solo opciones de filtros. */
+  const sinFiltros = andParts.length === 0;
+  if (sinFiltros) {
+    const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+      prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
+      prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
+      prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
+    ]);
+    return {
+      items: [],
+      total: 0,
+      marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
+      rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
+      subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
+      setMejorPrecio: new Set<string>(),
+      totalPaginas: 0,
+    };
+  }
 
   /* Opciones de filtros encadenadas: cada desplegable solo muestra valores que existen
    * en el conjunto que cumple TODOS los filtros actuales (q, marca, rubro, subRubro). */
-  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput =
-    andParts.length ? { AND: [...andParts, { marca: { not: null } }] } : { marca: { not: null } };
-  const whereRubros: Prisma.ListaPrecioTiendaWhereInput =
-    andParts.length ? { AND: [...andParts, { rubro: { not: null } }] } : { rubro: { not: null } };
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput =
-    andParts.length ? { AND: [...andParts, { subRubro: { not: null } }] } : { subRubro: { not: null } };
+  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = { AND: [...andParts, { marca: { not: null } }] };
+  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { AND: [...andParts, { rubro: { not: null } }] };
+  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { AND: [...andParts, { subRubro: { not: null } }] };
 
   const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({

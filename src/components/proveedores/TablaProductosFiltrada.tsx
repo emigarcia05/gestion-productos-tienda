@@ -36,9 +36,14 @@ interface Producto {
   proveedor: { id: string; nombre: string; codigoUnico: string; prefijo: string };
 }
 
+const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Proveedor o búsqueda) para ver los productos.";
+const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
+
 interface Props {
   productos: Producto[];
   rol: Rol;
+  /** true cuando no hay filtros aplicados: se muestra mensaje para invitar a filtrar. */
+  sinFiltros?: boolean;
 }
 
 
@@ -144,7 +149,7 @@ function CeldaDisponible({
 }
 
 // ─── Tabla principal ───────────────────────────────────────────────────────
-export default function TablaProductosFiltrada({ productos: inicial, rol }: Props) {
+export default function TablaProductosFiltrada({ productos: inicial, rol, sinFiltros = false }: Props) {
   const [productos, setProductos] = useState(inicial);
   const col = PERMISOS.proveedores.tabla;
 
@@ -157,7 +162,9 @@ export default function TablaProductosFiltrada({ productos: inicial, rol }: Prop
   if (productos.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">No se encontraron productos.</p>
+        <p className="text-sm text-muted-foreground text-center max-w-md px-4">
+          {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+        </p>
       </div>
     );
   }

@@ -19,12 +19,16 @@ export interface ProductoListaPrecios {
   proveedor: { nombre: string; prefijo: string };
 }
 
+const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Proveedor o búsqueda) para ver los productos.";
+const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
+
 interface Props {
   productos: ProductoListaPrecios[];
   onAgregarAlPedido?: (producto: ProductoListaPrecios, cantidad: number) => void;
+  sinFiltros?: boolean;
 }
 
-export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Props) {
+export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFiltros = false }: Props) {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<ProductoListaPrecios | null>(null);
@@ -45,7 +49,9 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido }: Prop
   if (productos.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">No se encontraron productos.</p>
+        <p className="text-sm text-muted-foreground text-center max-w-md px-4">
+          {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+        </p>
       </div>
     );
   }

@@ -33,7 +33,20 @@ interface ItemTienda {
   diferenciaMejorPrecio: number | null;
 }
 
-export default function TablaTienda({ items, setMejorPrecio, rol }: { items: ItemTienda[]; setMejorPrecio: Set<string>; rol: Rol }) {
+const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
+const MENSAJE_SIN_RESULTADOS = "No se encontraron items.";
+
+export default function TablaTienda({
+  items,
+  setMejorPrecio,
+  rol,
+  sinFiltros = false,
+}: {
+  items: ItemTienda[];
+  setMejorPrecio: Set<string>;
+  rol: Rol;
+  sinFiltros?: boolean;
+}) {
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const puedeVincular = puede(rol, col.vinculos);
@@ -41,7 +54,9 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
   if (items.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">No se encontraron items.</p>
+        <p className="text-sm text-muted-foreground text-center max-w-md px-4">
+          {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+        </p>
       </div>
     );
   }
@@ -55,7 +70,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
               <TableHead className="py-2 px-2 text-xs leading-tight">Cod. Tienda</TableHead>
               <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               <TableHead className="py-2 px-2 text-xs leading-tight">Px Compra Final</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight" title="✓ = Hay otro proveedor vinculado con mejor precio que el principal">✓</TableHead>
+              <TableHead className="py-2 px-2 text-xs leading-tight" title="✓ = Menor Cx Disponible: hay ≥2 proveedores vinculados y el principal no es el de menor costo. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

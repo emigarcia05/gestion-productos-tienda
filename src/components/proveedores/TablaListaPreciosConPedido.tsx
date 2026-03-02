@@ -5,9 +5,10 @@ import TablaListaPrecios, { type ProductoListaPrecios } from "./TablaListaPrecio
 
 interface Props {
   productos: ProductoListaPrecios[];
+  sinFiltros?: boolean;
 }
 
-export default function TablaListaPreciosConPedido({ productos }: Props) {
+export default function TablaListaPreciosConPedido({ productos, sinFiltros = false }: Props) {
   function handleAgregarAlPedido(producto: ProductoListaPrecios, cantidad: number) {
     toast.success(
       `Agregado al pedido: ${producto.descripcion.slice(0, 40)}${producto.descripcion.length > 40 ? "…" : ""} × ${cantidad}`
@@ -18,6 +19,7 @@ export default function TablaListaPreciosConPedido({ productos }: Props) {
     <TablaListaPrecios
       productos={productos}
       onAgregarAlPedido={handleAgregarAlPedido}
+      sinFiltros={sinFiltros}
     />
   );
 }

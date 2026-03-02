@@ -37,16 +37,20 @@ export async function getProveedorById(id: string) {
   return { ...prov, codigoUnico: prov.codigoUnico, productosProveedor, _count: { productosProveedor: productosProveedor.length } };
 }
 
-/** Datos para la página /proveedores (lista + productos + total). MOCK. */
+/** Datos para la página /proveedores (lista + productos + total). Sin filtros no se cargan productos para navegación más rápida. MOCK. */
 export async function getProveedoresPageData(params: {
   q?: string;
   proveedor?: string;
   pagina?: string;
 }) {
-  const { pagina = "1" } = params;
+  const { q = "", proveedor = "", pagina = "1" } = params;
   const proveedores = await getProveedores();
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const PAGE_SIZE = 50;
+  const sinFiltros = !q && !proveedor;
+  if (sinFiltros) {
+    return { proveedores, productos: [], total: 0, totalPaginas: 0 };
+  }
   const skip = (paginaNum - 1) * PAGE_SIZE;
   const total = MOCK_PRODUCTOS.length;
   const productos = MOCK_PRODUCTOS.slice(skip, skip + PAGE_SIZE);
