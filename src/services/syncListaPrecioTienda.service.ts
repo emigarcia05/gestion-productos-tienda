@@ -128,6 +128,7 @@ export async function syncListaPrecioTiendaFromDux(
 
   // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
   // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
+  // Marcas: se resuelve el texto de la API a la tabla marcas y se asigna idMarca.
   if (totalSincronizados > 0) {
     if (onProgress) onProgress(0, totalSincronizados, "guardando");
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
@@ -141,7 +142,25 @@ export async function syncListaPrecioTiendaFromDux(
         // #endregion
         await prisma.$transaction(
           async (tx) => {
+            const marcasUnicas = [
+              ...new Set(
+                chunk
+                  .map((r) => r.marca?.trim())
+                  .filter((n): n is string => Boolean(n && n.length > 0))
+              ),
+            ];
+            const mapaMarca = new Map<string, string>();
+            for (const nombre of marcasUnicas) {
+              const m = await tx.marca.upsert({
+                where: { nombre },
+                create: { nombre },
+                update: {},
+              });
+              mapaMarca.set(nombre, m.id);
+            }
             for (const row of chunk) {
+              const nombreMarca = row.marca?.trim();
+              const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
               await tx.listaPrecioTienda.upsert({
                 where: { codExt: row.codExt },
                 create: {
@@ -150,6 +169,7 @@ export async function syncListaPrecioTiendaFromDux(
                   rubro: row.rubro,
                   subRubro: row.subRubro,
                   marca: row.marca,
+                  idMarca,
                   proveedor: row.proveedor,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
@@ -162,6 +182,7 @@ export async function syncListaPrecioTiendaFromDux(
                   rubro: row.rubro,
                   subRubro: row.subRubro,
                   marca: row.marca,
+                  idMarca,
                   proveedor: row.proveedor,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),

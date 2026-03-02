@@ -16,7 +16,10 @@ export interface FilaListaPrecioParaCliente {
   codExt: string;
   descripcionProveedor: string;
   descripcionTienda: string | null;
+  marca: string | null;
+  descProveedor: number;
   pxListaProveedor: number;
+  dtoProveedor: number;
   dtoMarca: number;
   dtoProducto: number;
   dtoCantidad: number;
@@ -51,7 +54,10 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     codExt: f.codExt,
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
+    marca: f.marca ?? null,
+    descProveedor: Number(f.descProveedor ?? 0),
     pxListaProveedor: Number(f.pxListaProveedor),
+    dtoProveedor: f.dtoProveedor,
     dtoMarca: f.dtoMarca,
     dtoProducto: f.dtoProducto,
     dtoCantidad: f.dtoCantidad,
@@ -165,6 +171,8 @@ export async function upsertListaPrecios(
 }
 
 export interface ActualizacionMasivaListaPrecios {
+  marca?: string | null;
+  dtoProveedor?: number;
   dtoMarca?: number;
   dtoProducto?: number;
   dtoCantidad?: number;
@@ -184,11 +192,16 @@ export async function actualizarListaPreciosMasivo(
   if (ids.length === 0) return { actualizados: 0 };
 
   const updatePayload: {
+    marca?: string | null;
+    dtoProveedor?: number;
     dtoMarca?: number;
     dtoProducto?: number;
     dtoCantidad?: number;
     cxAproxTransporte?: number;
   } = {};
+  if (data.marca !== undefined) updatePayload.marca = data.marca;
+  if (data.dtoProveedor !== undefined)
+    updatePayload.dtoProveedor = Math.round(Math.max(0, Math.min(100, data.dtoProveedor)));
   if (data.dtoMarca !== undefined)
     updatePayload.dtoMarca = Math.round(Math.max(0, Math.min(100, data.dtoMarca)));
   if (data.dtoProducto !== undefined)
@@ -201,7 +214,15 @@ export async function actualizarListaPreciosMasivo(
   if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
 
   const setClauses: string[] = [];
-  const params: (number | string[])[] = [];
+  const params: (number | string | string[])[] = [];
+  if (updatePayload.marca !== undefined) {
+    setClauses.push(`marca = $${params.length + 1}`);
+    params.push(updatePayload.marca ?? null);
+  }
+  if (updatePayload.dtoProveedor !== undefined) {
+    setClauses.push(`dto_proveedor = $${params.length + 1}`);
+    params.push(updatePayload.dtoProveedor);
+  }
   if (updatePayload.dtoMarca !== undefined) {
     setClauses.push(`dto_marca = $${params.length + 1}`);
     params.push(updatePayload.dtoMarca);

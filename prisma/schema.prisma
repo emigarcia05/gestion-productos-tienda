@@ -28,11 +28,14 @@ model ListaPrecioProveedor {
   codExt            String   @map("cod_ext") // ya no unique: varios proveedores pueden compartir el mismo cod_ext (1 tienda → N proveedores)
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
+  marca             String?  // texto marca (proveedor / lista)
+  descProveedor     Decimal  @map("desc_proveedor") @db.Decimal(14, 4) @default(0) // descuento proveedor (monto a restar)
+  dtoProveedor      Int      @map("dto_proveedor") @default(0) // descuento proveedor (%)
   dtoMarca          Int      @map("dto_marca") @default(0)
   dtoProducto       Int      @map("dto_producto") @default(0)
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
   cxAproxTransporte Int      @map("cx_aprox_transporte") @default(0)
-  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD
+  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD: px_lista_proveedor - desc_proveedor - dto_* + cx_aprox_transporte
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   createdAt         DateTime @default(now()) @map("created_at")
@@ -88,6 +91,18 @@ model PresentacionComparacion {
   @@map("presentaciones_comparacion")
 }
 
+// Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en lista_precios_tienda.
+model Marca {
+  id     String   @id @default(cuid())
+  nombre String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  listaPreciosTienda ListaPrecioTienda[]
+
+  @@map("marcas")
+}
+
 // Alimentada solo por API externa. Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
   id              String   @id @default(uuid())
@@ -95,7 +110,8 @@ model ListaPrecioTienda {
   codTienda       String   @map("cod_tienda")
   rubro           String?
   subRubro        String?  @map("sub_rubro")
-  marca           String?
+  marca           String?  // texto tal cual viene de la API DUX (se mantiene para trazabilidad)
+  idMarca         String?  @map("id_marca") // FK a marcas: marca normalizada y vinculada
   proveedor       String?  // texto; cruce con proveedores: WHERE proveedores.nombre ILIKE proveedor
   descripcionTienda String? @map("descripcion_tienda")
   costoCompra     Decimal  @map("costo_compra") @db.Decimal(14, 4)
@@ -104,6 +120,7 @@ model ListaPrecioTienda {
   stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
   lastSync        DateTime @default(now()) @map("last_sync")
 
+  marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // 1 tienda → N proveedores (vinculados por id_lista_precios_tienda)
 
   @@map("lista_precios_tienda")

@@ -16,13 +16,19 @@ interface ProveedorParaCliente {
   codigoUnico: string;
 }
 
+interface MarcaOption {
+  id: string;
+  nombre: string;
+}
+
 interface Props {
   filas: FilaListaPrecioParaCliente[];
   proveedores: ProveedorParaCliente[];
+  marcas: MarcaOption[];
   rol: Rol;
 }
 
-export default function ListaPreciosPageClient({ filas, proveedores, rol }: Props) {
+export default function ListaPreciosPageClient({ filas, proveedores, marcas, rol }: Props) {
   const router = useRouter();
   const [filteredIds, setFilteredIds] = useState<string[]>([]);
 
@@ -59,6 +65,7 @@ export default function ListaPreciosPageClient({ filas, proveedores, rol }: Prop
         <ListaPreciosTablaConFiltros
           filas={filas}
           proveedores={proveedores}
+          marcas={marcas}
           onFilteredIdsChange={handleFilteredIdsChange}
         />
       </div>
