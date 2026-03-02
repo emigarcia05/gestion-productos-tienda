@@ -47,6 +47,7 @@ export default function ListaPreciosPageClient({ filas, proveedores, marcas, rol
         {puedeEdicionMasiva && (
           <EdicionMasivaListaPreciosModal
             filteredIds={filteredIds}
+            marcas={marcas}
             onSuccess={() => router.refresh()}
           />
         )}
