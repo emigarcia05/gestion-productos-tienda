@@ -554,7 +554,13 @@
   padding: 0;
 }
 .modal-app__header {
-  padding: 1.25rem 1.5rem 0.5rem;
+  padding: 0 1.5rem;
+  min-height: 4rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   background-color: var(--primary);
   color: var(--primary-foreground);
 }
@@ -566,8 +572,10 @@
 }
 .modal-app__body {
   border: none;
-  margin: 0 1rem;
-  padding-bottom: 1.5rem;
+  margin: 0 1.5rem 1.5rem;
+  background-color: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 /* Estilos globales para todos los modales .modal-app: textos en negro, inputs/desplegables #0072BB */
@@ -607,8 +615,10 @@
   gap: 0.5rem;
 }
 
-/* Botón cerrar (X) en modales .modal-app: más visible sobre header azul */
+/* Botón cerrar (X) en modales .modal-app: centrado verticalmente en el header */
 .modal-app [data-slot="dialog-close"] {
+  top: 2rem;
+  transform: translateY(-50%);
   border-color: rgba(255, 255, 255, 0.85);
   color: var(--primary-foreground);
 }
