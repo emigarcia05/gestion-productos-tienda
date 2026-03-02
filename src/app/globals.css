@@ -165,10 +165,15 @@
   --filtro-columnas: 5;
   --filtro-gap: 0.75rem;
   --filtro-select-side: bottom;
-  /* Contenedor de filtros: separación entre filas y padding vertical */
-  --filtros-gap-y: 0.75rem;
-  --filtros-py: 0.75rem;
-  --filtros-gap-x: 0.875rem;
+  /* Recuadro de filtros: padding interno (distancia entre filtros y borde del recuadro); un poco más chico que antes */
+  --filtros-recuadro-py: 0.5rem;
+  --filtros-recuadro-px: 0.625rem;
+  /* Separación entre filas de filtros */
+  --filtros-gap-y: 0.5rem;
+  --filtros-py: var(--filtros-recuadro-py);
+  --filtros-gap-x: var(--filtros-recuadro-px);
+  /* Espacio entre el recuadro de filtros y la tabla (diseño global) */
+  --filtros-margin-bottom-tabla: 0.75rem;
 }
 
 @layer base {
@@ -416,17 +421,17 @@
     background-color: var(--popover);
   }
 
-  /* ─── Sección de filtros: contenedor visual que identifica la zona de filtros ───
-   * Fondo distinto al resto de la página, borde sutil y sombra para separarla.
-   * Usar en el contenedor principal de FilterBar para que toda la barra de filtros
-   * se perciba como una sección única y coherente.
+  /* ─── Sección de filtros (recuadro): diseño global ───
+   * Padding interno = distancia entre filtros y borde (--filtros-recuadro-*). Recuadro un poco compacto.
+   * margin-bottom = separación visual entre recuadro y tabla (--filtros-margin-bottom-tabla).
    */
   .seccion-filtros {
     background-color: color-mix(in oklch, var(--primary) 6%, var(--background));
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    padding: var(--filtros-py) var(--filtros-gap-x);
+    padding: var(--filtros-recuadro-py) var(--filtros-recuadro-px);
+    margin-bottom: var(--filtros-margin-bottom-tabla);
   }
 
   /* Contenedor de filtros: más separación entre desplegables, input y botones (variables en :root) */
@@ -565,6 +570,7 @@
 
 /* Modal estándar de la app (SSOT): título azul, zona central e inferior gris, datos en blanco.
  * Título = igual. Div central = fondo gris y bloque de datos en blanco. Div inferior = fondo gris, sin línea; botones resaltan por color.
+ * Contorno #0072BB para todos los modales. overflow: hidden para evitar divs que sobresalgan.
  */
 .modal-app {
   max-width: 42rem;
@@ -574,8 +580,13 @@
   gap: 0;
   padding: 0;
   background-color: var(--muted);
+  border: 2px solid #0072BB;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
+/* Encabezado: fijo, no se achica */
 .modal-app__header {
+  flex-shrink: 0;
   padding: 0 1.5rem;
   min-height: 4rem;
   margin-bottom: 1.25rem;
@@ -592,17 +603,25 @@
   line-height: 1.25;
   color: var(--primary-foreground);
 }
-/* Bloque de datos: fondo blanco para resaltar sobre la zona gris */
+/* Bloque de datos: flexible, hace scroll si sobra contenido; cuando es hijo directo de .modal-app */
 .modal-app__body {
   border: none;
   margin: 0 1.5rem 1rem;
   background-color: var(--card);
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.modal-app > .modal-app__body {
+  flex: 1 1 0;
 }
 
-/* Contenedor cuerpo + footer: zona gris; cuerpo = tarjeta blanca, footer = gris sin línea */
+/* Contenedor cuerpo + footer: zona flexible que se achica; cuerpo con scroll, footer fijo */
 .modal-app__content {
+  flex: 1 1 0;
+  min-height: 0;
   margin: 0 1.5rem 1.5rem;
   background-color: var(--muted);
   border-radius: 0;
@@ -613,10 +632,13 @@
   gap: 0;
 }
 .modal-app__content .modal-app__body {
-  margin: 0 0 0 0;
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0;
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .modal-app__content .modal-app__footer {
   flex-shrink: 0;
@@ -658,6 +680,12 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+/* Contorno #0072BB para todos los modales (también los que no usan .modal-app) */
+[data-slot="dialog-content"] {
+  border: 2px solid #0072BB !important;
+  border-radius: var(--radius-lg);
 }
 
 /* Botón cerrar (X) en modales .modal-app: mismo color de fondo que el encabezado */
