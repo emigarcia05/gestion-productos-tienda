@@ -560,12 +560,14 @@
   font-size: var(--text-base);
   font-weight: var(--font-weight-semibold);
   line-height: 1.25;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 0.5rem;
 }
 /* Cuerpo del modal: líneas divisoras superior e inferior amarillas (accent2), mismo aspecto en todos los modales */
 .modal-app__body {
   border: none;
-  border-top: 2px solid var(--accent2);
-  border-bottom: 2px solid var(--accent2);
+  border-top: 2px solid var(--primary);
+  border-bottom: 2px solid var(--primary);
   margin: 0 1rem;
   padding-bottom: 1.5rem;
 }
