@@ -6,20 +6,20 @@ interface Props {
   subtitulo?: string;
   /** Botones de acción a la derecha; tamaño uniforme obligatorio (h-10 px-4) */
   actions?: React.ReactNode;
-  /** Vista compacta: menos margen inferior y menos padding superior (ej. lista-precios dense view) */
+  /** @deprecated El espaciado es siempre el mismo (clase global .section-header) */
   compact?: boolean;
 }
 
-export default function SectionHeader({ titulo, subtitulo, actions, compact }: Props) {
+export default function SectionHeader({ titulo, subtitulo, actions }: Props) {
   return (
-    <header className={`shrink-0 w-full bg-white px-6 pb-0 ${compact ? "pt-3" : "pt-5"}`}>
-      <div className={`flex flex-nowrap items-center justify-between gap-4 ${compact ? "mb-2" : "mb-8"}`}>
+    <header className="section-header shrink-0 w-full bg-white">
+      <div className="section-header__inner flex flex-nowrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+          <div className="section-header__bar" aria-hidden />
           <div className="min-w-0">
-            <h1 className="text-3xl font-black text-foreground">{titulo}</h1>
+            <h1 className="section-header__titulo">{titulo}</h1>
             {subtitulo && (
-              <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitulo}</p>
+              <p className="section-header__subtitulo">{subtitulo}</p>
             )}
           </div>
         </div>

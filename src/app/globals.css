@@ -563,16 +563,22 @@
   padding-bottom: 0 !important;
 }
 
-/* Modal estándar de la app (SSOT): mismo aspecto en Tienda y Lista Proveedores */
+/* Modal estándar de la app (SSOT): forzar flex para que el cuerpo no se contraiga (DialogContent usa grid por defecto) */
 .modal-app {
   max-width: 42rem;
   max-height: 85vh;
-  display: flex;
-  flex-direction: column;
+  min-height: 50vh;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 0;
   padding: 0;
+  background-color: var(--muted);
+  border: 2px solid #0072BB;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 .modal-app__header {
+  flex-shrink: 0;
   padding: 0 1.5rem;
   min-height: 4rem;
   margin-bottom: 1.25rem;
@@ -589,29 +595,42 @@
   line-height: 1.25;
   color: var(--primary-foreground);
 }
+/* Cuerpo: cuando es hijo directo (ej. Importar lista), debe ocupar el resto y hacer scroll */
 .modal-app__body {
   border: none;
-  margin: 0 1.5rem 1.5rem;
-  background-color: #ffffff;
+  margin: 0 1.5rem 1rem;
+  background-color: var(--card);
   border-radius: var(--radius-lg);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.modal-app > .modal-app__body {
+  flex: 1 1 0;
 }
 
-/* Contenedor cuerpo + footer: un solo cuadro blanco para que los botones queden dentro del modal */
+/* Contenedor cuerpo + footer (ej. Edición masiva): zona flexible, cuerpo con scroll, footer fijo */
 .modal-app__content {
+  flex: 1 1 0;
+  min-height: 0;
   margin: 0 1.5rem 1.5rem;
-  background-color: #ffffff;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  background-color: var(--muted);
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  gap: 0;
 }
 .modal-app__content .modal-app__body {
+  flex: 1 1 0;
+  min-height: 0;
   margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-  flex: 1 1 auto;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .modal-app__content .modal-app__footer {
   flex-shrink: 0;
@@ -645,10 +664,11 @@
   padding: 0.375rem 0;
 }
 
-/* Footer estándar de modales con botón Cancelar/Guardar */
+/* Footer estándar de modales: fondo gris, sin línea; botones resaltan por color */
 .modal-app__footer {
   padding: 1rem 1.5rem;
-  border-top: 2px solid var(--primary);
+  border-top: none;
+  background-color: var(--muted);
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
@@ -917,6 +937,38 @@ main button,
   gap: 0.5rem;
   transition: box-shadow 0.15s, background-color 0.15s;
   box-shadow: 0 1px 2px #0000000d;
+}
+
+/* ─── Título de sección (SectionHeader): misma clase en toda la app, mínimo espacio para dar más lugar a la tabla ─── */
+.section-header {
+  padding-top: 0.375rem;
+  padding-bottom: 0;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.section-header .section-header__inner {
+  margin-bottom: 0.5rem;
+}
+.section-header__bar {
+  height: 1.5rem;
+  width: 0.25rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background-color: var(--primary);
+}
+.section-header__titulo {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl--line-height);
+  font-weight: var(--font-weight-black);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  margin: 0;
+}
+.section-header__subtitulo {
+  margin-top: 0.125rem;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
 }
 
 /* Tarjeta de título de módulo: todos los botones mismo tamaño y texto centrado.
