@@ -214,7 +214,7 @@ export async function actualizarListaPreciosMasivo(
   if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
 
   const setClauses: string[] = [];
-  const params: (number | string | string[])[] = [];
+  const params: (number | string | string[] | null)[] = [];
   if (updatePayload.marca !== undefined) {
     setClauses.push(`marca = $${params.length + 1}`);
     params.push(updatePayload.marca ?? null);
