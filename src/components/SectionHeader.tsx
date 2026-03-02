@@ -17,7 +17,7 @@ export default function SectionHeader({ titulo, subtitulo, actions, compact }: P
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-10 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
           <div className="min-w-0">
-            <h1 className="text-3xl font-black text-foreground">{titulo}</h1>
+            <h1 className="section-header__titulo">{titulo}</h1>
             {subtitulo && (
               <p className="mt-1 text-sm font-medium text-muted-foreground">{subtitulo}</p>
             )}
