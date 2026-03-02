@@ -31,9 +31,9 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 /** Alto aproximado de una fila tbody (celda-datos). */
-const BODY_ROW_HEIGHT_PX = 18;
-/** Alto del thead (Table variant="compact"). */
-const HEADER_HEIGHT_PX = 16;
+const BODY_ROW_HEIGHT_PX = 28;
+/** Alto del thead (Table variant="compact"): 3.5rem en globals.css. */
+const HEADER_HEIGHT_PX = 56;
 
 interface ProveedorOption {
   id: string;

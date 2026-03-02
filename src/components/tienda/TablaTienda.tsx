@@ -55,7 +55,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
               <TableHead className="py-2 px-2 text-xs leading-tight">Cod. Tienda</TableHead>
               <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               <TableHead className="py-2 px-2 text-xs leading-tight">Px Compra Final</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight" title="Mejor Px: ✓ = ya tiene el mejor precio; +$ = ahorro posible con otro proveedor vinculado">✓</TableHead>
+              <TableHead className="py-2 px-2 text-xs leading-tight" title="✓ = Hay otro proveedor vinculado con mejor precio que el principal">✓</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -74,14 +74,12 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
                 <TableCell className="py-2 px-2 tabular-nums text-xs font-bold">
                   ${fmtPrecio(item.costo)}
                 </TableCell>
-                <TableCell className="py-2 px-2 text-center tabular-nums text-xs">
+                <TableCell className="py-2 px-2 text-center text-xs">
                   {item.diferenciaMejorPrecio != null && item.diferenciaMejorPrecio > 0 ? (
-                    <span title="Hay un proveedor vinculado con precio final más bajo; ahorro posible">
-                      +${fmtPrecio(item.diferenciaMejorPrecio)}
+                    <span className="font-semibold" title="Hay otro proveedor vinculado con mejor precio que el principal" style={{ color: "#0072BB" }}>
+                      ✓
                     </span>
-                  ) : (
-                    <span title="Mejor precio o sin proveedores vinculados para comparar">✓</span>
-                  )}
+                  ) : null}
                 </TableCell>
               </TableRow>
             ))}

@@ -91,12 +91,15 @@ export default function EdicionMasivaListaPreciosModal({
         </Button>
       </DialogTrigger>
       <DialogContent className="modal-app">
+        {/* 1. Título */}
         <DialogHeader className="modal-app__header">
           <DialogTitle className="modal-app__title">
             Edición masiva
           </DialogTitle>
         </DialogHeader>
-        <div className="modal-app__body px-6 pb-6 flex flex-col gap-4">
+
+        {/* 2. Descuentos: solo este div tiene líneas divisoras amarillas */}
+        <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
             Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
           </p>
@@ -119,14 +122,16 @@ export default function EdicionMasivaListaPreciosModal({
               </div>
             ))}
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
-              Cancelar
-            </Button>
-            <Button type="button" onClick={handleGuardar} disabled={pending}>
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
-            </Button>
-          </div>
+        </div>
+
+        {/* 3. Botón Guardar */}
+        <div className="px-6 pb-6 flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleGuardar} disabled={pending}>
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
