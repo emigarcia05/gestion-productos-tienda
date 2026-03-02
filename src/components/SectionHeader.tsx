@@ -29,7 +29,7 @@ export default function SectionHeader({ titulo, subtitulo, actions }: Props) {
           </div>
         )}
       </div>
-      <Separator className="bg-slate-200/60" />
+      <Separator className="section-header-divider" />
     </header>
   );
 }
