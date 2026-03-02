@@ -32,7 +32,7 @@ const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: str
   { key: "dtoMarca", label: "Desc. Marca (%)" },
   { key: "dtoProducto", label: "Desc. Productor (%)" },
   { key: "dtoCantidad", label: "Desc. Cantidad (%)" },
-  { key: "cxAproxTransporte", label: "Cx. Aprox Transporte (%)" },
+  { key: "cxTransporte", label: "Cx. Aprox. Transporte (%)" },
 ];
 
 interface Props {
@@ -56,7 +56,7 @@ export default function EdicionMasivaListaPreciosModal({
     dtoMarca: undefined,
     dtoProducto: undefined,
     dtoCantidad: undefined,
-    cxAproxTransporte: undefined,
+    cxTransporte: undefined,
   });
 
   function handleChange(key: keyof ActualizacionMasivaListaPrecios, value: string) {
@@ -71,7 +71,7 @@ export default function EdicionMasivaListaPreciosModal({
     if (values.dtoMarca !== undefined && !Number.isNaN(values.dtoMarca)) data.dtoMarca = values.dtoMarca;
     if (values.dtoProducto !== undefined && !Number.isNaN(values.dtoProducto)) data.dtoProducto = values.dtoProducto;
     if (values.dtoCantidad !== undefined && !Number.isNaN(values.dtoCantidad)) data.dtoCantidad = values.dtoCantidad;
-    if (values.cxAproxTransporte !== undefined && !Number.isNaN(values.cxAproxTransporte)) data.cxAproxTransporte = values.cxAproxTransporte;
+    if (values.cxTransporte !== undefined && !Number.isNaN(values.cxTransporte)) data.cxTransporte = values.cxTransporte;
 
     if (Object.keys(data).length === 0) {
       toast.error("Ingresá al menos un valor para actualizar.");
@@ -87,7 +87,7 @@ export default function EdicionMasivaListaPreciosModal({
       toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
       setOpen(false);
       setMarcaNombre("");
-      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, cxAproxTransporte: undefined });
+      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, cxTransporte: undefined });
       onSuccess?.();
     } finally {
       setPending(false);

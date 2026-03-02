@@ -205,13 +205,14 @@ export default function ListaPreciosTablaConFiltros({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-28">COD. EXT.</TableHead>
+              <TableHead className="w-24">MARCA</TableHead>
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
-              <TableHead className="w-28">PX COMPRA FINAL</TableHead>
-              <TableHead className="w-24">PX LISTA</TableHead>
-              <TableHead className="w-24">DESC. PROVEEDOR</TableHead>
+              <TableHead className="w-28">PX FINAL COMPRA</TableHead>
+              <TableHead className="w-20">DESC. PROVEEDOR</TableHead>
               <TableHead className="w-20">DESC. MARCA</TableHead>
               <TableHead className="w-20">DESC. PROD.</TableHead>
-              <TableHead className="w-24">CX. APROX TRANSPORTE</TableHead>
+              <TableHead className="w-20">DESC. CANT.</TableHead>
+              <TableHead className="w-24">CX. APRO. TRANSPORTE</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -219,6 +220,9 @@ export default function ListaPreciosTablaConFiltros({
               <TableRow key={fila.id}>
                 <TableCell className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
+                </TableCell>
+                <TableCell className="celda-datos">
+                  {fila.marca ?? "—"}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
                   <div className="celda-destacado truncate text-xs font-bold">
@@ -236,13 +240,7 @@ export default function ListaPreciosTablaConFiltros({
                   ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
-                  ${fmtPrecio(Number(fila.pxListaProveedor))}
-                </TableCell>
-                <TableCell className="celda-datos celda-numero">
-                  ${fmtPrecio(fila.descProveedor)}
-                </TableCell>
-                <TableCell className="celda-datos">
-                  {fila.marca ?? "—"}
+                  {fmtNumero(fila.dtoProveedor)}%
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoMarca)}%
@@ -251,7 +249,10 @@ export default function ListaPreciosTablaConFiltros({
                   {fmtNumero(fila.dtoProducto)}%
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
-                  {fmtNumero(fila.cxAproxTransporte)}%
+                  {fmtNumero(fila.dtoCantidad)}%
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
+                  {fmtNumero(fila.cxTransporte)}%
                 </TableCell>
               </TableRow>
             ))}
@@ -259,7 +260,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableRow>
                 <TableCell
                   className="celda-datos py-1 text-muted-foreground text-center"
-                  colSpan={8}
+                  colSpan={9}
                 >
                   {filas.length === 0
                     ? "No hay datos de lista de precios para mostrar."

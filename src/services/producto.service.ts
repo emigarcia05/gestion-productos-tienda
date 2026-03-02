@@ -47,7 +47,7 @@ export async function getProductosVinculadosPorItemTienda(itemTiendaId: string):
       precioVentaSugerido: Number(r.pxVtaSugerido ?? 0),
       descuentoProducto: r.dtoProducto,
       descuentoCantidad: r.dtoCantidad,
-      cxTransporte: r.cxAproxTransporte,
+      cxTransporte: r.cxTransporte,
       disponible: true,
       proveedorId: r.proveedor.id,
       proveedor: { id: r.proveedor.id, nombre: r.proveedor.nombre, prefijo: r.proveedor.prefijo },

@@ -17,13 +17,12 @@ export interface FilaListaPrecioParaCliente {
   descripcionProveedor: string;
   descripcionTienda: string | null;
   marca: string | null;
-  descProveedor: number;
   pxListaProveedor: number;
   dtoProveedor: number;
   dtoMarca: number;
   dtoProducto: number;
   dtoCantidad: number;
-  cxAproxTransporte: number;
+  cxTransporte: number;
   pxCompraFinal: number | null;
   proveedor: { id: string; prefijo: string } | null;
 }
@@ -55,13 +54,12 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     marca: f.marca ?? null,
-    descProveedor: Number(f.descProveedor ?? 0),
     pxListaProveedor: Number(f.pxListaProveedor),
     dtoProveedor: f.dtoProveedor,
     dtoMarca: f.dtoMarca,
     dtoProducto: f.dtoProducto,
     dtoCantidad: f.dtoCantidad,
-    cxAproxTransporte: f.cxAproxTransporte,
+    cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor
       ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo }
@@ -149,7 +147,7 @@ export async function upsertListaPrecios(
           codExt,
           pxListaProveedor: fila.precioLista,
           pxVtaSugerido: fila.precioVentaSugerido || null,
-          // dto_producto, dto_cantidad, cx_aprox_transporte usan defaults (0)
+          // dto_producto, dto_cantidad, cx_transporte usan defaults (0)
         },
         update: {
           idProveedor: proveedorId,
@@ -176,11 +174,11 @@ export interface ActualizacionMasivaListaPrecios {
   dtoMarca?: number;
   dtoProducto?: number;
   dtoCantidad?: number;
-  cxAproxTransporte?: number;
+  cxTransporte?: number;
 }
 
 /**
- * Actualiza dto_producto, dto_cantidad y/o cx_aprox_transporte en los registros con id en la lista.
+ * Actualiza dto_producto, dto_cantidad y/o cx_transporte en los registros con id en la lista.
  * Valores en porcentaje (0-100). Solo actualiza los campos presentes en data.
  * Usa SQL crudo para evitar fallos con Prisma 7 + adapter-pg ("column not available").
  * Un solo UPDATE en BD; eficiente para 100–10.000 filas.
@@ -197,7 +195,7 @@ export async function actualizarListaPreciosMasivo(
     dtoMarca?: number;
     dtoProducto?: number;
     dtoCantidad?: number;
-    cxAproxTransporte?: number;
+    cxTransporte?: number;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
   if (data.dtoProveedor !== undefined)
@@ -208,8 +206,8 @@ export async function actualizarListaPreciosMasivo(
     updatePayload.dtoProducto = Math.round(Math.max(0, Math.min(100, data.dtoProducto)));
   if (data.dtoCantidad !== undefined)
     updatePayload.dtoCantidad = Math.round(Math.max(0, Math.min(100, data.dtoCantidad)));
-  if (data.cxAproxTransporte !== undefined)
-    updatePayload.cxAproxTransporte = Math.round(Math.max(0, Math.min(100, data.cxAproxTransporte)));
+  if (data.cxTransporte !== undefined)
+    updatePayload.cxTransporte = Math.round(Math.max(0, Math.min(100, data.cxTransporte)));
 
   if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
 
@@ -235,9 +233,9 @@ export async function actualizarListaPreciosMasivo(
     setClauses.push(`dto_cantidad = $${params.length + 1}`);
     params.push(updatePayload.dtoCantidad);
   }
-  if (updatePayload.cxAproxTransporte !== undefined) {
-    setClauses.push(`cx_aprox_transporte = $${params.length + 1}`);
-    params.push(updatePayload.cxAproxTransporte);
+  if (updatePayload.cxTransporte !== undefined) {
+    setClauses.push(`cx_transporte = $${params.length + 1}`);
+    params.push(updatePayload.cxTransporte);
   }
   params.push(ids);
 

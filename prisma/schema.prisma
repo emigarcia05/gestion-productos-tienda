@@ -29,13 +29,12 @@ model ListaPrecioProveedor {
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
   marca             String?  // texto marca (proveedor / lista)
-  descProveedor     Decimal  @map("desc_proveedor") @db.Decimal(14, 4) @default(0) // descuento proveedor (monto a restar)
   dtoProveedor      Int      @map("dto_proveedor") @default(0) // descuento proveedor (%)
   dtoMarca          Int      @map("dto_marca") @default(0)
   dtoProducto       Int      @map("dto_producto") @default(0)
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
-  cxAproxTransporte Int      @map("cx_aprox_transporte") @default(0)
-  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD: px_lista_proveedor - desc_proveedor - dto_* + cx_aprox_transporte
+  cxTransporte       Int      @map("cx_transporte") @default(0)
+  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD: px_lista_proveedor - dto_* + cx_transporte
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   createdAt         DateTime @default(now()) @map("created_at")
