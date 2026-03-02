@@ -125,11 +125,11 @@ export default function EdicionMasivaListaPreciosModal({
         <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
           <div className="grid gap-4 py-2">
             <div className="grid grid-cols-2 gap-4 items-center">
-              <Label htmlFor="marca" className="text-right">
+              <Label htmlFor="marca" className="text-right text-muted-foreground font-medium">
                 Marca
               </Label>
               <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
-                <SelectTrigger id="marca" className="tabular-nums">
+                <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums">
                   <SelectValue placeholder="Seleccionar marca" />
                 </SelectTrigger>
                 <SelectContent>
@@ -144,7 +144,7 @@ export default function EdicionMasivaListaPreciosModal({
             </div>
             {CAMPOS_NUMERICOS.map(({ key, label }) => (
               <div key={key} className="grid grid-cols-2 gap-4 items-center">
-                <Label htmlFor={key} className="text-right">
+                <Label htmlFor={key} className="text-right text-muted-foreground font-medium">
                   {label}
                 </Label>
                 <Input
@@ -163,7 +163,7 @@ export default function EdicionMasivaListaPreciosModal({
         </div>
 
         {/* 3. Botón Guardar */}
-        <div className="px-6 pb-6 flex justify-end gap-2">
+        <div className="px-6 pt-6 pb-6 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
             Cancelar
           </Button>

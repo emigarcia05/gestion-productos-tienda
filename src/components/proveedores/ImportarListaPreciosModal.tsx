@@ -202,16 +202,16 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="modal-app__body px-6 pb-6">
+        <div className="modal-app__body px-6 pb-8">
         {step === "upload" && (
           <div className="space-y-5 pt-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Proveedor</label>
+              <label className="text-sm font-medium text-muted-foreground">Proveedor</label>
               <div className="relative">
                 <select
                   value={proveedorId}
                   onChange={(e) => setProveedorId(e.target.value)}
-                  className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p) => (

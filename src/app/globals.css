@@ -186,7 +186,7 @@
     @apply flex flex-col gap-y-2 py-2;
   }
 
-  /* ─── Clase maestra inputs y selects de filtro (SSOT): una sola clase, variables de tema ─── */
+  /* ─── Clase maestra inputs y selects de filtro (SSOT): misma apariencia para desplegables y filtro descripción ─── */
   .input-filtro-unificado,
   .input-filtro-custom {
     @apply w-full flex items-center justify-between gap-2 px-3;
@@ -195,6 +195,13 @@
     @apply transition-[box-shadow,border-color] duration-150;
     @apply text-sm font-semibold text-foreground;
     @apply h-10 min-h-[2.5rem];
+  }
+  /* Input de texto (filtro descripción): mismo recuadro #0072BB que los selects desplegables (sobreescribe border-input del UI) */
+  input.input-filtro-unificado,
+  input.input-filtro-custom {
+    border-color: var(--primary) !important;
+    border-width: 1px;
+    border-style: solid;
   }
   .input-filtro-unificado::placeholder,
   .input-filtro-unificado[data-placeholder],
@@ -208,6 +215,11 @@
   .input-filtro-custom[data-state="open"] {
     @apply outline-none ring-[3px] ring-primary/20;
     border-color: var(--ring);
+  }
+  input.input-filtro-unificado:focus-visible,
+  input.input-filtro-custom:focus-visible {
+    border-color: var(--ring) !important;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent);
   }
 
   /* ─── Clases maestras lista-precios / gestión (cascada desde una variable) ─── */
@@ -297,8 +309,9 @@
     outline: none;
     outline-style: none;
     -webkit-tap-highlight-color: transparent;
-    min-height: 2.5rem;
-    height: calc(var(--spacing) * 10);
+    /* Altura más compacta (~50% menos área visual que antes) para todos los filtros y selects de modales */
+    min-height: 2rem;
+    height: calc(var(--spacing) * 8);
     width: 100% !important;
     min-width: 0;
     padding-inline: calc(var(--spacing) * 3);
@@ -554,6 +567,7 @@
   border-top: 2px solid var(--accent2);
   border-bottom: 2px solid var(--accent2);
   margin: 0 1rem;
+  padding-bottom: 1.5rem;
 }
 
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
