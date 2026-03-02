@@ -7,7 +7,7 @@
 import type { FilaListaPrecio } from "@/lib/parsearImport";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
-import { filtroTexto } from "@/lib/busqueda";
+import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 
 /** Fila para el cliente (lista-precios): proveedor + descripción tienda si existe. */
@@ -65,6 +65,77 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
       ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo }
       : null,
   }));
+}
+
+/**
+ * Lista de precios filtrada por proveedor, marca y/o búsqueda (≥3 caracteres).
+ * Usado para carga bajo demanda: no se traen datos hasta que el usuario aplica un filtro.
+ * Si no hay filtro activo (ningún selector o búsqueda < 3 chars), devuelve [].
+ */
+export async function getListaPreciosConTiendaFiltrada(
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined
+): Promise<FilaListaPrecioParaCliente[]> {
+  const prov = proveedorId?.trim() || undefined;
+  const marca = marcaNombre?.trim() || undefined;
+  const q = busqueda?.trim() || "";
+  const tieneFiltro = !!prov || !!marca || q.length >= 3;
+  if (!tieneFiltro) return [];
+
+  const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
+  if (prov) andParts.push({ idProveedor: prov });
+  if (marca) andParts.push({ marca: marca });
+  if (q.length >= 3) {
+    const textFilter = filtroTexto(q, ["descripcionProveedor", "codExt", "marca"]);
+    if (textFilter.AND?.length) andParts.push(textFilter);
+  }
+  const where: Prisma.ListaPrecioProveedorWhereInput = andParts.length ? { AND: andParts } : {};
+
+  const filas = await prisma.listaPrecioProveedor.findMany({
+    where,
+    include: { proveedor: true },
+    orderBy: { codExt: "asc" },
+  });
+
+  const codExts = [...new Set(filas.map((r) => r.codExt))];
+  const tiendaRows =
+    codExts.length > 0
+      ? await prisma.listaPrecioTienda.findMany({
+          where: { codExt: { in: codExts } },
+          select: { codExt: true, descripcionTienda: true },
+        })
+      : [];
+
+  const descripcionPorCodExt = new Map(
+    tiendaRows
+      .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
+      .map((t) => [t.codExt, t.descripcionTienda as string])
+  );
+
+  let result: FilaListaPrecioParaCliente[] = filas.map((f) => ({
+    id: f.id,
+    codExt: f.codExt,
+    descripcionProveedor: f.descripcionProveedor,
+    descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
+    marca: f.marca ?? null,
+    pxListaProveedor: Number(f.pxListaProveedor),
+    dtoProveedor: f.dtoProveedor,
+    dtoMarca: f.dtoMarca,
+    dtoProducto: f.dtoProducto,
+    dtoCantidad: f.dtoCantidad,
+    cxTransporte: f.cxTransporte,
+    pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
+    proveedor: f.proveedor ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo } : null,
+  }));
+
+  if (q.length >= 3) {
+    result = result.filter((f) =>
+      matchByMultiTerm([f.descripcionProveedor, f.descripcionTienda, f.marca ?? ""], q)
+    );
+  }
+
+  return result;
 }
 
 /** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. */

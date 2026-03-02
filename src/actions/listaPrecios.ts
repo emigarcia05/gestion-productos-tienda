@@ -1,11 +1,28 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { actualizarListaPreciosMasivo, type ActualizacionMasivaListaPrecios } from "@/services/listaPrecios.service";
+import {
+  actualizarListaPreciosMasivo,
+  getListaPreciosConTiendaFiltrada,
+  type ActualizacionMasivaListaPrecios,
+  type FilaListaPrecioParaCliente,
+} from "@/services/listaPrecios.service";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
-export type { ActualizacionMasivaListaPrecios } from "@/services/listaPrecios.service";
+export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
+
+/**
+ * Devuelve lista de precios filtrada por proveedor, marca y/o búsqueda (≥3 caracteres).
+ * Para carga bajo demanda: el cliente solo llama cuando hay filtro activo.
+ */
+export async function getListaPreciosFiltradaAction(
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined
+): Promise<FilaListaPrecioParaCliente[]> {
+  return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, busqueda);
+}
 
 /**
  * Edición masiva: actualiza Desc. prod., Desc. cant. y/o Cx. aprox. transporte

@@ -6,8 +6,8 @@ import SectionHeader from "@/components/SectionHeader";
 import ImportarListaPreciosModal from "@/components/proveedores/ImportarListaPreciosModal";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
-import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
+import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 interface ProveedorParaCliente {
   id: string;
@@ -21,14 +21,20 @@ interface MarcaOption {
   nombre: string;
 }
 
+type FetchListaPreciosAction = (
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined
+) => Promise<FilaListaPrecioParaCliente[]>;
+
 interface Props {
-  filas: FilaListaPrecioParaCliente[];
   proveedores: ProveedorParaCliente[];
   marcas: MarcaOption[];
   rol: Rol;
+  fetchListaPreciosAction: FetchListaPreciosAction;
 }
 
-export default function ListaPreciosPageClient({ filas, proveedores, marcas, rol }: Props) {
+export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetchListaPreciosAction }: Props) {
   const router = useRouter();
   const [filteredIds, setFilteredIds] = useState<string[]>([]);
 
@@ -64,10 +70,10 @@ export default function ListaPreciosPageClient({ filas, proveedores, marcas, rol
       />
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-1.5">
         <ListaPreciosTablaConFiltros
-          filas={filas}
           proveedores={proveedores}
           marcas={marcas}
           onFilteredIdsChange={handleFilteredIdsChange}
+          fetchListaPreciosAction={fetchListaPreciosAction}
         />
       </div>
     </>

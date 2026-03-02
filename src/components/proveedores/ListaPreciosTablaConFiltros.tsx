@@ -27,8 +27,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
-import { matchByMultiTerm } from "@/lib/busqueda";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
+
+type FetchListaPreciosAction = (
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined
+) => Promise<FilaListaPrecioParaCliente[]>;
 
 /** Alto aproximado de una fila tbody (celda-datos). */
 const BODY_ROW_HEIGHT_PX = 28;
@@ -47,25 +52,33 @@ interface MarcaOption {
 }
 
 interface ListaPreciosTablaConFiltrosProps {
-  filas: FilaListaPrecioParaCliente[];
   proveedores: ProveedorOption[];
   marcas: MarcaOption[];
-  /** Se invoca con los id de las filas actualmente filtradas (para edición masiva). */
   onFilteredIdsChange?: (ids: string[]) => void;
+  fetchListaPreciosAction: FetchListaPreciosAction;
 }
 
+const MIN_CARACTERES_BUSQUEDA = 3;
+const MENSAJE_SIN_FILTRO =
+  "Aplicá un filtro (Proveedor o Marca) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
+
 export default function ListaPreciosTablaConFiltros({
-  filas,
   proveedores,
   marcas,
   onFilteredIdsChange,
+  fetchListaPreciosAction,
 }: ListaPreciosTablaConFiltrosProps) {
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
+  const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
+  const [loading, setLoading] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const hasFilterActive =
+    !!proveedorId || !!marcaNombre || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
 
   useEffect(() => {
     const el = tableContainerRef.current;
@@ -81,25 +94,34 @@ export default function ListaPreciosTablaConFiltros({
     return () => ro.disconnect();
   }, []);
 
-  const filteredFilas = useMemo(() => {
-    let result = filas;
-    if (proveedorId) {
-      result = result.filter((f) => f.proveedor?.id === proveedorId);
-    }
-    if (marcaNombre) {
-      result = result.filter((f) => (f.marca ?? "").trim() === marcaNombre);
-    }
-    if (busqueda.trim()) {
-      result = result.filter((f) =>
-        matchByMultiTerm([f.descripcionProveedor, f.descripcionTienda, f.marca ?? ""], busqueda)
-      );
-    }
-    return result;
-  }, [filas, proveedorId, marcaNombre, busqueda]);
-
   useEffect(() => {
-    onFilteredIdsChange?.(filteredFilas.map((f) => f.id));
-  }, [filteredFilas, onFilteredIdsChange]);
+    if (!hasFilterActive) {
+      setFilasData([]);
+      onFilteredIdsChange?.([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetchListaPreciosAction(
+      proveedorId || undefined,
+      marcaNombre || undefined,
+      busqueda.trim() || undefined
+    )
+      .then((data) => {
+        if (!cancelled) {
+          setFilasData(data);
+          onFilteredIdsChange?.(data.map((f) => f.id));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasFilterActive, proveedorId, marcaNombre, busqueda, fetchListaPreciosAction, onFilteredIdsChange]);
+
+  const filteredFilas = filasData;
 
   const totalPaginas = Math.max(
     1,
@@ -188,7 +210,7 @@ export default function ListaPreciosTablaConFiltros({
               id="filtro-lista-precios-busqueda"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="BUSCAR POR DESCRIPCION"
+              placeholder="Buscar por descripción (mín. 3 caracteres)"
               className="input-filtro-unificado"
             />
           </FilterRowSearch>
@@ -216,7 +238,7 @@ export default function ListaPreciosTablaConFiltros({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filasPagina.map((fila) => (
+            {hasFilterActive && !loading && filasPagina.map((fila) => (
               <TableRow key={fila.id}>
                 <TableCell className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
@@ -256,15 +278,17 @@ export default function ListaPreciosTablaConFiltros({
                 </TableCell>
               </TableRow>
             ))}
-            {filasPagina.length === 0 && (
+            {(!hasFilterActive || loading || filasPagina.length === 0) && (
               <TableRow>
                 <TableCell
-                  className="celda-datos py-1 text-muted-foreground text-center"
+                  className="celda-datos py-8 text-muted-foreground text-center"
                   colSpan={9}
                 >
-                  {filas.length === 0
-                    ? "No hay datos de lista de precios para mostrar."
-                    : "Ningún producto coincide con los filtros."}
+                  {!hasFilterActive
+                    ? MENSAJE_SIN_FILTRO
+                    : loading
+                      ? "Cargando…"
+                      : "Ningún producto coincide con los filtros."}
                 </TableCell>
               </TableRow>
             )}
