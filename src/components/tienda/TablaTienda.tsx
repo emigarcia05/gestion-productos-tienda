@@ -8,6 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  EmptyTableRow,
 } from "@/components/ui/table";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
@@ -50,16 +51,7 @@ export default function TablaTienda({
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const puedeVincular = puede(rol, col.vinculos);
-
-  if (items.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-muted-foreground text-center max-w-md px-4">
-          {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
-        </p>
-      </div>
-    );
-  }
+  const COLUMNS = 4;
 
   return (
     <>
@@ -70,11 +62,17 @@ export default function TablaTienda({
               <TableHead className="py-2 px-2 text-xs leading-tight">Cod. Tienda</TableHead>
               <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
               <TableHead className="py-2 px-2 text-xs leading-tight">Px Compra Final</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight" title="✓ = Menor Cx Disponible: hay ≥2 proveedores vinculados y el principal no es el de menor costo. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
+              <TableHead className="py-2 px-2 text-xs leading-tight" title="✓ = Menor Cx Disponible: hay al menos un proveedor vinculado con costo menor que el principal. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => (
+            {items.length === 0 ? (
+              <EmptyTableRow
+                colSpan={COLUMNS}
+                message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+              />
+            ) : (
+              items.map((item) => (
               <TableRow
                 key={item.id}
                 onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
@@ -97,13 +95,14 @@ export default function TablaTienda({
                   ) : null}
                 </TableCell>
               </TableRow>
-            ))}
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
 
       {/* Modales de vínculos — uno por item, se monta solo el que está abierto */}
-      {puedeVincular && items.map((item) => (
+      {puedeVincular && items.length > 0 && items.map((item) => (
         modalAbierto === item.id && (
           <VincularModal
             key={item.id}

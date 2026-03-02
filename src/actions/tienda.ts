@@ -36,7 +36,7 @@ export interface ItemTiendaParaTabla {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
-  /** Si hay un proveedor vinculado con precio final más bajo que el actual: diferencia positiva (costo - mejor precio). Null si ya tiene el mejor precio o no hay vínculos. */
+  /** Si hay al menos un proveedor vinculado con precio final más bajo que el principal: diferencia positiva (costo - mejor precio). Null si ya tiene el mejor precio o no hay vínculos. */
   diferenciaMejorPrecio: number | null;
 }
 
@@ -71,7 +71,7 @@ export async function getTiendaPageData(params: {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT lpt.id
       FROM lista_precios_tienda lpt
-      WHERE (SELECT COUNT(*) FROM lista_precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
+      WHERE (SELECT COUNT(*) FROM lista_precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 1
         AND (SELECT MIN(lpp.px_compra_final) FROM lista_precios_proveedores lpp
              WHERE lpp.id_lista_precios_tienda = lpt.id AND lpp.px_compra_final IS NOT NULL) < lpt.costo_compra
     `;
@@ -163,8 +163,9 @@ export async function getTiendaPageData(params: {
     const costo = Number(r.costoCompra);
     const minPx = minPxPorTienda.get(r.id);
     const cantidadVinculos = r._count.listaPreciosProveedores;
+    /* Tilde "Menor Cx Disponible": ≥1 proveedor vinculado y alguno tiene costo menor que el principal (costo_compra). */
     const diferenciaMejorPrecio =
-      cantidadVinculos >= 2 && minPx != null && minPx < costo
+      cantidadVinculos >= 1 && minPx != null && minPx < costo
         ? Math.round((costo - minPx) * 100) / 100
         : null;
     return {

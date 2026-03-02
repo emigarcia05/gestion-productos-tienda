@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  EmptyTableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -53,18 +54,6 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido, sinFi
 
   const puedeAgregar = !!onAgregarAlPedido;
 
-  if (productos.length === 0) {
-    return (
-      <Card className="rounded-xl shadow-sm">
-        <CardContent className="flex items-center justify-center py-16">
-          <p className="text-sm text-slate-500 text-center max-w-md px-4">
-            {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <>
       <Card className="rounded-xl shadow-sm border-border overflow-hidden">
@@ -79,7 +68,13 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido, sinFi
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productos.map((prod) => {
+                {productos.length === 0 ? (
+                  <EmptyTableRow
+                    colSpan={3}
+                    message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+                  />
+                ) : (
+                productos.map((prod) => {
                   const valor = cantidadUrgente[prod.id] ?? "";
                   return (
                     <TableRow
@@ -115,7 +110,8 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido, sinFi
                       </TableCell>
                     </TableRow>
                   );
-                })}
+                })
+                )}
               </TableBody>
             </Table>
           </div>

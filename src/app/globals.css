@@ -597,6 +597,26 @@
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
+/* Contenedor cuerpo + footer: un solo cuadro blanco para que los botones queden dentro del modal */
+.modal-app__content {
+  margin: 0 1.5rem 1.5rem;
+  background-color: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-app__content .modal-app__body {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  flex: 1 1 auto;
+}
+.modal-app__content .modal-app__footer {
+  flex-shrink: 0;
+}
+
 /* Estilos globales para todos los modales .modal-app: textos en negro, inputs/desplegables #0072BB */
 .modal-app__body label,
 .modal-app__body > p,
@@ -634,16 +654,18 @@
   gap: 0.5rem;
 }
 
-/* Botón cerrar (X) en modales .modal-app: centrado verticalmente en el header */
+/* Botón cerrar (X) en modales .modal-app: mismo color de fondo que el encabezado */
 .modal-app [data-slot="dialog-close"] {
   top: 2rem;
   transform: translateY(-50%);
+  background-color: var(--primary) !important;
   border-color: rgba(255, 255, 255, 0.85);
   color: var(--primary-foreground);
 }
 .modal-app [data-slot="dialog-close"]:hover {
   border-color: var(--primary-foreground);
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: var(--primary) !important;
+  filter: brightness(1.1);
 }
 
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
@@ -707,28 +729,41 @@
   font-size: 0.875rem;
 }
 
-/* Filas de tabla de vínculos: columnas 15% 20% 20% 45%, centrado, zebra */
+/* ─── Listado de vínculos por proveedor: cada fila = un proveedor distinto (bloque diferenciado) ───
+ * Política de diseño: cada comparación es una "tarjeta" con borde, radio y separación visual.
+ */
+.modal-vinculos-listado-contenedor {
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .modal-vinculos-fila {
   display: grid;
   grid-template-columns: 15% 20% 20% 45%;
   gap: 0.5rem;
   align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .modal-vinculos-fila--zebra-impar {
-  background-color: #fff;
+  background-color: var(--card);
+  border-color: var(--border);
 }
 .modal-vinculos-fila--zebra-par {
-  background-color: rgba(248, 250, 252, 0.8);
+  background-color: color-mix(in oklch, var(--primary) 4%, var(--card));
+  border-color: color-mix(in oklch, var(--primary) 12%, var(--border));
 }
 .modal-vinculos-fila--destacado {
-  box-shadow: inset 0 0 0 2px rgba(250, 204, 21, 0.45);
-  background-color: rgba(254, 249, 195, 0.35);
-  border-radius: var(--radius);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent2) 35%, transparent);
+  background-color: color-mix(in oklch, var(--accent2) 10%, var(--card));
+  border-color: color-mix(in oklch, var(--accent2) 40%, var(--border));
 }
+
 .modal-vinculos-celda {
   text-align: center;
 }
@@ -742,9 +777,6 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
-}
-.modal-vinculos-listado-contenedor {
-  padding: 0.75rem 1.5rem;
 }
 .modal-vinculos-celda--numero {
   font-size: 0.75rem;

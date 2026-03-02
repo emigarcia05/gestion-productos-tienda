@@ -120,6 +120,28 @@ function TableCaption({
   )
 }
 
+/** Fila vacía reutilizable: tabla visible sin datos (ej. sin filtros o sin resultados). */
+function EmptyTableRow({
+  colSpan,
+  message,
+  className,
+}: {
+  colSpan: number;
+  message: string;
+  className?: string;
+}) {
+  return (
+    <TableRow>
+      <TableCell
+        colSpan={colSpan}
+        className={cn("py-8 text-muted-foreground text-center", className)}
+      >
+        <span className="text-sm max-w-md inline-block px-4">{message}</span>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export {
   Table,
   TableHeader,
@@ -129,4 +151,5 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  EmptyTableRow,
 }

@@ -116,60 +116,61 @@ export default function EdicionMasivaListaPreciosModal({
           <DialogTitle className="modal-app__title">Edición masiva</DialogTitle>
         </DialogHeader>
 
-        {/* 2. Texto descriptivo + campos (clases globales .modal-app__body y .modal-app__form-row) */}
-        <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
-          <p className="text-sm">
-            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
-            {cantidad !== 1 ? "s" : ""} del filtro actual.
-          </p>
+        {/* 2. Contenedor único (cuerpo + footer) para que los botones queden dentro del cuadro */}
+        <div className="modal-app__content">
+          <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
+            <p className="text-sm">
+              Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
+              {cantidad !== 1 ? "s" : ""} del filtro actual.
+            </p>
 
-          <div className="grid gap-0 py-1">
-            <div className="modal-app__form-row">
-              <Label htmlFor="marca" className="text-right font-medium">
-                Marca
-              </Label>
-              <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
-                <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums">
-                  <SelectValue placeholder="Seleccionar marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {marcas.map((m) => (
-                    <SelectItem key={m.id} value={m.nombre}>
-                      {m.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {CAMPOS_NUMERICOS.map(({ key, label }) => (
-              <div key={key} className="modal-app__form-row">
-                <Label htmlFor={key} className="text-right font-medium">
-                  {label}
+            <div className="grid gap-0 py-1">
+              <div className="modal-app__form-row">
+                <Label htmlFor="marca" className="text-right font-medium">
+                  Marca
                 </Label>
-                <Input
-                  id={key}
-                  type="number"
-                  min={0}
-                  max={100}
-                  placeholder="—"
-                  value={values[key] ?? ""}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                  className="tabular-nums"
-                />
+                <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
+                  <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums">
+                    <SelectValue placeholder="Seleccionar marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {marcas.map((m) => (
+                      <SelectItem key={m.id} value={m.nombre}>
+                        {m.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
+              {CAMPOS_NUMERICOS.map(({ key, label }) => (
+                <div key={key} className="modal-app__form-row">
+                  <Label htmlFor={key} className="text-right font-medium">
+                    {label}
+                  </Label>
+                  <Input
+                    id={key}
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="—"
+                    value={values[key] ?? ""}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    className="tabular-nums"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* 3. Botones Cancelar / Guardar con línea superior azul */}
-        <div className="modal-app__footer">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleGuardar} disabled={pending}>
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
-          </Button>
+          <div className="modal-app__footer">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleGuardar} disabled={pending}>
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

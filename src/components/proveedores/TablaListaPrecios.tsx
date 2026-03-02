@@ -8,6 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  EmptyTableRow,
 } from "@/components/ui/table";
 import CantidadPedidoModal from "@/components/pedidos/CantidadPedidoModal";
 
@@ -46,16 +47,6 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
     setProductoSeleccionado(null);
   }
 
-  if (productos.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-muted-foreground text-center max-w-md px-4">
-          {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
-        </p>
-      </div>
-    );
-  }
-
   const puedeAgregar = !!onAgregarAlPedido;
 
   return (
@@ -70,7 +61,13 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
           </TableRow>
         </TableHeader>
         <TableBody>
-          {productos.map((prod) => (
+          {productos.length === 0 ? (
+            <EmptyTableRow
+              colSpan={3}
+              message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+            />
+          ) : (
+          productos.map((prod) => (
             <TableRow
               key={prod.id}
               className={puedeAgregar ? "cursor-pointer" : ""}
@@ -80,7 +77,8 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
               <TableCell className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</TableCell>
               <TableCell className="py-2 px-3 text-center tabular-nums text-xs">—</TableCell>
             </TableRow>
-          ))}
+          ))
+          )}
         </TableBody>
       </Table>
     </div>

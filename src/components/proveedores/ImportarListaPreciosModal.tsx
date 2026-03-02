@@ -308,7 +308,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="modal-app__footer">
               <Button variant="outline" onClick={() => handleClose(false)}>
                 Cancelar
               </Button>
@@ -393,7 +393,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               })}
             </div>
 
-            <div className="flex justify-between gap-2">
+            <div className="modal-app__footer justify-between gap-2">
               <Button variant="outline" onClick={() => setStep("upload")} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" /> Volver
               </Button>
@@ -447,7 +447,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             )}
 
-            <div className="flex justify-end gap-2">
+            <div className="modal-app__footer">
               <Button variant="outline" onClick={resetForm}>
                 Nueva importación
               </Button>

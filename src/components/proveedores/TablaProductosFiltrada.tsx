@@ -12,6 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  EmptyTableRow,
 } from "@/components/ui/table";
 import { editarProducto } from "@/actions/productos";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
@@ -159,15 +160,19 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
     );
   }
 
-  if (productos.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-muted-foreground text-center max-w-md px-4">
-          {sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
-        </p>
-      </div>
-    );
-  }
+  const columnCount = [
+    puede(rol, col.codProdProv),
+    puede(rol, col.codExt),
+    puede(rol, col.descripcion),
+    puede(rol, col.proveedor),
+    puede(rol, col.precioLista),
+    puede(rol, col.precioVentaSugerido),
+    puede(rol, col.descuentoProducto),
+    puede(rol, col.descuentoCantidad),
+    puede(rol, col.cxTransporte),
+    puede(rol, col.precioCompraFinal),
+    puede(rol, col.disponible),
+  ].filter(Boolean).length || 1;
 
   return (
     <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
@@ -210,7 +215,13 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
           </TableRow>
         </TableHeader>
         <TableBody>
-          {productos.map((prod) => (
+          {productos.length === 0 ? (
+            <EmptyTableRow
+              colSpan={columnCount || 1}
+              message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+            />
+          ) : (
+          productos.map((prod) => (
             <TableRow key={prod.id}>
               {puede(rol, col.codProdProv) && (
                 <TableCell className="py-2 px-2 font-mono text-xs">{prod.codProdProv}</TableCell>
@@ -258,7 +269,8 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
                 </TableCell>
               )}
             </TableRow>
-          ))}
+          ))
+          )}
         </TableBody>
       </Table>
     </div>
