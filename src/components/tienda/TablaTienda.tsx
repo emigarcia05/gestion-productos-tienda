@@ -48,7 +48,7 @@ export default function TablaTienda({ items, setMejorPrecio, rol }: { items: Ite
 
   return (
     <>
-      <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
+      <div className="h-full contenedor-tabla-paginada">
         <Table variant="compact" className="tabla-tienda-listado">
           <TableHeader>
             <TableRow className="hover:bg-transparent">

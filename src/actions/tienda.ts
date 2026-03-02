@@ -115,8 +115,11 @@ export async function getTiendaPageData(params: {
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
     const costo = Number(r.costoCompra);
     const minPx = minPxPorTienda.get(r.id);
+    const cantidadVinculos = r._count.listaPreciosProveedores;
     const diferenciaMejorPrecio =
-      minPx != null && minPx < costo ? Math.round((costo - minPx) * 100) / 100 : null;
+      cantidadVinculos >= 2 && minPx != null && minPx < costo
+        ? Math.round((costo - minPx) * 100) / 100
+        : null;
     return {
       id: r.id,
       codItem: r.codTienda,

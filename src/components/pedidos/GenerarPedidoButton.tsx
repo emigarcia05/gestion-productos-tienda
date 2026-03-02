@@ -4,13 +4,12 @@ import Link from "next/link";
 import { FileOutput } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ACTION_BUTTON_PRIMARY } from "@/lib/actionButtons";
 
 export default function GenerarPedidoButton() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="default" size="default" className={`gap-2 ${ACTION_BUTTON_PRIMARY}`} asChild>
+        <Button variant="default" size="default" className="btn-primario-gestion gap-2" asChild>
           <Link href="/pedidos/historial">
             <FileOutput className="h-4 w-4" />
             Generar Pedido

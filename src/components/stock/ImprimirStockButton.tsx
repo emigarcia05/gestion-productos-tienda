@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 import type { TablaStockHandle } from "./TablaStock";
 
 interface Props {
@@ -16,9 +15,9 @@ export default function ImprimirStockButton({ tableRef }: Props) {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="outline"
+          variant="default"
           size="default"
-          className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY}`}
+          className="btn-primario-gestion gap-2 shrink-0"
           onClick={() => tableRef.current?.openPrint()}
         >
           <Printer className="h-4 w-4" />

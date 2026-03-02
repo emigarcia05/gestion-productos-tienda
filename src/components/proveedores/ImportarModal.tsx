@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/table";
 import { importarProductos, type ImportResult, type MapeoColumnas } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
-import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 
 interface Proveedor {
   id: string;
@@ -151,7 +150,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="outline" size="default" className={`gap-2 ${ACTION_BUTTON_SECONDARY}`}>
+            <Button variant="default" size="default" className="btn-primario-gestion gap-2">
               <Upload className="h-4 w-4" />
               Importar Lista
             </Button>

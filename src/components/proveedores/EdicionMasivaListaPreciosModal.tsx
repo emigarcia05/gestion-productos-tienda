@@ -81,9 +81,9 @@ export default function EdicionMasivaListaPreciosModal({
       <DialogTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="default"
-          className="gap-2 shrink-0"
+          className="btn-primario-gestion gap-2 shrink-0"
           disabled={disabled || cantidad === 0}
         >
           <Pencil className="h-4 w-4 shrink-0" />
@@ -96,13 +96,13 @@ export default function EdicionMasivaListaPreciosModal({
           <DialogTitle className="modal-app__title">
             Edición masiva
           </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
+          </p>
         </DialogHeader>
 
         {/* 2. Descuentos: solo este div tiene líneas divisoras amarillas */}
         <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
-          </p>
           <div className="grid gap-4 py-2">
             {CAMPOS.map(({ key, label }) => (
               <div key={key} className="grid grid-cols-2 gap-4 items-center">

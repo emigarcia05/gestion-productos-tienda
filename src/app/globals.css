@@ -226,6 +226,19 @@
     flex-direction: column;
   }
 
+  /** Contenedor de tabla paginada: sin scroll; se usan páginas (ej. Lista Tienda). */
+  .contenedor-tabla-paginada {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    display: flex;
+    flex-direction: column;
+  }
+
   /* Celdas de datos: text-xs, padding un poco más generoso */
   .celda-datos {
     padding: 0.375rem 0.625rem;
@@ -730,6 +743,10 @@
   flex: 1 1 0%;
   min-height: 0;
   overflow-y: auto;
+}
+/* Encabezado de tabla fijo al hacer scroll: el scroll vertical solo en .modal-tabla-body */
+.modal-tabla-body [data-slot="table-container"] {
+  overflow-y: visible;
 }
 .modal-tabla-footer {
   padding: 0.75rem 1.5rem;

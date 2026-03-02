@@ -96,9 +96,9 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     <div className="flex items-center gap-2">
       <Button
         type="button"
-        variant="outline"
+        variant="default"
         size="default"
-        className="gap-2 h-10 px-4"
+        className="btn-primario-gestion gap-2"
         onClick={() => setModalGestion(true)}
       >
         <Plus className="h-4 w-4" />

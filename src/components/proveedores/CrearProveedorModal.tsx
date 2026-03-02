@@ -16,7 +16,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ACTION_BUTTON_PRIMARY } from "@/lib/actionButtons";
 import ProveedorForm from "./ProveedorForm";
 
 export default function CrearProveedorModal() {
@@ -27,7 +26,7 @@ export default function CrearProveedorModal() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="default" size="default" className={`gap-2 ${ACTION_BUTTON_PRIMARY}`}>
+            <Button variant="default" size="default" className="btn-primario-gestion gap-2">
               <Plus className="h-4 w-4" />
               Crear Proveedor
             </Button>

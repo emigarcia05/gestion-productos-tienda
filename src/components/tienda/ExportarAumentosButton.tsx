@@ -3,7 +3,6 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ACTION_BUTTON_SECONDARY } from "@/lib/actionButtons";
 import type { TablaAumentosHandle } from "./TablaAumentos";
 
 interface Props {
@@ -15,9 +14,9 @@ export default function ExportarAumentosButton({ tableRef }: Props) {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="outline"
+          variant="default"
           size="default"
-          className={`gap-2 shrink-0 ${ACTION_BUTTON_SECONDARY}`}
+          className="btn-primario-gestion gap-2 shrink-0"
           onClick={() => tableRef.current?.triggerExport()}
         >
           <Download className="h-4 w-4" />

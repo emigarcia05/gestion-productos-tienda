@@ -9,7 +9,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 interface Props {
   searchParams: Promise<{

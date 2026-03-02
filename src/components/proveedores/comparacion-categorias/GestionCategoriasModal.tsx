@@ -145,38 +145,41 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Gestionar categorías</DialogTitle>
+      <DialogContent className="modal-app max-w-md">
+        <DialogHeader className="modal-app__header">
+          <DialogTitle className="modal-app__title">Gestionar categorías</DialogTitle>
         </DialogHeader>
-        <div className="flex gap-2 border-b pb-2">
-          <Button
-            type="button"
-            variant={tab === "categoria" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setTab("categoria")}
-          >
-            Categoría
-          </Button>
-          <Button
-            type="button"
-            variant={tab === "subcategoria" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setTab("subcategoria")}
-          >
-            Subcategoría
-          </Button>
-          <Button
-            type="button"
-            variant={tab === "presentacion" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setTab("presentacion")}
-          >
-            Presentación
-          </Button>
-        </div>
 
-        {tab === "categoria" && (
+        {/* Div intermedio: líneas divisoras amarillas */}
+        <div className="modal-app__body px-6 py-4">
+          <div className="flex gap-2 border-b border-border pb-2 mb-4">
+            <Button
+              type="button"
+              variant={tab === "categoria" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setTab("categoria")}
+            >
+              Categoría
+            </Button>
+            <Button
+              type="button"
+              variant={tab === "subcategoria" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setTab("subcategoria")}
+            >
+              Subcategoría
+            </Button>
+            <Button
+              type="button"
+              variant={tab === "presentacion" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setTab("presentacion")}
+            >
+              Presentación
+            </Button>
+          </div>
+
+          {tab === "categoria" && (
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="nombre-cat">Nombre</Label>
@@ -297,8 +300,9 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
             </Button>
           </div>
         )}
+        </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="px-6 pb-6 text-xs text-muted-foreground">
           Para editar o eliminar categorías, subcategorías o presentaciones podés hacerlo desde una futura pantalla de administración o ampliando este modal.
         </p>
       </DialogContent>
