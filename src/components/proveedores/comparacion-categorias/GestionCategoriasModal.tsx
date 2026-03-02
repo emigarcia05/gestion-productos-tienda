@@ -150,7 +150,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
           <DialogTitle className="modal-app__title">Gestionar categorías</DialogTitle>
         </DialogHeader>
 
-        {/* Div intermedio: líneas divisoras amarillas */}
+        {/* Tabs y formularios dentro del body, sin líneas superiores/inferiores */}
         <div className="modal-app__body px-6 py-4">
           <div className="flex gap-2 border-b border-border pb-2 mb-4">
             <Button

@@ -160,14 +160,16 @@ export default function ModalTablaConFiltros<T>({
       <DialogContent className={cn("modal-app", contentClassName)}>
         <DialogHeader className="modal-app__header">
           <DialogTitle className="modal-app__title">{title}</DialogTitle>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-          )}
         </DialogHeader>
 
-        <div className="modal-tabla-filtros">{filterContent}</div>
+        <div className="modal-app__body px-6 pt-4 pb-0 flex flex-col gap-3">
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          )}
+          <div className="modal-tabla-filtros">{filterContent}</div>
+        </div>
 
-        <div className={cn("modal-tabla-body", "modal-app__body")}>
+        <div className={cn("modal-tabla-body", "px-6 pt-2 pb-4")}>
           {loading ? (
             <div className="modal-mensaje-carga">
               <Loader2 className="h-4 w-4 animate-spin" /> Cargando...

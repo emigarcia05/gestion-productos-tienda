@@ -564,13 +564,27 @@
   line-height: 1.25;
   color: var(--primary-foreground);
 }
-/* Cuerpo del modal: líneas divisoras superior e inferior amarillas (accent2), mismo aspecto en todos los modales */
 .modal-app__body {
   border: none;
-  border-top: 2px solid var(--primary);
-  border-bottom: 2px solid var(--primary);
   margin: 0 1rem;
   padding-bottom: 1.5rem;
+}
+
+/* Zebra sencilla para cuerpos de modal con filas múltiples */
+.modal-body-rows > *:nth-child(odd) {
+  background-color: #ffffff;
+}
+.modal-body-rows > *:nth-child(even) {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
+/* Footer estándar de modales con botón Cancelar/Guardar */
+.modal-app__footer {
+  padding: 1rem 1.5rem;
+  border-top: 2px solid var(--primary);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */

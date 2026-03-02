@@ -111,20 +111,20 @@ export default function EdicionMasivaListaPreciosModal({
         </Button>
       </DialogTrigger>
       <DialogContent className="modal-app">
-        {/* 1. Título */}
+        {/* 1. Título (solo título en el header) */}
         <DialogHeader className="modal-app__header">
-          <DialogTitle className="modal-app__title">
-            Edición masiva
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto{cantidad !== 1 ? "s" : ""} del filtro actual.
-          </p>
+          <DialogTitle className="modal-app__title">Edición masiva</DialogTitle>
         </DialogHeader>
 
-        {/* 2. Campos: Marca (select) + descuentos (%) en orden */}
+        {/* 2. Texto descriptivo + campos: Marca (select) + descuentos (%) en orden */}
         <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
-          <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4 items-center">
+          <p className="text-sm text-muted-foreground">
+            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
+            {cantidad !== 1 ? "s" : ""} del filtro actual.
+          </p>
+
+          <div className="modal-body-rows grid gap-0 py-1">
+            <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-3 items-center py-2">
               <Label htmlFor="marca" className="text-right text-muted-foreground font-medium">
                 Marca
               </Label>
@@ -143,7 +143,10 @@ export default function EdicionMasivaListaPreciosModal({
               </Select>
             </div>
             {CAMPOS_NUMERICOS.map(({ key, label }) => (
-              <div key={key} className="grid grid-cols-2 gap-4 items-center">
+              <div
+                key={key}
+                className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-3 items-center py-2"
+              >
                 <Label htmlFor={key} className="text-right text-muted-foreground font-medium">
                   {label}
                 </Label>
@@ -162,8 +165,8 @@ export default function EdicionMasivaListaPreciosModal({
           </div>
         </div>
 
-        {/* 3. Botón Guardar */}
-        <div className="px-6 pt-6 pb-6 flex justify-end gap-2">
+        {/* 3. Botones Cancelar / Guardar con línea superior azul */}
+        <div className="modal-app__footer">
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
             Cancelar
           </Button>
