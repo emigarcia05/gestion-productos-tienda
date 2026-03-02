@@ -116,16 +116,16 @@ export default function EdicionMasivaListaPreciosModal({
           <DialogTitle className="modal-app__title">Edición masiva</DialogTitle>
         </DialogHeader>
 
-        {/* 2. Texto descriptivo + campos: Marca (select) + descuentos (%) en orden */}
+        {/* 2. Texto descriptivo + campos (clases globales .modal-app__body y .modal-app__form-row) */}
         <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm">
             Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
             {cantidad !== 1 ? "s" : ""} del filtro actual.
           </p>
 
-          <div className="modal-body-rows grid gap-0 py-1">
-            <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-3 items-center py-2">
-              <Label htmlFor="marca" className="text-right text-muted-foreground font-medium">
+          <div className="grid gap-0 py-1">
+            <div className="modal-app__form-row">
+              <Label htmlFor="marca" className="text-right font-medium">
                 Marca
               </Label>
               <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
@@ -143,11 +143,8 @@ export default function EdicionMasivaListaPreciosModal({
               </Select>
             </div>
             {CAMPOS_NUMERICOS.map(({ key, label }) => (
-              <div
-                key={key}
-                className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-3 items-center py-2"
-              >
-                <Label htmlFor={key} className="text-right text-muted-foreground font-medium">
+              <div key={key} className="modal-app__form-row">
+                <Label htmlFor={key} className="text-right font-medium">
                   {label}
                 </Label>
                 <Input
