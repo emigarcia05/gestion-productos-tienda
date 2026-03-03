@@ -22,6 +22,7 @@ export interface FilaListaPrecioParaCliente {
   dtoMarca: number;
   dtoProducto: number;
   dtoCantidad: number;
+  dtoFinanciero: number;
   cxTransporte: number;
   pxCompraFinal: number | null;
   proveedor: { id: string; prefijo: string } | null;
@@ -59,6 +60,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     dtoMarca: f.dtoMarca,
     dtoProducto: f.dtoProducto,
     dtoCantidad: f.dtoCantidad,
+    dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor
@@ -124,6 +126,7 @@ export async function getListaPreciosConTiendaFiltrada(
     dtoMarca: f.dtoMarca,
     dtoProducto: f.dtoProducto,
     dtoCantidad: f.dtoCantidad,
+    dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo } : null,
@@ -245,6 +248,7 @@ export interface ActualizacionMasivaListaPrecios {
   dtoMarca?: number;
   dtoProducto?: number;
   dtoCantidad?: number;
+  dtoFinanciero?: number;
   cxTransporte?: number;
 }
 
@@ -266,6 +270,7 @@ export async function actualizarListaPreciosMasivo(
     dtoMarca?: number;
     dtoProducto?: number;
     dtoCantidad?: number;
+    dtoFinanciero?: number;
     cxTransporte?: number;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
@@ -277,6 +282,8 @@ export async function actualizarListaPreciosMasivo(
     updatePayload.dtoProducto = Math.round(Math.max(0, Math.min(100, data.dtoProducto)));
   if (data.dtoCantidad !== undefined)
     updatePayload.dtoCantidad = Math.round(Math.max(0, Math.min(100, data.dtoCantidad)));
+  if (data.dtoFinanciero !== undefined)
+    updatePayload.dtoFinanciero = Math.round(Math.max(0, Math.min(100, data.dtoFinanciero)));
   if (data.cxTransporte !== undefined)
     updatePayload.cxTransporte = Math.round(Math.max(0, Math.min(100, data.cxTransporte)));
 
@@ -303,6 +310,10 @@ export async function actualizarListaPreciosMasivo(
   if (updatePayload.dtoCantidad !== undefined) {
     setClauses.push(`dto_cantidad = $${params.length + 1}`);
     params.push(updatePayload.dtoCantidad);
+  }
+  if (updatePayload.dtoFinanciero !== undefined) {
+    setClauses.push(`dto_financiero = $${params.length + 1}`);
+    params.push(updatePayload.dtoFinanciero);
   }
   if (updatePayload.cxTransporte !== undefined) {
     setClauses.push(`cx_transporte = $${params.length + 1}`);

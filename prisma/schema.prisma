@@ -33,8 +33,9 @@ model ListaPrecioProveedor {
   dtoMarca          Int      @map("dto_marca") @default(0)
   dtoProducto       Int      @map("dto_producto") @default(0)
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
+  dtoFinanciero     Int      @map("dto_financiero") @default(0)
   cxTransporte       Int      @map("cx_transporte") @default(0)
-  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD: px_lista_proveedor - dto_* + cx_transporte
+  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada en BD: px_lista_proveedor - dto_proveedor - dto_marca - dto_producto - dto_cantidad - dto_financiero + cx_transporte
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   createdAt         DateTime @default(now()) @map("created_at")

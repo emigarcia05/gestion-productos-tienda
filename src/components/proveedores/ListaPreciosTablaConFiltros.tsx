@@ -234,6 +234,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead className="w-20">DESC. MARCA</TableHead>
               <TableHead className="w-20">DESC. PROD.</TableHead>
               <TableHead className="w-20">DESC. CANT.</TableHead>
+              <TableHead className="w-20">DESC. FINAN.</TableHead>
               <TableHead className="w-24">CX. APRO. TRANSPORTE</TableHead>
             </TableRow>
           </TableHeader>
@@ -274,6 +275,9 @@ export default function ListaPreciosTablaConFiltros({
                   {fmtNumero(fila.dtoCantidad)}%
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
+                  {fmtNumero(fila.dtoFinanciero)}%
+                </TableCell>
+                <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.cxTransporte)}%
                 </TableCell>
               </TableRow>
@@ -282,7 +286,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableRow>
                 <TableCell
                   className="celda-datos py-8 text-muted-foreground text-center"
-                  colSpan={9}
+                  colSpan={10}
                 >
                   {!hasFilterActive
                     ? MENSAJE_SIN_FILTRO

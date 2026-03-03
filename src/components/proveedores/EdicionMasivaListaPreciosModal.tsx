@@ -32,6 +32,7 @@ const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: str
   { key: "dtoMarca", label: "Desc. Marca (%)" },
   { key: "dtoProducto", label: "Desc. Productor (%)" },
   { key: "dtoCantidad", label: "Desc. Cantidad (%)" },
+  { key: "dtoFinanciero", label: "Desc. Finan. (%)" },
   { key: "cxTransporte", label: "Cx. Aprox. Transporte (%)" },
 ];
 
@@ -71,6 +72,7 @@ export default function EdicionMasivaListaPreciosModal({
     if (values.dtoMarca !== undefined && !Number.isNaN(values.dtoMarca)) data.dtoMarca = values.dtoMarca;
     if (values.dtoProducto !== undefined && !Number.isNaN(values.dtoProducto)) data.dtoProducto = values.dtoProducto;
     if (values.dtoCantidad !== undefined && !Number.isNaN(values.dtoCantidad)) data.dtoCantidad = values.dtoCantidad;
+    if (values.dtoFinanciero !== undefined && !Number.isNaN(values.dtoFinanciero)) data.dtoFinanciero = values.dtoFinanciero;
     if (values.cxTransporte !== undefined && !Number.isNaN(values.cxTransporte)) data.cxTransporte = values.cxTransporte;
 
     if (Object.keys(data).length === 0) {
@@ -87,7 +89,7 @@ export default function EdicionMasivaListaPreciosModal({
       toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
       setOpen(false);
       setMarcaNombre("");
-      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, cxTransporte: undefined });
+      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, dtoFinanciero: undefined, cxTransporte: undefined });
       onSuccess?.();
     } finally {
       setPending(false);
