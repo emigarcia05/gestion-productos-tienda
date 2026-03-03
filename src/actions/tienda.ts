@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import { filtroTexto } from "@/lib/busqueda";
+import { calcPxCompraFinal } from "@/lib/calculos";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -72,8 +73,8 @@ export async function getTiendaPageData(params: {
       SELECT lpt.id
       FROM lista_precios_tienda lpt
       WHERE (SELECT COUNT(*) FROM lista_precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 1
-        AND (SELECT MIN(lpp.px_compra_final) FROM lista_precios_proveedores lpp
-             WHERE lpp.id_lista_precios_tienda = lpt.id AND lpp.px_compra_final IS NOT NULL) < lpt.costo_compra
+        AND (SELECT MIN(COALESCE(lpp.px_compra_final, lpp.px_lista_proveedor::numeric)) FROM lista_precios_proveedores lpp
+             WHERE lpp.id_lista_precios_tienda = lpt.id) < lpt.costo_compra
     `;
     idsMenorCxDisponible = rows.map((r) => r.id);
     if (idsMenorCxDisponible.length === 0) {
@@ -141,16 +142,35 @@ export async function getTiendaPageData(params: {
     rows.length > 0
       ? await prisma.listaPrecioProveedor.findMany({
           where: { idListaPrecioTienda: { in: rows.map((r) => r.id) } },
-          select: { idListaPrecioTienda: true, pxCompraFinal: true },
+          select: {
+            idListaPrecioTienda: true,
+            pxCompraFinal: true,
+            pxListaProveedor: true,
+            dtoProveedor: true,
+            dtoMarca: true,
+            dtoProducto: true,
+            dtoCantidad: true,
+            cxTransporte: true,
+          },
         })
       : [];
 
-  // Mínimo px_compra_final por ítem tienda (entre proveedores vinculados)
+  // Mínimo px compra final por ítem tienda (entre proveedores vinculados). Si px_compra_final es null, se calcula.
   const minPxPorTienda = new Map<string, number>();
   for (const lp of linkedPrices) {
     if (!lp.idListaPrecioTienda) continue;
-    const n = lp.pxCompraFinal != null ? Number(lp.pxCompraFinal) : null;
-    if (n == null) continue;
+    let n: number;
+    if (lp.pxCompraFinal != null) {
+      n = Number(lp.pxCompraFinal);
+    } else {
+      const pxLista = Number(lp.pxListaProveedor);
+      n = calcPxCompraFinal(
+        pxLista,
+        lp.dtoProducto,
+        lp.dtoCantidad,
+        lp.cxTransporte
+      );
+    }
     const prev = minPxPorTienda.get(lp.idListaPrecioTienda);
     if (prev === undefined || n < prev) minPxPorTienda.set(lp.idListaPrecioTienda, n);
   }

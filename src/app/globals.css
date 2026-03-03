@@ -568,11 +568,10 @@
   padding-bottom: 0 !important;
 }
 
-/* ─── Modales .modal-app: diseño global; título azul, cuerpo/footer gris, datos en blanco ─── */
+/* ─── Modales .modal-app: diseño global; el div central se ajusta al contenido para evitar scroll innecesario ─── */
 .modal-app {
   max-width: 42rem;
   max-height: 85vh;
-  min-height: 55vh;
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
@@ -582,7 +581,6 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
-/* Encabezado: fijo, no se achica */
 .modal-app__header {
   flex-shrink: 0;
   padding: 0 1.5rem;
@@ -601,7 +599,7 @@
   line-height: 1.25;
   color: var(--primary-foreground);
 }
-/* Bloque de datos: flexible, hace scroll si sobra contenido; cuando es hijo directo de .modal-app */
+/* Cuerpo: altura según contenido; solo hace scroll si no cabe en 85vh */
 .modal-app__body {
   border: none;
   margin: 0 1.5rem 1rem;
@@ -611,14 +609,15 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  flex: 0 1 auto;
 }
 .modal-app > .modal-app__body {
-  flex: 1 1 0;
+  flex: 0 1 auto;
 }
 
-/* Contenedor cuerpo + footer: zona flexible que se achica; cuerpo con scroll, footer fijo */
+/* Contenedor cuerpo + footer: se ajusta al contenido */
 .modal-app__content {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-height: 0;
   margin: 0 1.5rem 1.5rem;
   background-color: var(--muted);
@@ -630,7 +629,7 @@
   gap: 0;
 }
 .modal-app__content .modal-app__body {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-height: 0;
   margin: 0;
   border-radius: var(--radius-lg);

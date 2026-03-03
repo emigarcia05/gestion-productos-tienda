@@ -88,7 +88,7 @@ export default function TablaTienda({
                   ${fmtPrecio(item.costo)}
                 </TableCell>
                 <TableCell className="py-2 px-2 text-center text-xs">
-                  {item.diferenciaMejorPrecio != null && item.diferenciaMejorPrecio > 0 ? (
+                  {item.diferenciaMejorPrecio != null ? (
                     <span className="font-semibold text-primary" title="Hay otro proveedor vinculado con mejor precio que el principal">
                       ✓
                     </span>
