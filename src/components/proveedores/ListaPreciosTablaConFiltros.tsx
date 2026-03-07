@@ -222,7 +222,7 @@ export default function ListaPreciosTablaConFiltros({
         </div>
       </FilterBar>
 
-      <div ref={tableContainerRef} className="contenedor-tabla-gestion no-scroll-x">
+      <div ref={tableContainerRef} className="contenedor-tabla-gestion no-scroll-x no-scrollbar">
         <Table variant="compact" scrollX={false}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -299,7 +299,7 @@ export default function ListaPreciosTablaConFiltros({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-muted/30 rounded-b-lg shrink-0">
+      <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
         <span className="text-sm text-muted-foreground tabular-nums">
           {filteredFilas.length === 0
             ? "Mostrando 0 de 0"

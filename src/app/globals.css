@@ -118,8 +118,8 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  /** Gris universal (slate-300 #cbd5e1): fondo de páginas y ventanas modales. Referencia única: cuando se hable de "gris" en la app = este valor. */
-  --gris: #cbd5e1;
+  /** Gris universal (slate-200 #e2e8f0): fondo de páginas y ventanas modales. Referencia única: cuando se hable de "gris" en la app = este valor. */
+  --gris: #e2e8f0;
   /** Fondo de superficie: alias del gris universal para compatibilidad. */
   --surface: var(--gris);
   --accent: #e0f2fe;
@@ -261,6 +261,14 @@
   }
   .contenedor-tabla-gestion.no-scroll-x {
     overflow-x: hidden;
+  }
+  /* Ocultar barra de scroll vertical (mantiene overflow-y: auto para scroll táctil/rueda) */
+  .contenedor-tabla-gestion.no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .contenedor-tabla-gestion.no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
   /** Contenedor de tabla paginada: diseño global */
@@ -731,18 +739,21 @@
   filter: brightness(1.1);
 }
 
-/* AppModal: botón cerrar (X) visible sobre header corporativo #0072BB */
+/* AppModal: botón cerrar (X) sin fondo diferenciado, alineado verticalmente con el título del header */
 .app-modal [data-slot="dialog-close"] {
-  top: 1.25rem;
+  top: 1.75rem;
   right: 1rem;
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-50%);
+  background-color: transparent !important;
+  border-color: transparent !important;
   color: var(--primary-foreground);
+  opacity: 0.9;
 }
 .app-modal [data-slot="dialog-close"]:hover {
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  border-color: var(--primary-foreground);
+  background-color: transparent !important;
+  border-color: transparent !important;
   color: var(--primary-foreground);
+  opacity: 1;
 }
 
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
