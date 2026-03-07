@@ -27,7 +27,8 @@ model ListaPrecioProveedor {
   descripcionProveedor String  @map("descripcion_proveedor")
   codExt            String   @map("cod_ext") // ya no unique: varios proveedores pueden compartir el mismo cod_ext (1 tienda → N proveedores)
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
-  cotizacionDolar  Decimal  @map("cotizacion_dolar") @db.Decimal(14, 4) @default(1) // 1 = pesos; otro valor = cotización USD → pesos
+  pxDolares         Boolean  @map("px_dolares") @default(false) // mapea switch SÍ/NO del modal importar: true = precio × cotizacion_dolar
+  cotizacionDolar   Decimal  @map("cotizacion_dolar") @db.Decimal(14, 4) @default(1) // cotización USD → pesos; se usa cuando px_dolares = true
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
   marca             String?  // texto marca (proveedor / lista)
   dtoProveedor      Int      @map("dto_proveedor") @default(0) // descuento proveedor (%)
@@ -36,7 +37,7 @@ model ListaPrecioProveedor {
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
   dtoFinanciero     Int      @map("dto_financiero") @default(0)
   cxTransporte       Int      @map("cx_transporte") @default(0)
-  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada: (px_lista_proveedor * cotizacion_dolar) - dto_* ... + cx_transporte
+  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada: (px_lista * (px_dolares ? cotizacion_dolar : 1)) - dto_* ... + cx_transporte
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   createdAt         DateTime @default(now()) @map("created_at")

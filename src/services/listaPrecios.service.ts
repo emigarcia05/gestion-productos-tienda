@@ -228,7 +228,7 @@ export interface UpsertListaPreciosResult {
  * Upsert de filas en lista_precios_proveedores.
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
- * precioEnDolares: si true, al existir columna cotizacion_dolar se usará COTIZACION_DOLAR (env) o 1.
+ * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = COTIZACION_DOLAR (env) o 1.
  */
 export async function upsertListaPrecios(
   proveedorId: string,
@@ -259,14 +259,17 @@ export async function upsertListaPrecios(
           descripcionProveedor: fila.descripcion,
           codExt,
           pxListaProveedor: fila.precioLista,
+          pxDolares: precioEnDolares,
+          cotizacionDolar,
           pxVtaSugerido: fila.precioVentaSugerido || null,
-          // dto_producto, dto_cantidad, cx_transporte usan defaults (0)
         },
         update: {
           idProveedor: proveedorId,
           codProdProveedor: fila.codProdProv,
           descripcionProveedor: fila.descripcion,
           pxListaProveedor: fila.precioLista,
+          pxDolares: precioEnDolares,
+          cotizacionDolar,
           pxVtaSugerido: fila.precioVentaSugerido || null,
         },
       });
