@@ -239,7 +239,7 @@ export async function upsertListaPrecios(
   let creados = 0;
   let actualizados = 0;
   const errores: string[] = [];
-  void precioEnDolares; // usado cuando el schema tenga cotizacion_dolar
+  const cotizacionDolar = precioEnDolares ? Number(process.env.COTIZACION_DOLAR ?? 1) : 1;
 
   for (let i = 0; i < filas.length; i++) {
     const fila = filas[i];
@@ -361,7 +361,7 @@ export async function actualizarListaPreciosMasivo(
   params.push(ids);
 
   try {
-    const sql = `UPDATE lista_precios_proveedores SET ${setClauses.join(", ")} WHERE id = ANY($${params.length}::uuid[])`;
+    const sql = `UPDATE precios_proveedores SET ${setClauses.join(", ")} WHERE id = ANY($${params.length}::uuid[])`;
     const actualizados = await prisma.$executeRawUnsafe(sql, ...params);
     return { actualizados: Number(actualizados) };
   } catch (e) {
