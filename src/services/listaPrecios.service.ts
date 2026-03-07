@@ -228,15 +228,18 @@ export interface UpsertListaPreciosResult {
  * Upsert de filas en lista_precios_proveedores.
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
+ * precioEnDolares: si true, al existir columna cotizacion_dolar se usará COTIZACION_DOLAR (env) o 1.
  */
 export async function upsertListaPrecios(
   proveedorId: string,
   prefijo: string,
-  filas: FilaListaPrecio[]
+  filas: FilaListaPrecio[],
+  precioEnDolares: boolean = false
 ): Promise<UpsertListaPreciosResult> {
   let creados = 0;
   let actualizados = 0;
   const errores: string[] = [];
+  void precioEnDolares; // usado cuando el schema tenga cotizacion_dolar
 
   for (let i = 0; i < filas.length; i++) {
     const fila = filas[i];

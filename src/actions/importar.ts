@@ -40,7 +40,8 @@ export async function importarProductos(
 export async function importarListaPreciosProveedor(
   proveedorId: string,
   filasCrudas: string[][],
-  mapeo: MapeoColumnasListaPrecios
+  mapeo: MapeoColumnasListaPrecios,
+  precioEnDolares: boolean = false
 ): Promise<ImportResult> {
   if (!(await esEditor())) throw new Error("Sin permisos de editor.");
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
@@ -57,7 +58,8 @@ export async function importarListaPreciosProveedor(
   const { creados, actualizados, errores } = await listaPreciosService.upsertListaPrecios(
     proveedorId,
     prefijo,
-    filas
+    filas,
+    precioEnDolares
   );
 
   revalidatePath("/proveedores");

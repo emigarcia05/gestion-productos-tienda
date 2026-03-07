@@ -8,10 +8,8 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  X,
   ChevronDown,
   ArrowRight,
-  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -43,7 +41,7 @@ interface Props {
   proveedores: Proveedor[];
 }
 
-type Step = "upload" | "mapear" | "result";
+type Step = "import" | "result";
 
 type CampoDestinoListaPrecios =
   | "codigoExterno"
@@ -63,9 +61,10 @@ const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolea
 
 export default function ImportarListaPreciosModal({ proveedores }: Props) {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<Step>("upload");
+  const [step, setStep] = useState<Step>("import");
   const [proveedorId, setProveedorId] = useState("");
   const [tieneEncabezados, setTieneEncabezados] = useState(true);
+  const [precioEnDolares, setPrecioEnDolares] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -78,9 +77,10 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function resetForm() {
-    setStep("upload");
+    setStep("import");
     setProveedorId("");
     setTieneEncabezados(true);
+    setPrecioEnDolares(false);
     setIsDragging(false);
     setFileName(null);
     setEncabezados(null);
@@ -114,7 +114,6 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             inicialMapeo[i] = "ignorar";
           });
           setMapeo(inicialMapeo);
-          setStep("mapear");
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Error al leer el archivo.");
           setFileName(null);
@@ -151,7 +150,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
 
     startTransition(async () => {
       try {
-        const res = await importarListaPreciosProveedor(proveedorId, filasCrudas, mapeo);
+        const res = await importarListaPreciosProveedor(proveedorId, filasCrudas, mapeo, precioEnDolares);
         setResult(res);
         setStep("result");
         if (res.errores.length === 0) {
@@ -183,44 +182,35 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
           <>
             <span>Importar lista de precios</span>
             <div className="flex items-center gap-1.5 ml-auto">
-              {(["upload", "mapear", "result"] as Step[]).map((s, i) => (
-                <div key={s} className="flex items-center gap-1.5">
-                  <div
-                    className={`h-2 w-2 rounded-full transition-colors ${
-                      step === s ? "bg-primary" : ["upload", "mapear", "result"].indexOf(step) > i ? "bg-primary/40" : "bg-muted"
-                    }`}
-                  />
-                  {i < 2 && <div className="h-px w-4 bg-border" />}
-                </div>
-              ))}
+              <div className={`h-2 w-2 rounded-full ${step === "import" ? "bg-primary" : "bg-muted"}`} />
+              <div className="h-px w-4 bg-border" />
+              <div className={`h-2 w-2 rounded-full ${step === "result" ? "bg-primary" : "bg-muted"}`} />
             </div>
           </>
         }
         actions={
-          step === "upload" ? (
-            <Button variant="outline" onClick={() => handleClose(false)}>
-              Cancelar
-            </Button>
-          ) : step === "mapear" ? (
+          step === "import" ? (
             <>
-              <Button variant="outline" onClick={() => setStep("upload")} className="gap-1.5">
-                <ArrowLeft className="h-4 w-4" /> Volver
+              <Button variant="outline" onClick={() => handleClose(false)}>
+                Cancelar
               </Button>
-              <Button
-                onClick={handleImport}
-                disabled={pending || !camposRequeridosMapeados || !proveedorId}
-                className="gap-2 min-w-[130px]"
-              >
-                {pending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Importando...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
-                  </>
-                )}
-              </Button>
+              {filasCrudas.length > 0 && (
+                <Button
+                  onClick={handleImport}
+                  disabled={pending || !camposRequeridosMapeados || !proveedorId}
+                  className="gap-2 min-w-[130px]"
+                >
+                  {pending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Importando...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
+                    </>
+                  )}
+                </Button>
+              )}
             </>
           ) : (
             <>
@@ -232,189 +222,190 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
           )
         }
       >
-        {step === "upload" && (
-          <div className="space-y-5 pt-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">Proveedor</label>
-              <div className="relative">
-                <select
-                  value={proveedorId}
-                  onChange={(e) => setProveedorId(e.target.value)}
-                  className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 border-primary"
-                >
-                  <option value="">Seleccionar proveedor...</option>
-                  {proveedores.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      [{p.prefijo}] {p.nombre}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        {step === "import" && (
+          <div className="space-y-4 pt-2">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-1.5 min-w-[180px]">
+                <label className="text-sm font-medium text-muted-foreground">Proveedor</label>
+                <div className="relative">
+                  <select
+                    value={proveedorId}
+                    onChange={(e) => setProveedorId(e.target.value)}
+                    className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 border-primary"
+                  >
+                    <option value="">Seleccionar proveedor...</option>
+                    {proveedores.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        [{p.prefijo}] {p.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
               </div>
-              {proveedorSeleccionado && (
-                <p className="text-xs text-muted-foreground">
-                  ID compuesto:{" "}
-                  <code className="bg-muted px-1 rounded">
-                    {proveedorSeleccionado.prefijo}-[codProdProv]
-                  </code>
-                </p>
-              )}
+              <div className="flex gap-3 items-center">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTieneEncabezados(true)}
+                    className={`min-w-[3rem] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                    }`}
+                  >
+                    Encabezados SÍ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTieneEncabezados(false)}
+                    className={`min-w-[3rem] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      !tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                    }`}
+                  >
+                    NO
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrecioEnDolares(true)}
+                    className={`min-w-[3rem] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                    }`}
+                  >
+                    USD SÍ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrecioEnDolares(false)}
+                    className={`min-w-[3rem] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      !precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                    }`}
+                  >
+                    NO
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setTieneEncabezados((v) => !v)}
-              className="flex items-center gap-3 w-full rounded-lg border border-border/50 bg-card/30 px-4 py-3 text-sm hover:bg-card/60 transition-colors"
-            >
+            {!fileName ? (
               <div
-                className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${
-                  tieneEncabezados ? "bg-primary" : "bg-muted"
+                className={`rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
+                  isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
                 }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={onDrop}
+                onClick={() => fileInputRef.current?.click()}
               >
-                <div
-                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                    tieneEncabezados ? "translate-x-4" : "translate-x-0.5"
-                  }`}
+                <div className="flex flex-col items-center justify-center py-6">
+                  <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Arrastra un CSV o <span className="text-foreground underline">haz clic</span>
+                  </p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) loadFile(f);
+                  }}
                 />
               </div>
-              <div className="text-left">
-                <p className="font-medium">El archivo tiene encabezados</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {tieneEncabezados
-                    ? "La primera fila se usará como nombre de columnas"
-                    : "Todas las filas se tratarán como datos"}
-                </p>
-              </div>
-            </button>
-
-            <div
-              className={`rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
-                isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
-              }`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {fileName ? (
-                <div
-                  className="flex items-center gap-3 px-4 py-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <span className="flex-1 text-sm truncate">{fileName}</span>
+            ) : (
+              <>
+                <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card/30 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">{fileName}</span>
+                    <span className="text-xs text-muted-foreground">({filasCrudas.length} filas)</span>
+                  </div>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() => setFileName(null)}
+                    size="sm"
+                    className="h-7 text-xs shrink-0"
+                    onClick={() => {
+                      setFileName(null);
+                      setEncabezados(null);
+                      setFilasCrudas([]);
+                      setMapeo({});
+                    }}
                   >
-                    <X className="h-3.5 w-3.5" />
+                    Cambiar archivo
                   </Button>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Upload className="h-7 w-7 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Arrastra un archivo CSV o{" "}
-                    <span className="text-foreground underline underline-offset-2">haz clic</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">Solo archivos .csv</p>
+                <p className="text-xs text-muted-foreground">
+                  Asigná cada columna a su campo. <span className="text-destructive">*</span> obligatorios.
+                </p>
+                <div className="rounded-lg border border-border/50 overflow-hidden bg-white max-h-[280px] overflow-y-auto">
+                  <Table variant="compact">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="py-2 px-3 text-xs w-1/3">Columna</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-1/3">Ejemplo</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-1/3">Asignar a</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {colLabels.map((label, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="py-2 px-3 font-mono text-xs truncate max-w-[120px]">
+                            {label}
+                          </TableCell>
+                          <TableCell className="py-2 px-3 text-xs truncate max-w-[120px]">
+                            {filaEjemplo[i] ?? <span className="text-slate-400 italic">—</span>}
+                          </TableCell>
+                          <TableCell className="py-2 px-3">
+                            <div className="relative">
+                              <select
+                                value={mapeo[i] ?? "ignorar"}
+                                onChange={(e) =>
+                                  setMapeo((prev) => ({
+                                    ...prev,
+                                    [i]: e.target.value as CampoDestinoListaPrecios,
+                                  }))
+                                }
+                                className="w-full appearance-none rounded border border-input bg-background px-2 py-1 pr-6 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                              >
+                                {CAMPOS.map((c) => (
+                                  <option key={c.value} value={c.value}>
+                                    {c.required ? `${c.label} *` : c.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) loadFile(f);
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {step === "mapear" && (
-          <div className="space-y-5 pt-2">
-            <p className="text-sm text-muted-foreground">
-              Asigná cada columna del archivo a su campo. Los marcados con{" "}
-              <span className="text-destructive">*</span> son obligatorios.
-            </p>
-
-            <div className="rounded-lg border border-border/50 overflow-hidden bg-white">
-              <Table variant="compact">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="py-2 px-3 text-xs w-1/3">Columna del archivo</TableHead>
-                    <TableHead className="py-2 px-3 text-xs w-1/3">Ejemplo</TableHead>
-                    <TableHead className="py-2 px-3 text-xs w-1/3">Asignar a</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {colLabels.map((label, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="py-2.5 px-3 font-mono text-xs truncate max-w-[150px]">
-                        {label}
-                      </TableCell>
-                      <TableCell className="py-2.5 px-3 text-xs truncate max-w-[150px]">
-                        {filaEjemplo[i] ?? (
-                          <span className="text-slate-400 italic">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2.5 px-3">
-                        <div className="relative">
-                          <select
-                            value={mapeo[i] ?? "ignorar"}
-                            onChange={(e) =>
-                              setMapeo((prev) => ({
-                                ...prev,
-                                [i]: e.target.value as CampoDestinoListaPrecios,
-                              }))
-                            }
-                            className="w-full appearance-none rounded border border-input bg-background px-2 py-1 pr-6 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                          >
-                            {CAMPOS.map((c) => (
-                              <option key={c.value} value={c.value}>
-                                {c.required ? `${c.label} *` : c.label}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {CAMPOS.filter((c) => c.required).map((c) => {
-                const asignado = Object.values(mapeo).includes(c.value);
-                return (
-                  <Badge
-                    key={c.value}
-                    className={
-                      asignado
-                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                        : "bg-destructive/10 text-destructive border-destructive/20"
-                    }
-                  >
-                    {asignado ? (
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                    ) : (
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                    )}
-                    {c.label}
-                  </Badge>
-                );
-              })}
-            </div>
+                <div className="flex flex-wrap gap-2">
+                  {CAMPOS.filter((c) => c.required).map((c) => {
+                    const asignado = Object.values(mapeo).includes(c.value);
+                    return (
+                      <Badge
+                        key={c.value}
+                        className={
+                          asignado
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            : "bg-destructive/10 text-destructive border-destructive/20"
+                        }
+                      >
+                        {asignado ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
+                        {c.label}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
