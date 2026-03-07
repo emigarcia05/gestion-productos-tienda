@@ -30,7 +30,7 @@ export default async function ListaProveedoresPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo="Lista Proveedores" subtitulo="Listado de proveedores" actions={acciones} />
+      <SectionHeader titulo="Proveedores" subtitulo="Proveedores" actions={acciones} />
 
       <Separator className="bg-slate-200/60" />
 

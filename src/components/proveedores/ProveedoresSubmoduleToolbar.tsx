@@ -23,7 +23,7 @@ export default function ProveedoresSubmoduleToolbar({ activo }: { activo: Provee
       >
         <Link href="/proveedores" className="gap-2">
           <FileSearch className="h-4 w-4 shrink-0" />
-          Lista Proveedores
+          Proveedores
         </Link>
       </Button>
       <Button
@@ -39,7 +39,7 @@ export default function ProveedoresSubmoduleToolbar({ activo }: { activo: Provee
       >
         <Link href="/proveedores/lista" className="gap-2">
           <List className="h-4 w-4 shrink-0" />
-          Listado de proveedores
+          Proveedores
         </Link>
       </Button>
     </div>

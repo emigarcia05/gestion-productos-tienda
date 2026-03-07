@@ -7,14 +7,15 @@ globs: **/app/**/*.tsx, **/components/**/*.tsx, **/components/**/*.ts
 
 Toda nueva página, enlace de sidebar o lógica de módulo debe alinearse con esta jerarquía.
 
-## 1. Grupo: Lista Proveedores
+## 1. Grupo: Proveedores
 
 | Ruta | Propósito |
 |------|------------|
-| `/proveedores/sugeridos` | Px Sugeridos Proveedores |
-| `/proveedores/lista-precios` | Lista Px Proveedores |
-| `/proveedores/comparacion-categorias` | Comparación por categorías |
-| `/proveedores/gestion` | Lista Proveedores (gestión de empresas) |
+| `/proveedores/sugeridos` | Px Vta. Sugeridos |
+| `/proveedores/lista-precios` | Lista Precios |
+| `/proveedores/comparacion-categorias` | Comparacion Cat. |
+| `/proveedores/lista` | Proveedores (listado) |
+| `/proveedores/gestion` | Proveedores (gestión de empresas) |
 
 La lógica de proveedores, listas de precios y empresas vive bajo este grupo.
 

@@ -50,12 +50,13 @@ const MODULES: {
 }[] = [
   {
     id: "proveedores",
-    label: "Lista Proveedores",
+    label: "Proveedores",
     icon: <Handshake className={iconClass} />,
     submodules: [
-      { href: "/proveedores/lista-precios", label: "Lista Px Proveedores", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/comparacion-categorias", label: "Comparación por categorías", icon: <GitCompare className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/lista", label: "Listado de proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/sugeridos", label: "Px Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/lista-precios", label: "Lista Precios", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/comparacion-categorias", label: "Comparacion Cat.", icon: <GitCompare className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/lista", label: "Proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
     ],
   },
   {
@@ -97,6 +98,7 @@ function getOpenModule(pathname: string): ModuleId {
 }
 
 function isSubmoduleActive(pathname: string, href: string): boolean {
+  if (href === "/proveedores/sugeridos") return pathname === "/proveedores/sugeridos";
   if (href === "/proveedores/lista-precios") return pathname === "/proveedores/lista-precios";
   if (href === "/proveedores/comparacion-categorias") return pathname === "/proveedores/comparacion-categorias";
   if (href === "/proveedores") return pathname === "/proveedores" || pathname === "/" || /^\/proveedores\/[^/]+$/.test(pathname);

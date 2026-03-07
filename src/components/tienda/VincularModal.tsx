@@ -156,7 +156,7 @@ export default function VincularModal({
               variant="ghost"
               size="sm"
               className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary"
-              title="Gestionar vínculos con Lista Proveedores"
+              title="Gestionar vínculos con Proveedores"
             >
               <Link2 className="h-3.5 w-3.5" />
               {cantidad > 0 && (
@@ -169,7 +169,7 @@ export default function VincularModal({
         <DialogContent className="modal-app">
           <DialogHeader className="modal-app__header">
             <DialogTitle className="modal-app__title">
-              Vínculos con Lista Proveedores
+              Vínculos con Proveedores
             </DialogTitle>
           </DialogHeader>
 

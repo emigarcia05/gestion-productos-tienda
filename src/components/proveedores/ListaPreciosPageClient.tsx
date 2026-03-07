@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import SectionHeader from "@/components/SectionHeader";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import ImportarListaPreciosModal from "@/components/proveedores/ImportarListaPreciosModal";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
@@ -46,7 +46,7 @@ export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetch
   const puedeImportar = puede(rol, p.acciones.importarLista);
   const puedeEdicionMasiva = puede(rol, p.acciones.edicionMasiva);
 
-  const acciones =
+  const actions =
     puedeImportar || puedeEdicionMasiva ? (
       <div className="flex items-center gap-2">
         {puedeImportar && <ImportarListaPreciosModal proveedores={proveedores} />}
@@ -61,21 +61,17 @@ export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetch
     ) : undefined;
 
   return (
-    <>
-      <SectionHeader
-        titulo="Lista Proveedores"
-        subtitulo="Lista Px Proveedores"
-        actions={acciones}
-        compact
+    <ClassicFilteredTableLayout
+      title="Proveedores"
+      subtitle="Lista Precios"
+      actions={actions}
+    >
+      <ListaPreciosTablaConFiltros
+        proveedores={proveedores}
+        marcas={marcas}
+        onFilteredIdsChange={handleFilteredIdsChange}
+        fetchListaPreciosAction={fetchListaPreciosAction}
       />
-      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-1.5">
-        <ListaPreciosTablaConFiltros
-          proveedores={proveedores}
-          marcas={marcas}
-          onFilteredIdsChange={handleFilteredIdsChange}
-          fetchListaPreciosAction={fetchListaPreciosAction}
-        />
-      </div>
-    </>
+    </ClassicFilteredTableLayout>
   );
 }
