@@ -153,7 +153,7 @@ export default function ListaPreciosTablaConFiltros({
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-0.5">
-      <FilterBar className="filtros-contenedor-tienda">
+      <FilterBar className="filtros-contenedor-tienda bg-white">
         <FilterRowSelection>
           <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
