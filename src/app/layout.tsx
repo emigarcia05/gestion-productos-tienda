@@ -30,7 +30,7 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-surface text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gris text-foreground`}
       >
         <TooltipProvider>
           <AppShell rol={rol}>{children}</AppShell>

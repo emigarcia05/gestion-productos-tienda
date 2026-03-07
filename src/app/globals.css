@@ -37,6 +37,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-surface: var(--surface);
+  /** Gris universal: fondo de páginas y modales. Usar bg-gris en Tailwind. */
+  --color-gris: var(--gris);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -116,8 +118,10 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  /** Fondo de superficie (página y layout de listado): gris oscuro para contraste con bloques blancos. Valor: slate-600 (#475569). */
-  --surface: #475569;
+  /** Gris universal (slate-300 #cbd5e1): fondo de páginas y ventanas modales. Referencia única: cuando se hable de "gris" en la app = este valor. */
+  --gris: #cbd5e1;
+  /** Fondo de superficie: alias del gris universal para compatibilidad. */
+  --surface: var(--gris);
   --accent: #e0f2fe;
   --accent-foreground: #0072bb;
   --border: #e2e8f0;

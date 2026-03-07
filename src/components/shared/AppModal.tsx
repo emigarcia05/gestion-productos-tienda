@@ -48,7 +48,7 @@ export default function AppModal({
   return (
     <DialogContent
       className={cn(
-        "app-modal grid gap-0 p-0 max-w-[calc(100%-2rem)] w-full sm:max-w-lg",
+        "app-modal grid gap-0 p-0 max-w-[calc(100%-2rem)] w-full sm:max-w-lg bg-gris",
         "rounded-xl overflow-hidden outline-none border-0 shadow-xl",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         "fixed top-[50%] left-[50%] z-50 translate-x-[-50%] translate-y-[-50%] duration-200",
@@ -63,8 +63,8 @@ export default function AppModal({
         </DialogTitle>
       </DialogHeader>
 
-      {/* Cuerpo: contenedor externo gris claro (app background); card blanca centrada con padding */}
-      <div className="flex-1 min-h-0 flex flex-col bg-background">
+      {/* Cuerpo: contenedor externo gris universal (slate-300); card blanca centrada con padding */}
+      <div className="flex-1 min-h-0 flex flex-col bg-gris">
         <div className="flex-1 min-h-0 flex items-stretch justify-center p-4">
           <div
             className={cn(
@@ -77,8 +77,8 @@ export default function AppModal({
         </div>
       </div>
 
-      {/* Footer: mismo gris claro que cuerpo externo; botonera centrada verticalmente */}
-      <div className="shrink-0 flex flex-row items-center justify-end gap-2 px-6 py-4 bg-background">
+      {/* Footer: mismo gris universal que cuerpo externo; botonera centrada verticalmente */}
+      <div className="shrink-0 flex flex-row items-center justify-end gap-2 px-6 py-4 bg-gris">
         {actions}
       </div>
     </DialogContent>

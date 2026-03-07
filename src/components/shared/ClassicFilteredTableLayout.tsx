@@ -38,7 +38,7 @@ export default function ClassicFilteredTableLayout({
   return (
     <div
       className={cn(
-        "h-full min-h-0 flex flex-col overflow-hidden bg-surface",
+        "h-full min-h-0 flex flex-col overflow-hidden bg-gris",
         className
       )}
     >
