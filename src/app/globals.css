@@ -36,6 +36,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-surface: var(--surface);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -115,6 +116,8 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
+  /** Fondo de superficie (página y modal de referencia): gris más oscuro para contraste con bloques blancos. Valor: slate-500 (#64748b). */
+  --surface: #64748b;
   --accent: #e0f2fe;
   --accent-foreground: #0072bb;
   --border: #e2e8f0;
@@ -722,6 +725,20 @@
   border-color: var(--primary-foreground);
   background-color: var(--primary) !important;
   filter: brightness(1.1);
+}
+
+/* AppModal: botón cerrar (X) visible sobre header corporativo #0072BB */
+.app-modal [data-slot="dialog-close"] {
+  top: 1.25rem;
+  right: 1rem;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.8);
+  color: var(--primary-foreground);
+}
+.app-modal [data-slot="dialog-close"]:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border-color: var(--primary-foreground);
+  color: var(--primary-foreground);
 }
 
 /* ─── Modales: resumen producto, panel con scroll, filas y botones ─── */
