@@ -120,7 +120,7 @@ export interface ModalContentProps<T, TSubmit = void> {
 
 **AppModal (componente estándar):** Layout wrapper para modales (`@/components/shared/AppModal`). **Header:** fondo corporativo #0072BB (`bg-primary`), texto blanco Geist centrado, sin bordes internos. **Cuerpo:** contenedor externo gris claro (`bg-background`); card interna blanca (`bg-white`) centrada con padding; contenido dinámico vía `children`. **Footer:** mismo gris claro (`bg-background`), botonera centrada verticalmente; acciones principales #0072BB con texto blanco; cancelar `variant="outline"` o `"ghost"`. Props documentadas: `title` (ReactNode), `children` (ReactNode), `actions` (ReactNode). Uso: `<Dialog open={open} onOpenChange={setOpen}><AppModal title="..." actions={<>...</>}>{contenido}</AppModal></Dialog>`.
 
-**Fondo de superficie (contraste con blanco):** El gris de la **página** usa **`--surface`** (#64748b, `bg-surface`) en `body` y `main` (AppShell). El **AppModal** usa **`--background`** (#f8fafc, `bg-background`) para el contenedor externo del cuerpo y el footer, con header #0072BB y card blanca centrada en el cuerpo.
+**Fondo de superficie (contraste con blanco):** El gris de la **página** usa **`--surface`** (#475569, slate-600, `bg-surface`) en `body`, `main` (AppShell) y en **ClassicFilteredTableLayout** (lista-precios y cualquier ruta que use ese layout). Así el fondo oscuro se ve en todas las vistas. El **AppModal** usa **`--background`** (#f8fafc) para el contenedor externo del cuerpo y el footer, con header #0072BB y card blanca centrada.
 
 ---
 

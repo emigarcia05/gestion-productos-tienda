@@ -116,8 +116,8 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  /** Fondo de superficie (página y modal de referencia): gris más oscuro para contraste con bloques blancos. Valor: slate-500 (#64748b). */
-  --surface: #64748b;
+  /** Fondo de superficie (página y layout de listado): gris oscuro para contraste con bloques blancos. Valor: slate-600 (#475569). */
+  --surface: #475569;
   --accent: #e0f2fe;
   --accent-foreground: #0072bb;
   --border: #e2e8f0;
