@@ -2,7 +2,7 @@ import { getProveedores } from "@/actions/proveedores";
 import { getRol } from "@/lib/sesion";
 import { prisma } from "@/lib/prisma";
 import ListaPreciosPageClient from "@/components/proveedores/ListaPreciosPageClient";
-import { getListaPreciosFiltradaAction } from "@/actions/listaPrecios";
+import { getListaPreciosConOpcionesAction } from "@/actions/listaPrecios";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function ListaPreciosPage() {
         proveedores={proveedores}
         marcas={marcas}
         rol={rol}
-        fetchListaPreciosAction={getListaPreciosFiltradaAction}
+        fetchListaPreciosConOpcionesAction={getListaPreciosConOpcionesAction}
       />
     </div>
   );

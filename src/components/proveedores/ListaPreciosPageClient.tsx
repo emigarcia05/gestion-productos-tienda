@@ -21,20 +21,24 @@ interface MarcaOption {
   nombre: string;
 }
 
-type FetchListaPreciosAction = (
+type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   busqueda: string | undefined
-) => Promise<FilaListaPrecioParaCliente[]>;
+) => Promise<{
+  filas: FilaListaPrecioParaCliente[];
+  proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
+  marcasDisponibles: { id: string; nombre: string }[];
+}>;
 
 interface Props {
   proveedores: ProveedorParaCliente[];
   marcas: MarcaOption[];
   rol: Rol;
-  fetchListaPreciosAction: FetchListaPreciosAction;
+  fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
 
-export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetchListaPreciosAction }: Props) {
+export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetchListaPreciosConOpcionesAction }: Props) {
   const router = useRouter();
   const [filteredIds, setFilteredIds] = useState<string[]>([]);
 
@@ -70,7 +74,7 @@ export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetch
         proveedores={proveedores}
         marcas={marcas}
         onFilteredIdsChange={handleFilteredIdsChange}
-        fetchListaPreciosAction={fetchListaPreciosAction}
+        fetchListaPreciosConOpcionesAction={fetchListaPreciosConOpcionesAction}
       />
     </ClassicFilteredTableLayout>
   );

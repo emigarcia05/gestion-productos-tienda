@@ -25,7 +25,7 @@ export interface FilaListaPrecioParaCliente {
   dtoFinanciero: number;
   cxTransporte: number;
   pxCompraFinal: number | null;
-  proveedor: { id: string; prefijo: string } | null;
+  proveedor: { id: string; prefijo: string; nombre: string } | null;
 }
 
 /**
@@ -64,7 +64,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor
-      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo }
+      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo, nombre: f.proveedor.nombre }
       : null,
   }));
 }
@@ -129,7 +129,9 @@ export async function getListaPreciosConTiendaFiltrada(
     dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
-    proveedor: f.proveedor ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo } : null,
+    proveedor: f.proveedor
+      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo, nombre: f.proveedor.nombre }
+      : null,
   }));
 
   if (q.length >= 3) {
@@ -139,6 +141,40 @@ export async function getListaPreciosConTiendaFiltrada(
   }
 
   return result;
+}
+
+/** Proveedores con al menos un ítem que cumple (marcaNombre, busqueda). Para filtros dinámicos. */
+export async function getProveedoresDisponiblesListaPrecios(
+  marcaNombre: string | undefined,
+  busqueda: string | undefined
+): Promise<{ id: string; nombre: string; prefijo: string }[]> {
+  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, busqueda);
+  const seen = new Set<string>();
+  const out: { id: string; nombre: string; prefijo: string }[] = [];
+  for (const f of filas) {
+    const p = f.proveedor;
+    if (!p || seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push({ id: p.id, nombre: p.nombre, prefijo: p.prefijo });
+  }
+  return out;
+}
+
+/** Marcas con al menos un ítem que cumple (proveedorId, busqueda). Para filtros dinámicos. */
+export async function getMarcasDisponiblesListaPrecios(
+  proveedorId: string | undefined,
+  busqueda: string | undefined
+): Promise<{ id: string; nombre: string }[]> {
+  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, busqueda);
+  const seen = new Set<string>();
+  const out: { id: string; nombre: string }[] = [];
+  for (const f of filas) {
+    const m = (f.marca ?? "").trim();
+    if (!m || seen.has(m)) continue;
+    seen.add(m);
+    out.push({ id: m, nombre: m });
+  }
+  return out;
 }
 
 /** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. */

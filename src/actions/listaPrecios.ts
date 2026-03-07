@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import {
   actualizarListaPreciosMasivo,
   getListaPreciosConTiendaFiltrada,
+  getProveedoresDisponiblesListaPrecios,
+  getMarcasDisponiblesListaPrecios,
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
 } from "@/services/listaPrecios.service";
@@ -22,6 +24,31 @@ export async function getListaPreciosFiltradaAction(
   busqueda: string | undefined
 ): Promise<FilaListaPrecioParaCliente[]> {
   return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, busqueda);
+}
+
+export interface ListaPreciosConOpcionesResult {
+  filas: FilaListaPrecioParaCliente[];
+  proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
+  marcasDisponibles: { id: string; nombre: string }[];
+}
+
+/**
+ * Lista de precios filtrada + opciones dinámicas para Proveedor y Marca según el resto de filtros.
+ */
+export async function getListaPreciosConOpcionesAction(
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined
+): Promise<ListaPreciosConOpcionesResult> {
+  const prov = proveedorId?.trim() || undefined;
+  const marca = marcaNombre?.trim() || undefined;
+  const q = busqueda?.trim() || undefined;
+  const [filas, proveedoresDisponibles, marcasDisponibles] = await Promise.all([
+    getListaPreciosConTiendaFiltrada(prov, marca, q),
+    getProveedoresDisponiblesListaPrecios(marca, q),
+    getMarcasDisponiblesListaPrecios(prov, q),
+  ]);
+  return { filas, proveedoresDisponibles, marcasDisponibles };
 }
 
 /**

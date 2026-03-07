@@ -29,11 +29,15 @@ import {
 import { fmtPrecio, fmtNumero } from "@/lib/format";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
-type FetchListaPreciosAction = (
+type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   busqueda: string | undefined
-) => Promise<FilaListaPrecioParaCliente[]>;
+) => Promise<{
+  filas: FilaListaPrecioParaCliente[];
+  proveedoresDisponibles: ProveedorOption[];
+  marcasDisponibles: MarcaOption[];
+}>;
 
 /** Alto aproximado de una fila tbody (celda-datos). */
 const BODY_ROW_HEIGHT_PX = 28;
@@ -55,7 +59,7 @@ interface ListaPreciosTablaConFiltrosProps {
   proveedores: ProveedorOption[];
   marcas: MarcaOption[];
   onFilteredIdsChange?: (ids: string[]) => void;
-  fetchListaPreciosAction: FetchListaPreciosAction;
+  fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
 
 const MIN_CARACTERES_BUSQUEDA = 3;
@@ -66,12 +70,14 @@ export default function ListaPreciosTablaConFiltros({
   proveedores,
   marcas,
   onFilteredIdsChange,
-  fetchListaPreciosAction,
+  fetchListaPreciosConOpcionesAction,
 }: ListaPreciosTablaConFiltrosProps) {
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
   const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
+  const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
+  const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
   const [loading, setLoading] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(15);
@@ -81,11 +87,21 @@ export default function ListaPreciosTablaConFiltros({
     !!proveedorId || !!marcaNombre || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
 
   useEffect(() => {
+    if (!hasFilterActive) {
+      setProveedoresOptions(proveedores);
+      setMarcasOptions(marcas);
+    }
+  }, [hasFilterActive, proveedores, marcas]);
+
+  useEffect(() => {
     const el = tableContainerRef.current;
     if (!el) return;
     const updateRowsPerPage = () => {
       const h = el.clientHeight;
-      const bodyRows = Math.max(1, Math.floor((h - HEADER_HEIGHT_PX) / BODY_ROW_HEIGHT_PX));
+      const bodyRows = Math.max(
+        1,
+        Math.floor((h - HEADER_HEIGHT_PX) / BODY_ROW_HEIGHT_PX) - 1
+      );
       setRowsPerPage(bodyRows);
     };
     updateRowsPerPage();
@@ -102,15 +118,30 @@ export default function ListaPreciosTablaConFiltros({
     }
     let cancelled = false;
     setLoading(true);
-    fetchListaPreciosAction(
+    fetchListaPreciosConOpcionesAction(
       proveedorId || undefined,
       marcaNombre || undefined,
       busqueda.trim() || undefined
     )
-      .then((data) => {
-        if (!cancelled) {
-          setFilasData(data);
-          onFilteredIdsChange?.(data.map((f) => f.id));
+      .then((res) => {
+        if (cancelled) return;
+        setFilasData(res.filas);
+        onFilteredIdsChange?.(res.filas.map((f) => f.id));
+        setProveedoresOptions(res.proveedoresDisponibles);
+        setMarcasOptions(res.marcasDisponibles);
+        if (
+          res.proveedoresDisponibles.length > 0 &&
+          proveedorId &&
+          !res.proveedoresDisponibles.some((p) => p.id === proveedorId)
+        ) {
+          setProveedorId("");
+        }
+        if (
+          res.marcasDisponibles.length > 0 &&
+          marcaNombre &&
+          !res.marcasDisponibles.some((m) => m.nombre === marcaNombre)
+        ) {
+          setMarcaNombre("");
         }
       })
       .finally(() => {
@@ -119,7 +150,14 @@ export default function ListaPreciosTablaConFiltros({
     return () => {
       cancelled = true;
     };
-  }, [hasFilterActive, proveedorId, marcaNombre, busqueda, fetchListaPreciosAction, onFilteredIdsChange]);
+  }, [
+    hasFilterActive,
+    proveedorId,
+    marcaNombre,
+    busqueda,
+    fetchListaPreciosConOpcionesAction,
+    onFilteredIdsChange,
+  ]);
 
   const filteredFilas = filasData;
 
@@ -171,7 +209,7 @@ export default function ListaPreciosTablaConFiltros({
                   className="select-content-filtro"
                 >
                   <SelectItem value="none">PROVEEDOR</SelectItem>
-                  {proveedores.map((p) => (
+                  {proveedoresOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
                     </SelectItem>
@@ -194,7 +232,7 @@ export default function ListaPreciosTablaConFiltros({
                   className="select-content-filtro"
                 >
                   <SelectItem value="none">MARCA</SelectItem>
-                  {marcas.map((m) => (
+                  {marcasOptions.map((m) => (
                     <SelectItem key={m.id} value={m.nombre}>
                       {m.nombre}
                     </SelectItem>
