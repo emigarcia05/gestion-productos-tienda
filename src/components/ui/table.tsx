@@ -8,9 +8,11 @@ export type TableVariant = "default" | "compact"
 
 interface TableProps extends React.ComponentProps<"table"> {
   variant?: TableVariant
+  /** Si false, desactiva el scroll horizontal del contenedor (solo scroll vertical si aplica). Default true. */
+  scrollX?: boolean
 }
 
-function Table({ className, variant = "default", ...props }: TableProps) {
+function Table({ className, variant = "default", scrollX = true, ...props }: TableProps) {
   const tableClass =
     variant === "compact"
       ? cn("tabla-gestion-compacta", className)
@@ -18,7 +20,7 @@ function Table({ className, variant = "default", ...props }: TableProps) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn("relative w-full", scrollX ? "overflow-x-auto" : "overflow-x-hidden")}
     >
       <table
         data-slot="table"

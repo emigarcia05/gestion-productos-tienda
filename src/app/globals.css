@@ -252,6 +252,9 @@
     display: flex;
     flex-direction: column;
   }
+  .contenedor-tabla-gestion.no-scroll-x {
+    overflow-x: hidden;
+  }
 
   /** Contenedor de tabla paginada: diseño global */
   .contenedor-tabla-paginada {
@@ -658,6 +661,28 @@
 }
 .modal-app__body [data-slot="select-trigger"] svg {
   color: var(--primary);
+}
+
+/* Inputs numéricos en modales .modal-app: sin flechas (spinner) para subir/bajar valor */
+.modal-app input[type="number"]::-webkit-inner-spin-button,
+.modal-app input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.modal-app input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Mismo comportamiento en AppModal (cuerpo estándar de modales) */
+.app-modal__body input[type="number"]::-webkit-inner-spin-button,
+.app-modal__body input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.app-modal__body input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Fila compacta label + input (espacio mínimo entre texto e input) */

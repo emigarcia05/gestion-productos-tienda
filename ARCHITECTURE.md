@@ -116,6 +116,10 @@ export interface ModalContentProps<T, TSubmit = void> {
 
 - **Drawer:** cuando se necesite, usar el mismo patrón (props + genéricos) con el componente Drawer de Radix/shadcn; el contenido y los datos se inyectan por props.
 
+**Plantilla Modal App (referencia de diseño):** Para ventanas modales con el mismo diseño, estética y tamaño que “Edición masiva” en Lista Precios, usar la **Plantilla Modal App**. Nombre de referencia: **`modal-app`** (clase CSS en `DialogContent`). Estructura: `DialogContent className="modal-app"` → `DialogHeader` con `modal-app__header` + `DialogTitle` con `modal-app__title`; cuerpo en `div.modal-app__content` con `div.modal-app__body` y `div.modal-app__footer`. Los estilos están en `globals.css` (bloque “Modales .modal-app”). Implementación de referencia: `EdicionMasivaListaPreciosModal.tsx`.
+
+**AppModal (componente estándar):** Para estandarizar modales en la app usar **`AppModal`** (`@/components/shared/AppModal`). Layout wrapper basado en shadcn Dialog: fondo gris (slate-50), header con título (Geist), cuerpo con fondo blanco y bordes redondeados (`children`), footer gris con botonera (`actions`). Props: `title`, `children`, `actions`. Uso: `<Dialog open={open} onOpenChange={setOpen}><AppModal title="..." actions={<>Cancelar / Guardar</>}>{contenido}</AppModal></Dialog>`. Botón principal: `Button` variant por defecto (azul corporativo); cancelar: `variant="outline"` o `"ghost"`.
+
 ---
 
 ## 4. Tipado estricto

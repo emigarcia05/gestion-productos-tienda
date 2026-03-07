@@ -4,13 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -112,69 +107,64 @@ export default function EdicionMasivaListaPreciosModal({
           Edición masiva
         </Button>
       </DialogTrigger>
-      <DialogContent className="modal-app">
-        {/* 1. Título (solo título en el header) */}
-        <DialogHeader className="modal-app__header">
-          <DialogTitle className="modal-app__title">Edición masiva</DialogTitle>
-        </DialogHeader>
-
-        {/* 2. Contenedor único (cuerpo + footer) para que los botones queden dentro del cuadro */}
-        <div className="modal-app__content">
-          <div className="modal-app__body px-6 py-4 flex flex-col gap-4">
-            <p className="text-sm">
-              Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
-              {cantidad !== 1 ? "s" : ""} del filtro actual.
-            </p>
-
-            <div className="grid gap-0 py-1">
-              <div className="modal-app__form-row">
-                <Label htmlFor="marca" className="text-right font-medium">
-                  Marca
-                </Label>
-                <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
-                  <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums">
-                    <SelectValue placeholder="Seleccionar marca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {marcas.map((m) => (
-                      <SelectItem key={m.id} value={m.nombre}>
-                        {m.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {CAMPOS_NUMERICOS.map(({ key, label }) => (
-                <div key={key} className="modal-app__form-row">
-                  <Label htmlFor={key} className="text-right font-medium">
-                    {label}
-                  </Label>
-                  <Input
-                    id={key}
-                    type="number"
-                    min={0}
-                    max={100}
-                    placeholder="—"
-                    value={values[key] ?? ""}
-                    onChange={(e) => handleChange(key, e.target.value)}
-                    className="tabular-nums"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="modal-app__footer">
+      <AppModal
+        title="Edición masiva"
+        actions={
+          <>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
               Cancelar
             </Button>
             <Button type="button" onClick={handleGuardar} disabled={pending}>
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
             </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm">
+            Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
+            {cantidad !== 1 ? "s" : ""} del filtro actual.
+          </p>
+
+          <div className="grid gap-0 py-1">
+            <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
+              <Label htmlFor="marca" className="text-right font-medium">
+                Marca
+              </Label>
+              <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
+                <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums border-primary">
+                  <SelectValue placeholder="Seleccionar marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {marcas.map((m) => (
+                    <SelectItem key={m.id} value={m.nombre}>
+                      {m.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {CAMPOS_NUMERICOS.map(({ key, label }) => (
+              <div key={key} className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
+                <Label htmlFor={key} className="text-right font-medium">
+                  {label}
+                </Label>
+                <Input
+                  id={key}
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="—"
+                  value={values[key] ?? ""}
+                  onChange={(e) => handleChange(key, e.target.value)}
+                  className="tabular-nums border-primary"
+                />
+              </div>
+            ))}
           </div>
         </div>
-      </DialogContent>
+      </AppModal>
     </Dialog>
   );
 }

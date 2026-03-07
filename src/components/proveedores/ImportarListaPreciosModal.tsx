@@ -14,13 +14,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -60,7 +55,7 @@ type CampoDestinoListaPrecios =
 
 const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolean }[] = [
   { value: "codProdProv", label: "Cod. Proveedor", required: true },          // cod_prod_proveedor
-  { value: "descripcion", label: "Descripcion", required: true },             // descripcion_proveedor
+  { value: "descripcion", label: "Descripcion", required: false },            // descripcion_proveedor (opcional)
   { value: "precioLista", label: "Px. Lista", required: true },               // px_lista_proveedor
   { value: "precioVentaSugerido", label: "Px. Sugerido", required: false },   // px_vta_sugerido
   { value: "ignorar", label: "Ignorar / (sin asignar)", required: false },
@@ -183,10 +178,10 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="modal-app">
-        <DialogHeader className="modal-app__header">
-          <DialogTitle className="modal-app__title flex items-center gap-3">
-            Importar lista de precios
+      <AppModal
+        title={
+          <>
+            <span>Importar lista de precios</span>
             <div className="flex items-center gap-1.5 ml-auto">
               {(["upload", "mapear", "result"] as Step[]).map((s, i) => (
                 <div key={s} className="flex items-center gap-1.5">
@@ -199,10 +194,44 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 </div>
               ))}
             </div>
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="modal-app__body px-6 pb-8">
+          </>
+        }
+        actions={
+          step === "upload" ? (
+            <Button variant="outline" onClick={() => handleClose(false)}>
+              Cancelar
+            </Button>
+          ) : step === "mapear" ? (
+            <>
+              <Button variant="outline" onClick={() => setStep("upload")} className="gap-1.5">
+                <ArrowLeft className="h-4 w-4" /> Volver
+              </Button>
+              <Button
+                onClick={handleImport}
+                disabled={pending || !camposRequeridosMapeados || !proveedorId}
+                className="gap-2 min-w-[130px]"
+              >
+                {pending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Importando...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={resetForm}>
+                Nueva importación
+              </Button>
+              <Button onClick={() => handleClose(false)}>Cerrar</Button>
+            </>
+          )
+        }
+      >
         {step === "upload" && (
           <div className="space-y-5 pt-2">
             <div className="space-y-1.5">
@@ -211,7 +240,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <select
                   value={proveedorId}
                   onChange={(e) => setProveedorId(e.target.value)}
-                  className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 border-primary"
                 >
                   <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p) => (
@@ -307,12 +336,6 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 }}
               />
             </div>
-
-            <div className="modal-app__footer">
-              <Button variant="outline" onClick={() => handleClose(false)}>
-                Cancelar
-              </Button>
-            </div>
           </div>
         )}
 
@@ -392,27 +415,6 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 );
               })}
             </div>
-
-            <div className="modal-app__footer justify-between gap-2">
-              <Button variant="outline" onClick={() => setStep("upload")} className="gap-1.5">
-                <ArrowLeft className="h-4 w-4" /> Volver
-              </Button>
-              <Button
-                onClick={handleImport}
-                disabled={pending || !camposRequeridosMapeados || !proveedorId}
-                className="gap-2 min-w-[130px]"
-              >
-                {pending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Importando...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         )}
 
@@ -446,17 +448,9 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 Importación completada sin errores.
               </div>
             )}
-
-            <div className="modal-app__footer">
-              <Button variant="outline" onClick={resetForm}>
-                Nueva importación
-              </Button>
-              <Button onClick={() => handleClose(false)}>Cerrar</Button>
-            </div>
           </div>
         )}
-        </div>
-      </DialogContent>
+      </AppModal>
     </Dialog>
   );
 }
