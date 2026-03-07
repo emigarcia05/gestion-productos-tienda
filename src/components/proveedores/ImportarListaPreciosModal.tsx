@@ -178,6 +178,8 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       </DialogTrigger>
 
       <AppModal
+        className="sm:max-w-3xl"
+        bodyClassName="max-w-full min-w-0"
         title={
           <>
             <span>Importar lista de precios</span>
@@ -244,14 +246,14 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             </div>
 
-            {/* Fila 1: La lista tiene encabezados — SÍ (default) / NO */}
-            <div className="flex items-center gap-3">
+            {/* Fila 1: La lista tiene encabezados — SÍ (default) / NO, botones apilados */}
+            <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-muted-foreground shrink-0">La lista tiene encabezados</span>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-1.5 w-20 shrink-0">
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(true)}
-                  className={`min-w-[3.5rem] px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -260,7 +262,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(false)}
-                  className={`min-w-[3.5rem] px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     !tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -269,14 +271,14 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             </div>
 
-            {/* Fila 2: Precios en dólares — SÍ / NO (default) */}
-            <div className="flex items-center gap-3">
+            {/* Fila 2: Precios en dólares — SÍ / NO (default), botones apilados */}
+            <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-muted-foreground shrink-0">Precios en dólares</span>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-1.5 w-20 shrink-0">
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(true)}
-                  className={`min-w-[3.5rem] px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -285,7 +287,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(false)}
-                  className={`min-w-[3.5rem] px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     !precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -357,18 +359,18 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             {/* Cuando hay archivo: 2 columnas — Valor de la primera fila | Opciones para mapear */}
             {fileName && colLabels.length > 0 && (
               <>
-                <div className="rounded-lg border border-border/50 overflow-hidden bg-white max-h-[280px] overflow-y-auto">
-                  <Table variant="compact">
+                <div className="rounded-lg border border-border/50 overflow-hidden bg-white max-h-[280px] overflow-y-auto w-full min-w-0">
+                  <Table variant="compact" className="table-fixed w-full">
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="py-2 px-3 text-xs w-1/2">Valor de la primera fila</TableHead>
-                        <TableHead className="py-2 px-3 text-xs w-1/2">Opciones desplegables para mapear los datos</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-[45%]">Valor de la primera fila</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-[55%]">Opciones desplegables para mapear los datos</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {colLabels.map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell className="py-2 px-3 font-mono text-xs truncate max-w-[200px]">
+                          <TableCell className="py-2 px-3 font-mono text-xs truncate">
                             {(encabezados ?? filaEjemplo)?.[i] ?? <span className="text-slate-400 italic">—</span>}
                           </TableCell>
                           <TableCell className="py-2 px-3">

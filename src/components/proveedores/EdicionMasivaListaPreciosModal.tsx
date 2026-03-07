@@ -28,7 +28,8 @@ const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: str
   { key: "dtoProducto", label: "Desc. Productor (%)" },
   { key: "dtoCantidad", label: "Desc. Cantidad (%)" },
   { key: "dtoFinanciero", label: "Desc. Finan. (%)" },
-  { key: "cxTransporte", label: "Cx. Aprox. Transporte (%)" },
+  { key: "cxTransporte", label: "Cx. Transporte (%)" },
+  { key: "cotizacionDolar", label: "Cotización Dolar" },
 ];
 
 interface Props {
@@ -52,11 +53,14 @@ export default function EdicionMasivaListaPreciosModal({
     dtoMarca: undefined,
     dtoProducto: undefined,
     dtoCantidad: undefined,
+    dtoFinanciero: undefined,
     cxTransporte: undefined,
+    cotizacionDolar: undefined,
   });
 
   function handleChange(key: keyof ActualizacionMasivaListaPrecios, value: string) {
     const num = value === "" ? undefined : parseInt(value, 10);
+    if (num !== undefined && (Number.isNaN(num) || num < 0)) return;
     setValues((prev) => ({ ...prev, [key]: num }));
   }
 
@@ -69,6 +73,7 @@ export default function EdicionMasivaListaPreciosModal({
     if (values.dtoCantidad !== undefined && !Number.isNaN(values.dtoCantidad)) data.dtoCantidad = values.dtoCantidad;
     if (values.dtoFinanciero !== undefined && !Number.isNaN(values.dtoFinanciero)) data.dtoFinanciero = values.dtoFinanciero;
     if (values.cxTransporte !== undefined && !Number.isNaN(values.cxTransporte)) data.cxTransporte = values.cxTransporte;
+    if (values.cotizacionDolar !== undefined && !Number.isNaN(values.cotizacionDolar) && values.cotizacionDolar > 0) data.cotizacionDolar = values.cotizacionDolar;
 
     if (Object.keys(data).length === 0) {
       toast.error("Ingresá al menos un valor para actualizar.");
@@ -84,7 +89,7 @@ export default function EdicionMasivaListaPreciosModal({
       toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
       setOpen(false);
       setMarcaNombre("");
-      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, dtoFinanciero: undefined, cxTransporte: undefined });
+      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, dtoFinanciero: undefined, cxTransporte: undefined, cotizacionDolar: undefined });
       onSuccess?.();
     } finally {
       setPending(false);
@@ -153,8 +158,9 @@ export default function EdicionMasivaListaPreciosModal({
                 <Input
                   id={key}
                   type="number"
-                  min={0}
-                  max={100}
+                  min={key === "cotizacionDolar" ? 1 : 0}
+                  max={key === "cotizacionDolar" ? undefined : 100}
+                  step={1}
                   placeholder="—"
                   value={values[key] ?? ""}
                   onChange={(e) => handleChange(key, e.target.value)}
