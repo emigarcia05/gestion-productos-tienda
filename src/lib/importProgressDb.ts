@@ -3,6 +3,7 @@
  * funcione en serverless (misma fuente para POST y GET).
  */
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const IMPORT_PROGRESS_ID = "lista-precios";
@@ -73,7 +74,7 @@ export async function startImportInDb(total: number): Promise<void> {
       resultCreados: null,
       resultActualizados: null,
       resultEliminados: null,
-      resultErrores: null,
+      resultErrores: Prisma.DbNull,
       error: null,
       updatedAt: new Date(),
     },

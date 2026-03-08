@@ -11,6 +11,12 @@ import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 interface Props {
   proveedor?: { id: string; nombre: string; prefijo: string };
   onSuccess?: () => void;
+  /** Id del form para asociar botón externo con form="id". */
+  id?: string;
+  /** Si true, no renderiza la fila del botón Guardar (para usar botonera del modal). */
+  hideSubmitButton?: boolean;
+  /** Callback cuando cambia el estado de envío (para deshabilitar botón externo). */
+  onPendingChange?: (pending: boolean) => void;
 }
 
 function SubmitButton({ isEdit, pending }: { isEdit: boolean; pending: boolean }) {
@@ -22,7 +28,13 @@ function SubmitButton({ isEdit, pending }: { isEdit: boolean; pending: boolean }
   );
 }
 
-export default function ProveedorForm({ proveedor, onSuccess }: Props) {
+export default function ProveedorForm({
+  proveedor,
+  onSuccess,
+  id,
+  hideSubmitButton = false,
+  onPendingChange,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const isEdit = !!proveedor;
 
@@ -32,22 +44,27 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
     const formData = new FormData(form);
 
     startTransition(async () => {
-      const result = isEdit
-        ? await editarProveedor(proveedor.id, formData)
-        : await crearProveedor(formData);
+      onPendingChange?.(true);
+      try {
+        const result = isEdit
+          ? await editarProveedor(proveedor.id, formData)
+          : await crearProveedor(formData);
 
-      if (result.ok) {
-        toast.success(isEdit ? "Proveedor actualizado." : "Proveedor guardado con éxito.");
-        if (!isEdit) form.reset();
-        onSuccess?.();
-      } else {
-        toast.error(result.error);
+        if (result.ok) {
+          toast.success(isEdit ? "Proveedor actualizado." : "Proveedor guardado con éxito.");
+          if (!isEdit) form.reset();
+          onSuccess?.();
+        } else {
+          toast.error(result.error);
+        }
+      } finally {
+        onPendingChange?.(false);
       }
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form id={id} onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="nombre">Nombre del proveedor</Label>
         <Input
@@ -88,9 +105,11 @@ export default function ProveedorForm({ proveedor, onSuccess }: Props) {
         </p>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <SubmitButton isEdit={isEdit} pending={pending} />
-      </div>
+      {!hideSubmitButton && (
+        <div className="flex justify-end gap-2 pt-2">
+          <SubmitButton isEdit={isEdit} pending={pending} />
+        </div>
+      )}
     </form>
   );
 }
