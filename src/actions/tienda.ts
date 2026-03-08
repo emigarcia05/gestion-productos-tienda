@@ -117,11 +117,12 @@ export async function getTiendaPageData(params: {
     };
   }
 
-  /* Opciones de filtros encadenadas: cada desplegable solo muestra valores que existen
-   * en el conjunto que cumple TODOS los filtros actuales (q, marca, rubro, subRubro). */
-  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = { AND: [...andParts, { marca: { not: null } }] };
-  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = { AND: [...andParts, { rubro: { not: null } }] };
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = { AND: [...andParts, { subRubro: { not: null } }] };
+  /* Opciones de filtros: cada desplegable muestra siempre la lista completa de su dimensión (ver docs/FILTROS_DINAMICOS.md). Solo se aplica filtro de búsqueda (q) si existe. */
+  const andPartsOnlyQ: Prisma.ListaPrecioTiendaWhereInput[] = [];
+  if (textFilter.AND?.length) andPartsOnlyQ.push(textFilter);
+  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { marca: { not: null } }] } : { marca: { not: null } };
+  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] } : { rubro: { not: null } };
+  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { subRubro: { not: null } }] } : { subRubro: { not: null } };
 
   const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
@@ -150,6 +151,7 @@ export async function getTiendaPageData(params: {
             dtoMarca: true,
             dtoProducto: true,
             dtoCantidad: true,
+            dtoFinanciero: true,
             cxTransporte: true,
           },
         })
@@ -168,7 +170,10 @@ export async function getTiendaPageData(params: {
         pxLista,
         lp.dtoProducto,
         lp.dtoCantidad,
-        lp.cxTransporte
+        lp.cxTransporte,
+        lp.dtoProveedor,
+        lp.dtoMarca,
+        lp.dtoFinanciero
       );
     }
     const prev = minPxPorTienda.get(lp.idListaPrecioTienda);

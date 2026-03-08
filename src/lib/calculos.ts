@@ -1,19 +1,24 @@
 /**
- * Precio de compra final = precioLista
- *   × (1 - descuentoProducto / 100)
- *   × (1 - descuentoCantidad / 100)
- *   × (1 + cxTransporte / 100)
+ * Precio de compra final: todos los dto y cx_transporte son porcentajes.
+ * Fórmula: precioLista × (1 - dto/100) por cada descuento × (1 + cxTransporte/100).
+ * Parámetros opcionales (dtoProveedor, dtoMarca, dtoFinanciero) default 0 para compatibilidad.
  */
 export function calcPxCompraFinal(
-  precioLista:       number,
-  descuentoProducto: number,
-  descuentoCantidad: number,
-  cxTransporte:      number
+  precioLista:        number,
+  dtoProducto:        number,
+  dtoCantidad:        number,
+  cxTransporte:       number,
+  dtoProveedor:       number = 0,
+  dtoMarca:           number = 0,
+  dtoFinanciero:      number = 0
 ): number {
   return (
     precioLista *
-    (1 - descuentoProducto / 100) *
-    (1 - descuentoCantidad / 100) *
+    (1 - dtoProveedor / 100) *
+    (1 - dtoMarca / 100) *
+    (1 - dtoProducto / 100) *
+    (1 - dtoCantidad / 100) *
+    (1 - dtoFinanciero / 100) *
     (1 + cxTransporte / 100)
   );
 }

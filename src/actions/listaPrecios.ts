@@ -34,7 +34,8 @@ export interface ListaPreciosConOpcionesResult {
 }
 
 /**
- * Lista de precios filtrada + opciones dinámicas para Proveedor y Marca según el resto de filtros.
+ * Lista de precios filtrada + opciones dinámicas para Proveedor y Marca.
+ * Cada desplegable muestra siempre la lista completa de su dimensión (ver docs/FILTROS_DINAMICOS.md).
  * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Px Vta. Sugeridos).
  */
 export async function getListaPreciosConOpcionesAction(
@@ -48,8 +49,8 @@ export async function getListaPreciosConOpcionesAction(
   const q = busqueda?.trim() || undefined;
   const [filas, proveedoresDisponibles, marcasDisponibles] = await Promise.all([
     getListaPreciosConTiendaFiltrada(prov, marca, q, opciones),
-    getProveedoresDisponiblesListaPrecios(marca, q, opciones),
-    getMarcasDisponiblesListaPrecios(prov, q, opciones),
+    getProveedoresDisponiblesListaPrecios(undefined, q, opciones),
+    getMarcasDisponiblesListaPrecios(undefined, q, opciones),
   ]);
   return { filas, proveedoresDisponibles, marcasDisponibles };
 }
