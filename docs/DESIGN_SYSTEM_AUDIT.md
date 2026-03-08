@@ -71,7 +71,7 @@ Para botones que representan una **acción principal o de limpieza** con solo ic
 ## 5. Layout y espaciado
 
 - **SectionHeader:** Título + opcional subtítulo + acciones a la derecha; botones con `h-10 px-4`.
-- **FilterBar:** FilterRowSelection (Selects) + FilterRowSearch (input al 75%) + LimpiarFiltrosButton. Usar `INPUT_FILTER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`.
+- **FilterBar:** FilterRowSelection (Selects) + FilterRowSearch (input al 75%) + LimpiarFiltrosButton. Usar `INPUT_FILTER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. **Contenedor de filtros:** el `FilterBar` debe llevar `bg-card` (fondo blanco) en todas las pantallas con filtros (Lista Precios, Sugeridos, Tienda); ej. `className="filtros-contenedor-tienda bg-card"`.
 - **Main:** Fondo `bg-background` (slate muy claro). Cards con `bg-card` (blanco).
 
 ---

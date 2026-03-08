@@ -185,37 +185,30 @@ export default function VincularModal({
             </>
           }
         >
-          {/* Resumen del producto */}
-          <div className="modal-resumen-producto">
-            <p className="modal-resumen-producto__titulo">{itemDescripcion}</p>
-            <div className="modal-resumen-producto__grid">
-              <div>
-                <span className="modal-resumen-producto__label">Prefijo proveedor</span>
-                <span className="modal-resumen-producto__valor">{prefijoProveedor ?? "—"}</span>
-              </div>
-              <div>
-                <span className="modal-resumen-producto__label">Marca</span>
-                <span className="modal-resumen-producto__valor">{marca ?? "—"}</span>
-              </div>
-              <div>
-                <span className="modal-resumen-producto__label">Rubro</span>
-                <span className="modal-resumen-producto__valor">{rubro ?? "—"}</span>
-              </div>
-              <div>
-                <span className="modal-resumen-producto__label">Subrubro</span>
-                <span className="modal-resumen-producto__valor">{subRubro ?? "—"}</span>
-              </div>
-            </div>
+          {/* Contexto compacto: producto + marca/rubro */}
+          <div className="pb-3 border-b border-border">
+            <p className="text-sm text-foreground font-semibold truncate" title={itemDescripcion}>
+              {itemDescripcion}
+            </p>
+            {(marca || rubro) && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {[marca, rubro].filter(Boolean).join(" · ")}
+              </p>
+            )}
           </div>
 
-          {/* Lista de productos vinculados */}
-          <div className="modal-panel-scroll mt-4">
+          {/* Sección principal: Proveedores vinculados */}
+          <div className="mt-4 flex flex-col min-h-0 flex-1">
+            <h4 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-3">
+              Proveedores vinculados
+            </h4>
+            <div className="modal-panel-scroll rounded-lg border border-border bg-card overflow-hidden">
             {cargando ? (
-              <div className="modal-mensaje-carga">
+              <div className="modal-mensaje-carga p-4">
                 <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
               </div>
             ) : vinculados.length === 0 ? (
-              <p className="modal-mensaje-vacio">Sin vínculos aún.</p>
+              <p className="modal-mensaje-vacio p-4">Sin vínculos aún.</p>
             ) : (
               <div className="modal-vinculos-listado-contenedor">
                 {vinculados.map((prod, idx) => {
@@ -269,6 +262,7 @@ export default function VincularModal({
                 })}
               </div>
             )}
+            </div>
           </div>
         </AppModal>
       </Dialog>

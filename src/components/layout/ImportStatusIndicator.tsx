@@ -16,6 +16,7 @@ export default function ImportStatusIndicator() {
   const [result, setResult] = useState<{ creados: number; actualizados: number; eliminados?: number; errores: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const lastDoneRef = useRef(false);
+  const hadRunningThisSessionRef = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -24,6 +25,10 @@ export default function ImportStatusIndicator() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (!data) return;
+          if (data.running) {
+            hadRunningThisSessionRef.current = true;
+            lastDoneRef.current = false;
+          }
           setRunning(!!data.running);
           setProcessed(data.processed ?? 0);
           setTotal(data.total ?? 0);
@@ -41,10 +46,11 @@ export default function ImportStatusIndicator() {
     };
   }, []);
 
-  // Al terminar: abrir modal de resultado y opcionalmente toast de error
+  // Solo abrir modal cuando en esta sesión vimos la importación en curso y luego terminó (evita abrir al navegar con estado "done" persistido)
   useEffect(() => {
-    if (!done || lastDoneRef.current) return;
+    if (!done || lastDoneRef.current || !hadRunningThisSessionRef.current) return;
     lastDoneRef.current = true;
+    hadRunningThisSessionRef.current = false;
     if (error) {
       toast.error(error);
       openError(error);
@@ -57,10 +63,6 @@ export default function ImportStatusIndicator() {
       });
     }
   }, [done, error, result, openResult, openError]);
-
-  useEffect(() => {
-    if (!running) lastDoneRef.current = false;
-  }, [running]);
 
   if (!running) return null;
 
