@@ -13,7 +13,10 @@ export interface ProveedorListItem {
   nombre: string;
   codigoUnico: string;
   prefijo: string;
-  _count: { productosProveedor: number };
+  /** Cantidad de ítems en precios_proveedores. */
+  cantProductos: number;
+  /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
+  cantProductosProvistos: number;
 }
 
 export const PROVEEDOR_ERROR = {
@@ -22,18 +25,32 @@ export const PROVEEDOR_ERROR = {
 } as const;
 
 /**
- * Lista de proveedores desde la base de datos.
+ * Lista de proveedores desde la base de datos con conteos en precios_proveedores y lista_precios_tienda.
  */
 export async function getProveedores(): Promise<ProveedorListItem[]> {
-  const rows = await prisma.proveedor.findMany({
-    orderBy: { nombre: "asc" },
-  });
+  const [rows, provistosByProveedor] = await Promise.all([
+    prisma.proveedor.findMany({
+      orderBy: { nombre: "asc" },
+      include: { _count: { select: { listaPrecios: true } } },
+    }),
+    prisma.listaPrecioProveedor.groupBy({
+      by: ["idProveedor"],
+      where: { idListaPrecioTienda: { not: null } },
+      _count: { id: true },
+    }),
+  ]);
+
+  const provistosMap = new Map(
+    provistosByProveedor.map((g) => [g.idProveedor, g._count.id])
+  );
+
   return rows.map((p) => ({
     id: p.id,
     nombre: p.nombre,
     codigoUnico: p.codigoUnico,
     prefijo: p.prefijo,
-    _count: { productosProveedor: 0 },
+    cantProductos: p._count.listaPrecios,
+    cantProductosProvistos: provistosMap.get(p.id) ?? 0,
   }));
 }
 

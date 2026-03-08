@@ -60,7 +60,7 @@ export default async function GestionProveedoresPage() {
                     </TableCell>
                     <TableCell>{prov.prefijo}</TableCell>
                     <TableCell className="font-mono text-xs">{prov.codigoUnico}</TableCell>
-                    <TableCell>{prov._count.productosProveedor}</TableCell>
+                    <TableCell>{prov.cantProductos}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

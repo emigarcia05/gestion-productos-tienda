@@ -121,8 +121,22 @@ export default function SugeridosTablaConFiltros({
       .then((res) => {
         if (cancelled) return;
         setFilasData(res.filas);
-        setProveedoresOptions(res.proveedoresDisponibles);
-        setMarcasOptions(res.marcasDisponibles);
+        setProveedoresOptions((prev) => {
+          const next = res.proveedoresDisponibles;
+          const selected = prev.find((p) => p.id === proveedorId);
+          if (proveedorId && selected && !next.some((p) => p.id === proveedorId)) {
+            return [selected, ...next];
+          }
+          return next;
+        });
+        setMarcasOptions((prev) => {
+          const next = res.marcasDisponibles;
+          const selected = prev.find((m) => m.nombre === marcaNombre);
+          if (marcaNombre && selected && !next.some((m) => m.nombre === marcaNombre)) {
+            return [selected, ...next];
+          }
+          return next;
+        });
         if (
           res.proveedoresDisponibles.length > 0 &&
           proveedorId &&
