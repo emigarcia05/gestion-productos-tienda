@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useTransition, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   Upload,
   FileText,
-  Loader2,
   CheckCircle2,
   AlertCircle,
   ChevronDown,
@@ -14,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import MensajeProceso from "@/components/shared/MensajeProceso";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -24,11 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  importarListaPreciosProveedor,
-  type ImportResult,
-  type MapeoColumnasListaPrecios,
-} from "@/actions/importar";
+import { type MapeoColumnasListaPrecios } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
 
 interface Proveedor {
@@ -41,8 +35,6 @@ interface Proveedor {
 interface Props {
   proveedores: Proveedor[];
 }
-
-type Step = "import" | "result";
 
 type CampoDestinoListaPrecios =
   | "codigoExterno"
@@ -62,7 +54,7 @@ const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolea
 
 export default function ImportarListaPreciosModal({ proveedores }: Props) {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<Step>("import");
+  const [sending, setSending] = useState(false);
   const [proveedorId, setProveedorId] = useState("");
   const [tieneEncabezados, setTieneEncabezados] = useState(true);
   const [precioEnDolares, setPrecioEnDolares] = useState(false);
@@ -73,12 +65,10 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
   const [filasCrudas, setFilasCrudas] = useState<string[][]>([]);
   const [mapeo, setMapeo] = useState<MapeoColumnasListaPrecios>({});
 
-  const [result, setResult] = useState<ImportResult | null>(null);
-  const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function resetForm() {
-    setStep("import");
+    setSending(false);
     setProveedorId("");
     setTieneEncabezados(true);
     setPrecioEnDolares(false);
@@ -87,7 +77,6 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
     setEncabezados(null);
     setFilasCrudas([]);
     setMapeo({});
-    setResult(null);
   }
 
   function handleClose(val: boolean) {
@@ -139,7 +128,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
     Object.values(mapeo).includes(c.value)
   );
 
-  function handleImport() {
+  async function handleImport() {
     if (!proveedorId) {
       toast.error("Selecciona un proveedor.");
       return;
@@ -148,21 +137,23 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       toast.error("Asigná todos los campos requeridos.");
       return;
     }
+    if (sending) return;
 
-    startTransition(async () => {
-      try {
-        const res = await importarListaPreciosProveedor(proveedorId, filasCrudas, mapeo, precioEnDolares);
-        setResult(res);
-        setStep("result");
-        if (res.errores.length === 0) {
-          toast.success("Importación completada.");
-        } else {
-          toast.warning(`Importación con ${res.errores.length} advertencia(s).`);
-        }
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Error al importar.");
-      }
-    });
+    setSending(true);
+    fetch("/api/import-lista-precios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        proveedorId,
+        filasCrudas,
+        mapeo,
+        precioEnDolares,
+      }),
+    }).catch(() => {});
+
+    setOpen(false);
+    resetForm();
+    toast.info("Importación iniciada. El avance se muestra en la barra lateral.");
   }
 
   const proveedorSeleccionado = proveedores.find((p) => p.id === proveedorId);
@@ -181,55 +172,25 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       <AppModal
         className="sm:max-w-3xl"
         bodyClassName="max-w-full min-w-0"
-        title={
+        title="Importar lista de precios"
+        actions={
           <>
-            <span>Importar lista de precios</span>
-            <div className="flex items-center gap-1.5 ml-auto">
-              <div className={`h-2 w-2 rounded-full ${step === "import" ? "bg-primary" : "bg-muted"}`} />
-              <div className="h-px w-4 bg-border" />
-              <div className={`h-2 w-2 rounded-full ${step === "result" ? "bg-primary" : "bg-muted"}`} />
-            </div>
+            <Button variant="outline" onClick={() => handleClose(false)}>
+              Cancelar
+            </Button>
+            {filasCrudas.length > 0 && (
+              <Button
+                onClick={handleImport}
+                disabled={!camposRequeridosMapeados || !proveedorId || sending}
+                className="gap-2 min-w-[130px]"
+              >
+                <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
+              </Button>
+            )}
           </>
         }
-        actions={
-          step === "import" ? (
-            <>
-              <Button variant="outline" onClick={() => handleClose(false)}>
-                Cancelar
-              </Button>
-              {filasCrudas.length > 0 && (
-                <Button
-                  onClick={handleImport}
-                  disabled={pending || !camposRequeridosMapeados || !proveedorId}
-                  className="gap-2 min-w-[130px]"
-                >
-                  {pending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Importando...
-                    </>
-                  ) : (
-                    <>
-                      <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
-                    </>
-                  )}
-                </Button>
-              )}
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={resetForm}>
-                Nueva importación
-              </Button>
-              <Button onClick={() => handleClose(false)}>Cerrar</Button>
-            </>
-          )
-        }
       >
-        {step === "import" && (
-          <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
-            {pending && (
-              <MensajeProceso mensaje="Importando!" detalle={filasCrudas.length > 0 ? { procesados: 0, total: filasCrudas.length } : "…"} />
-            )}
+        <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
             {/* Fila 0: Proveedor */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-muted-foreground">Proveedor</label>
@@ -417,63 +378,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </>
             )}
           </div>
-        )}
-
-        {step === "result" && result && (
-          <div className="space-y-5 pt-2">
-            <div className="grid grid-cols-3 gap-3">
-              <ResultStat label="Creados" value={result.creados} color="emerald" />
-              <ResultStat label="Actualizados" value={result.actualizados} color="blue" />
-              <ResultStat label="Eliminados" value={result.eliminados} color="amber" />
-            </div>
-
-            {result.errores.length > 0 && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-1.5">
-                <p className="text-sm font-medium flex items-center gap-1.5 text-destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  {result.errores.length} advertencia(s)
-                </p>
-                <ul className="space-y-0.5 max-h-32 overflow-y-auto">
-                  {result.errores.map((err, i) => (
-                    <li key={i} className="text-xs text-muted-foreground font-mono">
-                      {err}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {result.errores.length === 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-500">
-                <CheckCircle2 className="h-4 w-4" />
-                Importación completada sin errores.
-              </div>
-            )}
-          </div>
-        )}
       </AppModal>
     </Dialog>
-  );
-}
-
-function ResultStat({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: "emerald" | "blue" | "amber";
-}) {
-  const colorMap = {
-    emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    blue: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    amber: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  };
-  return (
-    <div className="rounded-lg border border-border/50 bg-card/50 p-4 text-center space-y-1">
-      <p className="text-2xl font-bold">{value}</p>
-      <Badge className={`text-xs ${colorMap[color]}`}>{label}</Badge>
-    </div>
   );
 }

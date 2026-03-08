@@ -161,17 +161,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
 
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            Importar productos
-            <div className="flex items-center gap-1.5 ml-auto">
-              {(["upload", "mapear", "result"] as Step[]).map((s, i) => (
-                <div key={s} className="flex items-center gap-1.5">
-                  <div className={`h-2 w-2 rounded-full transition-colors ${step === s ? "bg-primary" : (["upload","mapear","result"].indexOf(step) > i ? "bg-primary/40" : "bg-muted")}`} />
-                  {i < 2 && <div className="h-px w-4 bg-border" />}
-                </div>
-              ))}
-            </div>
-          </DialogTitle>
+          <DialogTitle>Importar productos</DialogTitle>
         </DialogHeader>
 
         {/* ── PASO 1: Subir archivo ── */}

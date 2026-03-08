@@ -224,6 +224,11 @@ export interface UpsertListaPreciosResult {
   errores: string[];
 }
 
+export interface UpsertListaPreciosOptions {
+  /** Llamado periódicamente con (procesados, total) para indicar avance (ej. sidebar). */
+  onProgress?(processed: number, total: number): void;
+}
+
 /**
  * Upsert de filas en lista_precios_proveedores.
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
@@ -234,14 +239,20 @@ export async function upsertListaPrecios(
   proveedorId: string,
   prefijo: string,
   filas: FilaListaPrecio[],
-  precioEnDolares: boolean = false
+  precioEnDolares: boolean = false,
+  options?: UpsertListaPreciosOptions
 ): Promise<UpsertListaPreciosResult> {
   let creados = 0;
   let actualizados = 0;
   const errores: string[] = [];
   const cotizacionDolar = precioEnDolares ? Number(process.env.COTIZACION_DOLAR ?? 1) : 1;
+  const onProgress = options?.onProgress;
+  const total = filas.length;
 
   for (let i = 0; i < filas.length; i++) {
+    if (onProgress && (i % 10 === 0 || i === total - 1)) {
+      onProgress(i + 1, total);
+    }
     const fila = filas[i];
     const codExt = buildCodExt(prefijo, fila.codProdProv);
 
