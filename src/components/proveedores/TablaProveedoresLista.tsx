@@ -51,13 +51,20 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
               {proveedores.map((prov) => (
                 <TableRow key={prov.id}>
                   <TableCell className="celda-datos min-w-0">
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={() => openEdit(prov)}
-                      className="text-primary hover:underline truncate block text-left w-full"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openEdit(prov);
+                        }
+                      }}
+                      className="text-primary hover:underline truncate block text-left w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded"
                     >
                       {prov.nombre}
-                    </button>
+                    </span>
                   </TableCell>
                   <TableCell className="celda-datos celda-mono whitespace-nowrap">{prov.prefijo}</TableCell>
                   <TableCell className="celda-datos celda-numero">{prov.cantProductos.toLocaleString()}</TableCell>

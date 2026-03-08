@@ -143,20 +143,6 @@ export default function ListaPreciosTablaConFiltros({
           }
           return next;
         });
-        if (
-          res.proveedoresDisponibles.length > 0 &&
-          proveedorId &&
-          !res.proveedoresDisponibles.some((p) => p.id === proveedorId)
-        ) {
-          setProveedorId("");
-        }
-        if (
-          res.marcasDisponibles.length > 0 &&
-          marcaNombre &&
-          !res.marcasDisponibles.some((m) => m.nombre === marcaNombre)
-        ) {
-          setMarcaNombre("");
-        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
