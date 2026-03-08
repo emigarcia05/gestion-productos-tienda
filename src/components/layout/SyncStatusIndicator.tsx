@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import MensajeProceso from "@/components/shared/MensajeProceso";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -35,19 +36,10 @@ export default function SyncStatusIndicator() {
   if (!running) return null;
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="mensaje-proceso mensaje-proceso--sidebar"
-    >
-      {phase === "guardando" ? "Guardando! " : "Sincronizando! "}
-      {total > 0 ? (
-        <span className="mensaje-proceso__detalle">
-          {processed.toLocaleString()} de {total.toLocaleString()}
-        </span>
-      ) : (
-        "…"
-      )}
-    </div>
+    <MensajeProceso
+      variant="sidebar"
+      mensaje={phase === "guardando" ? "Guardando!" : "Sincronizando!"}
+      detalle={total > 0 ? { procesados: processed, total } : "…"}
+    />
   );
 }

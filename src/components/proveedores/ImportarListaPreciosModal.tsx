@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import MensajeProceso from "@/components/shared/MensajeProceso";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -226,6 +227,9 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       >
         {step === "import" && (
           <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
+            {pending && (
+              <MensajeProceso mensaje="Importando!" detalle={filasCrudas.length > 0 ? { procesados: 0, total: filasCrudas.length } : "…"} />
+            )}
             {/* Fila 0: Proveedor */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-muted-foreground">Proveedor</label>

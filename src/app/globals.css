@@ -1120,7 +1120,20 @@ main button:hover:not(:disabled),
   --action:   #3D96D0;
 }
 
-/* Mensaje de proceso en curso (Guardando, Sincronizando, Importando, etc.). */
+/*
+ * =============================================================================
+ * MENSAJE DE PROCESO (indicador de progreso reutilizable)
+ * =============================================================================
+ * Uso: indicar que una operación está en curso (sincronizar, importar, guardar).
+ * Componente recomendado: <MensajeProceso /> en src/components/shared/MensajeProceso.tsx
+ * Documentación: docs/COMPONENTES_ESTILOS.md
+ *
+ * Clases:
+ *   .mensaje-proceso         — Base: borde accent2, fondo suave, texto foreground
+ *   .mensaje-proceso__detalle — Detalle numérico (ej. "1.234 de 5.000"): color accent2, bold
+ *   .mensaje-proceso--sidebar — Modificador: tamaño reducido para barra lateral
+ * =============================================================================
+ */
 .mensaje-proceso {
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in oklch, var(--accent2) 50%, transparent);
@@ -1134,8 +1147,6 @@ main button:hover:not(:disabled),
   color: var(--accent2);
   font-weight: 600;
 }
-
-/* Variante discreta para barra lateral (siempre visible). */
 .mensaje-proceso--sidebar {
   font-size: 0.75rem;
   padding: 0.375rem 0.625rem;
