@@ -29,14 +29,6 @@ export async function getProveedores() {
   return proveedorService.getProveedores();
 }
 
-export async function getProveedorById(id: string) {
-  const proveedores = await getProveedores();
-  const prov = proveedores.find((p) => p.id === id);
-  if (!prov) return null;
-  const productosProveedor = MOCK_PRODUCTOS.filter((p) => p.proveedorId === id);
-  return { ...prov, codigoUnico: prov.codigoUnico, productosProveedor, _count: { productosProveedor: productosProveedor.length } };
-}
-
 /** Datos para la página /proveedores (lista + productos + total). Sin filtros no se cargan productos para navegación más rápida. MOCK. */
 export async function getProveedoresPageData(params: {
   q?: string;
@@ -103,12 +95,15 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
   if (!prefijo || prefijo.length !== 3 || !/^[A-Z]{3}$/.test(prefijo))
     return { ok: false, error: "El prefijo debe tener exactamente 3 letras." };
   revalidatePath("/proveedores");
-  revalidatePath(`/proveedores/${id}`);
+  revalidatePath("/proveedores/lista");
+  revalidatePath("/proveedores/gestion");
   return { ok: true, data: undefined };
 }
 
 export async function eliminarProveedor(id: string): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   revalidatePath("/proveedores");
+  revalidatePath("/proveedores/lista");
+  revalidatePath("/proveedores/gestion");
   return { ok: true, data: undefined };
 }

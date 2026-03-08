@@ -31,7 +31,8 @@ export async function importarProductos(
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
   if (!filasCrudas.length) throw new Error("No hay filas para importar.");
   revalidatePath("/proveedores");
-  revalidatePath(`/proveedores/${proveedorId}`);
+  revalidatePath("/proveedores/lista");
+  revalidatePath("/proveedores/gestion");
   return { creados: 0, actualizados: 0, eliminados: 0, errores: [] };
 }
 
@@ -64,7 +65,8 @@ export async function importarListaPreciosProveedor(
 
   revalidatePath("/proveedores");
   revalidatePath("/proveedores/lista-precios");
-  revalidatePath(`/proveedores/${proveedorId}`);
+  revalidatePath("/proveedores/lista");
+  revalidatePath("/proveedores/gestion");
 
   return { creados, actualizados, eliminados: 0, errores };
 }

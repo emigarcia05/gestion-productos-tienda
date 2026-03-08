@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -9,14 +10,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import AppModal from "@/components/shared/AppModal";
-import ProveedorForm from "./ProveedorForm";
-
-const FORM_ID = "crear-proveedor-form";
+import ProveedorModal from "./ProveedorModal";
 
 export default function CrearProveedorModal() {
   const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState(false);
+  const router = useRouter();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -31,30 +29,14 @@ export default function CrearProveedorModal() {
         </TooltipTrigger>
         <TooltipContent>Crear nuevo proveedor</TooltipContent>
       </Tooltip>
-      <AppModal
-        title="Nuevo proveedor"
-        actions={
-          <>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" form={FORM_ID} disabled={pending} className="gap-2">
-              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-muted-foreground mb-4">
-          Se generará un código único automáticamente.
-        </p>
-        <ProveedorForm
-          id={FORM_ID}
-          hideSubmitButton
-          onSuccess={() => setOpen(false)}
-          onPendingChange={setPending}
-        />
-      </AppModal>
+      <ProveedorModal
+        open={open}
+        onOpenChange={setOpen}
+        onSuccess={() => {
+          setOpen(false);
+          router.refresh();
+        }}
+      />
     </Dialog>
   );
 }

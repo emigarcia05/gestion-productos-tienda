@@ -74,7 +74,8 @@ export async function POST(request: Request) {
 
     revalidatePath("/proveedores");
     revalidatePath("/proveedores/lista-precios");
-    revalidatePath(`/proveedores/${proveedorId}`);
+    revalidatePath("/proveedores/lista");
+    revalidatePath("/proveedores/gestion");
 
     return NextResponse.json({ ok: true, creados, actualizados, errores });
   } catch (e) {

@@ -47,23 +47,6 @@ export const PERMISOS = {
     editar:  { simple: false, editor: true }, // CRUD categorías/subcategorías/presentaciones y asignar productos
   },
 
-  // ─── Página /proveedores/[id] ─────────────────────────────────────────────
-  proveedorDetalle: {
-    acciones: {
-      importarLista:     { simple: false, editor: true },
-      editarProveedor:   { simple: false, editor: true },
-      eliminarProveedor: { simple: false, editor: true },
-    },
-    tabla: {
-      codProdProv:         { simple: false, editor: true },
-      codExt:              { simple: false, editor: true },
-      descripcion:         { simple: true,  editor: true },
-      precioLista:         { simple: false, editor: true },
-      precioVentaSugerido: { simple: true,  editor: true },
-      margen:              { simple: false, editor: true },
-    },
-  },
-
   // ─── Página /tienda ───────────────────────────────────────────────────────
   tienda: {
     acceso: { simple: false, editor: true },
