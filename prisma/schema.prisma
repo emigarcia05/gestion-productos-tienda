@@ -127,3 +127,19 @@ model ListaPrecioTienda {
 
   @@map("lista_precios_tienda")
 }
+
+// Progreso de importación (singleton por id) para que el polling desde la sidebar funcione en serverless.
+model ImportProgress {
+  id               String   @id // ej. "lista-precios"
+  running          Boolean  @default(false)
+  processed        Int      @default(0)
+  total            Int      @default(0)
+  resultCreados    Int?     @map("result_creados")
+  resultActualizados Int?   @map("result_actualizados")
+  resultEliminados Int?     @map("result_eliminados")
+  resultErrores    Json?    @map("result_errores") // string[]
+  error            String?
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("import_progress")
+}

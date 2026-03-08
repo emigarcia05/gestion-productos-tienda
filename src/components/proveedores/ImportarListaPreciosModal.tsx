@@ -153,7 +153,6 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
 
     setOpen(false);
     resetForm();
-    toast.info("Importación iniciada. El avance se muestra en la barra lateral.");
   }
 
   const proveedorSeleccionado = proveedores.find((p) => p.id === proveedorId);
