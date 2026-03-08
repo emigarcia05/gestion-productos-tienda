@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getImportProgress } from "@/lib/importProgressStore";
+import { getImportProgressFromDb } from "@/lib/importProgressDb";
 
 /**
  * GET: Estado actual de la importación de lista de precios (para polling desde el cliente/sidebar).
  */
 export async function GET() {
-  const progress = getImportProgress();
+  const progress = await getImportProgressFromDb();
   return NextResponse.json(progress);
 }

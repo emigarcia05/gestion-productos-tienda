@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import AppShell from "@/components/layout/AppShell";
 import TooltipProvider from "@/components/providers/TooltipProvider";
+import { ImportResultProvider } from "@/components/import/ImportResultContext";
 import { getRol } from "@/lib/sesion";
 import "./globals.css";
 
@@ -33,8 +34,10 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gris text-foreground`}
       >
         <TooltipProvider>
-          <AppShell rol={rol}>{children}</AppShell>
-          <Toaster richColors position="bottom-right" />
+          <ImportResultProvider>
+            <AppShell rol={rol}>{children}</AppShell>
+            <Toaster richColors position="bottom-right" />
+          </ImportResultProvider>
         </TooltipProvider>
       </body>
     </html>

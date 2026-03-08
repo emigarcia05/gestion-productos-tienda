@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import MensajeProceso from "@/components/shared/MensajeProceso";
+import { useImportResult } from "@/components/import/ImportResultContext";
 
 const POLL_INTERVAL_MS = 1000;
 
 export default function ImportStatusIndicator() {
+  const { openResult, openError } = useImportResult();
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [total, setTotal] = useState(0);
   const [done, setDone] = useState(false);
-  const [result, setResult] = useState<{ creados: number; actualizados: number; errores: string[] } | null>(null);
+  const [result, setResult] = useState<{ creados: number; actualizados: number; eliminados?: number; errores: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const lastDoneRef = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -39,20 +41,22 @@ export default function ImportStatusIndicator() {
     };
   }, []);
 
-  // Toast al terminar (solo una vez por ciclo)
+  // Al terminar: abrir modal de resultado y opcionalmente toast de error
   useEffect(() => {
     if (!done || lastDoneRef.current) return;
     lastDoneRef.current = true;
     if (error) {
       toast.error(error);
+      openError(error);
     } else if (result) {
-      if (result.errores.length === 0) {
-        toast.success("Importación completada.");
-      } else {
-        toast.warning(`Importación con ${result.errores.length} advertencia(s).`);
-      }
+      openResult({
+        creados: result.creados,
+        actualizados: result.actualizados,
+        eliminados: result.eliminados ?? 0,
+        errores: result.errores ?? [],
+      });
     }
-  }, [done, error, result]);
+  }, [done, error, result, openResult, openError]);
 
   useEffect(() => {
     if (!running) lastDoneRef.current = false;

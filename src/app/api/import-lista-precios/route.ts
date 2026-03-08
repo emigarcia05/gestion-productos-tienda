@@ -5,11 +5,11 @@ import { aplicarMapeoListaPrecios, type MapeoColumnasListaPrecios } from "@/lib/
 import * as proveedorService from "@/services/proveedor.service";
 import * as listaPreciosService from "@/services/listaPrecios.service";
 import {
-  startImport,
-  setImportProgress,
-  setImportResult,
-  setImportError,
-} from "@/lib/importProgressStore";
+  startImportInDb,
+  setImportProgressInDb,
+  setImportResultInDb,
+  setImportErrorInDb,
+} from "@/lib/importProgressDb";
 
 export const maxDuration = 300;
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "No hay filas válidas para importar." }, { status: 400 });
   }
 
-  startImport(filas.length);
+  await startImportInDb(filas.length);
 
   try {
     const { creados, actualizados, errores } = await listaPreciosService.upsertListaPrecios(
@@ -65,12 +65,12 @@ export async function POST(request: Request) {
       precioEnDolares ?? false,
       {
         onProgress(processed, total) {
-          setImportProgress(processed, total);
+          void setImportProgressInDb(processed, total);
         },
       }
     );
 
-    setImportResult({ creados, actualizados, eliminados: 0, errores });
+    await setImportResultInDb({ creados, actualizados, eliminados: 0, errores });
 
     revalidatePath("/proveedores");
     revalidatePath("/proveedores/lista-precios");
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, creados, actualizados, errores });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    setImportError(message);
+    await setImportErrorInDb(message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
