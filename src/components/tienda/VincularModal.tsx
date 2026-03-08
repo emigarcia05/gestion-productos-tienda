@@ -4,9 +4,8 @@ import { useState, useTransition, useEffect, useMemo } from "react";
 import { Link2, Plus, Loader2, X, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import { Badge } from "@/components/ui/badge";
 import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
 import { convertirEnProveedor } from "@/actions/tienda";
@@ -166,14 +165,27 @@ export default function VincularModal({
           </DialogTrigger>
         )}
 
-        <DialogContent className="modal-app">
-          <DialogHeader className="modal-app__header">
-            <DialogTitle className="modal-app__title">
-              Vínculos con Proveedores
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Primer div: resumen del producto */}
+        <AppModal
+          title="Vínculos con Proveedores"
+          className="sm:max-w-xl"
+          actions={
+            <>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setAbrirSelector(true)}
+                disabled={isPending}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Vincular nuevo producto
+              </Button>
+              <Button variant="default" onClick={() => setOpen(false)}>
+                Cerrar
+              </Button>
+            </>
+          }
+        >
+          {/* Resumen del producto */}
           <div className="modal-resumen-producto">
             <p className="modal-resumen-producto__titulo">{itemDescripcion}</p>
             <div className="modal-resumen-producto__grid">
@@ -196,8 +208,8 @@ export default function VincularModal({
             </div>
           </div>
 
-          {/* Segundo div: tabla de productos vinculados */}
-          <div className="modal-panel-scroll modal-app__body">
+          {/* Lista de productos vinculados */}
+          <div className="modal-panel-scroll mt-4">
             {cargando ? (
               <div className="modal-mensaje-carga">
                 <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
@@ -258,20 +270,7 @@ export default function VincularModal({
               </div>
             )}
           </div>
-
-          {/* Tercer div: botón Vincular nuevo producto */}
-          <div className="modal-vinculos-footer">
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setAbrirSelector(true)}
-              disabled={isPending}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Vincular nuevo producto
-            </Button>
-          </div>
-        </DialogContent>
+        </AppModal>
       </Dialog>
 
       {/* Modal selector — se abre encima del modal principal */}

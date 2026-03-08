@@ -55,39 +55,38 @@ export default function TablaTienda({
 
   return (
     <>
-      <div className="h-full contenedor-tabla-paginada">
-        <Table variant="compact" className="tabla-tienda-listado">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="py-2 px-2 text-xs leading-tight">Cod. Tienda</TableHead>
-              <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight">Px Compra Final</TableHead>
-              <TableHead className="py-2 px-2 text-xs leading-tight" title="✓ = Menor Cx Disponible: hay al menos un proveedor vinculado con costo menor que el principal. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.length === 0 ? (
-              <EmptyTableRow
-                colSpan={COLUMNS}
-                message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
-              />
-            ) : (
-              items.map((item) => (
+      <Table variant="compact" scrollX={false}>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="min-w-0">Cod. Tienda</TableHead>
+            <TableHead className="min-w-0">Descripción</TableHead>
+            <TableHead className="w-28">Px Compra Final</TableHead>
+            <TableHead className="w-12 text-center" title="✓ = Menor Cx Disponible: hay al menos un proveedor vinculado con costo menor que el principal. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.length === 0 ? (
+            <EmptyTableRow
+              colSpan={COLUMNS}
+              message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
+            />
+          ) : (
+            items.map((item) => (
               <TableRow
                 key={item.id}
                 onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
                 className={puedeVincular ? "cursor-pointer" : ""}
               >
-                <TableCell className="py-2 px-2 font-mono text-xs">
+                <TableCell className="celda-datos celda-mono min-w-0 whitespace-nowrap">
                   {item.codItem}
                 </TableCell>
-                <TableCell className="py-2 px-3 text-xs font-bold">
+                <TableCell className="celda-datos celda-destacado min-w-0">
                   {item.descripcion}
                 </TableCell>
-                <TableCell className="py-2 px-2 tabular-nums text-xs font-bold">
+                <TableCell className="celda-datos celda-numero celda-destacado">
                   ${fmtPrecio(item.costo)}
                 </TableCell>
-                <TableCell className="py-2 px-2 text-center text-xs">
+                <TableCell className="celda-datos text-center">
                   {item.diferenciaMejorPrecio != null ? (
                     <span className="font-semibold text-primary" title="Hay otro proveedor vinculado con mejor precio que el principal">
                       ✓
@@ -95,11 +94,10 @@ export default function TablaTienda({
                   ) : null}
                 </TableCell>
               </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       {/* Modales de vínculos — uno por item, se monta solo el que está abierto */}
       {puedeVincular && items.length > 0 && items.map((item) => (
