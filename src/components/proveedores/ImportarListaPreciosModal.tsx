@@ -225,7 +225,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
         }
       >
         {step === "import" && (
-          <div className="space-y-5 pt-2">
+          <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
             {/* Fila 0: Proveedor */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-muted-foreground">Proveedor</label>
@@ -246,14 +246,14 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             </div>
 
-            {/* Fila 1: La lista tiene encabezados — SÍ (default) / NO, botones apilados */}
+            {/* Fila 1: Encabezados — SÍ (default) / NO en misma línea; botones alineados en columna */}
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground shrink-0">La lista tiene encabezados</span>
-              <div className="flex flex-col gap-1.5 w-20 shrink-0">
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Encabezados</span>
+              <div className="flex gap-2 w-28 shrink-0">
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(true)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -262,7 +262,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(false)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     !tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -271,14 +271,14 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             </div>
 
-            {/* Fila 2: Precios en dólares — SÍ / NO (default), botones apilados */}
+            {/* Fila 2: Px. en USD — SÍ / NO (default) en misma línea; botones alineados en columna */}
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground shrink-0">Precios en dólares</span>
-              <div className="flex flex-col gap-1.5 w-20 shrink-0">
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Px. en USD</span>
+              <div className="flex gap-2 w-28 shrink-0">
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(true)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -287,7 +287,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(false)}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     !precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                   }`}
                 >
@@ -359,12 +359,12 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             {/* Cuando hay archivo: 2 columnas — Valor de la primera fila | Opciones para mapear */}
             {fileName && colLabels.length > 0 && (
               <>
-                <div className="rounded-lg border border-border/50 overflow-hidden bg-white max-h-[280px] overflow-y-auto w-full min-w-0">
+                <div className="rounded-lg border border-border/50 overflow-hidden bg-white max-h-[220px] overflow-y-auto w-full min-w-0">
                   <Table variant="compact" className="table-fixed w-full">
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="py-2 px-3 text-xs w-[45%]">Valor de la primera fila</TableHead>
-                        <TableHead className="py-2 px-3 text-xs w-[55%]">Opciones desplegables para mapear los datos</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-[45%]">Primera fila</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-[55%]">Mapear a</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
