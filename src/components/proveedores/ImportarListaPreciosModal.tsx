@@ -246,10 +246,44 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             </div>
 
-            {/* Fila 1: Encabezados — SÍ (default) / NO en misma línea; botones alineados en columna */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Encabezados</span>
-              <div className="flex gap-2 w-28 shrink-0">
+            {/* Tres filas: mismo tipo/tamaño/color de texto; botones en la misma columna alineados */}
+            <div className="grid grid-cols-[1fr_10rem] gap-x-4 gap-y-3 items-center">
+              {/* Fila 1: Adjuntar / Modificar archivo */}
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">
+                {fileName ? "Modificar archivo" : "Adjuntar un archivo"}
+              </span>
+              <div className="flex gap-2 w-full min-w-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (fileName) {
+                      setFileName(null);
+                      setEncabezados(null);
+                      setFilasCrudas([]);
+                      setMapeo({});
+                    } else {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className="flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                >
+                  {fileName ? "Modificar archivo" : "Adjuntar archivo"}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) loadFile(f);
+                  }}
+                />
+              </div>
+
+              {/* Fila 2: Los datos tienen encabezados — SÍ / NO */}
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Los datos tienen encabezados</span>
+              <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(true)}
@@ -269,12 +303,10 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                   NO
                 </button>
               </div>
-            </div>
 
-            {/* Fila 2: Px. en USD — SÍ / NO (default) en misma línea; botones alineados en columna */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Px. en USD</span>
-              <div className="flex gap-2 w-28 shrink-0">
+              {/* Fila 3: Precio en dólares — SÍ / NO */}
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Precio en dólares</span>
+              <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(true)}
@@ -296,65 +328,26 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
             </div>
 
-            {/* Fila 3: Cargar archivo — "Cargue un archivo" + botón adjuntar, o nombre del archivo + Cambiar */}
-            <div className="space-y-1.5">
-              {!fileName ? (
-                <div
-                  className={`rounded-lg border-2 border-dashed transition-colors flex items-center justify-between gap-3 px-4 py-3 ${
-                    isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
-                  }`}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={onDrop}
-                >
-                  <span className="text-sm text-muted-foreground">Cargue un archivo</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-1.5" />
-                    Adjuntar archivo
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) loadFile(f);
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card/30 px-4 py-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate">{fileName}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">({filasCrudas.length} filas)</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => {
-                      setFileName(null);
-                      setEncabezados(null);
-                      setFilasCrudas([]);
-                      setMapeo({});
-                    }}
-                  >
-                    Cambiar archivo
-                  </Button>
-                </div>
-              )}
-            </div>
+            {/* Zona de arrastre cuando no hay archivo (opcional, para drag & drop) */}
+            {!fileName && (
+              <div
+                className={`rounded-lg border-2 border-dashed transition-colors flex items-center justify-center gap-2 py-4 px-3 ${
+                  isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
+                }`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={onDrop}
+              >
+                <span className="text-sm text-muted-foreground">O arrastrá un archivo .csv aquí</span>
+              </div>
+            )}
+            {fileName && (
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/30 px-3 py-2 min-w-0">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm truncate">{fileName}</span>
+                <span className="text-xs text-muted-foreground shrink-0">({filasCrudas.length} filas)</span>
+              </div>
+            )}
 
             {/* Cuando hay archivo: 2 columnas — Valor de la primera fila | Opciones para mapear */}
             {fileName && colLabels.length > 0 && (

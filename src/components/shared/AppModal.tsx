@@ -48,7 +48,7 @@ export default function AppModal({
   return (
     <DialogContent
       className={cn(
-        "app-modal grid gap-0 p-0 max-w-[calc(100%-2rem)] w-full sm:max-w-lg bg-gris",
+        "app-modal grid grid-rows-[auto_minmax(0,1fr)_auto] gap-0 p-0 max-w-[calc(100%-2rem)] w-full sm:max-w-lg max-h-[90vh] bg-gris",
         "rounded-xl overflow-hidden outline-none border-0 shadow-xl",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         "fixed top-[50%] left-[50%] z-50 translate-x-[-50%] translate-y-[-50%] duration-200",
@@ -63,9 +63,9 @@ export default function AppModal({
         </DialogTitle>
       </DialogHeader>
 
-      {/* Cuerpo: contenedor externo gris universal (slate-300); card blanca centrada con padding */}
-      <div className="flex-1 min-h-0 flex flex-col bg-gris">
-        <div className="flex-1 min-h-0 flex items-stretch justify-center p-4">
+      {/* Cuerpo: scroll cuando el contenido es alto; header y footer siempre visibles */}
+      <div className="min-h-0 flex flex-col bg-gris overflow-auto">
+        <div className="min-h-0 flex items-stretch justify-center p-4 flex-1">
           <div
             className={cn(
               "app-modal__body w-full max-w-full bg-white rounded-lg p-6 shadow-sm min-h-0 overflow-auto",
