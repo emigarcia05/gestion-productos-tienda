@@ -1,17 +1,23 @@
-import SectionHeader from "@/components/SectionHeader";
+import { getProveedores } from "@/actions/proveedores";
+import { prisma } from "@/lib/prisma";
+import SugeridosPageClient from "@/components/proveedores/SugeridosPageClient";
 
 export const dynamic = "force-dynamic";
 
-export default function PxVtaSugeridosPage() {
+export default async function PxVtaSugeridosPage() {
+  const [proveedores, marcasRows] = await Promise.all([
+    getProveedores(),
+    prisma.marca.findMany({
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true },
+    }),
+  ]);
+
+  const marcas = marcasRows.map((m) => ({ id: m.id, nombre: m.nombre }));
+
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <SectionHeader
-        titulo="Proveedores"
-        subtitulo="Px Vta. Sugeridos"
-      />
-      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-        Contenido de Px Vta. Sugeridos en desarrollo.
-      </div>
+    <div className="h-screen flex flex-col overflow-hidden">
+      <SugeridosPageClient proveedores={proveedores} marcas={marcas} />
     </div>
   );
 }

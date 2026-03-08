@@ -8,6 +8,7 @@ import {
   getMarcasDisponiblesListaPrecios,
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
+  type ListaPreciosFiltradoOpciones,
 } from "@/services/listaPrecios.service";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -34,19 +35,21 @@ export interface ListaPreciosConOpcionesResult {
 
 /**
  * Lista de precios filtrada + opciones dinámicas para Proveedor y Marca según el resto de filtros.
+ * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Px Vta. Sugeridos).
  */
 export async function getListaPreciosConOpcionesAction(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
-  busqueda: string | undefined
+  busqueda: string | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
 ): Promise<ListaPreciosConOpcionesResult> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
   const q = busqueda?.trim() || undefined;
   const [filas, proveedoresDisponibles, marcasDisponibles] = await Promise.all([
-    getListaPreciosConTiendaFiltrada(prov, marca, q),
-    getProveedoresDisponiblesListaPrecios(marca, q),
-    getMarcasDisponiblesListaPrecios(prov, q),
+    getListaPreciosConTiendaFiltrada(prov, marca, q, opciones),
+    getProveedoresDisponiblesListaPrecios(marca, q, opciones),
+    getMarcasDisponiblesListaPrecios(prov, q, opciones),
   ]);
   return { filas, proveedoresDisponibles, marcasDisponibles };
 }

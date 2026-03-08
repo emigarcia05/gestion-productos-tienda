@@ -1,0 +1,320 @@
+"use client";
+
+import { useMemo, useState, useEffect, useRef } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import FilterBar, {
+  FilterRowSelection,
+  FilterRowSearch,
+  FILTER_SELECT_WRAPPER_CLASS,
+  FILTER_COUNT_CLASS,
+  LimpiarFiltrosButton,
+} from "@/components/FilterBar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { fmtPrecio } from "@/lib/format";
+import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
+import type { ListaPreciosFiltradoOpciones } from "@/services/listaPrecios.service";
+
+type FetchListaPreciosConOpcionesAction = (
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
+) => Promise<{
+  filas: FilaListaPrecioParaCliente[];
+  proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
+  marcasDisponibles: { id: string; nombre: string }[];
+}>;
+
+const BODY_ROW_HEIGHT_PX = 28;
+const HEADER_HEIGHT_PX = 56;
+
+interface ProveedorOption {
+  id: string;
+  nombre: string;
+  prefijo: string;
+}
+
+interface MarcaOption {
+  id: string;
+  nombre: string;
+}
+
+interface SugeridosTablaConFiltrosProps {
+  proveedores: ProveedorOption[];
+  marcas: MarcaOption[];
+  fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
+}
+
+const MIN_CARACTERES_BUSQUEDA = 3;
+const MENSAJE_SIN_FILTRO =
+  "Aplicá un filtro (Proveedor o Marca) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
+
+export default function SugeridosTablaConFiltros({
+  proveedores,
+  marcas,
+  fetchListaPreciosConOpcionesAction,
+}: SugeridosTablaConFiltrosProps) {
+  const [proveedorId, setProveedorId] = useState<string>("");
+  const [marcaNombre, setMarcaNombre] = useState<string>("");
+  const [busqueda, setBusqueda] = useState("");
+  const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
+  const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
+  const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
+  const [loading, setLoading] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const hasFilterActive =
+    !!proveedorId || !!marcaNombre || busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA;
+
+  useEffect(() => {
+    if (!hasFilterActive) {
+      setProveedoresOptions(proveedores);
+      setMarcasOptions(marcas);
+    }
+  }, [hasFilterActive, proveedores, marcas]);
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const updateRowsPerPage = () => {
+      const h = el.clientHeight;
+      const bodyRows = Math.max(1, Math.floor((h - HEADER_HEIGHT_PX) / BODY_ROW_HEIGHT_PX) - 1);
+      setRowsPerPage(bodyRows);
+    };
+    updateRowsPerPage();
+    const ro = new ResizeObserver(updateRowsPerPage);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasFilterActive) {
+      setFilasData([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetchListaPreciosConOpcionesAction(
+      proveedorId || undefined,
+      marcaNombre || undefined,
+      busqueda.trim() || undefined,
+      { soloPxSugerido: true }
+    )
+      .then((res) => {
+        if (cancelled) return;
+        setFilasData(res.filas);
+        setProveedoresOptions(res.proveedoresDisponibles);
+        setMarcasOptions(res.marcasDisponibles);
+        if (
+          res.proveedoresDisponibles.length > 0 &&
+          proveedorId &&
+          !res.proveedoresDisponibles.some((p) => p.id === proveedorId)
+        ) {
+          setProveedorId("");
+        }
+        if (
+          res.marcasDisponibles.length > 0 &&
+          marcaNombre &&
+          !res.marcasDisponibles.some((m) => m.nombre === marcaNombre)
+        ) {
+          setMarcaNombre("");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasFilterActive, proveedorId, marcaNombre, busqueda, fetchListaPreciosConOpcionesAction]);
+
+  const filteredFilas = filasData;
+  const totalPaginas = Math.max(1, Math.ceil(filteredFilas.length / rowsPerPage));
+  const filasPagina = useMemo(() => {
+    const desde = (paginaActual - 1) * rowsPerPage;
+    return filteredFilas.slice(desde, desde + rowsPerPage);
+  }, [filteredFilas, paginaActual, rowsPerPage]);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [proveedorId, marcaNombre, busqueda]);
+
+  useEffect(() => {
+    if (totalPaginas > 0 && paginaActual > totalPaginas) {
+      setPaginaActual(totalPaginas);
+    }
+  }, [totalPaginas, paginaActual]);
+
+  const hayFiltros = !!proveedorId || !!marcaNombre || !!busqueda.trim();
+
+  function limpiarFiltros() {
+    setProveedorId("");
+    setMarcaNombre("");
+    setBusqueda("");
+    setPaginaActual(1);
+  }
+
+  return (
+    <div className="flex flex-col h-full min-h-0 gap-0.5">
+      <FilterBar className="filtros-contenedor-tienda bg-white">
+        <FilterRowSelection>
+          <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+              <Select
+                value={proveedorId || "none"}
+                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="filtro-sugeridos-proveedor" className="input-filtro-unificado">
+                  <SelectValue placeholder="PROVEEDOR" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">PROVEEDOR</SelectItem>
+                  {proveedoresOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      [{p.prefijo}] {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+              <Select
+                value={marcaNombre || "none"}
+                onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="filtro-sugeridos-marca" className="input-filtro-unificado">
+                  <SelectValue placeholder="MARCA" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">MARCA</SelectItem>
+                  {marcasOptions.map((m) => (
+                    <SelectItem key={m.id} value={m.nombre}>
+                      {m.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </FilterRowSelection>
+        <div className="flex items-center gap-3">
+          <FilterRowSearch className="flex-1">
+            <Input
+              id="filtro-sugeridos-busqueda"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por descripción (mín. 3 caracteres)"
+              className="input-filtro-unificado"
+            />
+          </FilterRowSearch>
+          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
+            {filteredFilas.length.toLocaleString()} producto
+            {filteredFilas.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </FilterBar>
+
+      <div ref={tableContainerRef} className="contenedor-tabla-gestion no-scroll-x no-scrollbar">
+        <Table variant="compact" scrollX={false}>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-28">COD. EXT.</TableHead>
+              <TableHead className="min-w-0">DESCRIPCION PROVEEDOR</TableHead>
+              <TableHead className="w-28">PX VTA. SUGERIDO</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {hasFilterActive && !loading && filasPagina.map((fila) => (
+              <TableRow key={fila.id}>
+                <TableCell className="celda-datos celda-mono whitespace-nowrap">
+                  {fila.codExt}
+                </TableCell>
+                <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
+                  <div className="celda-destacado truncate text-xs font-bold">
+                    {fila.descripcionProveedor}
+                  </div>
+                </TableCell>
+                <TableCell className="celda-datos celda-numero celda-destacado">
+                  ${fmtPrecio(Number(fila.pxVtaSugerido ?? 0))}
+                </TableCell>
+              </TableRow>
+            ))}
+            {(!hasFilterActive || loading || filasPagina.length === 0) && (
+              <TableRow>
+                <TableCell
+                  className="celda-datos py-8 text-muted-foreground text-center"
+                  colSpan={3}
+                >
+                  {!hasFilterActive
+                    ? MENSAJE_SIN_FILTRO
+                    : loading
+                      ? "Cargando…"
+                      : "Ningún producto coincide con los filtros."}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {filteredFilas.length === 0
+            ? "Mostrando 0 de 0"
+            : `Mostrando ${(paginaActual - 1) * rowsPerPage + 1}–${Math.min(paginaActual * rowsPerPage, filteredFilas.length)} de ${filteredFilas.length.toLocaleString()}`}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+            disabled={paginaActual <= 1}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="text-sm font-medium min-w-[7rem] text-center tabular-nums">
+            Página {paginaActual} de {totalPaginas}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+            disabled={paginaActual >= totalPaginas}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

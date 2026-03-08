@@ -10,7 +10,7 @@ import { buildCodExt } from "@/lib/codigos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 
-/** Fila para el cliente (lista-precios): proveedor + descripción tienda si existe. */
+/** Fila para el cliente (lista-precios / sugeridos): proveedor + descripción tienda si existe. */
 export interface FilaListaPrecioParaCliente {
   id: string;
   codExt: string;
@@ -18,6 +18,8 @@ export interface FilaListaPrecioParaCliente {
   descripcionTienda: string | null;
   marca: string | null;
   pxListaProveedor: number;
+  /** Precio venta sugerido; presente cuando se usa soloPxSugerido (p. ej. página Sugeridos). */
+  pxVtaSugerido?: number | null;
   dtoProveedor: number;
   dtoMarca: number;
   dtoProducto: number;
@@ -26,6 +28,11 @@ export interface FilaListaPrecioParaCliente {
   cxTransporte: number;
   pxCompraFinal: number | null;
   proveedor: { id: string; prefijo: string; nombre: string } | null;
+}
+
+export interface ListaPreciosFiltradoOpciones {
+  /** Si true, solo devuelve ítems con px_vta_sugerido no nulo (p. ej. página Px Vta. Sugeridos). */
+  soloPxSugerido?: boolean;
 }
 
 /**
@@ -73,11 +80,13 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
  * Lista de precios filtrada por proveedor, marca y/o búsqueda (≥3 caracteres).
  * Usado para carga bajo demanda: no se traen datos hasta que el usuario aplica un filtro.
  * Si no hay filtro activo (ningún selector o búsqueda < 3 chars), devuelve [].
+ * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Sugeridos).
  */
 export async function getListaPreciosConTiendaFiltrada(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
-  busqueda: string | undefined
+  busqueda: string | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
 ): Promise<FilaListaPrecioParaCliente[]> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
@@ -88,6 +97,7 @@ export async function getListaPreciosConTiendaFiltrada(
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
   if (prov) andParts.push({ idProveedor: prov });
   if (marca) andParts.push({ marca: marca });
+  if (opciones?.soloPxSugerido) andParts.push({ pxVtaSugerido: { not: null } });
   if (q.length >= 3) {
     const textFilter = filtroTexto(q, ["descripcionProveedor", "codExt", "marca"]);
     if (textFilter.AND?.length) andParts.push(textFilter);
@@ -115,6 +125,7 @@ export async function getListaPreciosConTiendaFiltrada(
       .map((t) => [t.codExt, t.descripcionTienda as string])
   );
 
+  const incluirPxSugerido = opciones?.soloPxSugerido === true;
   let result: FilaListaPrecioParaCliente[] = filas.map((f) => ({
     id: f.id,
     codExt: f.codExt,
@@ -122,6 +133,7 @@ export async function getListaPreciosConTiendaFiltrada(
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     marca: f.marca ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
+    ...(incluirPxSugerido && { pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null }),
     dtoProveedor: f.dtoProveedor,
     dtoMarca: f.dtoMarca,
     dtoProducto: f.dtoProducto,
@@ -146,9 +158,10 @@ export async function getListaPreciosConTiendaFiltrada(
 /** Proveedores con al menos un ítem que cumple (marcaNombre, busqueda). Para filtros dinámicos. */
 export async function getProveedoresDisponiblesListaPrecios(
   marcaNombre: string | undefined,
-  busqueda: string | undefined
+  busqueda: string | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string; prefijo: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, busqueda);
+  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, busqueda, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string; prefijo: string }[] = [];
   for (const f of filas) {
@@ -163,9 +176,10 @@ export async function getProveedoresDisponiblesListaPrecios(
 /** Marcas con al menos un ítem que cumple (proveedorId, busqueda). Para filtros dinámicos. */
 export async function getMarcasDisponiblesListaPrecios(
   proveedorId: string | undefined,
-  busqueda: string | undefined
+  busqueda: string | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, busqueda);
+  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, busqueda, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
