@@ -20,7 +20,7 @@ export default async function ListaProveedoresPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Proveedores" subtitle="Proveedores" actions={actions}>
+      <ClassicFilteredTableLayout title="Lista Proveedores" subtitle="Proveedores" actions={actions}>
         <TablaProveedoresLista proveedores={proveedores} />
       </ClassicFilteredTableLayout>
     </div>

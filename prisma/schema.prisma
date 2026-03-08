@@ -93,7 +93,7 @@ model PresentacionComparacion {
   @@map("presentaciones_comparacion")
 }
 
-// Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en lista_precios_tienda.
+// Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en precios_tienda.
 model Marca {
   id     String   @id @default(cuid())
   nombre String   @unique
@@ -105,7 +105,7 @@ model Marca {
   @@map("marcas")
 }
 
-// Alimentada solo por API externa. Frontend solo lectura; no usar create/update/delete desde UI.
+// Alimentada solo por API externa (tabla precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
   id              String   @id @default(uuid())
   codExt          String   @unique @map("cod_ext")
@@ -125,7 +125,7 @@ model ListaPrecioTienda {
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // 1 tienda → N proveedores (vinculados por id_lista_precios_tienda)
 
-  @@map("lista_precios_tienda")
+  @@map("precios_tienda")
 }
 
 // Progreso de importación (singleton por id) para que el polling desde la sidebar funcione en serverless.

@@ -71,7 +71,7 @@ export async function getTiendaPageData(params: {
   if (mejorPrecio === "true") {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT lpt.id
-      FROM lista_precios_tienda lpt
+      FROM precios_tienda lpt
       WHERE (SELECT COUNT(*) FROM precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 1
         AND (SELECT MIN(COALESCE(lpp.px_compra_final, lpp.px_lista_proveedor::numeric)) FROM precios_proveedores lpp
              WHERE lpp.id_lista_precios_tienda = lpt.id) < lpt.costo_compra

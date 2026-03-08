@@ -58,10 +58,10 @@ export default function TablaTienda({
       <Table variant="compact" scrollX={false}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="min-w-0">Cod. Tienda</TableHead>
-            <TableHead className="min-w-0">Descripción</TableHead>
-            <TableHead className="w-28">Px Compra Final</TableHead>
-            <TableHead className="w-12 text-center" title="✓ = Menor Cx Disponible: hay al menos un proveedor vinculado con costo menor que el principal. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
+            <TableHead className="w-[15%]">Cod. Tienda</TableHead>
+            <TableHead className="w-[65%]">Descripción</TableHead>
+            <TableHead className="w-[15%]">Px Compra Final</TableHead>
+            <TableHead className="w-[5%] text-center" title="✓ = Menor Cx Disponible: hay al menos un proveedor vinculado con costo menor que el principal. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,16 +77,16 @@ export default function TablaTienda({
                 onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
                 className={puedeVincular ? "cursor-pointer" : ""}
               >
-                <TableCell className="celda-datos celda-mono min-w-0 whitespace-nowrap">
+                <TableCell className="celda-datos celda-mono w-[15%] whitespace-nowrap">
                   {item.codItem}
                 </TableCell>
-                <TableCell className="celda-datos celda-destacado min-w-0">
+                <TableCell className="celda-datos celda-destacado w-[65%] min-w-0 overflow-hidden">
                   {item.descripcion}
                 </TableCell>
-                <TableCell className="celda-datos celda-numero celda-destacado">
+                <TableCell className="celda-datos celda-numero celda-destacado w-[15%]">
                   ${fmtPrecio(item.costo)}
                 </TableCell>
-                <TableCell className="celda-datos text-center">
+                <TableCell className="celda-datos text-center w-[5%]">
                   {item.diferenciaMejorPrecio != null ? (
                     <span className="font-semibold text-primary" title="Hay otro proveedor vinculado con mejor precio que el principal">
                       ✓

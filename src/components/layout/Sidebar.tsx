@@ -57,7 +57,7 @@ const MODULES: {
       { href: "/proveedores/sugeridos", label: "Px Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
       { href: "/proveedores/lista-precios", label: "Lista Precios", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
       { href: "/proveedores/comparacion-categorias", label: "Comparacion Cat.", icon: <GitCompare className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/lista", label: "Proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/lista", label: "Lista Proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
     ],
   },
   {
