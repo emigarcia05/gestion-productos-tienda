@@ -242,17 +242,18 @@ export async function getTiendaPageData(params: {
 // ─── Control de Aumentos ───────────────────────────────────────────────────
 
 export interface ItemAumento {
-  itemId:        string;
-  codItem:       string;
-  descripcion:   string;
-  marca:         string | null;
-  rubro:         string | null;
-  subRubro:      string | null;
-  codigoExterno: string;
-  proveedorDux:  string | null;
-  costoTienda:   number;
-  pxCompraFinal: number;
-  pctAumento:    number; // ((pxCompraFinal - costoTienda) / costoTienda) * 100
+  itemId:          string;
+  codItem:         string;
+  descripcion:     string;
+  marca:           string | null;
+  rubro:           string | null;
+  subRubro:        string | null;
+  codigoExterno:   string;
+  proveedorDux:    string | null;  // prefijo del proveedor (para UI)
+  proveedorNombre: string | null;   // nombre completo (para exportación)
+  costoTienda:     number;
+  pxCompraFinal:   number;
+  pctAumento:      number; // ((pxCompraFinal - costoTienda) / costoTienda) * 100
 }
 
 export interface GrupoAumento {

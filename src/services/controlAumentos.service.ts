@@ -60,6 +60,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
 
     let minPx = Infinity;
     let proveedorDux: string | null = r.proveedor?.trim() ?? null;
+    let proveedorNombre: string | null = null;
 
     for (const lp of r.listaPreciosProveedores) {
       let px: number;
@@ -79,6 +80,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
       if (px < minPx) {
         minPx = px;
         proveedorDux = lp.proveedor?.prefijo ?? lp.proveedor?.nombre ?? proveedorDux;
+        proveedorNombre = lp.proveedor?.nombre ?? null;
       }
     }
 
@@ -98,6 +100,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
       subRubro: r.subRubro ?? null,
       codigoExterno: r.codExt,
       proveedorDux,
+      proveedorNombre,
       costoTienda,
       pxCompraFinal: minPx,
       pctAumento,

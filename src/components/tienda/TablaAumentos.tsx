@@ -28,7 +28,7 @@ function exportarXLS(items: ItemAumento[]) {
     const filas = items.map((i) => ({
       "CODIGO":           i.codItem,
       "CODIGO EXTERNO":   i.codigoExterno,
-      "PROVEEDOR":        i.proveedorDux ?? "",
+      "PROVEEDOR":        i.proveedorNombre ?? i.proveedorDux ?? "",
       "COSTO":            parseFloat(i.costoTienda.toFixed(2)),
     }));
 
@@ -60,8 +60,7 @@ function exportarXLS(items: ItemAumento[]) {
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
-  const variacion = pct > 0 ? "variacion-costo--positiva" : pct < 0 ? "variacion-costo--negativa" : "variacion-costo--neutra";
-  return <span className={`${cls} ${variacion}`}>{fmtPctEntero(pct)}</span>;
+  return <span className={`${cls} text-foreground`}>{fmtPctEntero(pct)}</span>;
 }
 
 function IconTendencia({ pct }: { pct: number }) {
