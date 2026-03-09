@@ -23,6 +23,7 @@ type ProductoConProveedor = {
   descuentoProducto: number;
   descuentoCantidad: number;
   cxTransporte: number;
+  pxCompraFinal?: number | null;
   proveedor: { nombre: string; prefijo: string };
 };
 
