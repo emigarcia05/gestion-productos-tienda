@@ -41,6 +41,7 @@ model ListaPrecioProveedor {
   pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada: (px_lista * (px_dolares ? cotizacion_dolar : 1)) - dto_* ... + cx_transporte
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
+  habilitado         Boolean  @map("habilitado") @default(true) // mapea opción SÍ/NO del modal importar
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 

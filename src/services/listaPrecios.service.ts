@@ -290,12 +290,14 @@ export interface UpsertListaPreciosOptions {
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
  * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = COTIZACION_DOLAR (env) o 1.
+ * habilitado: mapea opción Habilitado SÍ/NO del modal importar; por defecto true.
  */
 export async function upsertListaPrecios(
   proveedorId: string,
   prefijo: string,
   filas: FilaListaPrecio[],
   precioEnDolares: boolean = false,
+  habilitado: boolean = true,
   options?: UpsertListaPreciosOptions
 ): Promise<UpsertListaPreciosResult> {
   let creados = 0;
@@ -329,6 +331,7 @@ export async function upsertListaPrecios(
           pxDolares: precioEnDolares,
           cotizacionDolar,
           pxVtaSugerido: fila.precioVentaSugerido || null,
+          habilitado,
         },
         update: {
           idProveedor: proveedorId,
@@ -338,6 +341,7 @@ export async function upsertListaPrecios(
           pxDolares: precioEnDolares,
           cotizacionDolar,
           pxVtaSugerido: fila.precioVentaSugerido || null,
+          habilitado,
         },
       });
 

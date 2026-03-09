@@ -18,6 +18,7 @@ interface ImportBody {
   filasCrudas: string[][];
   mapeo: MapeoColumnasListaPrecios;
   precioEnDolares: boolean;
+  habilitado?: boolean;
 }
 
 /**
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Body JSON inválido." }, { status: 400 });
   }
 
-  const { proveedorId, filasCrudas, mapeo, precioEnDolares } = body;
+  const { proveedorId, filasCrudas, mapeo, precioEnDolares, habilitado } = body;
   if (!proveedorId || !Array.isArray(filasCrudas) || !filasCrudas.length) {
     return NextResponse.json(
       { ok: false, error: "Faltan proveedorId o filasCrudas." },
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
       proveedor.prefijo,
       filas,
       precioEnDolares ?? false,
+      habilitado ?? true,
       {
         onProgress(processed, total) {
           void setImportProgressInDb(processed, total);

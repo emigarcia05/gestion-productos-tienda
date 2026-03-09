@@ -42,7 +42,8 @@ export async function importarListaPreciosProveedor(
   proveedorId: string,
   filasCrudas: string[][],
   mapeo: MapeoColumnasListaPrecios,
-  precioEnDolares: boolean = false
+  precioEnDolares: boolean = false,
+  habilitado: boolean = true
 ): Promise<ImportResult> {
   if (!(await esEditor())) throw new Error("Sin permisos de editor.");
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
@@ -60,7 +61,8 @@ export async function importarListaPreciosProveedor(
     proveedorId,
     prefijo,
     filas,
-    precioEnDolares
+    precioEnDolares,
+    habilitado
   );
 
   revalidatePath("/proveedores");

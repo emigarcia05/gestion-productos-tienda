@@ -57,6 +57,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
   const [sending, setSending] = useState(false);
   const [proveedorId, setProveedorId] = useState("");
   const [tieneEncabezados, setTieneEncabezados] = useState(true);
+  const [habilitado, setHabilitado] = useState(true);
   const [precioEnDolares, setPrecioEnDolares] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -71,6 +72,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
     setSending(false);
     setProveedorId("");
     setTieneEncabezados(true);
+    setHabilitado(true);
     setPrecioEnDolares(false);
     setIsDragging(false);
     setFileName(null);
@@ -148,6 +150,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
         filasCrudas,
         mapeo,
         precioEnDolares,
+        habilitado,
       }),
     }).catch(() => {});
 
@@ -268,7 +271,30 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 </button>
               </div>
 
-              {/* Fila 3: Precio en dólares — SÍ / NO */}
+              {/* Fila 3: Habilitado — SÍ / NO */}
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Habilitado</span>
+              <div className="flex gap-2 w-full min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setHabilitado(true)}
+                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    habilitado ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                  }`}
+                >
+                  SÍ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHabilitado(false)}
+                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    !habilitado ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
+                  }`}
+                >
+                  NO
+                </button>
+              </div>
+
+              {/* Fila 4: Precio en dólares — SÍ / NO */}
               <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Precio en dólares</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
