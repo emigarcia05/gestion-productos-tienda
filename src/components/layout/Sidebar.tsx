@@ -65,7 +65,7 @@ const MODULES: {
     label: "Lista Tienda",
     icon: <ShoppingBag className={iconClass} />,
     submodules: [
-      { href: "/tienda", label: "Comparación Px Proveedores", icon: <Link2 className="h-4 w-4 shrink-0" /> },
+      { href: "/tienda", label: "Comp. Px. Prov.", icon: <Link2 className="h-4 w-4 shrink-0" /> },
       { href: "/tienda/aumentos", label: "Control aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
     ],
   },

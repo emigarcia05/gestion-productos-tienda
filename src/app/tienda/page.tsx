@@ -52,7 +52,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
       <ClassicFilteredTableLayout
         title="Lista Tienda"
-        subtitle="Comparación Px Proveedores"
+        subtitle="Comp. Px. Prov."
         actions={actions}
         filters={filters}
       >

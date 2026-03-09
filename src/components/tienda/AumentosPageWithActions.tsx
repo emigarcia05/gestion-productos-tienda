@@ -28,7 +28,7 @@ export default function AumentosPageWithActions({ data }: Props) {
         }
       />
 
-      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-4">
+      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 contenedor-pagina-con-filtros">
         <TablaAumentos ref={tableRef} data={data} />
       </div>
     </div>

@@ -178,7 +178,9 @@
   --filtros-gap-y: 0.5rem;
   --filtros-py: var(--filtros-recuadro-py);
   --filtros-gap-x: var(--filtros-recuadro-px);
-  --filtros-margin-bottom-tabla: 0.75rem;
+  /** Distancia simétrica: recuadro de filtros ↔ encabezado y recuadro ↔ tabla. Usar mismo valor arriba y abajo. */
+  --espacio-filtros-vertical: 1rem;
+  --filtros-margin-bottom-tabla: var(--espacio-filtros-vertical);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -196,6 +198,14 @@
 }
 
 @layer components {
+  /* ─── Contenedor de contenido (encabezado → filtros → tabla): una sola clase para todo el espaciado vertical.
+   * Usar en el div que envuelve filtros + tabla. Cambiar aquí actualiza todas las páginas. Variable: --espacio-filtros-vertical.
+   */
+  .contenedor-pagina-con-filtros {
+    padding-top: var(--espacio-filtros-vertical);
+    padding-bottom: var(--espacio-filtros-vertical);
+  }
+
   /* ─── Barra de filtros Tienda / lista-precios (contenedor principal) ─── */
   .filtros-contenedor-tienda {
     @apply flex flex-col gap-y-2 py-2;
@@ -386,10 +396,14 @@
     max-width: 100%;
     box-sizing: border-box;
   }
+  /* Fila de filtros desplegables: hasta 4 (o 5) columnas; cada una mismo tamaño. */
+  .fila-filtros-desplegables > div,
   .fila-filtros-5 > div {
     min-width: 0;
     width: 100%;
   }
+  .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-unificado,
+  .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-custom,
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado,
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-custom {
     width: 100% !important;
@@ -397,6 +411,8 @@
     max-width: 100% !important;
     overflow: hidden;
   }
+  .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
+  .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-custom [data-slot="select-value"],
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-custom [data-slot="select-value"] {
     overflow: hidden;

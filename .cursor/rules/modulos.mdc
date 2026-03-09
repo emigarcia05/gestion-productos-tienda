@@ -35,7 +35,7 @@ Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha 
 - Activo: `bg-[#0072BB]/10`, texto `#0072BB`, línea vertical izquierda 2px `border-l-2 border-primary`.
 - Pedido Urgente: indicador visual `#FFC107` (punto sólido o icono Zap).
 
-**Estructura:** Lista Proveedores → Lista Proveedores (submódulo independiente), Listado de proveedores. Lista Tienda → Comparación Px Proveedores (Act. Prod vinculados), Control aumentos. Control Stock → Control Stock. Pedido Mercadería → Pedido Urgente, Tintométrico, Reposición, Historial Pedidos.
+**Estructura:** Lista Proveedores → Lista Proveedores (submódulo independiente), Listado de proveedores. Lista Tienda → Comp. Px. Prov. (Act. Prod vinculados), Control aumentos. Control Stock → Control Stock. Pedido Mercadería → Pedido Urgente, Tintométrico, Reposición, Historial Pedidos.
 
 ## 2. Header de sección y botones de acción
 

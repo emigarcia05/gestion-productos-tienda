@@ -23,7 +23,7 @@ La lógica de proveedores, listas de precios y empresas vive bajo este grupo.
 
 | Ruta | Propósito |
 |------|------------|
-| `/tienda/comparacion` | Comparación Px Proveedores |
+| `/tienda/comparacion` | Comp. Px. Prov. |
 | `/tienda/aumentos` | Control Aumentos |
 
 La lógica de comparación de precios y control de aumentos va aquí.

@@ -19,7 +19,8 @@ export interface ClassicFilteredTableLayoutProps {
 }
 
 const LAYOUT_PADDING = "px-4 sm:px-6 lg:px-8";
-const CONTENT_GAP = "gap-4";
+/** Sin gap entre bloque de filtros y tabla: el espacio lo da el margin-bottom del recuadro de filtros (--espacio-filtros-vertical) para mantener simetría con el padding-top del contenido. */
+const CONTENT_GAP = "gap-0";
 
 /**
  * Template de página reutilizable: Header (título + subtítulo + acciones) + Filtros + Tabla.
@@ -47,9 +48,9 @@ export default function ClassicFilteredTableLayout({
       <div
         className={cn(
           "flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl mx-auto w-full",
+          "contenedor-pagina-con-filtros",
           LAYOUT_PADDING,
           CONTENT_GAP,
-          "py-4",
           contentClassName
         )}
       >
