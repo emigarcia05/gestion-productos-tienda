@@ -5,7 +5,7 @@
  */
 export function calcPxCompraFinal(
   precioLista:        number,
-  dtoProducto:        number,
+  dtoRubro:           number,
   dtoCantidad:        number,
   cxTransporte:       number,
   dtoProveedor:       number = 0,
@@ -16,7 +16,7 @@ export function calcPxCompraFinal(
     precioLista *
     (1 - dtoProveedor / 100) *
     (1 - dtoMarca / 100) *
-    (1 - dtoProducto / 100) *
+    (1 - dtoRubro / 100) *
     (1 - dtoCantidad / 100) *
     (1 - dtoFinanciero / 100) *
     (1 + cxTransporte / 100)

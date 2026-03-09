@@ -31,9 +31,10 @@ model ListaPrecioProveedor {
   cotizacionDolar   Decimal  @map("cotizacion_dolar") @db.Decimal(14, 4) @default(1) // cotización USD → pesos; se usa cuando px_dolares = true
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
   marca             String?  // texto marca (proveedor / lista)
+  rubro             String?  @map("rubro")
   dtoProveedor      Int      @map("dto_proveedor") @default(0) // descuento proveedor (%)
   dtoMarca          Int      @map("dto_marca") @default(0)
-  dtoProducto       Int      @map("dto_producto") @default(0)
+  dtoRubro         Int      @map("dto_rubro") @default(0)
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
   dtoFinanciero     Int      @map("dto_financiero") @default(0)
   cxTransporte       Int      @map("cx_transporte") @default(0)

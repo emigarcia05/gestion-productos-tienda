@@ -26,7 +26,7 @@ interface Props {
 }
 
 const CAMPOS_OPCIONES: { value: CampoMasivo; label: string; tipo: "porcentaje" | "boolean" }[] = [
-  { value: "descuentoProducto", label: "Descuento producto", tipo: "porcentaje" },
+  { value: "descuentoRubro", label: "Descuento rubro", tipo: "porcentaje" },
   { value: "descuentoCantidad", label: "Descuento por cant.", tipo: "porcentaje" },
   { value: "cxTransporte",      label: "Cx Transporte",      tipo: "porcentaje" },
   { value: "disponible",        label: "Disponible",         tipo: "boolean" },
@@ -41,7 +41,7 @@ export default function AccionMasivaModal({
   const [open, setOpen] = useState(false);
   const [proveedorId, setProveedorId] = useState(filtroProveedorActual);
   const [usarFiltroQ, setUsarFiltroQ] = useState(!!filtroBusquedaActual);
-  const [campo, setCampo] = useState<CampoMasivo>("descuentoProducto");
+  const [campo, setCampo] = useState<CampoMasivo>("descuentoRubro");
   const [valor, setValor] = useState("");
   const [pending, startTransition] = useTransition();
   const [afectados, setAfectados] = useState<number | null>(null);

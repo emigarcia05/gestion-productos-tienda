@@ -33,12 +33,14 @@ import type { ListaPreciosFiltradoOpciones } from "@/services/listaPrecios.servi
 type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
   marcasDisponibles: { id: string; nombre: string }[];
+  rubrosDisponibles: { id: string; nombre: string }[];
 }>;
 
 const BODY_ROW_HEIGHT_PX = 28;
@@ -115,6 +117,7 @@ export default function SugeridosTablaConFiltros({
     fetchListaPreciosConOpcionesAction(
       proveedorId || undefined,
       marcaNombre || undefined,
+      undefined,
       busqueda.trim() || undefined,
       { soloPxSugerido: true }
     )

@@ -25,7 +25,7 @@ interface MarcaOption {
 const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: string }[] = [
   { key: "dtoProveedor", label: "Desc. Proveedor (%)" },
   { key: "dtoMarca", label: "Desc. Marca (%)" },
-  { key: "dtoProducto", label: "Desc. Productor (%)" },
+  { key: "dtoRubro", label: "Desc. Rubro (%)" },
   { key: "dtoCantidad", label: "Desc. Cantidad (%)" },
   { key: "dtoFinanciero", label: "Desc. Finan. (%)" },
   { key: "cxTransporte", label: "Cx. Transporte (%)" },
@@ -51,7 +51,7 @@ export default function EdicionMasivaListaPreciosModal({
   const [values, setValues] = useState<ActualizacionMasivaListaPrecios>({
     dtoProveedor: undefined,
     dtoMarca: undefined,
-    dtoProducto: undefined,
+    dtoRubro: undefined,
     dtoCantidad: undefined,
     dtoFinanciero: undefined,
     cxTransporte: undefined,
@@ -69,7 +69,7 @@ export default function EdicionMasivaListaPreciosModal({
     if (marcaNombre) data.marca = marcaNombre;
     if (values.dtoProveedor !== undefined && !Number.isNaN(values.dtoProveedor)) data.dtoProveedor = values.dtoProveedor;
     if (values.dtoMarca !== undefined && !Number.isNaN(values.dtoMarca)) data.dtoMarca = values.dtoMarca;
-    if (values.dtoProducto !== undefined && !Number.isNaN(values.dtoProducto)) data.dtoProducto = values.dtoProducto;
+    if (values.dtoRubro !== undefined && !Number.isNaN(values.dtoRubro)) data.dtoRubro = values.dtoRubro;
     if (values.dtoCantidad !== undefined && !Number.isNaN(values.dtoCantidad)) data.dtoCantidad = values.dtoCantidad;
     if (values.dtoFinanciero !== undefined && !Number.isNaN(values.dtoFinanciero)) data.dtoFinanciero = values.dtoFinanciero;
     if (values.cxTransporte !== undefined && !Number.isNaN(values.cxTransporte)) data.cxTransporte = values.cxTransporte;
@@ -89,7 +89,7 @@ export default function EdicionMasivaListaPreciosModal({
       toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
       setOpen(false);
       setMarcaNombre("");
-      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoProducto: undefined, dtoCantidad: undefined, dtoFinanciero: undefined, cxTransporte: undefined, cotizacionDolar: undefined });
+      setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoRubro: undefined, dtoCantidad: undefined, dtoFinanciero: undefined, cxTransporte: undefined, cotizacionDolar: undefined });
       onSuccess?.();
     } finally {
       setPending(false);

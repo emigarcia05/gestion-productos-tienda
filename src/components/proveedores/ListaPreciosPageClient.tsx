@@ -24,11 +24,13 @@ interface MarcaOption {
 type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
   marcasDisponibles: { id: string; nombre: string }[];
+  rubrosDisponibles: { id: string; nombre: string }[];
 }>;
 
 interface Props {

@@ -29,14 +29,21 @@ import {
 import { fmtPrecio, fmtNumero } from "@/lib/format";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
+interface RubroOption {
+  id: string;
+  nombre: string;
+}
+
 type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
   proveedoresDisponibles: ProveedorOption[];
   marcasDisponibles: MarcaOption[];
+  rubrosDisponibles: RubroOption[];
 }>;
 
 /** Alto aproximado de una fila tbody (celda-datos). */
@@ -64,7 +71,7 @@ interface ListaPreciosTablaConFiltrosProps {
 
 const MIN_CARACTERES_BUSQUEDA = 3;
 const MENSAJE_SIN_FILTRO =
-  "Aplicá un filtro (Proveedor o Marca) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
+  "Aplicá un filtro (Proveedor, Marca o Rubro) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
 
 export default function ListaPreciosTablaConFiltros({
   proveedores,
@@ -74,22 +81,25 @@ export default function ListaPreciosTablaConFiltros({
 }: ListaPreciosTablaConFiltrosProps) {
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
+  const [rubroNombre, setRubroNombre] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
   const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
   const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
+  const [rubrosOptions, setRubrosOptions] = useState<RubroOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const hasFilterActive =
-    !!proveedorId || !!marcaNombre || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
+    !!proveedorId || !!marcaNombre || !!rubroNombre || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
 
   useEffect(() => {
     if (!hasFilterActive) {
       setProveedoresOptions(proveedores);
       setMarcasOptions(marcas);
+      setRubrosOptions([]);
     }
   }, [hasFilterActive, proveedores, marcas]);
 
@@ -121,6 +131,7 @@ export default function ListaPreciosTablaConFiltros({
     fetchListaPreciosConOpcionesAction(
       proveedorId || undefined,
       marcaNombre || undefined,
+      rubroNombre || undefined,
       busqueda.trim() || undefined
     )
       .then((res) => {
@@ -143,6 +154,14 @@ export default function ListaPreciosTablaConFiltros({
           }
           return next;
         });
+        setRubrosOptions((prev) => {
+          const next = res.rubrosDisponibles;
+          const selected = prev.find((r) => r.nombre === rubroNombre);
+          if (rubroNombre && selected && !next.some((r) => r.nombre === rubroNombre)) {
+            return [selected, ...next];
+          }
+          return next;
+        });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -154,6 +173,7 @@ export default function ListaPreciosTablaConFiltros({
     hasFilterActive,
     proveedorId,
     marcaNombre,
+    rubroNombre,
     busqueda,
     fetchListaPreciosConOpcionesAction,
     onFilteredIdsChange,
@@ -172,7 +192,7 @@ export default function ListaPreciosTablaConFiltros({
 
   useEffect(() => {
     setPaginaActual(1);
-  }, [proveedorId, marcaNombre, busqueda]);
+  }, [proveedorId, marcaNombre, rubroNombre, busqueda]);
 
   useEffect(() => {
     if (totalPaginas > 0 && paginaActual > totalPaginas) {
@@ -180,11 +200,12 @@ export default function ListaPreciosTablaConFiltros({
     }
   }, [totalPaginas, paginaActual]);
 
-  const hayFiltros = !!proveedorId || !!marcaNombre || !!busqueda.trim();
+  const hayFiltros = !!proveedorId || !!marcaNombre || !!rubroNombre || !!busqueda.trim();
 
   function limpiarFiltros() {
     setProveedorId("");
     setMarcaNombre("");
+    setRubroNombre("");
     setBusqueda("");
     setPaginaActual(1);
   }
@@ -240,6 +261,29 @@ export default function ListaPreciosTablaConFiltros({
                 </SelectContent>
               </Select>
             </div>
+            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+              <Select
+                value={rubroNombre || "none"}
+                onValueChange={(v) => setRubroNombre(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="filtro-rubro" className="input-filtro-unificado">
+                  <SelectValue placeholder="RUBRO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">RUBRO</SelectItem>
+                  {rubrosOptions.map((r) => (
+                    <SelectItem key={r.id} value={r.nombre}>
+                      {r.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </FilterRowSelection>
         <div className="flex items-center gap-3">
@@ -266,11 +310,12 @@ export default function ListaPreciosTablaConFiltros({
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-28">COD. EXT.</TableHead>
               <TableHead className="w-24">MARCA</TableHead>
+              <TableHead className="w-24">RUBRO</TableHead>
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
               <TableHead className="w-28">PX FINAL COMPRA</TableHead>
               <TableHead className="w-20">DESC. PROVEEDOR</TableHead>
               <TableHead className="w-20">DESC. MARCA</TableHead>
-              <TableHead className="w-20">DESC. PROD.</TableHead>
+              <TableHead className="w-20">DESC. RUBRO</TableHead>
               <TableHead className="w-20">DESC. CANT.</TableHead>
               <TableHead className="w-20">DESC. FINAN.</TableHead>
               <TableHead className="w-24">CX. APRO. TRANSPORTE</TableHead>
@@ -284,6 +329,9 @@ export default function ListaPreciosTablaConFiltros({
                 </TableCell>
                 <TableCell className="celda-datos">
                   {fila.marca ?? "—"}
+                </TableCell>
+                <TableCell className="celda-datos">
+                  {fila.rubro ?? "—"}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
                   <div className="celda-destacado truncate text-xs font-bold">
@@ -307,7 +355,7 @@ export default function ListaPreciosTablaConFiltros({
                   {fmtNumero(fila.dtoMarca)}%
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
-                  {fmtNumero(fila.dtoProducto)}%
+                  {fmtNumero(fila.dtoRubro)}%
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoCantidad)}%
@@ -324,7 +372,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableRow>
                 <TableCell
                   className="celda-datos py-8 text-muted-foreground text-center"
-                  colSpan={10}
+                  colSpan={11}
                 >
                   {!hasFilterActive
                     ? MENSAJE_SIN_FILTRO

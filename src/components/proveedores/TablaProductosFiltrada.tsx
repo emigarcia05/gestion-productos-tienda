@@ -30,7 +30,7 @@ interface Producto {
   descripcion: string;
   precioLista: number;
   precioVentaSugerido: number;
-  descuentoProducto: number;
+  descuentoRubro: number;
   descuentoCantidad: number;
   cxTransporte: number;
   disponible: boolean;
@@ -56,7 +56,7 @@ function CeldaPorcentaje({
   onUpdate,
 }: {
   productoId: string;
-  campo: "descuentoProducto" | "descuentoCantidad" | "cxTransporte";
+  campo: "descuentoRubro" | "descuentoCantidad" | "cxTransporte";
   valor: number;
   onUpdate: (id: string, campo: string, val: number) => void;
 }) {
@@ -167,7 +167,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
     puede(rol, col.proveedor),
     puede(rol, col.precioLista),
     puede(rol, col.precioVentaSugerido),
-    puede(rol, col.descuentoProducto),
+    puede(rol, col.descuentoRubro),
     puede(rol, col.descuentoCantidad),
     puede(rol, col.cxTransporte),
     puede(rol, col.precioCompraFinal),
@@ -197,8 +197,8 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
             {puede(rol, col.precioVentaSugerido) && (
               <TableHead className="py-2 px-2 text-xs w-20 leading-tight">Px Venta<br />Sug.</TableHead>
             )}
-            {puede(rol, col.descuentoProducto) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Prod.</TableHead>
+            {puede(rol, col.descuentoRubro) && (
+              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Rubro</TableHead>
             )}
             {puede(rol, col.descuentoCantidad) && (
               <TableHead className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Cant.</TableHead>
@@ -243,9 +243,9 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
               {puede(rol, col.precioVentaSugerido) && (
                 <TableCell className="py-2 px-2 tabular-nums text-xs font-bold whitespace-nowrap">${fmtPrecio(prod.precioVentaSugerido)}</TableCell>
               )}
-              {puede(rol, col.descuentoProducto) && (
+              {puede(rol, col.descuentoRubro) && (
                 <TableCell className="py-2 px-2 text-center">
-                  <CeldaPorcentaje productoId={prod.id} campo="descuentoProducto" valor={prod.descuentoProducto} onUpdate={handleUpdate} />
+                  <CeldaPorcentaje productoId={prod.id} campo="descuentoRubro" valor={prod.descuentoRubro} onUpdate={handleUpdate} />
                 </TableCell>
               )}
               {puede(rol, col.descuentoCantidad) && (
@@ -260,7 +260,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
               )}
               {puede(rol, col.precioCompraFinal) && (
                 <TableCell className="py-2 px-2 tabular-nums text-xs font-bold whitespace-nowrap">
-                  ${fmtPrecio(calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte))}
+                  ${fmtPrecio(calcPxCompraFinal(prod.precioLista, prod.descuentoRubro, prod.descuentoCantidad, prod.cxTransporte))}
                 </TableCell>
               )}
               {puede(rol, col.disponible) && (

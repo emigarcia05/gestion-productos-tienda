@@ -11,14 +11,14 @@ import * as proveedorService from "@/services/proveedor.service";
 const MOCK_PRODUCTOS = [
   {
     id: "mock-prod-1", codigoExterno: "DEM-001", codProdProv: "001", descripcion: "Producto ejemplo 1",
-    precioLista: 100, precioVentaSugerido: 120, descuentoProducto: 0, descuentoCantidad: 0, cxTransporte: 0,
+    precioLista: 100, precioVentaSugerido: 120, descuentoRubro: 0, descuentoCantidad: 0, cxTransporte: 0,
     disponible: true, proveedorId: "mock-prov-1",
     proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", prefijo: "DEM" },
     createdAt: new Date(), updatedAt: new Date(),
   },
   {
     id: "mock-prod-2", codigoExterno: "DEM-002", codProdProv: "002", descripcion: "Producto ejemplo 2",
-    precioLista: 200, precioVentaSugerido: 240, descuentoProducto: 5, descuentoCantidad: 0, cxTransporte: 2,
+    precioLista: 200, precioVentaSugerido: 240, descuentoRubro: 5, descuentoCantidad: 0, cxTransporte: 2,
     disponible: true, proveedorId: "mock-prov-1",
     proveedor: { id: "mock-prov-1", nombre: "Proveedor Demo", codigoUnico: "DEM", prefijo: "DEM" },
     createdAt: new Date(), updatedAt: new Date(),

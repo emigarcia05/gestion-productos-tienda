@@ -7,7 +7,7 @@ import type { ActionResult } from "@/lib/types";
 // ─── MOCK: sin Prisma; respuestas de prueba ─────────────────────────────────
 
 export interface CamposEditables {
-  descuentoProducto?: number;
+  descuentoRubro?: number;
   descuentoCantidad?: number;
   cxTransporte?: number;
   disponible?: boolean;
@@ -19,7 +19,7 @@ export async function editarProducto(id: string, campos: CamposEditables): Promi
   return { ok: true, data: undefined };
 }
 
-export type CampoMasivo = "descuentoProducto" | "descuentoCantidad" | "cxTransporte" | "disponible";
+export type CampoMasivo = "descuentoRubro" | "descuentoCantidad" | "cxTransporte" | "disponible";
 
 export async function aplicarCampoMasivo(
   proveedorId: string,

@@ -138,8 +138,8 @@ export default function SeleccionarProductoModal({
         <div className="modal-app__content flex-1 min-h-0">
           {/* Cuerpo: Filtro Proveedor (fijo) + Filtro Descripción (fijo) + Encabezado (fijo) + Tabla (scroll) */}
           <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
-            {/* Ancho único: desplegable e input+botón comparten el mismo largo */}
-            <div className="shrink-0 w-[260px] flex flex-col gap-2 pb-3 border-b border-border">
+            {/* Mismo ancho que la tabla: contenedor y filtros a ancho completo */}
+            <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
               {/* Filtro Proveedor (fijo) */}
               <Select
                 value={proveedorId || "none"}
@@ -170,8 +170,8 @@ export default function SeleccionarProductoModal({
               </div>
             </div>
 
-            {/* Encabezado (fijo, sticky) + Tabla (scroll). modal-tabla-body: scroll aquí; thead queda fijo (globals.css). */}
-            <div className="modal-tabla-body flex-1 min-h-0 overflow-y-auto pt-3 pb-3">
+            {/* Encabezado (fijo, fuera del scroll) + Tabla (solo cuerpo con scroll). Mismo ancho de columnas con table-fixed. */}
+            <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3">
               {!hayFiltros ? (
                 <div className="py-12 text-center text-sm text-muted-foreground">
                   {MENSAJE_SIN_FILTRO}
@@ -185,39 +185,49 @@ export default function SeleccionarProductoModal({
                   No hay productos o no coinciden los filtros.
                 </div>
               ) : (
-                <Table variant="compact" scrollX={false}>
-                  <TableHeader className="modal-tabla-thead-sticky">
-                    <TableRow className="hover:bg-transparent border-b-0">
-                      <TableHead className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
-                        Proveedor
-                      </TableHead>
-                      <TableHead className="py-2.5 px-3 text-xs min-w-0">
-                        Descripción
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        onDoubleClick={() => handleRowDoubleClick(row)}
-                        className="cursor-pointer select-none hover:bg-primary/5"
-                        title="Doble clic para vincular"
-                      >
-                        <TableCell className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
-                          <Badge variant="secondary" className="font-mono text-xs">
-                            {row.proveedor.prefijo}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-2.5 px-3 text-xs min-w-0">
-                          <span className="block truncate" title={row.descripcionProveedor}>
-                            {row.descripcionProveedor}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <>
+                  {/* Encabezado fijo: fuera del contenedor con scroll */}
+                  <div className="shrink-0">
+                    <Table variant="compact" scrollX={false} className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          <TableHead className="py-2.5 px-3 text-xs w-28 text-center bg-primary text-primary-foreground font-bold">
+                            Proveedor
+                          </TableHead>
+                          <TableHead className="py-2.5 px-3 text-xs min-w-0 bg-primary text-primary-foreground font-bold">
+                            Descripción
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                    </Table>
+                  </div>
+                  {/* Cuerpo con scroll: solo tbody */}
+                  <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
+                    <Table variant="compact" scrollX={false} className="table-fixed w-full">
+                      <TableBody>
+                        {rows.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            onDoubleClick={() => handleRowDoubleClick(row)}
+                            className="cursor-pointer select-none hover:bg-primary/5"
+                            title="Doble clic para vincular"
+                          >
+                            <TableCell className="py-2.5 px-3 text-xs w-28 text-center">
+                              <Badge variant="secondary" className="font-mono text-xs">
+                                {row.proveedor.prefijo}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-2.5 px-3 text-xs min-w-0">
+                              <span className="block truncate" title={row.descripcionProveedor}>
+                                {row.descripcionProveedor}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </div>
           </div>

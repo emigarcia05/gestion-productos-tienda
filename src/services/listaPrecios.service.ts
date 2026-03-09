@@ -17,12 +17,13 @@ export interface FilaListaPrecioParaCliente {
   descripcionProveedor: string;
   descripcionTienda: string | null;
   marca: string | null;
+  rubro: string | null;
   pxListaProveedor: number;
   /** Precio venta sugerido; presente cuando se usa soloPxSugerido (p. ej. página Sugeridos). */
   pxVtaSugerido?: number | null;
   dtoProveedor: number;
   dtoMarca: number;
-  dtoProducto: number;
+  dtoRubro: number;
   dtoCantidad: number;
   dtoFinanciero: number;
   cxTransporte: number;
@@ -62,10 +63,11 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     marca: f.marca ?? null,
+    rubro: f.rubro ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
     dtoProveedor: f.dtoProveedor,
     dtoMarca: f.dtoMarca,
-    dtoProducto: f.dtoProducto,
+    dtoRubro: f.dtoRubro,
     dtoCantidad: f.dtoCantidad,
     dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
@@ -77,29 +79,33 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
 }
 
 /**
- * Lista de precios filtrada por proveedor, marca y/o búsqueda (≥3 caracteres).
+ * Lista de precios filtrada por proveedor, marca, rubro y/o búsqueda (≥3 caracteres).
  * Usado para carga bajo demanda: no se traen datos hasta que el usuario aplica un filtro.
  * Si no hay filtro activo (ningún selector o búsqueda < 3 chars), devuelve [].
  * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Sugeridos).
+ * Regla de filtros: ver docs/FILTROS_DINAMICOS.md (simétrico: opciones de cada filtro según los demás).
  */
 export async function getListaPreciosConTiendaFiltrada(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<FilaListaPrecioParaCliente[]> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
+  const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || "";
-  const tieneFiltro = !!prov || !!marca || q.length >= 3;
+  const tieneFiltro = !!prov || !!marca || !!rubro || q.length >= 3;
   if (!tieneFiltro) return [];
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
   if (prov) andParts.push({ idProveedor: prov });
   if (marca) andParts.push({ marca: marca });
+  if (rubro) andParts.push({ rubro: rubro });
   if (opciones?.soloPxSugerido) andParts.push({ pxVtaSugerido: { not: null } });
   if (q.length >= 3) {
-    const textFilter = filtroTexto(q, ["descripcionProveedor", "codExt", "marca"]);
+    const textFilter = filtroTexto(q, ["descripcionProveedor", "codExt", "marca", "rubro"]);
     if (textFilter.AND?.length) andParts.push(textFilter);
   }
   const where: Prisma.ListaPrecioProveedorWhereInput = andParts.length ? { AND: andParts } : {};
@@ -132,11 +138,12 @@ export async function getListaPreciosConTiendaFiltrada(
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     marca: f.marca ?? null,
+    rubro: f.rubro ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
     ...(incluirPxSugerido && { pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null }),
     dtoProveedor: f.dtoProveedor,
     dtoMarca: f.dtoMarca,
-    dtoProducto: f.dtoProducto,
+    dtoRubro: f.dtoRubro,
     dtoCantidad: f.dtoCantidad,
     dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
@@ -148,20 +155,21 @@ export async function getListaPreciosConTiendaFiltrada(
 
   if (q.length >= 3) {
     result = result.filter((f) =>
-      matchByMultiTerm([f.descripcionProveedor, f.descripcionTienda, f.marca ?? ""], q)
+      matchByMultiTerm([f.descripcionProveedor, f.descripcionTienda, f.marca ?? "", f.rubro ?? ""], q)
     );
   }
 
   return result;
 }
 
-/** Proveedores con al menos un ítem que cumple (marcaNombre, busqueda). Para filtros dinámicos. */
+/** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getProveedoresDisponiblesListaPrecios(
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string; prefijo: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, busqueda, opciones);
+  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, rubroNombre, busqueda, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string; prefijo: string }[] = [];
   for (const f of filas) {
@@ -173,13 +181,14 @@ export async function getProveedoresDisponiblesListaPrecios(
   return out;
 }
 
-/** Marcas con al menos un ítem que cumple (proveedorId, busqueda). Para filtros dinámicos. */
+/** Marcas con al menos un ítem que cumple (proveedorId, rubro, busqueda). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getMarcasDisponiblesListaPrecios(
   proveedorId: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, busqueda, opciones);
+  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, rubroNombre, busqueda, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
@@ -191,12 +200,32 @@ export async function getMarcasDisponiblesListaPrecios(
   return out;
 }
 
+/** Rubros con al menos un ítem que cumple (proveedorId, marcaNombre, busqueda). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+export async function getRubrosDisponiblesListaPrecios(
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  busqueda: string | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
+): Promise<{ id: string; nombre: string }[]> {
+  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, undefined, busqueda, opciones);
+  const seen = new Set<string>();
+  const out: { id: string; nombre: string }[] = [];
+  for (const f of filas) {
+    const r = (f.rubro ?? "").trim();
+    if (!r || seen.has(r)) continue;
+    seen.add(r);
+    out.push({ id: r, nombre: r });
+  }
+  return out;
+}
+
 /** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. */
 export interface ProductoProveedorParaVincular {
   id: string;
   codExt: string;
   codProdProv: string;
   descripcionProveedor: string;
+  rubro: string | null;
   proveedor: { prefijo: string; nombre: string };
 }
 
@@ -228,6 +257,7 @@ export async function listarProductosProveedoresParaVincular(
     codExt: r.codExt,
     codProdProv: r.codProdProveedor,
     descripcionProveedor: r.descripcionProveedor,
+    rubro: r.rubro ?? null,
     proveedor: { prefijo: r.proveedor.prefijo, nombre: r.proveedor.nombre },
   }));
 }
@@ -313,7 +343,7 @@ export interface ActualizacionMasivaListaPrecios {
   marca?: string | null;
   dtoProveedor?: number;
   dtoMarca?: number;
-  dtoProducto?: number;
+  dtoRubro?: number;
   dtoCantidad?: number;
   dtoFinanciero?: number;
   cxTransporte?: number;
@@ -321,7 +351,7 @@ export interface ActualizacionMasivaListaPrecios {
 }
 
 /**
- * Actualiza dto_producto, dto_cantidad y/o cx_transporte en los registros con id en la lista.
+ * Actualiza dto_rubro, dto_cantidad y/o cx_transporte en los registros con id en la lista.
  * Valores en porcentaje (0-100). Solo actualiza los campos presentes en data.
  * Usa SQL crudo para evitar fallos con Prisma 7 + adapter-pg ("column not available").
  * Un solo UPDATE en BD; eficiente para 100–10.000 filas.
@@ -336,7 +366,7 @@ export async function actualizarListaPreciosMasivo(
     marca?: string | null;
     dtoProveedor?: number;
     dtoMarca?: number;
-    dtoProducto?: number;
+    dtoRubro?: number;
     dtoCantidad?: number;
     dtoFinanciero?: number;
     cxTransporte?: number;
@@ -347,8 +377,8 @@ export async function actualizarListaPreciosMasivo(
     updatePayload.dtoProveedor = Math.round(Math.max(0, Math.min(100, data.dtoProveedor)));
   if (data.dtoMarca !== undefined)
     updatePayload.dtoMarca = Math.round(Math.max(0, Math.min(100, data.dtoMarca)));
-  if (data.dtoProducto !== undefined)
-    updatePayload.dtoProducto = Math.round(Math.max(0, Math.min(100, data.dtoProducto)));
+  if (data.dtoRubro !== undefined)
+    updatePayload.dtoRubro = Math.round(Math.max(0, Math.min(100, data.dtoRubro)));
   if (data.dtoCantidad !== undefined)
     updatePayload.dtoCantidad = Math.round(Math.max(0, Math.min(100, data.dtoCantidad)));
   if (data.dtoFinanciero !== undefined)
@@ -374,9 +404,9 @@ export async function actualizarListaPreciosMasivo(
     setClauses.push(`dto_marca = $${params.length + 1}`);
     params.push(updatePayload.dtoMarca);
   }
-  if (updatePayload.dtoProducto !== undefined) {
-    setClauses.push(`dto_producto = $${params.length + 1}`);
-    params.push(updatePayload.dtoProducto);
+  if (updatePayload.dtoRubro !== undefined) {
+    setClauses.push(`dto_rubro = $${params.length + 1}`);
+    params.push(updatePayload.dtoRubro);
   }
   if (updatePayload.dtoCantidad !== undefined) {
     setClauses.push(`dto_cantidad = $${params.length + 1}`);

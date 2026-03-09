@@ -154,7 +154,7 @@ export async function getTiendaPageData(params: {
             pxListaProveedor: true,
             dtoProveedor: true,
             dtoMarca: true,
-            dtoProducto: true,
+            dtoRubro: true,
             dtoCantidad: true,
             dtoFinanciero: true,
             cxTransporte: true,
@@ -183,7 +183,7 @@ export async function getTiendaPageData(params: {
       const pxLista = Number(lp.pxListaProveedor);
       n = calcPxCompraFinal(
         pxLista,
-        lp.dtoProducto,
+        lp.dtoRubro,
         lp.dtoCantidad,
         lp.cxTransporte,
         lp.dtoProveedor,

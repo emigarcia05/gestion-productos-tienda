@@ -6,6 +6,7 @@ import {
   getListaPreciosConTiendaFiltrada,
   getProveedoresDisponiblesListaPrecios,
   getMarcasDisponiblesListaPrecios,
+  getRubrosDisponiblesListaPrecios,
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
   type ListaPreciosFiltradoOpciones,
@@ -16,50 +17,54 @@ import { PERMISOS, puede } from "@/lib/permisos";
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 /**
- * Devuelve lista de precios filtrada por proveedor, marca y/o búsqueda (≥3 caracteres).
+ * Devuelve lista de precios filtrada por proveedor, marca, rubro y/o búsqueda (≥3 caracteres).
  * Para carga bajo demanda: el cliente solo llama cuando hay filtro activo.
  */
 export async function getListaPreciosFiltradaAction(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined
 ): Promise<FilaListaPrecioParaCliente[]> {
-  return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, busqueda);
+  return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, rubroNombre, busqueda);
 }
 
 export interface ListaPreciosConOpcionesResult {
   filas: FilaListaPrecioParaCliente[];
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
   marcasDisponibles: { id: string; nombre: string }[];
+  rubrosDisponibles: { id: string; nombre: string }[];
 }
 
 /**
- * Lista de precios filtrada + opciones dinámicas para Proveedor y Marca.
- * Comportamiento simétrico: el usuario puede empezar por cualquier filtro.
- * - Proveedor: opciones filtradas por la Marca seleccionada (si hay).
- * - Marca: opciones filtradas por el Proveedor seleccionado (si hay).
- * Tabla: filtrada por Proveedor + Marca + búsqueda.
+ * Lista de precios filtrada + opciones dinámicas para Proveedor, Marca y Rubro.
+ * Comportamiento simétrico: ver docs/FILTROS_DINAMICOS.md.
+ * Cada desplegable muestra solo opciones que tengan al menos un ítem con lo seleccionado en los demás.
+ * Tabla: filtrada por Proveedor + Marca + Rubro + búsqueda.
  * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Px Vta. Sugeridos).
  */
 export async function getListaPreciosConOpcionesAction(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
   busqueda: string | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<ListaPreciosConOpcionesResult> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
+  const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || undefined;
-  const [filas, proveedoresDisponibles, marcasDisponibles] = await Promise.all([
-    getListaPreciosConTiendaFiltrada(prov, marca, q, opciones),
-    getProveedoresDisponiblesListaPrecios(marca, q, opciones),
-    getMarcasDisponiblesListaPrecios(prov, q, opciones),
+  const [filas, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles] = await Promise.all([
+    getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, opciones),
+    getProveedoresDisponiblesListaPrecios(marca, rubro, q, opciones),
+    getMarcasDisponiblesListaPrecios(prov, rubro, q, opciones),
+    getRubrosDisponiblesListaPrecios(prov, marca, q, opciones),
   ]);
-  return { filas, proveedoresDisponibles, marcasDisponibles };
+  return { filas, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles };
 }
 
 /**
- * Edición masiva: actualiza Desc. prod., Desc. cant. y/o Cx. aprox. transporte
+ * Edición masiva: actualiza Desc. rubro, Desc. cant. y/o Cx. aprox. transporte
  * en los registros de lista_precios_proveedores cuyos id están en ids.
  * Solo usuarios con permiso listaPrecios.acciones.edicionMasiva.
  */

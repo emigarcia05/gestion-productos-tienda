@@ -20,7 +20,7 @@ type ProductoConProveedor = {
   descripcion: string;
   precioLista: number;
   precioVentaSugerido: number;
-  descuentoProducto: number;
+  descuentoRubro: number;
   descuentoCantidad: number;
   cxTransporte: number;
   pxCompraFinal?: number | null;
@@ -95,7 +95,7 @@ export default function VincularModal({
     if (vinculados.length === 0) return 0;
     return Math.min(
       ...vinculados.map((p) =>
-        p.pxCompraFinal != null ? p.pxCompraFinal : calcPxCompraFinal(p.precioLista, p.descuentoProducto, p.descuentoCantidad, p.cxTransporte)
+        p.pxCompraFinal != null ? p.pxCompraFinal : calcPxCompraFinal(p.precioLista, p.descuentoRubro, p.descuentoCantidad, p.cxTransporte)
       )
     );
   }, [vinculados]);
@@ -134,7 +134,7 @@ export default function VincularModal({
         const productoCompleto: ProductoConProveedor = {
           ...producto,
           precioVentaSugerido: 0,
-          descuentoProducto: 0,
+          descuentoRubro: 0,
           descuentoCantidad: 0,
           cxTransporte: 0,
         };
@@ -210,7 +210,7 @@ export default function VincularModal({
             ) : (
               <div className="modal-vinculos-listado-contenedor">
                 {vinculados.map((prod, idx) => {
-                  const pxCompra = prod.pxCompraFinal != null ? prod.pxCompraFinal : calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte);
+                  const pxCompra = prod.pxCompraFinal != null ? prod.pxCompraFinal : calcPxCompraFinal(prod.precioLista, prod.descuentoRubro, prod.descuentoCantidad, prod.cxTransporte);
                   const esMenorCosto = vinculados.length > 1 && pxCompra <= minCxVinculados;
                   const zebra = idx % 2 === 1 ? "modal-vinculos-fila--zebra-par" : "modal-vinculos-fila--zebra-impar";
                   return (

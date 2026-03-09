@@ -25,7 +25,7 @@ export const PERMISOS = {
       proveedor:           { simple: true,  editor: true  },
       precioLista:         { simple: false, editor: true  },
       precioVentaSugerido: { simple: true,  editor: true  },
-      descuentoProducto:   { simple: false, editor: true  },
+      descuentoRubro:      { simple: false, editor: true  },
       descuentoCantidad:   { simple: false, editor: true  },
       cxTransporte:        { simple: false, editor: true  },
       precioCompraFinal:   { simple: false, editor: true  },
