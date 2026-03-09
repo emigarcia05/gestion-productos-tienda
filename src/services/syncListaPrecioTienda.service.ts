@@ -11,6 +11,7 @@ import {
   DUX_API_PAGE_LIMIT,
   type ItemDux,
 } from "@/lib/duxApi";
+import { vincularProveedoresPorCodExt } from "@/services/vinculosPorCodExt.service";
 
 /** Pausa entre peticiones (mínimo 5s según rate limit DUX: 1 petición cada 5 segundos). */
 const DELAY_MS = Math.max(5000, Number(process.env.DUX_SYNC_DELAY_MS) || 5000);
@@ -208,6 +209,15 @@ export async function syncListaPrecioTiendaFromDux(
         console.error(`Error persistiendo chunk en offset ${i}:`, msg, stack);
       }
     }
+  }
+
+  // Vinculación automática por cod_ext: precios_proveedores.id_lista_precios_tienda = precios_tienda.id donde cod_ext coincide
+  try {
+    await vincularProveedoresPorCodExt();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    errores.push(`Vinculación por cod_ext: ${msg}`);
+    console.error("Error en vinculación automática por cod_ext:", msg);
   }
 
   const duracionMs = Date.now() - inicioMs;

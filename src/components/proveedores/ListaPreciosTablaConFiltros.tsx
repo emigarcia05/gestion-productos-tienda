@@ -304,8 +304,8 @@ export default function ListaPreciosTablaConFiltros({
                   className="select-content-filtro"
                 >
                   <SelectItem value="none">HABILITADO</SelectItem>
-                  <SelectItem value="si">SÍ</SelectItem>
-                  <SelectItem value="no">NO</SelectItem>
+                  <SelectItem value="si">HABILITADO</SelectItem>
+                  <SelectItem value="no">NO HABILITADO</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -25,13 +25,12 @@ interface Props {
   marcaActual: string;
   rubroActual: string;
   subRubroActual: string;
-  habilitadoActual: string;
   mejorPrecioActual: string;
 }
 
 export default function FiltrosTienda({
   marcas, rubros, subRubros, totalItems,
-  qActual, marcaActual, rubroActual, subRubroActual, habilitadoActual, mejorPrecioActual,
+  qActual, marcaActual, rubroActual, subRubroActual, mejorPrecioActual,
 }: Props) {
   const pathname    = usePathname();
   const [q, setQ]   = useState(qActual);
@@ -51,21 +50,19 @@ export default function FiltrosTienda({
     }
   }, []);
 
-  const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || habilitadoActual || mejorPrecioActual);
+  const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || mejorPrecioActual);
 
-  function navigate(updates: { q?: string; marca?: string; rubro?: string; subRubro?: string; habilitado?: string; mejorPrecio?: string }) {
+  function navigate(updates: { q?: string; marca?: string; rubro?: string; subRubro?: string; mejorPrecio?: string }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const subRubroVal = updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
-    const habVal = updates.habilitado !== undefined ? updates.habilitado : habilitadoActual;
     const mejorVal = updates.mejorPrecio !== undefined ? updates.mejorPrecio : mejorPrecioActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
-    if (habVal) p.set("habilitado", habVal);
     if (mejorVal) p.set("mejorPrecio", mejorVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
@@ -88,9 +85,6 @@ export default function FiltrosTienda({
   function handleSubRubro(value: string) {
     navigate({ subRubro: value });
   }
-  function handleHabilitado(value: string) {
-    navigate({ habilitado: value });
-  }
   function handleMejorPrecio(value: string) {
     navigate({ mejorPrecio: value });
   }
@@ -103,7 +97,7 @@ export default function FiltrosTienda({
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
-        <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+        <div className="fila-filtros-5 grid grid-cols-4 gap-3 w-full">
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
               <SelectTrigger id="filtro-tienda-marca" className="input-filtro-unificado">
@@ -145,18 +139,6 @@ export default function FiltrosTienda({
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
                 <SelectItem value="none">COSTO</SelectItem>
                 <SelectItem value="true">Menor Cx Disponible</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select value={habilitadoActual || "none"} onValueChange={(v) => handleHabilitado(v === "none" ? "" : v)}>
-              <SelectTrigger id="filtro-tienda-habilitado" className="input-filtro-unificado">
-                <SelectValue placeholder="HABILITADO" />
-              </SelectTrigger>
-              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                <SelectItem value="none">HABILITADO</SelectItem>
-                <SelectItem value="true">Habilitado</SelectItem>
-                <SelectItem value="false">No habilitado</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -17,21 +17,20 @@ interface Props {
     rubro?: string;
     subRubro?: string;
     marca?: string;
-    habilitado?: string;
     mejorPrecio?: string;
     pagina?: string;
   }>;
 }
 
 export default async function TiendaPage({ searchParams }: Props) {
-  const { q = "", rubro = "", subRubro = "", marca = "", habilitado = "", mejorPrecio = "", pagina = "1" } = await searchParams;
+  const { q = "", rubro = "", subRubro = "", marca = "", mejorPrecio = "", pagina = "1" } = await searchParams;
   const rol = await getRol();
 
   const { items, total, marcas, rubros, subRubros, setMejorPrecio, totalPaginas } = await getTiendaPageData({
-    q, rubro, subRubro, marca, habilitado, mejorPrecio, pagina,
+    q, rubro, subRubro, marca, mejorPrecio, pagina,
   });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const hasFiltros = !!(q || rubro || subRubro || marca || habilitado || mejorPrecio);
+  const hasFiltros = !!(q || rubro || subRubro || marca || mejorPrecio);
 
   const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined;
 
@@ -45,7 +44,6 @@ export default async function TiendaPage({ searchParams }: Props) {
       marcaActual={marca}
       rubroActual={rubro}
       subRubroActual={subRubro}
-      habilitadoActual={habilitado}
       mejorPrecioActual={mejorPrecio}
     />
   );
@@ -71,7 +69,7 @@ export default async function TiendaPage({ searchParams }: Props) {
               q={q}
               proveedor=""
               basePath="/tienda"
-              extraParams={{ marca, rubro, subRubro, habilitado, mejorPrecio }}
+              extraParams={{ marca, rubro, subRubro, mejorPrecio }}
             />
           </div>
         </div>

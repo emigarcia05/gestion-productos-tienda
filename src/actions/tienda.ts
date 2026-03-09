@@ -51,7 +51,6 @@ export async function getTiendaPageData(params: {
   rubro?: string;
   subRubro?: string;
   marca?: string;
-  habilitado?: string;
   mejorPrecio?: string;
   pagina?: string;
 }) {
