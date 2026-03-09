@@ -50,6 +50,8 @@ export const PERMISOS = {
   // ─── Página /tienda ───────────────────────────────────────────────────────
   tienda: {
     acceso: { simple: false, editor: true },
+    /** Control Aumentos: ver resumen de variación de precios tienda vs proveedores vinculados. */
+    controlAumentos: { simple: true, editor: true },
     acciones: {
       sincronizar: { simple: false, editor: true },
     },

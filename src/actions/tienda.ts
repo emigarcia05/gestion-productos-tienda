@@ -271,7 +271,8 @@ export interface ControlAumentosData {
 }
 
 export async function getControlAumentos(): Promise<ControlAumentosData> {
-  return { porMarca: [], porRubro: [], porSubRubro: [], individual: [] };
+  const { getControlAumentosData } = await import("@/services/controlAumentos.service");
+  return getControlAumentosData();
 }
 
 export async function convertirEnProveedor(

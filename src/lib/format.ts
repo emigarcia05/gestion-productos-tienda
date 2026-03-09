@@ -26,3 +26,11 @@ export function fmtPct(n: number): string {
   if (n < -0.5) return `-${abs}%`;
   return "≈0%";
 }
+
+/** Variación porcentual sin decimales (entero). Para Control Aumentos y listados que muestran % redondeado. */
+export function fmtPctEntero(n: number): string {
+  const entero = Math.round(n);
+  if (entero > 0)  return `+${entero}%`;
+  if (entero < 0) return `${entero}%`;
+  return "0%";
+}

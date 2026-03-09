@@ -20,7 +20,7 @@ import FilterBar, {
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
-import { fmtPct } from "@/lib/format";
+import { fmtPctEntero } from "@/lib/format";
 import { matchByMultiTerm } from "@/lib/busqueda";
 
 function exportarXLS(items: ItemAumento[]) {
@@ -60,15 +60,13 @@ function exportarXLS(items: ItemAumento[]) {
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
-  const variacion = pct > 0.5 ? "variacion-costo--positiva" : pct < -0.5 ? "variacion-costo--negativa" : "variacion-costo--neutra";
-  if (pct > 0.5)  return <span className={`${cls} ${variacion}`}>{fmtPct(pct)}</span>;
-  if (pct < -0.5) return <span className={`${cls} ${variacion}`}>{fmtPct(pct)}</span>;
-  return <span className={`${cls} ${variacion}`}>≈0%</span>;
+  const variacion = pct > 0 ? "variacion-costo--positiva" : pct < 0 ? "variacion-costo--negativa" : "variacion-costo--neutra";
+  return <span className={`${cls} ${variacion}`}>{fmtPctEntero(pct)}</span>;
 }
 
 function IconTendencia({ pct }: { pct: number }) {
-  if (pct > 0.5)  return <ArrowUp   className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />;
-  if (pct < -0.5) return <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />;
+  if (pct > 0)  return <ArrowUp   className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />;
+  if (pct < 0) return <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />;
   return null;
 }
 
@@ -102,7 +100,7 @@ function ColumnaGrupo({
         )}
         {grupos.map((g, idx) => {
           const pct = promedio(g.items);
-          const conVariacion = g.items.filter((i) => Math.abs(i.pctAumento) > 0.5).length;
+          const conVariacion = g.items.filter((i) => i.pctAumento !== 0).length;
           const zebra = idx % 2 === 1 ? "bg-blue-50/50" : "bg-card";
           return (
             <div
@@ -115,9 +113,9 @@ function ColumnaGrupo({
               </span>
               <div className="flex items-center gap-1 shrink-0">
                 <ColorPct pct={pct} />
-                {pct > 0.5
+                {pct > 0
                   ? <ArrowUp   className="h-3 w-3 variacion-costo-icon--positiva" />
-                  : pct < -0.5
+                  : pct < 0
                     ? <ArrowDown className="h-3 w-3 variacion-costo-icon--negativa" />
                     : null
                 }
@@ -133,8 +131,8 @@ function ColumnaGrupo({
 // ─── Lista de productos individuales ──────────────────────────────────────
 
 function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: string }) {
-  // Solo productos con aumento significativo (> ±0.5%)
-  const conAumento = items.filter((i) => Math.abs(i.pctAumento) > 0.5);
+  // Solo ítems con variación (backend ya filtra por |diferencia neta| >= 1)
+  const conAumento = items.filter((i) => i.pctAumento !== 0);
 
   const filtrados = busqueda.trim()
     ? conAumento.filter((i) => matchByMultiTerm([i.descripcion, i.codigoExterno], busqueda))
@@ -220,7 +218,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
     return Array.from(mapa.entries())
       .map(([nombre, items]) => ({ nombre, items }))
       // Solo mostrar grupos que tengan al menos un producto con variación real
-      .filter(({ items }) => items.some((i) => Math.abs(i.pctAumento) > 0.5))
+      .filter(({ items }) => items.some((i) => i.pctAumento !== 0))
       .sort((a, b) => promedio(b.items) - promedio(a.items));
   }, [itemsFiltrados]);
 
@@ -228,7 +226,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
   const gruposRubro    = useMemo(() => agrupar("rubro"),    [agrupar]);
   const gruposSubRubro = useMemo(() => agrupar("subRubro"), [agrupar]);
 
-  const conAumento   = itemsFiltrados.filter((i) => Math.abs(i.pctAumento) > 0.5);
+  const conAumento   = itemsFiltrados.filter((i) => i.pctAumento !== 0);
   const hayFiltros   = filtroMarca || filtroRubro || filtroSubRubro;
 
   const conAumentoRef = useRef(conAumento);
