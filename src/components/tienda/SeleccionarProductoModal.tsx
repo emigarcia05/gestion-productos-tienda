@@ -138,13 +138,14 @@ export default function SeleccionarProductoModal({
         <div className="modal-app__content flex-1 min-h-0">
           {/* Cuerpo: Filtro Proveedor (fijo) + Filtro Descripción (fijo) + Encabezado (fijo) + Tabla (scroll) */}
           <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
-            {/* Filtro Proveedor (fijo) */}
-            <div className="shrink-0 pb-2">
+            {/* Ancho único: desplegable e input+botón comparten el mismo largo */}
+            <div className="shrink-0 w-[260px] flex flex-col gap-2 pb-3 border-b border-border">
+              {/* Filtro Proveedor (fijo) */}
               <Select
                 value={proveedorId || "none"}
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
-                <SelectTrigger className="input-filtro-unificado w-[200px]">
+                <SelectTrigger className="input-filtro-unificado w-full">
                   <SelectValue placeholder="Proveedor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -156,11 +157,9 @@ export default function SeleccionarProductoModal({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            {/* Filtro por descripción (fijo) */}
-            <div className="shrink-0 pb-3 flex items-center gap-2 border-b border-border">
-              <div className="w-[200px] flex items-center gap-2">
+              {/* Filtro por descripción (fijo): input se estira; junto con el botón ocupan el mismo ancho que el desplegable */}
+              <div className="w-full flex items-center gap-2">
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
@@ -171,8 +170,8 @@ export default function SeleccionarProductoModal({
               </div>
             </div>
 
-            {/* Encabezado (fijo, sticky) + Tabla (scroll). Sin datos hasta que haya al menos un filtro. */}
-            <div className="flex-1 min-h-0 overflow-auto pt-3 pb-3">
+            {/* Encabezado (fijo, sticky) + Tabla (scroll). modal-tabla-body: scroll aquí; thead queda fijo (globals.css). */}
+            <div className="modal-tabla-body flex-1 min-h-0 overflow-y-auto pt-3 pb-3">
               {!hayFiltros ? (
                 <div className="py-12 text-center text-sm text-muted-foreground">
                   {MENSAJE_SIN_FILTRO}
@@ -186,7 +185,7 @@ export default function SeleccionarProductoModal({
                   No hay productos o no coinciden los filtros.
                 </div>
               ) : (
-                <Table variant="compact">
+                <Table variant="compact" scrollX={false}>
                   <TableHeader className="modal-tabla-thead-sticky">
                     <TableRow className="hover:bg-transparent border-b-0">
                       <TableHead className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
