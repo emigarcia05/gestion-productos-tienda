@@ -308,17 +308,17 @@ export default function ListaPreciosTablaConFiltros({
         <Table variant="compact" scrollX={false}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-28">COD. EXT.</TableHead>
-              <TableHead className="w-24">MARCA</TableHead>
-              <TableHead className="w-24">RUBRO</TableHead>
+              <TableHead className="w-20">COD. EXT.</TableHead>
+              <TableHead className="w-20">MARCA</TableHead>
+              <TableHead className="w-20">RUBRO</TableHead>
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
               <TableHead className="w-28">PX FINAL COMPRA</TableHead>
-              <TableHead className="w-20">DESC. PROVEEDOR</TableHead>
-              <TableHead className="w-20">DESC. MARCA</TableHead>
-              <TableHead className="w-20">DESC. RUBRO</TableHead>
-              <TableHead className="w-20">DESC. CANT.</TableHead>
-              <TableHead className="w-20">DESC. FINAN.</TableHead>
-              <TableHead className="w-24">CX. APRO. TRANSPORTE</TableHead>
+              <TableHead className="w-16">DESC. PROV.</TableHead>
+              <TableHead className="w-16">DESC. MARCA</TableHead>
+              <TableHead className="w-16">DESC. RUBRO</TableHead>
+              <TableHead className="w-16">DESC. CANT.</TableHead>
+              <TableHead className="w-16">DESC. FINAN.</TableHead>
+              <TableHead className="w-16">CX. TRANSP.</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -335,15 +335,8 @@ export default function ListaPreciosTablaConFiltros({
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
                   <div className="celda-destacado truncate text-xs font-bold">
-                    {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor
-                      ? fila.descripcionTienda
-                      : fila.descripcionProveedor}
+                    {fila.descripcionProveedor}
                   </div>
-                  {fila.descripcionTienda && fila.descripcionTienda !== fila.descripcionProveedor && (
-                    <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                      {fila.descripcionProveedor}
-                    </div>
-                  )}
                 </TableCell>
                 <TableCell className="celda-datos celda-numero celda-destacado">
                   ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}

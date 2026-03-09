@@ -80,3 +80,20 @@ Al agregar un **nuevo filtro** (ej. Rubro) en una pantalla que ya tiene filtros 
 - **Sugeridos:** misma action y servicio con `opciones.soloPxSugerido`.
 - **Tienda:** `src/actions/tienda.ts`; al agregar o ajustar filtros, aplicar la misma regla simétrica.
 - **Documento:** este archivo. En caso de duda sobre cómo implementar un filtro nuevo, seguir esta regla y el checklist anterior.
+
+## Búsqueda por descripción (Lista Precios)
+
+En la tabla **precios_proveedores** (pantalla Lista de Precios), el filtro por descripción (búsqueda con ≥3 caracteres) aplica la siguiente lógica:
+
+1. **Dónde se busca**  
+   La búsqueda se realiza en:
+   - **precios_proveedores.descripcion_proveedor** (siempre).
+   - **precios_tienda.descripcion_tienda** cuando el ítem tiene vinculación con tienda (por `id_lista_precios_tienda` / relación `listaPrecioTienda`).  
+   Así, un ítem aparece si el texto coincide en la descripción del proveedor **o** en la descripción de tienda (si existe vínculo). Se mantiene la regla de “todas las palabras” (cada término debe aparecer en al menos uno de los campos).
+
+2. **Qué se muestra en pantalla**  
+   La columna “DESCRIPCION” de la tabla muestra **siempre** el valor de **precios_proveedores.descripcion_proveedor**. No se muestra la descripción de tienda en esa columna, aunque se use para filtrar.
+
+3. **Referencia en código**  
+   - Filtro: `src/services/listaPrecios.service.ts` → `getListaPreciosConTiendaFiltrada` (armado del `where` con `listaPrecioTienda.descripcionTienda` en el OR por término).  
+   - Visualización: `src/components/proveedores/ListaPreciosTablaConFiltros.tsx` → celda de descripción muestra solo `fila.descripcionProveedor`.

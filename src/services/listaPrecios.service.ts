@@ -105,8 +105,20 @@ export async function getListaPreciosConTiendaFiltrada(
   if (rubro) andParts.push({ rubro: rubro });
   if (opciones?.soloPxSugerido) andParts.push({ pxVtaSugerido: { not: null } });
   if (q.length >= 3) {
-    const textFilter = filtroTexto(q, ["descripcionProveedor", "codExt", "marca", "rubro"]);
-    if (textFilter.AND?.length) andParts.push(textFilter);
+    const tokens = q.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length > 0) {
+      andParts.push({
+        AND: tokens.map((token) => ({
+          OR: [
+            { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
+            { codExt: { contains: token, mode: "insensitive" as const } },
+            { marca: { contains: token, mode: "insensitive" as const } },
+            { rubro: { contains: token, mode: "insensitive" as const } },
+            { listaPrecioTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
+          ],
+        })),
+      });
+    }
   }
   const where: Prisma.ListaPrecioProveedorWhereInput = andParts.length ? { AND: andParts } : {};
 
@@ -341,6 +353,7 @@ export async function upsertListaPrecios(
 
 export interface ActualizacionMasivaListaPrecios {
   marca?: string | null;
+  rubro?: string | null;
   dtoProveedor?: number;
   dtoMarca?: number;
   dtoRubro?: number;
@@ -364,6 +377,7 @@ export async function actualizarListaPreciosMasivo(
 
   const updatePayload: {
     marca?: string | null;
+    rubro?: string | null;
     dtoProveedor?: number;
     dtoMarca?: number;
     dtoRubro?: number;
@@ -373,6 +387,7 @@ export async function actualizarListaPreciosMasivo(
     cotizacionDolar?: number;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
+   if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
   if (data.dtoProveedor !== undefined)
     updatePayload.dtoProveedor = Math.round(Math.max(0, Math.min(100, data.dtoProveedor)));
   if (data.dtoMarca !== undefined)
@@ -395,6 +410,10 @@ export async function actualizarListaPreciosMasivo(
   if (updatePayload.marca !== undefined) {
     setClauses.push(`marca = $${params.length + 1}`);
     params.push(updatePayload.marca ?? null);
+  }
+  if (updatePayload.rubro !== undefined) {
+    setClauses.push(`rubro = $${params.length + 1}`);
+    params.push(updatePayload.rubro ?? null);
   }
   if (updatePayload.dtoProveedor !== undefined) {
     setClauses.push(`dto_proveedor = $${params.length + 1}`);

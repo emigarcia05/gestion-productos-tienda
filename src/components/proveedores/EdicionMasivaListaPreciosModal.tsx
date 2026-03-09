@@ -22,6 +22,11 @@ interface MarcaOption {
   nombre: string;
 }
 
+interface RubroOption {
+  id: string;
+  nombre: string;
+}
+
 const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: string }[] = [
   { key: "dtoProveedor", label: "Desc. Proveedor (%)" },
   { key: "dtoMarca", label: "Desc. Marca (%)" },
@@ -35,6 +40,7 @@ const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: str
 interface Props {
   filteredIds: string[];
   marcas: MarcaOption[];
+  rubros: RubroOption[];
   disabled?: boolean;
   onSuccess?: () => void;
 }
@@ -42,12 +48,14 @@ interface Props {
 export default function EdicionMasivaListaPreciosModal({
   filteredIds,
   marcas,
+  rubros,
   disabled = false,
   onSuccess,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [marcaNombre, setMarcaNombre] = useState<string>("");
+  const [rubroNombre, setRubroNombre] = useState<string>("");
   const [values, setValues] = useState<ActualizacionMasivaListaPrecios>({
     dtoProveedor: undefined,
     dtoMarca: undefined,
@@ -67,6 +75,7 @@ export default function EdicionMasivaListaPreciosModal({
   async function handleGuardar() {
     const data: ActualizacionMasivaListaPrecios = {};
     if (marcaNombre) data.marca = marcaNombre;
+    if (rubroNombre) data.rubro = rubroNombre;
     if (values.dtoProveedor !== undefined && !Number.isNaN(values.dtoProveedor)) data.dtoProveedor = values.dtoProveedor;
     if (values.dtoMarca !== undefined && !Number.isNaN(values.dtoMarca)) data.dtoMarca = values.dtoMarca;
     if (values.dtoRubro !== undefined && !Number.isNaN(values.dtoRubro)) data.dtoRubro = values.dtoRubro;
@@ -89,6 +98,7 @@ export default function EdicionMasivaListaPreciosModal({
       toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
       setOpen(false);
       setMarcaNombre("");
+      setRubroNombre("");
       setValues({ dtoProveedor: undefined, dtoMarca: undefined, dtoRubro: undefined, dtoCantidad: undefined, dtoFinanciero: undefined, cxTransporte: undefined, cotizacionDolar: undefined });
       onSuccess?.();
     } finally {
@@ -145,6 +155,24 @@ export default function EdicionMasivaListaPreciosModal({
                   {marcas.map((m) => (
                     <SelectItem key={m.id} value={m.nombre}>
                       {m.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
+              <Label htmlFor="rubro" className="text-right font-medium">
+                Rubro
+              </Label>
+              <Select value={rubroNombre || "none"} onValueChange={(v) => setRubroNombre(v === "none" ? "" : v)}>
+                <SelectTrigger id="rubro" className="input-filtro-unificado tabular-nums border-primary">
+                  <SelectValue placeholder="Seleccionar rubro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {rubros.map((r) => (
+                    <SelectItem key={r.id} value={r.nombre}>
+                      {r.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>

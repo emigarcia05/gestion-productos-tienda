@@ -21,6 +21,11 @@ interface MarcaOption {
   nombre: string;
 }
 
+interface RubroOption {
+  id: string;
+  nombre: string;
+}
+
 type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
@@ -36,11 +41,18 @@ type FetchListaPreciosConOpcionesAction = (
 interface Props {
   proveedores: ProveedorParaCliente[];
   marcas: MarcaOption[];
+  rubros: RubroOption[];
   rol: Rol;
   fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
 
-export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetchListaPreciosConOpcionesAction }: Props) {
+export default function ListaPreciosPageClient({
+  proveedores,
+  marcas,
+  rubros,
+  rol,
+  fetchListaPreciosConOpcionesAction,
+}: Props) {
   const router = useRouter();
   const [filteredIds, setFilteredIds] = useState<string[]>([]);
 
@@ -60,6 +72,7 @@ export default function ListaPreciosPageClient({ proveedores, marcas, rol, fetch
           <EdicionMasivaListaPreciosModal
             filteredIds={filteredIds}
             marcas={marcas}
+            rubros={rubros}
             onSuccess={() => router.refresh()}
           />
         )}
