@@ -94,7 +94,7 @@ export default function VincularModal({
     if (vinculados.length === 0) return 0;
     return Math.min(
       ...vinculados.map((p) =>
-        calcPxCompraFinal(p.precioLista, p.descuentoProducto, p.descuentoCantidad, p.cxTransporte)
+        p.pxCompraFinal != null ? p.pxCompraFinal : calcPxCompraFinal(p.precioLista, p.descuentoProducto, p.descuentoCantidad, p.cxTransporte)
       )
     );
   }, [vinculados]);
@@ -197,12 +197,9 @@ export default function VincularModal({
             )}
           </div>
 
-          {/* Sección principal: Proveedores vinculados */}
+          {/* Sección principal: lista de vínculos (sin título para simplificar) */}
           <div className="mt-4 flex flex-col min-h-0 flex-1">
-            <h4 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-3">
-              Proveedores vinculados
-            </h4>
-            <div className="modal-panel-scroll rounded-lg border border-border bg-card overflow-hidden">
+            <div className="modal-panel-scroll rounded-lg border-2 border-border bg-card overflow-hidden">
             {cargando ? (
               <div className="modal-mensaje-carga p-4">
                 <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
@@ -212,7 +209,7 @@ export default function VincularModal({
             ) : (
               <div className="modal-vinculos-listado-contenedor">
                 {vinculados.map((prod, idx) => {
-                  const pxCompra = calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte);
+                  const pxCompra = prod.pxCompraFinal != null ? prod.pxCompraFinal : calcPxCompraFinal(prod.precioLista, prod.descuentoProducto, prod.descuentoCantidad, prod.cxTransporte);
                   const esMenorCosto = vinculados.length > 1 && pxCompra <= minCxVinculados;
                   const zebra = idx % 2 === 1 ? "modal-vinculos-fila--zebra-par" : "modal-vinculos-fila--zebra-impar";
                   return (
