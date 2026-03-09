@@ -90,19 +90,21 @@ export async function getListaPreciosConTiendaFiltrada(
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
+  habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<FilaListaPrecioParaCliente[]> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
   const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || "";
-  const tieneFiltro = !!prov || !!marca || !!rubro || q.length >= 3;
+  const tieneFiltro = !!prov || !!marca || !!rubro || habilitado !== undefined || q.length >= 3;
   if (!tieneFiltro) return [];
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
   if (prov) andParts.push({ idProveedor: prov });
   if (marca) andParts.push({ marca: marca });
   if (rubro) andParts.push({ rubro: rubro });
+  if (habilitado !== undefined) andParts.push({ habilitado });
   if (opciones?.soloPxSugerido) andParts.push({ pxVtaSugerido: { not: null } });
   if (q.length >= 3) {
     const tokens = q.trim().split(/\s+/).filter(Boolean);
@@ -174,14 +176,15 @@ export async function getListaPreciosConTiendaFiltrada(
   return result;
 }
 
-/** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getProveedoresDisponiblesListaPrecios(
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
+  habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string; prefijo: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, rubroNombre, busqueda, opciones);
+  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, rubroNombre, busqueda, habilitado, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string; prefijo: string }[] = [];
   for (const f of filas) {
@@ -193,14 +196,15 @@ export async function getProveedoresDisponiblesListaPrecios(
   return out;
 }
 
-/** Marcas con al menos un ítem que cumple (proveedorId, rubro, busqueda). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Marcas con al menos un ítem que cumple (proveedorId, rubro, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getMarcasDisponiblesListaPrecios(
   proveedorId: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
+  habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, rubroNombre, busqueda, opciones);
+  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, rubroNombre, busqueda, habilitado, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
@@ -212,14 +216,15 @@ export async function getMarcasDisponiblesListaPrecios(
   return out;
 }
 
-/** Rubros con al menos un ítem que cumple (proveedorId, marcaNombre, busqueda). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Rubros con al menos un ítem que cumple (proveedorId, marcaNombre, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getRubrosDisponiblesListaPrecios(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   busqueda: string | undefined,
+  habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, undefined, busqueda, opciones);
+  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, undefined, busqueda, habilitado, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {

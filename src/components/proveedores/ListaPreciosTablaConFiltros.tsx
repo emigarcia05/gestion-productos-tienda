@@ -38,7 +38,8 @@ type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
-  busqueda: string | undefined
+  busqueda: string | undefined,
+  habilitado: boolean | undefined
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
   proveedoresDisponibles: ProveedorOption[];
@@ -71,7 +72,7 @@ interface ListaPreciosTablaConFiltrosProps {
 
 const MIN_CARACTERES_BUSQUEDA = 3;
 const MENSAJE_SIN_FILTRO =
-  "Aplicá un filtro (Proveedor, Marca o Rubro) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
+  "Aplicá un filtro (Proveedor, Marca, Rubro o Habilitado) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
 
 export default function ListaPreciosTablaConFiltros({
   proveedores,
@@ -82,6 +83,7 @@ export default function ListaPreciosTablaConFiltros({
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [rubroNombre, setRubroNombre] = useState<string>("");
+  const [habilitadoFilter, setHabilitadoFilter] = useState<string>(""); // "" | "si" | "no"
   const [busqueda, setBusqueda] = useState("");
   const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
@@ -93,7 +95,7 @@ export default function ListaPreciosTablaConFiltros({
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const hasFilterActive =
-    !!proveedorId || !!marcaNombre || !!rubroNombre || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
+    !!proveedorId || !!marcaNombre || !!rubroNombre || habilitadoFilter === "si" || habilitadoFilter === "no" || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
 
   useEffect(() => {
     if (!hasFilterActive) {
@@ -132,7 +134,8 @@ export default function ListaPreciosTablaConFiltros({
       proveedorId || undefined,
       marcaNombre || undefined,
       rubroNombre || undefined,
-      busqueda.trim() || undefined
+      busqueda.trim() || undefined,
+      habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined
     )
       .then((res) => {
         if (cancelled) return;
@@ -174,6 +177,7 @@ export default function ListaPreciosTablaConFiltros({
     proveedorId,
     marcaNombre,
     rubroNombre,
+    habilitadoFilter,
     busqueda,
     fetchListaPreciosConOpcionesAction,
     onFilteredIdsChange,
@@ -200,12 +204,13 @@ export default function ListaPreciosTablaConFiltros({
     }
   }, [totalPaginas, paginaActual]);
 
-  const hayFiltros = !!proveedorId || !!marcaNombre || !!rubroNombre || !!busqueda.trim();
+  const hayFiltros = !!proveedorId || !!marcaNombre || !!rubroNombre || !!habilitadoFilter || !!busqueda.trim();
 
   function limpiarFiltros() {
     setProveedorId("");
     setMarcaNombre("");
     setRubroNombre("");
+    setHabilitadoFilter("");
     setBusqueda("");
     setPaginaActual(1);
   }
@@ -281,6 +286,26 @@ export default function ListaPreciosTablaConFiltros({
                       {r.nombre}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+              <Select
+                value={habilitadoFilter || "none"}
+                onValueChange={(v) => setHabilitadoFilter(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="filtro-habilitado" className="input-filtro-unificado">
+                  <SelectValue placeholder="HABILITADO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">HABILITADO</SelectItem>
+                  <SelectItem value="si">SÍ</SelectItem>
+                  <SelectItem value="no">NO</SelectItem>
                 </SelectContent>
               </Select>
             </div>

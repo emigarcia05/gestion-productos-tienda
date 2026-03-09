@@ -3,7 +3,7 @@ import { Package, Upload, Building2, ShoppingBag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const navLinks = [
-  { href: "/proveedores", label: "Proveedores", icon: Building2 },
+  { href: "/proveedores", label: "Lista Proveedores", icon: Building2 },
   { href: "/tienda", label: "TiendaColor", icon: ShoppingBag },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/productos", label: "Productos", icon: Package },

@@ -26,7 +26,7 @@ export async function getListaPreciosFiltradaAction(
   rubroNombre: string | undefined,
   busqueda: string | undefined
 ): Promise<FilaListaPrecioParaCliente[]> {
-  return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, rubroNombre, busqueda);
+  return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, rubroNombre, busqueda, undefined);
 }
 
 export interface ListaPreciosConOpcionesResult {
@@ -48,6 +48,7 @@ export async function getListaPreciosConOpcionesAction(
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
+  habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<ListaPreciosConOpcionesResult> {
   const prov = proveedorId?.trim() || undefined;
@@ -55,10 +56,10 @@ export async function getListaPreciosConOpcionesAction(
   const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || undefined;
   const [filas, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles] = await Promise.all([
-    getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, opciones),
-    getProveedoresDisponiblesListaPrecios(marca, rubro, q, opciones),
-    getMarcasDisponiblesListaPrecios(prov, rubro, q, opciones),
-    getRubrosDisponiblesListaPrecios(prov, marca, q, opciones),
+    getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, habilitado, opciones),
+    getProveedoresDisponiblesListaPrecios(marca, rubro, q, habilitado, opciones),
+    getMarcasDisponiblesListaPrecios(prov, rubro, q, habilitado, opciones),
+    getRubrosDisponiblesListaPrecios(prov, marca, q, habilitado, opciones),
   ]);
   return { filas, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles };
 }

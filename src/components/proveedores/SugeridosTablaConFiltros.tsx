@@ -35,6 +35,7 @@ type FetchListaPreciosConOpcionesAction = (
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
+  habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
@@ -119,6 +120,7 @@ export default function SugeridosTablaConFiltros({
       marcaNombre || undefined,
       undefined,
       busqueda.trim() || undefined,
+      undefined,
       { soloPxSugerido: true }
     )
       .then((res) => {

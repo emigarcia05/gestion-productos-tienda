@@ -110,7 +110,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   return (
     <>
       <SectionHeader
-        titulo="Proveedores"
+        titulo="Lista Proveedores"
         subtitulo="Comparacion Cat."
         actions={acciones}
         compact

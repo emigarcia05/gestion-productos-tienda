@@ -30,7 +30,8 @@ type FetchListaPreciosConOpcionesAction = (
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
-  busqueda: string | undefined
+  busqueda: string | undefined,
+  habilitado: boolean | undefined
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
@@ -81,7 +82,7 @@ export default function ListaPreciosPageClient({
 
   return (
     <ClassicFilteredTableLayout
-      title="Proveedores"
+      title="Lista Proveedores"
       subtitle="Lista Precios"
       actions={actions}
     >

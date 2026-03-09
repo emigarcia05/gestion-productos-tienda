@@ -51,7 +51,7 @@ const MODULES: {
 }[] = [
   {
     id: "proveedores",
-    label: "Proveedores",
+    label: "Lista Proveedores",
     icon: <Handshake className={iconClass} />,
     submodules: [
       { href: "/proveedores/sugeridos", label: "Px Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" /> },

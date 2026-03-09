@@ -30,7 +30,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const hasFiltros = !!(q || proveedor);
 
-  const titulo = "Proveedores";
+  const titulo = "Lista Proveedores";
 
   const acciones =
     esEditor && (puede(rol, p.acciones.importarLista) || puede(rol, p.acciones.accionMasiva)) ? (
@@ -49,7 +49,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo={titulo} subtitulo="Proveedores" actions={acciones} />
+      <SectionHeader titulo={titulo} subtitulo="Lista Proveedores" actions={acciones} />
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
