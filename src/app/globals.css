@@ -181,6 +181,8 @@
   /** Distancia simétrica: recuadro de filtros ↔ encabezado y recuadro ↔ tabla. Usar mismo valor arriba y abajo. */
   --espacio-filtros-vertical: 1rem;
   --filtros-margin-bottom-tabla: var(--espacio-filtros-vertical);
+  /** Altura fija de los paneles en Control Aumentos (Marca/Rubro/SubRubro y lista de productos). */
+  --altura-paneles-aumentos: 36vh;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -602,6 +604,42 @@
   padding-bottom: 0 !important;
 }
 
+/* Contenedor de tabla con borde de marca (reutilizable en listados). Evitar style inline; usar esta clase. */
+.contenedor-tabla-card {
+  border: 1px solid var(--card-border);
+  background-color: var(--card);
+}
+
+/* Panel con cabecera primaria (ej. Control Aumentos: columnas Marca/Rubro/SubRubro y lista productos). */
+.panel-con-cabecera {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+}
+.panel-cabecera-primary {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--primary);
+}
+.panel-cabecera-primary h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  margin: 0;
+}
+
+/* Altura fija de los paneles en Control Aumentos (variable --altura-paneles-aumentos). */
+.paneles-aumentos {
+  height: var(--altura-paneles-aumentos);
+}
+
 /* ─── Modales .modal-app: diseño global; el div central se ajusta al contenido para evitar scroll innecesario ─── */
 .modal-app {
   max-width: 42rem;
@@ -939,6 +977,17 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-emerald-500);
+}
+
+/* Mismo color que variacion-costo para iconos (ArrowUp/ArrowDown en Control Aumentos). */
+.variacion-costo-icon--positiva {
+  color: var(--color-red-500);
+}
+.variacion-costo-icon--negativa {
+  color: var(--color-emerald-500);
+}
+.variacion-costo-icon--neutra {
+  color: var(--muted-foreground);
 }
 
 /* ─── Modal tabla con filtros: header sticky, estructura ─── */

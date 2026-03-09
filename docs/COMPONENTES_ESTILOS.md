@@ -1,6 +1,6 @@
 # Componentes y estilos reutilizables
 
-Documentación de componentes compartidos y clases CSS globales para mantener consistencia y evitar duplicación.
+Documentación de componentes compartidos y clases CSS globales para mantener consistencia y evitar duplicación. Todo debe derivar de `src/app/globals.css` y de este documento.
 
 ---
 
@@ -67,18 +67,36 @@ El componente renderiza `role="status"` y `aria-live="polite"` para que lectores
 
 En **toda la aplicación**, la primera fila de filtros (la de los Selects desplegables) sigue el mismo formato:
 
-- **Siempre 5 columnas.** El contenedor debe usar `grid-cols-5` en todos los módulos que tengan barra de filtros con desplegables. No se usa 4, 6 ni otro número: la fila tiene exactamente 5 huecos (slots).
-- **Cada módulo coloca de 1 a 5 filtros** en esa fila. Los slots no usados quedan vacíos; los Selects no se expanden para ocupar todo el ancho. Así se mantiene el mismo aspecto visual en Lista Precios, Sugeridos, Comparación Tienda, etc.
+- **Siempre 5 columnas.** El contenedor debe usar exactamente 5 columnas en todos los módulos que tengan barra de filtros con desplegables. No se usa 4, 6 ni otro número: la fila tiene exactamente 5 huecos (slots).
+- **Cada módulo coloca de 1 a 5 filtros** en esa fila. Los slots no usados quedan vacíos; los Selects no se expanden para ocupar todo el ancho. Así se mantiene el mismo aspecto visual en Lista Precios, Sugeridos, Tienda, Control Aumentos y Pedido Urgente.
 - **Cada filtro ocupa siempre el mismo tamaño**: mismo ancho para todos (1/5 del ancho de la fila), independientemente de si tienen valor seleccionado o no.
 - La fila ocupa todo el ancho disponible (`w-full`).
 
-Al agregar una **nueva página con filtros desplegables**, hay que usar este mismo formato (siempre 5 columnas) para no romper la uniformidad del diseño.
+Al agregar una **nueva página con filtros desplegables**, hay que usar el componente `<FilaFiltrosDesplegables>` y este mismo formato (siempre 5 columnas) para no romper la uniformidad del diseño.
 
-### Implementación
+### Componente compartido: FilaFiltrosDesplegables
 
-- **Contenedor:** Clase `.fila-filtros-5` (definida en `globals.css`; `.fila-filtros-desplegables` es alias con los mismos estilos). Estilos: cada hijo (`> div`) con `min-width: 0` y `width: 100%`; los triggers de los Select con ancho completo y texto con ellipsis.
-- **Layout:** Siempre `grid grid-cols-5 gap-3 w-full`. Cada columna tiene el mismo ancho (1/5).
-- **Cada celda:** `FILTER_SELECT_WRAPPER_CLASS` (`min-w-0 flex-1`) en el wrapper de cada Select, dentro del grid. No se añaden divs vacíos para los slots sin filtro: el grid ya reserva las 5 columnas.
+**Ubicación:** `src/components/FilterBar.tsx` (exportado junto con `FilterBar`, `FilterRowSelection`, etc.).
+
+**Uso:** Envuelve los wrappers de cada Select (cada uno con `FILTER_SELECT_WRAPPER_CLASS`). No se añaden divs vacíos para los slots sin filtro; el grid ya reserva las 5 columnas.
+
+```tsx
+import FilterBar, { FilterRowSelection, FilaFiltrosDesplegables, FILTER_SELECT_WRAPPER_CLASS, ... } from "@/components/FilterBar";
+
+<FilterRowSelection>
+  <FilaFiltrosDesplegables>
+    <div className={FILTER_SELECT_WRAPPER_CLASS}>
+      <Select>…</Select>
+    </div>
+    {/* de 1 a 5 slots; el resto queda vacío */}
+  </FilaFiltrosDesplegables>
+</FilterRowSelection>
+```
+
+### Implementación (clases en globals.css)
+
+- **Contenedor:** La clase `.fila-filtros-5` (y el componente `FilaFiltrosDesplegables`) aplican `grid grid-cols-5 gap-3 w-full`. Cada hijo (`> div`) tiene `min-width: 0` y `width: 100%`; los triggers de los Select con ancho completo y texto con ellipsis.
+- **Cada celda:** `FILTER_SELECT_WRAPPER_CLASS` (`min-w-0 flex-1`) en el wrapper de cada Select, dentro del grid.
 
 ### Distancia simétrica (encabezado ↔ filtros ↔ tabla)
 
@@ -92,22 +110,72 @@ La distancia desde el **recuadro de filtros** hasta el **encabezado** y hasta la
 
 **Cuando FilterBar y contenido (tabla/cards) están en el mismo componente** (p. ej. Control Aumentos): el contenedor que envuelve FilterBar y el bloque de contenido debe usar `gap-0` entre ambos. No insertar `Separator` ni `gap` entre el FilterBar y el inicio del contenido; así la única distancia es el `margin-bottom` del recuadro (variable global) y se mantiene la misma que entre encabezado y filtros.
 
-### Ejemplo (4 filtros — Lista Tienda / Comp. Px. Prov.)
+### Dónde se usa
 
-```tsx
-<FilterRowSelection>
-  <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
-    <div className={FILTER_SELECT_WRAPPER_CLASS}>
-      <Select>…</Select>
-    </div>
-    {/* 3 Selects más; el 5.º slot queda vacío */}
-  </div>
-</FilterRowSelection>
-```
+- **Lista Tienda – Comp. Px. Prov.** (`/tienda`): 4 filtros (Marca, Rubro, SubRubro, COSTO). `FilaFiltrosDesplegables` con 4 slots usados; 5.º slot vacío.
+- **Control Aumentos** (`/tienda/aumentos`): 3 filtros (MARCA, RUBRO, SUB-RUBRO). `FilaFiltrosDesplegables` con 3 slots usados; 2 slots vacíos.
+- **Lista Precios** (`/proveedores/lista-precios`): 5 filtros (Proveedor, Marca, Rubro, Habilitado). `FilaFiltrosDesplegables` con las 5 columnas ocupadas.
+- **Px Vta. Sugeridos** (`/proveedores/sugeridos`): 2 filtros (Proveedor, Marca). `FilaFiltrosDesplegables` con 2 slots usados; 3 slots vacíos.
+- **Pedido Urgente** (`/pedidos/urgente`): 2 filtros (Sucursal, Proveedor). `FilaFiltrosDesplegables` con 2 slots usados; 3 slots vacíos. **Obligatorio** usar la misma fila de 5 columnas para uniformidad.
+
+---
+
+## Panel con cabecera primaria
+
+Para bloques con cabecera de color primario (ej. columnas Marca/Rubro/SubRubro en Control Aumentos, o lista “Productos con variación”).
+
+### Clases CSS globales (`globals.css`)
+
+| Clase | Uso |
+|-------|-----|
+| `.panel-con-cabecera` | Contenedor: flex column, borde `var(--border)`, fondo `var(--card)`, overflow y min-height para scroll. |
+| `.panel-cabecera-primary` | Cabecera: fondo `var(--primary)`, padding. |
+| `.panel-cabecera-primary h3` | Título: texto `var(--primary-foreground)`, uppercase, centrado. |
+
+**Variable:** `--altura-paneles-aumentos` (ej. `36vh`) para altura fija. Clase `.paneles-aumentos` aplica `height: var(--altura-paneles-aumentos)`.
+
+**No duplicar** bordes `border-slate-200`, `bg-white` ni `text-white` en estos paneles; usar siempre las clases anteriores y tokens del tema.
 
 ### Dónde se usa
 
-- **Lista Tienda – Comp. Px. Prov.** (`/tienda`): 4 filtros (Marca, Rubro, SubRubro, COSTO). Misma fila de 5 columnas; 5.º slot vacío.
-- **Control Aumentos** (`/tienda/aumentos`): 3 filtros (MARCA, RUBRO, SUB-RUBRO). Misma fila de 5 columnas; 2 slots vacíos.
-- **Lista Precios** (`/proveedores/lista-precios`): 5 filtros (Proveedor, Marca, Rubro, Habilitado, etc.). Las 5 columnas ocupadas.
-- **Px Vta. Sugeridos** (`/proveedores/sugeridos`): 2 filtros (Proveedor, Marca). Misma fila de 5 columnas; 3 slots vacíos.
+- **TablaAumentos** (`src/components/tienda/TablaAumentos.tsx`): `ColumnaGrupo` (Marca, Rubro, Sub-Rubro) y el bloque “Productos con variación”.
+
+---
+
+## Contenedor de tabla con borde de marca
+
+Para listados dentro de un Card o div con borde azul tenue (identidad de marca).
+
+### Regla
+
+**No usar** `style={{ borderColor: "rgba(0,114,187,0.25)" }}`. Usar siempre clases que referencien la variable del tema.
+
+### Clases
+
+- **Contenedor de tabla:** `border border-card-border bg-card` (o la clase `.contenedor-tabla-card` si se prefiere un único nombre). Definido en `globals.css`; `--card-border` en `:root`.
+
+### Dónde se usa
+
+- **TablaListaPrecios**, **TablaStock**, contenedores de tabla en listados. Cualquier nuevo listado debe usar `border-card-border` y `bg-card`.
+
+---
+
+## Variación de costo (positiva / negativa / neutra)
+
+Para mostrar porcentajes o indicadores de variación (subida/bajada/sin cambio) con color semántico.
+
+### Clases CSS globales (`globals.css`)
+
+| Clase | Uso |
+|-------|-----|
+| `.variacion-costo--positiva` | Texto en rojo (subida): `color: var(--color-red-500)`. |
+| `.variacion-costo--negativa` | Texto en verde (bajada): `color: var(--color-emerald-500)`. |
+| `.variacion-costo--neutra` | Texto neutro: `color: var(--muted-foreground)`. |
+| `.variacion-costo-icon--positiva` | Mismo color para iconos (ej. ArrowUp). |
+| `.variacion-costo-icon--negativa` | Mismo color para iconos (ej. ArrowDown). |
+
+**No duplicar** `text-red-600`, `text-emerald-600`, `text-slate-500` en componentes de variación; usar estas clases para mantener un solo criterio de color.
+
+### Dónde se usa
+
+- **TablaAumentos**: `ColorPct` e `IconTendencia` (y celdas de variación en listas).

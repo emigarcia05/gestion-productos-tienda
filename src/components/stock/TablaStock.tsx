@@ -255,7 +255,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
       </div>
 
       {/* ── Tabla ── */}
-      <div className="flex-1 overflow-auto rounded-lg border bg-white" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
+      <div className="flex-1 overflow-auto rounded-lg border border-card-border bg-card">
         <Table variant="compact">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -268,7 +268,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
           <TableBody>
             {filtrados.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-xs text-slate-500 py-10">Sin resultados</TableCell>
+                <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-10">Sin resultados</TableCell>
               </TableRow>
             )}
             {filtrados.map((item) => (

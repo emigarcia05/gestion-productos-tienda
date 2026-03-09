@@ -14,6 +14,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
+  FilaFiltrosDesplegables,
   FILTER_SELECT_WRAPPER_CLASS,
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
@@ -179,9 +180,9 @@ export default function SugeridosTablaConFiltros({
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-0.5">
-      <FilterBar className="filtros-contenedor-tienda bg-white">
+      <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
-          <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+          <FilaFiltrosDesplegables>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
                 value={proveedorId || "none"}
@@ -228,7 +229,7 @@ export default function SugeridosTablaConFiltros({
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </FilaFiltrosDesplegables>
         </FilterRowSelection>
         <div className="flex items-center gap-3">
           <FilterRowSearch className="flex-1">

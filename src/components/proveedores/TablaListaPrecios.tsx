@@ -51,7 +51,7 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
 
   return (
     <>
-    <div className="h-full overflow-auto rounded-lg border bg-white" style={{ borderColor: "rgba(0,114,187,0.25)" }}>
+    <div className="h-full overflow-auto rounded-lg border border-card-border bg-card">
       <Table variant="compact">
         <TableHeader>
           <TableRow className="hover:bg-transparent">

@@ -71,8 +71,8 @@ Para botones que representan una **acción principal o de limpieza** con solo ic
 ## 5. Layout y espaciado
 
 - **SectionHeader:** Título + opcional subtítulo + acciones a la derecha; botones con `h-10 px-4`.
-- **FilterBar:** FilterRowSelection (Selects) + FilterRowSearch (input al 75%) + LimpiarFiltrosButton. Usar `INPUT_FILTER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. **Fila de Selects:** siempre 5 columnas en toda la app (`fila-filtros-5 grid grid-cols-5`); los módulos usan de 1 a 5 filtros y los slots no usados quedan vacíos (detalle en **COMPONENTES_ESTILOS.md**). **Contenedor de filtros:** el `FilterBar` debe llevar `bg-card` (fondo blanco) en todas las pantallas con filtros (Lista Precios, Sugeridos, Tienda); ej. `className="filtros-contenedor-tienda bg-card"`. **Espaciado filtros → tabla:** no añadir `gap` ni `Separator` entre FilterBar y el contenido; la distancia la define el `margin-bottom` del recuadro (variable global). Ver **COMPONENTES_ESTILOS.md** (Distancia simétrica).
-- **Main:** Fondo `bg-background` (slate muy claro). Cards con `bg-card` (blanco).
+- **FilterBar:** FilterRowSelection (Selects) + FilterRowSearch (input al 75%) + LimpiarFiltrosButton. Usar el componente **`FilaFiltrosDesplegables`** (exportado en `@/components/FilterBar`) para la fila de Selects: siempre 5 columnas en toda la app; los módulos usan de 1 a 5 filtros y los slots no usados quedan vacíos (detalle en **COMPONENTES_ESTILOS.md**). **Contenedor de filtros:** el `FilterBar` debe llevar **`bg-card`** en todas las pantallas con filtros (Lista Precios, Sugeridos, Tienda, Pedido Urgente); ej. `className="filtros-contenedor-tienda bg-card"`. No usar `bg-white`; unificar con el token `bg-card`. **Espaciado filtros → tabla:** no añadir `gap` ni `Separator` entre FilterBar y el contenido; la distancia la define el `margin-bottom` del recuadro (variable global). Ver **COMPONENTES_ESTILOS.md** (Distancia simétrica).
+- **Main:** Fondo `bg-background`. Cards y contenedores de listado con `bg-card` y borde `border-card-border`. No usar `bg-white` ni `border-slate-200`; todo desde variables del tema.
 
 ---
 
@@ -102,12 +102,14 @@ La Sidebar tiene una **jerarquía visual específica** que debe respetarse en to
 
 ## 8. Referencia rápida para nuevos módulos
 
-- **Colores:** `primary`, `primary-foreground`, `foreground`, `muted-foreground`, `background`, `card`, `border`, `input`, `accent`, `accent-foreground`, `destructive`, `sidebar`, `sidebar-foreground`, `accent2`.
+- **Colores:** `primary`, `primary-foreground`, `foreground`, `muted-foreground`, `background`, `card`, `card-border`, `border`, `input`, `accent`, `accent-foreground`, `destructive`, `sidebar`, `sidebar-foreground`, `accent2`. No usar `bg-white`, `text-slate-*`, `border-slate-*`; usar siempre tokens del tema.
 - **Botones:** Siempre `<Button>` con `variant` y `size`; en headers usar `ACTION_BUTTON_PRIMARY` / `ACTION_BUTTON_SECONDARY` cuando aplique. Para botones solo icono de acción principal/limpieza: `variant="primaryIcon"` y `size="icon-lg"`.
-- **Card listados:** `Card` > `CardContent` > `Table`; borde `border-card-border` (azul tenue de marca), sin clases tipo `border-slate-200`.
-- **Tablas:** `Table` de `@/components/ui/table` o `<table className="tabla-global w-full text-sm">`. Celdas `text-foreground text-sm`; códigos con `font-mono`.
+- **Card listados:** `Card` > `CardContent` > `Table`; borde `border-card-border`, fondo `bg-card`. Contenedor de tabla con borde de marca: clase `.contenedor-tabla-card` o `border border-card-border bg-card` (no `style` inline).
+- **Tablas:** `Table` de `@/components/ui/table` o `<table className="tabla-global w-full text-sm">`. Celdas `text-foreground text-sm`; códigos con `font-mono`. Mensajes vacíos/neutros: `text-muted-foreground`.
 - **Header de sección:** `SectionHeader` con título, opcional subtítulo y acciones a la derecha.
-- **Filtros:** `FilterBar` > `FilterRowSelection` + `FilterRowSearch` + `LimpiarFiltrosButton`.
+- **Filtros:** `FilterBar` > `FilterRowSelection` > **`FilaFiltrosDesplegables`** (con 1 a 5 slots con `FILTER_SELECT_WRAPPER_CLASS`) + `FilterRowSearch` + `LimpiarFiltrosButton`. FilterBar con `bg-card`.
+- **Panel con cabecera primaria:** Clases `.panel-con-cabecera` y `.panel-cabecera-primary` (ver `globals.css` y **COMPONENTES_ESTILOS.md**). Altura fija opcional: `.paneles-aumentos` y variable `--altura-paneles-aumentos`.
+- **Variación de costo/porcentaje:** Clases `.variacion-costo--positiva`, `.variacion-costo--negativa`, `.variacion-costo--neutra` y `.variacion-costo-icon--*` (no duplicar colores con Tailwind arbitrarios).
 - **Utilidad:** `cn()` de `@/lib/utils` para combinar clases; no hardcodear hex cuando exista variable.
 
 ---
@@ -145,3 +147,14 @@ Resultado: interfaz coherente, profesional y alineada con los colores de la marc
 - **globals.css:** Añadido `--sidebar-indicator: #FFC107` y `--color-sidebar-indicator` en `@theme`. `--sidebar-foreground` se mantiene en `#ffffff` (blanco puro).
 - **Sidebar (`@/components/layout/Sidebar.tsx`):** Textos e iconos en blanco puro: eliminadas opacidades (`text-sidebar-foreground/90`, `[&_svg]:text-sidebar-foreground/70`, `[&_button]:!text-sidebar-foreground/80`). Iconos de módulo con `[&>span:first-child_svg]:text-sidebar-foreground`. Flechas de acordeón (ChevronDown) con `text-sidebar-indicator` (#FFC107). Línea de jerarquía vertical en submenús: `border-l-2 border-sidebar-indicator`. Ítem activo: `border-sidebar-indicator` (borde izquierdo amarillo) y `[&_svg]:text-sidebar-foreground`. Perfil: botones con `!text-sidebar-foreground` sin opacidad.
 - **Regla de oro:** Sidebar = Fondo azul, texto blanco, indicadores de navegación en amarillo (#FFC107).
+
+---
+
+## 13. Refactorización auditoría (componentes y estilos unificados)
+
+- **FilaFiltrosDesplegables:** Nuevo componente en `@/components/FilterBar.tsx`. Encapsula la fila de 5 columnas (`fila-filtros-5 grid grid-cols-5 gap-3 w-full`). Usado en Lista Precios, Sugeridos, FiltrosTienda, TablaAumentos y FiltrosPedidoUrgente. Elimina duplicación de la misma estructura en 5 archivos.
+- **Panel con cabecera primaria:** Clases `.panel-con-cabecera`, `.panel-cabecera-primary` y `.paneles-aumentos` en `globals.css`. Variable `--altura-paneles-aumentos` (36vh). TablaAumentos (ColumnaGrupo y bloque "Productos con variación") actualizado para usarlas; eliminados estilos inline y clases `border-slate-200`, `bg-white`, `text-white`.
+- **Contenedor de tabla:** Sustituido `style={{ borderColor: "rgba(0,114,187,0.25)" }}` por `border border-card-border bg-card` en TablaListaPrecios y TablaStock. TablaProveedoresGestion: `border-card-border bg-card shadow-sm`.
+- **Variación de costo:** TablaAumentos usa `.variacion-costo--positiva/negativa/neutra` y `.variacion-costo-icon--*` en ColorPct e IconTendencia; eliminados `text-red-600`, `text-emerald-600`, `text-slate-500` hardcodeados.
+- **FilterBar con bg-card:** ListaPreciosTablaConFiltros y SugeridosTablaConFiltros pasan de `bg-white` a `bg-card`. FiltrosPedidoUrgente: añadidos `filtros-contenedor-tienda bg-card` y fila de 5 columnas con `FilaFiltrosDesplegables`; SelectContent con `select-content-filtro` y `position="popper" side="bottom"`.
+- **Documentación:** COMPONENTES_ESTILOS.md reescrito con FilaFiltrosDesplegables, panel con cabecera, contenedor tabla card y variación de costo. DESIGN_SYSTEM_AUDIT.md y .cursor/rules/modulos.mdc actualizados para usar solo tokens del tema (no slate/white).

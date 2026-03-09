@@ -38,6 +38,19 @@ export function FilterRowSelection({ children, className }: { children: React.Re
   );
 }
 
+/**
+ * Fila de exactamente 5 columnas para filtros desplegables (regla unificada en toda la app).
+ * Cada módulo pone de 1 a 5 Selects; los slots no usados quedan vacíos.
+ * Documentación: docs/COMPONENTES_ESTILOS.md
+ */
+export function FilaFiltrosDesplegables({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+      {children}
+    </div>
+  );
+}
+
 /** Fila 2 (Búsqueda): input de texto. Ocupa ~75% dejando espacio al botón de limpieza; borde primary cuando activo. */
 export function FilterRowSearch({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

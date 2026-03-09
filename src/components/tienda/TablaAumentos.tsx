@@ -14,6 +14,7 @@ import {
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
+  FilaFiltrosDesplegables,
   FILTER_SELECT_WRAPPER_CLASS,
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
@@ -59,14 +60,15 @@ function exportarXLS(items: ItemAumento[]) {
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
-  if (pct > 0.5)  return <span className={`${cls} text-red-600`}>{fmtPct(pct)}</span>;
-  if (pct < -0.5) return <span className={`${cls} text-emerald-600`}>{fmtPct(pct)}</span>;
-  return <span className={`${cls} text-slate-500`}>≈0%</span>;
+  const variacion = pct > 0.5 ? "variacion-costo--positiva" : pct < -0.5 ? "variacion-costo--negativa" : "variacion-costo--neutra";
+  if (pct > 0.5)  return <span className={`${cls} ${variacion}`}>{fmtPct(pct)}</span>;
+  if (pct < -0.5) return <span className={`${cls} ${variacion}`}>{fmtPct(pct)}</span>;
+  return <span className={`${cls} ${variacion}`}>≈0%</span>;
 }
 
 function IconTendencia({ pct }: { pct: number }) {
-  if (pct > 0.5)  return <ArrowUp   className="h-3.5 w-3.5 text-red-500 shrink-0" />;
-  if (pct < -0.5) return <ArrowDown className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
+  if (pct > 0.5)  return <ArrowUp   className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />;
+  if (pct < -0.5) return <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />;
   return null;
 }
 
@@ -90,36 +92,33 @@ function ColumnaGrupo({
   grupos: GrupoFila[];
 }) {
   return (
-    <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border border-slate-200 bg-white">
-      {/* Cabecera estilo tabla global (color primario, texto blanco) */}
-      <div className="shrink-0 bg-primary px-3 py-2">
-        <h3 className="text-xs font-semibold text-white uppercase tracking-wider text-center">
-          {titulo}
-        </h3>
+    <div className="panel-con-cabecera">
+      <div className="panel-cabecera-primary">
+        <h3>{titulo}</h3>
       </div>
       <div className="flex-1 overflow-y-auto">
         {grupos.length === 0 && (
-          <p className="text-xs text-slate-500 text-center py-6">Sin datos</p>
+          <p className="text-xs text-muted-foreground text-center py-6">Sin datos</p>
         )}
         {grupos.map((g, idx) => {
           const pct = promedio(g.items);
           const conVariacion = g.items.filter((i) => Math.abs(i.pctAumento) > 0.5).length;
-          const zebra = idx % 2 === 1 ? "bg-blue-50/50" : "bg-white";
+          const zebra = idx % 2 === 1 ? "bg-blue-50/50" : "bg-card";
           return (
             <div
               key={g.nombre}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left border-b border-slate-100 ${zebra}`}
+              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left border-b border-border ${zebra}`}
             >
-              <span className="text-xs text-slate-900 truncate">
+              <span className="text-xs text-foreground truncate">
                 {g.nombre}
-                <span className="text-slate-500 ml-1">({conVariacion})</span>
+                <span className="text-muted-foreground ml-1">({conVariacion})</span>
               </span>
               <div className="flex items-center gap-1 shrink-0">
                 <ColorPct pct={pct} />
                 {pct > 0.5
-                  ? <ArrowUp   className="h-3 w-3 text-red-500" />
+                  ? <ArrowUp   className="h-3 w-3 variacion-costo-icon--positiva" />
                   : pct < -0.5
-                    ? <ArrowDown className="h-3 w-3 text-emerald-500" />
+                    ? <ArrowDown className="h-3 w-3 variacion-costo-icon--negativa" />
                     : null
                 }
               </div>
@@ -253,7 +252,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
     <div className="flex flex-col gap-0 h-full">
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
-          <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+          <FilaFiltrosDesplegables>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
                 value={filtroMarca ?? "none"}
@@ -309,7 +308,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </FilaFiltrosDesplegables>
         </FilterRowSelection>
         <div className="flex items-center gap-3">
           <FilterRowSearch className="flex-1">
@@ -346,20 +345,20 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
       <div className="flex flex-col gap-3 flex-1 min-h-0">
 
         {/* Marca | Rubro | Sub-Rubro */}
-        <div className="grid grid-cols-3 gap-3" style={{ height: "36vh" }}>
+        <div className="grid grid-cols-3 gap-3 paneles-aumentos">
           <ColumnaGrupo titulo="Marca"     grupos={gruposMarca}    />
           <ColumnaGrupo titulo="Rubro"     grupos={gruposRubro}    />
           <ColumnaGrupo titulo="Sub-Rubro" grupos={gruposSubRubro} />
         </div>
 
         {/* Productos individuales (cabecera estándar, color primario) */}
-        <div className="flex flex-col min-h-0 rounded-lg overflow-hidden border border-slate-200 bg-white" style={{ height: "36vh" }}>
-          <div className="shrink-0 bg-primary px-3 py-2">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wider text-center">
-              Productos con variación
-            </h3>
+        <div className="panel-con-cabecera paneles-aumentos">
+          <div className="panel-cabecera-primary">
+            <h3>Productos con variación</h3>
           </div>
-          <ListaProductos items={itemsFiltrados} busqueda={busqueda} />
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <ListaProductos items={itemsFiltrados} busqueda={busqueda} />
+          </div>
         </div>
 
       </div>

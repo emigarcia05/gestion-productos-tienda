@@ -1,21 +1,21 @@
 ---
-description: Identidad de marca #0072BB, Header estándar, filtros de doble fila, tablas centradas. Reglas de oro para Cursor en módulos nuevos.
+description: Identidad de marca #0072BB, Header estándar, filtros de doble fila, tablas centradas. Reglas de oro para Cursor en módulos nuevos. Usar siempre tokens del tema (globals.css); no hardcodear slate/white.
 globs: **/app/**/*.tsx, **/components/**/*.tsx
 ---
 
 # Reglas de oro — Identidad de marca y layout
 
-**Color primario #0072BB:** Usar en acciones principales, bordes de foco (`focus-visible:border-primary`), iconos de navegación activa y encabezados de tablas (`bg-primary/10 text-primary`). Contraste: fondos blancos y textos `text-slate-900`.
+**Color primario (#0072BB / `--primary`):** Usar en acciones principales, bordes de foco (`focus-visible:border-primary`), iconos de navegación activa y encabezados de tablas. Contraste: fondos `bg-card` o `bg-background` y textos `text-foreground`. No usar `text-slate-900` ni `text-black`; usar `text-foreground`.
 
 **Header (Tarjeta de presentación):** `flex justify-between items-center`. Botones de acción **exclusivamente a la derecha**. **Tamaño uniforme obligatorio:** todos los botones del header deben ser `h-10 px-4` (regla mandatoria para módulos actuales y futuros). SectionHeader ya aplica `[&_button]:!h-10 [&_button]:!px-4`.
 
 **Sistema de filtros de doble fila (estándar):**
-- **Fila 1 (Selección):** Solo menús desplegables (Select de shadcn): Sucursales, Proveedores, Rubros, etc. Alineados a la izquierda con `gap-4`. Usar `FilterRowSelection` de `@/components/FilterBar`.
-- **Fila 2 (Búsqueda):** Entrada de texto. El input debe ocupar **75% del ancho** de la tabla/contenedor. Usar `FilterRowSearch` (wrapper al 75%). Borde del input en **#0072BB cuando esté activo** (`INPUT_FILTER_CLASS` ya lo aplica).
+- **Fila 1 (Selección):** Solo menús desplegables (Select de shadcn). Usar **`FilaFiltrosDesplegables`** de `@/components/FilterBar` (siempre 5 columnas; de 1 a 5 filtros, slots no usados vacíos). Cada Select dentro de un `div` con `FILTER_SELECT_WRAPPER_CLASS`.
+- **Fila 2 (Búsqueda):** Entrada de texto en wrapper al **75%**. Usar `FilterRowSearch` y `INPUT_FILTER_CLASS` (borde primary cuando activo).
 
-**Tablas:** Centrado absoluto en encabezados y datos. Color de marca en encabezados de columna (`bg-primary/10 text-primary font-bold`).
+**Tablas:** Centrado en encabezados y datos. Encabezados con `bg-primary` y `text-primary-foreground`. Celdas con `text-foreground`. No duplicar estilos; usar componente `Table` de `@/components/ui/table` o clase `tabla-global`.
 
-Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha + sistema de filtros de dos filas.
+Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha + sistema de filtros con `FilaFiltrosDesplegables` + tokens del tema (sin `border-slate-*`, `text-slate-*`, `bg-white`).
 
 ---
 
@@ -25,71 +25,54 @@ Cualquier módulo nuevo debe heredar: Header con botones uniformes a la derecha 
 
 **Toda la navegación** está en el aside. No hay barra superior ni sub-header; el contenido empieza con el título de sección y la tabla/filtros.
 
-**Sidebar:** `bg-slate-50`, borde derecho definido `border-r border-slate-300`. Acordeón vertical con `Collapsible`; al clic en un módulo se despliegan sus submódulos (con sangría). Contraste delicado: texto `text-slate-900` en módulos y submódulos inactivos.
+**Sidebar:** Fondo `--sidebar` (#0072BB). Borde y acentos con variables del tema (`--sidebar-border`). Acordeón vertical con `Collapsible`. Textos e iconos: `text-sidebar-foreground` (blanco). No usar `bg-slate-50` ni `border-slate-300`; la sidebar usa el tema de marca.
 
-**Módulos (Nivel 1):** No redirigen; solo abren/cierran. **Iconografía:** Todos los iconos de módulo y los chevrons (ChevronDown/ChevronRight) usan siempre el color de marca `text-primary` (#0072BB) para contraste claro sobre el fondo de la sidebar.
-- Abierto: `text-slate-900 font-bold`, icono y chevron `text-primary`, `ChevronDown` con `rotate-180`.
-- Cerrado: `text-slate-900 font-semibold`, icono y chevron `text-primary`, hover `hover:bg-primary/10 hover:text-primary`.
+**Módulos (Nivel 1):** No redirigen; solo abren/cierran. Iconografía: iconos y chevrons con `text-primary` o `text-sidebar-indicator` según diseño. Abierto: `font-bold`, `ChevronDown` con `rotate-180`. Cerrado: `font-semibold`, hover `hover:bg-primary/10`.
 
-**Submódulos (Nivel 2):** Son los únicos `Link` que cambian de ruta. Con indent (sangría) bajo el módulo.
-- Activo: `bg-[#0072BB]/10`, texto `#0072BB`, línea vertical izquierda 2px `border-l-2 border-primary`.
-- Pedido Urgente: indicador visual `#FFC107` (punto sólido o icono Zap).
+**Submódulos (Nivel 2):** Son los únicos `Link` que cambian de ruta. Activo: `bg-primary/10`, `text-primary`, `border-l-2 border-primary`. Pedido Urgente: indicador `accent2` (#FFC107).
 
-**Estructura:** Lista Proveedores → Lista Proveedores (submódulo independiente), Listado de proveedores. Lista Tienda → Comp. Px. Prov. (Act. Prod vinculados), Control aumentos. Control Stock → Control Stock. Pedido Mercadería → Pedido Urgente, Tintométrico, Reposición, Historial Pedidos.
+**Estructura:** Lista Proveedores → Lista Proveedores, Listado de proveedores. Lista Tienda → Comp. Px. Prov., Control aumentos. Control Stock. Pedido Mercadería → Pedido Urgente, Tintométrico, Reposición, Historial Pedidos.
 
 ## 2. Header de sección y botones de acción
 
-**Estructura:** Contenedor horizontal `flex justify-between items-center`. Sin descripción bajo el título. Margen generoso bajo la fila del header: `mb-8`.
+**Estructura:** Contenedor horizontal `flex justify-between items-center`. Margen bajo el header: `mb-8`.
 
-**Título:** `text-3xl font-black text-slate-950`. Una sola línea; la elegancia viene del espaciado y del contraste de los botones.
+**Título:** Usar tokens de tipografía del tema (ej. `text-2xl`/`text-3xl` con `font-bold`), color `text-foreground`. Línea decorativa: `bg-primary`.
 
-**Botones de acción (zona derecha):** Agrupados en `flex gap-2`. **Ubicación obligatoria:** Importar Lista, Crear Proveedor, Sincronizar, Exportar .csv, Imprimir, Generar Pedido y Acción Masiva se renderizan **solo en el Header (Tarjeta de Título)**, nunca dentro de la tabla ni en el cuerpo de la página. **Tamaño y estilo uniformes:** `h-10 px-4`, `rounded-lg`, `font-semibold`; usar las constantes de `@/lib/actionButtons`: `ACTION_BUTTON_SECONDARY` (outline, `border-slate-300`, `text-slate-900`, `hover:shadow-md`) para acciones secundarias; `ACTION_BUTTON_PRIMARY` (fondo #0072BB, texto blanco, `hover:brightness-90 hover:shadow-md`) para la acción principal (Crear Proveedor, Generar Pedido). Cada botón con **Tooltip** de shadcn al hover.
-- **Pedido Mercadería:** En todos los submódulos (Pedido Urgente, Tintométrico, Reposición, Historial) el botón **Generar Pedido** debe aparecer en el header y ser el más destacado (primario #0072BB).
+**Botones de acción (zona derecha):** `flex gap-2`. Importar Lista, Crear Proveedor, Sincronizar, etc. solo en el Header. Tamaño uniforme: `h-10 px-4`, `rounded-lg`, `font-semibold`. Usar `ACTION_BUTTON_PRIMARY` / `ACTION_BUTTON_SECONDARY` de `@/lib/actionButtons`. Tooltip de shadcn al hover.
 
 ## 3. Filtros (doble fila estándar)
 
-**Estructura fija:** `FilterBar` > `FilterRowSelection` (fila 1) > `FilterRowSearch` (fila 2).
-- **Fila 1:** Solo Selects (Sucursal, Proveedor, Rubro, etc.), alineados a la izquierda, `gap-4`. **Sin labels:** se usan placeholders en el trigger (ej. "Seleccionar sucursal", "Filtrar por rubro"). Placeholder inactivo: `text-slate-400`; valor seleccionado: `text-slate-900` (`SELECT_TRIGGER_FILTER_CLASS`).
-- **Fila 2:** Input de búsqueda en wrapper al **75% de ancho** (`FilterRowSearch`). Placeholder tipo "Buscar por descripción o código..." con `placeholder:text-slate-400`; texto al escribir `text-slate-900`. Borde **#0072BB** cuando activo (`INPUT_FILTER_CLASS`).
-- Contenedor: `gap-y-2 py-2` entre filas para ahorro vertical. Fondo blanco, bordes `border-slate-300`.
+**Estructura fija:** `FilterBar` (con `filtros-contenedor-tienda bg-card`) > `FilterRowSelection` > **`FilaFiltrosDesplegables`** (fila de 5 columnas) > `FilterRowSearch` (input 75%) + `LimpiarFiltrosButton`.
+- **Fila 1:** Selects con `FILTER_SELECT_WRAPPER_CLASS` y trigger `input-filtro-unificado` (o `SELECT_TRIGGER_FILTER_CLASS`). Placeholders en el trigger. SelectContent con `position="popper" side="bottom" align="start" className="select-content-filtro"`.
+- **Fila 2:** Input con `INPUT_FILTER_CLASS` o `input-filtro-unificado`. Placeholder y texto con colores del tema (`text-muted-foreground` / `text-foreground`).
 
 ## 4. Tabla de datos — regla obligatoria
 
-**Todas las tablas de la aplicación** (todos los módulos y usuarios) deben tener **exactamente el mismo estilo**. Para garantizarlo solo hay dos formas válidas de implementar una tabla:
+**Solo dos formas válidas:**
+1. Componente `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` de `@/components/ui/table` (con `variant="compact"` si aplica).
+2. `<table className="tabla-global ...">` sin estilos propios en thead/tbody/tr/th/td.
 
-1. **Componente shadcn:** Usar `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` de `@/components/ui/table`.
-2. **HTML con clase global:** Usar `<table className="tabla-global ...">` y no añadir estilos propios a `thead`, `tbody`, `tr`, `th`, `td` (ni `bg-brand`, ni `text-white`, ni `text-white/60`, etc.). El contenedor de la tabla debe tener fondo claro (`bg-white`) para que el zebra y el texto negro se vean correctamente.
+**Contenedor de tabla:** `bg-card`, `border-card-border`, `rounded-lg`, `shadow-sm`. No usar `bg-white` ni `border-slate-200` ni `style={{ borderColor: ... }}`. Clase opcional: `.contenedor-tabla-card` (globals.css).
 
-**Prohibido:** `<table>` con clases propias en encabezados o celdas que anulen el diseño unificado (p. ej. `text-brand-fg`, `text-white/70` en celdas). Cualquier tabla nueva debe usar (1) o (2).
+**Encabezado (thead):** Fondo `bg-primary`, texto `text-primary-foreground`, `font-bold`, centrado.
 
-**Card contenedora:** `bg-white`, `rounded-xl`, `border-slate-200`, `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`.
+**Filas y celdas (tbody):** Zebra: `bg-card` / `bg-blue-50/50`. Texto `text-foreground`, `text-sm`. Hover `bg-primary/10`. Bordes `border-border`.
 
-**Encabezado (thead):** Fondo color de marca sólido `#0072BB`, texto blanco puro `text-white`, `font-bold`, alineación `text-center`.
-
-**Filas y celdas (tbody):** Cebra: filas impares `bg-white`, filas pares `bg-blue-50/50`. Texto de datos `text-black`, `text-center`. Hover `hover:bg-blue-100/40`. Padding `px-3 py-4`.
-
-**Numéricos y moneda:** Redondear a 0 decimales. Separador de miles: punto (ej. 1.500, 25.000). Usar `fmtNumero(n)` o `fmtPrecio(n)` de `@/lib/format` para valores en celdas.
-
-**Datos vacíos:** Mostrar guion medio "—" centrado. Usar `fmtCelda(val)` o `fmtNumero(n)` (devuelve "—" si es null/undefined/vacío).
-
-**Dato destacado:** Columna especial (ej. Cantidad Urgente) con `text-primary` en el header o badge en la celda.
+**Numéricos y vacíos:** `fmtNumero`, `fmtPrecio`, `fmtCelda` de `@/lib/format`. Mensajes "Sin resultados": `text-muted-foreground`.
 
 ## 5. Header (tarjeta de presentación)
 
-**Título:** `text-3xl font-black text-slate-950` con línea decorativa azul a la izquierda (`w-1 h-10 rounded-full bg-primary`). **Subtítulo:** nombre del submódulo debajo con menor jerarquía (`text-sm font-medium text-slate-500`). Botones de acción a la derecha con tamaño uniforme **obligatorio** (`h-10 px-4`).
+**Título:** Con línea decorativa `bg-primary`. **Subtítulo:** `text-muted-foreground`. Botones a la derecha, tamaño uniforme `h-10 px-4`.
 
 ## 6. Paleta y layout
 
-**Fondo:** `bg-slate-50` para la página (main). **Cards:** blanco puro (`bg-white` / `--card: #ffffff`). **Marca:** #0072BB para primarios y activos. **Detalle:** #FFC107 solo para el icono/indicador de "Pedido Urgente".
+**Fondo main:** `bg-background`. **Cards y listados:** `bg-card`, borde `border-card-border`. **Marca:** `primary` (#0072BB) para primarios y activos. **Detalle/urgente:** `accent2` (#FFC107). No hardcodear colores slate/white; usar variables de `globals.css`.
 
 ## 7. Tipografía y separadores
 
-**Separadores:** Usar `Separator` de shadcn:
-- Entre encabezado y filtros (ya en SectionHeader).
-- Entre filtros y tabla (añadir `<Separator className="bg-slate-200/60" />` antes del Card).
+**Separadores:** `Separator` de shadcn. Entre encabezado y filtros (SectionHeader). Entre filtros y tabla: no añadir gap extra; la distancia la define el `margin-bottom` del recuadro de filtros (variable `--espacio-filtros-vertical`). Ver **docs/COMPONENTES_ESTILOS.md**.
 
 ## Orden en página
 
-`SectionHeader` (título + subtitulo opcional + actions; `mb-8`) → `FilterBar` (con labels) → `Separator` → `Card` (tabla). Tablas: datos centrados, `text-slate-900`, encabezados #0072BB, filas con aire (`py-4`) y hover sutil.
-
-Usar Tailwind CSS 4 y mantener contraste accesible (ratio adecuado).
+`SectionHeader` → `FilterBar` (con `FilaFiltrosDesplegables` y `bg-card`) → contenido (tabla/cards). Tablas con estilos desde `globals.css` (`.tabla-global` o `.tabla-gestion-compacta`). Usar Tailwind CSS 4 y tokens del tema; mantener contraste accesible.

@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, { FilterRowSelection, FilterRowSearch, FilaFiltrosDesplegables, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const FOCUS_KEY = "filtros-tienda-focus";
 
@@ -97,7 +97,7 @@ export default function FiltrosTienda({
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
-        <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+        <FilaFiltrosDesplegables>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
               <SelectTrigger id="filtro-tienda-marca" className="input-filtro-unificado">
@@ -142,7 +142,7 @@ export default function FiltrosTienda({
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-3">
         <FilterRowSearch className="flex-1">
