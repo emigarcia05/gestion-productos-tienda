@@ -37,7 +37,7 @@ export interface ItemTiendaParaTabla {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
-  /** Si hay al menos un proveedor vinculado con precio final más bajo que el principal: diferencia positiva (costo - mejor precio). Null si ya tiene el mejor precio o no hay vínculos. */
+  /** Si hay ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra: diferencia (costo - mejor px no oficial). Null en caso contrario. */
   diferenciaMejorPrecio: number | null;
 }
 
@@ -66,15 +66,20 @@ export async function getTiendaPageData(params: {
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
 
-  /* Filtro "Menor Cx Disponible": solo ítems con ≥2 proveedores vinculados y el principal no es el de menor costo. */
+  /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
   let idsMenorCxDisponible: string[] = [];
   if (mejorPrecio === "true") {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT lpt.id
       FROM precios_tienda lpt
-      WHERE (SELECT COUNT(*) FROM precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 1
-        AND (SELECT MIN(COALESCE(lpp.px_compra_final, lpp.px_lista_proveedor::numeric)) FROM precios_proveedores lpp
-             WHERE lpp.id_lista_precios_tienda = lpt.id) < lpt.costo_compra
+      WHERE (SELECT COUNT(*) FROM precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
+        AND EXISTS (
+          SELECT 1 FROM precios_proveedores lpp
+          INNER JOIN proveedores p ON p.id = lpp.id_proveedor
+          WHERE lpp.id_lista_precios_tienda = lpt.id
+            AND LOWER(TRIM(COALESCE(p.nombre, ''))) != LOWER(TRIM(COALESCE(lpt.proveedor, '')))
+            AND COALESCE(lpp.px_compra_final, lpp.px_lista_proveedor::numeric) < lpt.costo_compra
+        )
     `;
     idsMenorCxDisponible = rows.map((r) => r.id);
     if (idsMenorCxDisponible.length === 0) {
@@ -153,14 +158,24 @@ export async function getTiendaPageData(params: {
             dtoCantidad: true,
             dtoFinanciero: true,
             cxTransporte: true,
+            proveedor: { select: { nombre: true } },
           },
         })
       : [];
 
-  // Mínimo px compra final por ítem tienda (entre proveedores vinculados). Si px_compra_final es null, se calcula.
-  const minPxPorTienda = new Map<string, number>();
+  const proveedorOficialPorTienda = new Map<string, string>();
+  for (const r of rows) {
+    const txt = (r.proveedor ?? "").trim().toLowerCase();
+    proveedorOficialPorTienda.set(r.id, txt);
+  }
+
+  // Mínimo px_compra_final solo entre proveedores NO oficiales por ítem tienda (para tilde "Menor Cx Disponible").
+  const minPxNoOficialPorTienda = new Map<string, number>();
   for (const lp of linkedPrices) {
     if (!lp.idListaPrecioTienda) continue;
+    const oficial = proveedorOficialPorTienda.get(lp.idListaPrecioTienda) ?? "";
+    const nombreProveedor = (lp.proveedor?.nombre ?? "").trim().toLowerCase();
+    if (nombreProveedor === oficial) continue; // excluir proveedor oficial
     let n: number;
     if (lp.pxCompraFinal != null) {
       n = Number(lp.pxCompraFinal);
@@ -176,8 +191,8 @@ export async function getTiendaPageData(params: {
         lp.dtoFinanciero
       );
     }
-    const prev = minPxPorTienda.get(lp.idListaPrecioTienda);
-    if (prev === undefined || n < prev) minPxPorTienda.set(lp.idListaPrecioTienda, n);
+    const prev = minPxNoOficialPorTienda.get(lp.idListaPrecioTienda);
+    if (prev === undefined || n < prev) minPxNoOficialPorTienda.set(lp.idListaPrecioTienda, n);
   }
 
   const nombreToPrefijo = new Map(proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo]));
@@ -186,12 +201,12 @@ export async function getTiendaPageData(params: {
     const proveedorTexto = r.proveedor?.trim() ?? null;
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
     const costo = Number(r.costoCompra);
-    const minPx = minPxPorTienda.get(r.id);
+    const minPxNoOficial = minPxNoOficialPorTienda.get(r.id);
     const cantidadVinculos = r._count.listaPreciosProveedores;
-    /* Tilde "Menor Cx Disponible": ≥1 proveedor vinculado y alguno tiene costo menor que el principal (costo_compra). */
+    /* Tilde "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
     const diferenciaMejorPrecio =
-      cantidadVinculos >= 1 && minPx != null && minPx < costo
-        ? Math.round((costo - minPx) * 100) / 100
+      cantidadVinculos >= 2 && minPxNoOficial != null && minPxNoOficial < costo
+        ? Math.round((costo - minPxNoOficial) * 100) / 100
         : null;
     return {
       id: r.id,
