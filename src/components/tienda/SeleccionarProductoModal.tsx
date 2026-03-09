@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
+import { LimpiarFiltrosButton } from "@/components/FilterBar";
 import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { cn } from "@/lib/utils";
@@ -68,9 +69,16 @@ export default function SeleccionarProductoModal({
     getProveedores().then(setProveedores);
   }, [open]);
 
+  const hayFiltros = !!proveedorId || !!q.trim();
+
   useEffect(() => {
     if (!open) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!hayFiltros) {
+      setLoading(false);
+      setRows([]);
+      return;
+    }
     setLoading(true);
     const run = async () => {
       const result = await listarProductosParaVincular(
@@ -88,7 +96,7 @@ export default function SeleccionarProductoModal({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [open, proveedorId, q]);
+  }, [open, proveedorId, q, hayFiltros]);
 
   function limpiar() {
     setProveedorId("");
@@ -107,7 +115,8 @@ export default function SeleccionarProductoModal({
     onSeleccionar(producto);
   }
 
-  const hayFiltros = !!proveedorId || !!q.trim();
+  const MENSAJE_SIN_FILTRO =
+    "Aplicá al menos un filtro (Proveedor o Descripción) para ver los productos.";
 
   return (
     <Dialog
@@ -125,96 +134,108 @@ export default function SeleccionarProductoModal({
           <DialogTitle className="modal-app__title">Vincular nuevo producto</DialogTitle>
         </DialogHeader>
 
-        {/* Div 1: filtros siempre visibles, sin títulos */}
-        <div className="shrink-0 px-6 py-3 border-b border-border flex flex-wrap items-center gap-3 bg-card">
-          <Select
-            value={proveedorId || "none"}
-            onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
-          >
-            <SelectTrigger className="input-filtro-unificado w-[200px]">
-              <SelectValue placeholder="Proveedor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Todos los proveedores</SelectItem>
-              {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  [{p.prefijo}] {p.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Descripción"
-            className="input-filtro-unificado flex-1 min-w-[180px] max-w-[320px]"
-          />
-          {hayFiltros && (
-            <Button type="button" variant="ghost" size="sm" onClick={limpiar}>
-              Limpiar
+        {/* Plantilla modal-app: content (cuerpo + footer) según globals.css */}
+        <div className="modal-app__content flex-1 min-h-0">
+          {/* Cuerpo: Filtro Proveedor (fijo) + Filtro Descripción (fijo) + Encabezado (fijo) + Tabla (scroll) */}
+          <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
+            {/* Filtro Proveedor (fijo) */}
+            <div className="shrink-0 pb-2">
+              <Select
+                value={proveedorId || "none"}
+                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger className="input-filtro-unificado w-[200px]">
+                  <SelectValue placeholder="Proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Todos los proveedores</SelectItem>
+                  {proveedores.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      [{p.prefijo}] {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro por descripción (fijo) */}
+            <div className="shrink-0 pb-3 flex items-center gap-2 border-b border-border">
+              <div className="w-[200px] flex items-center gap-2">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Descripción"
+                  className="input-filtro-unificado flex-1 min-w-0"
+                />
+                <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
+              </div>
+            </div>
+
+            {/* Encabezado (fijo, sticky) + Tabla (scroll). Sin datos hasta que haya al menos un filtro. */}
+            <div className="flex-1 min-h-0 overflow-auto pt-3 pb-3">
+              {!hayFiltros ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  {MENSAJE_SIN_FILTRO}
+                </div>
+              ) : loading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin" /> Cargando...
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  No hay productos o no coinciden los filtros.
+                </div>
+              ) : (
+                <Table variant="compact">
+                  <TableHeader className="modal-tabla-thead-sticky">
+                    <TableRow className="hover:bg-transparent border-b-0">
+                      <TableHead className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
+                        Proveedor
+                      </TableHead>
+                      <TableHead className="py-2.5 px-3 text-xs min-w-0">
+                        Descripción
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        onDoubleClick={() => handleRowDoubleClick(row)}
+                        className="cursor-pointer select-none hover:bg-primary/5"
+                        title="Doble clic para vincular"
+                      >
+                        <TableCell className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
+                          <Badge variant="secondary" className="font-mono text-xs">
+                            {row.proveedor.prefijo}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-2.5 px-3 text-xs min-w-0">
+                          <span className="block truncate" title={row.descripcionProveedor}>
+                            {row.descripcionProveedor}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </div>
+
+          <div className="modal-app__footer shrink-0 justify-between">
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {rows.length > 0 && (
+                <>
+                  <strong className="text-primary font-semibold">{rows.length.toLocaleString()}</strong>
+                  {" resultado(s)"}
+                </>
+              )}
+            </p>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cancelar
             </Button>
-          )}
-        </div>
-
-        {/* Div 2: tabla con encabezado fijo y scroll en el cuerpo */}
-        <div className="flex-1 min-h-0 overflow-auto px-6 py-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" /> Cargando...
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              No hay productos o no coinciden los filtros.
-            </div>
-          ) : (
-            <Table variant="compact">
-              <TableHeader className="modal-tabla-thead-sticky">
-                <TableRow className="hover:bg-transparent border-b-0">
-                  <TableHead className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
-                    Proveedor
-                  </TableHead>
-                  <TableHead className="py-2.5 px-3 text-xs min-w-0">
-                    Descripción
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    onDoubleClick={() => handleRowDoubleClick(row)}
-                    className="cursor-pointer select-none hover:bg-primary/5"
-                    title="Doble clic para vincular"
-                  >
-                    <TableCell className="py-2.5 px-3 text-xs w-28 shrink-0 text-center">
-                      <Badge variant="secondary" className="font-mono text-xs">
-                        {row.proveedor.prefijo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-2.5 px-3 text-xs min-w-0">
-                      <span className="block truncate" title={row.descripcionProveedor}>
-                        {row.descripcionProveedor}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        <div className="modal-tabla-footer shrink-0">
-          <p className="modal-tabla-footer__count">
-            {rows.length > 0 && (
-              <>
-                <strong>{rows.length.toLocaleString()}</strong>
-                {" resultado(s)"}
-              </>
-            )}
-          </p>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Cancelar
-          </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
