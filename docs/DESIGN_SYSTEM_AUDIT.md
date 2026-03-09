@@ -71,7 +71,7 @@ Para botones que representan una **acción principal o de limpieza** con solo ic
 ## 5. Layout y espaciado
 
 - **SectionHeader:** Título + opcional subtítulo + acciones a la derecha; botones con `h-10 px-4`.
-- **FilterBar:** FilterRowSelection (Selects) + FilterRowSearch (input al 75%) + LimpiarFiltrosButton. Usar `INPUT_FILTER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. **Fila de Selects:** siempre 5 columnas en toda la app (`fila-filtros-5 grid grid-cols-5`); los módulos usan de 1 a 5 filtros y los slots no usados quedan vacíos (detalle en **COMPONENTES_ESTILOS.md**). **Contenedor de filtros:** el `FilterBar` debe llevar `bg-card` (fondo blanco) en todas las pantallas con filtros (Lista Precios, Sugeridos, Tienda); ej. `className="filtros-contenedor-tienda bg-card"`.
+- **FilterBar:** FilterRowSelection (Selects) + FilterRowSearch (input al 75%) + LimpiarFiltrosButton. Usar `INPUT_FILTER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. **Fila de Selects:** siempre 5 columnas en toda la app (`fila-filtros-5 grid grid-cols-5`); los módulos usan de 1 a 5 filtros y los slots no usados quedan vacíos (detalle en **COMPONENTES_ESTILOS.md**). **Contenedor de filtros:** el `FilterBar` debe llevar `bg-card` (fondo blanco) en todas las pantallas con filtros (Lista Precios, Sugeridos, Tienda); ej. `className="filtros-contenedor-tienda bg-card"`. **Espaciado filtros → tabla:** no añadir `gap` ni `Separator` entre FilterBar y el contenido; la distancia la define el `margin-bottom` del recuadro (variable global). Ver **COMPONENTES_ESTILOS.md** (Distancia simétrica).
 - **Main:** Fondo `bg-background` (slate muy claro). Cards con `bg-card` (blanco).
 
 ---

@@ -18,7 +18,6 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
-import { Separator } from "@/components/ui/separator";
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPct } from "@/lib/format";
 import { matchByMultiTerm } from "@/lib/busqueda";
@@ -251,7 +250,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
   }
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col gap-0 h-full">
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
@@ -343,9 +342,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
         </div>
       </FilterBar>
 
-      <Separator className="bg-slate-200/60" />
-
-      {/* ── Layout: mitad superior (3 columnas) + mitad inferior (productos) ── */}
+      {/* Sin gap ni Separator aquí: la distancia filtros → tablas la da solo el margin-bottom del recuadro (--espacio-filtros-vertical). Ver COMPONENTES_ESTILOS.md. */}
       <div className="flex flex-col gap-3 flex-1 min-h-0">
 
         {/* Marca | Rubro | Sub-Rubro */}

@@ -90,6 +90,8 @@ La distancia desde el **recuadro de filtros** hasta el **encabezado** y hasta la
 
 **Regla:** Cualquier página con estructura encabezado → filtros → tabla debe usar la clase `.contenedor-pagina-con-filtros` en el contenedor de contenido para heredar el espaciado simétrico sin duplicar estilos.
 
+**Cuando FilterBar y contenido (tabla/cards) están en el mismo componente** (p. ej. Control Aumentos): el contenedor que envuelve FilterBar y el bloque de contenido debe usar `gap-0` entre ambos. No insertar `Separator` ni `gap` entre el FilterBar y el inicio del contenido; así la única distancia es el `margin-bottom` del recuadro (variable global) y se mantiene la misma que entre encabezado y filtros.
+
 ### Ejemplo (4 filtros — Lista Tienda / Comp. Px. Prov.)
 
 ```tsx
