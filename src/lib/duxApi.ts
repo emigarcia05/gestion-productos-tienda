@@ -231,9 +231,13 @@ export interface ActualizarCostoDuxPayload {
   id_proveedor: string;
 }
 
+const POST_429_MAX_RETRIES = 3;
+const POST_429_WAIT_MS = 5000;
+
 /**
  * Ejecuta el POST de actualización/creación de ítem en Dux.
  * Usa el token configurado en DUX_API_TOKEN.
+ * Respeta rate limit: 429 → espera al menos 5 s (o Retry-After) y reintenta.
  *
  * Ver docs/api-dux-actualizacion-costos.md para el contrato esperado.
  */
@@ -243,28 +247,49 @@ export async function postActualizarCostoEnDux(
   const token = process.env.DUX_API_TOKEN;
   if (!token) throw new Error("DUX_API_TOKEN no configurado.");
 
-  const res = await fetch(DUX_NUEVO_ITEM_URL, {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      authorization: token,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const headers = {
+    accept: "application/json",
+    authorization: token,
+    "content-type": "application/json",
+  };
+  const body = JSON.stringify(payload);
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
+  for (let attempt = 0; attempt <= POST_429_MAX_RETRIES; attempt++) {
+    const res = await fetch(DUX_NUEVO_ITEM_URL, {
+      method: "POST",
+      headers,
+      body,
+    });
+
+    if (res.ok) {
+      try {
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
     const text = await res.text().catch(() => "");
-    throw new Error(
+    lastError = new Error(
       `Error API Dux (${res.status} ${res.statusText}): ${
         text || "sin cuerpo de respuesta"
       }`
     );
+
+    if (res.status === 429 && attempt < POST_429_MAX_RETRIES) {
+      let waitMs = POST_429_WAIT_MS * Math.pow(2, attempt);
+      const retryAfter = res.headers.get("Retry-After");
+      if (retryAfter) {
+        const seconds = parseInt(retryAfter, 10);
+        if (!Number.isNaN(seconds)) waitMs = Math.max(waitMs, seconds * 1000);
+      }
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    throw lastError;
   }
 
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+  throw lastError ?? new Error("Error API Dux: desconocido");
 }

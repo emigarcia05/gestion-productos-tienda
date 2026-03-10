@@ -5,8 +5,8 @@ import type { ActionResult } from "@/lib/types";
 import { postActualizarCostoEnDux } from "@/lib/duxApi";
 import { getPayloadsActualizarCostosDux } from "@/services/actualizarPreciosDux.service";
 
-/** Pausa entre POSTs a DUX (rate limit). */
-const DELAY_MS = 2000;
+/** Pausa entre POSTs a DUX (rate limit: al menos 5 s entre peticiones). */
+const DELAY_MS = 5000;
 
 /**
  * Actualiza precios en DUX a partir de los ítems de Control Stock (precios_tienda) visibles.
