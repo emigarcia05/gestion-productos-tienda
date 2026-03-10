@@ -3,6 +3,7 @@
  * Permite que el polling desde la sidebar funcione en serverless.
  */
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const EXPORT_PROGRESS_ID = "exportar-precios-dux";
@@ -59,7 +60,7 @@ export async function startExportInDb(total: number): Promise<void> {
       resultCreados: null,
       resultActualizados: null,
       resultEliminados: null,
-      resultErrores: null,
+      resultErrores: Prisma.DbNull,
       error: null,
       updatedAt: new Date(),
     },
@@ -81,7 +82,7 @@ export async function setExportResultInDb(enviados: number): Promise<void> {
       resultCreados: enviados,
       resultActualizados: null,
       resultEliminados: null,
-      resultErrores: null,
+      resultErrores: Prisma.DbNull,
       error: null,
       updatedAt: new Date(),
     },
