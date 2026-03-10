@@ -34,7 +34,13 @@ export default async function StockPage({ searchParams }: Props) {
     sucursal === "guaymallen" || sucursal === "maipu" ? sucursal : null;
 
   const data = sucursalValida
-    ? await getControlStock(sucursalValida)
+    ? await getControlStock(sucursalValida, {
+        q,
+        marca,
+        rubro,
+        subRubro,
+        soloNegativo: soloNegativoBool,
+      })
     : { items: [], marcas: [], rubros: [], subRubros: [] };
 
   const soloNegativoBool = soloNegativo === "true";

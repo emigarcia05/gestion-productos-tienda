@@ -20,24 +20,12 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
-import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
+import type { ControlStockData, Sucursal } from "@/actions/stock";
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
   { value: "guaymallen", label: "Guaymallén" },
   { value: "maipu", label: "Maipú" },
 ];
-
-function distinctStrings(
-  items: ItemStock[],
-  getVal: (i: ItemStock) => string | null
-): string[] {
-  const set = new Set<string>();
-  for (const i of items) {
-    const v = getVal(i);
-    if (v != null && v.trim() !== "") set.add(v);
-  }
-  return Array.from(set).sort();
-}
 
 interface Props {
   data: ControlStockData;
@@ -69,13 +57,6 @@ export default function FiltrosStock({
   useEffect(() => {
     setQ(qActual);
   }, [qActual]);
-
-  const itemsPorMarca =
-    !marcaActual ? data.items : data.items.filter((i) => i.marca === marcaActual);
-  const itemsPorMarcaRubro =
-    !rubroActual ? itemsPorMarca : itemsPorMarca.filter((i) => i.rubro === rubroActual);
-  const opcionesRubros = distinctStrings(itemsPorMarca, (i) => i.rubro);
-  const opcionesSubRubros = distinctStrings(itemsPorMarcaRubro, (i) => i.subRubro);
 
   const hayFiltros = !!(
     q ||
@@ -248,7 +229,7 @@ export default function FiltrosStock({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">RUBRO</SelectItem>
-                {opcionesRubros.map((r) => (
+                {data.rubros.map((r) => (
                   <SelectItem key={r} value={r}>
                     {r}
                   </SelectItem>
@@ -275,7 +256,7 @@ export default function FiltrosStock({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">SUB-RUBRO</SelectItem>
-                {opcionesSubRubros.map((s) => (
+                {data.subRubros.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
                   </SelectItem>
@@ -285,7 +266,7 @@ export default function FiltrosStock({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={soloNegativoActual ? "negativo" : "todos"}
+              value={soloNegativoActual ? "negativo" : "none"}
               onValueChange={handleSoloNegativo}
               disabled={!sucursalSeleccionada}
             >
@@ -302,8 +283,7 @@ export default function FiltrosStock({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">STOCK</SelectItem>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="negativo">Stock negativo</SelectItem>
+                <SelectItem value="negativo">STOCK NEGATIVO</SelectItem>
               </SelectContent>
             </Select>
           </div>

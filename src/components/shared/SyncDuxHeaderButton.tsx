@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import SyncModal from "@/components/shared/SyncModal";
 import { useSyncDux } from "@/hooks/useSyncDux";
@@ -12,11 +11,7 @@ export default function SyncDuxHeaderButton() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
 
-  const { syncing, progreso, ejecutar } = useSyncDux((result) => {
-    toast.success(
-      `Datos actualizados — ${result.total.toLocaleString("es-AR")} ítems procesados.`,
-      { duration: 3000 }
-    );
+  const { syncing, progreso, ejecutar } = useSyncDux(() => {
     setShowModal(false);
     router.refresh();
   });

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSyncDux } from "@/hooks/useSyncDux";
 
@@ -14,17 +13,13 @@ interface Props {
  * Al abrir /stock muestra un modal recomendando sincronizar con Dux.
  * - Sí: inicia la sincronización en segundo plano, cierra el modal y el usuario puede usar la página.
  * - No: solo cierra el modal.
- * - Al terminar la sync: toast y router.refresh() para trabajar con datos actualizados.
+ * - Al terminar la sync: router.refresh() para trabajar con datos actualizados (sin toast; progreso en slidenav).
  */
 export default function StockPageSyncGate({ children }: Props) {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
 
-  const { syncing, ejecutar } = useSyncDux((result) => {
-    toast.success(
-      `Datos de stock actualizados — ${result.total.toLocaleString("es-AR")} ítems procesados.`,
-      { duration: 3000 }
-    );
+  const { syncing, ejecutar } = useSyncDux(() => {
     router.refresh();
   });
 

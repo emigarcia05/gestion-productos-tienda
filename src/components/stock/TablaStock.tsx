@@ -12,7 +12,6 @@ import {
 import { Input } from "@/components/ui/input";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
-import { matchByMultiTerm } from "@/lib/busqueda";
 import PrintStock from "./PrintStock";
 
 function fmtFecha(d: Date | null): string {
@@ -98,26 +97,15 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     setStocksEditados((prev) => ({ ...prev, [id]: value }));
   }
 
-  const filtrados = data.items.filter((i) => {
-    if (
-      qActual.trim() &&
-      !matchByMultiTerm([i.descripcion, i.codItem], qActual)
-    )
-      return false;
-    if (marcaActual && i.marca !== marcaActual) return false;
-    if (rubroActual && i.rubro !== rubroActual) return false;
-    if (subRubroActual && i.subRubro !== subRubroActual) return false;
-    if (soloNegativoActual && i.stock >= 0) return false;
-    return true;
-  });
+  const items = data.items;
 
   useEffect(() => {
-    if (onFiltradosCountChange) onFiltradosCountChange(filtrados.length);
-  }, [filtrados.length, onFiltradosCountChange]);
+    if (onFiltradosCountChange) onFiltradosCountChange(items.length);
+  }, [items.length, onFiltradosCountChange]);
 
   async function handleImprimir() {
     setImprimiendo(true);
-    const ids = filtrados.map((i) => i.id);
+    const ids = items.map((i) => i.id);
     const ahora = new Date();
     registrarImpresion(ids).then(() => {
       setImpresiones((prev) => {
@@ -153,7 +141,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-3 py-2 text-xs w-28">Código</TableHead>
+                <TableHead className="px-3 py-2 text-xs w-28">CÓD.</TableHead>
                 <TableHead className="px-3 py-2 text-xs">
                   Descripción
                 </TableHead>
@@ -166,7 +154,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtrados.length === 0 && (
+              {items.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={4}
@@ -176,7 +164,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                   </TableCell>
                 </TableRow>
               )}
-              {filtrados.map((item) => (
+              {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="px-3 py-2 text-xs font-mono">
                     {item.codItem}
@@ -206,7 +194,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
       {imprimiendo && (
         <PrintStock
-          items={filtrados}
+          items={items}
           sucursal={sucursalLabel}
           onClose={() => setImprimiendo(false)}
         />

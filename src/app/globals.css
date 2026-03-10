@@ -683,6 +683,14 @@
   overflow-y: auto;
   flex: 0 1 auto;
 }
+/* Modales de información: texto del cuerpo centrado */
+.modal-app__body--centered {
+  text-align: center;
+}
+.modal-app__body--centered > p,
+.modal-app__body--centered .modal-app__body-title {
+  text-align: center;
+}
 .modal-app > .modal-app__body {
   flex: 0 1 auto;
 }
