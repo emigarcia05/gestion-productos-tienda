@@ -7,14 +7,28 @@ import StockPageWithActions from "@/components/stock/StockPageWithActions";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  searchParams: Promise<{ sucursal?: string; q?: string; marca?: string; rubro?: string; subRubro?: string }>;
+  searchParams: Promise<{
+    sucursal?: string;
+    q?: string;
+    marca?: string;
+    rubro?: string;
+    subRubro?: string;
+    soloNegativo?: string;
+  }>;
 }
 
 export default async function StockPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) redirect("/proveedores");
 
-  const { sucursal, q = "", marca = "", rubro = "", subRubro = "" } = await searchParams;
+  const {
+    sucursal,
+    q = "",
+    marca = "",
+    rubro = "",
+    subRubro = "",
+    soloNegativo = "",
+  } = await searchParams;
 
   const sucursalValida: Sucursal | null =
     sucursal === "guaymallen" || sucursal === "maipu" ? sucursal : null;
@@ -22,6 +36,8 @@ export default async function StockPage({ searchParams }: Props) {
   const data = sucursalValida
     ? await getControlStock(sucursalValida)
     : { items: [], marcas: [], rubros: [], subRubros: [] };
+
+  const soloNegativoBool = soloNegativo === "true";
 
   return (
     <StockPageWithActions
@@ -31,6 +47,8 @@ export default async function StockPage({ searchParams }: Props) {
       marca={marca}
       rubro={rubro}
       subRubro={subRubro}
+      soloNegativo={soloNegativoBool}
     />
   );
 }
+

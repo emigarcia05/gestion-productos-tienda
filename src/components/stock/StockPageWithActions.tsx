@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import SectionHeader from "@/components/SectionHeader";
+import { useRef, useState } from "react";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaStock from "@/components/stock/TablaStock";
+import FiltrosStock from "@/components/stock/FiltrosStock";
 import StockPageSyncGate from "@/components/stock/StockPageSyncGate";
 import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
@@ -16,6 +17,7 @@ interface Props {
   marca: string;
   rubro: string;
   subRubro: string;
+  soloNegativo: boolean;
 }
 
 export default function StockPageWithActions({
@@ -25,8 +27,11 @@ export default function StockPageWithActions({
   marca,
   rubro,
   subRubro,
+  soloNegativo,
 }: Props) {
   const tableRef = useRef<TablaStockHandle>(null);
+  const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
+
   const tieneSucursal = sucursalValida !== null;
   const tieneItems = data.items.length > 0;
 
@@ -39,26 +44,44 @@ export default function StockPageWithActions({
     </div>
   );
 
+  const filters = (
+    <FiltrosStock
+      data={data}
+      sucursalActual={sucursalValida}
+      qActual={q}
+      marcaActual={marca}
+      rubroActual={rubro}
+      subRubroActual={subRubro}
+      soloNegativoActual={soloNegativo}
+      totalItems={totalFiltrados}
+    />
+  );
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader
-        titulo="Control Stock"
-        subtitulo="Por sucursal"
+    <StockPageSyncGate>
+      <ClassicFilteredTableLayout
+        title="Lista Tienda"
+        subtitle="Control Stock"
         actions={actions}
-      />
-      <StockPageSyncGate>
-        <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 pt-3">
-          <TablaStock
-            ref={tableRef}
-            data={data}
-            sucursalActual={sucursalValida}
-            qActual={q}
-            marcaActual={marca}
-            rubroActual={rubro}
-            subRubroActual={subRubro}
-          />
+        filters={filters}
+      >
+        <div className="flex flex-col h-full min-h-0 gap-0.5">
+          <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
+            <TablaStock
+              ref={tableRef}
+              data={data}
+              sucursalActual={sucursalValida}
+              qActual={q}
+              marcaActual={marca}
+              rubroActual={rubro}
+              subRubroActual={subRubro}
+              soloNegativoActual={soloNegativo}
+              onFiltradosCountChange={setTotalFiltrados}
+            />
+          </div>
         </div>
-      </StockPageSyncGate>
-    </div>
+      </ClassicFilteredTableLayout>
+    </StockPageSyncGate>
   );
 }
+
