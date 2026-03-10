@@ -138,16 +138,16 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
     : conAumento;
 
   return (
-    <div className="flex-1 overflow-y-auto rounded-b-lg border border-t-0 border-slate-200 bg-white">
+    <div className="flex-1 overflow-y-auto rounded-b-lg border border-t-0 border-border bg-card">
       {filtrados.length === 0 && (
-        <p className="text-xs text-slate-500 text-center py-6">Sin resultados</p>
+        <p className="text-xs text-muted-foreground text-center py-6">Sin resultados</p>
       )}
       {filtrados.map((item, idx) => (
         <div
           key={item.itemId}
-          className={`flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-slate-100 hover:bg-blue-100/40 ${idx % 2 === 1 ? "bg-blue-50/50" : "bg-white"}`}
+          className={`flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-border hover:bg-primary/10 ${idx % 2 === 1 ? "bg-blue-50/50" : "bg-card"}`}
         >
-          <span className="text-xs text-slate-900 truncate">{item.descripcion}</span>
+          <span className="text-xs text-foreground truncate">{item.descripcion}</span>
           <div className="flex items-center gap-1 shrink-0">
             <ColorPct pct={item.pctAumento} />
             <IconTendencia pct={item.pctAumento} />

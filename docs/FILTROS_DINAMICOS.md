@@ -35,10 +35,11 @@ La tabla siempre se filtra por Proveedor + Marca + Rubro (y búsqueda). El usuar
 
 ## Dónde aplicarla
 
-- **Lista Precios** (`/proveedores/lista-precios`): Proveedor, Marca, Rubro.
-- **Sugeridos** (`/proveedores/sugeridos`): Proveedor, Marca (y Rubro si se agrega la columna).
-- **Tienda** (`/tienda`): Marca, Rubro, SubRubro: misma regla (cada desplegable filtrado por los demás).
-- Cualquier pantalla nueva con filtros dinámicos.
+- **Lista Precios** (`/proveedores/lista-precios`): Proveedor, Marca, Rubro. Cumple la regla unificada.
+- **Sugeridos** (`/proveedores/sugeridos`): Proveedor, Marca (y Rubro si se agrega la columna). Cumple la regla unificada.
+- **Control Aumentos** (`/tienda/aumentos`): Marca, Rubro, SubRubro. Cumple la regla unificada (opciones y resultados por intersección en cliente).
+- **Tienda** (`/tienda`): Marca, Rubro, SubRubro. **Estado actual:** las opciones de cada desplegable se calculan solo con el filtro de búsqueda `q`; no se restringen entre sí (p. ej. las marcas no se limitan por el rubro o subrubro elegidos). El estándar deseado es alinear esta pantalla con la regla unificada en una futura iteración (opciones de cada eje filtradas por el resto).
+- Cualquier pantalla nueva con filtros dinámicos debe implementar la regla unificada desde el inicio.
 
 ## Implementación en backend (checklist)
 

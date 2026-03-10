@@ -1,9 +1,5 @@
 export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
 
-// Endpoint para creación / actualización de ítems (incluye costo) en Dux.
-const DUX_NUEVO_ITEM_URL =
-  "https://erp.duxsoftware.com.ar/WSERP/rest/services/item/nuevoItem";
-
 /** Rate limit DUX: 1 petición cada 5 segundos. Respetar en el cliente (ej. sync service) con delay >= 5s entre llamadas. */
 
 // IDs fijos de precios y sucursales en el sistema Dux de TiendaColor
@@ -138,18 +134,14 @@ export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAG
   for (let attempt = 0; attempt <= MAX_RETRIES_429; attempt++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    // #region agent log
     let res: Response;
     try {
       res = await fetch(url, { headers, cache: "no-store", signal: controller.signal });
     } catch (fetchErr) {
       clearTimeout(timeoutId);
-      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
-      fetch('http://127.0.0.1:7462/ingest/4aaad926-1e9e-4d0d-bfdd-1211332926ae',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'891179'},body:JSON.stringify({sessionId:'891179',location:'duxApi.ts:fetchItemsPage',message:'fetch to DUX API threw',data:{offset,attempt,error:msg},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
       throw fetchErr;
     }
     clearTimeout(timeoutId);
-    // #endregion
 
     if (res.ok) {
       const json = await res.json();
@@ -221,144 +213,4 @@ export async function fetchTodosLosItems(): Promise<ItemDux[]> {
   }
 
   return todos;
-}
-
-// ─── POST: Actualizar costo en Dux ────────────────────────────────────────────
-
-export interface ActualizarCostoDuxPayload {
-  cod_item: string;
-  costo: number;
-  id_proveedor: string;
-}
-
-const POST_429_MAX_RETRIES = 3;
-const POST_429_WAIT_MS = 5000;
-
-/**
- * Ejecuta el POST de actualización/creación de ítem en Dux.
- * Usa el token configurado en DUX_API_TOKEN.
- * Respeta rate limit: 429 → espera al menos 5 s (o Retry-After) y reintenta.
- *
- * Ver docs/api-dux-actualizacion-costos.md para el contrato esperado.
- */
-export async function postActualizarCostoEnDux(
-  payload: ActualizarCostoDuxPayload
-): Promise<unknown> {
-  const token = process.env.DUX_API_TOKEN;
-  if (!token) throw new Error("DUX_API_TOKEN no configurado.");
-
-  const headers = {
-    accept: "application/json",
-    authorization: token,
-    "content-type": "application/json",
-  };
-  const body = JSON.stringify(payload);
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= POST_429_MAX_RETRIES; attempt++) {
-    const res = await fetch(DUX_NUEVO_ITEM_URL, {
-      method: "POST",
-      headers,
-      body,
-    });
-
-    if (res.ok) {
-      try {
-        return await res.json();
-      } catch {
-        return null;
-      }
-    }
-
-    const text = await res.text().catch(() => "");
-    const errorMsg = `Error API Dux (${res.status} ${res.statusText}): ${text || "sin cuerpo de respuesta"}`;
-    lastError = new Error(errorMsg);
-    console.error("[DUX POST nuevoItem]", res.status, res.statusText, text || "(sin cuerpo)");
-
-    if (res.status === 429 && attempt < POST_429_MAX_RETRIES) {
-      let waitMs = POST_429_WAIT_MS * Math.pow(2, attempt);
-      const retryAfter = res.headers.get("Retry-After");
-      if (retryAfter) {
-        const seconds = parseInt(retryAfter, 10);
-        if (!Number.isNaN(seconds)) waitMs = Math.max(waitMs, seconds * 1000);
-      }
-      await new Promise((r) => setTimeout(r, waitMs));
-      continue;
-    }
-
-    throw lastError;
-  }
-
-  throw lastError ?? new Error("Error API Dux: desconocido");
-}
-
-/** Máximo de ítems por request según límite de la API DUX. */
-export const DUX_POST_COSTOS_BATCH_SIZE = 50;
-
-/**
- * Envía un lote de hasta 50 actualizaciones de costo en una sola petición POST.
- * Formato esperado por la API DUX: { "productos": [ { cod_item, id_proveedor (número), costo } ] }.
- * Ver https://duxsoftware.readme.io/reference/modificar-preciosproductos
- */
-export async function postActualizarCostosEnDuxBatch(
-  payloads: ActualizarCostoDuxPayload[]
-): Promise<unknown> {
-  if (payloads.length === 0) return null;
-  if (payloads.length > DUX_POST_COSTOS_BATCH_SIZE) {
-    throw new Error(
-      `postActualizarCostosEnDuxBatch: máximo ${DUX_POST_COSTOS_BATCH_SIZE} ítems por request, recibidos ${payloads.length}`
-    );
-  }
-
-  const token = process.env.DUX_API_TOKEN;
-  if (!token) throw new Error("DUX_API_TOKEN no configurado.");
-
-  const headers = {
-    accept: "application/json",
-    authorization: token,
-    "content-type": "application/json",
-  };
-  const productos = payloads.map((p) => ({
-    cod_item: p.cod_item,
-    id_proveedor: Number(p.id_proveedor) || 0,
-    costo: p.costo,
-  }));
-  const body = JSON.stringify({ productos });
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= POST_429_MAX_RETRIES; attempt++) {
-    const res = await fetch(DUX_NUEVO_ITEM_URL, {
-      method: "POST",
-      headers,
-      body,
-    });
-
-    if (res.ok) {
-      try {
-        return await res.json();
-      } catch {
-        return null;
-      }
-    }
-
-    const text = await res.text().catch(() => "");
-    const errorMsg = `Error API Dux (${res.status} ${res.statusText}): ${text || "sin cuerpo de respuesta"}`;
-    lastError = new Error(errorMsg);
-    console.error("[DUX POST nuevoItem batch]", res.status, res.statusText, text || "(sin cuerpo)");
-
-    if (res.status === 429 && attempt < POST_429_MAX_RETRIES) {
-      let waitMs = POST_429_WAIT_MS * Math.pow(2, attempt);
-      const retryAfter = res.headers.get("Retry-After");
-      if (retryAfter) {
-        const seconds = parseInt(retryAfter, 10);
-        if (!Number.isNaN(seconds)) waitMs = Math.max(waitMs, seconds * 1000);
-      }
-      await new Promise((r) => setTimeout(r, waitMs));
-      continue;
-    }
-
-    throw lastError;
-  }
-
-  throw lastError ?? new Error("Error API Dux: desconocido");
 }

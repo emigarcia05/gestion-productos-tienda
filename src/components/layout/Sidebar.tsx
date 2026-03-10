@@ -30,7 +30,6 @@ import {
 import SelectorRol from "@/components/SelectorRol";
 import SyncStatusIndicator from "@/components/layout/SyncStatusIndicator";
 import ImportStatusIndicator from "@/components/layout/ImportStatusIndicator";
-import ExportStatusIndicator from "@/components/layout/ExportStatusIndicator";
 import type { Rol } from "@/lib/permisos";
 
 const iconClass = "h-5 w-5 shrink-0";
@@ -114,7 +113,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border shadow-[2px_0_8px_rgba(0,0,0,0.06)]">
+    <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.map((module) => {
           const isOpen = openId === module.id;
@@ -175,7 +174,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         <div className="px-4 pb-2 flex flex-col gap-2">
           <SyncStatusIndicator />
           <ImportStatusIndicator />
-          <ExportStatusIndicator />
         </div>
         <div className="p-4">
           <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-2.5 backdrop-blur-sm">

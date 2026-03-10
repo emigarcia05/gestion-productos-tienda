@@ -143,6 +143,43 @@ Para bloques con cabecera de color primario (ej. columnas Marca/Rubro/SubRubro e
 
 ---
 
+## Sidebar (navegación)
+
+El aside de navegación no debe usar sombra inline. La sombra se define en una variable y se aplica mediante una clase global.
+
+### Variable y clase en `globals.css`
+
+| Variable / Clase | Uso |
+|------------------|-----|
+| `--sidebar-shadow` (en `:root`) | Valor de `box-shadow` del aside (ej. `2px 0 8px rgba(0, 0, 0, 0.06)`). |
+| `.sidebar-container` | Aplica `box-shadow: var(--sidebar-shadow)` al contenedor del aside. |
+
+**Regla:** En el componente Sidebar usar la clase `sidebar-container` junto con las demás clases del aside. No usar `shadow-[...]` ni `style={{ boxShadow: ... }}` para la sombra de la barra lateral.
+
+### Dónde se usa
+
+- **Sidebar** (`src/components/layout/Sidebar.tsx`): el `<aside>` incluye la clase `sidebar-container` para heredar la sombra desde `globals.css`.
+
+---
+
+## Lista de filas con zebra (div-based)
+
+Cuando el listado no es una `<table>` sino una secuencia de `<div>` (ej. lista de productos en Control Aumentos), usar los mismos tokens que las tablas para bordes, fondos y texto.
+
+### Regla
+
+- **Contenedor:** `border-border`, `bg-card`. Evitar `border-slate-200`, `bg-white`.
+- **Filas:** zebra con `bg-card` (impar) y `bg-blue-50/50` (par); `border-b border-border`; hover `hover:bg-primary/10`.
+- **Texto:** `text-foreground` para el contenido principal; `text-muted-foreground` para mensajes secundarios (ej. "Sin resultados").
+
+**No duplicar** colores slate/white en estas listas; usar siempre las variables del tema y, si hace falta, una clase compartida en `globals.css` que agrupe este patrón.
+
+### Dónde se usa
+
+- **TablaAumentos** (`src/components/tienda/TablaAumentos.tsx`): componente `ListaProductos` (panel "Productos con variación") usa contenedor con `border-border`/`bg-card` y filas con zebra y `hover:bg-primary/10`.
+
+---
+
 ## Contenedor de tabla con borde de marca
 
 Para listados dentro de un Card o div con borde azul tenue (identidad de marca).

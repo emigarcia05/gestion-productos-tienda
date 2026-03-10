@@ -136,6 +136,8 @@
   --sidebar-border: rgba(255, 255, 255, 0.2);
   --sidebar-ring: rgba(255, 255, 255, 0.3);
   --sidebar-indicator: #ffc107;
+  /** Sombra del aside de navegación (evitar valores inline en Sidebar). */
+  --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
   --card-border: rgba(0, 114, 187, 0.25);
   --destructive: lab(48.4493% 77.4328 61.5452);
   --chart-1: lab(57.1026% 64.2584 89.8886);
@@ -478,6 +480,11 @@
   }
   .filtros-contenedor > div {
     gap: var(--filtros-gap-x) !important;
+  }
+
+  /* Sidebar: sombra desde variable (SSOT en :root --sidebar-shadow). */
+  .sidebar-container {
+    box-shadow: var(--sidebar-shadow);
   }
 }
 
