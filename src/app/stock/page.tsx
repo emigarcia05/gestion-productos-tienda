@@ -14,10 +14,14 @@ export default async function StockPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) redirect("/proveedores");
 
-  const { sucursal = "guaymallen", q = "", marca = "", rubro = "", subRubro = "" } = await searchParams;
-  const sucursalValida: Sucursal = sucursal === "maipu" ? "maipu" : "guaymallen";
+  const { sucursal, q = "", marca = "", rubro = "", subRubro = "" } = await searchParams;
 
-  const data = await getControlStock(sucursalValida);
+  const sucursalValida: Sucursal | null =
+    sucursal === "guaymallen" || sucursal === "maipu" ? sucursal : null;
+
+  const data = sucursalValida
+    ? await getControlStock(sucursalValida)
+    : { items: [], marcas: [], rubros: [], subRubros: [] };
 
   return (
     <StockPageWithActions

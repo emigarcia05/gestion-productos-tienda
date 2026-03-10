@@ -1,6 +1,6 @@
 import { getTiendaPageData } from "@/actions/tienda";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import SyncButton from "@/components/tienda/SyncButton";
+import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
@@ -32,7 +32,7 @@ export default async function TiendaPage({ searchParams }: Props) {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const hasFiltros = !!(q || rubro || subRubro || marca || mejorPrecio);
 
-  const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncButton /> : undefined;
+  const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncDuxHeaderButton /> : undefined;
 
   const filters = (
     <FiltrosTienda

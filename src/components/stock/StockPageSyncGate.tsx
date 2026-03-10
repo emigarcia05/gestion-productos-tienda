@@ -3,57 +3,87 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { useSyncDux } from "@/hooks/useSyncDux";
-import SyncModal from "@/components/shared/SyncModal";
-
-const STOCK_SYNC_JUST_DONE = "stockSyncJustDone";
 
 interface Props {
   children: React.ReactNode;
 }
 
 /**
- * En la página /stock: si el usuario llegó por URL directa (navegador), muestra
- * el mismo modal de consulta API que al entrar desde el index. Si llegó desde
- * el index tras hacer la sync, no muestra el modal.
+ * Al abrir /stock muestra un modal recomendando sincronizar con Dux.
+ * - Sí: inicia la sincronización en segundo plano, cierra el modal y el usuario puede usar la página.
+ * - No: solo cierra el modal.
+ * - Al terminar la sync: toast y router.refresh() para trabajar con datos actualizados.
  */
 export default function StockPageSyncGate({ children }: Props) {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  const [listo, setListo] = useState(false);
 
-  const { syncing, progreso, ejecutar } = useSyncDux((result) => {
+  const { syncing, ejecutar } = useSyncDux((result) => {
     toast.success(
-      `Base de datos actualizada — ${result.total.toLocaleString()} ítems procesados.`,
+      `Datos de stock actualizados — ${result.total.toLocaleString("es-AR")} ítems procesados.`,
       { duration: 3000 }
     );
-    setShowModal(false);
     router.refresh();
   });
 
   useEffect(() => {
-    const desdeIndex = typeof window !== "undefined" && sessionStorage.getItem(STOCK_SYNC_JUST_DONE);
-    if (desdeIndex) {
-      sessionStorage.removeItem(STOCK_SYNC_JUST_DONE);
-      queueMicrotask(() => setShowModal(false));
-    } else {
-      queueMicrotask(() => setShowModal(true));
-    }
-    queueMicrotask(() => setListo(true));
+    setShowModal(true);
   }, []);
 
-  if (!listo) return <>{children}</>;
+  function handleYes() {
+    setShowModal(false);
+    ejecutar();
+  }
+
+  function handleNo() {
+    setShowModal(false);
+  }
 
   return (
     <>
       {children}
+
       {showModal && (
-        <SyncModal
-          syncing={syncing}
-          progreso={progreso}
-          onConfirm={ejecutar}
-          onCancel={() => setShowModal(false)}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="modal-app mx-4">
+            <div className="modal-app__header">
+              <h2 className="modal-app__title">
+                Control Stock — Actualizar datos
+              </h2>
+            </div>
+
+            <div className="modal-app__content">
+              <div className="modal-app__body flex flex-col gap-4 p-4 text-sm">
+                <p className="text-foreground">
+                  Para ejecutar este módulo, se recomienda actualizar los datos con Dux.
+                </p>
+                <p className="font-medium text-foreground">
+                  ¿Desea ejecutar una sincronización ahora?
+                </p>
+              </div>
+
+              <div className="modal-app__footer">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleNo}
+                  disabled={syncing}
+                >
+                  No
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleYes}
+                  disabled={syncing}
+                >
+                  Sí
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

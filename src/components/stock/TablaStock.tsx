@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
 import { matchByMultiTerm } from "@/lib/busqueda";
@@ -42,7 +43,7 @@ export interface TablaStockHandle {
 
 interface Props {
   data:           ControlStockData;
-  sucursalActual: Sucursal;
+  sucursalActual: Sucursal | null;
   qActual:        string;
   marcaActual:    string;
   rubroActual:    string;
@@ -72,6 +73,14 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
     for (const i of data.items) if (i.ultimaImpresion) m[i.id] = new Date(i.ultimaImpresion);
     return m;
   });
+  const [stocksEditados, setStocksEditados] = useState<Record<string, string>>(() => {
+    const m: Record<string, string> = {};
+    for (const i of data.items) {
+      const valor = Number.isInteger(i.stock) ? i.stock.toFixed(0) : i.stock.toFixed(2);
+      m[i.id] = valor;
+    }
+    return m;
+  });
 
   useEffect(() => {
     setMarca(marcaActual);
@@ -79,9 +88,25 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
     setSubRubro(subRubroActual);
   }, [marcaActual, rubroActual, subRubroActual]);
 
+  // Cuando pasamos de sin sucursal a con sucursal, rellenar stocksEditados desde data
+  useEffect(() => {
+    if (data.items.length === 0) return;
+    setStocksEditados((prev) => {
+      let hasNew = false;
+      const next = { ...prev };
+      for (const i of data.items) {
+        if (next[i.id] === undefined) {
+          hasNew = true;
+          next[i.id] = Number.isInteger(i.stock) ? i.stock.toFixed(0) : i.stock.toFixed(2);
+        }
+      }
+      return hasNew ? next : prev;
+    });
+  }, [data.items.length]);
+
   function navigate(params: Record<string, string>) {
     const p = new URLSearchParams();
-    p.set("sucursal", sucursalActual);
+    if (sucursalActual) p.set("sucursal", sucursalActual);
     const qVal = params.q !== undefined ? params.q : q;
     const marcaVal = params.marca !== undefined ? params.marca : marca;
     const rubroVal = params.rubro !== undefined ? params.rubro : rubro;
@@ -105,7 +130,15 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
 
   function limpiar() {
     setQ(""); setMarca(""); setRubro(""); setSubRubro(""); setSoloNegativo(false);
-    router.push(`${pathname}?sucursal=${sucursalActual}`);
+    if (sucursalActual) {
+      router.push(`${pathname}?sucursal=${sucursalActual}`);
+    } else {
+      router.push(pathname);
+    }
+  }
+
+  function handleCambioStock(id: string, value: string) {
+    setStocksEditados((prev) => ({ ...prev, [id]: value }));
   }
 
   async function handleImprimir() {
@@ -150,7 +183,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
   useImperativeHandle(ref, () => ({ openPrint: () => handleImprimirRef.current() }), []);
 
   const hayFiltros = !!(q || marca || rubro || subRubro || soloNegativo);
-  const sucursalLabel = SUCURSALES.find((s) => s.value === sucursalActual)?.label ?? sucursalActual;
+  const sucursalSeleccionada = sucursalActual !== null;
+  const sucursalLabel = sucursalActual
+    ? (SUCURSALES.find((s) => s.value === sucursalActual)?.label ?? sucursalActual)
+    : "";
 
   return (
     <div className="flex flex-col h-full gap-3">
@@ -158,13 +194,21 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
       {/* ── Barra de filtros ── */}
       <div className="flex items-center gap-2 flex-wrap shrink-0">
 
-        {/* Selector de sucursal */}
+        {/* Selector de sucursal (obligatorio para ver datos) */}
         <div className="relative shrink-0">
           <select
-            value={sucursalActual}
-            onChange={(e) => cambiarSucursal(e.target.value as Sucursal)}
+            value={sucursalActual ?? ""}
+            onChange={(e) => {
+              const value = e.target.value as Sucursal | "";
+              if (!value) {
+                router.push(pathname);
+              } else {
+                cambiarSucursal(value);
+              }
+            }}
             className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm font-semibold text-accent2 focus:outline-none focus:ring-1 focus:ring-ring"
           >
+            <option value="">Seleccionar sucursal</option>
             {SUCURSALES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
@@ -178,7 +222,8 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por descripción o código..."
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring pr-7"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring pr-7 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={!sucursalSeleccionada}
           />
           {q && (
             <Button variant="ghost" size="icon" onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground">
@@ -192,7 +237,8 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
           <select
             value={marca}
             onChange={(e) => navigate({ marca: e.target.value, rubro: "", subRubro: "" })}
-            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={!sucursalSeleccionada}
           >
             <option value="">Todas las marcas</option>
             {data.marcas.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -205,7 +251,8 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
           <select
             value={rubro}
             onChange={(e) => navigate({ rubro: e.target.value, subRubro: "" })}
-            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={!sucursalSeleccionada}
           >
             <option value="">Todos los rubros</option>
             {opcionesRubros.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -218,7 +265,8 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
           <select
             value={subRubro}
             onChange={(e) => navigate({ subRubro: e.target.value })}
-            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={!sucursalSeleccionada}
           >
             <option value="">Todos los sub-rubros</option>
             {opcionesSubRubros.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -231,7 +279,8 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
           <select
             value={soloNegativo ? "negativo" : "todos"}
             onChange={(e) => setSoloNegativo(e.target.value === "negativo")}
-            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={!sucursalSeleccionada}
           >
             <option value="todos">Todos</option>
             <option value="negativo">Stock negativo</option>
@@ -256,35 +305,46 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock({
 
       {/* ── Tabla ── */}
       <div className="flex-1 overflow-auto rounded-lg border border-card-border bg-card">
-        <Table variant="compact">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs w-28">Código</TableHead>
-              <TableHead className="px-3 py-2 text-xs">Descripción</TableHead>
-              <TableHead className="px-3 py-2 text-xs w-28">Stock {sucursalLabel}</TableHead>
-              <TableHead className="px-3 py-2 text-xs w-28">Últ. impresión</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtrados.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-10">Sin resultados</TableCell>
+        {!sucursalSeleccionada ? (
+          <div className="flex h-full min-h-[200px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
+            Seleccioná una sucursal para ver el stock.
+          </div>
+        ) : (
+          <Table variant="compact">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-3 py-2 text-xs w-28">Código</TableHead>
+                <TableHead className="px-3 py-2 text-xs">Descripción</TableHead>
+                <TableHead className="px-3 py-2 text-xs w-28">Stock {sucursalLabel}</TableHead>
+                <TableHead className="px-3 py-2 text-xs w-28">Últ. impresión</TableHead>
               </TableRow>
-            )}
-            {filtrados.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="px-3 py-2 text-xs font-mono">{item.codItem}</TableCell>
-                <TableCell className="px-3 py-2 text-xs">{item.descripcion}</TableCell>
-                <TableCell className="px-3 py-2 text-sm font-semibold tabular-nums">
-                  {item.stock % 1 === 0 ? item.stock.toFixed(0) : item.stock.toFixed(2)}
-                </TableCell>
-                <TableCell className="px-3 py-2 text-xs tabular-nums">
-                  {fmtFecha(impresiones[item.id] ?? item.ultimaImpresion)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtrados.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-10">Sin resultados</TableCell>
+                </TableRow>
+              )}
+              {filtrados.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="px-3 py-2 text-xs font-mono">{item.codItem}</TableCell>
+                  <TableCell className="px-3 py-2 text-xs">{item.descripcion}</TableCell>
+                  <TableCell className="px-3 py-2 text-sm tabular-nums">
+                    <Input
+                      type="number"
+                      value={stocksEditados[item.id] ?? ""}
+                      onChange={(e) => handleCambioStock(item.id, e.target.value)}
+                      className="h-8 text-center text-sm font-semibold"
+                    />
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                    {fmtFecha(impresiones[item.id] ?? item.ultimaImpresion)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {/* ── Modal de impresión ── */}
