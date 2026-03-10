@@ -66,7 +66,7 @@ const MODULES: {
     icon: <ShoppingBag className={iconClass} />,
     submodules: [
       { href: "/tienda", label: "Comp. Px. Prov.", icon: <Link2 className="h-4 w-4 shrink-0" /> },
-      { href: "/tienda/aumentos", label: "Control aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
+      { href: "/tienda/aumentos", label: "Control Aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
       { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" /> },
     ],
   },

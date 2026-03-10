@@ -28,7 +28,7 @@ export default function SyncModal({ syncing, progreso, onConfirm, onCancel }: Pr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="modal-app mx-4 w-full max-w-md">
         <div className="modal-app__header">
-          <h2 className="modal-app__title">Act. Datos Dux</h2>
+          <h2 className="modal-app__title">Importar Datos Dux</h2>
         </div>
 
         <div className="modal-app__content">

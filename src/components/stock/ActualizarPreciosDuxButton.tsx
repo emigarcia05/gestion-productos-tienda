@@ -56,7 +56,7 @@ export default function ActualizarPreciosDuxButton({ itemIds, disabled }: Props)
       onClick={handleClick}
     >
       <RefreshCw className={`h-4 w-4 shrink-0 ${pending ? "animate-spin" : ""}`} />
-      Act. Px. en Dux
+      Exportar Px. Dux
     </Button>
   );
 }

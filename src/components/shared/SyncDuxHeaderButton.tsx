@@ -41,7 +41,7 @@ export default function SyncDuxHeaderButton() {
         <RefreshCw
           className={`h-4 w-4 shrink-0 ${syncing ? "animate-spin" : ""}`}
         />
-        {syncing ? "Sincronizando…" : "Act. Datos Dux"}
+        {syncing ? "Importando…" : "Importar Datos Dux"}
       </Button>
 
       {showModal && (

@@ -39,7 +39,7 @@ export default function TiendaSubmoduleToolbar({ activo }: { activo: TiendaSubmo
       >
         <Link href="/tienda/aumentos" className="gap-2">
           <TrendingUp className="h-4 w-4 shrink-0" />
-          Control aumentos
+          Control Aumentos
         </Link>
       </Button>
     </div>
