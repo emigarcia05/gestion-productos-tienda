@@ -291,3 +291,69 @@ export async function postActualizarCostoEnDux(
 
   throw lastError ?? new Error("Error API Dux: desconocido");
 }
+
+/** Máximo de ítems por request según límite de la API DUX. */
+export const DUX_POST_COSTOS_BATCH_SIZE = 50;
+
+/**
+ * Envía un lote de hasta 50 actualizaciones de costo en una sola petición POST.
+ * El body es un array JSON de objetos { cod_item, costo, id_proveedor }.
+ * Respeta 429 con reintentos (misma lógica que postActualizarCostoEnDux).
+ */
+export async function postActualizarCostosEnDuxBatch(
+  payloads: ActualizarCostoDuxPayload[]
+): Promise<unknown> {
+  if (payloads.length === 0) return null;
+  if (payloads.length > DUX_POST_COSTOS_BATCH_SIZE) {
+    throw new Error(
+      `postActualizarCostosEnDuxBatch: máximo ${DUX_POST_COSTOS_BATCH_SIZE} ítems por request, recibidos ${payloads.length}`
+    );
+  }
+
+  const token = process.env.DUX_API_TOKEN;
+  if (!token) throw new Error("DUX_API_TOKEN no configurado.");
+
+  const headers = {
+    accept: "application/json",
+    authorization: token,
+    "content-type": "application/json",
+  };
+  const body = JSON.stringify(payloads);
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= POST_429_MAX_RETRIES; attempt++) {
+    const res = await fetch(DUX_NUEVO_ITEM_URL, {
+      method: "POST",
+      headers,
+      body,
+    });
+
+    if (res.ok) {
+      try {
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    const text = await res.text().catch(() => "");
+    const errorMsg = `Error API Dux (${res.status} ${res.statusText}): ${text || "sin cuerpo de respuesta"}`;
+    lastError = new Error(errorMsg);
+    console.error("[DUX POST nuevoItem batch]", res.status, res.statusText, text || "(sin cuerpo)");
+
+    if (res.status === 429 && attempt < POST_429_MAX_RETRIES) {
+      let waitMs = POST_429_WAIT_MS * Math.pow(2, attempt);
+      const retryAfter = res.headers.get("Retry-After");
+      if (retryAfter) {
+        const seconds = parseInt(retryAfter, 10);
+        if (!Number.isNaN(seconds)) waitMs = Math.max(waitMs, seconds * 1000);
+      }
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    throw lastError;
+  }
+
+  throw lastError ?? new Error("Error API Dux: desconocido");
+}

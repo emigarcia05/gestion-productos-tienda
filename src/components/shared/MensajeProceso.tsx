@@ -75,11 +75,24 @@ export default function MensajeProceso({
         className
       )}
     >
-      {mensaje}
-      {detailContent != null && (
+      {isSidebar ? (
         <>
-          {" "}
-          <span className="mensaje-proceso__detalle">{detailContent}</span>
+          <span className="mensaje-proceso__linea1">{mensaje}</span>
+          {detailContent != null ? (
+            <span className="mensaje-proceso__detalle">{detailContent}</span>
+          ) : (
+            <span className="mensaje-proceso__detalle">…</span>
+          )}
+        </>
+      ) : (
+        <>
+          {mensaje}
+          {detailContent != null && (
+            <>
+              {" "}
+              <span className="mensaje-proceso__detalle">{detailContent}</span>
+            </>
+          )}
         </>
       )}
     </div>

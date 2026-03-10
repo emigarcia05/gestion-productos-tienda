@@ -35,13 +35,13 @@ export default function SyncModal({ syncing, progreso, onConfirm, onCancel }: Pr
           <div className="modal-app__body modal-app__body--centered flex flex-col items-center gap-4 py-4">
             {!syncing ? (
               <>
-                <div className="rounded-full bg-accent2/10 p-3">
-                  <AlertTriangle className="h-7 w-7 text-accent2" />
+                <div className="rounded-full bg-primary/10 p-3">
+                  <AlertTriangle className="h-7 w-7 text-primary" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Para continuar se debe actualizar la base de datos. Esto
                   demorará aproximadamente{" "}
-                  <span className="text-accent2 font-semibold">
+                  <span className="font-semibold">
                     5 a 10 minutos
                   </span>
                   .
@@ -73,13 +73,13 @@ export default function SyncModal({ syncing, progreso, onConfirm, onCancel }: Pr
                         {" / "}
                         {progreso.total.toLocaleString("es-AR")} ítems
                       </span>
-                      <span className="text-accent2 font-semibold">{pct}%</span>
+                      <span className="font-semibold">{pct}%</span>
                     </div>
                     {progreso.segsRestantes !== null &&
                       progreso.segsRestantes > 0 && (
                         <p className="text-xs text-muted-foreground">
                           Tiempo restante estimado:{" "}
-                          <span className="text-accent2 font-semibold">
+                          <span className="font-semibold">
                             {fmtTiempo(progreso.segsRestantes)}
                           </span>
                         </p>

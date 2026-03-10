@@ -8,15 +8,16 @@ Documentación de componentes compartidos y clases CSS globales para mantener co
 
 ### Descripción
 
-Indica al usuario que una operación está en curso (sincronizar, importar, guardar, etc.). Estilo unificado en toda la app: borde y acentos en color `accent2` (amarillo), texto en `foreground`.
+Indica al usuario que una operación está en curso (sincronizar, importar, guardar, etc.). Estilo unificado en toda la app: borde y acentos en azul corporativo **#0072BB**, texto en `foreground`.
 
 ### Clases CSS globales (`src/app/globals.css`)
 
 | Clase | Uso |
 |-------|-----|
-| `.mensaje-proceso` | Contenedor base: borde, fondo suave, padding y tipografía. |
-| `.mensaje-proceso__detalle` | Detalle numérico o secundario (ej. "1.234 de 5.000"): color accent2, font-weight 600. |
-| `.mensaje-proceso--sidebar` | Modificador: tamaño reducido (font 0.75rem, padding menor) para barra lateral. |
+| `.mensaje-proceso` | Contenedor base: borde y fondo suave en azul `#0072BB`, padding y tipografía. |
+| `.mensaje-proceso__detalle` | Detalle numérico o secundario (ej. "1.234 de 5.000"): color azul `#0072BB`, font-weight 600. En variante sidebar es la 2.ª fila ("X de Y"). |
+| `.mensaje-proceso--sidebar` | Barra lateral: mismo alto que el bloque de usuario (min-height 3.5rem), texto en dos filas — 1.ª: mensaje (ej. "Exportando", "Importando"); 2.ª: "X de Y". |
+| `.mensaje-proceso__linea1` | Primera fila del mensaje en variante sidebar (uso interno del componente). |
 
 **No duplicar** estos estilos en otros archivos; cualquier variante debe usar estas clases o el componente `<MensajeProceso />`.
 

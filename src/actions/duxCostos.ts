@@ -2,7 +2,10 @@
 
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
-import { postActualizarCostoEnDux } from "@/lib/duxApi";
+import {
+  postActualizarCostosEnDuxBatch,
+  DUX_POST_COSTOS_BATCH_SIZE,
+} from "@/lib/duxApi";
 import { getPayloadsActualizarCostosDux } from "@/services/actualizarPreciosDux.service";
 import {
   startExportInDb,
@@ -40,17 +43,22 @@ export async function actualizarPreciosDuxDesdeStock(
 
     await startExportInDb(payloads.length);
 
+    const total = payloads.length;
     let processed = 0;
     try {
-      for (const p of payloads) {
-        await postActualizarCostoEnDux({
+      for (let i = 0; i < payloads.length; i += DUX_POST_COSTOS_BATCH_SIZE) {
+        const chunk = payloads.slice(i, i + DUX_POST_COSTOS_BATCH_SIZE);
+        const batchPayloads = chunk.map((p) => ({
           cod_item: p.codItem,
           costo: p.costo,
           id_proveedor: p.idProveedorDux,
-        });
-        processed++;
-        await setExportProgressInDb(processed, payloads.length);
-        await new Promise((r) => setTimeout(r, DELAY_MS));
+        }));
+        await postActualizarCostosEnDuxBatch(batchPayloads);
+        processed += chunk.length;
+        await setExportProgressInDb(processed, total);
+        if (i + chunk.length < payloads.length) {
+          await new Promise((r) => setTimeout(r, DELAY_MS));
+        }
       }
       await setExportResultInDb(payloads.length);
       return { ok: true, data: { enviados: payloads.length } };

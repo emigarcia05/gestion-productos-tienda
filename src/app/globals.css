@@ -1202,29 +1202,46 @@ main button:hover:not(:disabled),
  * Documentación: docs/COMPONENTES_ESTILOS.md
  *
  * Clases:
- *   .mensaje-proceso         — Base: borde accent2, fondo suave, texto foreground
- *   .mensaje-proceso__detalle — Detalle numérico (ej. "1.234 de 5.000"): color accent2, bold
- *   .mensaje-proceso--sidebar — Modificador: tamaño reducido para barra lateral
+ *   .mensaje-proceso           — Base: borde y fondo azul #0072BB, texto foreground
+ *   .mensaje-proceso__detalle  — Detalle numérico (ej. "1.234 de 5.000"): color #0072BB, bold
+ *   .mensaje-proceso--sidebar  — Barra lateral: mismo alto que bloque usuario (3.5rem), texto en 2 filas (mensaje + "X de Y")
+ *   .mensaje-proceso__linea1   — Primera fila en variante sidebar (ej. "Exportando", "Importando")
  * =============================================================================
  */
 .mensaje-proceso {
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in oklch, var(--accent2) 50%, transparent);
-  background-color: color-mix(in oklch, var(--accent2) 12%, var(--background));
+  /* Azul corporativo fijo para borde y fondo del mensaje de proceso */
+  border: 1px solid color-mix(in oklch, #0072bb 50%, transparent);
+  background-color: color-mix(in oklch, #0072bb 12%, var(--background));
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--foreground);
 }
 .mensaje-proceso__detalle {
-  color: var(--accent2);
+  /* Detalle numérico en azul #0072BB en lugar de accent2 (amarillo) */
+  color: #0072bb;
   font-weight: 600;
 }
 .mensaje-proceso--sidebar {
   font-size: 0.75rem;
   padding: 0.375rem 0.625rem;
   border-radius: var(--radius-md);
-  border-color: color-mix(in oklch, var(--accent2) 35%, transparent);
-  background-color: color-mix(in oklch, var(--accent2) 8%, var(--background));
+  border-color: color-mix(in oklch, #0072bb 35%, transparent);
+  background-color: color-mix(in oklch, #0072bb 8%, var(--background));
   text-align: center;
+  /* Mismo alto que el bloque de usuario en la sidebar (py-2.5 + h-9 ≈ 3.5rem) */
+  min-height: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.125rem;
+}
+.mensaje-proceso--sidebar .mensaje-proceso__linea1 {
+  display: block;
+  font-weight: 500;
+}
+.mensaje-proceso--sidebar .mensaje-proceso__detalle {
+  display: block;
 }
