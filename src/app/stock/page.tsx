@@ -33,6 +33,8 @@ export default async function StockPage({ searchParams }: Props) {
   const sucursalValida: Sucursal | null =
     sucursal === "guaymallen" || sucursal === "maipu" ? sucursal : null;
 
+  const soloNegativoBool = soloNegativo === "true";
+
   const data = sucursalValida
     ? await getControlStock(sucursalValida, {
         q,
@@ -42,8 +44,6 @@ export default async function StockPage({ searchParams }: Props) {
         soloNegativo: soloNegativoBool,
       })
     : { items: [], marcas: [], rubros: [], subRubros: [] };
-
-  const soloNegativoBool = soloNegativo === "true";
 
   return (
     <StockPageWithActions
