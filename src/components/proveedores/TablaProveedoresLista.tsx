@@ -24,7 +24,12 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
   const [modalProveedor, setModalProveedor] = useState<ProveedorParaModal | null>(null);
 
   function openEdit(prov: ProveedorListItem) {
-    setModalProveedor({ id: prov.id, nombre: prov.nombre, prefijo: prov.prefijo });
+    setModalProveedor({
+      id: prov.id,
+      nombre: prov.nombre,
+      prefijo: prov.prefijo,
+      idProveedorDux: prov.idProveedorDux ?? undefined,
+    });
     setModalOpen(true);
   }
 

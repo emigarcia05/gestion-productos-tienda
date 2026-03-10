@@ -59,7 +59,7 @@ export default function ProveedorModal({ open, onOpenChange, proveedor, onSucces
 
   return (
     <AppModal
-      title={isEdit ? "Editar proveedor" : "Nuevo proveedor"}
+      title={isEdit ? "Editor Proveedor" : "Nuevo proveedor"}
       actions={
         <>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending || deleting}>

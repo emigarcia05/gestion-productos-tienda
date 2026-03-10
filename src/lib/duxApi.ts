@@ -297,8 +297,8 @@ export const DUX_POST_COSTOS_BATCH_SIZE = 50;
 
 /**
  * Envía un lote de hasta 50 actualizaciones de costo en una sola petición POST.
- * El body es un array JSON de objetos { cod_item, costo, id_proveedor }.
- * Respeta 429 con reintentos (misma lógica que postActualizarCostoEnDux).
+ * Formato esperado por la API DUX: { "productos": [ { cod_item, id_proveedor (número), costo } ] }.
+ * Ver https://duxsoftware.readme.io/reference/modificar-preciosproductos
  */
 export async function postActualizarCostosEnDuxBatch(
   payloads: ActualizarCostoDuxPayload[]
@@ -318,7 +318,12 @@ export async function postActualizarCostosEnDuxBatch(
     authorization: token,
     "content-type": "application/json",
   };
-  const body = JSON.stringify(payloads);
+  const productos = payloads.map((p) => ({
+    cod_item: p.cod_item,
+    id_proveedor: Number(p.id_proveedor) || 0,
+    costo: p.costo,
+  }));
+  const body = JSON.stringify({ productos });
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= POST_429_MAX_RETRIES; attempt++) {

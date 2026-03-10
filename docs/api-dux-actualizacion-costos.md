@@ -14,13 +14,23 @@ Este documento describe el contrato del endpoint de la API DUX para **actualizar
 
 ## Cuerpo del request (JSON)
 
-- **Un ítem:** objeto `{ cod_item, costo, id_proveedor }`.
-- **Lote (recomendado):** array de hasta 50 objetos con los mismos campos.
+Formato según [documentación DUX](https://duxsoftware.readme.io/reference/modificar-preciosproductos):
+
+```json
+{
+  "productos": [
+    { "cod_item": "2578", "id_proveedor": 1960007, "costo": 100 }
+  ]
+}
+```
+
+- **Clave raíz:** `productos` (array de hasta 50 ítems).
+- **`id_proveedor`** debe ser **número** (la app convierte desde `proveedores.id_proveedor_dux`).
 
 | Campo          | Tipo   | Descripción                                      |
 |----------------|--------|--------------------------------------------------|
-| `cod_item`     | STRING | Código del ítem en DUX (ej. código de tienda).  |
-| `costo`        | double | Nuevo costo a enviar.                            |
-| `id_proveedor` | (según API) | ID del proveedor en DUX (origen del costo). |
+| `cod_item`     | string | Código del ítem en DUX (ej. código de tienda).  |
+| `costo`        | number | Nuevo costo a enviar.                            |
+| `id_proveedor` | number | ID del proveedor en DUX (origen del costo).      |
 
-En nuestra aplicación, el valor de `id_proveedor` se obtiene del campo **`proveedores.id_proveedor_dux`**. La exportación envía lotes de hasta 50 ítems por petición, con una pausa de 5 segundos entre lotes (límite de la API).
+En nuestra aplicación, el valor de `id_proveedor` se obtiene del campo **`proveedores.id_proveedor_dux`** (convertido a número al enviar). La exportación envía lotes de hasta 50 ítems por petición, con una pausa de 5 segundos entre lotes (límite de la API).
