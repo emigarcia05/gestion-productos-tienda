@@ -6,6 +6,14 @@ import { prisma } from "@/lib/prisma";
 export interface CreateProveedorInput {
   nombre: string;
   prefijo: string;
+  idProveedorDux?: string | null;
+}
+
+export interface UpdateProveedorInput {
+  id: string;
+  nombre: string;
+  prefijo: string;
+  idProveedorDux?: string | null;
 }
 
 export interface ProveedorListItem {
@@ -13,6 +21,8 @@ export interface ProveedorListItem {
   nombre: string;
   codigoUnico: string;
   prefijo: string;
+  /** ID del proveedor en DUX (si está configurado). */
+  idProveedorDux: string | null;
   /** Cantidad de ítems en precios_proveedores. */
   cantProductos: number;
   /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
@@ -49,6 +59,7 @@ export async function getProveedores(): Promise<ProveedorListItem[]> {
     nombre: p.nombre,
     codigoUnico: p.codigoUnico,
     prefijo: p.prefijo,
+    idProveedorDux: p.idProveedorDux ?? null,
     cantProductos: p._count.listaPrecios,
     cantProductosProvistos: provistosMap.get(p.id) ?? 0,
   }));
@@ -67,7 +78,25 @@ export async function createProveedor(
       nombre: input.nombre.trim(),
       prefijo: prefijoNorm,
       codigoUnico: prefijoNorm,
+      idProveedorDux: input.idProveedorDux?.trim() || null,
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
+}
+
+/**
+ * Actualiza un proveedor existente en la base de datos.
+ */
+export async function updateProveedor(
+  input: UpdateProveedorInput
+): Promise<void> {
+  const prefijoNorm = input.prefijo.trim().toUpperCase();
+  await prisma.proveedor.update({
+    where: { id: input.id },
+    data: {
+      nombre: input.nombre.trim(),
+      prefijo: prefijoNorm,
+      idProveedorDux: input.idProveedorDux?.trim() || null,
+    },
+  });
 }

@@ -66,7 +66,11 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
   }
 
   try {
-    const { id } = await proveedorService.createProveedor(parsed.data);
+    const idProveedorDuxRaw = (formData.get("idProveedorDux") as string | null) ?? "";
+    const { id } = await proveedorService.createProveedor({
+      ...parsed.data,
+      idProveedorDux: idProveedorDuxRaw.trim() || null,
+    });
     revalidatePath("/proveedores");
     revalidatePath("/proveedores/lista");
     revalidatePath("/proveedores/gestion");
@@ -91,13 +95,34 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const nombre = (formData.get("nombre") as string)?.trim();
   const prefijo = (formData.get("prefijo") as string)?.trim().toUpperCase();
+  const idProveedorDuxRaw = (formData.get("idProveedorDux") as string | null) ?? "";
+  const idProveedorDux = idProveedorDuxRaw.trim() || null;
   if (!nombre || nombre.length < 2) return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
   if (!prefijo || prefijo.length !== 3 || !/^[A-Z]{3}$/.test(prefijo))
     return { ok: false, error: "El prefijo debe tener exactamente 3 letras." };
-  revalidatePath("/proveedores");
-  revalidatePath("/proveedores/lista");
-  revalidatePath("/proveedores/gestion");
-  return { ok: true, data: undefined };
+  try {
+    await proveedorService.updateProveedor({
+      id,
+      nombre,
+      prefijo,
+      idProveedorDux,
+    });
+    revalidatePath("/proveedores");
+    revalidatePath("/proveedores/lista");
+    revalidatePath("/proveedores/gestion");
+    return { ok: true, data: undefined };
+  } catch (e: unknown) {
+    const isPrisma = e && typeof e === "object" && "code" in e;
+    if (isPrisma && (e as { code: string }).code === "P2002") {
+      const target = (e as { meta?: { target?: string[] } }).meta?.target;
+      if (Array.isArray(target) && target.includes("prefijo"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.PREFIJO_DUPLICADO };
+      if (Array.isArray(target) && target.includes("nombre"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.NOMBRE_DUPLICADO };
+    }
+    const message = e instanceof Error ? e.message : "Error al editar el proveedor.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function eliminarProveedor(id: string): Promise<ActionResult> {

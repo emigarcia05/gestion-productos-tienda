@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
 interface Props {
-  proveedor?: { id: string; nombre: string; prefijo: string };
+  proveedor?: { id: string; nombre: string; prefijo: string; idProveedorDux?: string };
   onSuccess?: () => void;
   /** Id del form para asociar botón externo con form="id". */
   id?: string;
@@ -102,6 +102,20 @@ export default function ProveedorForm({
         <p className="text-xs text-muted-foreground">
           Exactamente 3 letras. El código externo quedará como{" "}
           <code className="bg-muted px-1 rounded">PIN-CODPROD</code>
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="idProveedorDux">ID PROVEEDOR EN DUX</Label>
+        <Input
+          id="idProveedorDux"
+          name="idProveedorDux"
+          placeholder="Ej: 1234"
+          defaultValue={proveedor?.idProveedorDux ?? ""}
+          disabled={pending}
+        />
+        <p className="text-xs text-muted-foreground">
+          Identificador del proveedor en el sistema DUX (se usa para actualizar costos vía API).
         </p>
       </div>
 

@@ -39,8 +39,8 @@ interface Props {
 }
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
-  { value: "guaymallen", label: "Guaymallén" },
-  { value: "maipu", label: "Maipú" },
+  { value: "guaymallen", label: "GUAYMALLÉN" },
+  { value: "maipu", label: "MAIPÚ" },
 ];
 
 const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(

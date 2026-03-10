@@ -23,8 +23,8 @@ import FilterBar, {
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
-  { value: "guaymallen", label: "Guaymallén" },
-  { value: "maipu", label: "Maipú" },
+  { value: "guaymallen", label: "GUAYMALLÉN" },
+  { value: "maipu", label: "MAIPÚ" },
 ];
 
 interface Props {

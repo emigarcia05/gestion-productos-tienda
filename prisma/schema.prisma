@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Proveedor {
-  id          String   @id @default(cuid())
-  nombre      String   @unique
-  prefijo     String   @unique
-  codigoUnico String   @map("codigo_unico")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  nombre          String   @unique
+  prefijo         String   @unique
+  codigoUnico     String   @map("codigo_unico")
+  idProveedorDux  String?  @map("id_proveedor_dux") // ID del proveedor en DUX (para POST actualización costos)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   listaPrecios ListaPrecioProveedor[]
 

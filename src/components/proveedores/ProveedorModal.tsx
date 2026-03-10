@@ -15,6 +15,7 @@ export interface ProveedorParaModal {
   id: string;
   nombre: string;
   prefijo: string;
+  idProveedorDux?: string;
 }
 
 interface Props {
