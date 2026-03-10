@@ -34,7 +34,7 @@ import type { Rol } from "@/lib/permisos";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "proveedores" | "tienda" | "stock" | "pedidos";
+type ModuleId = "proveedores" | "tienda" | "pedidos";
 
 interface SubmoduleItem {
   href: string;
@@ -67,13 +67,6 @@ const MODULES: {
     submodules: [
       { href: "/tienda", label: "Comp. Px. Prov.", icon: <Link2 className="h-4 w-4 shrink-0" /> },
       { href: "/tienda/aumentos", label: "Control aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
-    ],
-  },
-  {
-    id: "stock",
-    label: "Control Stock",
-    icon: <PackageSearch className={iconClass} />,
-    submodules: [
       { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" /> },
     ],
   },
@@ -93,7 +86,7 @@ const MODULES: {
 function getOpenModule(pathname: string): ModuleId {
   if (pathname === "/" || pathname.startsWith("/proveedores")) return "proveedores";
   if (pathname.startsWith("/tienda")) return "tienda";
-  if (pathname.startsWith("/stock")) return "stock";
+  if (pathname.startsWith("/stock")) return "tienda";
   if (pathname.startsWith("/pedidos")) return "pedidos";
   return "proveedores";
 }
