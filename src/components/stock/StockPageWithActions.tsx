@@ -9,6 +9,7 @@ import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
+import ActualizarPreciosDuxButton from "@/components/stock/ActualizarPreciosDuxButton";
 
 interface Props {
   data: ControlStockData;
@@ -38,6 +39,10 @@ export default function StockPageWithActions({
   const actions = (
     <div className="flex items-center justify-end gap-2">
       <SyncDuxHeaderButton />
+      <ActualizarPreciosDuxButton
+        itemIds={data.items.map((i) => i.id)}
+        disabled={!tieneSucursal || !tieneItems}
+      />
       {tieneSucursal && tieneItems && (
         <ImprimirStockButton tableRef={tableRef} />
       )}

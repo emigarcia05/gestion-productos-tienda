@@ -1,5 +1,9 @@
 export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
 
+// Endpoint para creación / actualización de ítems (incluye costo) en Dux.
+const DUX_NUEVO_ITEM_URL =
+  "https://erp.duxsoftware.com.ar/WSERP/rest/services/item/nuevoItem";
+
 /** Rate limit DUX: 1 petición cada 5 segundos. Respetar en el cliente (ej. sync service) con delay >= 5s entre llamadas. */
 
 // IDs fijos de precios y sucursales en el sistema Dux de TiendaColor
@@ -217,4 +221,50 @@ export async function fetchTodosLosItems(): Promise<ItemDux[]> {
   }
 
   return todos;
+}
+
+// ─── POST: Actualizar costo en Dux ────────────────────────────────────────────
+
+export interface ActualizarCostoDuxPayload {
+  cod_item: string;
+  costo: number;
+  id_proveedor: string;
+}
+
+/**
+ * Ejecuta el POST de actualización/creación de ítem en Dux.
+ * Usa el token configurado en DUX_API_TOKEN.
+ *
+ * Ver docs/api-dux-actualizacion-costos.md para el contrato esperado.
+ */
+export async function postActualizarCostoEnDux(
+  payload: ActualizarCostoDuxPayload
+): Promise<unknown> {
+  const token = process.env.DUX_API_TOKEN;
+  if (!token) throw new Error("DUX_API_TOKEN no configurado.");
+
+  const res = await fetch(DUX_NUEVO_ITEM_URL, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      authorization: token,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Error API Dux (${res.status} ${res.statusText}): ${
+        text || "sin cuerpo de respuesta"
+      }`
+    );
+  }
+
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
