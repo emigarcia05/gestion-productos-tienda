@@ -36,7 +36,9 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         title="Instructivo: importar el archivo exportado"
-        bodyClassName="max-w-4xl flex flex-col min-h-0"
+        className="sm:max-w-5xl"
+        bodyClassName="max-w-full flex flex-col min-h-0"
+        scrollBody={false}
         actions={
           <Button type="button" onClick={() => onOpenChange(false)} className="bg-primary text-primary-foreground">
             Cerrar
@@ -44,17 +46,13 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
         }
       >
         <div className="flex flex-col gap-4 min-h-0 flex-1 flex">
-          <p className="text-sm text-muted-foreground text-center shrink-0">
-            Después de guardar el .csv, seguí estos pasos para importar los datos en el sistema.
-          </p>
-
           {/* Carrusel: flecha izq | contenido del paso | flecha der */}
-          <div className="flex items-stretch justify-center gap-2 sm:gap-4 flex-1 min-h-0 min-w-0">
+          <div className="flex items-stretch justify-center gap-2 sm:gap-4 flex-1 min-h-0 min-w-0 overflow-hidden">
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className="shrink-0 h-10 w-10 rounded-full self-center"
+              className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
               onClick={irAtras}
               disabled={pasoActual === 0}
               aria-label="Paso anterior"
@@ -62,15 +60,15 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
               <ChevronLeft className="h-5 w-5" />
             </Button>
 
-            <div className="flex flex-col items-center text-center flex-1 min-w-0 min-h-0">
+            <div className="flex flex-col items-center text-center flex-1 min-w-0 min-h-0 overflow-hidden">
               <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1 shrink-0">{paso.titulo}</p>
               <p className="text-sm text-foreground mb-2 shrink-0">{paso.texto}</p>
-              <div className="w-full flex-1 min-h-[280px] sm:min-h-[380px] flex justify-center items-center bg-muted/30 rounded-lg overflow-hidden relative">
+              <div className="w-full flex-1 min-h-0 aspect-video max-w-full flex justify-center items-center bg-muted/30 rounded-lg overflow-hidden relative z-0">
                 <Image
                   src={paso.img}
                   alt={paso.texto}
                   fill
-                  className="object-contain"
+                  className="object-contain object-center"
                   sizes="(max-width: 896px) 100vw, 896px"
                 />
               </div>
@@ -80,7 +78,7 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
               type="button"
               variant="outline"
               size="icon"
-              className="shrink-0 h-10 w-10 rounded-full self-center"
+              className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
               onClick={irAdelante}
               disabled={pasoActual === PASOS.length - 1}
               aria-label="Paso siguiente"
@@ -90,7 +88,7 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
           </div>
 
           {/* Indicadores de paso (carrusel inferior) */}
-          <div className="flex items-center justify-center gap-2 flex-wrap shrink-0">
+          <div className="flex items-center justify-center gap-2 flex-wrap shrink-0 relative z-10">
             {PASOS.map((_, i) => (
               <button
                 key={i}

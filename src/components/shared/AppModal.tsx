@@ -25,6 +25,8 @@ export interface AppModalProps {
   bodyClassName?: string;
   /** Si se muestra el botón de cerrar (X). Por defecto true. */
   showCloseButton?: boolean;
+  /** Si false, el cuerpo no hace scroll y el contenido debe caber (overflow-hidden). Por defecto true. */
+  scrollBody?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export default function AppModal({
   className,
   bodyClassName,
   showCloseButton = true,
+  scrollBody = true,
 }: AppModalProps) {
   return (
     <DialogContent
@@ -63,12 +66,13 @@ export default function AppModal({
         </DialogTitle>
       </DialogHeader>
 
-      {/* Cuerpo: scroll cuando el contenido es alto; header y footer siempre visibles */}
-      <div className="min-h-0 flex flex-col bg-gris overflow-auto">
-        <div className="min-h-0 flex items-stretch justify-center p-4 flex-1">
+      {/* Cuerpo: scroll cuando scrollBody; si no, overflow-hidden para que el contenido se adapte */}
+      <div className={cn("min-h-0 flex flex-col bg-gris", scrollBody ? "overflow-auto" : "overflow-hidden")}>
+        <div className="min-h-0 flex items-stretch justify-center p-4 flex-1 min-h-0">
           <div
             className={cn(
-              "app-modal__body w-full max-w-full bg-white rounded-lg p-6 shadow-sm min-h-0 overflow-auto",
+              "app-modal__body w-full max-w-full bg-white rounded-lg p-6 shadow-sm min-h-0",
+              scrollBody ? "overflow-auto" : "overflow-hidden flex flex-col",
               bodyClassName
             )}
           >
