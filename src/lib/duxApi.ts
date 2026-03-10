@@ -271,11 +271,9 @@ export async function postActualizarCostoEnDux(
     }
 
     const text = await res.text().catch(() => "");
-    lastError = new Error(
-      `Error API Dux (${res.status} ${res.statusText}): ${
-        text || "sin cuerpo de respuesta"
-      }`
-    );
+    const errorMsg = `Error API Dux (${res.status} ${res.statusText}): ${text || "sin cuerpo de respuesta"}`;
+    lastError = new Error(errorMsg);
+    console.error("[DUX POST nuevoItem]", res.status, res.statusText, text || "(sin cuerpo)");
 
     if (res.status === 429 && attempt < POST_429_MAX_RETRIES) {
       let waitMs = POST_429_WAIT_MS * Math.pow(2, attempt);

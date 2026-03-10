@@ -39,8 +39,9 @@ export default function ActualizarPreciosDuxButton({ itemIds, disabled }: Props)
         );
         router.refresh();
       } catch (e: unknown) {
+        console.error("[Exportar Px. Dux] Error en cliente:", e);
         const message =
-          e instanceof Error ? e.message : "Error al intentar actualizar precios en Dux.";
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Error al intentar actualizar precios en Dux.";
         toast.error(message);
       }
     });
