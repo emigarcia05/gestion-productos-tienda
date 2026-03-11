@@ -93,14 +93,25 @@ export default function VincularModal({
     });
   }, [open, itemTiendaId]);
 
-  const minCxVinculados = useMemo(() => {
-    if (vinculados.length === 0) return 0;
+  const prefijoPrincipal = (prefijoProveedor ?? "").trim().toLowerCase();
+
+  const { principal, alternativos } = useMemo(() => {
+    const principalItem =
+      prefijoPrincipal === ""
+        ? null
+        : vinculados.find((p) => p.proveedor.prefijo.trim().toLowerCase() === prefijoPrincipal) ?? null;
+    const alts = principalItem ? vinculados.filter((p) => p.id !== principalItem.id) : [...vinculados];
+    return { principal: principalItem, alternativos: alts };
+  }, [vinculados, prefijoPrincipal]);
+
+  const minCxAlternativos = useMemo(() => {
+    if (alternativos.length === 0) return 0;
     return Math.min(
-      ...vinculados.map((p) =>
+      ...alternativos.map((p) =>
         p.pxCompraFinal != null ? p.pxCompraFinal : calcPxCompraFinal(p.precioLista, p.descuentoRubro, p.descuentoCantidad, p.cxTransporte)
       )
     );
-  }, [vinculados]);
+  }, [alternativos]);
 
   function handleDesvincular(producto: ProductoConProveedor) {
     startTransition(async () => {
@@ -211,7 +222,7 @@ export default function VincularModal({
             )}
           </div>
 
-          {/* Sección principal: lista de vínculos (sin título para simplificar) */}
+          {/* Sección: Proveedor Principal + Proveedores Alternativos */}
           <div className="mt-4 flex flex-col min-h-0 flex-1">
             <div className="modal-panel-scroll rounded-lg border-2 border-border bg-card overflow-hidden">
             {cargando ? (
@@ -222,45 +233,50 @@ export default function VincularModal({
               <p className="modal-mensaje-vacio p-4">Sin vínculos aún.</p>
             ) : (
               <div className="modal-vinculos-listado-contenedor">
-                {vinculados.map((prod, idx) => {
-                  const pxCompra = prod.pxCompraFinal != null ? prod.pxCompraFinal : calcPxCompraFinal(prod.precioLista, prod.descuentoRubro, prod.descuentoCantidad, prod.cxTransporte);
-                  const esMenorCosto = vinculados.length > 1 && pxCompra <= minCxVinculados;
-                  const zebra = idx % 2 === 1 ? "modal-vinculos-fila--zebra-par" : "modal-vinculos-fila--zebra-impar";
-                  return (
+                {principal && (
+                  <>
+                    <p className="modal-vinculos-seccion-titulo">Proveedor Principal</p>
                     <div
-                      key={prod.id}
-                      className={`modal-vinculos-fila ${zebra} ${esMenorCosto ? "modal-vinculos-fila--destacado" : ""}`}
+                      key={principal.id}
+                      className="modal-vinculos-fila modal-vinculos-fila--zebra-impar"
                     >
                       <div className="modal-vinculos-celda">
                         <Badge variant="secondary" className="modal-vinculos-prefijo">
-                          {prod.proveedor.prefijo}
+                          {principal.proveedor.prefijo}
                         </Badge>
                       </div>
                       <div className="modal-vinculos-celda modal-vinculos-celda--numero">
-                        ${fmtPrecio(pxCompra)}
+                        ${fmtPrecio(
+                          principal.pxCompraFinal != null
+                            ? principal.pxCompraFinal
+                            : calcPxCompraFinal(
+                                principal.precioLista,
+                                principal.descuentoRubro,
+                                principal.descuentoCantidad,
+                                principal.cxTransporte
+                              )
+                        )}
                       </div>
                       <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
-                        <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
+                        <DifCosto
+                          costoTienda={costoTienda}
+                          pxCompraFinal={
+                            principal.pxCompraFinal != null
+                              ? principal.pxCompraFinal
+                              : calcPxCompraFinal(
+                                  principal.precioLista,
+                                  principal.descuentoRubro,
+                                  principal.descuentoCantidad,
+                                  principal.cxTransporte
+                                )
+                          }
+                        />
                       </div>
                       <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleConvertir(prod)}
-                          disabled={isPending}
-                          title="Marcar como proveedor principal del ítem"
-                          className="btn-convertir-proveedor-principal"
-                        >
-                          <ArrowRightLeft className="h-3 w-3 shrink-0" />
-                          <span className="block">
-                            <span className="block">Proveedor</span>
-                            <span className="block">Principal</span>
-                          </span>
-                        </Button>
-                        <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDesvincular(prod)}
+                          onClick={() => handleDesvincular(principal)}
                           disabled={isPending}
                           className="btn-desvincular-icono"
                           title="Desvincular"
@@ -269,8 +285,74 @@ export default function VincularModal({
                         </Button>
                       </div>
                     </div>
-                  );
-                })}
+                  </>
+                )}
+                {alternativos.length > 0 && (
+                  <>
+                    <p className="modal-vinculos-seccion-titulo">Proveedores Alternativos</p>
+                    {alternativos.map((prod, idx) => {
+                      const pxCompra =
+                        prod.pxCompraFinal != null
+                          ? prod.pxCompraFinal
+                          : calcPxCompraFinal(
+                              prod.precioLista,
+                              prod.descuentoRubro,
+                              prod.descuentoCantidad,
+                              prod.cxTransporte
+                            );
+                      const esMenorCostoAlternativo =
+                        alternativos.length > 1 && pxCompra <= minCxAlternativos;
+                      const zebra =
+                        idx % 2 === 1
+                          ? "modal-vinculos-fila--zebra-par"
+                          : "modal-vinculos-fila--zebra-impar";
+                      return (
+                        <div
+                          key={prod.id}
+                          className={`modal-vinculos-fila ${zebra}`}
+                        >
+                          <div className="modal-vinculos-celda">
+                            <Badge variant="secondary" className="modal-vinculos-prefijo">
+                              {prod.proveedor.prefijo}
+                            </Badge>
+                          </div>
+                          <div className="modal-vinculos-celda modal-vinculos-celda--numero">
+                            ${fmtPrecio(pxCompra)}
+                          </div>
+                          <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
+                            <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
+                          </div>
+                          <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleConvertir(prod)}
+                              disabled={isPending}
+                              title="Marcar como proveedor principal del ítem"
+                              className={`btn-convertir-proveedor-principal ${esMenorCostoAlternativo ? "btn-convertir-proveedor-principal--destacado" : ""}`}
+                            >
+                              <ArrowRightLeft className="h-3 w-3 shrink-0" />
+                              <span className="block">
+                                <span className="block">Proveedor</span>
+                                <span className="block">Principal</span>
+                              </span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDesvincular(prod)}
+                              disabled={isPending}
+                              className="btn-desvincular-icono"
+                              title="Desvincular"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             )}
             </div>

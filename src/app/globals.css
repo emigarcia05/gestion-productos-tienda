@@ -915,6 +915,18 @@
   background-color: color-mix(in oklch, var(--primary) 4%, var(--card));
   border-color: color-mix(in oklch, var(--primary) 12%, var(--border));
 }
+.modal-vinculos-seccion-titulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  margin: 0.75rem 0 0.25rem 0;
+  padding: 0 0.25rem;
+}
+.modal-vinculos-seccion-titulo:first-child {
+  margin-top: 0.25rem;
+}
 .modal-vinculos-fila--destacado {
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent2) 35%, transparent);
   background-color: color-mix(in oklch, var(--accent2) 10%, var(--card));
@@ -966,6 +978,14 @@
 }
 .btn-convertir-proveedor-principal span {
   display: block;
+}
+.btn-convertir-proveedor-principal--destacado {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent2) 35%, transparent);
+  background-color: color-mix(in oklch, var(--accent2) 18%, var(--card)) !important;
+  border-color: color-mix(in oklch, var(--accent2) 50%, var(--border));
+}
+.btn-convertir-proveedor-principal--destacado:hover:not(:disabled) {
+  background-color: color-mix(in oklch, var(--accent2) 25%, var(--card)) !important;
 }
 .btn-desvincular-icono {
   height: 1.75rem;
