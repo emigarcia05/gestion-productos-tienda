@@ -95,7 +95,7 @@ export default function EdicionMasivaListaPreciosModal({
         toast.error(result.error ?? "Error al actualizar.");
         return;
       }
-      toast.success(`Se actualizaron ${result.actualizados ?? 0} productos.`);
+      toast.success(`Se actualizaron ${result.data?.actualizados ?? 0} productos.`);
       setOpen(false);
       setMarcaNombre("");
       setRubroNombre("");

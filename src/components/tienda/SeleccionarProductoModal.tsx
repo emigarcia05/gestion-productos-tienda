@@ -49,6 +49,8 @@ interface Props {
   onClose: () => void;
   onSeleccionar: (producto: ProductoConProveedor) => void;
   excluirItemTiendaId: string;
+  /** Prefijos de proveedores ya vinculados al ítem; se ocultan de la lista para evitar duplicados. */
+  prefijosYaVinculados?: string[];
 }
 
 export default function SeleccionarProductoModal({
@@ -56,6 +58,7 @@ export default function SeleccionarProductoModal({
   onClose,
   onSeleccionar,
   excluirItemTiendaId: _excluirItemTiendaId,
+  prefijosYaVinculados = [],
 }: Props) {
   const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
   const [proveedorId, setProveedorId] = useState("");
@@ -86,8 +89,12 @@ export default function SeleccionarProductoModal({
         q.trim() || undefined
       );
       setLoading(false);
-      if (result.success) setRows(result.data);
-      else {
+      if (result.success) {
+        const filtrados = prefijosYaVinculados.length
+          ? result.data.filter((r) => !prefijosYaVinculados.includes(r.proveedor.prefijo))
+          : result.data;
+        setRows(filtrados);
+      } else {
         toast.error(result.error);
         setRows([]);
       }

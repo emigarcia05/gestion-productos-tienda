@@ -65,6 +65,15 @@ export async function getProveedores(): Promise<ProveedorListItem[]> {
   }));
 }
 
+/** Obtiene un proveedor por id (para validaciones sin cargar toda la lista). */
+export async function getProveedorById(id: string): Promise<Pick<ProveedorListItem, "id" | "nombre" | "prefijo"> | null> {
+  const p = await prisma.proveedor.findUnique({
+    where: { id },
+    select: { id: true, nombre: true, prefijo: true },
+  });
+  return p;
+}
+
 /**
  * Crea un proveedor en la base de datos.
  * codigoUnico se genera a partir del prefijo (normalizado en mayúsculas).

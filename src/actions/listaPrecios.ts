@@ -11,6 +11,7 @@ import {
   type FilaListaPrecioParaCliente,
   type ListaPreciosFiltradoOpciones,
 } from "@/services/listaPrecios.service";
+import type { ActionResult } from "@/lib/types";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -72,7 +73,7 @@ export async function getListaPreciosConOpcionesAction(
 export async function actualizarListaPreciosMasivoAction(
   ids: string[],
   data: ActualizacionMasivaListaPrecios
-): Promise<{ ok: boolean; actualizados?: number; error?: string }> {
+): Promise<ActionResult<{ actualizados: number }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para edición masiva." };
@@ -80,5 +81,5 @@ export async function actualizarListaPreciosMasivoAction(
   const result = await actualizarListaPreciosMasivo(ids, data);
   if (result.error) return { ok: false, error: result.error };
   revalidatePath("/proveedores/lista-precios");
-  return { ok: true, actualizados: result.actualizados };
+  return { ok: true, data: { actualizados: result.actualizados } };
 }

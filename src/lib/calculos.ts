@@ -1,3 +1,8 @@
+/** Clamp de porcentaje 0–100 (para dto_*, cx_transporte). */
+export function clampPercent(value: number): number {
+  return Math.round(Math.max(0, Math.min(100, value)));
+}
+
 /**
  * Precio de compra final: todos los dto y cx_transporte son porcentajes.
  * Fórmula: precioLista × (1 - dto/100) por cada descuento × (1 + cxTransporte/100).

@@ -109,9 +109,8 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
 
   const agrupar = (clave: "marca" | "rubro" | "subRubro"): GrupoAumento[] => {
     const mapa = new Map<string, ItemAumento[]>();
-    const keyLabel = clave === "marca" ? "marca" : clave === "rubro" ? "rubro" : "subRubro";
     for (const item of individual) {
-      const nombre = item[keyLabel] ?? "Sin definir";
+      const nombre = item[clave] ?? "Sin definir";
       if (!mapa.has(nombre)) mapa.set(nombre, []);
       mapa.get(nombre)!.push(item);
     }

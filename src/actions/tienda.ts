@@ -10,6 +10,24 @@ import { prisma } from "@/lib/prisma";
 
 const PAGE_SIZE = 50;
 
+/** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
+async function getTiendaEmptyWithOpciones() {
+  const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+    prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
+    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
+  ]);
+  return {
+    items: [] as ItemTiendaParaTabla[],
+    total: 0,
+    marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
+    rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
+    subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
+    setMejorPrecio: new Set<string>(),
+    totalPaginas: 0,
+  };
+}
+
 /** Última sincronización (max last_sync de lista_precios_tienda). */
 export async function getUltimoSync() {
   const row = await prisma.listaPrecioTienda.findFirst({
@@ -81,45 +99,14 @@ export async function getTiendaPageData(params: {
         )
     `;
     idsMenorCxDisponible = rows.map((r) => r.id);
-    if (idsMenorCxDisponible.length === 0) {
-      const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
-        prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
-        prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
-        prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
-      ]);
-      return {
-        items: [],
-        total: 0,
-        marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
-        rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
-        subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
-        setMejorPrecio: new Set<string>(),
-        totalPaginas: 0,
-      };
-    }
+    if (idsMenorCxDisponible.length === 0) return getTiendaEmptyWithOpciones();
     andParts.push({ id: { in: idsMenorCxDisponible } });
   }
 
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
   /* Sin filtros: no cargar ítems para que la navegación sea más rápida; solo opciones de filtros. */
-  const sinFiltros = andParts.length === 0;
-  if (sinFiltros) {
-    const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
-      prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
-      prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
-      prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
-    ]);
-    return {
-      items: [],
-      total: 0,
-      marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
-      rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
-      subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
-      setMejorPrecio: new Set<string>(),
-      totalPaginas: 0,
-    };
-  }
+  if (andParts.length === 0) return getTiendaEmptyWithOpciones();
 
   /* Opciones de filtros: cada desplegable muestra siempre la lista completa de su dimensión (ver docs/FILTROS_DINAMICOS.md). Solo se aplica filtro de búsqueda (q) si existe. */
   const andPartsOnlyQ: Prisma.ListaPrecioTiendaWhereInput[] = [];
@@ -276,11 +263,26 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
   return getControlAumentosData();
 }
 
+/** Marca un producto vinculado como proveedor principal: actualiza precios_tienda.cod_ext y precios_tienda.proveedor. */
 export async function convertirEnProveedor(
   itemTiendaId: string,
   productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const itemProveedor = await prisma.listaPrecioProveedor.findUnique({
+    where: { id: productoProveedorId },
+    include: { proveedor: { select: { nombre: true, prefijo: true } } },
+  });
+  if (!itemProveedor || itemProveedor.idListaPrecioTienda !== itemTiendaId) {
+    return { ok: false, error: "Producto no encontrado o no está vinculado a este ítem." };
+  }
+  await prisma.listaPrecioTienda.update({
+    where: { id: itemTiendaId },
+    data: {
+      codExt: itemProveedor.codExt,
+      proveedor: itemProveedor.proveedor.nombre ?? itemProveedor.proveedor.prefijo,
+    },
+  });
   revalidatePath("/tienda");
   return { ok: true, data: undefined };
 }

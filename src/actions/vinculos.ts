@@ -38,6 +38,21 @@ export async function vincularProducto(
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const { prisma } = await import("@/lib/prisma");
+  const producto = await prisma.listaPrecioProveedor.findUnique({
+    where: { id: productoProveedorId },
+    select: { idProveedor: true },
+  });
+  if (!producto) return { ok: false, error: "Producto no encontrado." };
+  const yaVinculadoMismoProveedor = await prisma.listaPrecioProveedor.findFirst({
+    where: {
+      idListaPrecioTienda: itemTiendaId,
+      idProveedor: producto.idProveedor,
+      id: { not: productoProveedorId },
+    },
+  });
+  if (yaVinculadoMismoProveedor) {
+    return { ok: false, error: "Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor." };
+  }
   await prisma.listaPrecioProveedor.update({
     where: { id: productoProveedorId },
     data: { idListaPrecioTienda: itemTiendaId },
@@ -47,10 +62,15 @@ export async function vincularProducto(
 }
 
 export async function desvincularProducto(
-  itemTiendaId: string,
-  _productoProveedorId: string
+  _itemTiendaId: string,
+  productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const { prisma } = await import("@/lib/prisma");
+  await prisma.listaPrecioProveedor.update({
+    where: { id: productoProveedorId },
+    data: { idListaPrecioTienda: null },
+  });
   revalidatePath("/tienda");
   return { ok: true, data: undefined };
 }

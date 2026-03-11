@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
-import { createProveedorSchema } from "@/lib/validations/proveedor";
+import { createProveedorSchema, updateProveedorSchema } from "@/lib/validations/proveedor";
 import * as proveedorService from "@/services/proveedor.service";
 
 // ─── MOCK: productos de prueba (lista de proveedores viene del servicio) ─────
@@ -93,18 +93,25 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
 
 export async function editarProveedor(id: string, formData: FormData): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  const nombre = (formData.get("nombre") as string)?.trim();
-  const prefijo = (formData.get("prefijo") as string)?.trim().toUpperCase();
+
+  const raw = {
+    nombre: (formData.get("nombre") as string) ?? "",
+    prefijo: (formData.get("prefijo") as string) ?? "",
+  };
+  const parsed = updateProveedorSchema.safeParse(raw);
+  if (!parsed.success) {
+    const first = parsed.error.flatten().fieldErrors;
+    const msg = first.nombre?.[0] ?? first.prefijo?.[0] ?? "Datos inválidos.";
+    return { ok: false, error: msg };
+  }
+
   const idProveedorDuxRaw = (formData.get("idProveedorDux") as string | null) ?? "";
   const idProveedorDux = idProveedorDuxRaw.trim() || null;
-  if (!nombre || nombre.length < 2) return { ok: false, error: "El nombre debe tener al menos 2 caracteres." };
-  if (!prefijo || prefijo.length !== 3 || !/^[A-Z]{3}$/.test(prefijo))
-    return { ok: false, error: "El prefijo debe tener exactamente 3 letras." };
+
   try {
     await proveedorService.updateProveedor({
       id,
-      nombre,
-      prefijo,
+      ...parsed.data,
       idProveedorDux,
     });
     revalidatePath("/proveedores");

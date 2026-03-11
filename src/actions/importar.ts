@@ -7,11 +7,10 @@ import {
   type MapeoColumnasListaPrecios,
   aplicarMapeoListaPrecios,
 } from "@/lib/parsearImport";
-import { getProveedores } from "@/actions/proveedores";
 import * as listaPreciosService from "@/services/listaPrecios.service";
+import { getProveedorById } from "@/services/proveedor.service";
 
-export type { FilaProducto, MapeoColumnas } from "@/lib/parsearImport";
-export type { MapeoColumnasListaPrecios } from "@/lib/parsearImport";
+export type { FilaProducto, MapeoColumnas, MapeoColumnasListaPrecios } from "@/lib/parsearImport";
 
 export interface ImportResult {
   creados: number;
@@ -49,8 +48,7 @@ export async function importarListaPreciosProveedor(
   if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
   if (!filasCrudas.length) throw new Error("No hay filas para importar.");
 
-  const proveedores = await getProveedores();
-  const proveedor = proveedores.find((p) => p.id === proveedorId);
+  const proveedor = await getProveedorById(proveedorId);
   if (!proveedor) throw new Error("Proveedor no encontrado.");
   const prefijo = proveedor.prefijo;
 

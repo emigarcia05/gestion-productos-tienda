@@ -172,11 +172,15 @@ export async function createPresentacion(
   });
 }
 
-export async function updatePresentacion(
-  id: string,
-  data: { nombre?: string; orden?: number; subcategoriaId?: string; costoCompraObjetivo?: number | null }
-) {
-  const payload: Record<string, unknown> = {};
+export type UpdatePresentacionData = {
+  nombre?: string;
+  orden?: number;
+  subcategoriaId?: string;
+  costoCompraObjetivo?: number | null;
+};
+
+export async function updatePresentacion(id: string, data: UpdatePresentacionData) {
+  const payload: UpdatePresentacionData = {};
   if (data.nombre !== undefined) payload.nombre = data.nombre;
   if (data.orden !== undefined) payload.orden = data.orden;
   if (data.subcategoriaId !== undefined) payload.subcategoriaId = data.subcategoriaId;

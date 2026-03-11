@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Link2, Plus, Loader2, X, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ export default function VincularModal({
   marca, rubro, subRubro, prefijoProveedor,
   open: openProp, onOpenChange,
 }: Props) {
+  const router = useRouter();
   const [openInterno, setOpenInterno] = useState(false);
   const open    = openProp    !== undefined ? openProp    : openInterno;
   const setOpen = onOpenChange !== undefined ? onOpenChange : setOpenInterno;
@@ -117,7 +119,10 @@ export default function VincularModal({
     startTransition(async () => {
       const res = await convertirEnProveedor(itemTiendaId, producto.id);
       if (res.ok) {
-        toast.success(`Proveedor Dux actualizado a "${producto.proveedor.nombre}"`);
+        const refreshed = await getVinculos(itemTiendaId);
+        if (refreshed.success) setVinculados(refreshed.data);
+        router.refresh();
+        toast.success(`Proveedor principal actualizado a "${producto.proveedor.nombre}"`);
       } else {
         toast.error(res.error);
       }
@@ -126,20 +131,28 @@ export default function VincularModal({
 
   // Llamado desde SeleccionarProductoModal al hacer doble clic
   async function handleSeleccionar(producto: { id: string; codigoExterno: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; prefijo: string } }) {
+    if (vinculados.some((p) => p.proveedor.prefijo === producto.proveedor.prefijo)) {
+      toast.error("Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor.");
+      return;
+    }
     setAbrirSelector(false);
     startTransition(async () => {
       const res = await vincularProducto(itemTiendaId, producto.id);
       if (res.ok) {
-        // Rellenar campos de descuento con 0 — se actualizarán al reabrir el modal
-        const productoCompleto: ProductoConProveedor = {
-          ...producto,
-          precioVentaSugerido: 0,
-          descuentoRubro: 0,
-          descuentoCantidad: 0,
-          cxTransporte: 0,
-        };
-        setVinculados((prev) => [...prev, productoCompleto]);
-        setCantidad((c) => c + 1);
+        const refreshed = await getVinculos(itemTiendaId);
+        if (refreshed.success) {
+          setVinculados(refreshed.data);
+          setCantidad(refreshed.data.length);
+        } else {
+          setVinculados((prev) => [...prev, {
+            ...producto,
+            precioVentaSugerido: 0,
+            descuentoRubro: 0,
+            descuentoCantidad: 0,
+            cxTransporte: 0,
+          }]);
+          setCantidad((c) => c + 1);
+        }
         toast.success(`Vinculado: ${producto.codigoExterno}`);
       } else {
         toast.error(res.error);
@@ -271,6 +284,7 @@ export default function VincularModal({
         onClose={() => setAbrirSelector(false)}
         onSeleccionar={handleSeleccionar}
         excluirItemTiendaId={itemTiendaId}
+        prefijosYaVinculados={vinculados.map((p) => p.proveedor.prefijo)}
       />
     </>
   );

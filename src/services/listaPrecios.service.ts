@@ -7,6 +7,7 @@
 import type { FilaListaPrecio } from "@/lib/parsearImport";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
+import { clampPercent } from "@/lib/calculos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 
@@ -396,19 +397,13 @@ export async function actualizarListaPreciosMasivo(
     cotizacionDolar?: number;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
-   if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
-  if (data.dtoProveedor !== undefined)
-    updatePayload.dtoProveedor = Math.round(Math.max(0, Math.min(100, data.dtoProveedor)));
-  if (data.dtoMarca !== undefined)
-    updatePayload.dtoMarca = Math.round(Math.max(0, Math.min(100, data.dtoMarca)));
-  if (data.dtoRubro !== undefined)
-    updatePayload.dtoRubro = Math.round(Math.max(0, Math.min(100, data.dtoRubro)));
-  if (data.dtoCantidad !== undefined)
-    updatePayload.dtoCantidad = Math.round(Math.max(0, Math.min(100, data.dtoCantidad)));
-  if (data.dtoFinanciero !== undefined)
-    updatePayload.dtoFinanciero = Math.round(Math.max(0, Math.min(100, data.dtoFinanciero)));
-  if (data.cxTransporte !== undefined)
-    updatePayload.cxTransporte = Math.round(Math.max(0, Math.min(100, data.cxTransporte)));
+  if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
+  if (data.dtoProveedor !== undefined) updatePayload.dtoProveedor = clampPercent(data.dtoProveedor);
+  if (data.dtoMarca !== undefined) updatePayload.dtoMarca = clampPercent(data.dtoMarca);
+  if (data.dtoRubro !== undefined) updatePayload.dtoRubro = clampPercent(data.dtoRubro);
+  if (data.dtoCantidad !== undefined) updatePayload.dtoCantidad = clampPercent(data.dtoCantidad);
+  if (data.dtoFinanciero !== undefined) updatePayload.dtoFinanciero = clampPercent(data.dtoFinanciero);
+  if (data.cxTransporte !== undefined) updatePayload.cxTransporte = clampPercent(data.cxTransporte);
   if (data.cotizacionDolar !== undefined && data.cotizacionDolar > 0)
     updatePayload.cotizacionDolar = data.cotizacionDolar;
 

@@ -72,21 +72,20 @@ export async function getControlStock(
     return parts;
   }
 
+  const toWhereWithNotNull = (
+    exclude: "marca" | "rubro" | "subRubro"
+  ): Prisma.ListaPrecioTiendaWhereInput => {
+    const parts = baseWhere(exclude);
+    const key = exclude;
+    const notNull = { [key]: { not: null } } as Prisma.ListaPrecioTiendaWhereInput;
+    return parts.length > 0 ? { AND: [...parts, notNull] } : notNull;
+  };
+
   const whereItems: Prisma.ListaPrecioTiendaWhereInput =
     baseWhere().length > 0 ? { AND: baseWhere() } : {};
-
-  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput =
-    baseWhere("marca").length > 0
-      ? { AND: [...baseWhere("marca"), { marca: { not: null } }] }
-      : { marca: { not: null } };
-  const whereRubros: Prisma.ListaPrecioTiendaWhereInput =
-    baseWhere("rubro").length > 0
-      ? { AND: [...baseWhere("rubro"), { rubro: { not: null } }] }
-      : { rubro: { not: null } };
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput =
-    baseWhere("subRubro").length > 0
-      ? { AND: [...baseWhere("subRubro"), { subRubro: { not: null } }] }
-      : { subRubro: { not: null } };
+  const whereMarcas = toWhereWithNotNull("marca");
+  const whereRubros = toWhereWithNotNull("rubro");
+  const whereSubRubros = toWhereWithNotNull("subRubro");
 
   const [rows, marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({

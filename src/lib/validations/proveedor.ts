@@ -14,3 +14,7 @@ export const createProveedorSchema = z.object({
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;
+
+/** Misma validación que crear (nombre + prefijo). Reutilizable en editar. */
+export const updateProveedorSchema = createProveedorSchema;
+export type UpdateProveedorFormData = z.infer<typeof updateProveedorSchema>;
