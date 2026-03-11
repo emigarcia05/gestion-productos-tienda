@@ -217,3 +217,42 @@ Para mostrar porcentajes o indicadores de variación (subida/bajada/sin cambio) 
 ### Dónde se usa
 
 - **TablaAumentos**: `ColorPct` e `IconTendencia` (y celdas de variación en listas).
+
+---
+
+## Modal "Vínculos con Proveedores"
+
+### Objetivo
+
+Unificar el diseño del modal de comparación de costos entre proveedores vinculados a un ítem de tienda. Todo el layout y estilos viven en `globals.css` y se reutilizan desde el componente `VincularModal`.
+
+### Clases CSS globales (`src/app/globals.css`)
+
+| Clase | Uso |
+|-------|-----|
+| `.modal-vinculos-listado-contenedor` | Contenedor interno con padding y layout vertical para las filas del modal. |
+| `.modal-vinculos-fila` | Fila base (grid) con 4 columnas: prefijo, precio, variación, acciones; borde y fondo de tarjeta. |
+| `.modal-vinculos-fila--zebra-impar` / `--zebra-par` | Zebra para filas impares/pares, usando `bg-card` y mezcla suave con `primary`. |
+| `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, color muted, centrados. |
+| `.modal-vinculos-celda` | Celda base, texto centrado. |
+| `.modal-vinculos-celda--acciones` | Celda de acciones: flex, alinea todos los botones a la derecha (`justify-content: flex-end`) para que queden alineados verticalmente. |
+| `.modal-vinculos-celda--principal` | Celda del proveedor principal: centrar prefijo/etiqueta verticalmente en la fila. |
+| `.modal-vinculos-celda--principal-numero` | Precio del proveedor principal: número centrado, más grande y en negrita. |
+| `.modal-vinculos-prefijo` | Estilo del prefijo del proveedor (fuente monoespaciada, tamaño reducido, bold). |
+| `.modal-vinculos-celda--numero` | Precio en filas de proveedores alternativos (tamaño pequeño, tabular-nums). |
+| `.modal-vinculos-celda--variacion` | Contenedor de la variación de costo (`≈0%`, `+X%`, `-X%`) usando las clases de variación de costo. |
+| `.btn-convertir-proveedor-principal` | Botón base "Proveedor Principal": outline compacto con padding vertical y tipografía pequeña. |
+| `.btn-convertir-proveedor-principal--destacado` | Variante destacada para el proveedor alternativo más económico: borde y texto en `foreground`, fondo gris muy suave y negrita. Se aplica solo al botón, no a toda la fila. |
+| `.btn-desvincular-icono` | Botón de borrar vínculo (icono de tacho): tamaño fijo, alineado a la derecha en todas las filas. |
+
+### Comportamiento de diseño
+
+- El modal se divide en dos secciones:
+  - **Proveedor Principal**: muestra solo prefijo + precio de compra final del proveedor actual, centrados, sin botón de "Convertir", solo el botón de borrar (tacho).
+  - **Proveedores Alternativos**: muestra prefijo, precio, variación de costo y botones de acción.
+- El proveedor alternativo con **menor costo** se resalta únicamente a través de la variante del botón `btn-convertir-proveedor-principal--destacado` (texto negro, negrita, fondo gris suave), evitando bordes gruesos en toda la fila para no romper la jerarquía visual del modal.
+
+**Regla:** cualquier ajuste futuro al layout o colores de este modal debe hacerse modificando estas clases globales, manteniendo la separación conceptual entre:
+- layout de filas/celdas (`modal-vinculos-*`),
+- semántica de variación de costos (`variacion-costo-*`),
+- y botones reutilizables (`btn-convertir-proveedor-principal*`, `btn-desvincular-icono`).

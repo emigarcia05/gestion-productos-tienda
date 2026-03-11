@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, X, ArrowRightLeft } from "lucide-react";
+import { Link2, Plus, Loader2, ArrowRightLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -235,17 +235,17 @@ export default function VincularModal({
               <div className="modal-vinculos-listado-contenedor">
                 {principal && (
                   <>
-                    <p className="modal-vinculos-seccion-titulo">Proveedor Principal</p>
+                    <p className="modal-vinculos-seccion-titulo text-center">Proveedor Principal</p>
                     <div
                       key={principal.id}
                       className="modal-vinculos-fila modal-vinculos-fila--zebra-impar"
                     >
-                      <div className="modal-vinculos-celda">
+                      <div className="modal-vinculos-celda modal-vinculos-celda--principal">
                         <Badge variant="secondary" className="modal-vinculos-prefijo">
                           {principal.proveedor.prefijo}
                         </Badge>
                       </div>
-                      <div className="modal-vinculos-celda modal-vinculos-celda--numero">
+                      <div className="modal-vinculos-celda modal-vinculos-celda--principal-numero">
                         ${fmtPrecio(
                           principal.pxCompraFinal != null
                             ? principal.pxCompraFinal
@@ -257,21 +257,6 @@ export default function VincularModal({
                               )
                         )}
                       </div>
-                      <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
-                        <DifCosto
-                          costoTienda={costoTienda}
-                          pxCompraFinal={
-                            principal.pxCompraFinal != null
-                              ? principal.pxCompraFinal
-                              : calcPxCompraFinal(
-                                  principal.precioLista,
-                                  principal.descuentoRubro,
-                                  principal.descuentoCantidad,
-                                  principal.cxTransporte
-                                )
-                          }
-                        />
-                      </div>
                       <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
                         <Button
                           variant="ghost"
@@ -281,7 +266,7 @@ export default function VincularModal({
                           className="btn-desvincular-icono"
                           title="Desvincular"
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -289,7 +274,7 @@ export default function VincularModal({
                 )}
                 {alternativos.length > 0 && (
                   <>
-                    <p className="modal-vinculos-seccion-titulo">Proveedores Alternativos</p>
+                    <p className="modal-vinculos-seccion-titulo text-center">Proveedores Alternativos</p>
                     {alternativos.map((prod, idx) => {
                       const pxCompra =
                         prod.pxCompraFinal != null
@@ -345,7 +330,7 @@ export default function VincularModal({
                               className="btn-desvincular-icono"
                               title="Desvincular"
                             >
-                              <X className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </div>

@@ -939,8 +939,21 @@
 .modal-vinculos-celda--acciones {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+.modal-vinculos-celda--principal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   gap: 0.25rem;
+}
+.modal-vinculos-celda--principal-numero {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: center;
 }
 .modal-vinculos-prefijo {
   font-family: var(--font-mono);
@@ -980,12 +993,14 @@
   display: block;
 }
 .btn-convertir-proveedor-principal--destacado {
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent2) 35%, transparent);
-  background-color: color-mix(in oklch, var(--accent2) 18%, var(--card)) !important;
-  border-color: color-mix(in oklch, var(--accent2) 50%, var(--border));
+  box-shadow: 0 0 0 1px var(--foreground);
+  background-color: color-mix(in oklch, var(--foreground) 6%, var(--card)) !important;
+  border-color: var(--foreground);
+  color: var(--foreground);
+  font-weight: 700;
 }
 .btn-convertir-proveedor-principal--destacado:hover:not(:disabled) {
-  background-color: color-mix(in oklch, var(--accent2) 25%, var(--card)) !important;
+  background-color: color-mix(in oklch, var(--foreground) 10%, var(--card)) !important;
 }
 .btn-desvincular-icono {
   height: 1.75rem;
