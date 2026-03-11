@@ -152,9 +152,13 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
   useEffect(() => {
     handleImprimirRef.current = handleImprimir;
   }, [handleImprimir]);
+
+  const stocksEditadosRef = useRef(stocksEditados);
+  stocksEditadosRef.current = stocksEditados;
+
   useImperativeHandle(ref, () => ({
     openPrint: () => handleImprimirRef.current(),
-    triggerExport: () => exportarStockExcel(items, stocksEditados),
+    triggerExport: () => exportarStockExcel(items, stocksEditadosRef.current),
   }));
 
   const sucursalSeleccionada = sucursalActual !== null;
