@@ -898,7 +898,7 @@
 
 .modal-vinculos-fila {
   display: grid;
-  grid-template-columns: 15% 20% 20% 45%;
+  grid-template-columns: minmax(0, 45%) minmax(0, 20%) minmax(0, 35%);
   gap: 0.5rem;
   align-items: center;
   padding: 0.625rem 0.75rem;
@@ -1032,17 +1032,17 @@
 .variacion-costo--neutra {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 .variacion-costo--positiva {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-red-500);
+  color: var(--foreground);
 }
 .variacion-costo--negativa {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-emerald-500);
+  color: var(--foreground);
 }
 
 /* Mismo color que variacion-costo para iconos (ArrowUp/ArrowDown en Control Aumentos). */

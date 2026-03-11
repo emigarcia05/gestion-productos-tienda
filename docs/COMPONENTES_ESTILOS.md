@@ -200,15 +200,15 @@ Para listados dentro de un Card o div con borde azul tenue (identidad de marca).
 
 ## Variación de costo (positiva / negativa / neutra)
 
-Para mostrar porcentajes o indicadores de variación (subida/bajada/sin cambio) con color semántico.
+Para mostrar porcentajes o indicadores de variación (subida/bajada/sin cambio). En esta versión de la app se unifica el color del texto en negro (`foreground`) para maximizar legibilidad en todos los contextos (tablas y modales).
 
 ### Clases CSS globales (`globals.css`)
 
 | Clase | Uso |
 |-------|-----|
-| `.variacion-costo--positiva` | Texto en rojo (subida): `color: var(--color-red-500)`. |
-| `.variacion-costo--negativa` | Texto en verde (bajada): `color: var(--color-emerald-500)`. |
-| `.variacion-costo--neutra` | Texto neutro: `color: var(--muted-foreground)`. |
+| `.variacion-costo--positiva` | Texto en negro (subida): `color: var(--foreground)`. |
+| `.variacion-costo--negativa` | Texto en negro (bajada): `color: var(--foreground)`. |
+| `.variacion-costo--neutra` | Texto en negro (sin cambio): `color: var(--foreground)`. |
 | `.variacion-costo-icon--positiva` | Mismo color para iconos (ej. ArrowUp). |
 | `.variacion-costo-icon--negativa` | Mismo color para iconos (ej. ArrowDown). |
 

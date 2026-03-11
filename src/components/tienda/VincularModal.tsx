@@ -211,7 +211,7 @@ export default function VincularModal({
           }
         >
           {/* Contexto compacto: producto + marca/rubro (centrado) */}
-          <div className="pb-3 border-b border-border text-center">
+          <div className="pb-3 text-center">
             <p className="text-sm text-foreground font-semibold truncate text-center" title={itemDescripcion}>
               {itemDescripcion}
             </p>
@@ -296,13 +296,13 @@ export default function VincularModal({
                           key={prod.id}
                           className={`modal-vinculos-fila ${zebra}`}
                         >
-                          <div className="modal-vinculos-celda">
+                          <div className="modal-vinculos-fila-principal-contenido">
                             <Badge variant="secondary" className="modal-vinculos-prefijo">
                               {prod.proveedor.prefijo}
                             </Badge>
-                          </div>
-                          <div className="modal-vinculos-celda modal-vinculos-celda--numero">
-                            ${fmtPrecio(pxCompra)}
+                            <span className="modal-vinculos-celda--principal-numero">
+                              ${fmtPrecio(pxCompra)}
+                            </span>
                           </div>
                           <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
                             <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
