@@ -299,16 +299,7 @@ export default function VincularModal({
                           key={prod.id}
                           className={`modal-vinculos-fila ${zebra}`}
                         >
-                          <div className="modal-vinculos-celda modal-vinculos-celda--vacia" aria-hidden />
-                          <div className="modal-vinculos-celda modal-vinculos-celda--columna-izquierda">
-                            <div className="modal-vinculos-fila-principal-contenido">
-                              <Badge variant="secondary" className="modal-vinculos-prefijo">
-                                {prod.proveedor.prefijo}
-                              </Badge>
-                              <span className="modal-vinculos-celda--principal-numero">
-                                ${fmtPrecio(pxCompra)}
-                              </span>
-                            </div>
+                          <div className="modal-vinculos-celda modal-vinculos-celda--centrado">
                             <Button
                               variant="outline"
                               size="sm"
@@ -324,7 +315,17 @@ export default function VincularModal({
                               </span>
                             </Button>
                           </div>
-                          <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
+                          <div className="modal-vinculos-celda modal-vinculos-celda--columna-izquierda">
+                            <div className="modal-vinculos-fila-principal-contenido">
+                              <Badge variant="secondary" className="modal-vinculos-prefijo">
+                                {prod.proveedor.prefijo}
+                              </Badge>
+                              <span className="modal-vinculos-celda--principal-numero">
+                                ${fmtPrecio(pxCompra)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="modal-vinculos-celda modal-vinculos-celda--variacion modal-vinculos-celda--centrado">
                             <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
                           </div>
                           <div className="modal-vinculos-celda modal-vinculos-celda--acciones">

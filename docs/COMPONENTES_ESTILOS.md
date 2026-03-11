@@ -231,10 +231,12 @@ Unificar el diseño del modal de comparación de costos entre proveedores vincul
 | Clase | Uso |
 |-------|-----|
 | `.modal-vinculos-listado-contenedor` | Contenedor interno con padding y layout vertical para las filas del modal. |
-| `.modal-vinculos-fila` | Fila alternativos: 4 columnas — Col1 20% vacía, Col2 40% (Prefijo + Px + botón Convertir), Col3 20% variación, Col4 20% botón eliminar. |
+| `.modal-vinculos-fila` | Fila alternativos: 4 columnas — Col1 20% botón "Convertir Proveedor Principal", Col2 40% (Prefijo + Px), Col3 20% variación, Col4 20% botón eliminar. |
 | `.modal-vinculos-fila--principal` | Fila Proveedor Principal: 3 columnas — Col1 20% vacía, Col2 60% (Prefijo + Px), Col3 20% botón eliminar. |
-| `.modal-vinculos-celda--vacia` | Celda vacía (20% izquierda) para alinear visualmente con la columna de contenido. |
-| `.modal-vinculos-celda--columna-izquierda` | Columna de contenido: flex columna centrado; Prefijo + Px y, solo en alternativos, el botón "Convertir en Proveedor Principal" debajo. |
+| `.modal-vinculos-celda` | Toda celda centra su contenido vertical y horizontalmente (flex center). |
+| `.modal-vinculos-celda--vacia` | Celda vacía (20% en principal) para alinear con las demás columnas. |
+| `.modal-vinculos-celda--centrado` | Refuerzo de centrado para celdas con un solo elemento (ej. botón Convertir, variación). |
+| `.modal-vinculos-celda--columna-izquierda` | Columna de contenido: Prefijo + Px centrados en columna. |
 | `.modal-vinculos-fila-principal-contenido` | Bloque interno (columna, centrado) que agrupa Prefijo y Cx Final de Compra; se usa dentro de la columna de contenido en ambas secciones. |
 | `.modal-vinculos-fila--zebra-impar` / `--zebra-par` | Zebra para filas impares/pares, usando `bg-card` y mezcla suave con `primary`. |
 | `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, color muted, centrados. |
