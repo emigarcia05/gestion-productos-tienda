@@ -97,6 +97,12 @@ export default function ComparacionCategoriasClient({
     }
   }, []);
 
+  useEffect(() => {
+    if (presentacionIdInicial) {
+      loadProductos(presentacionIdInicial);
+    }
+  }, [presentacionIdInicial, loadProductos]);
+
   const refreshArbol = useCallback(() => {
     router.refresh();
   }, [router]);
@@ -132,17 +138,32 @@ export default function ComparacionCategoriasClient({
     </div>
   ) : undefined;
 
+  const totalPresentaciones = useMemo(() => countPresentaciones(arbol), [arbol]);
+
+  const filters = (
+    <FiltrosComparacionCategorias
+      marcas={marcas}
+      arbol={arbol}
+      marcaActual={marcaInicial}
+      categoriaIdActual={categoriaIdInicial}
+      subcategoriaIdActual={subcategoriaIdInicial}
+      presentacionIdActual={presentacionIdInicial}
+      qActual={qInicial}
+      totalPresentaciones={totalPresentaciones}
+    />
+  );
+
   return (
     <>
-      <SectionHeader
-        titulo="Lista Proveedores"
-        subtitulo="Comparacion Cat."
+      <ClassicFilteredTableLayout
+        title="Lista Proveedores"
+        subtitle="Comparacion Cat."
         actions={acciones}
-        compact
-      />
-      <div className="flex-1 min-h-0 flex gap-4 px-4 sm:px-6 lg:px-8 py-3">
-        {/* Panel izquierdo: árbol */}
-        <Card className="w-80 shrink-0 flex flex-col min-h-0">
+        filters={filters}
+      >
+        <div className="flex-1 min-h-0 flex gap-4 py-3">
+          {/* Panel izquierdo: árbol */}
+          <Card className="w-80 shrink-0 flex flex-col min-h-0">
           <CardHeader className="py-3">
             <h2 className="text-sm font-bold text-foreground">Categorías</h2>
           </CardHeader>
@@ -309,7 +330,8 @@ export default function ComparacionCategoriasClient({
             )}
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </ClassicFilteredTableLayout>
 
       {puedeEditar && (
         <>
