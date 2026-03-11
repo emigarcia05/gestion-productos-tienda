@@ -970,6 +970,13 @@
   align-items: center;
   justify-content: center;
 }
+/* En alternativos: Prefijo+Px a la derecha del div y Variación a la izquierda para que se vean juntos */
+.modal-vinculos-celda--derecha {
+  justify-content: flex-end;
+}
+.modal-vinculos-celda--izquierda {
+  justify-content: flex-start;
+}
 .modal-vinculos-celda--acciones {
   display: flex;
   align-items: center;

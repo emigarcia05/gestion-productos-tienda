@@ -236,7 +236,9 @@ Unificar el diseño del modal de comparación de costos entre proveedores vincul
 | `.modal-vinculos-celda` | Toda celda centra su contenido vertical y horizontalmente (flex center). |
 | `.modal-vinculos-celda--vacia` | Celda vacía (20% en principal) para alinear con las demás columnas. |
 | `.modal-vinculos-celda--centrado` | Refuerzo de centrado para celdas con un solo elemento (ej. botón Convertir, variación). |
-| `.modal-vinculos-celda--columna-izquierda` | Columna de contenido: Prefijo + Px centrados en columna. |
+| `.modal-vinculos-celda--columna-izquierda` | Columna de contenido: Prefijo + Px. En alternativos se combina con `--derecha` para alinear a la derecha del div. |
+| `.modal-vinculos-celda--derecha` | Alinea el contenido de la celda a la derecha (en alternativos: Col2 Prefijo+Px). |
+| `.modal-vinculos-celda--izquierda` | Alinea el contenido de la celda a la izquierda (en alternativos: Col3 Variación). Así Prefijo+Px y Variación se ven juntos. |
 | `.modal-vinculos-fila-principal-contenido` | Bloque interno (columna, centrado) que agrupa Prefijo y Cx Final de Compra; se usa dentro de la columna de contenido en ambas secciones. |
 | `.modal-vinculos-fila--zebra-impar` / `--zebra-par` | Zebra para filas impares/pares, usando `bg-card` y mezcla suave con `primary`. |
 | `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, color muted, centrados. |
