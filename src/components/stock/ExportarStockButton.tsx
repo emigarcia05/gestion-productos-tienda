@@ -3,22 +3,15 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { TablaAumentosHandle } from "./TablaAumentos";
-
-const INSTRUCTOR_DELAY_MS = 1500;
+import type { TablaStockHandle } from "./TablaStock";
 
 interface Props {
-  tableRef: React.RefObject<TablaAumentosHandle | null>;
-  /** Se llama tras disparar la exportación (después de un breve delay, cuando ya se abrió el diálogo de guardar). */
-  onAfterExport?: () => void;
+  tableRef: React.RefObject<TablaStockHandle | null>;
 }
 
-export default function ExportarAumentosButton({ tableRef, onAfterExport }: Props) {
+export default function ExportarStockButton({ tableRef }: Props) {
   function handleClick() {
     tableRef.current?.triggerExport();
-    if (onAfterExport) {
-      setTimeout(onAfterExport, INSTRUCTOR_DELAY_MS);
-    }
   }
 
   return (
@@ -34,7 +27,7 @@ export default function ExportarAumentosButton({ tableRef, onAfterExport }: Prop
           Exportar Excel
         </Button>
       </TooltipTrigger>
-      <TooltipContent>Descargar variaciones en Excel</TooltipContent>
+      <TooltipContent>Descargar ajuste de stock en Excel 97-2003</TooltipContent>
     </Tooltip>
   );
 }

@@ -10,9 +10,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import type { ControlStockData, Sucursal } from "@/actions/stock";
+import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
 import { registrarImpresion } from "@/actions/stock";
 import PrintStock from "./PrintStock";
+
+function exportarStockExcel(items: ItemStock[]) {
+  import("xlsx").then((XLSX) => {
+    const filas = items.map((i) => ({
+      "CÓD.": i.codItem,
+      "TIPO MOVIMIENTO": "AJUSTE",
+      "CANTIDAD DISPONIBLE": i.stock,
+    }));
+    const hoja = XLSX.utils.json_to_sheet(filas);
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Ajuste stock");
+    hoja["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 22 }];
+    const ahora = new Date();
+    const dd = String(ahora.getDate()).padStart(2, "0");
+    const mm = String(ahora.getMonth() + 1).padStart(2, "0");
+    const aa = String(ahora.getFullYear()).slice(-2);
+    const hh = String(ahora.getHours()).padStart(2, "0");
+    const min = String(ahora.getMinutes()).padStart(2, "0");
+    const nombre = `Ajuste stock ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
+    XLSX.writeFile(libro, nombre, { bookType: "xls" });
+  });
+}
 
 function fmtFecha(d: Date | null): string {
   if (!d) return "—";
@@ -25,6 +47,7 @@ function fmtFecha(d: Date | null): string {
 
 export interface TablaStockHandle {
   openPrint: () => void;
+  triggerExport: () => void;
 }
 
 interface Props {
@@ -122,6 +145,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
   }, [handleImprimir]);
   useImperativeHandle(ref, () => ({
     openPrint: () => handleImprimirRef.current(),
+    triggerExport: () => exportarStockExcel(items),
   }));
 
   const sucursalSeleccionada = sucursalActual !== null;

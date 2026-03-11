@@ -6,6 +6,7 @@ import TablaStock from "@/components/stock/TablaStock";
 import FiltrosStock from "@/components/stock/FiltrosStock";
 import StockPageSyncGate from "@/components/stock/StockPageSyncGate";
 import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
+import ExportarStockButton from "@/components/stock/ExportarStockButton";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
@@ -39,7 +40,10 @@ export default function StockPageWithActions({
     <div className="flex items-center justify-end gap-2">
       <SyncDuxHeaderButton />
       {tieneSucursal && tieneItems && (
-        <ImprimirStockButton tableRef={tableRef} />
+        <>
+          <ExportarStockButton tableRef={tableRef} />
+          <ImprimirStockButton tableRef={tableRef} />
+        </>
       )}
     </div>
   );
