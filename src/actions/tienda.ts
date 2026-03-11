@@ -10,9 +10,10 @@ import { prisma } from "@/lib/prisma";
 
 const PAGE_SIZE = 50;
 
-/** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
+/** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
 async function getTiendaEmptyWithOpciones() {
-  const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+  const [proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+    prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
@@ -20,6 +21,7 @@ async function getTiendaEmptyWithOpciones() {
   return {
     items: [] as ItemTiendaParaTabla[],
     total: 0,
+    proveedores: proveedores.map((p) => ({ nombre: p.nombre, prefijo: p.prefijo })),
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
