@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, ArrowRightLeft, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ import { convertirEnProveedor } from "@/actions/tienda";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
+import ProveedorAlternativoRow from "./ProveedorAlternativoRow";
 
 type ProductoConProveedor = {
   id: string;
@@ -297,52 +298,18 @@ export default function VincularModal({
                           ? "modal-vinculos-fila--zebra-par"
                           : "modal-vinculos-fila--zebra-impar";
                       return (
-                        <div
+                        <ProveedorAlternativoRow
                           key={prod.id}
-                          className={`modal-vinculos-fila ${zebra}`}
-                        >
-                          <div className="modal-vinculos-celda modal-vinculos-celda--centrado">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConvertir(prod)}
-                              disabled={isPending}
-                              title="Marcar como proveedor principal del ítem"
-                              className={`btn-convertir-proveedor-principal ${esMenorCostoAlternativo ? "btn-convertir-proveedor-principal--destacado" : ""}`}
-                            >
-                              <ArrowRightLeft className="h-3 w-3 shrink-0" />
-                              <span className="block">
-                                <span className="block">Proveedor</span>
-                                <span className="block">Principal</span>
-                              </span>
-                            </Button>
-                          </div>
-                          <div className="modal-vinculos-celda modal-vinculos-celda--contenido-y-variacion">
-                            <div className="modal-vinculos-fila-principal-contenido">
-                              <Badge variant="secondary" className="modal-vinculos-prefijo">
-                                {prod.proveedor.prefijo}
-                              </Badge>
-                              <span className="modal-vinculos-celda--principal-numero">
-                                ${fmtPrecio(pxCompra)}
-                              </span>
-                            </div>
-                            <div className="modal-vinculos-celda--variacion">
-                              <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
-                            </div>
-                          </div>
-                          <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDesvincular(prod)}
-                              disabled={isPending}
-                              className="btn-desvincular-icono"
-                              title="Desvincular"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
+                          id={prod.id}
+                          prefijo={prod.proveedor.prefijo}
+                          precioFinalLabel={`$${fmtPrecio(pxCompra)}`}
+                          variacionNode={<DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />}
+                          zebraClass={zebra}
+                          esMenorCostoAlternativo={esMenorCostoAlternativo}
+                          disabled={isPending}
+                          onCambiarPrincipal={() => handleConvertir(prod)}
+                          onEliminar={() => handleDesvincular(prod)}
+                        />
                       );
                     })}
                   </>
