@@ -238,8 +238,9 @@ export default function VincularModal({
                     <p className="modal-vinculos-seccion-titulo text-center">Proveedor Principal</p>
                     <div
                       key={principal.id}
-                      className="modal-vinculos-fila modal-vinculos-fila--zebra-impar"
+                      className="modal-vinculos-fila modal-vinculos-fila--zebra-impar modal-vinculos-fila--principal"
                     >
+                      <div className="modal-vinculos-celda modal-vinculos-celda--vacia" aria-hidden />
                       <div className="modal-vinculos-celda modal-vinculos-celda--columna-izquierda">
                         <div className="modal-vinculos-fila-principal-contenido">
                           <Badge variant="secondary" className="modal-vinculos-prefijo">
@@ -258,21 +259,6 @@ export default function VincularModal({
                             )}
                           </span>
                         </div>
-                      </div>
-                      <div className="modal-vinculos-celda modal-vinculos-celda--variacion">
-                        <DifCosto
-                          costoTienda={costoTienda}
-                          pxCompraFinal={
-                            principal.pxCompraFinal != null
-                              ? principal.pxCompraFinal
-                              : calcPxCompraFinal(
-                                  principal.precioLista,
-                                  principal.descuentoRubro,
-                                  principal.descuentoCantidad,
-                                  principal.cxTransporte
-                                )
-                          }
-                        />
                       </div>
                       <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
                         <Button
@@ -313,6 +299,7 @@ export default function VincularModal({
                           key={prod.id}
                           className={`modal-vinculos-fila ${zebra}`}
                         >
+                          <div className="modal-vinculos-celda modal-vinculos-celda--vacia" aria-hidden />
                           <div className="modal-vinculos-celda modal-vinculos-celda--columna-izquierda">
                             <div className="modal-vinculos-fila-principal-contenido">
                               <Badge variant="secondary" className="modal-vinculos-prefijo">
