@@ -69,10 +69,19 @@ export async function getTiendaPageData(params: {
   rubro?: string;
   subRubro?: string;
   marca?: string;
+  proveedor?: string;
   mejorPrecio?: string;
   pagina?: string;
 }) {
-  const { q = "", rubro = "", subRubro = "", marca = "", mejorPrecio = "", pagina = "1" } = params;
+  const {
+    q = "",
+    rubro = "",
+    subRubro = "",
+    marca = "",
+    proveedor = "",
+    mejorPrecio = "",
+    pagina = "1",
+  } = params;
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
@@ -82,6 +91,8 @@ export async function getTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
+   // Filtro por proveedor (texto de columna proveedor en precios_tienda).
+  if (proveedor) andParts.push({ proveedor });
 
   /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
   let idsMenorCxDisponible: string[] = [];
@@ -218,6 +229,7 @@ export async function getTiendaPageData(params: {
   return {
     items,
     total,
+    proveedores: proveedores.map((p) => ({ nombre: p.nombre, prefijo: p.prefijo })),
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),

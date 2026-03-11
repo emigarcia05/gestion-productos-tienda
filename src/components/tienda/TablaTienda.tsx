@@ -61,7 +61,12 @@ export default function TablaTienda({
             <TableHead className="w-[15%]">Cod. Tienda</TableHead>
             <TableHead className="w-[65%]">Descripción</TableHead>
             <TableHead className="w-[15%]">Px Compra Final</TableHead>
-            <TableHead className="w-[5%] text-center" title="✓ = Menor Cx Disponible: ≥2 proveedores vinculados y al menos un no oficial con px menor que costo_compra. Filtrable por COSTO → Menor Cx Disponible.">✓</TableHead>
+          <TableHead
+            className="w-[5%] text-center"
+            title="✓ = MENOR DISPONIBLE: ≥2 proveedores vinculados y al menos un no oficial con px menor que costo_compra. Filtrable por COSTO → MENOR DISPONIBLE."
+          >
+            ✓
+          </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

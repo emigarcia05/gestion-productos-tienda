@@ -17,20 +17,36 @@ interface Props {
     rubro?: string;
     subRubro?: string;
     marca?: string;
+    proveedor?: string;
     mejorPrecio?: string;
     pagina?: string;
   }>;
 }
 
 export default async function TiendaPage({ searchParams }: Props) {
-  const { q = "", rubro = "", subRubro = "", marca = "", mejorPrecio = "", pagina = "1" } = await searchParams;
+  const {
+    q = "",
+    rubro = "",
+    subRubro = "",
+    marca = "",
+    proveedor = "",
+    mejorPrecio = "",
+    pagina = "1",
+  } = await searchParams;
   const rol = await getRol();
 
-  const { items, total, marcas, rubros, subRubros, setMejorPrecio, totalPaginas } = await getTiendaPageData({
-    q, rubro, subRubro, marca, mejorPrecio, pagina,
-  });
+  const { items, total, proveedores, marcas, rubros, subRubros, setMejorPrecio, totalPaginas } =
+    await getTiendaPageData({
+      q,
+      rubro,
+      subRubro,
+      marca,
+      proveedor,
+      mejorPrecio,
+      pagina,
+    });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const hasFiltros = !!(q || rubro || subRubro || marca || mejorPrecio);
+  const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
 
   const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncDuxHeaderButton /> : undefined;
 
@@ -39,11 +55,13 @@ export default async function TiendaPage({ searchParams }: Props) {
       marcas={marcas.map((m) => m.marca!)}
       rubros={rubros.map((r) => r.rubro!)}
       subRubros={subRubros.map((s) => s.subRubro!)}
+      proveedores={proveedores}
       totalItems={total}
       qActual={q}
       marcaActual={marca}
       rubroActual={rubro}
       subRubroActual={subRubro}
+      proveedorActual={proveedor}
       mejorPrecioActual={mejorPrecio}
     />
   );
@@ -67,9 +85,9 @@ export default async function TiendaPage({ searchParams }: Props) {
               total={total}
               pageSize={PAGE_SIZE}
               q={q}
-              proveedor=""
+              proveedor={proveedor}
               basePath="/tienda"
-              extraParams={{ marca, rubro, subRubro, mejorPrecio }}
+              extraParams={{ marca, rubro, subRubro, proveedor, mejorPrecio }}
             />
           </div>
         </div>

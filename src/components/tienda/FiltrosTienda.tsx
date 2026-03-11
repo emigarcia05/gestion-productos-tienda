@@ -20,17 +20,28 @@ interface Props {
   marcas: string[];
   rubros: string[];
   subRubros: string[];
+  proveedores: { nombre: string; prefijo: string }[];
   totalItems: number;
   qActual: string;
   marcaActual: string;
   rubroActual: string;
   subRubroActual: string;
+  proveedorActual: string;
   mejorPrecioActual: string;
 }
 
 export default function FiltrosTienda({
-  marcas, rubros, subRubros, totalItems,
-  qActual, marcaActual, rubroActual, subRubroActual, mejorPrecioActual,
+  marcas,
+  rubros,
+  subRubros,
+  proveedores,
+  totalItems,
+  qActual,
+  marcaActual,
+  rubroActual,
+  subRubroActual,
+  proveedorActual,
+  mejorPrecioActual,
 }: Props) {
   const pathname    = usePathname();
   const [q, setQ]   = useState(qActual);
@@ -50,19 +61,36 @@ export default function FiltrosTienda({
     }
   }, []);
 
-  const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual || mejorPrecioActual);
+  const hayFiltros = !!(
+    q ||
+    marcaActual ||
+    rubroActual ||
+    subRubroActual ||
+    proveedorActual ||
+    mejorPrecioActual
+  );
 
-  function navigate(updates: { q?: string; marca?: string; rubro?: string; subRubro?: string; mejorPrecio?: string }) {
+  function navigate(updates: {
+    q?: string;
+    marca?: string;
+    rubro?: string;
+    subRubro?: string;
+    proveedor?: string;
+    mejorPrecio?: string;
+  }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const subRubroVal = updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
+    const proveedorVal =
+      updates.proveedor !== undefined ? updates.proveedor : proveedorActual;
     const mejorVal = updates.mejorPrecio !== undefined ? updates.mejorPrecio : mejorPrecioActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
+    if (proveedorVal) p.set("proveedor", proveedorVal);
     if (mejorVal) p.set("mejorPrecio", mejorVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
@@ -85,6 +113,9 @@ export default function FiltrosTienda({
   function handleSubRubro(value: string) {
     navigate({ subRubro: value });
   }
+  function handleProveedor(value: string) {
+    navigate({ proveedor: value });
+  }
   function handleMejorPrecio(value: string) {
     navigate({ mejorPrecio: value });
   }
@@ -98,6 +129,29 @@ export default function FiltrosTienda({
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
+              value={proveedorActual || "none"}
+              onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="filtro-tienda-proveedor" className="input-filtro-unificado">
+                <SelectValue placeholder="PROVEEDORES" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PROVEEDORES</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.prefijo} value={p.nombre}>
+                    [{p.prefijo}] {p.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select value={marcaActual || "none"} onValueChange={(v) => handleMarca(v === "none" ? "" : v)}>
               <SelectTrigger id="filtro-tienda-marca" className="input-filtro-unificado">
@@ -138,7 +192,7 @@ export default function FiltrosTienda({
               </SelectTrigger>
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
                 <SelectItem value="none">COSTO</SelectItem>
-                <SelectItem value="true">Menor Cx Disponible</SelectItem>
+                <SelectItem value="true">MENOR DISPONIBLE</SelectItem>
               </SelectContent>
             </Select>
           </div>
