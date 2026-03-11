@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, ArrowRightLeft, Trash2 } from "lucide-react";
+import { Link2, Plus, Loader2, ArrowRightLeft, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -55,13 +55,15 @@ function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompr
   const absFmt = abs.toFixed(1);
   if (dif > 0) {
     return (
-      <span className="variacion-costo--positiva" title={`Px Compra Final es ${absFmt}% más caro que Cx Actual`}>
+      <span className="variacion-costo--positiva flex items-center gap-1" title={`Px Compra Final es ${absFmt}% más caro que Cx Actual`}>
+        <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
         +{absFmt}%
       </span>
     );
   }
   return (
-    <span className="variacion-costo--negativa" title={`Px Compra Final es ${absFmt}% más económico que Cx Actual`}>
+    <span className="variacion-costo--negativa flex items-center gap-1" title={`Px Compra Final es ${absFmt}% más económico que Cx Actual`}>
+      <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
       -{absFmt}%
     </span>
   );

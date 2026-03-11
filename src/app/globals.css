@@ -947,7 +947,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted-foreground);
+  color: var(--foreground);
   margin: 0.75rem 0 0.25rem 0;
   padding: 0 0.25rem;
 }
@@ -1098,7 +1098,7 @@
   color: var(--color-red-500);
 }
 .variacion-costo-icon--negativa {
-  color: var(--color-emerald-500);
+  color: #0072bb;
 }
 .variacion-costo-icon--neutra {
   color: var(--muted-foreground);
