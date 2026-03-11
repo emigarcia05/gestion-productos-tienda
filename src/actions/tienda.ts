@@ -93,8 +93,8 @@ export async function getTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
-   // Filtro por proveedor (texto de columna proveedor en precios_tienda).
-  if (proveedor) andParts.push({ proveedor });
+  // Filtro por proveedor: solo proveedores oficiales (columna proveedor en precios_tienda). Los vinculados son solo para comparación en la tabla.
+  if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
 
   /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
   let idsMenorCxDisponible: string[] = [];

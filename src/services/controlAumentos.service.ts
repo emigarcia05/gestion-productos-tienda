@@ -1,7 +1,8 @@
 /**
- * Control de Aumentos: compara precios_tienda con precios_proveedores vinculados por id_lista_precios_tienda.
- * Solo se consideran ítems con variación: diferencia neta en pesos >= UMBRAL (evita ruido por redondeos).
- * Resúmenes agrupados por MARCA, RUBRO, SUB-RUBRO; aumentos en porcentaje sin decimales.
+ * Control de Aumentos: compara el costo registrado en lista_tienda (precios_tienda.costo_compra)
+ * con el mismo producto del mismo proveedor en lista_proveedores (precios_proveedores).
+ * Solo se considera el proveedor oficial del ítem (precios_tienda.proveedor). En la exportación
+ * se muestra el proveedor original (oficial). Solo ítems con variación: |diff| >= UMBRAL.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -54,42 +55,48 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
 
   const individual: ItemAumento[] = [];
 
+  const oficialNorm = (s: string | null | undefined) =>
+    (s ?? "").trim().toLowerCase();
+
   for (const r of rows) {
     const costoTienda = toNum(r.costoCompra);
     if (costoTienda <= 0) continue;
 
-    let minPx = Infinity;
-    let proveedorDux: string | null = r.proveedor?.trim() ?? null;
-    let proveedorNombre: string | null = null;
+    const oficialTienda = oficialNorm(r.proveedor);
+    if (!oficialTienda) continue;
 
-    for (const lp of r.listaPreciosProveedores) {
-      let px: number;
-      if (lp.pxCompraFinal != null) {
-        px = toNum(lp.pxCompraFinal);
-      } else {
-        px = calcPxCompraFinal(
-          toNum(lp.pxListaProveedor),
-          lp.dtoRubro,
-          lp.dtoCantidad,
-          lp.cxTransporte,
-          lp.dtoProveedor,
-          lp.dtoMarca,
-          lp.dtoFinanciero
-        );
-      }
-      if (px < minPx) {
-        minPx = px;
-        proveedorDux = lp.proveedor?.prefijo ?? lp.proveedor?.nombre ?? proveedorDux;
-        proveedorNombre = lp.proveedor?.nombre ?? null;
-      }
+    // Mismo producto, mismo proveedor: buscar el ítem de lista_proveedores que corresponde al proveedor oficial del ítem tienda.
+    const lpOficial = r.listaPreciosProveedores.find((lp) => {
+      const nom = oficialNorm(lp.proveedor?.nombre);
+      const pref = oficialNorm(lp.proveedor?.prefijo);
+      return nom === oficialTienda || pref === oficialTienda;
+    });
+
+    if (!lpOficial) continue;
+
+    let pxCompra: number;
+    if (lpOficial.pxCompraFinal != null) {
+      pxCompra = toNum(lpOficial.pxCompraFinal);
+    } else {
+      pxCompra = calcPxCompraFinal(
+        toNum(lpOficial.pxListaProveedor),
+        lpOficial.dtoRubro,
+        lpOficial.dtoCantidad,
+        lpOficial.cxTransporte,
+        lpOficial.dtoProveedor,
+        lpOficial.dtoMarca,
+        lpOficial.dtoFinanciero
+      );
     }
 
-    if (!Number.isFinite(minPx)) continue;
-
-    const diferenciaNeta = minPx - costoTienda;
+    const diferenciaNeta = pxCompra - costoTienda;
     if (Math.abs(diferenciaNeta) < UMBRAL_DIFERENCIA_NETA) continue;
 
     const pctAumento = Math.round((diferenciaNeta / costoTienda) * 100);
+
+    // Proveedor original (oficial) para la exportación.
+    const proveedorDux = lpOficial.proveedor?.prefijo ?? lpOficial.proveedor?.nombre ?? r.proveedor?.trim() ?? null;
+    const proveedorNombre = lpOficial.proveedor?.nombre ?? r.proveedor?.trim() ?? null;
 
     individual.push({
       itemId: r.id,
@@ -102,7 +109,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
       proveedorDux,
       proveedorNombre,
       costoTienda,
-      pxCompraFinal: minPx,
+      pxCompraFinal: pxCompra,
       pctAumento,
     });
   }
