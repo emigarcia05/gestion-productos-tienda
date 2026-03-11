@@ -942,8 +942,7 @@
   min-width: 0;
 }
 .modal-vinculos-contenido-bottom-variacion {
-  border-left: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
-  padding-left: 0.75rem;
+  /* Línea suave se define en .modal-vinculos-celda--variacion */
 }
 /* Columna contenido: Prefijo + Px (centrado vertical y horizontal en la celda) */
 .modal-vinculos-celda--columna-izquierda {
@@ -976,8 +975,8 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--foreground);
-  margin: 0.5rem 0 0.125rem 0;
-  padding: 0 0.125rem;
+  margin: 0.375rem 0 0.0625rem 0;
+  padding: 0;
 }
 .modal-vinculos-seccion-titulo:first-child {
   margin-top: 0.25rem;

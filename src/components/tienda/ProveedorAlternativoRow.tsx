@@ -64,7 +64,7 @@ export default function ProveedorAlternativoRow({
               {precioFinalLabel}
             </span>
           </div>
-          <div className="modal-vinculos-contenido-bottom-variacion">
+          <div className="modal-vinculos-contenido-bottom-variacion modal-vinculos-celda--variacion">
             {variacionNode}
           </div>
         </div>
