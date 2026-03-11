@@ -231,7 +231,7 @@ Unificar el diseño del modal de comparación de costos entre proveedores vincul
 | Clase | Uso |
 |-------|-----|
 | `.modal-vinculos-listado-contenedor` | Contenedor interno con padding y layout vertical para las filas del modal. |
-| `.modal-vinculos-fila` | Fila alternativos: 4 columnas — Col1 20% botón "Convertir Proveedor Principal", Col2 40% (Prefijo + Px), Col3 20% variación, Col4 20% botón eliminar. |
+| `.modal-vinculos-fila` | Fila alternativos: 4 columnas — Col1 20% botón "Convertir Proveedor Principal", Col2 30% (Prefijo + Px), Col3 30% variación, Col4 20% botón eliminar. |
 | `.modal-vinculos-fila--principal` | Fila Proveedor Principal: 3 columnas — Col1 20% vacía, Col2 60% (Prefijo + Px), Col3 20% botón eliminar. |
 | `.modal-vinculos-celda` | Toda celda centra su contenido vertical y horizontalmente (flex center). |
 | `.modal-vinculos-celda--vacia` | Celda vacía (20% en principal) para alinear con las demás columnas. |
