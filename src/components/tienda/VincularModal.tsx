@@ -210,13 +210,13 @@ export default function VincularModal({
             </>
           }
         >
-          {/* Contexto compacto: producto + marca/rubro */}
-          <div className="pb-3 border-b border-border">
-            <p className="text-sm text-foreground font-semibold truncate" title={itemDescripcion}>
+          {/* Contexto compacto: producto + marca/rubro (centrado) */}
+          <div className="pb-3 border-b border-border text-center">
+            <p className="text-sm text-foreground font-semibold truncate text-center" title={itemDescripcion}>
               {itemDescripcion}
             </p>
             {(marca || rubro) && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 text-center">
                 {[marca, rubro].filter(Boolean).join(" · ")}
               </p>
             )}
@@ -238,24 +238,24 @@ export default function VincularModal({
                     <p className="modal-vinculos-seccion-titulo text-center">Proveedor Principal</p>
                     <div
                       key={principal.id}
-                      className="modal-vinculos-fila modal-vinculos-fila--zebra-impar"
+                      className="modal-vinculos-fila modal-vinculos-fila--zebra-impar modal-vinculos-fila--solo-principal"
                     >
-                      <div className="modal-vinculos-celda modal-vinculos-celda--principal">
+                      <div className="modal-vinculos-fila-principal-contenido">
                         <Badge variant="secondary" className="modal-vinculos-prefijo">
                           {principal.proveedor.prefijo}
                         </Badge>
-                      </div>
-                      <div className="modal-vinculos-celda modal-vinculos-celda--principal-numero">
-                        ${fmtPrecio(
-                          principal.pxCompraFinal != null
-                            ? principal.pxCompraFinal
-                            : calcPxCompraFinal(
-                                principal.precioLista,
-                                principal.descuentoRubro,
-                                principal.descuentoCantidad,
-                                principal.cxTransporte
-                              )
-                        )}
+                        <span className="modal-vinculos-celda--principal-numero">
+                          ${fmtPrecio(
+                            principal.pxCompraFinal != null
+                              ? principal.pxCompraFinal
+                              : calcPxCompraFinal(
+                                  principal.precioLista,
+                                  principal.descuentoRubro,
+                                  principal.descuentoCantidad,
+                                  principal.cxTransporte
+                                )
+                          )}
+                        </span>
                       </div>
                       <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
                         <Button

@@ -907,6 +907,18 @@
   background-color: var(--card);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
+/* Fila del proveedor principal: una sola zona de contenido centrada + acciones a la derecha */
+.modal-vinculos-fila--solo-principal {
+  grid-template-columns: 1fr auto;
+}
+.modal-vinculos-fila-principal-contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
 .modal-vinculos-fila--zebra-impar {
   background-color: var(--card);
   border-color: var(--border);
@@ -941,6 +953,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
+  padding-right: 0.5rem;
 }
 .modal-vinculos-celda--principal {
   display: flex;
@@ -1005,6 +1018,9 @@
 .btn-desvincular-icono {
   height: 1.75rem;
   width: 1.75rem;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+  padding: 0.35rem;
   color: var(--muted-foreground);
   flex-shrink: 0;
 }

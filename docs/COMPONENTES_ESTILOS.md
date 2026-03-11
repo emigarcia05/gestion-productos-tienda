@@ -232,24 +232,26 @@ Unificar el diseño del modal de comparación de costos entre proveedores vincul
 |-------|-----|
 | `.modal-vinculos-listado-contenedor` | Contenedor interno con padding y layout vertical para las filas del modal. |
 | `.modal-vinculos-fila` | Fila base (grid) con 4 columnas: prefijo, precio, variación, acciones; borde y fondo de tarjeta. |
+| `.modal-vinculos-fila--solo-principal` | Modificador para la fila del proveedor principal: grid en 2 columnas (`1fr auto`): contenido centrado + acciones. |
+| `.modal-vinculos-fila-principal-contenido` | Contenedor flex (columna, centrado) que agrupa Prefijo y Cx Final de Compra del proveedor principal; ambos quedan centrados en el div. |
 | `.modal-vinculos-fila--zebra-impar` / `--zebra-par` | Zebra para filas impares/pares, usando `bg-card` y mezcla suave con `primary`. |
 | `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, color muted, centrados. |
 | `.modal-vinculos-celda` | Celda base, texto centrado. |
-| `.modal-vinculos-celda--acciones` | Celda de acciones: flex, alinea todos los botones a la derecha (`justify-content: flex-end`) para que queden alineados verticalmente. |
-| `.modal-vinculos-celda--principal` | Celda del proveedor principal: centrar prefijo/etiqueta verticalmente en la fila. |
-| `.modal-vinculos-celda--principal-numero` | Precio del proveedor principal: número centrado, más grande y en negrita. |
+| `.modal-vinculos-celda--acciones` | Celda de acciones: flex, botones alineados a la derecha (`justify-content: flex-end`), con `padding-right` para que el tacho no quede pegado al borde. |
+| `.modal-vinculos-celda--principal` | Celda del proveedor principal (solo en filas alternativas si se usa): centrar prefijo/etiqueta. |
+| `.modal-vinculos-celda--principal-numero` | Precio del proveedor principal: número centrado, más grande y en negrita (usado dentro de `.modal-vinculos-fila-principal-contenido`). |
 | `.modal-vinculos-prefijo` | Estilo del prefijo del proveedor (fuente monoespaciada, tamaño reducido, bold). |
 | `.modal-vinculos-celda--numero` | Precio en filas de proveedores alternativos (tamaño pequeño, tabular-nums). |
 | `.modal-vinculos-celda--variacion` | Contenedor de la variación de costo (`≈0%`, `+X%`, `-X%`) usando las clases de variación de costo. |
 | `.btn-convertir-proveedor-principal` | Botón base "Proveedor Principal": outline compacto con padding vertical y tipografía pequeña. |
 | `.btn-convertir-proveedor-principal--destacado` | Variante destacada para el proveedor alternativo más económico: borde y texto en `foreground`, fondo gris muy suave y negrita. Se aplica solo al botón, no a toda la fila. |
-| `.btn-desvincular-icono` | Botón de borrar vínculo (icono de tacho): tamaño fijo, alineado a la derecha en todas las filas. |
+| `.btn-desvincular-icono` | Botón de borrar vínculo (icono de tacho): tamaño mínimo fijo, `padding` para área de clic, alineado al margen derecho del div (la celda de acciones tiene `padding-right`). |
 
 ### Comportamiento de diseño
 
 - El modal se divide en dos secciones:
-  - **Proveedor Principal**: muestra solo prefijo + precio de compra final del proveedor actual, centrados, sin botón de "Convertir", solo el botón de borrar (tacho).
-  - **Proveedores Alternativos**: muestra prefijo, precio, variación de costo y botones de acción.
+  - **Proveedor Principal**: la fila usa `modal-vinculos-fila--solo-principal` y un único bloque `modal-vinculos-fila-principal-contenido` donde **Prefijo y Cx Final de Compra** van centrados (flex centrado) dentro del div; el botón del tacho va a la derecha con padding y margen derecho.
+  - **Proveedores Alternativos**: muestra prefijo, precio, variación de costo y botones de acción; el tacho tiene padding y queda alineado al margen derecho del div.
 - El proveedor alternativo con **menor costo** se resalta únicamente a través de la variante del botón `btn-convertir-proveedor-principal--destacado` (texto negro, negrita, fondo gris suave), evitando bordes gruesos en toda la fila para no romper la jerarquía visual del modal.
 
 **Regla:** cualquier ajuste futuro al layout o colores de este modal debe hacerse modificando estas clases globales, manteniendo la separación conceptual entre:
