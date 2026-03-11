@@ -908,14 +908,42 @@
   background-color: var(--card);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
-/* Fila alternativos con 4 columnas: se usa la misma grid 20% 60% 20%; la celda central agrupa Prefijo+Px y Variación */
+/* Fila alternativos: la celda central se divide en:
+ * - Fila superior: prefijo del proveedor.
+ * - Fila inferior: 2 columnas (50/50) → Px final de compra | Variación, separadas por una línea suave.
+ */
 .modal-vinculos-celda--contenido-y-variacion {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+/* Fila superior: prefijo centrado */
+.modal-vinculos-contenido-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Fila inferior: Px final (50%) | Variación (50%) con línea divisoria suave */
+.modal-vinculos-contenido-bottom {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
+}
+.modal-vinculos-contenido-bottom-precio,
+.modal-vinculos-contenido-bottom-variacion {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
+}
+.modal-vinculos-contenido-bottom-variacion {
+  border-left: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+  padding-left: 0.75rem;
 }
 /* Columna contenido: Prefijo + Px (centrado vertical y horizontal en la celda) */
 .modal-vinculos-celda--columna-izquierda {
@@ -948,8 +976,8 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--foreground);
-  margin: 0.75rem 0 0.25rem 0;
-  padding: 0 0.25rem;
+  margin: 0.5rem 0 0.125rem 0;
+  padding: 0 0.125rem;
 }
 .modal-vinculos-seccion-titulo:first-child {
   margin-top: 0.25rem;

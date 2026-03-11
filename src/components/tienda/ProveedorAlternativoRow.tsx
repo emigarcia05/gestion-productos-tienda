@@ -53,15 +53,21 @@ export default function ProveedorAlternativoRow({
       </div>
 
       <div className="modal-vinculos-celda modal-vinculos-celda--contenido-y-variacion">
-        <div className="modal-vinculos-fila-principal-contenido">
+        <div className="modal-vinculos-contenido-top">
           <Badge variant="secondary" className="modal-vinculos-prefijo">
             {prefijo}
           </Badge>
-          <span className="modal-vinculos-celda--principal-numero">
-            {precioFinalLabel}
-          </span>
         </div>
-        <div className="modal-vinculos-celda--variacion">{variacionNode}</div>
+        <div className="modal-vinculos-contenido-bottom">
+          <div className="modal-vinculos-contenido-bottom-precio">
+            <span className="modal-vinculos-celda--principal-numero">
+              {precioFinalLabel}
+            </span>
+          </div>
+          <div className="modal-vinculos-contenido-bottom-variacion">
+            {variacionNode}
+          </div>
+        </div>
       </div>
 
       <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
