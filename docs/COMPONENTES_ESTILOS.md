@@ -231,9 +231,9 @@ Unificar el diseño del modal de comparación de costos entre proveedores vincul
 | Clase | Uso |
 |-------|-----|
 | `.modal-vinculos-listado-contenedor` | Contenedor interno con padding y layout vertical para las filas del modal. |
-| `.modal-vinculos-fila` | Fila base (grid) con 4 columnas: prefijo, precio, variación, acciones; borde y fondo de tarjeta. |
-| `.modal-vinculos-fila--solo-principal` | Modificador para la fila del proveedor principal: grid en 2 columnas (`1fr auto`): contenido centrado + acciones. |
-| `.modal-vinculos-fila-principal-contenido` | Contenedor flex (columna, centrado) que agrupa Prefijo y Cx Final de Compra del proveedor principal; ambos quedan centrados en el div. |
+| `.modal-vinculos-fila` | Fila base (grid) con 3 columnas: columna izquierda (Prefijo + Px; en alternativos incluye botón Convertir), variación, acciones (solo tacho). Misma distribución para Proveedor Principal y Proveedores Alternativos. |
+| `.modal-vinculos-celda--columna-izquierda` | Primera columna: flex columna centrado; contiene Prefijo + Px y, solo en alternativos, el botón "Convertir en Proveedor Principal" debajo. |
+| `.modal-vinculos-fila-principal-contenido` | Bloque interno (columna, centrado) que agrupa Prefijo y Cx Final de Compra; se usa dentro de la columna izquierda en ambas secciones. |
 | `.modal-vinculos-fila--zebra-impar` / `--zebra-par` | Zebra para filas impares/pares, usando `bg-card` y mezcla suave con `primary`. |
 | `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, color muted, centrados. |
 | `.modal-vinculos-celda` | Celda base, texto centrado. |
