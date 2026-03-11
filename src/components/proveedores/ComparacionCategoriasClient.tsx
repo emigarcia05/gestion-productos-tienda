@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import SectionHeader from "@/components/SectionHeader";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
@@ -21,6 +20,8 @@ import {
 import { ChevronDown, ChevronRight, FolderOpen, Layers, Package, Plus, Pencil, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import FiltrosComparacionCategorias from "@/components/proveedores/comparacion-categorias/FiltrosComparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import type { ProductoEnCategoria } from "@/services/categoriasComparacion.service";
 import type { Rol } from "@/lib/permisos";
@@ -33,16 +34,40 @@ import AsignarProductosModal from "@/components/proveedores/comparacion-categori
 interface Props {
   arbolInicial: CategoriaComparacionTree[];
   rol: Rol;
+  marcas: string[];
+  marcaInicial: string;
+  categoriaIdInicial: string;
+  subcategoriaIdInicial: string;
+  presentacionIdInicial: string;
+  qInicial: string;
 }
 
-export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props) {
+function countPresentaciones(arb: CategoriaComparacionTree[]): number {
+  return arb.reduce(
+    (acc, c) =>
+      acc + c.subcategorias.reduce((s, sub) => s + sub.presentaciones.length, 0),
+    0
+  );
+}
+
+export default function ComparacionCategoriasClient({
+  arbolInicial,
+  rol,
+  marcas,
+  marcaInicial,
+  categoriaIdInicial,
+  subcategoriaIdInicial,
+  presentacionIdInicial,
+  qInicial,
+}: Props) {
   const router = useRouter();
   const [arbol, setArbol] = useState(arbolInicial);
-  // Sincronizar cuando el servidor devuelve nuevos datos (p. ej. tras crear categorías)
   useEffect(() => {
     setArbol(arbolInicial);
   }, [arbolInicial]);
-  const [selectedPresentacionId, setSelectedPresentacionId] = useState<string | null>(null);
+  const [selectedPresentacionId, setSelectedPresentacionId] = useState<string | null>(
+    presentacionIdInicial || null
+  );
   const [productos, setProductos] = useState<ProductoEnCategoria[]>([]);
   const [costoCompraObjetivo, setCostoCompraObjetivo] = useState<number | null>(null);
   const [labelCompleto, setLabelCompleto] = useState("");

@@ -108,6 +108,17 @@ export async function getProductosPorPresentacion(
   return { productos, costoCompraObjetivo: objetivo, labelCompleto };
 }
 
+/** Marcas distintas de lista_tienda (precios_tienda.marca) para filtros. */
+export async function getMarcasFromListaTienda(): Promise<string[]> {
+  const rows = await prisma.listaPrecioTienda.findMany({
+    where: { marca: { not: null } },
+    select: { marca: true },
+    distinct: ["marca"],
+    orderBy: { marca: "asc" },
+  });
+  return rows.map((r) => r.marca as string).filter(Boolean);
+}
+
 /** Lista plana de presentaciones con label completo (para selects). */
 export async function getPresentacionesConLabel(): Promise<{ id: string; labelCompleto: string }[]> {
   const presentaciones = await prisma.presentacionComparacion.findMany({
