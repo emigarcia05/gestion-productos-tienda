@@ -1029,6 +1029,14 @@
   font-weight: inherit;
   font-variant-numeric: inherit;
 }
+/* Mismo tamaño que Px final de compra: forzar 0.9rem en el modal (las clases variacion-costo usan 0.75rem por defecto) */
+.modal-vinculos-celda--variacion .variacion-costo--neutra,
+.modal-vinculos-celda--variacion .variacion-costo--positiva,
+.modal-vinculos-celda--variacion .variacion-costo--negativa {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 
 .btn-convertir-proveedor-principal {
   display: inline-flex;
