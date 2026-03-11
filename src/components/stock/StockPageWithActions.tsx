@@ -7,6 +7,7 @@ import FiltrosStock from "@/components/stock/FiltrosStock";
 import StockPageSyncGate from "@/components/stock/StockPageSyncGate";
 import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
 import ExportarStockButton from "@/components/stock/ExportarStockButton";
+import ExportarStockInstructorModal from "@/components/stock/ExportarStockInstructorModal";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
@@ -32,6 +33,7 @@ export default function StockPageWithActions({
 }: Props) {
   const tableRef = useRef<TablaStockHandle>(null);
   const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
+  const [showInstructor, setShowInstructor] = useState(false);
 
   const tieneSucursal = sucursalValida !== null;
   const tieneItems = data.items.length > 0;
@@ -41,7 +43,10 @@ export default function StockPageWithActions({
       <SyncDuxHeaderButton />
       {tieneSucursal && tieneItems && (
         <>
-          <ExportarStockButton tableRef={tableRef} />
+          <ExportarStockButton
+            tableRef={tableRef}
+            onAfterExport={() => setShowInstructor(true)}
+          />
           <ImprimirStockButton tableRef={tableRef} />
         </>
       )}
@@ -63,6 +68,7 @@ export default function StockPageWithActions({
 
   return (
     <StockPageSyncGate>
+      <ExportarStockInstructorModal open={showInstructor} onOpenChange={setShowInstructor} />
       <ClassicFilteredTableLayout
         title="Lista Tienda"
         subtitle="Control Stock"

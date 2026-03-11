@@ -5,13 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { TablaStockHandle } from "./TablaStock";
 
+const INSTRUCTOR_DELAY_MS = 1500;
+
 interface Props {
   tableRef: React.RefObject<TablaStockHandle | null>;
+  /** Se llama tras disparar la exportación (después de un breve delay, cuando ya se abrió el diálogo de guardar). */
+  onAfterExport?: () => void;
 }
 
-export default function ExportarStockButton({ tableRef }: Props) {
+export default function ExportarStockButton({ tableRef, onAfterExport }: Props) {
   function handleClick() {
     tableRef.current?.triggerExport();
+    if (onAfterExport) {
+      setTimeout(onAfterExport, INSTRUCTOR_DELAY_MS);
+    }
   }
 
   return (
