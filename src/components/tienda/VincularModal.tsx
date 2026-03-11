@@ -315,7 +315,7 @@ export default function VincularModal({
                               </span>
                             </Button>
                           </div>
-                          <div className="modal-vinculos-celda modal-vinculos-celda--columna-izquierda modal-vinculos-celda--derecha">
+                          <div className="modal-vinculos-celda modal-vinculos-celda--contenido-y-variacion">
                             <div className="modal-vinculos-fila-principal-contenido">
                               <Badge variant="secondary" className="modal-vinculos-prefijo">
                                 {prod.proveedor.prefijo}
@@ -324,9 +324,9 @@ export default function VincularModal({
                                 ${fmtPrecio(pxCompra)}
                               </span>
                             </div>
-                          </div>
-                          <div className="modal-vinculos-celda modal-vinculos-celda--variacion modal-vinculos-celda--izquierda">
-                            <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
+                            <div className="modal-vinculos-celda--variacion">
+                              <DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />
+                            </div>
                           </div>
                           <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
                             <Button
