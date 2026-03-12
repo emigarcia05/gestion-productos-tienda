@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, UserPlus, Check, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Plus, UserPlus, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -23,7 +23,6 @@ import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getProductosPorPresentacionAction } from "@/actions/comparacionCategorias";
 import GestionCategoriasModal from "@/components/proveedores/comparacion-categorias/GestionCategoriasModal";
-import EditarCostoObjetivoModal from "@/components/proveedores/comparacion-categorias/EditarCostoObjetivoModal";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
 
 interface Props {
@@ -64,11 +63,9 @@ export default function ComparacionCategoriasClient({
     presentacionIdInicial || null
   );
   const [productos, setProductos] = useState<ProductoEnCategoria[]>([]);
-  const [costoCompraObjetivo, setCostoCompraObjetivo] = useState<number | null>(null);
   const [labelCompleto, setLabelCompleto] = useState("");
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalGestion, setModalGestion] = useState(false);
-  const [modalCostoObjetivo, setModalCostoObjetivo] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
   const [selectedProductoId, setSelectedProductoId] = useState<string | null>(null);
 
@@ -82,11 +79,9 @@ export default function ComparacionCategoriasClient({
       const res = await getProductosPorPresentacionAction(presentacionId);
       if (res.ok && "productos" in res) {
         setProductos(res.productos);
-        setCostoCompraObjetivo(res.costoCompraObjetivo ?? null);
         setLabelCompleto(res.labelCompleto ?? "");
       } else {
         setProductos([]);
-        setCostoCompraObjetivo(null);
         setLabelCompleto("");
       }
     } finally {
@@ -114,12 +109,6 @@ export default function ComparacionCategoriasClient({
     if (selectedPresentacionId) loadProductos(selectedPresentacionId);
   }, [selectedPresentacionId, loadProductos]);
 
-  const onCostoObjetivoSaved = useCallback((valor: number | null) => {
-    setCostoCompraObjetivo(valor);
-    setModalCostoObjetivo(false);
-    router.refresh();
-  }, [router]);
-
   const acciones = puedeEditar ? (
     <div className="flex items-center gap-2">
       <Button
@@ -136,11 +125,6 @@ export default function ComparacionCategoriasClient({
   ) : undefined;
 
   const totalPresentaciones = useMemo(() => countPresentaciones(arbol), [arbol]);
-
-  const productoReferencia = useMemo(
-    () => productos.find((p) => p.id === selectedProductoId) ?? null,
-    [productos, selectedProductoId]
-  );
 
   const filters = (
     <FiltrosComparacionCategorias
@@ -168,37 +152,7 @@ export default function ComparacionCategoriasClient({
           <CardHeader className="py-3 flex flex-row items-center justify-between gap-2 flex-wrap px-6">
             <div>
               {selectedPresentacionId ? (
-                <>
-                  <h2 className="text-sm font-bold text-foreground">{labelCompleto || "Cargando…"}</h2>
-                  {costoCompraObjetivo != null && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Costo compra objetivo: ${fmtPrecio(costoCompraObjetivo)}
-                      {puedeEditar && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-1.5 ml-1 text-xs"
-                          onClick={() => setModalCostoObjetivo(true)}
-                        >
-                          <Pencil className="h-3 w-3 mr-0.5" />
-                          Editar
-                        </Button>
-                      )}
-                    </p>
-                  )}
-                  {costoCompraObjetivo == null && puedeEditar && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-1 h-8 text-xs"
-                      onClick={() => setModalCostoObjetivo(true)}
-                    >
-                      Definir costo compra objetivo
-                    </Button>
-                  )}
-                </>
+                <h2 className="text-sm font-bold text-foreground">{labelCompleto || "Cargando…"}</h2>
               ) : (
                 <h2 className="text-sm font-bold text-muted-foreground">
                   Seleccioná una presentación con los filtros (Marca, Categoría, Subcategoría, Presentación)
@@ -223,7 +177,7 @@ export default function ComparacionCategoriasClient({
               <p className="text-sm text-muted-foreground py-4">Cargando productos…</p>
             ) : !selectedPresentacionId ? (
               <p className="text-sm text-muted-foreground py-4">
-                Elegí Marca, Categoría, Subcategoría y Presentación en los filtros para ver los productos y comparar con el costo objetivo.
+                Elegí Marca, Categoría, Subcategoría y Presentación en los filtros para ver los productos de la lista.
               </p>
             ) : productos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">
@@ -233,36 +187,23 @@ export default function ComparacionCategoriasClient({
               <Table variant="compact" className="tabla-comparacion-cat tabla-gestion-compacta">
                 <colgroup>
                   <col style={{ width: "5%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "55%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "11%" }} />
+                  <col style={{ width: "11%" }} />
+                  <col style={{ width: "53%" }} />
+                  <col style={{ width: "20%" }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-center w-[5%] p-1 align-middle">
-                      <Check className="h-4 w-4 text-primary-foreground inline-block" aria-hidden />
-                    </TableHead>
+                    <TableHead className="text-center w-[5%] p-1 align-middle" />
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>
                     <TableHead>DESCRIPCION</TableHead>
                     <TableHead>PX FINAL COMPRA</TableHead>
-                    <TableHead>VARIACION</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {productos.map((p) => {
                     const selected = selectedProductoId === p.id;
-                    // Con producto seleccionado: base = px del producto referencia; sin selección: base = Costo Compra Objetivo
-                    const basePx =
-                      productoReferencia?.pxCompraFinal ?? costoCompraObjetivo ?? null;
-                    const pct =
-                      basePx != null &&
-                      basePx !== 0 &&
-                      p.pxCompraFinal != null
-                        ? Math.round(((p.pxCompraFinal - basePx) / basePx) * 100)
-                        : null;
                     return (
                       <TableRow
                         key={p.id}
@@ -273,13 +214,13 @@ export default function ComparacionCategoriasClient({
                             type="button"
                             onClick={() => setSelectedProductoId(selected ? null : p.id)}
                             className={cn(
-                              "selector-cuadro",
+                              "selector-cuadro selector-cuadro--circle",
                               selected && "selector-cuadro--selected"
                             )}
                             aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
                           >
                             {selected ? (
-                              <Check className="h-3.5 w-3.5" />
+                              <Check className="h-3.5 w-3.5 text-primary-foreground" />
                             ) : null}
                           </button>
                         </TableCell>
@@ -288,29 +229,6 @@ export default function ComparacionCategoriasClient({
                         <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
                         <TableCell className="celda-datos celda-numero">
                           {p.pxCompraFinal != null ? `$${fmtPrecio(p.pxCompraFinal)}` : "—"}
-                        </TableCell>
-                        <TableCell className="celda-datos celda-numero">
-                          {pct != null ? (
-                            <span
-                              className={cn(
-                                pct > 0 && "variacion-costo--positiva",
-                                pct < 0 && "variacion-costo--negativa",
-                                pct === 0 && "variacion-costo--neutra"
-                              )}
-                            >
-                              <span className="inline-flex items-center gap-1">
-                                {pct > 0 && (
-                                  <ArrowUpRight className="h-3.5 w-3.5 variacion-costo-icon--positiva" />
-                                )}
-                                {pct < 0 && (
-                                  <ArrowDownRight className="h-3.5 w-3.5 variacion-costo-icon--negativa" />
-                                )}
-                                <span>{`${pct > 0 ? "+" : ""}${pct}%`}</span>
-                              </span>
-                            </span>
-                          ) : (
-                            "—"
-                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -331,16 +249,6 @@ export default function ComparacionCategoriasClient({
             arbol={arbol}
             onSuccess={refreshArbol}
           />
-          {selectedPresentacionId && (
-            <EditarCostoObjetivoModal
-              open={modalCostoObjetivo}
-              onOpenChange={setModalCostoObjetivo}
-              presentacionId={selectedPresentacionId}
-              valorActual={costoCompraObjetivo}
-              labelCompleto={labelCompleto}
-              onSaved={onCostoObjetivoSaved}
-            />
-          )}
           {selectedPresentacionId && (
             <AsignarProductosModal
               open={modalAsignar}

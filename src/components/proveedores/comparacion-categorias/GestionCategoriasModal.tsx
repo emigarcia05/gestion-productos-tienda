@@ -84,7 +84,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showCrearSection, setShowCrearSection] = useState(false);
   const [presentacionId, setPresentacionId] = useState("");
-  const [showCrearForm, setShowCrearForm] = useState(false);
+  const [showCrearCamposModal, setShowCrearCamposModal] = useState(false);
 
   const cargarTabla = useCallback(async () => {
     const res = await getPresentacionesParaGestionAction();
@@ -217,6 +217,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       }
       onSuccess();
       await cargarTabla();
+      setShowCrearCamposModal(false);
     } finally {
       setPending(false);
     }
@@ -253,6 +254,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       }
       onSuccess();
       await cargarTabla();
+      setShowCrearCamposModal(false);
     } finally {
       setPending(false);
     }
@@ -295,6 +297,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       }
       onSuccess();
       await cargarTabla();
+      setShowCrearCamposModal(false);
     } finally {
       setPending(false);
     }
@@ -337,7 +340,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                     setShowCrearSection(true);
                   }}
                 >
-                  Crear nueva categoria
+                  Crear Nueva Categoria
                 </Button>
               )}
             </div>
@@ -492,7 +495,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                         size="icon"
                         onClick={() => {
                           setTab("categoria");
-                          setShowCrearForm(true);
+                          setShowCrearCamposModal(true);
                         }}
                         title="Crear nueva categoría"
                       >
@@ -533,7 +536,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                             return;
                           }
                           setTab("subcategoria");
-                          setShowCrearForm(true);
+                          setShowCrearCamposModal(true);
                         }}
                         title="Crear nueva subcategoría"
                       >
@@ -571,7 +574,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                             return;
                           }
                           setTab("presentacion");
-                          setShowCrearForm(true);
+                          setShowCrearCamposModal(true);
                         }}
                         title="Crear nueva presentación"
                       >
@@ -580,144 +583,6 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                     </div>
                   </div>
                 </div>
-
-                {/* Panel de creación según tipo */}
-                {showCrearForm && (
-                  <div className="pt-4">
-                    <div className="flex gap-2 border-b border-border pb-2 mb-4">
-                      <Button
-                        type="button"
-                        variant={tab === "categoria" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setTab("categoria")}
-                      >
-                        Crear categoría
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={tab === "subcategoria" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setTab("subcategoria")}
-                      >
-                        Crear subcategoría
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={tab === "presentacion" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setTab("presentacion")}
-                      >
-                        Crear presentación
-                      </Button>
-                    </div>
-
-                    {tab === "categoria" && (
-                      <div className="grid gap-4 py-2">
-                        <div className="grid gap-2">
-                          <Label htmlFor="nombre-cat">Nombre</Label>
-                          <Input
-                            id="nombre-cat"
-                            value={nombreCategoria}
-                            onChange={(e) => setNombreCategoria(e.target.value)}
-                            placeholder="Ej. Látex"
-                          />
-                        </div>
-                        <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
-                          Crear categoría
-                        </Button>
-                      </div>
-                    )}
-
-                    {tab === "subcategoria" && (
-                      <div className="grid gap-4 py-2">
-                        <div className="grid gap-2">
-                          <Label>Categoría</Label>
-                          <select
-                            className={cn(
-                              "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            )}
-                            value={categoriaId}
-                            onChange={(e) => setCategoriaId(e.target.value)}
-                          >
-                            <option value="">Seleccionar</option>
-                            {arbolLocal.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="nombre-sub">Nombre</Label>
-                          <Input
-                            id="nombre-sub"
-                            value={nombreSubcategoria}
-                            onChange={(e) => setNombreSubcategoria(e.target.value)}
-                            placeholder="Ej. Calidad Intermedia"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={handleCreateSubcategoria}
-                          disabled={pending}
-                        >
-                          Crear subcategoría
-                        </Button>
-                      </div>
-                    )}
-
-                    {tab === "presentacion" && (
-                      <div className="grid gap-4 py-2">
-                        <div className="grid gap-2">
-                          <Label>Subcategoría</Label>
-                          <select
-                            className={cn(
-                              "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            )}
-                            value={subcategoriaId}
-                            onChange={(e) => setSubcategoriaId(e.target.value)}
-                          >
-                            <option value="">Seleccionar</option>
-                            {subcategoriasFlat.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.categoriaNombre} → {s.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="nombre-pre">Nombre</Label>
-                          <Input
-                            id="nombre-pre"
-                            value={nombrePresentacion}
-                            onChange={(e) => setNombrePresentacion(e.target.value)}
-                            placeholder="Ej. 20 Lts"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="costo-pre">Costo compra objetivo (opcional)</Label>
-                          <Input
-                            id="costo-pre"
-                            type="text"
-                            inputMode="decimal"
-                            value={costoObjetivo}
-                            onChange={(e) => setCostoObjetivo(e.target.value)}
-                            placeholder="Ej. 15000"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={handleCreatePresentacion}
-                          disabled={pending}
-                        >
-                          Crear presentación
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
               <div className="modal-app__footer shrink-0 justify-between">
                 <Button
@@ -733,6 +598,160 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   variant="outline"
                   size="sm"
                   onClick={() => setShowCrearSection(false)}
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Tercer modal: Crear Campos Categoria (abre al hacer click en + de cualquier desplegable) */}
+        <Dialog open={showCrearCamposModal} onOpenChange={(v) => !v && setShowCrearCamposModal(false)}>
+          <DialogContent className="modal-app max-w-lg w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+            <DialogHeader className="modal-app__header shrink-0">
+              <DialogTitle className="modal-app__title">Crear Campos Categoria</DialogTitle>
+            </DialogHeader>
+            <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-6">
+              <div className="flex gap-2 border-b border-border pb-2 mb-4">
+                <Button
+                  type="button"
+                  variant={tab === "categoria" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setTab("categoria")}
+                >
+                  Crear categoría
+                </Button>
+                <Button
+                  type="button"
+                  variant={tab === "subcategoria" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setTab("subcategoria")}
+                >
+                  Crear subcategoría
+                </Button>
+                <Button
+                  type="button"
+                  variant={tab === "presentacion" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setTab("presentacion")}
+                >
+                  Crear presentación
+                </Button>
+              </div>
+
+              {tab === "categoria" && (
+                <div className="grid gap-4 py-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="nombre-cat-campos">Nombre</Label>
+                    <Input
+                      id="nombre-cat-campos"
+                      value={nombreCategoria}
+                      onChange={(e) => setNombreCategoria(e.target.value)}
+                      placeholder="Ej. Látex"
+                    />
+                  </div>
+                  <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
+                    Crear categoría
+                  </Button>
+                </div>
+              )}
+
+              {tab === "subcategoria" && (
+                <div className="grid gap-4 py-2">
+                  <div className="grid gap-2">
+                    <Label>Categoría</Label>
+                    <select
+                      className={cn(
+                        "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      )}
+                      value={categoriaId}
+                      onChange={(e) => setCategoriaId(e.target.value)}
+                    >
+                      <option value="">Seleccionar</option>
+                      {arbolLocal.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="nombre-sub-campos">Nombre</Label>
+                    <Input
+                      id="nombre-sub-campos"
+                      value={nombreSubcategoria}
+                      onChange={(e) => setNombreSubcategoria(e.target.value)}
+                      placeholder="Ej. Calidad Intermedia"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleCreateSubcategoria}
+                    disabled={pending}
+                  >
+                    Crear subcategoría
+                  </Button>
+                </div>
+              )}
+
+              {tab === "presentacion" && (
+                <div className="grid gap-4 py-2">
+                  <div className="grid gap-2">
+                    <Label>Subcategoría</Label>
+                    <select
+                      className={cn(
+                        "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      )}
+                      value={subcategoriaId}
+                      onChange={(e) => setSubcategoriaId(e.target.value)}
+                    >
+                      <option value="">Seleccionar</option>
+                      {subcategoriasFlat.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.categoriaNombre} → {s.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="nombre-pre-campos">Nombre</Label>
+                    <Input
+                      id="nombre-pre-campos"
+                      value={nombrePresentacion}
+                      onChange={(e) => setNombrePresentacion(e.target.value)}
+                      placeholder="Ej. 20 Lts"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="costo-pre-campos">Costo compra objetivo (opcional)</Label>
+                    <Input
+                      id="costo-pre-campos"
+                      type="text"
+                      inputMode="decimal"
+                      value={costoObjetivo}
+                      onChange={(e) => setCostoObjetivo(e.target.value)}
+                      placeholder="Ej. 15000"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleCreatePresentacion}
+                    disabled={pending}
+                  >
+                    Crear presentación
+                  </Button>
+                </div>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCrearCamposModal(false)}
                 >
                   Cerrar
                 </Button>
