@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Plus, UserPlus, Check, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
@@ -68,14 +69,28 @@ export default function ComparacionCategoriasClient({
   const [modalGestion, setModalGestion] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
   const [selectedProductoId, setSelectedProductoId] = useState<string | null>(null);
+  const [dtoEspecial, setDtoEspecial] = useState<Record<string, string>>({});
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
+
+  function pxConDto(pxOriginal: number | null, dtoStr: string): number | null {
+    if (pxOriginal == null || pxOriginal <= 0) return null;
+    const n = parseInt(dtoStr.trim(), 10);
+    if (Number.isNaN(n) || n < 0 || n > 99) return pxOriginal;
+    return pxOriginal * (1 - n / 100);
+  }
 
   const productoReferencia = useMemo(
     () => (selectedProductoId ? productos.find((pr) => pr.id === selectedProductoId) : null),
     [productos, selectedProductoId]
   );
-  const pxReferencia = productoReferencia?.pxCompraFinal ?? null;
+  const pxReferenciaOriginal = productoReferencia?.pxCompraFinal ?? null;
+  const dtoRef = productoReferencia ? dtoEspecial[productoReferencia.id] ?? "" : "";
+  const pxReferencia = useMemo(() => {
+    if (pxReferenciaOriginal == null) return null;
+    const conDto = pxConDto(pxReferenciaOriginal, dtoRef);
+    return conDto != null ? conDto : pxReferenciaOriginal;
+  }, [pxReferenciaOriginal, dtoRef]);
 
   function variacionVsReferencia(pxRow: number | null): { pct: number } | null {
     if (pxReferencia == null || pxReferencia <= 0 || pxRow == null) return null;
@@ -86,6 +101,7 @@ export default function ComparacionCategoriasClient({
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
     setSelectedProductoId(null);
+    setDtoEspecial({});
     setLoadingProductos(true);
     try {
       const res = await getProductosPorPresentacionAction(presentacionId);
@@ -199,10 +215,12 @@ export default function ComparacionCategoriasClient({
               <Table variant="compact" className="tabla-comparacion-cat tabla-gestion-compacta">
                 <colgroup>
                   <col style={{ width: "5%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "48%" }} />
-                  <col style={{ width: "17%" }} />
+                  <col style={{ width: "9%" }} />
+                  <col style={{ width: "9%" }} />
+                  <col style={{ width: "40%" }} />
+                  <col style={{ width: "8%" }} />
+                  <col style={{ width: "14%" }} />
+                  <col style={{ width: "15%" }} />
                   <col style={{ width: "10%" }} />
                 </colgroup>
                 <TableHeader>
@@ -211,14 +229,20 @@ export default function ComparacionCategoriasClient({
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>
                     <TableHead>DESCRIPCION</TableHead>
+                    <TableHead className="text-center">DTO ESPECIAL</TableHead>
                     <TableHead>PX FINAL COMPRA</TableHead>
+                    <TableHead>NUEVO PX FINAL COMPRA</TableHead>
                     <TableHead className="text-center">VARIACIÓN</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {productos.map((p) => {
                     const selected = selectedProductoId === p.id;
-                    const varData = variacionVsReferencia(p.pxCompraFinal);
+                    const dtoStr = dtoEspecial[p.id] ?? "";
+                    const pxOriginal = p.pxCompraFinal;
+                    const pxConDescuento = pxConDto(pxOriginal, dtoStr);
+                    const pxEfectivo = pxConDescuento ?? pxOriginal;
+                    const varData = variacionVsReferencia(pxEfectivo);
                     return (
                       <TableRow
                         key={p.id}
@@ -242,8 +266,30 @@ export default function ComparacionCategoriasClient({
                         <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
                         <TableCell className="celda-datos">{p.marca ?? "—"}</TableCell>
                         <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
+                        <TableCell className="celda-datos p-1">
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={2}
+                              placeholder="%"
+                              value={dtoStr}
+                              onChange={(e) => {
+                                const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                                setDtoEspecial((prev) => ({ ...prev, [p.id]: v }));
+                              }}
+                              className="h-8 w-14 text-center text-sm tabular-nums"
+                            />
+                            <span className="text-muted-foreground text-xs shrink-0">%</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="celda-datos celda-numero">
-                          {p.pxCompraFinal != null ? `$${fmtPrecio(p.pxCompraFinal)}` : "—"}
+                          {pxOriginal != null ? `$${fmtPrecio(pxOriginal)}` : "—"}
+                        </TableCell>
+                        <TableCell className="celda-datos celda-numero">
+                          {pxConDescuento != null && dtoStr.trim() !== "" && !Number.isNaN(parseInt(dtoStr, 10))
+                            ? `$${fmtPrecio(pxConDescuento)}`
+                            : "—"}
                         </TableCell>
                         <TableCell className="celda-datos text-center">
                           {varData == null ? (

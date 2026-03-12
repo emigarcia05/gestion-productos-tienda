@@ -260,7 +260,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
         <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
           {/* Botón Crear Nueva Categoria */}
           {!showCrearSection && (
-            <div className="shrink-0 mb-4">
+            <div className="shrink-0 mb-4 flex justify-end">
               <Button
                 type="button"
                 onClick={() => setShowCrearSection(true)}
@@ -329,7 +329,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="bg-primary text-primary-foreground font-bold min-w-[200px]">
-                        Combinación
+                        Categorias
                       </TableHead>
                       <TableHead className="bg-primary text-primary-foreground font-bold w-12" />
                     </TableRow>
