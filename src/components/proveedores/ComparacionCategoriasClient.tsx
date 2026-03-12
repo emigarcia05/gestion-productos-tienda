@@ -137,6 +137,11 @@ export default function ComparacionCategoriasClient({
 
   const totalPresentaciones = useMemo(() => countPresentaciones(arbol), [arbol]);
 
+  const productoReferencia = useMemo(
+    () => productos.find((p) => p.id === selectedProductoId) ?? null,
+    [productos, selectedProductoId]
+  );
+
   const filters = (
     <FiltrosComparacionCategorias
       marcas={marcas}
@@ -247,6 +252,11 @@ export default function ComparacionCategoriasClient({
                 <TableBody>
                   {productos.map((p) => {
                     const selected = selectedProductoId === p.id;
+                    const basePx = productoReferencia?.pxCompraFinal ?? null;
+                    const diff =
+                      basePx != null && p.pxCompraFinal != null
+                        ? Math.round((p.pxCompraFinal - basePx) * 100) / 100
+                        : null;
                     return (
                       <TableRow
                         key={p.id}
@@ -275,12 +285,12 @@ export default function ComparacionCategoriasClient({
                         <TableCell
                           className={cn(
                             "celda-datos celda-numero",
-                            p.diferenciaVsObjetivo != null && p.diferenciaVsObjetivo > 0 && "text-destructive",
-                            p.diferenciaVsObjetivo != null && p.diferenciaVsObjetivo < 0 && "text-green-600"
+                            diff != null && diff > 0 && "text-destructive",
+                            diff != null && diff < 0 && "text-green-600"
                           )}
                         >
-                          {p.diferenciaVsObjetivo != null
-                            ? `${p.diferenciaVsObjetivo >= 0 ? "+" : ""}$${fmtPrecio(p.diferenciaVsObjetivo)}`
+                          {diff != null
+                            ? `${diff >= 0 ? "+" : ""}$${fmtPrecio(diff)}`
                             : "—"}
                         </TableCell>
                       </TableRow>

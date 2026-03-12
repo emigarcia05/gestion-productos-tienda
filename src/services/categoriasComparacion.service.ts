@@ -80,6 +80,7 @@ export async function getProductosPorPresentacion(
       subcategoria: { include: { categoria: true } },
       listaPrecios: {
         include: { proveedor: { select: { prefijo: true } } },
+        orderBy: { pxCompraFinal: "asc" },
       },
     },
   });
