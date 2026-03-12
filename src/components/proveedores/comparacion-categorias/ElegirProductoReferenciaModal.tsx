@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -93,101 +92,127 @@ export default function ElegirProductoReferenciaModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
-        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
-          <DialogTitle>Elegir producto de referencia</DialogTitle>
+      <DialogContent
+        className={cn(
+          "modal-app max-w-2xl w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden"
+        )}
+      >
+        <DialogHeader className="modal-app__header shrink-0">
+          <DialogTitle className="modal-app__title">Elegir producto de referencia</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground px-6">{labelCompleto}</p>
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-3">
-          <div className="flex flex-col gap-2">
-            <Select
-              value={proveedorId || "none"}
-              onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Proveedor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Todos los proveedores</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    [{p.prefijo}] {p.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por descripción o código..."
-              className="w-full"
-            />
-          </div>
-          <div className="border rounded-md overflow-hidden max-h-48 overflow-y-auto">
-            {loading ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Cargando…</div>
-            ) : rows.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                Aplicá filtros para ver productos.
+
+        <div className="modal-app__content flex-1 min-h-0 flex flex-col">
+          <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
+            <p className="text-sm text-muted-foreground shrink-0 mb-3">{labelCompleto}</p>
+            <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
+              <Select
+                value={proveedorId || "none"}
+                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger className="input-filtro-unificado w-full">
+                  <SelectValue placeholder="Proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Todos los proveedores</SelectItem>
+                  {proveedores.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      [{p.prefijo}] {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar por descripción o código..."
+                className="input-filtro-unificado w-full"
+              />
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
+              {loading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  Cargando…
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  Aplicá filtros para ver productos.
+                </div>
+              ) : (
+                <>
+                  <div className="shrink-0 overflow-hidden">
+                    <Table variant="compact" className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          <TableHead className="py-2.5 px-3 text-xs w-24 text-center bg-primary text-primary-foreground font-bold">
+                            Proveedor
+                          </TableHead>
+                          <TableHead className="py-2.5 px-3 text-xs min-w-0 bg-primary text-primary-foreground font-bold">
+                            Descripción
+                          </TableHead>
+                          <TableHead className="py-2.5 px-3 text-xs w-28 text-right bg-primary text-primary-foreground font-bold">
+                            Px final
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                    </Table>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
+                    <Table variant="compact" className="table-fixed w-full">
+                      <TableBody>
+                        {rows.map((row) => {
+                          const isSelected = selectedRow?.id === row.id;
+                          const hasPx = row.pxCompraFinal != null;
+                          return (
+                            <TableRow
+                              key={row.id}
+                              className={cn(
+                                "cursor-pointer",
+                                isSelected && "bg-primary/10",
+                                !hasPx && "opacity-60"
+                              )}
+                              onClick={() => hasPx && setSelectedRow(isSelected ? null : row)}
+                            >
+                              <TableCell className="py-1.5 w-24 text-center">
+                                <Badge variant="secondary" className="font-mono text-xs">
+                                  {row.proveedor.prefijo}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-1.5 min-w-0 truncate" title={row.descripcionProveedor}>
+                                {row.descripcionProveedor}
+                              </TableCell>
+                              <TableCell className="py-1.5 w-28 text-right tabular-nums">
+                                {row.pxCompraFinal != null
+                                  ? `$${fmtPrecio(row.pxCompraFinal)}`
+                                  : "—"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </div>
+            {selectedRow != null && selectedRow.pxCompraFinal != null && (
+              <div className="shrink-0 pt-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleUsar}
+                  disabled={pending}
+                >
+                  Usar como referencia (${fmtPrecio(selectedRow.pxCompraFinal)})
+                </Button>
               </div>
-            ) : (
-              <Table variant="compact">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-24">Proveedor</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead className="w-28 text-right">Px final</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => {
-                    const isSelected = selectedRow?.id === row.id;
-                    const hasPx = row.pxCompraFinal != null;
-                    return (
-                      <TableRow
-                        key={row.id}
-                        className={cn(
-                          "cursor-pointer",
-                          isSelected && "bg-primary/10",
-                          !hasPx && "opacity-60"
-                        )}
-                        onClick={() => hasPx && setSelectedRow(isSelected ? null : row)}
-                      >
-                        <TableCell className="py-1.5">
-                          <Badge variant="secondary" className="font-mono text-xs">
-                            {row.proveedor.prefijo}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-1.5 truncate max-w-0" title={row.descripcionProveedor}>
-                          {row.descripcionProveedor}
-                        </TableCell>
-                        <TableCell className="py-1.5 text-right tabular-nums">
-                          {row.pxCompraFinal != null
-                            ? `$${fmtPrecio(row.pxCompraFinal)}`
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
             )}
           </div>
-          {selectedRow != null && selectedRow.pxCompraFinal != null && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleUsar}
-              disabled={pending}
-            >
-              Usar como referencia (${fmtPrecio(selectedRow.pxCompraFinal)})
+
+          <div className="modal-app__footer shrink-0 justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              Cancelar
             </Button>
-          )}
-        </div>
-        <div className="shrink-0 flex justify-end px-6 py-4 border-t">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

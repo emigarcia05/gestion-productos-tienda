@@ -31,8 +31,34 @@ import {
 } from "@/actions/comparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import type { PresentacionParaGestion } from "@/services/categoriasComparacion.service";
+import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import ElegirProductoReferenciaModal from "./ElegirProductoReferenciaModal";
+
+/** Parsea string con $ y "." como miles (y "," como decimal) a número; devuelve "" si vacío o inválido. */
+function parseCostoInput(value: string): string {
+  const s = value.replace(/\$/g, "").replace(/\s/g, "").trim();
+  if (s === "") return "";
+  const commaIdx = s.lastIndexOf(",");
+  if (commaIdx >= 0) {
+    const intPart = s.slice(0, commaIdx).replace(/\./g, "");
+    const decPart = s.slice(commaIdx + 1);
+    const num = parseFloat(intPart + "." + decPart);
+    if (Number.isNaN(num) || num < 0) return "";
+    return String(num);
+  }
+  const num = parseFloat(s.replace(/\./g, ""));
+  if (Number.isNaN(num) || num < 0) return "";
+  return String(num);
+}
+
+/** Formatea el valor guardado para mostrar en el input: $ y punto como miles. */
+function formatCostoDisplay(raw: string): string {
+  if (raw === "" || raw == null) return "";
+  const n = parseFloat(raw);
+  if (Number.isNaN(n) || n < 0) return raw;
+  return "$" + fmtPrecio(n);
+}
 
 interface Props {
   open: boolean;
@@ -103,7 +129,8 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
   };
 
   const setCostoLocal = (presentacionId: string, value: string) => {
-    setCostosLocales((prev) => ({ ...prev, [presentacionId]: value }));
+    const parsed = parseCostoInput(value);
+    setCostosLocales((prev) => ({ ...prev, [presentacionId]: parsed }));
   };
 
   const handleElegirProductoReferencia = async (presentacionId: string, pxCompraFinal: number) => {
@@ -247,8 +274,9 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="modal-app max-w-4xl max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+      <DialogContent className="modal-app max-w-[84rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="modal-app__header shrink-0">
           <DialogTitle className="modal-app__title">Gestionar categorías</DialogTitle>
         </DialogHeader>
@@ -256,7 +284,17 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
         <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
           {/* Tabla de combinaciones + producto ref + costo objetivo */}
           <div className="shrink-0 mb-4">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Combinaciones creadas</h3>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-foreground">Combinaciones creadas</h3>
+              {!showCrearSection && (
+                <Button
+                  type="button"
+                  onClick={() => setShowCrearSection(true)}
+                >
+                  Crear nueva categoria
+                </Button>
+              )}
+            </div>
             {loadingTabla ? (
               <p className="text-sm text-muted-foreground py-4">Cargando…</p>
             ) : filas.length === 0 ? (
@@ -318,12 +356,12 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                           <Input
                             type="text"
                             inputMode="decimal"
-                            value={costosLocales[fila.id] ?? ""}
+                            value={formatCostoDisplay(costosLocales[fila.id] ?? "")}
                             onChange={(e) => setCostoLocal(fila.id, e.target.value)}
                             onBlur={() => handleCostoBlur(fila.id)}
                             disabled={pendingCostoId === fila.id}
-                            placeholder="Manual"
-                            className="h-8 text-sm w-full"
+                            placeholder="$0"
+                            className="h-8 text-sm w-full text-center tabular-nums"
                           />
                         </TableCell>
                         <TableCell className="py-1 align-top w-12">
@@ -346,23 +384,30 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               </div>
             )}
           </div>
+        </div>
 
-          {/* Botón Crear nueva categoria → muestra opciones de creación */}
-          {!showCrearSection && (
-            <div className="shrink-0 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCrearSection(true)}
-              >
-                Crear nueva categoria
-              </Button>
-            </div>
-          )}
+        <ElegirProductoReferenciaModal
+          open={presentacionIdParaRef != null}
+          onOpenChange={(open) => !open && setPresentacionIdParaRef(null)}
+          presentacionId={presentacionIdParaRef ?? ""}
+          labelCompleto={labelCompletoParaRef}
+          onElegido={(px) => presentacionIdParaRef && handleElegirProductoReferencia(presentacionIdParaRef, px)}
+        />
 
-          {/* Tabs crear Categoría / Subcategoría / Presentación */}
-          {showCrearSection && (
-          <div className="shrink-0 border-t border-border pt-4">
+        <p className="px-6 pb-6 text-xs text-muted-foreground shrink-0">
+          La tabla muestra cada combinación con su producto de referencia (si su precio coincide con el costo objetivo) y el costo objetivo editable. Creá categorías, subcategorías y presentaciones con el botón de arriba.
+        </p>
+      </DialogContent>
+    </Dialog>
+
+    {/* Segundo modal: Crear categoría / subcategoría / presentación */}
+    <Dialog open={showCrearSection} onOpenChange={(v) => !v && setShowCrearSection(false)}>
+      <DialogContent className="modal-app max-w-lg w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="modal-app__header shrink-0">
+          <DialogTitle className="modal-app__title">Crear nueva categoria</DialogTitle>
+        </DialogHeader>
+        <div className="modal-app__content flex-1 min-h-0 flex flex-col">
+          <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
             <div className="flex gap-2 border-b border-border pb-2 mb-4">
               <Button
                 type="button"
@@ -518,21 +563,14 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               </div>
             )}
           </div>
-          )}
+          <div className="modal-app__footer shrink-0 justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowCrearSection(false)}>
+              Cerrar
+            </Button>
+          </div>
         </div>
-
-        <ElegirProductoReferenciaModal
-          open={presentacionIdParaRef != null}
-          onOpenChange={(open) => !open && setPresentacionIdParaRef(null)}
-          presentacionId={presentacionIdParaRef ?? ""}
-          labelCompleto={labelCompletoParaRef}
-          onElegido={(px) => presentacionIdParaRef && handleElegirProductoReferencia(presentacionIdParaRef, px)}
-        />
-
-        <p className="px-6 pb-6 text-xs text-muted-foreground shrink-0">
-          La tabla muestra cada combinación con su producto de referencia (si su precio coincide con el costo objetivo) y el costo objetivo editable. Podés crear categorías, subcategorías y presentaciones en las pestañas de abajo.
-        </p>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
