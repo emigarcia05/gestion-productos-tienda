@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, UserPlus, Square, Check } from "lucide-react";
+import { Plus, Pencil, UserPlus, Square, Check, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -241,7 +241,11 @@ export default function ComparacionCategoriasClient({
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead />
+                    <TableHead>
+                      <span className="inline-flex h-5 w-5 items-center justify-center">
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                      </span>
+                    </TableHead>
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>
                     <TableHead>DESCRIPCION</TableHead>
@@ -252,10 +256,14 @@ export default function ComparacionCategoriasClient({
                 <TableBody>
                   {productos.map((p) => {
                     const selected = selectedProductoId === p.id;
-                    const basePx = productoReferencia?.pxCompraFinal ?? null;
-                    const diff =
-                      basePx != null && p.pxCompraFinal != null
-                        ? Math.round((p.pxCompraFinal - basePx) * 100) / 100
+                    // Con producto seleccionado: base = px del producto referencia; sin selección: base = Costo Compra Objetivo
+                    const basePx =
+                      productoReferencia?.pxCompraFinal ?? costoCompraObjetivo ?? null;
+                    const pct =
+                      basePx != null &&
+                      basePx !== 0 &&
+                      p.pxCompraFinal != null
+                        ? Math.round(((p.pxCompraFinal - basePx) / basePx) * 100)
                         : null;
                     return (
                       <TableRow
@@ -266,13 +274,18 @@ export default function ComparacionCategoriasClient({
                           <button
                             type="button"
                             onClick={() => setSelectedProductoId(selected ? null : p.id)}
-                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-input bg-background hover:bg-muted"
+                            className={cn(
+                              "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border bg-transparent hover:bg-primary/10",
+                              selected
+                                ? "border-primary text-primary"
+                                : "border-primary text-muted-foreground"
+                            )}
                             aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
                           >
                             {selected ? (
-                              <Check className="h-3.5 w-3.5 text-primary" />
+                              <Check className="h-3.5 w-3.5" />
                             ) : (
-                              <Square className="h-3.5 w-3.5 text-muted-foreground/50" />
+                              <Square className="h-3.5 w-3.5" />
                             )}
                           </button>
                         </TableCell>
@@ -282,16 +295,28 @@ export default function ComparacionCategoriasClient({
                         <TableCell className="celda-datos celda-numero">
                           {p.pxCompraFinal != null ? `$${fmtPrecio(p.pxCompraFinal)}` : "—"}
                         </TableCell>
-                        <TableCell
-                          className={cn(
-                            "celda-datos celda-numero",
-                            diff != null && diff > 0 && "text-destructive",
-                            diff != null && diff < 0 && "text-green-600"
+                        <TableCell className="celda-datos celda-numero">
+                          {pct != null ? (
+                            <span
+                              className={cn(
+                                pct > 0 && "variacion-costo--positiva",
+                                pct < 0 && "variacion-costo--negativa",
+                                pct === 0 && "variacion-costo--neutra"
+                              )}
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                {pct > 0 && (
+                                  <ArrowUpRight className="h-3.5 w-3.5 variacion-costo-icon--positiva" />
+                                )}
+                                {pct < 0 && (
+                                  <ArrowDownRight className="h-3.5 w-3.5 variacion-costo-icon--negativa" />
+                                )}
+                                <span>{`${pct > 0 ? "+" : ""}${pct}%`}</span>
+                              </span>
+                            </span>
+                          ) : (
+                            "—"
                           )}
-                        >
-                          {diff != null
-                            ? `${diff >= 0 ? "+" : ""}$${fmtPrecio(diff)}`
-                            : "—"}
                         </TableCell>
                       </TableRow>
                     );

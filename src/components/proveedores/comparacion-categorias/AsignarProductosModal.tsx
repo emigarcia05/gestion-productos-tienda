@@ -11,12 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import FilterBar, {
-  FilterRowSelection,
-  FilterRowSearch,
-  FILTER_SELECT_WRAPPER_CLASS,
-  LimpiarFiltrosButton,
-} from "@/components/FilterBar";
+import { LimpiarFiltrosButton } from "@/components/FilterBar";
 import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
 import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
@@ -92,39 +87,34 @@ export default function AsignarProductosModal({
   const hayFiltros = !!proveedorId || !!q.trim();
 
   const filterContent = (
-    <FilterBar>
-      <FilterRowSelection>
-        <div className={FILTER_SELECT_WRAPPER_CLASS}>
-          <Select
-            value={proveedorId || "none"}
-            onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
-          >
-            <SelectTrigger className="input-filtro-unificado">
-              <SelectValue placeholder="PROVEEDOR" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Todos los proveedores</SelectItem>
-              {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  [{p.prefijo}] {p.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </FilterRowSelection>
-      <div className="flex items-center gap-2 flex-wrap">
-        <FilterRowSearch className="flex-1 min-w-[200px]">
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por descripción o código..."
-            className="input-filtro-unificado"
-          />
-        </FilterRowSearch>
+    <div className="flex flex-col gap-2">
+      <Select
+        value={proveedorId || "none"}
+        onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+      >
+        <SelectTrigger className="input-filtro-unificado w-full">
+          <SelectValue placeholder="Proveedor" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Todos los proveedores</SelectItem>
+          {proveedores.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              [{p.prefijo}] {p.nombre}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="w-full flex items-center gap-2">
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar por descripción o código..."
+          className="input-filtro-unificado flex-1 min-w-0"
+        />
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
       </div>
-    </FilterBar>
+    </div>
   );
 
   const columns = [

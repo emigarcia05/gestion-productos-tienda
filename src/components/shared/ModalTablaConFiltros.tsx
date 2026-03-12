@@ -157,104 +157,124 @@ export default function ModalTablaConFiltros<T>({
         if (!v) onClose();
       }}
     >
-      <DialogContent className={cn("modal-app", contentClassName)}>
-        <DialogHeader className="modal-app__header">
+      <DialogContent
+        className={cn(
+          "modal-app max-w-[84rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden",
+          contentClassName
+        )}
+      >
+        <DialogHeader className="modal-app__header shrink-0">
           <DialogTitle className="modal-app__title">{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="modal-app__body px-6 pt-4 pb-0 flex flex-col gap-3">
-          {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          )}
-          <div className="modal-tabla-filtros">{filterContent}</div>
-        </div>
-
-        <div className={cn("modal-tabla-body", "px-6 pt-2 pb-4")}>
-          {loading ? (
-            <div className="modal-mensaje-carga">
-              <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="modal-mensaje-vacio">
-              {emptyMessage}
-            </div>
-          ) : (
-            <Table variant="compact">
-              <TableHeader className="modal-tabla-thead-sticky">
-                <TableRow className="hover:bg-transparent border-b-0">
-                  {isMulti && (
-                    <TableHead className="py-2 px-2 w-10">
-                      <label className="flex items-center justify-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={rows.length > 0 && selectedIds.size === rows.length}
-                          onChange={toggleSelectAll}
-                          className="rounded border-input"
-                        />
-                      </label>
-                    </TableHead>
-                  )}
-                  {columns.map((col) => (
-                    <TableHead
-                      key={col.key}
-                      className={col.className ?? "py-2 px-3 text-xs"}
-                    >
-                      {col.label}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => {
-                  const id = getRowId(row);
-                  return (
-                    <TableRow
-                      key={id}
-                      onDoubleClick={!isMulti ? () => onRowDoubleClick?.(row) : undefined}
-                      className={cn(
-                        !isMulti && "cursor-pointer select-none hover:bg-primary/5",
-                        isMulti && selectedIds.has(id) && "bg-primary/5"
-                      )}
-                      title={!isMulti ? "Doble clic para seleccionar" : undefined}
-                    >
-                      {isMulti && (
-                        <TableCell className="py-2.5 px-2 w-10">
-                          <label className="flex items-center justify-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.has(id)}
-                              onChange={() => toggleSelect(id)}
-                              className="rounded border-input"
-                            />
-                          </label>
-                        </TableCell>
-                      )}
-                      {columns.map((col) => (
-                        <TableCell
-                          key={col.key}
-                          className={col.className ?? "py-2.5 px-3 text-xs"}
-                        >
-                          {col.render(row)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        <div className="modal-tabla-footer">
-          <p className="modal-tabla-footer__count">
-            {count !== undefined && (
-              <>
-                <strong>{count.toLocaleString()}</strong>
-                {" resultado(s)"}
-              </>
+        <div className="modal-app__content flex-1 min-h-0 flex flex-col">
+          <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
+            {subtitle && (
+              <p className="text-xs text-muted-foreground shrink-0">{subtitle}</p>
             )}
-          </p>
-          {footerRight}
+            <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
+              {filterContent}
+            </div>
+
+            <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
+              {loading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin" /> Cargando...
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  {emptyMessage}
+                </div>
+              ) : (
+                <>
+                  <div className="shrink-0 overflow-hidden">
+                    <Table variant="compact" className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          {isMulti && (
+                            <TableHead className="py-2 px-2 w-10 bg-primary text-primary-foreground font-bold">
+                              <label className="flex items-center justify-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={rows.length > 0 && selectedIds.size === rows.length}
+                                  onChange={toggleSelectAll}
+                                  className="rounded border-input"
+                                />
+                              </label>
+                            </TableHead>
+                          )}
+                          {columns.map((col) => (
+                            <TableHead
+                              key={col.key}
+                              className={cn(
+                                col.className ?? "py-2 px-3 text-xs",
+                                "bg-primary text-primary-foreground font-bold"
+                              )}
+                            >
+                              {col.label}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                    </Table>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
+                    <Table variant="compact" className="table-fixed w-full">
+                      <TableBody>
+                        {rows.map((row) => {
+                          const id = getRowId(row);
+                          return (
+                            <TableRow
+                              key={id}
+                              onDoubleClick={!isMulti ? () => onRowDoubleClick?.(row) : undefined}
+                              className={cn(
+                                !isMulti && "cursor-pointer select-none hover:bg-primary/5",
+                                isMulti && selectedIds.has(id) && "bg-primary/5"
+                              )}
+                              title={!isMulti ? "Doble clic para seleccionar" : undefined}
+                            >
+                              {isMulti && (
+                                <TableCell className="py-2.5 px-2 w-10">
+                                  <label className="flex items-center justify-center cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedIds.has(id)}
+                                      onChange={() => toggleSelect(id)}
+                                      className="rounded border-input"
+                                    />
+                                  </label>
+                                </TableCell>
+                              )}
+                              {columns.map((col) => (
+                                <TableCell
+                                  key={col.key}
+                                  className={col.className ?? "py-2.5 px-3 text-xs"}
+                                >
+                                  {col.render(row)}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="modal-app__footer shrink-0 justify-between">
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {count !== undefined && (
+                <>
+                  <strong className="text-primary font-semibold">{count.toLocaleString()}</strong>
+                  {" resultado(s)"}
+                </>
+              )}
+            </p>
+            {footerRight}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
