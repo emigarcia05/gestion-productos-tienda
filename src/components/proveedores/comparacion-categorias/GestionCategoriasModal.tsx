@@ -322,7 +322,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="modal-app max-w-[108rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="modal-app__header shrink-0">
-          <DialogTitle className="modal-app__title">Gestionar categorías</DialogTitle>
+          <DialogTitle className="modal-app__title">Gestionar Categorías</DialogTitle>
         </DialogHeader>
 
         <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -449,8 +449,8 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
         {/* Segundo modal: Crear combinación con selects + botones (+) */}
         <Dialog open={showCrearSection} onOpenChange={(v) => !v && setShowCrearSection(false)}>
           <DialogContent className="modal-app max-w-lg w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
-            <DialogHeader className="modal-app__header shrink-0">
-              <DialogTitle className="modal-app__title">Crear nueva categoria</DialogTitle>
+        <DialogHeader className="modal-app__header shrink-0">
+          <DialogTitle className="modal-app__title">Crear Nueva Categoría</DialogTitle>
             </DialogHeader>
             <div className="modal-app__content flex-1 min-h-0 flex flex-col">
               <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">

@@ -159,7 +159,7 @@ export default function ComparacionCategoriasClient({
     <>
       <ClassicFilteredTableLayout
         title="Lista Proveedores"
-        subtitle="Comparacion Cat."
+        subtitle="Comp. por Categorías"
         actions={acciones}
         filters={filters}
       >

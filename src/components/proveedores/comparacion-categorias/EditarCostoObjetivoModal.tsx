@@ -143,7 +143,7 @@ export default function EditarCostoObjetivoModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
-          <DialogTitle>Costo compra objetivo</DialogTitle>
+          <DialogTitle>Costo Compra Objetivo</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground px-6">{labelCompleto}</p>
 

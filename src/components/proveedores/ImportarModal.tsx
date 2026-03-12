@@ -161,7 +161,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
 
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Importar productos</DialogTitle>
+          <DialogTitle>Importar Productos</DialogTitle>
         </DialogHeader>
 
         {/* ── PASO 1: Subir archivo ── */}

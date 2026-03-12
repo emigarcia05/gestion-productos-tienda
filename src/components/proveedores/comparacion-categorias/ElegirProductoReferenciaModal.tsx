@@ -101,7 +101,7 @@ export default function ElegirProductoReferenciaModal({
         )}
       >
         <DialogHeader className="modal-app__header shrink-0">
-          <DialogTitle className="modal-app__title">Elegir producto de referencia</DialogTitle>
+          <DialogTitle className="modal-app__title">Elegir Producto De Referencia</DialogTitle>
         </DialogHeader>
 
         <div className="modal-app__content flex-1 min-h-0 flex flex-col">

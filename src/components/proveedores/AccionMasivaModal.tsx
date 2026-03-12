@@ -102,7 +102,7 @@ export default function AccionMasivaModal({
       </Tooltip>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Acción masiva</DialogTitle>
+          <DialogTitle>Acción Masiva</DialogTitle>
         </DialogHeader>
 
         {afectados !== null ? (

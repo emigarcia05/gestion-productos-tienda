@@ -231,35 +231,42 @@ Unificar el diseño del modal de comparación de costos entre proveedores vincul
 | Clase | Uso |
 |-------|-----|
 | `.modal-vinculos-listado-contenedor` | Contenedor interno con padding y layout vertical para las filas del modal. |
-| `.modal-vinculos-fila` | Ambas filas: 3 columnas — Col1 20%, Col2 60%, Col3 20%. Alternativos: Convertir \| (Prefijo+Px y Variación juntos) \| eliminar. Principal: vacía \| Prefijo+Px \| eliminar. |
+| `.modal-vinculos-fila` | Ambas filas usan un grid de 3 columnas — Col1 20%, Col2 60%, Col3 20%. En **alternativos**: Convertir Principal \| contenido central \| eliminar. En **principal**: vacía \| contenido central \| eliminar. |
 | `.modal-vinculos-fila--principal` | Clase semántica para la fila del Proveedor Principal. |
-| `.modal-vinculos-celda--contenido-y-variacion` | Celda central en alternativos: flex row con Prefijo+Px y Variación uno al lado del otro (gap 0.75rem). |
-| `.modal-vinculos-celda` | Toda celda centra su contenido vertical y horizontalmente (flex center). |
+| `.modal-vinculos-celda` | Celda base: centra su contenido vertical y horizontalmente (flex center). |
 | `.modal-vinculos-celda--vacia` | Celda vacía (20% en principal) para alinear con las demás columnas. |
-| `.modal-vinculos-celda--centrado` | Refuerzo de centrado para celdas con un solo elemento (ej. botón Convertir, variación). |
-| `.modal-vinculos-celda--columna-izquierda` | Columna de contenido (Principal): Prefijo + Px centrados. |
-| `.modal-vinculos-fila-principal-contenido` | Bloque interno (columna, centrado) que agrupa Prefijo y Cx Final de Compra; se usa dentro de la columna de contenido en ambas secciones. |
+| `.modal-vinculos-celda--centrado` | Refuerzo de centrado para celdas con un solo elemento (ej. botón Convertir Principal). |
+| `.modal-vinculos-celda--columna-izquierda` | Columna de contenido del Proveedor Principal: bloque con Prefijo + Cx Final centrados. |
+| `.modal-vinculos-fila-principal-contenido` | Bloque interno (columna, centrado) que agrupa Prefijo y Cx Final de Compra en la fila de Principal. |
+| `.modal-vinculos-celda--contenido-y-variacion` | Celda central en alternativos: se divide en dos filas (`modal-vinculos-contenido-top` + `modal-vinculos-contenido-bottom`). |
+| `.modal-vinculos-contenido-top` | Fila superior de la celda central: muestra solo el **prefijo del proveedor** centrado. |
+| `.modal-vinculos-contenido-bottom` | Fila inferior de la celda central: layout 50/50 → precio final \| variación. |
+| `.modal-vinculos-contenido-bottom-precio` | Columna izquierda (50%) de la fila inferior: contiene el precio final de compra (`modal-vinculos-celda--principal-numero`). |
+| `.modal-vinculos-contenido-bottom-variacion` | Columna derecha (50%) de la fila inferior: envuelve el contenedor de variación (`modal-vinculos-celda--variacion`). |
 | `.modal-vinculos-fila--zebra-impar` / `--zebra-par` | Zebra para filas impares/pares, usando `bg-card` y mezcla suave con `primary`. |
-| `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, color muted, centrados. |
-| `.modal-vinculos-celda` | Celda base, texto centrado. |
-| `.modal-vinculos-celda--acciones` | Celda de acciones: flex, botones alineados a la derecha (`justify-content: flex-end`), con `padding-right` para que el tacho no quede pegado al borde. |
-| `.modal-vinculos-celda--principal` | Celda del proveedor principal (solo en filas alternativas si se usa): centrar prefijo/etiqueta. |
-| `.modal-vinculos-celda--principal-numero` | Precio del proveedor principal: número centrado, más grande y en negrita (usado dentro de `.modal-vinculos-fila-principal-contenido`). |
+| `.modal-vinculos-seccion-titulo` | Títulos de sección del modal ("Proveedor Principal", "Proveedores Alternativos"): mayúsculas, tamaño pequeño, centrados, con margen vertical compacto. |
+| `.modal-vinculos-celda--acciones` | Celda de acciones (3.ª columna): alinea el botón de borrar vínculo (`btn-desvincular-icono`). |
+| `.modal-vinculos-celda--principal-numero` | Precio principal / alternativo: número centrado, más grande y en negrita (tabular-nums). |
 | `.modal-vinculos-prefijo` | Estilo del prefijo del proveedor (fuente monoespaciada, tamaño reducido, bold). |
-| `.modal-vinculos-celda--numero` | Precio en filas de proveedores alternativos (tamaño pequeño, tabular-nums). |
-| `.modal-vinculos-celda--variacion` | Contenedor de la variación de costo (`≈0%`, `+X%`, `-X%`) usando las clases de variación de costo. |
-| `.btn-convertir-proveedor-principal` | Botón base "Proveedor Principal": outline compacto con padding vertical y tipografía pequeña. |
-| `.btn-convertir-proveedor-principal--destacado` | Variante destacada para el proveedor alternativo más económico: borde y texto en `foreground`, fondo gris muy suave y negrita. Se aplica solo al botón, no a toda la fila. |
-| `.btn-desvincular-icono` | Botón de borrar vínculo (icono de tacho): tamaño mínimo fijo, `padding` para área de clic, alineado al margen derecho del div (la celda de acciones tiene `padding-right`). |
+| `.modal-vinculos-celda--numero` | Precio en otros contextos del modal (tamaño pequeño, tabular-nums). |
+| `.modal-vinculos-celda--variacion` | Contenedor de la variación de costo (`≈0%`, `+X%`, `-X%`), con la misma altura y tipografía que el precio y una **línea divisoria suave** a la izquierda. |
+| `.btn-convertir-proveedor-principal` | Botón base "Convertir / Principal": outline compacto con dos líneas de texto, padding vertical y tipografía pequeña. |
+| `.btn-convertir-proveedor-principal--destacado` | Variante destacada para el proveedor alternativo más económico: refuerza el botón (fondo y borde) sin cambiar el layout de la fila. |
+| `.btn-desvincular-icono` | Botón de borrar vínculo (icono de tacho): tamaño mínimo fijo y padding suficiente para un área de clic cómoda. |
 
 ### Comportamiento de diseño
 
 - El modal se divide en dos secciones:
-  - **Proveedor Principal**: la fila usa `modal-vinculos-fila--solo-principal` y un único bloque `modal-vinculos-fila-principal-contenido` donde **Prefijo y Cx Final de Compra** van centrados (flex centrado) dentro del div; el botón del tacho va a la derecha con padding y margen derecho.
-  - **Proveedores Alternativos**: muestra prefijo, precio, variación de costo y botones de acción; el tacho tiene padding y queda alineado al margen derecho del div.
-- El proveedor alternativo con **menor costo** se resalta únicamente a través de la variante del botón `btn-convertir-proveedor-principal--destacado` (texto negro, negrita, fondo gris suave), evitando bordes gruesos en toda la fila para no romper la jerarquía visual del modal.
+  - **Proveedor Principal**: fila con tres columnas (vacía \| contenido principal \| eliminar). El contenido principal usa `modal-vinculos-fila-principal-contenido` para mostrar **Prefijo y Cx Final de Compra** centrados en columna.
+  - **Proveedores Alternativos**: cada fila muestra:
+    - Columna 1 (20%): botón **“Convertir / Principal”** (`btn-convertir-proveedor-principal`).
+    - Columna 2 (60%): contenido central dividido en:
+      - Fila superior: prefijo (Badge) centrado.
+      - Fila inferior: 2 columnas 50/50 — izquierda el **precio final de compra**, derecha la **variación de costo con flecha** y una línea divisoria suave.
+    - Columna 3 (20%): botón de borrar vínculo (`btn-desvincular-icono`).
+- El proveedor alternativo con **menor costo** se resalta únicamente a través de la variante del botón `btn-convertir-proveedor-principal--destacado`, manteniendo la fila visualmente consistente con el resto.
 
-**Regla:** cualquier ajuste futuro al layout o colores de este modal debe hacerse modificando estas clases globales, manteniendo la separación conceptual entre:
+**Regla:** cualquier ajuste futuro al layout o colores de este modal debe hacerse modificando estas clases globales y, si aplica, el componente `ProveedorAlternativoRow`, manteniendo la separación conceptual entre:
 - layout de filas/celdas (`modal-vinculos-*`),
 - semántica de variación de costos (`variacion-costo-*`),
 - y botones reutilizables (`btn-convertir-proveedor-principal*`, `btn-desvincular-icono`).

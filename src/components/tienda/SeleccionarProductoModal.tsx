@@ -138,7 +138,7 @@ export default function SeleccionarProductoModal({
         )}
       >
         <DialogHeader className="modal-app__header shrink-0">
-          <DialogTitle className="modal-app__title">Vincular nuevo producto</DialogTitle>
+          <DialogTitle className="modal-app__title">Vincular Nuevo Producto</DialogTitle>
         </DialogHeader>
 
         {/* Plantilla modal-app: content (cuerpo + footer) según globals.css */}
