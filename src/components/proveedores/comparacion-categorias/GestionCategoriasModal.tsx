@@ -258,6 +258,18 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
         </DialogHeader>
 
         <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Botón Crear Nueva Categoria */}
+          {!showCrearSection && (
+            <div className="shrink-0 mb-4">
+              <Button
+                type="button"
+                onClick={() => setShowCrearSection(true)}
+              >
+                Crear Nueva Categoria
+              </Button>
+            </div>
+          )}
+
           {/* Filtros */}
           <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="grid gap-1">
@@ -304,19 +316,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
           {/* Tabla de combinaciones */}
           <div className="shrink-0 mb-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h3 className="text-sm font-semibold text-foreground">Combinaciones creadas</h3>
-              {!showCrearSection && (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowCrearSection(true);
-                  }}
-                >
-                  Crear Nueva Categoria
-                </Button>
-              )}
-            </div>
+            <h3 className="text-sm font-semibold text-foreground mb-2">Combinaciones creadas</h3>
             {loadingTabla ? (
               <p className="text-sm text-muted-foreground py-4">Cargando…</p>
             ) : filas.length === 0 ? (

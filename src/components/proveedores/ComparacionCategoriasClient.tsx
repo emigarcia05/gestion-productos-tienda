@@ -12,9 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, UserPlus, Check } from "lucide-react";
+import { Plus, UserPlus, Check, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fmtPrecio } from "@/lib/format";
+import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosComparacionCategorias from "@/components/proveedores/comparacion-categorias/FiltrosComparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
@@ -70,6 +70,18 @@ export default function ComparacionCategoriasClient({
   const [selectedProductoId, setSelectedProductoId] = useState<string | null>(null);
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
+
+  const productoReferencia = useMemo(
+    () => (selectedProductoId ? productos.find((pr) => pr.id === selectedProductoId) : null),
+    [productos, selectedProductoId]
+  );
+  const pxReferencia = productoReferencia?.pxCompraFinal ?? null;
+
+  function variacionVsReferencia(pxRow: number | null): { pct: number } | null {
+    if (pxReferencia == null || pxReferencia <= 0 || pxRow == null) return null;
+    const pct = ((pxRow - pxReferencia) / pxReferencia) * 100;
+    return { pct };
+  }
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
@@ -187,10 +199,11 @@ export default function ComparacionCategoriasClient({
               <Table variant="compact" className="tabla-comparacion-cat tabla-gestion-compacta">
                 <colgroup>
                   <col style={{ width: "5%" }} />
-                  <col style={{ width: "11%" }} />
-                  <col style={{ width: "11%" }} />
-                  <col style={{ width: "53%" }} />
-                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "48%" }} />
+                  <col style={{ width: "17%" }} />
+                  <col style={{ width: "10%" }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -199,11 +212,13 @@ export default function ComparacionCategoriasClient({
                     <TableHead>MARCA</TableHead>
                     <TableHead>DESCRIPCION</TableHead>
                     <TableHead>PX FINAL COMPRA</TableHead>
+                    <TableHead className="text-center">VARIACIÓN</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {productos.map((p) => {
                     const selected = selectedProductoId === p.id;
+                    const varData = variacionVsReferencia(p.pxCompraFinal);
                     return (
                       <TableRow
                         key={p.id}
@@ -229,6 +244,21 @@ export default function ComparacionCategoriasClient({
                         <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
                         <TableCell className="celda-datos celda-numero">
                           {p.pxCompraFinal != null ? `$${fmtPrecio(p.pxCompraFinal)}` : "—"}
+                        </TableCell>
+                        <TableCell className="celda-datos text-center">
+                          {varData == null ? (
+                            "—"
+                          ) : (
+                            <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
+                              {varData.pct > 0 && (
+                                <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
+                              )}
+                              {varData.pct < 0 && (
+                                <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
+                              )}
+                              <span>{fmtPctEntero(varData.pct)}</span>
+                            </span>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
