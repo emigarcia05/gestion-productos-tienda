@@ -230,7 +230,7 @@ export default function ComparacionCategoriasClient({
                 No hay productos asignados a esta categoría. Usá «Asignar productos» para agregar.
               </p>
             ) : (
-              <Table variant="compact" className="tabla-comparacion-cat">
+              <Table variant="compact" className="tabla-comparacion-cat tabla-gestion-compacta">
                 <colgroup>
                   <col style={{ width: "5%" }} />
                   <col style={{ width: "10%" }} />
@@ -242,7 +242,7 @@ export default function ComparacionCategoriasClient({
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="text-center">
-                      <span className="inline-flex h-5 w-5 items-center justify-center text-primary" aria-hidden>
+                      <span className="selector-cuadro selector-cuadro--selected" aria-hidden>
                         <Check className="h-3.5 w-3.5" />
                       </span>
                     </TableHead>
@@ -275,8 +275,8 @@ export default function ComparacionCategoriasClient({
                             type="button"
                             onClick={() => setSelectedProductoId(selected ? null : p.id)}
                             className={cn(
-                              "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-primary bg-white hover:bg-primary/5",
-                              selected && "text-primary"
+                              "selector-cuadro",
+                              selected && "selector-cuadro--selected"
                             )}
                             aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
                           >
