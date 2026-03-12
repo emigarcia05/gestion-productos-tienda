@@ -20,16 +20,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2 } from "lucide-react";
 import {
   createCategoriaAction,
   createSubcategoriaAction,
   createPresentacionAction,
   updatePresentacionAction,
+  deletePresentacionAction,
   getPresentacionesParaGestionAction,
 } from "@/actions/comparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import type { PresentacionParaGestion } from "@/services/categoriasComparacion.service";
 import { cn } from "@/lib/utils";
+import ElegirProductoReferenciaModal from "./ElegirProductoReferenciaModal";
 
 interface Props {
   open: boolean;
@@ -48,6 +51,10 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
   const [loadingTabla, setLoadingTabla] = useState(false);
   const [costosLocales, setCostosLocales] = useState<Record<string, string>>({});
   const [pendingCostoId, setPendingCostoId] = useState<string | null>(null);
+  const [presentacionIdParaRef, setPresentacionIdParaRef] = useState<string | null>(null);
+  const [labelCompletoParaRef, setLabelCompletoParaRef] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [showCrearSection, setShowCrearSection] = useState(false);
 
   const cargarTabla = useCallback(async () => {
     const res = await getPresentacionesParaGestionAction();
@@ -66,6 +73,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
   useEffect(() => {
     if (!open) return;
+    setShowCrearSection(false);
     setLoadingTabla(true);
     cargarTabla().finally(() => setLoadingTabla(false));
   }, [open, cargarTabla]);
@@ -96,6 +104,37 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
   const setCostoLocal = (presentacionId: string, value: string) => {
     setCostosLocales((prev) => ({ ...prev, [presentacionId]: value }));
+  };
+
+  const handleElegirProductoReferencia = async (presentacionId: string, pxCompraFinal: number) => {
+    const res = await updatePresentacionAction(presentacionId, {
+      costoCompraObjetivo: pxCompraFinal,
+    });
+    if (!res.ok) {
+      toast.error(res.error ?? "Error al guardar.");
+      return;
+    }
+    toast.success("Producto de referencia asignado.");
+    setPresentacionIdParaRef(null);
+    await cargarTabla();
+    onSuccess();
+  };
+
+  const handleEliminar = async (presentacionId: string) => {
+    if (!confirm("¿Eliminar esta combinación (presentación)? Se quitará la asignación de productos a esta categoría.")) return;
+    setPendingDeleteId(presentacionId);
+    try {
+      const res = await deletePresentacionAction(presentacionId);
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al eliminar.");
+        return;
+      }
+      toast.success("Combinación eliminada.");
+      await cargarTabla();
+      onSuccess();
+    } finally {
+      setPendingDeleteId(null);
+    }
   };
 
   // Form categoria
@@ -238,6 +277,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       <TableHead className="bg-primary text-primary-foreground font-bold w-36">
                         Costo objetivo ($)
                       </TableHead>
+                      <TableHead className="bg-primary text-primary-foreground font-bold w-12" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -259,7 +299,19 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                               </span>
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={() => {
+                                setPresentacionIdParaRef(fila.id);
+                                setLabelCompletoParaRef(fila.labelCompleto);
+                              }}
+                              title="Elegir producto de referencia"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
                           )}
                         </TableCell>
                         <TableCell className="py-1 align-top">
@@ -274,6 +326,19 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                             className="h-8 text-sm w-full"
                           />
                         </TableCell>
+                        <TableCell className="py-1 align-top w-12">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleEliminar(fila.id)}
+                            disabled={pendingDeleteId === fila.id}
+                            title="Eliminar combinación"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -282,7 +347,21 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
             )}
           </div>
 
+          {/* Botón Crear nueva categoria → muestra opciones de creación */}
+          {!showCrearSection && (
+            <div className="shrink-0 border-t border-border pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCrearSection(true)}
+              >
+                Crear nueva categoria
+              </Button>
+            </div>
+          )}
+
           {/* Tabs crear Categoría / Subcategoría / Presentación */}
+          {showCrearSection && (
           <div className="shrink-0 border-t border-border pt-4">
             <div className="flex gap-2 border-b border-border pb-2 mb-4">
               <Button
@@ -439,7 +518,16 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               </div>
             )}
           </div>
+          )}
         </div>
+
+        <ElegirProductoReferenciaModal
+          open={presentacionIdParaRef != null}
+          onOpenChange={(open) => !open && setPresentacionIdParaRef(null)}
+          presentacionId={presentacionIdParaRef ?? ""}
+          labelCompleto={labelCompletoParaRef}
+          onElegido={(px) => presentacionIdParaRef && handleElegirProductoReferencia(presentacionIdParaRef, px)}
+        />
 
         <p className="px-6 pb-6 text-xs text-muted-foreground shrink-0">
           La tabla muestra cada combinación con su producto de referencia (si su precio coincide con el costo objetivo) y el costo objetivo editable. Podés crear categorías, subcategorías y presentaciones en las pestañas de abajo.
