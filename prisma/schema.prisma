@@ -58,34 +58,31 @@ model ListaPrecioProveedor {
 model CategoriaComparacion {
   id             String   @id @default(cuid())
   nombre         String
-  orden          Int      @default(0)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   subcategorias  SubcategoriaComparacion[]
 
-  @@map("categorias_comparacion")
+  @@map("comparacion_categorias")
 }
 
 model SubcategoriaComparacion {
   id             String   @id @default(cuid())
   categoriaId    String   @map("categoria_id")
   nombre         String
-  orden          Int      @default(0)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   categoria      CategoriaComparacion  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
   presentaciones PresentacionComparacion[]
 
-  @@map("subcategorias_comparacion")
+  @@map("comparacion_subcategorias")
 }
 
 model PresentacionComparacion {
   id                   String    @id @default(cuid())
   subcategoriaId        String    @map("subcategoria_id")
   nombre               String
-  orden                 Int       @default(0)
   costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
@@ -93,7 +90,7 @@ model PresentacionComparacion {
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
   listaPrecios  ListaPrecioProveedor[]
 
-  @@map("presentaciones_comparacion")
+  @@map("comparacion_presentaciones")
 }
 
 // Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en precios_tienda.

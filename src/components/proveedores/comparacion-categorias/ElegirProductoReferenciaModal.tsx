@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { LimpiarFiltrosButton } from "@/components/FilterBar";
 import { buscarProductosParaAsignarAction } from "@/actions/comparacionCategorias";
 import { getProveedores } from "@/actions/vinculos";
 import { fmtPrecio } from "@/lib/format";
@@ -56,6 +52,13 @@ export default function ElegirProductoReferenciaModal({
   const [selectedRow, setSelectedRow] = useState<ProductoProveedorParaVincular | null>(null);
   const [pending, setPending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const hayFiltros = (proveedorId && proveedorId !== "none") || q.trim() !== "";
+
+  const limpiarFiltros = () => {
+    setProveedorId("");
+    setQ("");
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -121,12 +124,15 @@ export default function ElegirProductoReferenciaModal({
                   ))}
                 </SelectContent>
               </Select>
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por descripción o código..."
-                className="input-filtro-unificado w-full"
-              />
+              <div className="w-full flex items-center gap-2">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por descripción o código..."
+                  className="input-filtro-unificado flex-1 min-w-0"
+                />
+                <LimpiarFiltrosButton visible={!!hayFiltros} onClick={limpiarFiltros} />
+              </div>
             </div>
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
               {loading ? (

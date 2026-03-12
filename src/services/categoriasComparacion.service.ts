@@ -9,15 +9,12 @@ import { prisma } from "@/lib/prisma";
 export interface CategoriaComparacionTree {
   id: string;
   nombre: string;
-  orden: number;
   subcategorias: {
     id: string;
     nombre: string;
-    orden: number;
     presentaciones: {
       id: string;
       nombre: string;
-      orden: number;
       costoCompraObjetivo: number | null;
       labelCompleto: string;
     }[];
@@ -38,13 +35,13 @@ export interface ProductoEnCategoria {
 /** Árbol completo Categoria → Subcategoria → Presentacion para la UI. */
 export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> {
   const categorias = await prisma.categoriaComparacion.findMany({
-    orderBy: { orden: "asc" },
+    orderBy: { nombre: "asc" },
     include: {
       subcategorias: {
-        orderBy: { orden: "asc" },
+        orderBy: { nombre: "asc" },
         include: {
           presentaciones: {
-            orderBy: { orden: "asc" },
+            orderBy: { nombre: "asc" },
           },
         },
       },
@@ -54,15 +51,12 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
   return categorias.map((c) => ({
     id: c.id,
     nombre: c.nombre,
-    orden: c.orden,
     subcategorias: c.subcategorias.map((s) => ({
       id: s.id,
       nombre: s.nombre,
-      orden: s.orden,
       presentaciones: s.presentaciones.map((p) => ({
         id: p.id,
         nombre: p.nombre,
-        orden: p.orden,
         costoCompraObjetivo: p.costoCompraObjetivo != null ? Number(p.costoCompraObjetivo) : null,
         labelCompleto: `${c.nombre} - ${s.nombre} - ${p.nombre}`,
       })),
@@ -125,7 +119,7 @@ export async function getMarcasFromListaTienda(): Promise<string[]> {
 /** Lista plana de presentaciones con label completo (para selects). */
 export async function getPresentacionesConLabel(): Promise<{ id: string; labelCompleto: string }[]> {
   const presentaciones = await prisma.presentacionComparacion.findMany({
-    orderBy: { orden: "asc" },
+    orderBy: { nombre: "asc" },
     include: {
       subcategoria: { include: { categoria: true } },
     },
@@ -150,7 +144,7 @@ const TOLERANCIA_OBJETIVO = 0.01;
 /** Lista plana de presentaciones con costo objetivo y producto de referencia (primero que coincida con el objetivo). */
 export async function getPresentacionesParaGestion(): Promise<PresentacionParaGestion[]> {
   const presentaciones = await prisma.presentacionComparacion.findMany({
-    orderBy: { orden: "asc" },
+    orderBy: { nombre: "asc" },
     include: {
       subcategoria: { include: { categoria: true } },
       listaPrecios: {
@@ -181,13 +175,13 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
 }
 
 // ─── CRUD Categorias ────────────────────────────────────────────────────────
-export async function createCategoria(nombre: string, orden?: number) {
+export async function createCategoria(nombre: string) {
   return prisma.categoriaComparacion.create({
-    data: { nombre, orden: orden ?? 0 },
+    data: { nombre },
   });
 }
 
-export async function updateCategoria(id: string, data: { nombre?: string; orden?: number }) {
+export async function updateCategoria(id: string, data: { nombre?: string }) {
   return prisma.categoriaComparacion.update({ where: { id }, data });
 }
 
@@ -196,15 +190,15 @@ export async function deleteCategoria(id: string) {
 }
 
 // ─── CRUD Subcategorias ─────────────────────────────────────────────────────
-export async function createSubcategoria(categoriaId: string, nombre: string, orden?: number) {
+export async function createSubcategoria(categoriaId: string, nombre: string) {
   return prisma.subcategoriaComparacion.create({
-    data: { categoriaId, nombre, orden: orden ?? 0 },
+    data: { categoriaId, nombre },
   });
 }
 
 export async function updateSubcategoria(
   id: string,
-  data: { nombre?: string; orden?: number; categoriaId?: string }
+  data: { nombre?: string; categoriaId?: string }
 ) {
   return prisma.subcategoriaComparacion.update({ where: { id }, data });
 }
@@ -217,14 +211,12 @@ export async function deleteSubcategoria(id: string) {
 export async function createPresentacion(
   subcategoriaId: string,
   nombre: string,
-  orden?: number,
   costoCompraObjetivo?: number | null
 ) {
   return prisma.presentacionComparacion.create({
     data: {
       subcategoriaId,
       nombre,
-      orden: orden ?? 0,
       costoCompraObjetivo: costoCompraObjetivo ?? null,
     },
   });
@@ -232,7 +224,6 @@ export async function createPresentacion(
 
 export type UpdatePresentacionData = {
   nombre?: string;
-  orden?: number;
   subcategoriaId?: string;
   costoCompraObjetivo?: number | null;
 };
@@ -240,7 +231,6 @@ export type UpdatePresentacionData = {
 export async function updatePresentacion(id: string, data: UpdatePresentacionData) {
   const payload: UpdatePresentacionData = {};
   if (data.nombre !== undefined) payload.nombre = data.nombre;
-  if (data.orden !== undefined) payload.orden = data.orden;
   if (data.subcategoriaId !== undefined) payload.subcategoriaId = data.subcategoriaId;
   if (data.costoCompraObjetivo !== undefined) payload.costoCompraObjetivo = data.costoCompraObjetivo;
   return prisma.presentacionComparacion.update({ where: { id }, data: payload });

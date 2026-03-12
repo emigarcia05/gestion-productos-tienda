@@ -87,10 +87,10 @@ export async function buscarProductosParaAsignarAction(proveedorId?: string, q?:
 }
 
 // ─── CRUD Categorias ────────────────────────────────────────────────────────
-export async function createCategoriaAction(nombre: string, orden?: number) {
+export async function createCategoriaAction(nombre: string) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {
-    await createCategoria(nombre, orden);
+    await createCategoria(nombre);
     revalidatePath(PATH);
     return { ok: true };
   } catch (e) {
@@ -98,7 +98,7 @@ export async function createCategoriaAction(nombre: string, orden?: number) {
   }
 }
 
-export async function updateCategoriaAction(id: string, data: { nombre?: string; orden?: number }) {
+export async function updateCategoriaAction(id: string, data: { nombre?: string }) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {
     await updateCategoria(id, data);
@@ -121,10 +121,10 @@ export async function deleteCategoriaAction(id: string) {
 }
 
 // ─── CRUD Subcategorias ─────────────────────────────────────────────────────
-export async function createSubcategoriaAction(categoriaId: string, nombre: string, orden?: number) {
+export async function createSubcategoriaAction(categoriaId: string, nombre: string) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {
-    await createSubcategoria(categoriaId, nombre, orden);
+    await createSubcategoria(categoriaId, nombre);
     revalidatePath(PATH);
     return { ok: true };
   } catch (e) {
@@ -134,7 +134,7 @@ export async function createSubcategoriaAction(categoriaId: string, nombre: stri
 
 export async function updateSubcategoriaAction(
   id: string,
-  data: { nombre?: string; orden?: number; categoriaId?: string }
+  data: { nombre?: string; categoriaId?: string }
 ) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {
@@ -161,12 +161,11 @@ export async function deleteSubcategoriaAction(id: string) {
 export async function createPresentacionAction(
   subcategoriaId: string,
   nombre: string,
-  orden?: number,
   costoCompraObjetivo?: number | null
 ) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {
-    await createPresentacion(subcategoriaId, nombre, orden, costoCompraObjetivo);
+    await createPresentacion(subcategoriaId, nombre, costoCompraObjetivo);
     revalidatePath(PATH);
     return { ok: true };
   } catch (e) {
@@ -176,7 +175,7 @@ export async function createPresentacionAction(
 
 export async function updatePresentacionAction(
   id: string,
-  data: { nombre?: string; orden?: number; subcategoriaId?: string; costoCompraObjetivo?: number | null }
+  data: { nombre?: string; subcategoriaId?: string; costoCompraObjetivo?: number | null }
 ) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {

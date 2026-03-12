@@ -28,6 +28,7 @@ import {
   updatePresentacionAction,
   deletePresentacionAction,
   getPresentacionesParaGestionAction,
+  getArbolCategoriasAction,
 } from "@/actions/comparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import type { PresentacionParaGestion } from "@/services/categoriasComparacion.service";
@@ -70,6 +71,7 @@ interface Props {
 type Tab = "categoria" | "subcategoria" | "presentacion";
 
 export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSuccess }: Props) {
+  const [arbolLocal, setArbolLocal] = useState<CategoriaComparacionTree[]>(arbol);
   const [tab, setTab] = useState<Tab>("categoria");
   const [pending, setPending] = useState(false);
 
@@ -81,6 +83,8 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
   const [labelCompletoParaRef, setLabelCompletoParaRef] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showCrearSection, setShowCrearSection] = useState(false);
+  const [presentacionId, setPresentacionId] = useState("");
+  const [showCrearForm, setShowCrearForm] = useState(false);
 
   const cargarTabla = useCallback(async () => {
     const res = await getPresentacionesParaGestionAction();
@@ -96,6 +100,19 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       setFilas([]);
     }
   }, []);
+
+  const recargarArbol = useCallback(async (): Promise<CategoriaComparacionTree[] | null> => {
+    const res = await getArbolCategoriasAction();
+    if (res.ok && res.data) {
+      setArbolLocal(res.data);
+      return res.data;
+    }
+    return null;
+  }, []);
+
+  useEffect(() => {
+    setArbolLocal(arbol);
+  }, [arbol]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,17 +183,14 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
   // Form categoria
   const [nombreCategoria, setNombreCategoria] = useState("");
-  const [ordenCategoria, setOrdenCategoria] = useState("0");
 
   // Form subcategoria
   const [categoriaId, setCategoriaId] = useState("");
   const [nombreSubcategoria, setNombreSubcategoria] = useState("");
-  const [ordenSubcategoria, setOrdenSubcategoria] = useState("0");
 
   // Form presentacion
   const [subcategoriaId, setSubcategoriaId] = useState("");
   const [nombrePresentacion, setNombrePresentacion] = useState("");
-  const [ordenPresentacion, setOrdenPresentacion] = useState("0");
   const [costoObjetivo, setCostoObjetivo] = useState("");
 
   const handleCreateCategoria = async () => {
@@ -187,14 +201,20 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     }
     setPending(true);
     try {
-      const res = await createCategoriaAction(nombre, parseInt(ordenCategoria, 10) || 0);
+      const res = await createCategoriaAction(nombre);
       if (!res.ok) {
         toast.error(res.error ?? "Error al crear.");
         return;
       }
       toast.success("Categoría creada.");
       setNombreCategoria("");
-      setOrdenCategoria("0");
+      const actualizado = await recargarArbol();
+      if (actualizado) {
+        const encontrada = actualizado.find((c) => c.nombre === nombre);
+        if (encontrada) {
+          setCategoriaId(encontrada.id);
+        }
+      }
       onSuccess();
       await cargarTabla();
     } finally {
@@ -214,19 +234,23 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     }
     setPending(true);
     try {
-      const res = await createSubcategoriaAction(
-        categoriaId,
-        nombre,
-        parseInt(ordenSubcategoria, 10) || 0
-      );
+      const res = await createSubcategoriaAction(categoriaId, nombre);
       if (!res.ok) {
         toast.error(res.error ?? "Error al crear.");
         return;
       }
       toast.success("Subcategoría creada.");
       setNombreSubcategoria("");
-      setOrdenSubcategoria("0");
-      setCategoriaId("");
+      const actualizado = await recargarArbol();
+      if (actualizado) {
+        const cat = actualizado.find((c) => c.id === categoriaId);
+        if (cat) {
+          const sub = cat.subcategorias.find((s) => s.nombre === nombre);
+          if (sub) {
+            setSubcategoriaId(sub.id);
+          }
+        }
+      }
       onSuccess();
       await cargarTabla();
     } finally {
@@ -250,7 +274,6 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       const res = await createPresentacionAction(
         subcategoriaId,
         nombre,
-        parseInt(ordenPresentacion, 10) || 0,
         costo ?? null
       );
       if (!res.ok) {
@@ -259,9 +282,17 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       }
       toast.success("Presentación creada.");
       setNombrePresentacion("");
-      setOrdenPresentacion("0");
       setCostoObjetivo("");
-      setSubcategoriaId("");
+      const actualizado = await recargarArbol();
+      if (actualizado) {
+        const sub = actualizado
+          .flatMap((c) => c.subcategorias)
+          .find((s) => s.id === subcategoriaId);
+        const pres = sub?.presentaciones.find((p) => p.nombre === nombre);
+        if (pres) {
+          setPresentacionId(pres.id);
+        }
+      }
       onSuccess();
       await cargarTabla();
     } finally {
@@ -269,14 +300,27 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     }
   };
 
-  const subcategoriasFlat = arbol.flatMap((c) =>
+  const subcategoriasFlat = arbolLocal.flatMap((c) =>
     c.subcategorias.map((s) => ({ ...s, categoriaNombre: c.nombre }))
   );
+
+  const categoriaSeleccionada = arbolLocal.find((c) => c.id === categoriaId) ?? null;
+  const subcategoriasDeCategoria = categoriaSeleccionada?.subcategorias ?? [];
+  const subcategoriaSeleccionada =
+    subcategoriasDeCategoria.find((s) => s.id === subcategoriaId) ?? null;
+  const presentacionesDeSubcategoria = subcategoriaSeleccionada?.presentaciones ?? [];
+
+  const handleConfirmCombinacion = async () => {
+    if (!categoriaId || !subcategoriaId || !presentacionId) return;
+    setShowCrearSection(false);
+    await cargarTabla();
+    onSuccess();
+  };
 
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="modal-app max-w-[84rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+      <DialogContent className="modal-app max-w-[108rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="modal-app__header shrink-0">
           <DialogTitle className="modal-app__title">Gestionar categorías</DialogTitle>
         </DialogHeader>
@@ -289,7 +333,9 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               {!showCrearSection && (
                 <Button
                   type="button"
-                  onClick={() => setShowCrearSection(true)}
+                  onClick={() => {
+                    setShowCrearSection(true);
+                  }}
                 >
                   Crear nueva categoria
                 </Button>
@@ -400,177 +446,292 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       </DialogContent>
     </Dialog>
 
-    {/* Segundo modal: Crear categoría / subcategoría / presentación */}
-    <Dialog open={showCrearSection} onOpenChange={(v) => !v && setShowCrearSection(false)}>
-      <DialogContent className="modal-app max-w-lg w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
-        <DialogHeader className="modal-app__header shrink-0">
-          <DialogTitle className="modal-app__title">Crear nueva categoria</DialogTitle>
-        </DialogHeader>
-        <div className="modal-app__content flex-1 min-h-0 flex flex-col">
-          <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
-            <div className="flex gap-2 border-b border-border pb-2 mb-4">
-              <Button
-                type="button"
-                variant={tab === "categoria" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTab("categoria")}
-              >
-                Crear categoría
-              </Button>
-              <Button
-                type="button"
-                variant={tab === "subcategoria" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTab("subcategoria")}
-              >
-                Crear subcategoría
-              </Button>
-              <Button
-                type="button"
-                variant={tab === "presentacion" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTab("presentacion")}
-              >
-                Crear presentación
-              </Button>
+        {/* Segundo modal: Crear combinación con selects + botones (+) */}
+        <Dialog open={showCrearSection} onOpenChange={(v) => !v && setShowCrearSection(false)}>
+          <DialogContent className="modal-app max-w-lg w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+            <DialogHeader className="modal-app__header shrink-0">
+              <DialogTitle className="modal-app__title">Crear nueva categoria</DialogTitle>
+            </DialogHeader>
+            <div className="modal-app__content flex-1 min-h-0 flex flex-col">
+              <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
+                {/* Fila de selects: Categoría, Subcategoría, Presentación */}
+                <div className="grid gap-4 pb-4 border-b border-border">
+                  <div className="grid gap-1">
+                    <Label>Categoría</Label>
+                    <div className="flex gap-2">
+                      <select
+                        className={cn(
+                          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        )}
+                        value={categoriaId}
+                        onChange={(e) => {
+                          setCategoriaId(e.target.value);
+                          setSubcategoriaId("");
+                          setPresentacionId("");
+                        }}
+                      >
+                        <option value="">Seleccionar</option>
+                        {arbolLocal.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setTab("categoria");
+                          setShowCrearForm(true);
+                        }}
+                        title="Crear nueva categoría"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label>Subcategoría</Label>
+                    <div className="flex gap-2">
+                      <select
+                        className={cn(
+                          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        )}
+                        value={subcategoriaId}
+                        onChange={(e) => {
+                          setSubcategoriaId(e.target.value);
+                          setPresentacionId("");
+                        }}
+                        disabled={!categoriaId}
+                      >
+                        <option value="">Seleccionar</option>
+                        {subcategoriasDeCategoria.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (!categoriaId) {
+                            toast.error("Elegí una categoría primero.");
+                            return;
+                          }
+                          setTab("subcategoria");
+                          setShowCrearForm(true);
+                        }}
+                        title="Crear nueva subcategoría"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-1">
+                    <Label>Presentación</Label>
+                    <div className="flex gap-2">
+                      <select
+                        className={cn(
+                          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        )}
+                        value={presentacionId}
+                        onChange={(e) => setPresentacionId(e.target.value)}
+                        disabled={!subcategoriaId}
+                      >
+                        <option value="">Seleccionar</option>
+                        {presentacionesDeSubcategoria.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (!subcategoriaId) {
+                            toast.error("Elegí una subcategoría primero.");
+                            return;
+                          }
+                          setTab("presentacion");
+                          setShowCrearForm(true);
+                        }}
+                        title="Crear nueva presentación"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Panel de creación según tipo */}
+                {showCrearForm && (
+                  <div className="pt-4">
+                    <div className="flex gap-2 border-b border-border pb-2 mb-4">
+                      <Button
+                        type="button"
+                        variant={tab === "categoria" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setTab("categoria")}
+                      >
+                        Crear categoría
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={tab === "subcategoria" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setTab("subcategoria")}
+                      >
+                        Crear subcategoría
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={tab === "presentacion" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setTab("presentacion")}
+                      >
+                        Crear presentación
+                      </Button>
+                    </div>
+
+                    {tab === "categoria" && (
+                      <div className="grid gap-4 py-2">
+                        <div className="grid gap-2">
+                          <Label htmlFor="nombre-cat">Nombre</Label>
+                          <Input
+                            id="nombre-cat"
+                            value={nombreCategoria}
+                            onChange={(e) => setNombreCategoria(e.target.value)}
+                            placeholder="Ej. Látex"
+                          />
+                        </div>
+                        <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
+                          Crear categoría
+                        </Button>
+                      </div>
+                    )}
+
+                    {tab === "subcategoria" && (
+                      <div className="grid gap-4 py-2">
+                        <div className="grid gap-2">
+                          <Label>Categoría</Label>
+                          <select
+                            className={cn(
+                              "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            )}
+                            value={categoriaId}
+                            onChange={(e) => setCategoriaId(e.target.value)}
+                          >
+                            <option value="">Seleccionar</option>
+                            {arbolLocal.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="nombre-sub">Nombre</Label>
+                          <Input
+                            id="nombre-sub"
+                            value={nombreSubcategoria}
+                            onChange={(e) => setNombreSubcategoria(e.target.value)}
+                            placeholder="Ej. Calidad Intermedia"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleCreateSubcategoria}
+                          disabled={pending}
+                        >
+                          Crear subcategoría
+                        </Button>
+                      </div>
+                    )}
+
+                    {tab === "presentacion" && (
+                      <div className="grid gap-4 py-2">
+                        <div className="grid gap-2">
+                          <Label>Subcategoría</Label>
+                          <select
+                            className={cn(
+                              "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            )}
+                            value={subcategoriaId}
+                            onChange={(e) => setSubcategoriaId(e.target.value)}
+                          >
+                            <option value="">Seleccionar</option>
+                            {subcategoriasFlat.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.categoriaNombre} → {s.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="nombre-pre">Nombre</Label>
+                          <Input
+                            id="nombre-pre"
+                            value={nombrePresentacion}
+                            onChange={(e) => setNombrePresentacion(e.target.value)}
+                            placeholder="Ej. 20 Lts"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="costo-pre">Costo compra objetivo (opcional)</Label>
+                          <Input
+                            id="costo-pre"
+                            type="text"
+                            inputMode="decimal"
+                            value={costoObjetivo}
+                            onChange={(e) => setCostoObjetivo(e.target.value)}
+                            placeholder="Ej. 15000"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleCreatePresentacion}
+                          disabled={pending}
+                        >
+                          Crear presentación
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="modal-app__footer shrink-0 justify-between">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleConfirmCombinacion}
+                  disabled={!categoriaId || !subcategoriaId || !presentacionId}
+                >
+                  Crear combinación
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCrearSection(false)}
+                >
+                  Cerrar
+                </Button>
+              </div>
             </div>
-
-            {tab === "categoria" && (
-              <div className="grid gap-4 py-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="nombre-cat">Nombre</Label>
-                  <Input
-                    id="nombre-cat"
-                    value={nombreCategoria}
-                    onChange={(e) => setNombreCategoria(e.target.value)}
-                    placeholder="Ej. Látex"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="orden-cat">Orden</Label>
-                  <Input
-                    id="orden-cat"
-                    type="number"
-                    min={0}
-                    value={ordenCategoria}
-                    onChange={(e) => setOrdenCategoria(e.target.value)}
-                  />
-                </div>
-                <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
-                  Crear categoría
-                </Button>
-              </div>
-            )}
-
-            {tab === "subcategoria" && (
-              <div className="grid gap-4 py-2">
-                <div className="grid gap-2">
-                  <Label>Categoría</Label>
-                  <select
-                    className={cn(
-                      "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    )}
-                    value={categoriaId}
-                    onChange={(e) => setCategoriaId(e.target.value)}
-                  >
-                    <option value="">Seleccionar</option>
-                    {arbol.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="nombre-sub">Nombre</Label>
-                  <Input
-                    id="nombre-sub"
-                    value={nombreSubcategoria}
-                    onChange={(e) => setNombreSubcategoria(e.target.value)}
-                    placeholder="Ej. Calidad Intermedia"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="orden-sub">Orden</Label>
-                  <Input
-                    id="orden-sub"
-                    type="number"
-                    min={0}
-                    value={ordenSubcategoria}
-                    onChange={(e) => setOrdenSubcategoria(e.target.value)}
-                  />
-                </div>
-                <Button type="button" onClick={handleCreateSubcategoria} disabled={pending}>
-                  Crear subcategoría
-                </Button>
-              </div>
-            )}
-
-            {tab === "presentacion" && (
-              <div className="grid gap-4 py-2">
-                <div className="grid gap-2">
-                  <Label>Subcategoría</Label>
-                  <select
-                    className={cn(
-                      "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    )}
-                    value={subcategoriaId}
-                    onChange={(e) => setSubcategoriaId(e.target.value)}
-                  >
-                    <option value="">Seleccionar</option>
-                    {subcategoriasFlat.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.categoriaNombre} → {s.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="nombre-pre">Nombre</Label>
-                  <Input
-                    id="nombre-pre"
-                    value={nombrePresentacion}
-                    onChange={(e) => setNombrePresentacion(e.target.value)}
-                    placeholder="Ej. 20 Lts"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="orden-pre">Orden</Label>
-                  <Input
-                    id="orden-pre"
-                    type="number"
-                    min={0}
-                    value={ordenPresentacion}
-                    onChange={(e) => setOrdenPresentacion(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="costo-pre">Costo compra objetivo (opcional)</Label>
-                  <Input
-                    id="costo-pre"
-                    type="text"
-                    inputMode="decimal"
-                    value={costoObjetivo}
-                    onChange={(e) => setCostoObjetivo(e.target.value)}
-                    placeholder="Ej. 15000"
-                  />
-                </div>
-                <Button type="button" onClick={handleCreatePresentacion} disabled={pending}>
-                  Crear presentación
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="modal-app__footer shrink-0 justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={() => setShowCrearSection(false)}>
-              Cerrar
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </DialogContent>
+        </Dialog>
     </>
   );
 }
