@@ -159,7 +159,7 @@ export default function ComparacionCategoriasClient({
     <>
       <ClassicFilteredTableLayout
         title="Lista Proveedores"
-        subtitle="Comp. por Categorías"
+        subtitle="Comp. Por Cat."
         actions={acciones}
         filters={filters}
       >
@@ -241,10 +241,8 @@ export default function ComparacionCategoriasClient({
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-center">
-                      <span className="selector-cuadro selector-cuadro--selected" aria-hidden>
-                        <Check className="h-3.5 w-3.5" />
-                      </span>
+                    <TableHead className="text-center w-[5%] p-1 align-middle">
+                      <Check className="h-4 w-4 text-primary-foreground inline-block" aria-hidden />
                     </TableHead>
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>

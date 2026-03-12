@@ -318,19 +318,20 @@
     white-space: nowrap;
   }
 
-  /* Cuadros de selección (Comp. por Categorías): fondo blanco, borde azul, tilde azul al seleccionar */
+  /* Cuadros de selección (Comp. Por Cat.): cuadrado más chico que la fila, fondo blanco, contorno #0072BB, tilde azul al hacer click */
   .selector-cuadro {
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 0.375rem;
-    border: 2px solid var(--primary);
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 0.25rem;
+    border: 2px solid #0072BB;
     background-color: #ffffff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
   .selector-cuadro--selected {
-    color: var(--primary);
+    color: #0072BB;
   }
 
   /* Botón primario gestión (azul #0072bb) */
