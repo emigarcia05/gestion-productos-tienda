@@ -175,7 +175,7 @@ export async function createPresentacionAction(
 
 export async function updatePresentacionAction(
   id: string,
-  data: { nombre?: string; subcategoriaId?: string; costoCompraObjetivo?: number | null }
+  data: { nombre?: string; subcategoriaId?: string; costoCompraObjetivo?: number | null; idProductoReferencia?: string | null }
 ) {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
   try {

@@ -48,7 +48,8 @@ model ListaPrecioProveedor {
 
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   listaPrecioTienda ListaPrecioTienda? @relation(fields: [idListaPrecioTienda], references: [id], onDelete: SetNull)
-  presentacion      PresentacionComparacion? @relation(fields: [idPresentacion], references: [id], onDelete: SetNull)
+  presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
+  presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
 
   @@unique([idProveedor, codProdProveedor])
   @@map("precios_proveedores")
@@ -84,11 +85,13 @@ model PresentacionComparacion {
   subcategoriaId        String    @map("subcategoria_id")
   nombre               String
   costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
+  idProductoReferencia  String?   @map("id_producto_referencia")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
-  listaPrecios  ListaPrecioProveedor[]
+  listaPrecios  ListaPrecioProveedor[] @relation("PresentacionItems")
+  productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [idProductoReferencia], references: [id], onDelete: SetNull)
 
   @@map("comparacion_presentaciones")
 }

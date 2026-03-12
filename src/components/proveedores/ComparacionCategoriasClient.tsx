@@ -130,7 +130,7 @@ export default function ComparacionCategoriasClient({
         onClick={() => setModalGestion(true)}
       >
         <Plus className="h-4 w-4" />
-        Gestionar categorías
+        Gestionar Categorías
       </Button>
     </div>
   ) : undefined;

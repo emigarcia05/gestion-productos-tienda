@@ -183,11 +183,44 @@ export async function updatePresentacion(id: string, data: UpdatePresentacionDat
 
 ---
 
+## 9. Nombres de categorías en mayúsculas
+
+**Problema:** Categorías, subcategorías y presentaciones con mayúsculas/minúsculas mezcladas, lo que complica el filtrado visual y la consistencia.
+
+**Solución:** Normalizar siempre el nombre a mayúsculas al crear o actualizar registros de comparación de categorías.
+
+**Snippet de referencia:**
+
+```ts
+const normalizeNombreCategoria = (nombre: string): string =>
+  nombre.trim().toUpperCase();
+
+export async function createCategoria(nombre: string) {
+  return prisma.categoriaComparacion.create({
+    data: { nombre: normalizeNombreCategoria(nombre) },
+  });
+}
+
+export async function updateSubcategoria(
+  id: string,
+  data: { nombre?: string; categoriaId?: string }
+) {
+  const payload: { nombre?: string; categoriaId?: string } = {};
+  if (data.nombre !== undefined) {
+    payload.nombre = normalizeNombreCategoria(data.nombre);
+  }
+  // ...
+  return prisma.subcategoriaComparacion.update({ where: { id }, data: payload });
+}
+```
+
+---
+
 ## Resumen de archivos tocados en la auditoría
 
 | Área        | Cambio principal                                                                 |
 |------------|------------------------------------------------------------------------------------|
 | actions    | `ActionResult` en listaPrecios; Zod en editarProveedor; getTiendaEmptyWithOpciones |
-| services   | getProveedorById; clampPercent en listaPrecios; UpdatePresentacionData; sin agent log |
+| services   | getProveedorById; clampPercent en listaPrecios; UpdatePresentacionData; sin agent log; nombres de categorías en mayúsculas |
 | lib        | updateProveedorSchema; clampPercent en calculos                                    |
 | stock/tienda | toWhereWithNotNull; getTiendaEmptyWithOpciones                                   |

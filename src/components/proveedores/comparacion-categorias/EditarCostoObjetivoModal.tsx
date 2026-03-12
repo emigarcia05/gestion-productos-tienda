@@ -107,6 +107,7 @@ export default function EditarCostoObjetivoModal({
       }
       const res = await updatePresentacionAction(presentacionId, {
         costoCompraObjetivo: num,
+        idProductoReferencia: null,
       });
       if (!res.ok) {
         toast.error(res.error ?? "Error al guardar.");
@@ -125,7 +126,8 @@ export default function EditarCostoObjetivoModal({
     setPendingDesdeLista(true);
     try {
       const res = await updatePresentacionAction(presentacionId, {
-        costoCompraObjetivo: selectedRow.pxCompraFinal,
+        costoCompraObjetivo: null,
+        idProductoReferencia: selectedRow.id,
       });
       if (!res.ok) {
         toast.error(res.error ?? "Error al guardar.");

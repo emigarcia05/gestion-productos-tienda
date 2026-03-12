@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check } from "lucide-react";
 import {
   createCategoriaAction,
   createSubcategoriaAction,
@@ -358,8 +358,11 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       <TableHead className="bg-primary text-primary-foreground font-bold min-w-[180px]">
                         Producto cx de referencia
                       </TableHead>
-                      <TableHead className="bg-primary text-primary-foreground font-bold w-36">
-                        Costo objetivo ($)
+                      <TableHead className="bg-primary text-primary-foreground font-bold w-40">
+                        <div className="flex items-center justify-center gap-1">
+                          <span>Costo objetivo ($)</span>
+                          <Check className="h-4 w-4 text-primary-foreground" />
+                        </div>
                       </TableHead>
                       <TableHead className="bg-primary text-primary-foreground font-bold w-12" />
                     </TableRow>
@@ -399,16 +402,21 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                           )}
                         </TableCell>
                         <TableCell className="py-1 align-top">
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            value={formatCostoDisplay(costosLocales[fila.id] ?? "")}
-                            onChange={(e) => setCostoLocal(fila.id, e.target.value)}
-                            onBlur={() => handleCostoBlur(fila.id)}
-                            disabled={pendingCostoId === fila.id}
-                            placeholder="$0"
-                            className="h-8 text-sm w-full text-center tabular-nums"
-                          />
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              value={formatCostoDisplay(costosLocales[fila.id] ?? "")}
+                              onChange={(e) => setCostoLocal(fila.id, e.target.value)}
+                              onBlur={() => handleCostoBlur(fila.id)}
+                              disabled={pendingCostoId === fila.id}
+                              placeholder="$0"
+                              className="h-8 text-sm w-full text-center tabular-nums bg-white border-primary focus-visible:ring-2 focus-visible:ring-primary"
+                            />
+                            {(costosLocales[fila.id] ?? "").trim() !== "" && (
+                              <Check className="h-4 w-4 text-primary shrink-0" />
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="py-1 align-top w-12">
                           <Button

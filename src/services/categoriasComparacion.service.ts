@@ -6,6 +6,22 @@
 
 import { prisma } from "@/lib/prisma";
 
+const normalizeNombreCategoria = (nombre: string): string =>
+  nombre.trim().toUpperCase();
+
+const getObjetivoFromPresentacion = (p: {
+  costoCompraObjetivo: unknown;
+  productoReferencia?: { pxCompraFinal: unknown } | null;
+}): number | null => {
+  if (p.productoReferencia?.pxCompraFinal != null) {
+    return Number(p.productoReferencia.pxCompraFinal);
+  }
+  if (p.costoCompraObjetivo != null) {
+    return Number(p.costoCompraObjetivo);
+  }
+  return null;
+};
+
 export interface CategoriaComparacionTree {
   id: string;
   nombre: string;
@@ -42,6 +58,9 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
         include: {
           presentaciones: {
             orderBy: { nombre: "asc" },
+            include: {
+              productoReferencia: { select: { pxCompraFinal: true } },
+            },
           },
         },
       },
@@ -57,7 +76,7 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
       presentaciones: s.presentaciones.map((p) => ({
         id: p.id,
         nombre: p.nombre,
-        costoCompraObjetivo: p.costoCompraObjetivo != null ? Number(p.costoCompraObjetivo) : null,
+        costoCompraObjetivo: getObjetivoFromPresentacion(p),
         labelCompleto: `${c.nombre} - ${s.nombre} - ${p.nombre}`,
       })),
     })),
@@ -72,6 +91,11 @@ export async function getProductosPorPresentacion(
     where: { id: presentacionId },
     include: {
       subcategoria: { include: { categoria: true } },
+      productoReferencia: {
+        select: {
+          pxCompraFinal: true,
+        },
+      },
       listaPrecios: {
         include: { proveedor: { select: { prefijo: true } } },
         orderBy: { pxCompraFinal: "asc" },
@@ -83,7 +107,7 @@ export async function getProductosPorPresentacion(
     return { productos: [], costoCompraObjetivo: null, labelCompleto: "" };
   }
 
-  const objetivo = presentacion.costoCompraObjetivo != null ? Number(presentacion.costoCompraObjetivo) : null;
+  const objetivo = getObjetivoFromPresentacion(presentacion);
   const labelCompleto = `${presentacion.subcategoria.categoria.nombre} - ${presentacion.subcategoria.nombre} - ${presentacion.nombre}`;
 
   const productos: ProductoEnCategoria[] = presentacion.listaPrecios.map((lp) => {
@@ -147,6 +171,13 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
     orderBy: { nombre: "asc" },
     include: {
       subcategoria: { include: { categoria: true } },
+      productoReferencia: {
+        select: {
+          proveedor: { select: { prefijo: true } },
+          descripcionProveedor: true,
+          pxCompraFinal: true,
+        },
+      },
       listaPrecios: {
         select: {
           proveedor: { select: { prefijo: true } },
@@ -157,12 +188,22 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
     },
   });
   return presentaciones.map((p) => {
-    const objetivo = p.costoCompraObjetivo != null ? Number(p.costoCompraObjetivo) : null;
-    const ref = objetivo != null && p.listaPrecios.length > 0
+    const objetivo = getObjetivoFromPresentacion(p);
+
+    // Si hay productoReferencia explícito, usarlo siempre.
+    const refExplicito = p.productoReferencia && p.productoReferencia.pxCompraFinal != null
+      ? p.productoReferencia
+      : null;
+
+    // Fallback para presentaciones antiguas: buscar por coincidencia con costoCompraObjetivo.
+    const refCalculado = !refExplicito && objetivo != null && p.listaPrecios.length > 0
       ? p.listaPrecios.find(
           (lp) => lp.pxCompraFinal != null && Math.abs(Number(lp.pxCompraFinal) - objetivo) < TOLERANCIA_OBJETIVO
         )
       : null;
+
+    const ref = refExplicito ?? refCalculado;
+
     return {
       id: p.id,
       labelCompleto: `${p.subcategoria.categoria.nombre} - ${p.subcategoria.nombre} - ${p.nombre}`,
@@ -177,12 +218,16 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
 // ─── CRUD Categorias ────────────────────────────────────────────────────────
 export async function createCategoria(nombre: string) {
   return prisma.categoriaComparacion.create({
-    data: { nombre },
+    data: { nombre: normalizeNombreCategoria(nombre) },
   });
 }
 
 export async function updateCategoria(id: string, data: { nombre?: string }) {
-  return prisma.categoriaComparacion.update({ where: { id }, data });
+  const payload: { nombre?: string } = {};
+  if (data.nombre !== undefined) {
+    payload.nombre = normalizeNombreCategoria(data.nombre);
+  }
+  return prisma.categoriaComparacion.update({ where: { id }, data: payload });
 }
 
 export async function deleteCategoria(id: string) {
@@ -192,7 +237,7 @@ export async function deleteCategoria(id: string) {
 // ─── CRUD Subcategorias ─────────────────────────────────────────────────────
 export async function createSubcategoria(categoriaId: string, nombre: string) {
   return prisma.subcategoriaComparacion.create({
-    data: { categoriaId, nombre },
+    data: { categoriaId, nombre: normalizeNombreCategoria(nombre) },
   });
 }
 
@@ -200,7 +245,14 @@ export async function updateSubcategoria(
   id: string,
   data: { nombre?: string; categoriaId?: string }
 ) {
-  return prisma.subcategoriaComparacion.update({ where: { id }, data });
+  const payload: { nombre?: string; categoriaId?: string } = {};
+  if (data.nombre !== undefined) {
+    payload.nombre = normalizeNombreCategoria(data.nombre);
+  }
+  if (data.categoriaId !== undefined) {
+    payload.categoriaId = data.categoriaId;
+  }
+  return prisma.subcategoriaComparacion.update({ where: { id }, data: payload });
 }
 
 export async function deleteSubcategoria(id: string) {
@@ -216,7 +268,7 @@ export async function createPresentacion(
   return prisma.presentacionComparacion.create({
     data: {
       subcategoriaId,
-      nombre,
+      nombre: normalizeNombreCategoria(nombre),
       costoCompraObjetivo: costoCompraObjetivo ?? null,
     },
   });
@@ -226,13 +278,17 @@ export type UpdatePresentacionData = {
   nombre?: string;
   subcategoriaId?: string;
   costoCompraObjetivo?: number | null;
+   idProductoReferencia?: string | null;
 };
 
 export async function updatePresentacion(id: string, data: UpdatePresentacionData) {
   const payload: UpdatePresentacionData = {};
-  if (data.nombre !== undefined) payload.nombre = data.nombre;
+  if (data.nombre !== undefined) {
+    payload.nombre = normalizeNombreCategoria(data.nombre);
+  }
   if (data.subcategoriaId !== undefined) payload.subcategoriaId = data.subcategoriaId;
   if (data.costoCompraObjetivo !== undefined) payload.costoCompraObjetivo = data.costoCompraObjetivo;
+  if (data.idProductoReferencia !== undefined) payload.idProductoReferencia = data.idProductoReferencia;
   return prisma.presentacionComparacion.update({ where: { id }, data: payload });
 }
 
