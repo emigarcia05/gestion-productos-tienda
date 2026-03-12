@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, UserPlus, Square, Check, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Plus, Pencil, UserPlus, Check, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -241,9 +241,9 @@ export default function ComparacionCategoriasClient({
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>
-                      <span className="inline-flex h-5 w-5 items-center justify-center">
-                        <Check className="h-3.5 w-3.5 text-primary" />
+                    <TableHead className="text-center">
+                      <span className="inline-flex h-5 w-5 items-center justify-center text-primary" aria-hidden>
+                        <Check className="h-3.5 w-3.5" />
                       </span>
                     </TableHead>
                     <TableHead>PROVEEDOR</TableHead>
@@ -275,18 +275,14 @@ export default function ComparacionCategoriasClient({
                             type="button"
                             onClick={() => setSelectedProductoId(selected ? null : p.id)}
                             className={cn(
-                              "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border bg-transparent hover:bg-primary/10",
-                              selected
-                                ? "border-primary text-primary"
-                                : "border-primary text-muted-foreground"
+                              "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-primary bg-white hover:bg-primary/5",
+                              selected && "text-primary"
                             )}
                             aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
                           >
                             {selected ? (
                               <Check className="h-3.5 w-3.5" />
-                            ) : (
-                              <Square className="h-3.5 w-3.5" />
-                            )}
+                            ) : null}
                           </button>
                         </TableCell>
                         <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>

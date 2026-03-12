@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -12,17 +12,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
   createCategoriaAction,
   createSubcategoriaAction,
   createPresentacionAction,
-  updateCategoriaAction,
-  updateSubcategoriaAction,
   updatePresentacionAction,
-  deleteCategoriaAction,
-  deleteSubcategoriaAction,
-  deletePresentacionAction,
+  getPresentacionesParaGestionAction,
 } from "@/actions/comparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
+import type { PresentacionParaGestion } from "@/services/categoriasComparacion.service";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -36,6 +43,60 @@ type Tab = "categoria" | "subcategoria" | "presentacion";
 export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSuccess }: Props) {
   const [tab, setTab] = useState<Tab>("categoria");
   const [pending, setPending] = useState(false);
+
+  const [filas, setFilas] = useState<PresentacionParaGestion[]>([]);
+  const [loadingTabla, setLoadingTabla] = useState(false);
+  const [costosLocales, setCostosLocales] = useState<Record<string, string>>({});
+  const [pendingCostoId, setPendingCostoId] = useState<string | null>(null);
+
+  const cargarTabla = useCallback(async () => {
+    const res = await getPresentacionesParaGestionAction();
+    if (res.ok && res.data) {
+      setFilas(res.data);
+      const map: Record<string, string> = {};
+      res.data.forEach((f) => {
+        map[f.id] =
+          f.costoCompraObjetivo != null ? String(f.costoCompraObjetivo) : "";
+      });
+      setCostosLocales(map);
+    } else {
+      setFilas([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingTabla(true);
+    cargarTabla().finally(() => setLoadingTabla(false));
+  }, [open, cargarTabla]);
+
+  const handleCostoBlur = async (presentacionId: string) => {
+    const raw = costosLocales[presentacionId] ?? "";
+    const num = raw.trim() === "" ? null : parseFloat(raw.replace(",", "."));
+    if (raw.trim() !== "" && (Number.isNaN(num!) || num! < 0)) {
+      toast.error("Ingresá un número válido mayor o igual a 0.");
+      return;
+    }
+    setPendingCostoId(presentacionId);
+    try {
+      const res = await updatePresentacionAction(presentacionId, {
+        costoCompraObjetivo: num,
+      });
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al guardar.");
+        return;
+      }
+      toast.success("Costo objetivo actualizado.");
+      await cargarTabla();
+      onSuccess();
+    } finally {
+      setPendingCostoId(null);
+    }
+  };
+
+  const setCostoLocal = (presentacionId: string, value: string) => {
+    setCostosLocales((prev) => ({ ...prev, [presentacionId]: value }));
+  };
 
   // Form categoria
   const [nombreCategoria, setNombreCategoria] = useState("");
@@ -69,6 +130,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       setNombreCategoria("");
       setOrdenCategoria("0");
       onSuccess();
+      await cargarTabla();
     } finally {
       setPending(false);
     }
@@ -100,6 +162,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       setOrdenSubcategoria("0");
       setCategoriaId("");
       onSuccess();
+      await cargarTabla();
     } finally {
       setPending(false);
     }
@@ -134,6 +197,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
       setCostoObjetivo("");
       setSubcategoriaId("");
       onSuccess();
+      await cargarTabla();
     } finally {
       setPending(false);
     }
@@ -145,165 +209,240 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="modal-app max-w-md">
-        <DialogHeader className="modal-app__header">
+      <DialogContent className="modal-app max-w-4xl max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="modal-app__header shrink-0">
           <DialogTitle className="modal-app__title">Gestionar categorías</DialogTitle>
         </DialogHeader>
 
-        {/* Tabs y formularios dentro del body, sin líneas superiores/inferiores */}
-        <div className="modal-app__body px-6 py-4">
-          <div className="flex gap-2 border-b border-border pb-2 mb-4">
-            <Button
-              type="button"
-              variant={tab === "categoria" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setTab("categoria")}
-            >
-              Categoría
-            </Button>
-            <Button
-              type="button"
-              variant={tab === "subcategoria" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setTab("subcategoria")}
-            >
-              Subcategoría
-            </Button>
-            <Button
-              type="button"
-              variant={tab === "presentacion" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setTab("presentacion")}
-            >
-              Presentación
-            </Button>
+        <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Tabla de combinaciones + producto ref + costo objetivo */}
+          <div className="shrink-0 mb-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2">Combinaciones creadas</h3>
+            {loadingTabla ? (
+              <p className="text-sm text-muted-foreground py-4">Cargando…</p>
+            ) : filas.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">
+                No hay presentaciones. Creá categoría, subcategoría y presentación abajo.
+              </p>
+            ) : (
+              <div className="border rounded-md overflow-x-auto max-h-56 overflow-y-auto">
+                <Table variant="compact">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="bg-primary text-primary-foreground font-bold min-w-[200px]">
+                        Combinación (Categoría – Subcategoría – Presentación)
+                      </TableHead>
+                      <TableHead className="bg-primary text-primary-foreground font-bold min-w-[180px]">
+                        Producto cx de referencia
+                      </TableHead>
+                      <TableHead className="bg-primary text-primary-foreground font-bold w-36">
+                        Costo objetivo ($)
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filas.map((fila) => (
+                      <TableRow key={fila.id}>
+                        <TableCell className="py-2 text-sm align-top">
+                          <span className="font-medium text-foreground" title={fila.labelCompleto}>
+                            {fila.labelCompleto}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-2 text-sm align-top">
+                          {fila.productoReferencia ? (
+                            <span className="inline-flex flex-wrap items-center gap-1">
+                              <Badge variant="secondary" className="font-mono text-xs">
+                                {fila.productoReferencia.prefijo}
+                              </Badge>
+                              <span className="truncate max-w-[140px]" title={fila.productoReferencia.descripcionProveedor}>
+                                {fila.productoReferencia.descripcionProveedor}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1 align-top">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={costosLocales[fila.id] ?? ""}
+                            onChange={(e) => setCostoLocal(fila.id, e.target.value)}
+                            onBlur={() => handleCostoBlur(fila.id)}
+                            disabled={pendingCostoId === fila.id}
+                            placeholder="Manual"
+                            className="h-8 text-sm w-full"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
 
-          {tab === "categoria" && (
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="nombre-cat">Nombre</Label>
-              <Input
-                id="nombre-cat"
-                value={nombreCategoria}
-                onChange={(e) => setNombreCategoria(e.target.value)}
-                placeholder="Ej. Látex"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="orden-cat">Orden</Label>
-              <Input
-                id="orden-cat"
-                type="number"
-                min={0}
-                value={ordenCategoria}
-                onChange={(e) => setOrdenCategoria(e.target.value)}
-              />
-            </div>
-            <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
-              Crear categoría
-            </Button>
-          </div>
-        )}
-
-        {tab === "subcategoria" && (
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label>Categoría</Label>
-              <select
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
+          {/* Tabs crear Categoría / Subcategoría / Presentación */}
+          <div className="shrink-0 border-t border-border pt-4">
+            <div className="flex gap-2 border-b border-border pb-2 mb-4">
+              <Button
+                type="button"
+                variant={tab === "categoria" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setTab("categoria")}
               >
-                <option value="">Seleccionar</option>
-                {arbol.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nombre-sub">Nombre</Label>
-              <Input
-                id="nombre-sub"
-                value={nombreSubcategoria}
-                onChange={(e) => setNombreSubcategoria(e.target.value)}
-                placeholder="Ej. Calidad Intermedia"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="orden-sub">Orden</Label>
-              <Input
-                id="orden-sub"
-                type="number"
-                min={0}
-                value={ordenSubcategoria}
-                onChange={(e) => setOrdenSubcategoria(e.target.value)}
-              />
-            </div>
-            <Button type="button" onClick={handleCreateSubcategoria} disabled={pending}>
-              Crear subcategoría
-            </Button>
-          </div>
-        )}
-
-        {tab === "presentacion" && (
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label>Subcategoría</Label>
-              <select
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                value={subcategoriaId}
-                onChange={(e) => setSubcategoriaId(e.target.value)}
+                Crear categoría
+              </Button>
+              <Button
+                type="button"
+                variant={tab === "subcategoria" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setTab("subcategoria")}
               >
-                <option value="">Seleccionar</option>
-                {subcategoriasFlat.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.categoriaNombre} → {s.nombre}
-                  </option>
-                ))}
-              </select>
+                Crear subcategoría
+              </Button>
+              <Button
+                type="button"
+                variant={tab === "presentacion" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setTab("presentacion")}
+              >
+                Crear presentación
+              </Button>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nombre-pre">Nombre</Label>
-              <Input
-                id="nombre-pre"
-                value={nombrePresentacion}
-                onChange={(e) => setNombrePresentacion(e.target.value)}
-                placeholder="Ej. 20 Lts"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="orden-pre">Orden</Label>
-              <Input
-                id="orden-pre"
-                type="number"
-                min={0}
-                value={ordenPresentacion}
-                onChange={(e) => setOrdenPresentacion(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="costo-pre">Costo compra objetivo (opcional)</Label>
-              <Input
-                id="costo-pre"
-                type="text"
-                inputMode="decimal"
-                value={costoObjetivo}
-                onChange={(e) => setCostoObjetivo(e.target.value)}
-                placeholder="Ej. 15000"
-              />
-            </div>
-            <Button type="button" onClick={handleCreatePresentacion} disabled={pending}>
-              Crear presentación
-            </Button>
+
+            {tab === "categoria" && (
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="nombre-cat">Nombre</Label>
+                  <Input
+                    id="nombre-cat"
+                    value={nombreCategoria}
+                    onChange={(e) => setNombreCategoria(e.target.value)}
+                    placeholder="Ej. Látex"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="orden-cat">Orden</Label>
+                  <Input
+                    id="orden-cat"
+                    type="number"
+                    min={0}
+                    value={ordenCategoria}
+                    onChange={(e) => setOrdenCategoria(e.target.value)}
+                  />
+                </div>
+                <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
+                  Crear categoría
+                </Button>
+              </div>
+            )}
+
+            {tab === "subcategoria" && (
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-2">
+                  <Label>Categoría</Label>
+                  <select
+                    className={cn(
+                      "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    )}
+                    value={categoriaId}
+                    onChange={(e) => setCategoriaId(e.target.value)}
+                  >
+                    <option value="">Seleccionar</option>
+                    {arbol.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="nombre-sub">Nombre</Label>
+                  <Input
+                    id="nombre-sub"
+                    value={nombreSubcategoria}
+                    onChange={(e) => setNombreSubcategoria(e.target.value)}
+                    placeholder="Ej. Calidad Intermedia"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="orden-sub">Orden</Label>
+                  <Input
+                    id="orden-sub"
+                    type="number"
+                    min={0}
+                    value={ordenSubcategoria}
+                    onChange={(e) => setOrdenSubcategoria(e.target.value)}
+                  />
+                </div>
+                <Button type="button" onClick={handleCreateSubcategoria} disabled={pending}>
+                  Crear subcategoría
+                </Button>
+              </div>
+            )}
+
+            {tab === "presentacion" && (
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-2">
+                  <Label>Subcategoría</Label>
+                  <select
+                    className={cn(
+                      "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    )}
+                    value={subcategoriaId}
+                    onChange={(e) => setSubcategoriaId(e.target.value)}
+                  >
+                    <option value="">Seleccionar</option>
+                    {subcategoriasFlat.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.categoriaNombre} → {s.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="nombre-pre">Nombre</Label>
+                  <Input
+                    id="nombre-pre"
+                    value={nombrePresentacion}
+                    onChange={(e) => setNombrePresentacion(e.target.value)}
+                    placeholder="Ej. 20 Lts"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="orden-pre">Orden</Label>
+                  <Input
+                    id="orden-pre"
+                    type="number"
+                    min={0}
+                    value={ordenPresentacion}
+                    onChange={(e) => setOrdenPresentacion(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="costo-pre">Costo compra objetivo (opcional)</Label>
+                  <Input
+                    id="costo-pre"
+                    type="text"
+                    inputMode="decimal"
+                    value={costoObjetivo}
+                    onChange={(e) => setCostoObjetivo(e.target.value)}
+                    placeholder="Ej. 15000"
+                  />
+                </div>
+                <Button type="button" onClick={handleCreatePresentacion} disabled={pending}>
+                  Crear presentación
+                </Button>
+              </div>
+            )}
           </div>
-        )}
         </div>
 
-        <p className="px-6 pb-6 text-xs text-muted-foreground">
-          Para editar o eliminar categorías, subcategorías o presentaciones podés hacerlo desde una futura pantalla de administración o ampliando este modal.
+        <p className="px-6 pb-6 text-xs text-muted-foreground shrink-0">
+          La tabla muestra cada combinación con su producto de referencia (si su precio coincide con el costo objetivo) y el costo objetivo editable. Podés crear categorías, subcategorías y presentaciones en las pestañas de abajo.
         </p>
       </DialogContent>
     </Dialog>

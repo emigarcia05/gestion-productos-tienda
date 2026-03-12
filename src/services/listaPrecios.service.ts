@@ -237,7 +237,7 @@ export async function getRubrosDisponiblesListaPrecios(
   return out;
 }
 
-/** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. */
+/** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. pxCompraFinal para selector de costo objetivo. */
 export interface ProductoProveedorParaVincular {
   id: string;
   codExt: string;
@@ -245,6 +245,8 @@ export interface ProductoProveedorParaVincular {
   descripcionProveedor: string;
   rubro: string | null;
   proveedor: { prefijo: string; nombre: string };
+  /** Precio final de compra (para usar como costo objetivo al seleccionar desde lista). */
+  pxCompraFinal: number | null;
 }
 
 const MAX_PRODUCTOS_VINCULAR = 500;
@@ -277,6 +279,7 @@ export async function listarProductosProveedoresParaVincular(
     descripcionProveedor: r.descripcionProveedor,
     rubro: r.rubro ?? null,
     proveedor: { prefijo: r.proveedor.prefijo, nombre: r.proveedor.nombre },
+    pxCompraFinal: r.pxCompraFinal != null ? Number(r.pxCompraFinal) : null,
   }));
 }
 

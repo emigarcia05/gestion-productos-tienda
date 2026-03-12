@@ -5,6 +5,7 @@ import {
   getArbolCategorias,
   getProductosPorPresentacion,
   getPresentacionesConLabel,
+  getPresentacionesParaGestion,
   createCategoria,
   updateCategoria,
   deleteCategoria,
@@ -62,6 +63,16 @@ export async function getPresentacionesConLabelAction() {
     return { ok: false, data: [] };
   }
   const data = await getPresentacionesConLabel();
+  return { ok: true, data };
+}
+
+/** Lista plana de presentaciones para modal Gestionar categorías (combinación + producto ref + costo objetivo). */
+export async function getPresentacionesParaGestionAction() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
+    return { ok: false, error: "Sin permisos.", data: [] };
+  }
+  const data = await getPresentacionesParaGestion();
   return { ok: true, data };
 }
 

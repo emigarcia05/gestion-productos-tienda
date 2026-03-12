@@ -136,6 +136,50 @@ export async function getPresentacionesConLabel(): Promise<{ id: string; labelCo
   }));
 }
 
+/** Fila para el modal Gestionar categorías: combinación + producto de referencia (si px = objetivo) + costo objetivo editable. */
+export interface PresentacionParaGestion {
+  id: string;
+  labelCompleto: string;
+  costoCompraObjetivo: number | null;
+  /** Producto asignado cuya px_compra_final coincide con el costo objetivo, si existe. */
+  productoReferencia: { prefijo: string; descripcionProveedor: string } | null;
+}
+
+const TOLERANCIA_OBJETIVO = 0.01;
+
+/** Lista plana de presentaciones con costo objetivo y producto de referencia (primero que coincida con el objetivo). */
+export async function getPresentacionesParaGestion(): Promise<PresentacionParaGestion[]> {
+  const presentaciones = await prisma.presentacionComparacion.findMany({
+    orderBy: { orden: "asc" },
+    include: {
+      subcategoria: { include: { categoria: true } },
+      listaPrecios: {
+        select: {
+          proveedor: { select: { prefijo: true } },
+          descripcionProveedor: true,
+          pxCompraFinal: true,
+        },
+      },
+    },
+  });
+  return presentaciones.map((p) => {
+    const objetivo = p.costoCompraObjetivo != null ? Number(p.costoCompraObjetivo) : null;
+    const ref = objetivo != null && p.listaPrecios.length > 0
+      ? p.listaPrecios.find(
+          (lp) => lp.pxCompraFinal != null && Math.abs(Number(lp.pxCompraFinal) - objetivo) < TOLERANCIA_OBJETIVO
+        )
+      : null;
+    return {
+      id: p.id,
+      labelCompleto: `${p.subcategoria.categoria.nombre} - ${p.subcategoria.nombre} - ${p.nombre}`,
+      costoCompraObjetivo: objetivo,
+      productoReferencia: ref
+        ? { prefijo: ref.proveedor?.prefijo ?? "", descripcionProveedor: ref.descripcionProveedor }
+        : null,
+    };
+  });
+}
+
 // ─── CRUD Categorias ────────────────────────────────────────────────────────
 export async function createCategoria(nombre: string, orden?: number) {
   return prisma.categoriaComparacion.create({
