@@ -19,47 +19,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Check } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   createCategoriaAction,
   createSubcategoriaAction,
   createPresentacionAction,
-  updatePresentacionAction,
   deletePresentacionAction,
   getPresentacionesParaGestionAction,
   getArbolCategoriasAction,
 } from "@/actions/comparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import type { PresentacionParaGestion } from "@/services/categoriasComparacion.service";
-import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import ElegirProductoReferenciaModal from "./ElegirProductoReferenciaModal";
-
-/** Parsea string con $ y "." como miles (y "," como decimal) a número; devuelve "" si vacío o inválido. */
-function parseCostoInput(value: string): string {
-  const s = value.replace(/\$/g, "").replace(/\s/g, "").trim();
-  if (s === "") return "";
-  const commaIdx = s.lastIndexOf(",");
-  if (commaIdx >= 0) {
-    const intPart = s.slice(0, commaIdx).replace(/\./g, "");
-    const decPart = s.slice(commaIdx + 1);
-    const num = parseFloat(intPart + "." + decPart);
-    if (Number.isNaN(num) || num < 0) return "";
-    return String(num);
-  }
-  const num = parseFloat(s.replace(/\./g, ""));
-  if (Number.isNaN(num) || num < 0) return "";
-  return String(num);
-}
-
-/** Formatea el valor guardado para mostrar en el input: $ y punto como miles. */
-function formatCostoDisplay(raw: string): string {
-  if (raw === "" || raw == null) return "";
-  const n = parseFloat(raw);
-  if (Number.isNaN(n) || n < 0) return raw;
-  return "$" + fmtPrecio(n);
-}
 
 interface Props {
   open: boolean;
@@ -77,25 +48,17 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
   const [filas, setFilas] = useState<PresentacionParaGestion[]>([]);
   const [loadingTabla, setLoadingTabla] = useState(false);
-  const [costosLocales, setCostosLocales] = useState<Record<string, string>>({});
-  const [pendingCostoId, setPendingCostoId] = useState<string | null>(null);
-  const [presentacionIdParaRef, setPresentacionIdParaRef] = useState<string | null>(null);
-  const [labelCompletoParaRef, setLabelCompletoParaRef] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showCrearSection, setShowCrearSection] = useState(false);
   const [presentacionId, setPresentacionId] = useState("");
   const [showCrearCamposModal, setShowCrearCamposModal] = useState(false);
+  const [filtroCategoriaId, setFiltroCategoriaId] = useState("");
+  const [filtroSubcategoriaId, setFiltroSubcategoriaId] = useState("");
 
   const cargarTabla = useCallback(async () => {
     const res = await getPresentacionesParaGestionAction();
     if (res.ok && res.data) {
       setFilas(res.data);
-      const map: Record<string, string> = {};
-      res.data.forEach((f) => {
-        map[f.id] =
-          f.costoCompraObjetivo != null ? String(f.costoCompraObjetivo) : "";
-      });
-      setCostosLocales(map);
     } else {
       setFilas([]);
     }
@@ -120,49 +83,6 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     setLoadingTabla(true);
     cargarTabla().finally(() => setLoadingTabla(false));
   }, [open, cargarTabla]);
-
-  const handleCostoBlur = async (presentacionId: string) => {
-    const raw = costosLocales[presentacionId] ?? "";
-    const num = raw.trim() === "" ? null : parseFloat(raw.replace(",", "."));
-    if (raw.trim() !== "" && (Number.isNaN(num!) || num! < 0)) {
-      toast.error("Ingresá un número válido mayor o igual a 0.");
-      return;
-    }
-    setPendingCostoId(presentacionId);
-    try {
-      const res = await updatePresentacionAction(presentacionId, {
-        costoCompraObjetivo: num,
-      });
-      if (!res.ok) {
-        toast.error(res.error ?? "Error al guardar.");
-        return;
-      }
-      toast.success("Costo objetivo actualizado.");
-      await cargarTabla();
-      onSuccess();
-    } finally {
-      setPendingCostoId(null);
-    }
-  };
-
-  const setCostoLocal = (presentacionId: string, value: string) => {
-    const parsed = parseCostoInput(value);
-    setCostosLocales((prev) => ({ ...prev, [presentacionId]: parsed }));
-  };
-
-  const handleElegirProductoReferencia = async (presentacionId: string, pxCompraFinal: number) => {
-    const res = await updatePresentacionAction(presentacionId, {
-      costoCompraObjetivo: pxCompraFinal,
-    });
-    if (!res.ok) {
-      toast.error(res.error ?? "Error al guardar.");
-      return;
-    }
-    toast.success("Producto de referencia asignado.");
-    setPresentacionIdParaRef(null);
-    await cargarTabla();
-    onSuccess();
-  };
 
   const handleEliminar = async (presentacionId: string) => {
     if (!confirm("¿Eliminar esta combinación (presentación)? Se quitará la asignación de productos a esta categoría.")) return;
@@ -260,7 +180,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     }
   };
 
-  const handleCreatePresentacion = async () => {
+  const handleCreatePresentacion = async (costoOverride?: number | null) => {
     const nombre = nombrePresentacion.trim();
     if (!nombre) {
       toast.error("El nombre es obligatorio.");
@@ -272,12 +192,13 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     }
     setPending(true);
     try {
-      const costo = costoObjetivo.trim() ? parseFloat(costoObjetivo.replace(",", ".")) : undefined;
-      const res = await createPresentacionAction(
-        subcategoriaId,
-        nombre,
-        costo ?? null
-      );
+      const costo =
+        costoOverride !== undefined
+          ? costoOverride ?? null
+          : costoObjetivo.trim()
+            ? parseFloat(costoObjetivo.replace(",", ".")) ?? null
+            : null;
+      const res = await createPresentacionAction(subcategoriaId, nombre, costo);
       if (!res.ok) {
         toast.error(res.error ?? "Error al crear.");
         return;
@@ -307,6 +228,14 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     c.subcategorias.map((s) => ({ ...s, categoriaNombre: c.nombre }))
   );
 
+  const categoriaFiltro = arbolLocal.find((c) => c.id === filtroCategoriaId) ?? null;
+  const subcategoriasParaFiltro = categoriaFiltro?.subcategorias ?? [];
+  const filasFiltradas = filas.filter((f) => {
+    if (filtroCategoriaId && f.categoriaId !== filtroCategoriaId) return false;
+    if (filtroSubcategoriaId && f.subcategoriaId !== filtroSubcategoriaId) return false;
+    return true;
+  });
+
   const categoriaSeleccionada = arbolLocal.find((c) => c.id === categoriaId) ?? null;
   const subcategoriasDeCategoria = categoriaSeleccionada?.subcategorias ?? [];
   const subcategoriaSeleccionada =
@@ -329,7 +258,51 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
         </DialogHeader>
 
         <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
-          {/* Tabla de combinaciones + producto ref + costo objetivo */}
+          {/* Filtros */}
+          <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="grid gap-1">
+              <Label>Categoría</Label>
+              <select
+                className={cn(
+                  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                )}
+                value={filtroCategoriaId}
+                onChange={(e) => {
+                  setFiltroCategoriaId(e.target.value);
+                  setFiltroSubcategoriaId("");
+                }}
+              >
+                <option value="">Todas</option>
+                {arbolLocal.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-1">
+              <Label>Subcategoría</Label>
+              <select
+                className={cn(
+                  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                )}
+                value={filtroSubcategoriaId}
+                onChange={(e) => setFiltroSubcategoriaId(e.target.value)}
+                disabled={!filtroCategoriaId}
+              >
+                <option value="">Todas</option>
+                {subcategoriasParaFiltro.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Tabla de combinaciones */}
           <div className="shrink-0 mb-4">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h3 className="text-sm font-semibold text-foreground">Combinaciones creadas</h3>
@@ -348,7 +321,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               <p className="text-sm text-muted-foreground py-4">Cargando…</p>
             ) : filas.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">
-                No hay presentaciones. Creá categoría, subcategoría y presentación abajo.
+                No hay presentaciones. Creá categoría, subcategoría y presentación con el botón de arriba.
               </p>
             ) : (
               <div className="border rounded-md overflow-x-auto max-h-56 overflow-y-auto">
@@ -356,70 +329,18 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="bg-primary text-primary-foreground font-bold min-w-[200px]">
-                        Combinación (Categoría – Subcategoría – Presentación)
-                      </TableHead>
-                      <TableHead className="bg-primary text-primary-foreground font-bold min-w-[180px]">
-                        Producto cx de referencia
-                      </TableHead>
-                      <TableHead className="bg-primary text-primary-foreground font-bold w-40">
-                        <div className="flex items-center justify-center gap-1">
-                          <span>Costo objetivo ($)</span>
-                          <Check className="h-4 w-4 text-primary-foreground" />
-                        </div>
+                        Combinación
                       </TableHead>
                       <TableHead className="bg-primary text-primary-foreground font-bold w-12" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filas.map((fila) => (
+                    {filasFiltradas.map((fila) => (
                       <TableRow key={fila.id}>
                         <TableCell className="py-2 text-sm align-top">
                           <span className="font-medium text-foreground" title={fila.labelCompleto}>
                             {fila.labelCompleto}
                           </span>
-                        </TableCell>
-                        <TableCell className="py-2 text-sm align-top">
-                          {fila.productoReferencia ? (
-                            <span className="inline-flex flex-wrap items-center gap-1">
-                              <Badge variant="secondary" className="font-mono text-xs">
-                                {fila.productoReferencia.prefijo}
-                              </Badge>
-                              <span className="truncate max-w-[140px]" title={fila.productoReferencia.descripcionProveedor}>
-                                {fila.productoReferencia.descripcionProveedor}
-                              </span>
-                            </span>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={() => {
-                                setPresentacionIdParaRef(fila.id);
-                                setLabelCompletoParaRef(fila.labelCompleto);
-                              }}
-                              title="Elegir producto de referencia"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-1 align-top">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="text"
-                              inputMode="decimal"
-                              value={formatCostoDisplay(costosLocales[fila.id] ?? "")}
-                              onChange={(e) => setCostoLocal(fila.id, e.target.value)}
-                              onBlur={() => handleCostoBlur(fila.id)}
-                              disabled={pendingCostoId === fila.id}
-                              placeholder="$0"
-                              className="h-8 text-sm w-full text-center tabular-nums bg-white border-primary focus-visible:ring-2 focus-visible:ring-primary"
-                            />
-                            {(costosLocales[fila.id] ?? "").trim() !== "" && (
-                              <Check className="h-4 w-4 text-primary shrink-0" />
-                            )}
-                          </div>
                         </TableCell>
                         <TableCell className="py-1 align-top w-12">
                           <Button
@@ -443,16 +364,8 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
           </div>
         </div>
 
-        <ElegirProductoReferenciaModal
-          open={presentacionIdParaRef != null}
-          onOpenChange={(open) => !open && setPresentacionIdParaRef(null)}
-          presentacionId={presentacionIdParaRef ?? ""}
-          labelCompleto={labelCompletoParaRef}
-          onElegido={(px) => presentacionIdParaRef && handleElegirProductoReferencia(presentacionIdParaRef, px)}
-        />
-
         <p className="px-6 pb-6 text-xs text-muted-foreground shrink-0">
-          La tabla muestra cada combinación con su producto de referencia (si su precio coincide con el costo objetivo) y el costo objetivo editable. Creá categorías, subcategorías y presentaciones con el botón de arriba.
+          Filtrá por categoría y subcategoría. Creá categorías, subcategorías y presentaciones con el botón de arriba.
         </p>
       </DialogContent>
     </Dialog>
@@ -651,9 +564,6 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       placeholder="Ej. Látex"
                     />
                   </div>
-                  <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
-                    Crear categoría
-                  </Button>
                 </div>
               )}
 
@@ -686,13 +596,6 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       placeholder="Ej. Calidad Intermedia"
                     />
                   </div>
-                  <Button
-                    type="button"
-                    onClick={handleCreateSubcategoria}
-                    disabled={pending}
-                  >
-                    Crear subcategoría
-                  </Button>
                 </div>
               )}
 
@@ -725,28 +628,10 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       placeholder="Ej. 20 Lts"
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="costo-pre-campos">Costo compra objetivo (opcional)</Label>
-                    <Input
-                      id="costo-pre-campos"
-                      type="text"
-                      inputMode="decimal"
-                      value={costoObjetivo}
-                      onChange={(e) => setCostoObjetivo(e.target.value)}
-                      placeholder="Ej. 15000"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleCreatePresentacion}
-                    disabled={pending}
-                  >
-                    Crear presentación
-                  </Button>
                 </div>
               )}
 
-              <div className="mt-4 pt-4 border-t border-border">
+              <div className="mt-4 pt-4 border-t border-border flex justify-between">
                 <Button
                   type="button"
                   variant="outline"
@@ -755,6 +640,29 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                 >
                   Cerrar
                 </Button>
+                {tab === "categoria" && (
+                  <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
+                    Crear categoría
+                  </Button>
+                )}
+                {tab === "subcategoria" && (
+                  <Button
+                    type="button"
+                    onClick={handleCreateSubcategoria}
+                    disabled={pending}
+                  >
+                    Crear subcategoría
+                  </Button>
+                )}
+                {tab === "presentacion" && (
+                  <Button
+                    type="button"
+                    onClick={() => handleCreatePresentacion(null)}
+                    disabled={pending}
+                  >
+                    Crear presentación
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>

@@ -154,10 +154,12 @@ export async function getPresentacionesConLabel(): Promise<{ id: string; labelCo
   }));
 }
 
-/** Fila para el modal Gestionar categorías: combinación + producto de referencia (si px = objetivo) + costo objetivo editable. */
+/** Fila para el modal Gestionar categorías: combinación + ids para filtrar. */
 export interface PresentacionParaGestion {
   id: string;
   labelCompleto: string;
+  categoriaId: string;
+  subcategoriaId: string;
   costoCompraObjetivo: number | null;
   /** Producto asignado cuya px_compra_final coincide con el costo objetivo, si existe. */
   productoReferencia: { prefijo: string; descripcionProveedor: string } | null;
@@ -207,6 +209,8 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
     return {
       id: p.id,
       labelCompleto: `${p.subcategoria.categoria.nombre} - ${p.subcategoria.nombre} - ${p.nombre}`,
+      categoriaId: p.subcategoria.categoria.id,
+      subcategoriaId: p.subcategoria.id,
       costoCompraObjetivo: objetivo,
       productoReferencia: ref
         ? { prefijo: ref.proveedor?.prefijo ?? "", descripcionProveedor: ref.descripcionProveedor }
