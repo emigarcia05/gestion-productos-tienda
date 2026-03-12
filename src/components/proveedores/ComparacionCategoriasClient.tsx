@@ -29,8 +29,8 @@ import AsignarProductosModal from "@/components/proveedores/comparacion-categori
 interface Props {
   arbolInicial: CategoriaComparacionTree[];
   rol: Rol;
-  marcas: string[];
-  marcaInicial: string;
+  proveedores: string[];
+  proveedorInicial: string;
   categoriaIdInicial: string;
   subcategoriaIdInicial: string;
   presentacionIdInicial: string;
@@ -48,8 +48,8 @@ function countPresentaciones(arb: CategoriaComparacionTree[]): number {
 export default function ComparacionCategoriasClient({
   arbolInicial,
   rol,
-  marcas,
-  marcaInicial,
+  proveedores,
+  proveedorInicial,
   categoriaIdInicial,
   subcategoriaIdInicial,
   presentacionIdInicial,
@@ -156,9 +156,9 @@ export default function ComparacionCategoriasClient({
 
   const filters = (
     <FiltrosComparacionCategorias
-      marcas={marcas}
+      proveedores={proveedores}
       arbol={arbol}
-      marcaActual={marcaInicial}
+      proveedorActual={proveedorInicial}
       categoriaIdActual={categoriaIdInicial}
       subcategoriaIdActual={subcategoriaIdInicial}
       presentacionIdActual={presentacionIdInicial}
@@ -217,10 +217,9 @@ export default function ComparacionCategoriasClient({
                   <col style={{ width: "5%" }} />
                   <col style={{ width: "9%" }} />
                   <col style={{ width: "9%" }} />
-                  <col style={{ width: "40%" }} />
+                  <col style={{ width: "42%" }} />
                   <col style={{ width: "8%" }} />
-                  <col style={{ width: "14%" }} />
-                  <col style={{ width: "15%" }} />
+                  <col style={{ width: "17%" }} />
                   <col style={{ width: "10%" }} />
                 </colgroup>
                 <TableHeader>
@@ -229,9 +228,8 @@ export default function ComparacionCategoriasClient({
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>
                     <TableHead>DESCRIPCION</TableHead>
-                    <TableHead className="text-center">DTO ESPECIAL</TableHead>
+                    <TableHead className="text-center">DTO EXTRA</TableHead>
                     <TableHead>PX FINAL COMPRA</TableHead>
-                    <TableHead>NUEVO PX FINAL COMPRA</TableHead>
                     <TableHead className="text-center">VARIACIÓN</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -284,12 +282,7 @@ export default function ComparacionCategoriasClient({
                           </div>
                         </TableCell>
                         <TableCell className="celda-datos celda-numero">
-                          {pxOriginal != null ? `$${fmtPrecio(pxOriginal)}` : "—"}
-                        </TableCell>
-                        <TableCell className="celda-datos celda-numero">
-                          {pxConDescuento != null && dtoStr.trim() !== "" && !Number.isNaN(parseInt(dtoStr, 10))
-                            ? `$${fmtPrecio(pxConDescuento)}`
-                            : "—"}
+                          {pxEfectivo != null ? `$${fmtPrecio(pxEfectivo)}` : "—"}
                         </TableCell>
                         <TableCell className="celda-datos text-center">
                           {varData == null ? (

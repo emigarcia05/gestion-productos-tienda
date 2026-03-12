@@ -23,9 +23,9 @@ import FilterBar, {
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 
 interface Props {
-  marcas: string[];
+  proveedores: string[];
   arbol: CategoriaComparacionTree[];
-  marcaActual: string;
+  proveedorActual: string;
   categoriaIdActual: string;
   subcategoriaIdActual: string;
   presentacionIdActual: string;
@@ -34,9 +34,9 @@ interface Props {
 }
 
 export default function FiltrosComparacionCategorias({
-  marcas,
+  proveedores,
   arbol,
-  marcaActual,
+  proveedorActual,
   categoriaIdActual,
   subcategoriaIdActual,
   presentacionIdActual,
@@ -58,7 +58,7 @@ export default function FiltrosComparacionCategorias({
   const presentacionesOpciones = subcategoriaSeleccionada?.presentaciones ?? [];
 
   const hayFiltros = !!(
-    marcaActual ||
+    proveedorActual ||
     categoriaIdActual ||
     subcategoriaIdActual ||
     presentacionIdActual ||
@@ -66,19 +66,19 @@ export default function FiltrosComparacionCategorias({
   );
 
   function buildParams(updates: {
-    marca?: string;
+    proveedor?: string;
     categoriaId?: string;
     subcategoriaId?: string;
     presentacionId?: string;
     q?: string;
   }): URLSearchParams {
     const p = new URLSearchParams();
-    const marca = updates.marca !== undefined ? updates.marca : marcaActual;
+    const prov = updates.proveedor !== undefined ? updates.proveedor : proveedorActual;
     const catId = updates.categoriaId !== undefined ? updates.categoriaId : categoriaIdActual;
     const subId = updates.subcategoriaId !== undefined ? updates.subcategoriaId : subcategoriaIdActual;
     const preId = updates.presentacionId !== undefined ? updates.presentacionId : presentacionIdActual;
     const qVal = updates.q !== undefined ? updates.q : q;
-    if (marca) p.set("marca", marca);
+    if (prov) p.set("proveedor", prov);
     if (catId) p.set("categoriaId", catId);
     if (subId) p.set("subcategoriaId", subId);
     if (preId) p.set("presentacionId", preId);
@@ -87,7 +87,7 @@ export default function FiltrosComparacionCategorias({
   }
 
   function navigate(updates: {
-    marca?: string;
+    proveedor?: string;
     categoriaId?: string;
     subcategoriaId?: string;
     presentacionId?: string;
@@ -106,9 +106,9 @@ export default function FiltrosComparacionCategorias({
     }, 400);
   }
 
-  function handleMarca(value: string) {
+  function handleProveedor(value: string) {
     navigate({
-      marca: value || "",
+      proveedor: value || "",
       categoriaId: "",
       subcategoriaId: "",
       presentacionId: "",
@@ -142,11 +142,11 @@ export default function FiltrosComparacionCategorias({
         <FilaFiltrosDesplegables>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={marcaActual || "none"}
-              onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
+              value={proveedorActual || "none"}
+              onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
             >
-              <SelectTrigger id="filtro-cc-marca" className="input-filtro-unificado">
-                <SelectValue placeholder="MARCA" />
+              <SelectTrigger id="filtro-cc-proveedor" className="input-filtro-unificado">
+                <SelectValue placeholder="PROVEEDOR" />
               </SelectTrigger>
               <SelectContent
                 position="popper"
@@ -154,10 +154,10 @@ export default function FiltrosComparacionCategorias({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">MARCA</SelectItem>
-                {marcas.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
+                <SelectItem value="none">PROVEEDOR</SelectItem>
+                {proveedores.map((pr) => (
+                  <SelectItem key={pr} value={pr}>
+                    {pr}
                   </SelectItem>
                 ))}
               </SelectContent>

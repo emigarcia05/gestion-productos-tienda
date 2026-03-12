@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getArbolCategorias, getMarcasFromListaTienda } from "@/services/categoriasComparacion.service";
+import { getArbolCategorias, getProveedoresFromListaTienda } from "@/services/categoriasComparacion.service";
 import ComparacionCategoriasClient from "@/components/proveedores/ComparacionCategoriasClient";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   searchParams: Promise<{
-    marca?: string;
+    proveedor?: string;
     categoriaId?: string;
     subcategoriaId?: string;
     presentacionId?: string;
@@ -22,12 +22,12 @@ export default async function ComparacionCategoriasPage({ searchParams }: Props)
     redirect("/proveedores");
   }
 
-  const [arbol, marcas] = await Promise.all([
+  const [arbol, proveedores] = await Promise.all([
     getArbolCategorias(),
-    getMarcasFromListaTienda(),
+    getProveedoresFromListaTienda(),
   ]);
 
-  const { marca = "", categoriaId = "", subcategoriaId = "", presentacionId = "", q = "" } =
+  const { proveedor = "", categoriaId = "", subcategoriaId = "", presentacionId = "", q = "" } =
     await searchParams;
 
   return (
@@ -35,8 +35,8 @@ export default async function ComparacionCategoriasPage({ searchParams }: Props)
       <ComparacionCategoriasClient
         arbolInicial={arbol}
         rol={rol}
-        marcas={marcas}
-        marcaInicial={marca}
+        proveedores={proveedores}
+        proveedorInicial={proveedor}
         categoriaIdInicial={categoriaId}
         subcategoriaIdInicial={subcategoriaId}
         presentacionIdInicial={presentacionId}
