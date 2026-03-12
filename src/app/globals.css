@@ -333,6 +333,17 @@
   .selector-cuadro--selected {
     color: #0072BB;
   }
+  /* Anular estilos de main button para el cuadro de selección: debe verse blanco con borde azul, no relleno azul */
+  main button.selector-cuadro,
+  button.selector-cuadro {
+    background-color: #ffffff !important;
+    border: 2px solid #0072BB !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    min-height: 1.125rem !important;
+    padding: 0 !important;
+    box-shadow: none;
+  }
 
   /* Botón primario gestión (azul #0072bb) */
   .btn-primario-gestion {

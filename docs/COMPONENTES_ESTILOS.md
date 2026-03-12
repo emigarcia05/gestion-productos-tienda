@@ -118,6 +118,29 @@ La distancia desde el **recuadro de filtros** hasta el **encabezado** y hasta la
 - **Lista Precios** (`/proveedores/lista-precios`): 5 filtros (Proveedor, Marca, Rubro, Habilitado). `FilaFiltrosDesplegables` con las 5 columnas ocupadas.
 - **Px Vta. Sugeridos** (`/proveedores/sugeridos`): 2 filtros (Proveedor, Marca). `FilaFiltrosDesplegables` con 2 slots usados; 3 slots vacíos.
 - **Pedido Urgente** (`/pedidos/urgente`): 2 filtros (Sucursal, Proveedor). `FilaFiltrosDesplegables` con 2 slots usados; 3 slots vacíos. **Obligatorio** usar la misma fila de 5 columnas para uniformidad.
+- **Comp. Por Cat.** (`/proveedores/comparacion-categorias`): 4 filtros (Marca, Categoría, Subcategoría, Presentación). `FilaFiltrosDesplegables` con 4 slots usados; 5.º slot vacío.
+
+---
+
+## Cuadros de selección (Comp. Por Cat.)
+
+Primera columna de la tabla de productos en **Comp. Por Cat.**: encabezado con tilde blanco y celdas con recuadro clickeable (fondo blanco, borde azul, tilde azul al seleccionar).
+
+### Clases CSS globales (`src/app/globals.css`)
+
+| Clase | Uso |
+|-------|-----|
+| `.selector-cuadro` | Recuadro en celdas: cuadrado 1.125rem, fondo blanco, borde 2px #0072BB, flex centrado. Se aplica a un `<button>`. |
+| `.selector-cuadro--selected` | Estado seleccionado: el icono de tilde (Check) usa color #0072BB. |
+| `main button.selector-cuadro`, `button.selector-cuadro` | Regla de anulación: los botones en `main` reciben por defecto fondo primario; aquí se fuerza fondo blanco, borde #0072BB y tamaño del cuadro con `!important` para que el recuadro no se pinte azul. |
+
+**Encabezado de la columna:** no usa `.selector-cuadro`; solo un icono `<Check>` con `text-primary-foreground` (tilde blanco), mismo alto visual que el resto de encabezados.
+
+**No duplicar** estilos del recuadro en componentes; cualquier cambio (tamaño, color, borde) debe hacerse en `globals.css`.
+
+### Dónde se usa
+
+- **ComparacionCategoriasClient** (`src/components/proveedores/ComparacionCategoriasClient.tsx`): tabla de productos por presentación; primera columna con `<TableHead>` (solo Check blanco) y `<TableCell>` con `<button className="selector-cuadro ...">` por fila.
 
 ---
 

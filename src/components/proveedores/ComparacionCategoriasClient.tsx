@@ -164,8 +164,8 @@ export default function ComparacionCategoriasClient({
         filters={filters}
       >
         <div className="flex-1 min-h-0 flex py-3">
-          <Card className="flex-1 flex flex-col min-h-0 min-w-0">
-          <CardHeader className="py-3 flex flex-row items-center justify-between gap-2 flex-wrap">
+          <Card className="flex-1 flex flex-col min-h-0 min-w-0 gap-0 pt-0">
+          <CardHeader className="py-3 flex flex-row items-center justify-between gap-2 flex-wrap px-6">
             <div>
               {selectedPresentacionId ? (
                 <>
@@ -218,7 +218,7 @@ export default function ComparacionCategoriasClient({
               </Button>
             )}
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto py-0 pb-3">
+          <CardContent className="flex-1 overflow-auto py-0 pb-3 px-0">
             {loadingProductos ? (
               <p className="text-sm text-muted-foreground py-4">Cargando productos…</p>
             ) : !selectedPresentacionId ? (
