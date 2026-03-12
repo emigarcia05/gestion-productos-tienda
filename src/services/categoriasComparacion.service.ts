@@ -28,6 +28,7 @@ export interface ProductoEnCategoria {
   id: string;
   codExt: string;
   descripcionProveedor: string;
+  marca: string | null;
   pxCompraFinal: number | null;
   proveedorPrefijo: string | null;
   costoCompraObjetivo: number | null;
@@ -98,6 +99,7 @@ export async function getProductosPorPresentacion(
       id: lp.id,
       codExt: lp.codExt,
       descripcionProveedor: lp.descripcionProveedor,
+      marca: lp.marca ?? null,
       pxCompraFinal: pxFinal,
       proveedorPrefijo: lp.proveedor?.prefijo ?? null,
       costoCompraObjetivo: objetivo,

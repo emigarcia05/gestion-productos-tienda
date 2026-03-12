@@ -12,12 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, FolderOpen, Layers, Package, Plus, Pencil, UserPlus } from "lucide-react";
+import { Plus, Pencil, UserPlus, Square, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -75,11 +70,13 @@ export default function ComparacionCategoriasClient({
   const [modalGestion, setModalGestion] = useState(false);
   const [modalCostoObjetivo, setModalCostoObjetivo] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
+  const [selectedProductoId, setSelectedProductoId] = useState<string | null>(null);
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
+    setSelectedProductoId(null);
     setLoadingProductos(true);
     try {
       const res = await getProductosPorPresentacionAction(presentacionId);
@@ -161,73 +158,8 @@ export default function ComparacionCategoriasClient({
         actions={acciones}
         filters={filters}
       >
-        <div className="flex-1 min-h-0 flex gap-4 py-3">
-          {/* Panel izquierdo: árbol */}
-          <Card className="w-80 shrink-0 flex flex-col min-h-0">
-          <CardHeader className="py-3">
-            <h2 className="text-sm font-bold text-foreground">Categorías</h2>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto py-0 pb-3">
-            {arbol.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">
-                No hay categorías. {puedeEditar && "Usá «Gestionar categorías» para crear."}
-              </p>
-            ) : (
-              <ul className="space-y-0.5">
-                {arbol.map((cat) => (
-                  <li key={cat.id}>
-                    <Collapsible defaultOpen>
-                      <CollapsibleTrigger className="flex items-center gap-1.5 w-full rounded-md px-2 py-1.5 text-left text-sm font-medium hover:bg-muted">
-                        <ChevronDown className="h-4 w-4 shrink-0 [.group:not([data-state=open])_&]:rotate-[-90deg]" />
-                        <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
-                        <span className="truncate">{cat.nombre}</span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <ul className="ml-4 mt-0.5 space-y-0.5">
-                          {cat.subcategorias.map((sub) => (
-                            <li key={sub.id}>
-                              <Collapsible defaultOpen>
-                                <CollapsibleTrigger className="flex items-center gap-1.5 w-full rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
-                                  <ChevronRight className="h-3.5 w-3.5 shrink-0 [.group:not([data-state=open])_&]:rotate-[-90deg]" />
-                                  <Layers className="h-3.5 w-3.5 shrink-0" />
-                                  <span className="truncate">{sub.nombre}</span>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <ul className="ml-4 mt-0.5 space-y-0.5">
-                                    {sub.presentaciones.map((pre) => (
-                                      <li key={pre.id}>
-                                        <button
-                                          type="button"
-                                          onClick={() => loadProductos(pre.id)}
-                                          className={cn(
-                                            "flex items-center gap-1.5 w-full rounded-md px-2 py-1.5 text-left text-sm",
-                                            selectedPresentacionId === pre.id
-                                              ? "bg-primary/15 text-primary font-medium"
-                                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                          )}
-                                        >
-                                          <Package className="h-3.5 w-3.5 shrink-0" />
-                                          <span className="truncate">{pre.nombre}</span>
-                                        </button>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </CollapsibleContent>
-                              </Collapsible>
-                            </li>
-                          ))}
-                        </ul>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Panel derecho: productos de la categoría seleccionada */}
-        <Card className="flex-1 flex flex-col min-h-0 min-w-0">
+        <div className="flex-1 min-h-0 flex py-3">
+          <Card className="flex-1 flex flex-col min-h-0 min-w-0">
           <CardHeader className="py-3 flex flex-row items-center justify-between gap-2 flex-wrap">
             <div>
               {selectedPresentacionId ? (
@@ -264,7 +196,7 @@ export default function ComparacionCategoriasClient({
                 </>
               ) : (
                 <h2 className="text-sm font-bold text-muted-foreground">
-                  Seleccioná una categoría de comparación (Categoria - Subcategoria - Presentación)
+                  Seleccioná una presentación con los filtros (Marca, Categoría, Subcategoría, Presentación)
                 </h2>
               )}
             </div>
@@ -286,45 +218,74 @@ export default function ComparacionCategoriasClient({
               <p className="text-sm text-muted-foreground py-4">Cargando productos…</p>
             ) : !selectedPresentacionId ? (
               <p className="text-sm text-muted-foreground py-4">
-                Elegí una presentación en el panel izquierdo para ver los productos y comparar con el costo objetivo.
+                Elegí Marca, Categoría, Subcategoría y Presentación en los filtros para ver los productos y comparar con el costo objetivo.
               </p>
             ) : productos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">
                 No hay productos asignados a esta categoría. Usá «Asignar productos» para agregar.
               </p>
             ) : (
-              <Table variant="compact">
+              <Table variant="compact" className="tabla-comparacion-cat">
+                <colgroup>
+                  <col style={{ width: "5%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "55%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-20">PROVEEDOR</TableHead>
-                    <TableHead className="w-28">COD. EXT.</TableHead>
-                    <TableHead className="min-w-0">DESCRIPCION</TableHead>
-                    <TableHead className="w-28">PX COMPRA FINAL</TableHead>
-                    <TableHead className="w-28">DIF. VS OBJETIVO</TableHead>
+                    <TableHead />
+                    <TableHead>PROVEEDOR</TableHead>
+                    <TableHead>MARCA</TableHead>
+                    <TableHead>DESCRIPCION</TableHead>
+                    <TableHead>PX FINAL COMPRA</TableHead>
+                    <TableHead>VARIACION</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {productos.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
-                      <TableCell className="celda-datos celda-mono whitespace-nowrap">{p.codExt}</TableCell>
-                      <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
-                      <TableCell className="celda-datos celda-numero">
-                        {p.pxCompraFinal != null ? `$${fmtPrecio(p.pxCompraFinal)}` : "—"}
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          "celda-datos celda-numero",
-                          p.diferenciaVsObjetivo != null && p.diferenciaVsObjetivo > 0 && "text-destructive",
-                          p.diferenciaVsObjetivo != null && p.diferenciaVsObjetivo <= 0 && p.diferenciaVsObjetivo < 0 && "text-green-600"
-                        )}
+                  {productos.map((p) => {
+                    const selected = selectedProductoId === p.id;
+                    return (
+                      <TableRow
+                        key={p.id}
+                        className={cn(selected && "bg-primary/10")}
                       >
-                        {p.diferenciaVsObjetivo != null
-                          ? `${p.diferenciaVsObjetivo >= 0 ? "+" : ""}$${fmtPrecio(p.diferenciaVsObjetivo)}`
-                          : "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        <TableCell className="celda-datos w-[5%] p-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProductoId(selected ? null : p.id)}
+                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-input bg-background hover:bg-muted"
+                            aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
+                          >
+                            {selected ? (
+                              <Check className="h-3.5 w-3.5 text-primary" />
+                            ) : (
+                              <Square className="h-3.5 w-3.5 text-muted-foreground/50" />
+                            )}
+                          </button>
+                        </TableCell>
+                        <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
+                        <TableCell className="celda-datos">{p.marca ?? "—"}</TableCell>
+                        <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
+                        <TableCell className="celda-datos celda-numero">
+                          {p.pxCompraFinal != null ? `$${fmtPrecio(p.pxCompraFinal)}` : "—"}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "celda-datos celda-numero",
+                            p.diferenciaVsObjetivo != null && p.diferenciaVsObjetivo > 0 && "text-destructive",
+                            p.diferenciaVsObjetivo != null && p.diferenciaVsObjetivo < 0 && "text-green-600"
+                          )}
+                        >
+                          {p.diferenciaVsObjetivo != null
+                            ? `${p.diferenciaVsObjetivo >= 0 ? "+" : ""}$${fmtPrecio(p.diferenciaVsObjetivo)}`
+                            : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
