@@ -16,7 +16,8 @@ model Proveedor {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  listaPrecios ListaPrecioProveedor[]
+  listaPrecios     ListaPrecioProveedor[]
+  itemsPedidoEnvio ItemPedidoEnvio[]
 
   @@map("proveedores")
 }
@@ -145,4 +146,26 @@ model ImportProgress {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("import_progress")
+}
+
+// ─── Enviar Pedido: ítems a enviar.
+// Origen: proveedores (id/nombre/prefijo), precios_proveedores (cod_prod_proveedor, descripcion_proveedor, cod_ext),
+//         precios_tienda (cod_tienda, cod_ext, descripcion_tienda; vacío si no existe vínculo).
+model ItemPedidoEnvio {
+  id                  String   @id @default(uuid())
+  idProveedor         String   @map("id_proveedor")
+  tipoPedido          String   @map("tipo_de_pedido") // URGENTE | TINTOMETRICO | REPOSICION
+  sucursal            String   @map("sucursal")
+  codExt              String   @map("cod_ext")
+  codProveedor        String   @map("cod_proveedor") // cod_prod_proveedor
+  codTienda           String?  @map("cod_tienda") // precios_tienda.cod_tienda; vacío si no existe
+  descripcionProveedor String  @map("descripcion_proveedor")
+  descripcionTienda   String?  @map("descripcion_tienda") // precios_tienda; vacío si no existe
+  cantPedir           Int      @map("cant_pedir") @default(0)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+
+  @@map("pedidos_envio")
 }

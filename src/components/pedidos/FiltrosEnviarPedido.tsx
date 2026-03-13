@@ -18,11 +18,7 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-export type SucursalPedido = "guaymallen" | "maipu";
-
-export const TIPOS_PEDIDO = ["URGENTE", "TINTOMETRICO", "REPOSICION"] as const;
-export type TipoPedido = (typeof TIPOS_PEDIDO)[number];
+import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedidos";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -46,15 +42,6 @@ interface Props {
   proveedor: string;
   tipos: TipoPedido[];
   proveedores: Proveedor[];
-}
-
-export function parseTiposParam(param: string): TipoPedido[] {
-  if (!param?.trim()) return [];
-  const valid = new Set(TIPOS_PEDIDO);
-  return param
-    .split(",")
-    .map((s) => s.trim().toUpperCase())
-    .filter((v): v is TipoPedido => valid.has(v as TipoPedido));
 }
 
 export default function FiltrosEnviarPedido({

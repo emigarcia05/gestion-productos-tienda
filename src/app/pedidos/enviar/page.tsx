@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import FiltrosEnviarPedido, {
+import FiltrosEnviarPedido from "@/components/pedidos/FiltrosEnviarPedido";
+import {
   parseTiposParam,
   type SucursalPedido,
   type TipoPedido,
-} from "@/components/pedidos/FiltrosEnviarPedido";
+} from "@/lib/pedidos";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
