@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,7 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Check, Trash2 } from "lucide-react";
 
 const FILAS_EJEMPLO = [
   {
@@ -16,18 +19,32 @@ const FILAS_EJEMPLO = [
     proveedor: "GAR",
     regDux: true,
     descripcion: "3D PAÑO DE MICROFIBRA SUPER SUAVE",
-    cantPedida: 12,
+    cantPedidaInicial: 12,
   },
   {
     id: "ej-2",
     proveedor: "MER",
     regDux: false,
     descripcion: "ADHESIVO SINTEPLAST CONSTRUCCION P/BLOQUE 25 KG",
-    cantPedida: 0,
+    cantPedidaInicial: 0,
   },
 ];
 
 export default function TablaPedidoUrgente() {
+  const [cantPorId, setCantPorId] = useState<Record<string, string>>(() =>
+    Object.fromEntries(FILAS_EJEMPLO.map((f) => [f.id, String(f.cantPedidaInicial)]))
+  );
+
+  function handleCantChange(id: string, value: string) {
+    const soloDigitos = value.replace(/\D/g, "");
+    setCantPorId((prev) => ({ ...prev, [id]: soloDigitos }));
+  }
+
+  function borrarCant(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setCantPorId((prev) => ({ ...prev, [id]: "" }));
+  }
+
   return (
     <div className="w-full">
       <Table variant="compact" scrollX={false}>
@@ -58,8 +75,29 @@ export default function TablaPedidoUrgente() {
               <TableCell className="celda-datos min-w-0 truncate" title={fila.descripcion}>
                 {fila.descripcion}
               </TableCell>
-              <TableCell className="celda-datos celda-numero">
-                {fila.cantPedida}
+              <TableCell className="celda-datos">
+                <div className="flex items-center justify-center gap-1.5 w-full">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="0"
+                    className="w-20 text-center text-sm tabular-nums"
+                    value={cantPorId[fila.id] ?? ""}
+                    onChange={(e) => handleCantChange(fila.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={(e) => borrarCant(fila.id, e)}
+                    aria-label="Borrar cantidad pedida"
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

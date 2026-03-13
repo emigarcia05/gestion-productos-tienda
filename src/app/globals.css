@@ -604,6 +604,15 @@
   max-height: 1.5rem !important;
   height: 1.5rem !important;
 }
+/* Input número en tabla: sin botones de subir/bajar. */
+.tabla-gestion-compacta tbody td input[type="number"]::-webkit-inner-spin-button,
+.tabla-gestion-compacta tbody td input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.tabla-gestion-compacta tbody td input[type="number"] {
+  -moz-appearance: textfield;
+}
 .tabla-gestion-compacta tbody td button {
   max-height: 1.5rem !important;
   height: 1.5rem !important;
