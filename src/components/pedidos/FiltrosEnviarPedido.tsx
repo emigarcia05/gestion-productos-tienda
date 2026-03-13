@@ -48,7 +48,7 @@ interface Props {
   proveedores: Proveedor[];
 }
 
-function parseTiposParam(param: string): TipoPedido[] {
+export function parseTiposParam(param: string): TipoPedido[] {
   if (!param?.trim()) return [];
   const valid = new Set(TIPOS_PEDIDO);
   return param
