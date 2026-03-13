@@ -12,11 +12,9 @@ interface TableProps extends React.ComponentProps<"table"> {
   scrollX?: boolean
 }
 
-function Table({ className, variant = "default", scrollX = true, ...props }: TableProps) {
-  const tableClass =
-    variant === "compact"
-      ? cn("tabla-gestion-compacta", className)
-      : cn("tabla-global", className)
+/** Diseño único de tablas (referencia: Comp. Px. Prov.). variant se mantiene por API pero ambos usan el mismo estilo. */
+function Table({ className, variant, scrollX = true, ...props }: TableProps) {
+  const tableClass = cn("tabla-gestion-compacta", className)
   return (
     <div
       data-slot="table-container"

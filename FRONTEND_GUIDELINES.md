@@ -36,7 +36,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
 
 8. **Tablas**  
-   - Siempre `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` de `@/components/ui/table` con `variant="compact"`. No `<table>` en crudo con clases propias. Encabezados (`TableHead`) en MAYÚSCULAS.
+   - **Un solo diseño** para toda la app (referencia: Comp. Px. Prov.). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).
 
 9. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
@@ -73,7 +73,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 1. **Estructura de página**
    - `SectionHeader` o `ClassicPageHeader`: título + subtítulo + acciones (botones a la derecha, `h-10 px-4`).
    - `FilterBar` con `filtros-contenedor-tienda bg-card`: `FilterRowSelection` > `FilaFiltrosDesplegables` (5 columnas) + `FilterRowSearch` (input ~75%) + `LimpiarFiltrosButton`.
-   - Contenido: tabla con `<Table variant="compact">` de `@/components/ui/table` o clase `.tabla-global` en `globals.css`.
+   - Contenido: tabla con `<Table>` de `@/components/ui/table` (diseño único `.tabla-gestion-compacta` en `globals.css`).
 
 2. **Clases de filtros (SSOT en FilterBar / globals.css)**
    - Input y SelectTrigger: `INPUT_FILTER_CLASS` / `SELECT_TRIGGER_FILTER_CLASS` = `"input-filtro-unificado"`.
@@ -161,7 +161,9 @@ import SectionHeader from "@/components/SectionHeader";
 | `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
-| `.tabla-global`, `.tabla-gestion-compacta` | Tablas; preferir componente `Table` con `variant="compact"`. |
+| `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Px. Prov.). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. Altura desde variables (abajo). |
+| `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | Altura oficial de tablas (referencia: módulo Comp. Px. Prov.). No sobrescribir padding/height en celdas. |
+| `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
 | `--gris` | Fondo universal de modales y zonas secundarias. |
 | `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
@@ -215,7 +217,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: variantes contador debajo a la derecha y tabla sin scroll (Pedido Urgente); documentado en sección 1 punto 5 y hallazgos.*
+*Última actualización: diseño único de tablas (opción A): una sola clase `.tabla-gestion-compacta`; `<Table>` siempre la aplica; eliminado `.tabla-global`. Documentado en sección 1 punto 8 y catálogo.*
 
 ---
 

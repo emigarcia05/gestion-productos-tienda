@@ -187,6 +187,12 @@
   --altura-paneles-aumentos: 36vh;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* ─── Tablas: altura oficial (referencia: módulo Comp. Px. Prov. / TablaTienda). SSOT para todas las tablas. */
+  --tabla-thead-height: 3.5rem;
+  --tabla-body-row-min-height: 2.25rem;
+  --tabla-body-cell-padding-y: 0.375rem;
+  --tabla-body-cell-padding-x: 0.625rem;
 }
 
 /* ─── Diseño global: todos los estilos reutilizables están aquí o en variables :root.
@@ -298,12 +304,14 @@
     flex-direction: column;
   }
 
-  /* Celdas de datos: text-xs, padding un poco más generoso */
+  /* Celdas de datos: mismo padding que tabla oficial (Comp. Px. Prov.). */
   .celda-datos {
-    padding: 0.375rem 0.625rem;
+    padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
     font-size: 0.75rem;
     text-align: center;
     vertical-align: middle;
+    min-height: var(--tabla-body-row-min-height);
+    box-sizing: border-box;
   }
   .celda-datos.celda-mono {
     font-family: var(--font-mono);
@@ -526,43 +534,11 @@
 }
 
 @layer utilities {
-  /* ─── Estilos madre: tablas ─────────────────────────────────────────────────
-   * Tablas: usar Table de @/components/ui/table O <table class="tabla-global">.
-   * Encabezado fijo (sticky), altura fija, centrado. Sin -webkit-box en th para evitar rotura del layout.
-   */
-  .tabla-global thead {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .tabla-global thead th {
-    @apply bg-primary text-primary-foreground font-bold text-center align-middle px-3 py-1.5 text-xs uppercase;
-    height: 3.5rem !important;
-    min-height: 3.5rem !important;
-    max-height: 3.5rem !important;
-    box-sizing: border-box;
-    white-space: normal !important;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-  .tabla-global tbody td {
-    @apply text-foreground text-sm font-normal text-center align-middle px-3 py-1.5;
-  }
-  .tabla-global tbody tr {
-    @apply border-b border-border transition-colors duration-150;
-  }
-  .tabla-global tbody tr:nth-child(odd) {
-    @apply bg-card;
-  }
-  .tabla-global tbody tr:nth-child(even) {
-    @apply bg-blue-50/50;
-  }
-  .tabla-global tbody tr:hover {
-    @apply bg-primary/10;
-  }
+  /* Reservado: diseño único de tablas está en .tabla-gestion-compacta (fuera de @layer). */
 }
 
-/* Tabla compacta: fuera de @layer para que gane sobre utilidades de Table (thead/tr/th/td). */
+/* ─── Diseño único de tablas (referencia: Comp. Px. Prov.). Aplica a todas las tablas de la app.
+ * Usar <Table> de @/components/ui/table (siempre aplica esta clase). No usar otra clase de tabla. */
 .tabla-gestion-compacta {
   width: 100%;
   font-size: 0.75rem;
@@ -590,10 +566,10 @@
   background-color: var(--primary) !important;
 }
 .tabla-gestion-compacta thead th {
-  padding: 0.375rem 0.625rem !important;
-  height: 3.5rem !important;
-  min-height: 3.5rem !important;
-  max-height: 3.5rem !important;
+  padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
+  height: var(--tabla-thead-height) !important;
+  min-height: var(--tabla-thead-height) !important;
+  max-height: var(--tabla-thead-height) !important;
   font-size: 0.75rem !important;
   font-weight: 700;
   text-align: center;
@@ -611,8 +587,11 @@
   transition: background-color 0.2s ease;
 }
 .tabla-gestion-compacta tbody tr td {
-  padding: 0.375rem 0.625rem !important;
+  padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
   font-size: 0.75rem !important;
+  min-height: var(--tabla-body-row-min-height);
+  box-sizing: border-box;
+  vertical-align: middle;
   transition: font-size 0.2s ease;
 }
 .tabla-gestion-compacta tbody tr:nth-child(odd) {
