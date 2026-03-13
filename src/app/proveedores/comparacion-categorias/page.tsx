@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getArbolCategorias, getProveedoresFromListaTienda } from "@/services/categoriasComparacion.service";
+import { getArbolCategorias } from "@/services/categoriasComparacion.service";
+import { getProveedores } from "@/actions/proveedores";
 import ComparacionCategoriasClient from "@/components/proveedores/ComparacionCategoriasClient";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +23,12 @@ export default async function ComparacionCategoriasPage({ searchParams }: Props)
     redirect("/proveedores");
   }
 
-  const [arbol, proveedores] = await Promise.all([
+  const [arbol, listaProveedores] = await Promise.all([
     getArbolCategorias(),
-    getProveedoresFromListaTienda(),
+    getProveedores(),
   ]);
+
+  const proveedores = listaProveedores.map((p) => ({ id: p.id, nombre: p.nombre }));
 
   const { proveedor = "", categoriaId = "", subcategoriaId = "", presentacionId = "", q = "" } =
     await searchParams;

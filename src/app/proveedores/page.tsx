@@ -65,11 +65,11 @@ export default async function ProveedoresPage({ searchParams }: Props) {
         )}
       </div>
 
-      <Separator className="bg-slate-200/60" />
+      <Separator className="bg-border" />
 
       {/* Card con tabla */}
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 flex flex-col">
-        <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             {esEditor
               ? <TablaProductosFiltrada productos={productos} rol={rol} sinFiltros={!hasFiltros} />
@@ -80,7 +80,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       </div>
 
       {/* Paginación */}
-      <div className="shrink-0 border-t border-slate-200/60 bg-white/80 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
+      <div className="shrink-0 border-t border-border bg-card/80 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
         <PaginacionProductos
           paginaActual={paginaNum}
           totalPaginas={totalPaginas}

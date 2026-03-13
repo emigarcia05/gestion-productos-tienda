@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -139,12 +140,16 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     setImprimiendo(true);
     const ids = items.map((i) => i.id);
     const ahora = new Date();
-    registrarImpresion(ids).then(() => {
-      setImpresiones((prev) => {
-        const next = { ...prev };
-        for (const id of ids) next[id] = ahora;
-        return next;
-      });
+    registrarImpresion(ids).then((res) => {
+      if (res.ok) {
+        setImpresiones((prev) => {
+          const next = { ...prev };
+          for (const id of ids) next[id] = ahora;
+          return next;
+        });
+      } else {
+        toast.error(res.error ?? "Error al registrar impresión.");
+      }
     });
   }
 

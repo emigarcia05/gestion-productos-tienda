@@ -1,5 +1,8 @@
 "use server";
 
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
+
 // ─── MOCK: datos para página Pedido Urgente ─────────────────────────────────
 
 const MOCK_PROVEEDORES_PEDIDO = [
@@ -30,12 +33,23 @@ const MOCK_PRODUCTOS_PEDIDO = [
   },
 ];
 
+const EMPTY_PEDIDO_URGENTE = {
+  proveedores: MOCK_PROVEEDORES_PEDIDO,
+  productos: [] as typeof MOCK_PRODUCTOS_PEDIDO,
+  total: 0,
+  totalPaginas: 0,
+};
+
 /** Datos para la página /pedidos/urgente. Sin filtros no se cargan productos para navegación más rápida. MOCK. */
 export async function getPedidoUrgenteData(params: {
   q?: string;
   pagina?: string;
   proveedor?: string;
 }) {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return EMPTY_PEDIDO_URGENTE;
+  }
   const { q = "", proveedor = "", pagina = "1" } = params;
   const sinFiltros = !q && !proveedor;
   if (sinFiltros) {

@@ -71,7 +71,7 @@ export default function AppModal({
         <div className="min-h-0 flex items-stretch justify-center p-4 flex-1 min-h-0">
           <div
             className={cn(
-              "app-modal__body w-full max-w-full bg-white rounded-lg p-6 shadow-sm min-h-0",
+              "app-modal__body w-full max-w-full bg-card rounded-lg p-6 shadow-sm min-h-0",
               scrollBody ? "overflow-auto" : "overflow-hidden flex flex-col",
               bodyClassName
             )}

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { importarProductos, type ImportResult, type MapeoColumnas } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
+import { cn } from "@/lib/utils";
 
 interface Proveedor {
   id: string;
@@ -128,12 +129,17 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
     startTransition(async () => {
       try {
         const res = await importarProductos(proveedorId, filasCrudas, mapeo);
-        setResult(res);
+        if (!res.ok) {
+          toast.error(res.error ?? "Error al importar.");
+          return;
+        }
+        const data = res.data;
+        setResult(data);
         setStep("result");
-        if (res.errores.length === 0) {
+        if (data.errores.length === 0) {
           toast.success("Importación completada.");
         } else {
-          toast.warning(`Importación con ${res.errores.length} advertencia(s).`);
+          toast.warning(`Importación con ${data.errores.length} advertencia(s).`);
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Error al importar.");
@@ -198,8 +204,8 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               onClick={() => setTieneEncabezados((v) => !v)}
               className="flex items-center gap-3 w-full rounded-lg border border-border/50 bg-card/30 px-4 py-3 text-sm hover:bg-card/60 transition-colors"
             >
-              <div className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${tieneEncabezados ? "bg-primary" : "bg-muted"}`}>
-                <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${tieneEncabezados ? "translate-x-4" : "translate-x-0.5"}`} />
+              <div className={cn("relative h-5 w-9 rounded-full transition-colors shrink-0", tieneEncabezados ? "bg-primary" : "bg-muted")}>
+                <div className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform", tieneEncabezados ? "translate-x-4" : "translate-x-0.5")} />
               </div>
               <div className="text-left">
                 <p className="font-medium">El archivo tiene encabezados</p>
@@ -213,7 +219,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
 
             {/* Zona drag & drop */}
             <div
-              className={`rounded-lg border-2 border-dashed transition-colors cursor-pointer ${isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}
+              className={cn("rounded-lg border-2 border-dashed transition-colors cursor-pointer", isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border")}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={onDrop}
@@ -256,7 +262,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               Los campos marcados con <span className="text-destructive">*</span> son obligatorios.
             </p>
 
-            <div className="rounded-lg border border-border/50 overflow-hidden bg-white">
+            <div className="rounded-lg border border-border/50 overflow-hidden bg-card">
               <Table variant="compact">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -272,7 +278,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                         {label}
                       </TableCell>
                       <TableCell className="py-2.5 px-3 text-xs truncate max-w-[150px]">
-                        {filaEjemplo[i] ?? <span className="text-slate-400 italic">—</span>}
+                        {filaEjemplo[i] ?? <span className="text-muted-foreground italic">—</span>}
                       </TableCell>
                       <TableCell className="py-2.5 px-3">
                         <div className="relative">
@@ -380,7 +386,7 @@ function ResultStat({ label, value, color }: { label: string; value: number; col
   return (
     <div className="rounded-lg border border-border/50 bg-card/50 p-4 text-center space-y-1">
       <p className="text-2xl font-bold">{value}</p>
-      <Badge className={`text-xs ${colorMap[color]}`}>{label}</Badge>
+      <Badge className={cn("text-xs", colorMap[color])}>{label}</Badge>
     </div>
   );
 }

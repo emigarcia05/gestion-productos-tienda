@@ -5,6 +5,7 @@ import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2 } from "
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type UploadStatus = "idle" | "dragging" | "uploading" | "success" | "error";
 
@@ -81,11 +82,12 @@ export default function UploadZone() {
   return (
     <div className="space-y-4">
       <Card
-        className={`border-2 border-dashed transition-all duration-200 cursor-pointer ${
+        className={cn(
+          "border-2 border-dashed transition-all duration-200 cursor-pointer",
           isDragging
             ? "border-primary bg-primary/5"
             : "border-border/50 hover:border-border bg-card/30"
-        }`}
+        )}
         onDragOver={(e) => {
           e.preventDefault();
           setStatus("dragging");
@@ -96,14 +98,16 @@ export default function UploadZone() {
       >
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
           <div
-            className={`mb-4 rounded-full p-4 transition-colors ${
+            className={cn(
+              "mb-4 rounded-full p-4 transition-colors",
               isDragging ? "bg-primary/10" : "bg-muted"
-            }`}
+            )}
           >
             <Upload
-              className={`h-8 w-8 transition-colors ${
+              className={cn(
+                "h-8 w-8 transition-colors",
                 isDragging ? "text-primary" : "text-muted-foreground"
-              }`}
+              )}
             />
           </div>
 

@@ -1,4 +1,5 @@
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface Props {
   titulo: string;
@@ -12,14 +13,14 @@ interface Props {
 
 export default function SectionHeader({ titulo, subtitulo, actions }: Props) {
   return (
-    <header className="section-header shrink-0 w-full bg-white">
+    <header className={cn("section-header shrink-0 w-full")}>
       <div className="section-header__inner flex flex-nowrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="section-header__bar" aria-hidden />
           <div className="min-w-0">
             <h1 className="section-header__titulo">{titulo}</h1>
             {subtitulo && (
-              <p className="section-header__subtitulo">{subtitulo}</p>
+              <h3 className="section-header__subtitulo">{subtitulo}</h3>
             )}
           </div>
         </div>

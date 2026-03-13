@@ -1,10 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Loader2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,7 +8,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, {
+  FilterRowSelection,
+  FilterRowSearch,
+  SELECT_TRIGGER_FILTER_CLASS,
+  FILTER_SELECT_WRAPPER_CLASS,
+  FILTER_COUNT_CLASS,
+  LimpiarFiltrosButton,
+} from "@/components/FilterBar";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 const FOCUS_KEY = "filtros-proveedores-focus";
 
@@ -30,45 +35,40 @@ interface Props {
   proveedorActual: string;
 }
 
-export default function FiltrosProductos({ proveedores, totalProductos, qActual, proveedorActual }: Props) {
+export default function FiltrosProductos({
+  proveedores,
+  totalProductos,
+  qActual,
+  proveedorActual,
+}: Props) {
   const pathname = usePathname();
-  const [q, setQ] = useState(qActual);
-  const [buscando, setBuscando] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef    = useRef<HTMLInputElement>(null);
-
-  // Al montar, si venimos de una búsqueda, restaurar el foco al final del texto
-  useEffect(() => {
-    const shouldFocus = sessionStorage.getItem(FOCUS_KEY);
-    if (shouldFocus === "1") {
-      sessionStorage.removeItem(FOCUS_KEY);
-      const el = inputRef.current;
-      if (el) {
-        el.focus();
-        const len = el.value.length;
-        el.setSelectionRange(len, len);
-      }
-    }
-  }, []);
 
   function navigate(nuevoQ: string, nuevoProveedor: string) {
     const params = new URLSearchParams();
-    if (nuevoQ)         params.set("q", nuevoQ);
+    if (nuevoQ) params.set("q", nuevoQ);
     if (nuevoProveedor) params.set("proveedor", nuevoProveedor);
-    // Marcar que el foco venía del input de búsqueda (no del selector de proveedor)
-    if (document.activeElement === inputRef.current) sessionStorage.setItem(FOCUS_KEY, "1");
     window.location.href = `${pathname}?${params.toString()}`;
   }
 
-  function handleQ(value: string) {
-    setQ(value);
-    setBuscando(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => navigate(value, proveedorActual), 600);
-  }
+  const {
+    q,
+    setQ,
+    ref: inputRef,
+    handleQChange,
+    isDebouncing,
+    prepareNavigate,
+  } = useFiltrosConBusqueda({
+    qActual,
+    debounceMs: 600,
+    focusStorageKey: FOCUS_KEY,
+    onDebouncedSearch: (value) => {
+      prepareNavigate();
+      navigate(value, proveedorActual);
+    },
+  });
 
   function handleProveedor(value: string) {
-    navigate(q, value);
+    navigate(q, value === "none" ? "" : value);
   }
 
   const hayFiltros = !!(proveedorActual || q);
@@ -82,49 +82,38 @@ export default function FiltrosProductos({ proveedores, totalProductos, qActual,
     <FilterBar>
       <FilterRowSelection>
         <div className={FILTER_SELECT_WRAPPER_CLASS}>
-          <Select value={proveedorActual || "none"} onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}>
+          <Select
+            value={proveedorActual || "none"}
+            onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
+          >
             <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
               <SelectValue placeholder="PROVEEDOR" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">PROVEEDORES</SelectItem>
               {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>
+                  [{p.prefijo}] {p.nombre}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <span className={FILTER_COUNT_CLASS}>
-          {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
+          {totalProductos.toLocaleString()} producto
+          {totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>
       <div className="flex items-center gap-2">
         <FilterRowSearch>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
-            <Input
-              ref={inputRef}
-              id="filtro-proveedores-busqueda"
-              value={q}
-              onChange={(e) => handleQ(e.target.value)}
-              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-              className={`pl-9 pr-8 w-full ${INPUT_FILTER_CLASS}`}
-            />
-            {q && !buscando && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => handleQ("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
-            {buscando && (
-              <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 animate-spin pointer-events-none" />
-            )}
-          </div>
+          <FiltroBusquedaInput
+            id="filtro-proveedores-busqueda"
+            placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+            value={q}
+            onChange={handleQChange}
+            isDebouncing={isDebouncing}
+            inputRef={inputRef}
+          />
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
       </div>

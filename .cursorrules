@@ -1,0 +1,67 @@
+# Auditoría Frontend y Arquitectura - Gestión Productos Tienda
+
+## Uso obligatorio para IA
+
+Al **crear o modificar código frontend** (componentes, páginas, estilos):
+1. **Lee y aplica** el archivo **FRONTEND_GUIDELINES.md** de la raíz del proyecto.
+2. Usa la sección "Guía para IA" como checklist: estilos con tokens y `cn()`, filtros con `useFiltrosConBusqueda` + `FiltroBusquedaInput`, tablas con `Table` de `@/components/ui/table`, etc.
+3. Antes de dar por terminada una tarea, verifica el **Checklist de PR** en FRONTEND_GUIDELINES.md (sección 4) y actualiza la guía si introduces nuevas clases globales o patrones.
+
+No inventes convenciones de estilos ni estructuras que no estén documentadas en FRONTEND_GUIDELINES.md.
+
+---
+
+## 1. Objetivos de la Auditoría
+
+### Refactorización de Estilos
+- Identificar estilos "inline" o clases de Tailwind repetitivas.
+- Convertir a clases globales en `globals.css` o variantes con **class-variance-authority** (CVA).
+
+### Reutilización de Código
+- Detectar lógica duplicada en componentes.
+- Proponer componentes en `src/components/shared/` o hooks en `src/lib/hooks/`.
+
+### Consistencia de Diseño
+- Usar exclusivamente tokens de **shadcn/ui** y fuentes **Geist**.
+- Uso uniforme de **lucide-react** y **sonner**.
+
+### Rendimiento y React 19
+- Validar **Server Components** por defecto.
+- Manejo eficiente de **Server Actions** en `src/actions/`.
+
+---
+
+## 2. Reglas Técnicas Estrictas
+
+| Área | Regla |
+|------|--------|
+| **Tipado** | TypeScript 5.9+. No usar `any`. Priorizar esquemas **Zod** para validación. |
+| **Estilos** | Siempre usar la utilidad `cn()` de `@/lib/utils.ts` para combinar clases. |
+| **Estructura** | `src/app/` para rutas; `src/components/ui/` para componentes base shadcn. |
+| **Sesiones** | Acceso a datos vía **iron-session** usando los helpers definidos. |
+
+---
+
+## 3. Documentación y Guía (Knowledge Base)
+
+- Mantener actualizado **FRONTEND_GUIDELINES.md** en la raíz.
+- Incluir: patrones de diseño, catálogo de clases globales, checklist de PR.
+- Cada corrección o patrón detectado debe reflejarse en la documentación.
+
+---
+
+## 4. Modo de Operación
+
+1. **Al revisar una carpeta o archivo:** listar inconsistencias, proponer código corregido.
+2. **Cambios estructurales grandes:** preguntar antes de aplicar.
+3. **Tras correcciones:** confirmar actualización de la documentación técnica.
+
+---
+
+## Stack de Referencia
+
+- **Next.js 16** (App Router)
+- **React 19**
+- **Tailwind CSS 4**
+- **shadcn/ui**
+- **Zod**, **iron-session**, **lucide-react**, **sonner**

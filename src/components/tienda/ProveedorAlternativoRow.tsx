@@ -1,6 +1,7 @@
 import { ArrowRightLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface Props {
   id: string;
@@ -42,7 +43,7 @@ export default function ProveedorAlternativoRow({
           onClick={onCambiarPrincipal}
           disabled={disabled}
           title="Marcar como proveedor principal del ítem"
-          className={`btn-convertir-proveedor-principal ${esMenorCostoAlternativo ? "btn-convertir-proveedor-principal--destacado" : ""}`}
+          className={cn("btn-convertir-proveedor-principal", esMenorCostoAlternativo && "btn-convertir-proveedor-principal--destacado")}
         >
           <ArrowRightLeft className="h-3 w-3 shrink-0" />
           <span className="block">

@@ -20,10 +20,13 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import { cn } from "@/lib/utils";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 
+export type ProveedorOption = { id: string; nombre: string };
+
 interface Props {
-  proveedores: string[];
+  proveedores: ProveedorOption[];
   arbol: CategoriaComparacionTree[];
   proveedorActual: string;
   categoriaIdActual: string;
@@ -156,8 +159,8 @@ export default function FiltrosComparacionCategorias({
               >
                 <SelectItem value="none">PROVEEDOR</SelectItem>
                 {proveedores.map((pr) => (
-                  <SelectItem key={pr} value={pr}>
-                    {pr}
+                  <SelectItem key={pr.id} value={pr.id}>
+                    {pr.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -262,7 +265,7 @@ export default function FiltrosComparacionCategorias({
           </div>
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-        <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalPresentaciones.toLocaleString("es-AR")} presentación
           {totalPresentaciones !== 1 ? "es" : ""}
         </span>

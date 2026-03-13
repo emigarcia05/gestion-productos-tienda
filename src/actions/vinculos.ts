@@ -8,6 +8,7 @@ import type { ProductoCompleto } from "@/types";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { getProveedores as getProveedoresFromProveedores } from "@/actions/proveedores";
+import { uuidSchema } from "@/lib/validations/common";
 
 export async function getVinculos(itemTiendaId: string): Promise<ServiceResult<ProductoCompleto[]>> {
   return getProductosVinculadosPorItemTienda(itemTiendaId);
@@ -37,25 +38,30 @@ export async function vincularProducto(
   productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const parsedItem = uuidSchema.safeParse(itemTiendaId);
+  const parsedProducto = uuidSchema.safeParse(productoProveedorId);
+  if (!parsedItem.success || !parsedProducto.success) {
+    return { ok: false, error: "IDs inválidos." };
+  }
   const { prisma } = await import("@/lib/prisma");
   const producto = await prisma.listaPrecioProveedor.findUnique({
-    where: { id: productoProveedorId },
+    where: { id: parsedProducto.data },
     select: { idProveedor: true },
   });
   if (!producto) return { ok: false, error: "Producto no encontrado." };
   const yaVinculadoMismoProveedor = await prisma.listaPrecioProveedor.findFirst({
     where: {
-      idListaPrecioTienda: itemTiendaId,
+      idListaPrecioTienda: parsedItem.data,
       idProveedor: producto.idProveedor,
-      id: { not: productoProveedorId },
+      id: { not: parsedProducto.data },
     },
   });
   if (yaVinculadoMismoProveedor) {
     return { ok: false, error: "Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor." };
   }
   await prisma.listaPrecioProveedor.update({
-    where: { id: productoProveedorId },
-    data: { idListaPrecioTienda: itemTiendaId },
+    where: { id: parsedProducto.data },
+    data: { idListaPrecioTienda: parsedItem.data },
   });
   revalidatePath("/tienda");
   return { ok: true, data: undefined };
@@ -66,9 +72,11 @@ export async function desvincularProducto(
   productoProveedorId: string
 ): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const parsed = uuidSchema.safeParse(productoProveedorId);
+  if (!parsed.success) return { ok: false, error: "ID de producto inválido." };
   const { prisma } = await import("@/lib/prisma");
   await prisma.listaPrecioProveedor.update({
-    where: { id: productoProveedorId },
+    where: { id: parsed.data },
     data: { idListaPrecioTienda: null },
   });
   revalidatePath("/tienda");

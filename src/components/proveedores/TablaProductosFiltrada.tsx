@@ -175,7 +175,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
   ].filter(Boolean).length || 1;
 
   return (
-    <div className="h-full overflow-auto rounded-lg border border-border/50 bg-white">
+    <div className="h-full overflow-auto rounded-lg border border-border/50 bg-card">
       <Table variant="compact">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -228,7 +228,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
               )}
               {puede(rol, col.codExt) && (
                 <TableCell className="py-2 px-2 whitespace-nowrap">
-                  <code className="text-xs px-1.5 py-0.5 rounded font-mono bg-slate-100">{prod.codigoExterno}</code>
+                  <code className="text-xs px-1.5 py-0.5 rounded font-mono bg-muted">{prod.codigoExterno}</code>
                 </TableCell>
               )}
               {puede(rol, col.descripcion) && (

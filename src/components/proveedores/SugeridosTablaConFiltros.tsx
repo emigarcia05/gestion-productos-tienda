@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fmtPrecio } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 import type { ListaPreciosFiltradoOpciones } from "@/services/listaPrecios.service";
 
@@ -242,7 +243,7 @@ export default function SugeridosTablaConFiltros({
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-          <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
+          <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {filteredFilas.length.toLocaleString()} producto
             {filteredFilas.length !== 1 ? "s" : ""}
           </span>

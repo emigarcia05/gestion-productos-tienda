@@ -22,6 +22,7 @@ import FilterBar, {
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPctEntero } from "@/lib/format";
 import { matchByMultiTerm } from "@/lib/busqueda";
+import { cn } from "@/lib/utils";
 
 function exportarXLS(items: ItemAumento[]) {
   import("xlsx").then((XLSX) => {
@@ -60,7 +61,7 @@ function exportarXLS(items: ItemAumento[]) {
 
 function ColorPct({ pct, size = "sm" }: { pct: number; size?: "sm" | "lg" }) {
   const cls = size === "lg" ? "text-lg font-bold tabular-nums" : "text-xs font-semibold tabular-nums";
-  return <span className={`${cls} text-foreground`}>{fmtPctEntero(pct)}</span>;
+  return <span className={cn(cls, "text-foreground")}>{fmtPctEntero(pct)}</span>;
 }
 
 function IconTendencia({ pct }: { pct: number }) {
@@ -104,7 +105,7 @@ function ColumnaGrupo({
           return (
             <div
               key={g.nombre}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left border-b border-border ${zebra}`}
+              className={cn("w-full flex items-center justify-between gap-2 px-3 py-2 text-left border-b border-border", zebra)}
             >
               <span className="text-xs text-foreground truncate">
                 {g.nombre}
@@ -145,7 +146,7 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
       {filtrados.map((item, idx) => (
         <div
           key={item.itemId}
-          className={`flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-border hover:bg-primary/10 ${idx % 2 === 1 ? "bg-blue-50/50" : "bg-card"}`}
+          className={cn("flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-border hover:bg-primary/10", idx % 2 === 1 ? "bg-blue-50/50" : "bg-card")}
         >
           <span className="text-xs text-foreground truncate">{item.descripcion}</span>
           <div className="flex items-center gap-1 shrink-0">
@@ -332,7 +333,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
             </div>
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={!!hayFiltros || !!busqueda} onClick={limpiarFiltros} />
-          <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
+          <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {conAumento.length.toLocaleString()} con variación
           </span>
         </div>

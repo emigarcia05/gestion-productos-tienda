@@ -19,20 +19,26 @@ export interface ImportResult {
   errores: string[];
 }
 
+/** Resultado tipado para el frontend: éxito con datos o error. */
+export type ImportActionResult =
+  | { ok: true; data: ImportResult }
+  | { ok: false; error: string };
+
 // ─── Importar productos (mock) ──────────────────────────────────────────────
 
 export async function importarProductos(
   proveedorId: string,
   filasCrudas: string[][],
   mapeo: MapeoColumnas
-): Promise<ImportResult> {
-  if (!(await esEditor())) throw new Error("Sin permisos de editor.");
-  if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
-  if (!filasCrudas.length) throw new Error("No hay filas para importar.");
+): Promise<ImportActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  if (!proveedorId?.trim()) return { ok: false, error: "Debe seleccionar un proveedor." };
+  if (!Array.isArray(filasCrudas) || filasCrudas.length === 0) return { ok: false, error: "No hay filas para importar." };
+
   revalidatePath("/proveedores");
   revalidatePath("/proveedores/lista");
   revalidatePath("/proveedores/gestion");
-  return { creados: 0, actualizados: 0, eliminados: 0, errores: [] };
+  return { ok: true, data: { creados: 0, actualizados: 0, eliminados: 0, errores: [] } };
 }
 
 // ─── Importar lista de precios proveedor (upsert lista_precios_proveedores) ───
@@ -43,30 +49,35 @@ export async function importarListaPreciosProveedor(
   mapeo: MapeoColumnasListaPrecios,
   precioEnDolares: boolean = false,
   habilitado: boolean = true
-): Promise<ImportResult> {
-  if (!(await esEditor())) throw new Error("Sin permisos de editor.");
-  if (!proveedorId) throw new Error("Debe seleccionar un proveedor.");
-  if (!filasCrudas.length) throw new Error("No hay filas para importar.");
+): Promise<ImportActionResult> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  if (!proveedorId?.trim()) return { ok: false, error: "Debe seleccionar un proveedor." };
+  if (!Array.isArray(filasCrudas) || filasCrudas.length === 0) return { ok: false, error: "No hay filas para importar." };
 
   const proveedor = await getProveedorById(proveedorId);
-  if (!proveedor) throw new Error("Proveedor no encontrado.");
+  if (!proveedor) return { ok: false, error: "Proveedor no encontrado." };
   const prefijo = proveedor.prefijo;
 
   const filas = aplicarMapeoListaPrecios(filasCrudas, mapeo);
-  if (filas.length === 0) throw new Error("No hay filas válidas para importar.");
+  if (filas.length === 0) return { ok: false, error: "No hay filas válidas para importar." };
 
-  const { creados, actualizados, errores } = await listaPreciosService.upsertListaPrecios(
-    proveedorId,
-    prefijo,
-    filas,
-    precioEnDolares,
-    habilitado
-  );
+  try {
+    const { creados, actualizados, errores } = await listaPreciosService.upsertListaPrecios(
+      proveedorId,
+      prefijo,
+      filas,
+      precioEnDolares,
+      habilitado
+    );
 
-  revalidatePath("/proveedores");
-  revalidatePath("/proveedores/lista-precios");
-  revalidatePath("/proveedores/lista");
-  revalidatePath("/proveedores/gestion");
+    revalidatePath("/proveedores");
+    revalidatePath("/proveedores/lista-precios");
+    revalidatePath("/proveedores/lista");
+    revalidatePath("/proveedores/gestion");
 
-  return { creados, actualizados, eliminados: 0, errores };
+    return { ok: true, data: { creados, actualizados, eliminados: 0, errores } };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error al importar lista de precios.";
+    return { ok: false, error: message };
+  }
 }

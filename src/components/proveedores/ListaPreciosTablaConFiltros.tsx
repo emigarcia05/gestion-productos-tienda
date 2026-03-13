@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 interface RubroOption {
@@ -323,7 +324,7 @@ export default function ListaPreciosTablaConFiltros({
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-          <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
+          <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {filteredFilas.length.toLocaleString()} producto
             {filteredFilas.length !== 1 ? "s" : ""}
           </span>

@@ -17,7 +17,7 @@ export default function ProveedoresSubmoduleToolbar({ activo }: { activo: Provee
           "rounded-lg transition-colors duration-150",
           activo === "consulta"
             ? "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
         asChild
       >
@@ -33,7 +33,7 @@ export default function ProveedoresSubmoduleToolbar({ activo }: { activo: Provee
           "rounded-lg transition-colors duration-150",
           activo === "lista"
             ? "bg-primary/10 text-primary font-semibold hover:bg-primary/15"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
         asChild
       >

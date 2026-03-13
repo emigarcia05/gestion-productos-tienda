@@ -131,7 +131,7 @@ export default async function ImportarPage() {
             <div className="overflow-x-auto">
               <Table variant="compact">
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent border-b border-slate-200/80">
+                  <TableRow className="hover:bg-transparent border-b border-border">
                     <TableHead className="!text-left">Archivo</TableHead>
                     <TableHead>Filas</TableHead>
                     <TableHead>Importados</TableHead>
@@ -145,14 +145,14 @@ export default async function ImportarPage() {
                     <TableRow key={item.id}>
                       <TableCell className="!text-left">
                         <span className="flex items-center gap-2">
-                          <FileSpreadsheet className="h-4 w-4 text-slate-500" />
+                          <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
                           {item.filename}
                         </span>
                       </TableCell>
                       <TableCell>{item.rows}</TableCell>
                       <TableCell className="text-emerald-600 font-semibold">{item.imported}</TableCell>
                       <TableCell className="text-destructive font-semibold">{item.errors}</TableCell>
-                      <TableCell className="text-slate-600 text-xs">{item.date}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{item.date}</TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                     </TableRow>
                   ))}

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { type MapeoColumnasListaPrecios } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
+import { cn } from "@/lib/utils";
 
 interface Proveedor {
   id: string;
@@ -254,18 +255,20 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(true)}
-                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  }`}
+                  )}
                 >
                   SÍ
                 </button>
                 <button
                   type="button"
                   onClick={() => setTieneEncabezados(false)}
-                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     !tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  }`}
+                  )}
                 >
                   NO
                 </button>
@@ -277,18 +280,20 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setHabilitado(true)}
-                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     habilitado ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  }`}
+                  )}
                 >
                   SÍ
                 </button>
                 <button
                   type="button"
                   onClick={() => setHabilitado(false)}
-                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     !habilitado ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  }`}
+                  )}
                 >
                   NO
                 </button>
@@ -300,18 +305,20 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(true)}
-                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  }`}
+                  )}
                 >
                   SÍ
                 </button>
                 <button
                   type="button"
                   onClick={() => setPrecioEnDolares(false)}
-                  className={`flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                     !precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  }`}
+                  )}
                 >
                   NO
                 </button>
@@ -321,9 +328,10 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             {/* Zona de arrastre cuando no hay archivo (opcional, para drag & drop) */}
             {!fileName && (
               <div
-                className={`rounded-lg border-2 border-dashed transition-colors flex items-center justify-center gap-2 py-4 px-3 ${
+                className={cn(
+                  "rounded-lg border-2 border-dashed transition-colors flex items-center justify-center gap-2 py-4 px-3",
                   isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
-                }`}
+                )}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={onDrop}
@@ -342,7 +350,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             {/* Cuando hay archivo: 2 columnas — Valor de la primera fila | Opciones para mapear */}
             {fileName && colLabels.length > 0 && (
               <>
-                <div className="rounded-lg border border-border/50 overflow-hidden bg-white max-h-[220px] overflow-y-auto w-full min-w-0">
+                <div className="rounded-lg border border-border/50 overflow-hidden bg-card max-h-[220px] overflow-y-auto w-full min-w-0">
                   <Table variant="compact" className="table-fixed w-full">
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
@@ -354,7 +362,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                       {colLabels.map((_, i) => (
                         <TableRow key={i}>
                           <TableCell className="py-2 px-3 font-mono text-xs truncate">
-                            {(encabezados ?? filaEjemplo)?.[i] ?? <span className="text-slate-400 italic">—</span>}
+                            {(encabezados ?? filaEjemplo)?.[i] ?? <span className="text-muted-foreground italic">—</span>}
                           </TableCell>
                           <TableCell className="py-2 px-3">
                             <div className="relative">

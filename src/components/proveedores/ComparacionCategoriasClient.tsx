@@ -17,7 +17,9 @@ import { Plus, UserPlus, Check, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import FiltrosComparacionCategorias from "@/components/proveedores/comparacion-categorias/FiltrosComparacionCategorias";
+import FiltrosComparacionCategorias, {
+  type ProveedorOption,
+} from "@/components/proveedores/comparacion-categorias/FiltrosComparacionCategorias";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import type { ProductoEnCategoria } from "@/services/categoriasComparacion.service";
 import type { Rol } from "@/lib/permisos";
@@ -29,7 +31,7 @@ import AsignarProductosModal from "@/components/proveedores/comparacion-categori
 interface Props {
   arbolInicial: CategoriaComparacionTree[];
   rol: Rol;
-  proveedores: string[];
+  proveedores: ProveedorOption[];
   proveedorInicial: string;
   categoriaIdInicial: string;
   subcategoriaIdInicial: string;
@@ -105,9 +107,9 @@ export default function ComparacionCategoriasClient({
     setLoadingProductos(true);
     try {
       const res = await getProductosPorPresentacionAction(presentacionId);
-      if (res.ok && "productos" in res) {
-        setProductos(res.productos);
-        setLabelCompleto(res.labelCompleto ?? "");
+      if (res.ok && res.data) {
+        setProductos(res.data.productos);
+        setLabelCompleto(res.data.labelCompleto ?? "");
       } else {
         setProductos([]);
         setLabelCompleto("");

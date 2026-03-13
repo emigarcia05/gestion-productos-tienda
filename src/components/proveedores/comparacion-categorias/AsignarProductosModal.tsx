@@ -77,7 +77,7 @@ export default function AsignarProductosModal({
         toast.error(res.error ?? "Error al asignar.");
         throw new Error(res.error);
       }
-      toast.success(`Se asignaron ${res.count} productos.`);
+      toast.success(`Se asignaron ${res.data?.count ?? 0} productos.`);
       onSuccess();
     } finally {
       setAsignando(false);

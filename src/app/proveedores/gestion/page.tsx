@@ -27,7 +27,7 @@ export default async function GestionProveedoresPage() {
         actions={acciones}
       />
 
-      <Separator className="bg-slate-200/60" />
+      <Separator className="bg-border" />
 
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
         <TablaProveedoresGestion proveedores={proveedores} />

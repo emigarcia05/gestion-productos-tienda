@@ -3,6 +3,10 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
+import type { ActionResult } from "@/lib/types";
+import { z } from "zod";
 
 export type Sucursal = "guaymallen" | "maipu";
 
@@ -32,18 +36,30 @@ export interface GetControlStockParams {
   soloNegativo?: boolean;
 }
 
+const emptyControlStock: ControlStockData = {
+  items: [],
+  marcas: [],
+  rubros: [],
+  subRubros: [],
+};
+
 /**
  * Datos para Control Stock desde precios_tienda.
  * Filtros: MARCA → marca, RUBRO → rubro, SUB-RUBRO → sub_rubro.
  * Opciones de cada desplegable según docs/FILTROS_DINAMICOS.md (valores que existen con los demás filtros).
  * STOCK = stock_maipu o stock_guaymallen según sucursal.
+ * Requiere permiso PERMISOS.stock.acceso.
  */
 export async function getControlStock(
   sucursal: Sucursal | null,
   params: GetControlStockParams = {}
 ): Promise<ControlStockData> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return emptyControlStock;
+  }
   if (!sucursal) {
-    return { items: [], marcas: [], rubros: [], subRubros: [] };
+    return emptyControlStock;
   }
 
   const {
@@ -131,6 +147,21 @@ export async function getControlStock(
   };
 }
 
-export async function registrarImpresion(ids: string[]): Promise<void> {
+const idsUuidSchema = z.array(z.string().uuid()).optional().default([]);
+
+/**
+ * Registra impresión de ítems (no-op: persistencia opcional).
+ * Solo editor. Valida que ids sean UUIDs.
+ */
+export async function registrarImpresion(ids: string[]): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = idsUuidSchema.safeParse(ids ?? []);
+  if (!parsed.success) {
+    return { ok: false, error: "IDs inválidos." };
+  }
   // no-op: persistencia de última impresión opcional
+  return { ok: true, data: undefined };
 }

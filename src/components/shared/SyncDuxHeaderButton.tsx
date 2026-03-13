@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SyncModal from "@/components/shared/SyncModal";
 import MensajeProceso from "@/components/shared/MensajeProceso";
+import { cn } from "@/lib/utils";
 
 const STATUS_POLL_MS = 1500;
 
@@ -72,7 +73,7 @@ export default function SyncDuxHeaderButton() {
           disabled={syncing}
         >
           <RefreshCw
-            className={`h-4 w-4 shrink-0 ${syncing ? "animate-spin" : ""}`}
+            className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")}
           />
           {syncing ? "Importando…" : "Importar Datos Dux"}
         </Button>

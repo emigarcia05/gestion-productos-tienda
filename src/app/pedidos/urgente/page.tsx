@@ -42,10 +42,10 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
         totalProductos={total}
       />
 
-      <Separator className="bg-slate-200/60" />
+      <Separator className="bg-border" />
 
       <div className="flex-1 min-h-0 px-4 pb-4 max-w-7xl mx-auto w-full">
-        <Card className="min-h-0 flex flex-col rounded-xl border-slate-200 bg-white overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 overflow-auto p-0">
             <PedidoUrgenteTablaConToast productos={productos} sinFiltros={!hasFiltros} />
           </CardContent>

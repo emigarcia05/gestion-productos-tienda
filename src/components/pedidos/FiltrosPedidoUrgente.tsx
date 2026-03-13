@@ -1,9 +1,6 @@
 "use client";
 
-import * as React from "react";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -11,7 +8,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FilterBar, { FilterRowSelection, FilterRowSearch, FilaFiltrosDesplegables, INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS, FILTER_SELECT_WRAPPER_CLASS, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import FilterBar, {
+  FilterRowSelection,
+  FilterRowSearch,
+  FilaFiltrosDesplegables,
+  FILTER_SELECT_WRAPPER_CLASS,
+  SELECT_TRIGGER_FILTER_CLASS,
+  FILTER_COUNT_CLASS,
+  LimpiarFiltrosButton,
+} from "@/components/FilterBar";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 
@@ -34,12 +41,14 @@ interface Props {
   totalProductos: number;
 }
 
-export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedores, totalProductos }: Props) {
+export default function FiltrosPedidoUrgente({
+  q,
+  sucursal,
+  proveedor,
+  proveedores,
+  totalProductos,
+}: Props) {
   const pathname = usePathname();
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [qLocal, setQLocal] = React.useState(q);
-
-  React.useEffect(() => setQLocal(q), [q]);
 
   function updateUrl(updates: { q?: string; sucursal?: string; proveedor?: string }) {
     const next = { q, sucursal: sucursal || "", proveedor: proveedor || "" };
@@ -53,13 +62,24 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
     window.location.href = `${pathname}?${search.toString()}`;
   }
 
-  function handleSearch(value: string) {
-    setQLocal(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => updateUrl({ q: value }), 400);
-  }
+  const {
+    q: qLocal,
+    setQ: setQLocal,
+    ref: inputRef,
+    handleQChange,
+    isDebouncing,
+    prepareNavigate,
+  } = useFiltrosConBusqueda({
+    qActual: q,
+    debounceMs: 400,
+    focusStorageKey: "filtros-pedido-urgente-focus",
+    onDebouncedSearch: (value) => {
+      prepareNavigate();
+      updateUrl({ q: value });
+    },
+  });
 
-  const hayFiltros = !!(q || sucursal || proveedor);
+  const hayFiltros = !!(qLocal || sucursal || proveedor);
 
   function limpiarFiltros() {
     setQLocal("");
@@ -71,48 +91,69 @@ export default function FiltrosPedidoUrgente({ q, sucursal, proveedor, proveedor
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select value={sucursal || "none"} onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}>
+            <Select
+              value={sucursal || "none"}
+              onValueChange={(v) =>
+                updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })
+              }
+            >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SUCURSAL" />
               </SelectTrigger>
-              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
                 <SelectItem value="none">SUCURSAL</SelectItem>
                 {SUCURSALES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select value={proveedor || "none"} onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}>
+            <Select
+              value={proveedor || "none"}
+              onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
+            >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="PROVEEDOR" />
               </SelectTrigger>
-              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
                 <SelectItem value="none">PROVEEDORES</SelectItem>
                 {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    [{p.prefijo}] {p.nombre}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </FilaFiltrosDesplegables>
         <span className={FILTER_COUNT_CLASS}>
-          {totalProductos.toLocaleString()} producto{totalProductos !== 1 ? "s" : ""}
+          {totalProductos.toLocaleString()} producto
+          {totalProductos !== 1 ? "s" : ""}
         </span>
       </FilterRowSelection>
       <div className="flex items-center gap-2">
         <FilterRowSearch>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
-            <Input
-              id="filtro-pedidos-busqueda"
-              value={qLocal}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-              className={`pl-9 w-full ${INPUT_FILTER_CLASS}`}
-            />
-          </div>
+          <FiltroBusquedaInput
+            id="filtro-pedidos-busqueda"
+            placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+            value={qLocal}
+            onChange={handleQChange}
+            isDebouncing={isDebouncing}
+            inputRef={inputRef}
+          />
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
       </div>

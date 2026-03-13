@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const TOAST_SYNC_ID = "sync-dux";
 const REQUEST_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos
@@ -75,7 +76,7 @@ export default function SyncButton() {
       onClick={handleClick}
       disabled={syncing}
     >
-      <RefreshCw className={`h-4 w-4 shrink-0 ${syncing ? "animate-spin" : ""}`} />
+      <RefreshCw className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")} />
       {syncing ? "Sincronizando…" : "Actualizar Datos con Dux"}
     </Button>
   );

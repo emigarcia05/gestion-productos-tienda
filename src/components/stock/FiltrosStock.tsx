@@ -1,10 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,6 +16,9 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import { cn } from "@/lib/utils";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
@@ -50,13 +49,18 @@ export default function FiltrosStock({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const [q, setQ] = useState(qActual);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setQ(qActual);
-  }, [qActual]);
+  const {
+    q,
+    setQ,
+    ref: inputRef,
+    handleQChange,
+    isDebouncing,
+  } = useFiltrosConBusqueda({
+    qActual,
+    debounceMs: 400,
+    onDebouncedSearch: (value) => navigate({ q: value }),
+  });
 
   const hayFiltros = !!(
     q ||
@@ -83,7 +87,9 @@ export default function FiltrosStock({
     const subRubroVal =
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
     const soloVal =
-      updates.soloNegativo !== undefined ? updates.soloNegativo : soloNegativoActual;
+      updates.soloNegativo !== undefined
+        ? updates.soloNegativo
+        : soloNegativoActual;
 
     if (sucursal) p.set("sucursal", sucursal);
     if (qVal) p.set("q", qVal);
@@ -105,14 +111,6 @@ export default function FiltrosStock({
     const p = buildParams(updates);
     const query = p.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
-  }
-
-  function handleQ(value: string) {
-    setQ(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      navigate({ q: value });
-    }, 400);
   }
 
   function handleSucursal(value: string) {
@@ -291,32 +289,18 @@ export default function FiltrosStock({
       </FilterRowSelection>
       <div className="flex items-center gap-3">
         <FilterRowSearch className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
-            <Input
-              ref={inputRef}
-              id="filtro-stock-busqueda"
-              value={q}
-              onChange={(e) => handleQ(e.target.value)}
-              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-              className="input-filtro-unificado pl-9 pr-8"
-              disabled={!sucursalSeleccionada}
-            />
-            {q && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => handleQ("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
+          <FiltroBusquedaInput
+            id="filtro-stock-busqueda"
+            placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+            value={q}
+            onChange={handleQChange}
+            isDebouncing={isDebouncing}
+            inputRef={inputRef}
+            disabled={!sucursalSeleccionada}
+          />
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-        <span className={`${FILTER_COUNT_CLASS} ml-auto`}>
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString("es-AR")} ítem
           {totalItems !== 1 ? "s" : ""}
         </span>
@@ -324,4 +308,3 @@ export default function FiltrosStock({
     </FilterBar>
   );
 }
-

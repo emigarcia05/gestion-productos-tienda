@@ -14,6 +14,7 @@ import {
 import type { ActionResult } from "@/lib/types";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
+import { idsUuidSchema, actualizacionMasivaListaPreciosSchema } from "@/lib/validations/listaPrecios";
 
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
@@ -78,7 +79,17 @@ export async function actualizarListaPreciosMasivoAction(
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para edición masiva." };
   }
-  const result = await actualizarListaPreciosMasivo(ids, data);
+  const parsedIds = idsUuidSchema.safeParse(ids);
+  if (!parsedIds.success) {
+    const msg = parsedIds.error.flatten().formErrors[0] ?? parsedIds.error.message;
+    return { ok: false, error: msg ?? "IDs inválidos." };
+  }
+  const parsedData = actualizacionMasivaListaPreciosSchema.safeParse(data);
+  if (!parsedData.success) {
+    const msg = parsedData.error.flatten().formErrors[0] ?? parsedData.error.message;
+    return { ok: false, error: msg ?? "Datos de actualización inválidos." };
+  }
+  const result = await actualizarListaPreciosMasivo(parsedIds.data, parsedData.data);
   if (result.error) return { ok: false, error: result.error };
   revalidatePath("/proveedores/lista-precios");
   return { ok: true, data: { actualizados: result.actualizados } };
