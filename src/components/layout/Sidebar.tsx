@@ -11,6 +11,7 @@ import {
   ClipboardList,
   ChevronDown,
   AlarmClock,
+  Send,
   FileSearch,
   List,
   Link2,
@@ -79,6 +80,7 @@ const MODULES: {
     icon: <ClipboardList className={iconClass} />,
     submodules: [
       { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/enviar", label: "Enviar Pedido", icon: <Send className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
       { href: "/pedidos/tintometrico", label: "Pedido Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
       { href: "/pedidos/reposicion", label: "Pedido Reposición", icon: <RotateCw className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
       { href: "/pedidos/historial", label: "Historial Pedidos", icon: <History className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },

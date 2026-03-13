@@ -46,3 +46,13 @@ export async function getPedidoUrgenteData(params: {
     totalPaginas: result.totalPaginas,
   };
 }
+
+/** Datos iniciales para la página Enviar Pedido (filtros: proveedores). */
+export async function getEnviarPedidoData() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { proveedores: [] };
+  }
+  const proveedores = await getProveedoresParaPedidoUrgente();
+  return { proveedores };
+}
