@@ -82,7 +82,7 @@ export default function TablaPedidoUrgente({
 
   return (
     <>
-      <div className="overflow-auto max-h-[calc(100vh-16rem)]">
+      <div className="w-full">
         <Table variant="compact">
           <TableHeader>
             <TableRow className="hover:bg-transparent">

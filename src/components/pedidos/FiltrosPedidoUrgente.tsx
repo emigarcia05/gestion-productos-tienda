@@ -185,10 +185,6 @@ export default function FiltrosPedidoUrgente({
             </Select>
           </div>
         </FilaFiltrosDesplegables>
-        <span className={FILTER_COUNT_CLASS}>
-          {totalProductos.toLocaleString()} PRODUCTO
-          {totalProductos !== 1 ? "S" : ""}
-        </span>
       </FilterRowSelection>
       <div className="flex items-center gap-2">
         <FilterRowSearch>
@@ -202,6 +198,12 @@ export default function FiltrosPedidoUrgente({
           />
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+      </div>
+      <div className="flex justify-end w-full">
+        <span className={FILTER_COUNT_CLASS}>
+          {totalProductos.toLocaleString()} PRODUCTO
+          {totalProductos !== 1 ? "S" : ""}
+        </span>
       </div>
     </FilterBar>
   );

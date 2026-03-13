@@ -64,7 +64,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">
         <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-          <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+          <CardContent className="flex-1 min-h-0 overflow-x-auto overflow-y-visible p-0">
             <PedidoUrgenteTablaConToast
               productos={productos}
               sinFiltros={sinSucursal}

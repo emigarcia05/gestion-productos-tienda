@@ -88,6 +88,10 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 4. **Modal con tabla y filtros**
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección).
 
+5. **Variantes: contador debajo y tabla sin scroll**
+   - **Contador debajo a la derecha**: cuando el diseño requiera el número de ítems en una fila inferior alineada a la derecha (ej. Pedido Urgente), usar una tercera fila dentro del `FilterBar`: `<div className="flex justify-end w-full"><span className={FILTER_COUNT_CLASS}>…</span></div>`. No incluir el contador dentro de `FilterRowSelection`.
+   - **Tabla sin scroll (solo paginación)**: no usar `overflow-auto` ni `max-h` en el contenedor de la tabla; mostrar solo los datos de la página actual. Encabezado fijo con `<Table variant="compact">` (clase `.tabla-gestion-compacta` en globals.css). En el contenedor de la tabla usar `overflow-y-visible` o sin overflow para evitar scroll vertical; paginación debajo.
+
 ### Ejemplos de código (referencia para IA)
 
 **Combinar clases con `cn()`:**
@@ -199,7 +203,7 @@ Antes de dar por terminada una tarea de frontend:
 
 - **SectionHeader**: eliminado `bg-white`; clase `.section-header` (fondo `var(--card)`). `cn()` en header. Subtítulo `<h3>`.
 - **Toolbars (Proveedores, Tienda, Pedidos)**: tokens `text-muted-foreground`, `hover:bg-muted`, `hover:text-foreground`.
-- **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros.
+- **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha; tabla sin scroll (solo paginación); encabezado fijo con `Table variant="compact"` (sección 1, punto 5).
 - **ui/tooltip.tsx**, **ui/dialog.tsx**: tokens (border-border, bg-popover, bg-background).
 - **Modales y listados**: ImportarModal, ImportarListaPreciosModal, TablaProductosFiltrada, AppModal con `bg-card`, `text-muted-foreground`, `bg-muted` y `cn()` en todos los classNames combinados.
 - **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tabla importar `border-border`, `text-muted-foreground`; barra paginación `border-border bg-card/80`.
@@ -211,7 +215,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: mayúsculas en filtros (contador, placeholders), opciones de desplegables y encabezados de tablas; documentado en secciones 1, 3 y 4.*
+*Última actualización: variantes contador debajo a la derecha y tabla sin scroll (Pedido Urgente); documentado en sección 1 punto 5 y hallazgos.*
 
 ---
 
