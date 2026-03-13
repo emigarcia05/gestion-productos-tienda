@@ -8,32 +8,48 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  EmptyTableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, Trash2 } from "lucide-react";
 
-const FILAS_EJEMPLO = [
-  {
-    id: "ej-1",
-    proveedor: "GAR",
-    regDux: true,
-    descripcion: "3D PAÑO DE MICROFIBRA SUPER SUAVE",
-    cantPedidaInicial: 12,
-  },
-  {
-    id: "ej-2",
-    proveedor: "MER",
-    regDux: false,
-    descripcion: "ADHESIVO SINTEPLAST CONSTRUCCION P/BLOQUE 25 KG",
-    cantPedidaInicial: 0,
-  },
-];
+export interface ProductoPedidoUrgente {
+  id: string;
+  codExt: string;
+  prefijo: string;
+  regDux: boolean;
+  descripcion: string;
+}
 
-export default function TablaPedidoUrgente() {
-  const [cantPorId, setCantPorId] = useState<Record<string, string>>(() =>
-    Object.fromEntries(FILAS_EJEMPLO.map((f) => [f.id, String(f.cantPedidaInicial)]))
-  );
+export type PedidoFilterValor = "si" | "no" | "";
+
+const COLUMNS = 5;
+const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
+
+interface Props {
+  productos: ProductoPedidoUrgente[];
+  sinFiltros?: boolean;
+  mensajeSinSucursal?: string;
+  pedidoFilter?: PedidoFilterValor;
+}
+
+export default function TablaPedidoUrgente({
+  productos,
+  sinFiltros = false,
+  mensajeSinSucursal = "Seleccioná una sucursal para ver los productos.",
+  pedidoFilter = "",
+}: Props) {
+  const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
+
+  const visibleProductos =
+    pedidoFilter === "si"
+      ? productos.filter((p) => Number(cantPorId[p.id] || 0) > 0)
+      : pedidoFilter === "no"
+        ? productos.filter((p) => Number(cantPorId[p.id] || 0) === 0)
+        : productos;
+
+  const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 
   function handleCantChange(id: string, value: string) {
     const soloDigitos = value.replace(/\D/g, "");
@@ -58,52 +74,56 @@ export default function TablaPedidoUrgente() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {FILAS_EJEMPLO.map((fila) => (
-            <TableRow key={fila.id}>
-              <TableCell className="celda-datos celda-mono font-mono text-sm">
-                {fila.proveedor}
-              </TableCell>
-              <TableCell className="celda-datos text-center">
-                {fila.regDux ? (
-                  <Check
-                    className="h-4 w-4 text-primary mx-auto"
-                    aria-label="Registrado en Dux"
-                  />
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell className="celda-datos min-w-0 truncate" title={fila.descripcion}>
-                {fila.descripcion}
-              </TableCell>
-              <TableCell className="celda-datos">
-                <div className="flex items-center justify-center min-h-0">
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    placeholder="0"
-                    className="w-20 text-center text-sm tabular-nums"
-                    value={cantPorId[fila.id] ?? ""}
-                    onChange={(e) => handleCantChange(fila.id, e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </TableCell>
-              <TableCell className="celda-datos text-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={(e) => borrarCant(fila.id, e)}
-                  aria-label="Borrar cantidad pedida"
-                >
-                  <Trash2 />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {visibleProductos.length === 0 ? (
+            <EmptyTableRow colSpan={COLUMNS} message={mensajeVacio} />
+          ) : (
+            visibleProductos.map((prod) => (
+              <TableRow key={prod.id}>
+                <TableCell className="celda-datos celda-mono font-mono text-sm">
+                  {prod.prefijo}
+                </TableCell>
+                <TableCell className="celda-datos text-center">
+                  {prod.regDux ? (
+                    <Check
+                      className="h-4 w-4 text-primary mx-auto"
+                      aria-label="Registrado en Dux"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
+                  {prod.descripcion}
+                </TableCell>
+                <TableCell className="celda-datos">
+                  <div className="flex items-center justify-center min-h-0">
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      placeholder="0"
+                      className="w-20 text-center text-sm tabular-nums"
+                      value={cantPorId[prod.id] ?? ""}
+                      onChange={(e) => handleCantChange(prod.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="celda-datos text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={(e) => borrarCant(prod.id, e)}
+                    aria-label="Borrar cantidad pedida"
+                  >
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

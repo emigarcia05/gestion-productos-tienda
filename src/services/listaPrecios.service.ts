@@ -496,7 +496,7 @@ export async function getListaPreciosParaPedidoUrgente(
 
   const prov = proveedorId?.trim() || undefined;
   const busqueda = q?.trim() ?? "";
-  const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
+  const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
   if (prov) andParts.push({ idProveedor: prov });
   if (busqueda.length >= 3) {
     const tokens = busqueda.trim().split(/\s+/).filter(Boolean);
@@ -551,7 +551,7 @@ export async function getProveedoresParaPedidoUrgente(): Promise<
   { id: string; nombre: string; prefijo: string }[]
 > {
   const list = await prisma.proveedor.findMany({
-    where: { listaPrecios: { some: {} } },
+    where: { listaPrecios: { some: { habilitado: true } } },
     select: { id: true, nombre: true, prefijo: true },
     orderBy: { prefijo: "asc" },
   });
