@@ -125,7 +125,7 @@ export default function TablaPedidoUrgente({
                         min={0}
                         step={1}
                         placeholder="0"
-                        className="h-6 w-20 text-center text-sm tabular-nums"
+                        className="w-20 text-center text-sm tabular-nums"
                         value={valor}
                         onChange={(e) => {
                           const v = e.target.value.replace(/\D/g, "").slice(0, 5);
@@ -140,11 +140,11 @@ export default function TablaPedidoUrgente({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive [&_svg]:size-3.5"
+                        className="text-muted-foreground hover:text-destructive"
                         onClick={(e) => borrarCantidad(prod.id, e)}
                         aria-label="Borrar cantidad pedida"
                       >
-                        <Trash2 className="size-3.5" />
+                        <Trash2 />
                       </Button>
                     </TableCell>
                   </TableRow>
