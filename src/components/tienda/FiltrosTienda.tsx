@@ -272,7 +272,7 @@ export default function FiltrosTienda({
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-          {totalItems.toLocaleString()} item{totalItems !== 1 ? "s" : ""}
+          {totalItems.toLocaleString()} ITEM{totalItems !== 1 ? "S" : ""}
         </span>
       </div>
     </FilterBar>

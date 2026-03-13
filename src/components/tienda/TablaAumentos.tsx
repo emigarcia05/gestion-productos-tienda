@@ -51,7 +51,7 @@ function exportarXLS(items: ItemAumento[]) {
     const aa      = String(ahora.getFullYear()).slice(-2);
     const hh      = String(ahora.getHours()).padStart(2, "0");
     const min     = String(ahora.getMinutes()).padStart(2, "0");
-    const nombre  = `Act Px Compra ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
+    const nombre  = `Act. Px. Compra ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
 
     XLSX.writeFile(libro, nombre, { bookType: "xls" });
   });
@@ -344,15 +344,15 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
 
         {/* Marca | Rubro | Sub-Rubro */}
         <div className="grid grid-cols-3 gap-3 paneles-aumentos">
-          <ColumnaGrupo titulo="Marca"     grupos={gruposMarca}    />
-          <ColumnaGrupo titulo="Rubro"     grupos={gruposRubro}    />
-          <ColumnaGrupo titulo="Sub-Rubro" grupos={gruposSubRubro} />
+          <ColumnaGrupo titulo="MARCA"     grupos={gruposMarca}    />
+          <ColumnaGrupo titulo="RUBRO"     grupos={gruposRubro}    />
+          <ColumnaGrupo titulo="SUB-RUBRO" grupos={gruposSubRubro} />
         </div>
 
         {/* Productos individuales (cabecera estándar, color primario) */}
         <div className="panel-con-cabecera paneles-aumentos">
           <div className="panel-cabecera-primary">
-            <h3>Productos con variación</h3>
+            <h3>PRODUCTOS CON VARIACIÓN</h3>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto">
             <ListaProductos items={itemsFiltrados} busqueda={busqueda} />

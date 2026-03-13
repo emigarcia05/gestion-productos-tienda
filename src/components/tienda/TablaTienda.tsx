@@ -58,9 +58,9 @@ export default function TablaTienda({
       <Table variant="compact" scrollX={false}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[15%]">Cod. Tienda</TableHead>
-            <TableHead className="w-[65%]">Descripción</TableHead>
-            <TableHead className="w-[15%]">Px Compra Final</TableHead>
+            <TableHead className="w-[15%]">COD. TIENDA</TableHead>
+            <TableHead className="w-[65%]">DESCRIPCIÓN</TableHead>
+            <TableHead className="w-[15%]">PX. COMPRA FINAL</TableHead>
           <TableHead
             className="w-[5%] text-center"
             title="✓ = MENOR DISPONIBLE: ≥2 proveedores vinculados y al menos un no oficial con px menor que costo_compra. Filtrable por COSTO → MENOR DISPONIBLE."

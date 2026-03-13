@@ -111,7 +111,7 @@ function CeldaPorcentaje({
     <button
       onClick={() => { setDraft(String(valor)); setEditando(true); }}
       className="w-full text-center text-xs tabular-nums text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-      title="Clic para editar"
+      title="Clic Para Editar"
     >
       {valor > 0 ? fmtPorcentaje(valor) : <span className="text-muted-foreground">—</span>}
     </button>
@@ -180,37 +180,37 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             {puede(rol, col.codProdProv) && (
-              <TableHead className="py-2 px-2 text-xs w-16 leading-tight">Cod.<br />Prov.</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-16 leading-tight">COD.<br />PROV.</TableHead>
             )}
             {puede(rol, col.codExt) && (
-              <TableHead className="py-2 px-2 text-xs w-24 leading-tight">Cód.<br />Externo</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-24 leading-tight">CÓD.<br />EXTERNO</TableHead>
             )}
             {puede(rol, col.descripcion) && (
-              <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
+              <TableHead className="py-2 px-3 text-xs">DESCRIPCIÓN</TableHead>
             )}
             {puede(rol, col.proveedor) && (
               <TableHead className="py-2 px-2 text-xs w-14 leading-tight">Prov.</TableHead>
             )}
             {puede(rol, col.precioLista) && (
-              <TableHead className="py-2 px-2 text-xs w-20 leading-tight">Px<br />Lista</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-20 leading-tight">PX.<br />LISTA</TableHead>
             )}
             {puede(rol, col.precioVentaSugerido) && (
-              <TableHead className="py-2 px-2 text-xs w-20 leading-tight">Px Venta<br />Sug.</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-20 leading-tight">PX. VENTA<br />SUG.</TableHead>
             )}
             {puede(rol, col.descuentoRubro) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Rubro</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">DTO.<br />RUBRO</TableHead>
             )}
             {puede(rol, col.descuentoCantidad) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">Dto.<br />Cant.</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">DTO.<br />CANT.</TableHead>
             )}
             {puede(rol, col.cxTransporte) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">Cx<br />Transp.</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">CX.<br />TRANSP.</TableHead>
             )}
             {puede(rol, col.precioCompraFinal) && (
-              <TableHead className="py-2 px-2 text-xs w-24 leading-tight">Px Compra<br />Final</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-24 leading-tight">PX. COMPRA<br />FINAL</TableHead>
             )}
             {puede(rol, col.disponible) && (
-              <TableHead className="py-2 px-2 text-xs w-16 leading-tight">Disp.</TableHead>
+              <TableHead className="py-2 px-2 text-xs w-16 leading-tight">DISP.</TableHead>
             )}
           </TableRow>
         </TableHeader>

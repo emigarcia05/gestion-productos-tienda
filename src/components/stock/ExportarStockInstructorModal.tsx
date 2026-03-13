@@ -35,7 +35,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        title="Instructivo: importar el archivo de ajuste de stock"
+        title="Instructivo: Importar El Archivo De Ajuste De Stock"
         className="sm:max-w-5xl"
         bodyClassName="max-w-full flex flex-col min-h-0"
         scrollBody={false}
@@ -54,7 +54,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
               className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
               onClick={irAtras}
               disabled={pasoActual === 0}
-              aria-label="Paso anterior"
+              aria-label="Paso Anterior"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -80,7 +80,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
               className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
               onClick={irAdelante}
               disabled={pasoActual === PASOS.length - 1}
-              aria-label="Paso siguiente"
+              aria-label="Paso Siguiente"
             >
               <ChevronRight className="h-5 w-5" />
             </Button>

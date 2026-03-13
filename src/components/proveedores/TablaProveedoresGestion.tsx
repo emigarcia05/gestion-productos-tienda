@@ -47,10 +47,10 @@ export default function TablaProveedoresGestion({ proveedores }: Props) {
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Proveedor</TableHead>
-                <TableHead>Prefijo</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Productos</TableHead>
+                <TableHead>PROVEEDOR</TableHead>
+                <TableHead>PREFIJO</TableHead>
+                <TableHead>CÓDIGO</TableHead>
+                <TableHead>PRODUCTOS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

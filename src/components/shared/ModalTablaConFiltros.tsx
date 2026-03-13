@@ -231,7 +231,7 @@ export default function ModalTablaConFiltros<T>({
                                 !isMulti && "cursor-pointer select-none hover:bg-primary/5",
                                 isMulti && selectedIds.has(id) && "bg-primary/5"
                               )}
-                              title={!isMulti ? "Doble clic para seleccionar" : undefined}
+                              title={!isMulti ? "Doble Clic Para Seleccionar" : undefined}
                             >
                               {isMulti && (
                                 <TableCell className="py-2.5 px-2 w-10">

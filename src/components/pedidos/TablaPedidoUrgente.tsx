@@ -62,9 +62,9 @@ export default function TablaPedidoUrgente({ productos, onAgregarAlPedido, sinFi
             <Table variant="compact">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-28">Proveedor</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead className="w-36 text-primary">Cantidad Urgente</TableHead>
+                  <TableHead className="w-28">PROVEEDOR</TableHead>
+                  <TableHead>DESCRIPCIÓN</TableHead>
+                  <TableHead className="w-36 text-primary">CANTIDAD URGENTE</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

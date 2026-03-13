@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ControlAumentosPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.controlAumentos)) redirect("/tienda");
+  if (!puede(rol, PERMISOS.tienda.controlAumentos)) redirect("/stock");
 
   const data = await getControlAumentos();
 

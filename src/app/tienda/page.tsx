@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getTiendaPageData } from "@/actions/tienda";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
@@ -24,6 +25,9 @@ interface Props {
 }
 
 export default async function TiendaPage({ searchParams }: Props) {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/stock");
+
   const {
     q = "",
     rubro = "",
@@ -33,7 +37,6 @@ export default async function TiendaPage({ searchParams }: Props) {
     mejorPrecio = "",
     pagina = "1",
   } = await searchParams;
-  const rol = await getRol();
 
   const { items, total, proveedores, marcas, rubros, subRubros, setMejorPrecio, totalPaginas } =
     await getTiendaPageData({

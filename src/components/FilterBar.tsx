@@ -22,7 +22,7 @@ export default function FilterBar({
         className
       )}
       role="search"
-      aria-label="Filtros de búsqueda"
+      aria-label="FILTROS DE BÚSQUEDA"
     >
       {children}
     </div>

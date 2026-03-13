@@ -42,7 +42,7 @@ export default function ProveedorAlternativoRow({
           size="sm"
           onClick={onCambiarPrincipal}
           disabled={disabled}
-          title="Marcar como proveedor principal del ítem"
+          title="Marcar Como Proveedor Principal Del Ítem"
           className={cn("btn-convertir-proveedor-principal", esMenorCostoAlternativo && "btn-convertir-proveedor-principal--destacado")}
         >
           <ArrowRightLeft className="h-3 w-3 shrink-0" />

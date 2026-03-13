@@ -35,7 +35,7 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        title="Instructivo: importar el archivo exportado"
+        title="Instructivo: Importar El Archivo Exportado"
         className="sm:max-w-5xl"
         bodyClassName="max-w-full flex flex-col min-h-0"
         scrollBody={false}
@@ -81,7 +81,7 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
               className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
               onClick={irAdelante}
               disabled={pasoActual === PASOS.length - 1}
-              aria-label="Paso siguiente"
+              aria-label="Paso Siguiente"
             >
               <ChevronRight className="h-5 w-5" />
             </Button>

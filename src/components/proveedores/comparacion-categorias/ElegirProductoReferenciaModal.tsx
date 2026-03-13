@@ -150,13 +150,13 @@ export default function ElegirProductoReferenciaModal({
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
                           <TableHead className="py-2.5 px-3 text-xs w-24 text-center bg-primary text-primary-foreground font-bold">
-                            Proveedor
+                            PROVEEDOR
                           </TableHead>
                           <TableHead className="py-2.5 px-3 text-xs min-w-0 bg-primary text-primary-foreground font-bold">
-                            Descripción
+                            DESCRIPCIÓN
                           </TableHead>
                           <TableHead className="py-2.5 px-3 text-xs w-28 text-right bg-primary text-primary-foreground font-bold">
-                            Px final
+                            PX. FINAL
                           </TableHead>
                         </TableRow>
                       </TableHeader>

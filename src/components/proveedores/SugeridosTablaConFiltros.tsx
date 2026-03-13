@@ -244,8 +244,8 @@ export default function SugeridosTablaConFiltros({
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-            {filteredFilas.length.toLocaleString()} producto
-            {filteredFilas.length !== 1 ? "s" : ""}
+            {filteredFilas.length.toLocaleString()} PRODUCTO
+            {filteredFilas.length !== 1 ? "S" : ""}
           </span>
         </div>
       </FilterBar>
@@ -256,7 +256,7 @@ export default function SugeridosTablaConFiltros({
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-28">COD. EXT.</TableHead>
               <TableHead className="min-w-0">DESCRIPCION PROVEEDOR</TableHead>
-              <TableHead className="w-28">PX VTA. SUGERIDO</TableHead>
+              <TableHead className="w-28">PX. VTA. SUGERIDO</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

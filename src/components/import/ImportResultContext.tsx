@@ -53,7 +53,7 @@ export function ImportResultProvider({ children }: { children: React.ReactNode }
       {children}
       <Dialog open={open} onOpenChange={(open) => !open && close()}>
         <AppModal
-          title={state.type === "error" ? "Error en la importación" : "Resultado de importación"}
+          title={state.type === "error" ? "Error En La Importación" : "Resultado De Importación"}
           actions={
             <Button variant="default" onClick={close}>
               Cerrar

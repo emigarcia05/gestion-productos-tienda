@@ -31,6 +31,7 @@ import SelectorRol from "@/components/SelectorRol";
 import SyncStatusIndicator from "@/components/layout/SyncStatusIndicator";
 import ImportStatusIndicator from "@/components/layout/ImportStatusIndicator";
 import type { Rol } from "@/lib/permisos";
+import { PERMISOS, puede } from "@/lib/permisos";
 
 const iconClass = "h-5 w-5 shrink-0";
 
@@ -41,6 +42,8 @@ interface SubmoduleItem {
   label: string;
   icon: React.ReactNode;
   isUrgente?: boolean;
+  /** Permiso para ver este enlace (por rol). Si no se define, solo editor. */
+  permiso?: { simple: boolean; editor: boolean };
 }
 
 const MODULES: {
@@ -51,34 +54,34 @@ const MODULES: {
 }[] = [
   {
     id: "proveedores",
-    label: "Lista Proveedores",
+    label: "LISTA PROVEEDORES",
     icon: <Handshake className={iconClass} />,
     submodules: [
-      { href: "/proveedores/sugeridos", label: "Px Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/lista-precios", label: "Lista Precios", icon: <FileSearch className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/comparacion-categorias", label: "Comp. Por Cat.", icon: <GitCompare className="h-4 w-4 shrink-0" /> },
-      { href: "/proveedores/lista", label: "Lista Proveedores", icon: <List className="h-4 w-4 shrink-0" /> },
+      { href: "/proveedores/sugeridos", label: "Px. vta. sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.sugeridos },
+      { href: "/proveedores/lista-precios", label: "Lista precios", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.listaPrecios },
+      { href: "/proveedores/comparacion-categorias", label: "Comp. por cat.", icon: <GitCompare className="h-4 w-4 shrink-0" />, permiso: PERMISOS.comparacionCategorias.acceso },
+      { href: "/proveedores/lista", label: "Lista proveedores", icon: <List className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.lista },
     ],
   },
   {
     id: "tienda",
-    label: "Lista Tienda",
+    label: "LISTA TIENDA",
     icon: <ShoppingBag className={iconClass} />,
     submodules: [
-      { href: "/tienda", label: "Comp. Px. Prov.", icon: <Link2 className="h-4 w-4 shrink-0" /> },
-      { href: "/tienda/aumentos", label: "Control Aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
-      { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" /> },
+      { href: "/tienda", label: "Comp. px. prov.", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
+      { href: "/tienda/aumentos", label: "Control aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
+      { href: "/stock", label: "Control stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
     ],
   },
   {
     id: "pedidos",
-    label: "Pedido Mercadería",
+    label: "PEDIDO MERCADERÍA",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
-      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true },
-      { href: "/pedidos/tintometrico", label: "Pedido Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" /> },
-      { href: "/pedidos/reposicion", label: "Pedido Reposición", icon: <RotateCw className="h-4 w-4 shrink-0" /> },
-      { href: "/pedidos/historial", label: "Historial Pedidos", icon: <History className="h-4 w-4 shrink-0" /> },
+      { href: "/pedidos/urgente", label: "Pedido urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/tintometrico", label: "Pedido tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/reposicion", label: "Pedido reposición", icon: <RotateCw className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/historial", label: "Historial pedidos", icon: <History className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
     ],
   },
 ];
@@ -115,7 +118,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
-        {MODULES.map((module) => {
+        {MODULES.filter((module) =>
+          module.submodules.some((sub) => !sub.permiso || puede(rol, sub.permiso))
+        ).map((module) => {
           const isOpen = openId === module.id;
           return (
             <Collapsible
@@ -143,7 +148,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-indicator space-y-0.5 py-1">
-                  {module.submodules.map((sub) => {
+                  {module.submodules
+                    .filter((sub) => !sub.permiso || puede(rol, sub.permiso))
+                    .map((sub) => {
                     const active = isSubmoduleActive(pathname, sub.href);
                     return (
                       <Link

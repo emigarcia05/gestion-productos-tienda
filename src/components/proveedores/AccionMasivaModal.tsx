@@ -112,7 +112,7 @@ export default function AccionMasivaModal({
               Se actualizaron {afectados} productos correctamente.
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setAfectados(null); setValor(""); }}>Nueva acción</Button>
+              <Button variant="outline" onClick={() => { setAfectados(null); setValor(""); }}>Nueva Acción</Button>
               <Button onClick={() => handleOpen(false)}>Cerrar</Button>
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function AccionMasivaModal({
                     onChange={(e) => setProveedorId(e.target.value)}
                     className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    <option value="">Seleccionar proveedor...</option>
+                    <option value="">SELECCIONAR PROVEEDOR...</option>
                     {proveedores.map((p) => (
                       <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
                     ))}
@@ -196,7 +196,7 @@ export default function AccionMasivaModal({
                     onChange={(e) => setValor(e.target.value)}
                     className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    <option value="">Seleccionar...</option>
+                    <option value="">SELECCIONAR...</option>
                     <option value="true">Disponible</option>
                     <option value="false">No disponible</option>
                   </select>

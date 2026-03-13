@@ -56,14 +56,14 @@ function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompr
   const absFmt = abs.toFixed(1);
   if (dif > 0) {
     return (
-      <span className="variacion-costo--positiva flex items-center gap-1" title={`Px Compra Final es ${absFmt}% más caro que Cx Actual`}>
+      <span className="variacion-costo--positiva flex items-center gap-1" title={`Px. Compra Final es ${absFmt}% más caro que Cx. Actual`}>
         <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
         +{absFmt}%
       </span>
     );
   }
   return (
-    <span className="variacion-costo--negativa flex items-center gap-1" title={`Px Compra Final es ${absFmt}% más económico que Cx Actual`}>
+    <span className="variacion-costo--negativa flex items-center gap-1" title={`Px. Compra Final es ${absFmt}% más económico que Cx. Actual`}>
       <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
       -{absFmt}%
     </span>
@@ -183,7 +183,7 @@ export default function VincularModal({
               variant="ghost"
               size="sm"
               className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary"
-              title="Gestionar vínculos con Proveedores"
+              title="Gestionar Vínculos Con Proveedores"
             >
               <Link2 className="h-3.5 w-3.5" />
               {cantidad > 0 && (
@@ -205,7 +205,7 @@ export default function VincularModal({
                 disabled={isPending}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Vincular nuevo producto
+                Vincular Nuevo Producto
               </Button>
               <Button variant="default" onClick={() => setOpen(false)}>
                 Cerrar

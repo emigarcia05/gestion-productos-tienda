@@ -199,10 +199,10 @@ export default function SeleccionarProductoModal({
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
                           <TableHead className="py-2.5 px-3 text-xs w-28 text-center bg-primary text-primary-foreground font-bold">
-                            Proveedor
+                            PROVEEDOR
                           </TableHead>
                           <TableHead className="py-2.5 px-3 text-xs min-w-0 bg-primary text-primary-foreground font-bold">
-                            Descripción
+                            DESCRIPCIÓN
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -217,7 +217,7 @@ export default function SeleccionarProductoModal({
                             key={row.id}
                             onDoubleClick={() => handleRowDoubleClick(row)}
                             className="cursor-pointer select-none hover:bg-primary/5"
-                            title="Doble clic para vincular"
+                            title="Doble Clic Para Vincular"
                           >
                             <TableCell className="py-2.5 px-3 text-xs w-28 text-center">
                               <Badge variant="secondary" className="font-mono text-xs">

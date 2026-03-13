@@ -43,8 +43,8 @@ type CampoDestino = "codProdProv" | "descripcion" | "precioLista" | "precioVenta
 const CAMPOS: { value: CampoDestino; label: string; required: boolean }[] = [
   { value: "codProdProv",          label: "Cod. Producto Proveedor",  required: true },
   { value: "descripcion",          label: "Descripción",              required: true },
-  { value: "precioLista",          label: "Px Lista Proveedor",       required: true },
-  { value: "precioVentaSugerido",  label: "Px Venta Sugerido",        required: false },
+  { value: "precioLista",          label: "Px. Lista Proveedor",       required: true },
+  { value: "precioVentaSugerido",  label: "Px. Venta Sugerido",        required: false },
   { value: "ignorar",              label: "Ignorar columna",          required: false },
 ];
 
@@ -183,7 +183,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                   disabled={!!proveedorPreseleccionado}
                   className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 >
-                  <option value="">Seleccionar proveedor...</option>
+                  <option value="">SELECCIONAR PROVEEDOR...</option>
                   {proveedores.map((p) => (
                     <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
                   ))}
@@ -266,9 +266,9 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               <Table variant="compact">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="py-2 px-3 text-xs w-1/3">Columna del archivo</TableHead>
-                    <TableHead className="py-2 px-3 text-xs w-1/3">Ejemplo</TableHead>
-                    <TableHead className="py-2 px-3 text-xs w-1/3">Asignar a</TableHead>
+                    <TableHead className="py-2 px-3 text-xs w-1/3">COLUMNA DEL ARCHIVO</TableHead>
+                    <TableHead className="py-2 px-3 text-xs w-1/3">EJEMPLO</TableHead>
+                    <TableHead className="py-2 px-3 text-xs w-1/3">ASIGNAR A</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -329,7 +329,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               >
                 {pending
                   ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
-                  : <><ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas</>
+                  : <><ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} Filas</>
                 }
               </Button>
             </div>
@@ -367,7 +367,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={resetForm}>Nueva importación</Button>
+              <Button variant="outline" onClick={resetForm}>Nueva Importación</Button>
               <Button onClick={() => handleClose(false)}>Cerrar</Button>
             </div>
           </div>

@@ -319,14 +319,14 @@ export default function ListaPreciosTablaConFiltros({
               id="filtro-lista-precios-busqueda"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por descripción (mín. 3 caracteres)"
+              placeholder="BUSCAR POR DESCRIPCIÓN (MÍN. 3 CARACTERES)"
               className="input-filtro-unificado"
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-            {filteredFilas.length.toLocaleString()} producto
-            {filteredFilas.length !== 1 ? "s" : ""}
+            {filteredFilas.length.toLocaleString()} PRODUCTO
+            {filteredFilas.length !== 1 ? "S" : ""}
           </span>
         </div>
       </FilterBar>
@@ -339,7 +339,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead className="w-20">MARCA</TableHead>
               <TableHead className="w-20">RUBRO</TableHead>
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
-              <TableHead className="w-28">PX FINAL COMPRA</TableHead>
+              <TableHead className="w-28">PX. FINAL COMPRA</TableHead>
               <TableHead className="w-16">DESC. PROV.</TableHead>
               <TableHead className="w-16">DESC. MARCA</TableHead>
               <TableHead className="w-16">DESC. RUBRO</TableHead>

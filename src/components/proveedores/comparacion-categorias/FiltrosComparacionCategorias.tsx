@@ -248,7 +248,7 @@ export default function FiltrosComparacionCategorias({
               id="filtro-cc-busqueda"
               value={q}
               onChange={(e) => handleQ(e.target.value)}
-              placeholder="Buscar por descripción o código..."
+              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
               className="input-filtro-unificado pl-9 pr-8"
             />
             {q && (
@@ -266,8 +266,8 @@ export default function FiltrosComparacionCategorias({
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-          {totalPresentaciones.toLocaleString("es-AR")} presentación
-          {totalPresentaciones !== 1 ? "es" : ""}
+          {totalPresentaciones.toLocaleString("es-AR")} PRESENTACIÓN
+          {totalPresentaciones !== 1 ? "ES" : ""}
         </span>
       </div>
     </FilterBar>

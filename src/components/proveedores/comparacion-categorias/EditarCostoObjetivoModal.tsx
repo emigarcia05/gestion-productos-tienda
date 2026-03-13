@@ -232,9 +232,9 @@ export default function EditarCostoObjetivoModal({
                     <Table variant="compact">
                       <TableHeader>
                         <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-24">Proveedor</TableHead>
-                          <TableHead>Descripción</TableHead>
-                          <TableHead className="w-28 text-right">Px final</TableHead>
+                          <TableHead className="w-24">PROVEEDOR</TableHead>
+                          <TableHead>DESCRIPCIÓN</TableHead>
+                          <TableHead className="w-28 text-right">PX. FINAL</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

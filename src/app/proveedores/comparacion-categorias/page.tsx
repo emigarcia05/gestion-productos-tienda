@@ -20,7 +20,7 @@ interface Props {
 export default async function ComparacionCategoriasPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.comparacionCategorias.acceso)) {
-    redirect("/proveedores");
+    redirect("/proveedores/sugeridos");
   }
 
   const [arbol, listaProveedores] = await Promise.all([

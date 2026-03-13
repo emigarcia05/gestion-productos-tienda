@@ -132,12 +132,12 @@ export default async function ImportarPage() {
               <Table variant="compact">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-border">
-                    <TableHead className="!text-left">Archivo</TableHead>
-                    <TableHead>Filas</TableHead>
-                    <TableHead>Importados</TableHead>
-                    <TableHead>Errores</TableHead>
-                    <TableHead className="!text-left">Fecha</TableHead>
-                    <TableHead>Estado</TableHead>
+                    <TableHead className="!text-left">ARCHIVO</TableHead>
+                    <TableHead>FILAS</TableHead>
+                    <TableHead>IMPORTADOS</TableHead>
+                    <TableHead>ERRORES</TableHead>
+                    <TableHead className="!text-left">FECHA</TableHead>
+                    <TableHead>ESTADO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

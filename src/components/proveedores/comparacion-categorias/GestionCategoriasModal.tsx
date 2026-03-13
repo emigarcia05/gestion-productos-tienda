@@ -265,7 +265,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                 type="button"
                 onClick={() => setShowCrearSection(true)}
               >
-                Crear Nueva Categoria
+                Crear Nueva Categoría
               </Button>
             </div>
           )}
@@ -285,7 +285,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   setFiltroSubcategoriaId("");
                 }}
               >
-                <option value="">Todas</option>
+                <option value="">TODAS</option>
                 {arbolLocal.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nombre}
@@ -304,7 +304,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                 onChange={(e) => setFiltroSubcategoriaId(e.target.value)}
                 disabled={!filtroCategoriaId}
               >
-                <option value="">Todas</option>
+                <option value="">TODAS</option>
                 {subcategoriasParaFiltro.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nombre}
@@ -316,7 +316,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
           {/* Tabla de combinaciones */}
           <div className="shrink-0 mb-4">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Combinaciones creadas</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-2">Combinaciones Creadas</h3>
             {loadingTabla ? (
               <p className="text-sm text-muted-foreground py-4">Cargando…</p>
             ) : filas.length === 0 ? (
@@ -329,7 +329,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="bg-primary text-primary-foreground font-bold min-w-[200px]">
-                        Categorias
+                        CATEGORÍAS
                       </TableHead>
                       <TableHead className="bg-primary text-primary-foreground font-bold w-12" />
                     </TableRow>
@@ -350,7 +350,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             onClick={() => handleEliminar(fila.id)}
                             disabled={pendingDeleteId === fila.id}
-                            title="Eliminar combinación"
+                            title="Eliminar Combinación"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -395,7 +395,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                           setPresentacionId("");
                         }}
                       >
-                        <option value="">Seleccionar</option>
+                        <option value="">SELECCIONAR</option>
                         {arbolLocal.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.nombre}
@@ -410,7 +410,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                           setTab("categoria");
                           setShowCrearCamposModal(true);
                         }}
-                        title="Crear nueva categoría"
+                        title="Crear Nueva Categoría"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -432,7 +432,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                         }}
                         disabled={!categoriaId}
                       >
-                        <option value="">Seleccionar</option>
+                        <option value="">SELECCIONAR</option>
                         {subcategoriasDeCategoria.map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.nombre}
@@ -451,7 +451,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                           setTab("subcategoria");
                           setShowCrearCamposModal(true);
                         }}
-                        title="Crear nueva subcategoría"
+                        title="Crear Nueva Subcategoría"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -470,7 +470,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                         onChange={(e) => setPresentacionId(e.target.value)}
                         disabled={!subcategoriaId}
                       >
-                        <option value="">Seleccionar</option>
+                        <option value="">SELECCIONAR</option>
                         {presentacionesDeSubcategoria.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.nombre}
@@ -489,7 +489,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                           setTab("presentacion");
                           setShowCrearCamposModal(true);
                         }}
-                        title="Crear nueva presentación"
+                        title="Crear Nueva Presentación"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -504,7 +504,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   onClick={handleConfirmCombinacion}
                   disabled={!categoriaId || !subcategoriaId || !presentacionId}
                 >
-                  Crear combinación
+                  Crear Combinación
                 </Button>
                 <Button
                   type="button"
@@ -523,7 +523,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
         <Dialog open={showCrearCamposModal} onOpenChange={(v) => !v && setShowCrearCamposModal(false)}>
           <DialogContent className="modal-app max-w-lg w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
             <DialogHeader className="modal-app__header shrink-0">
-              <DialogTitle className="modal-app__title">Crear Campos Categoria</DialogTitle>
+              <DialogTitle className="modal-app__title">Crear Campos Categoría</DialogTitle>
             </DialogHeader>
             <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-6">
               <div className="flex gap-2 border-b border-border pb-2 mb-4">
@@ -533,7 +533,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   size="sm"
                   onClick={() => setTab("categoria")}
                 >
-                  Crear categoría
+                  Crear Categoría
                 </Button>
                 <Button
                   type="button"
@@ -541,7 +541,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   size="sm"
                   onClick={() => setTab("subcategoria")}
                 >
-                  Crear subcategoría
+                  Crear Subcategoría
                 </Button>
                 <Button
                   type="button"
@@ -549,7 +549,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   size="sm"
                   onClick={() => setTab("presentacion")}
                 >
-                  Crear presentación
+                  Crear Presentación
                 </Button>
               </div>
 
@@ -579,7 +579,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       value={categoriaId}
                       onChange={(e) => setCategoriaId(e.target.value)}
                     >
-                      <option value="">Seleccionar</option>
+                      <option value="">SELECCIONAR</option>
                       {arbolLocal.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.nombre}
@@ -611,7 +611,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                       value={subcategoriaId}
                       onChange={(e) => setSubcategoriaId(e.target.value)}
                     >
-                      <option value="">Seleccionar</option>
+                      <option value="">SELECCIONAR</option>
                       {subcategoriasFlat.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.categoriaNombre} → {s.nombre}
@@ -642,7 +642,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                 </Button>
                 {tab === "categoria" && (
                   <Button type="button" onClick={handleCreateCategoria} disabled={pending}>
-                    Crear categoría
+                    Crear Categoría
                   </Button>
                 )}
                 {tab === "subcategoria" && (
@@ -651,7 +651,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                     onClick={handleCreateSubcategoria}
                     disabled={pending}
                   >
-                    Crear subcategoría
+                    Crear Subcategoría
                   </Button>
                 )}
                 {tab === "presentacion" && (
@@ -660,7 +660,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                     onClick={() => handleCreatePresentacion(null)}
                     disabled={pending}
                   >
-                    Crear presentación
+                    Crear Presentación
                   </Button>
                 )}
               </div>

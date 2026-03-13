@@ -230,8 +230,8 @@ export default function ComparacionCategoriasClient({
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>
                     <TableHead>DESCRIPCION</TableHead>
-                    <TableHead className="text-center">DTO EXTRA</TableHead>
-                    <TableHead>PX FINAL COMPRA</TableHead>
+                    <TableHead className="text-center">DTO. EXTRA</TableHead>
+                    <TableHead>PX. FINAL COMPRA</TableHead>
                     <TableHead className="text-center">VARIACIÓN</TableHead>
                   </TableRow>
                 </TableHeader>

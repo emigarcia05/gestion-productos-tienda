@@ -185,13 +185,13 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-3 py-2 text-xs w-28">CÓD.</TableHead>
                 <TableHead className="px-3 py-2 text-xs">
-                  Descripción
+                  DESCRIPCIÓN
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-28">
-                  Stock {sucursalLabel}
+                  STOCK {sucursalLabel}
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-28">
-                  Últ. impresión
+                  ÚLT. IMPRESIÓN
                 </TableHead>
               </TableRow>
             </TableHeader>

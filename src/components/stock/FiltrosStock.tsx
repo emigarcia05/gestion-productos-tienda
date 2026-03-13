@@ -301,8 +301,8 @@ export default function FiltrosStock({
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-          {totalItems.toLocaleString("es-AR")} ítem
-          {totalItems !== 1 ? "s" : ""}
+          {totalItems.toLocaleString("es-AR")} ÍTEM
+          {totalItems !== 1 ? "S" : ""}
         </span>
       </div>
     </FilterBar>

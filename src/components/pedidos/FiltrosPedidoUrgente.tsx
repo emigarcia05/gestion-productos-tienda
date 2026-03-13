@@ -23,8 +23,8 @@ import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 export type SucursalPedido = "guaymallen" | "maipu";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
-  { value: "guaymallen", label: "Guaymallén" },
-  { value: "maipu", label: "Maipú" },
+  { value: "guaymallen", label: "GUAYMALLÉN" },
+  { value: "maipu", label: "MAIPÚ" },
 ];
 
 interface Proveedor {
@@ -140,8 +140,8 @@ export default function FiltrosPedidoUrgente({
           </div>
         </FilaFiltrosDesplegables>
         <span className={FILTER_COUNT_CLASS}>
-          {totalProductos.toLocaleString()} producto
-          {totalProductos !== 1 ? "s" : ""}
+          {totalProductos.toLocaleString()} PRODUCTO
+          {totalProductos !== 1 ? "S" : ""}
         </span>
       </FilterRowSelection>
       <div className="flex items-center gap-2">

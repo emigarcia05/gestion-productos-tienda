@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getProveedoresPageData } from "@/actions/proveedores";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
@@ -21,8 +22,10 @@ interface Props {
 }
 
 export default async function ProveedoresPage({ searchParams }: Props) {
-  const { q = "", proveedor = "", pagina = "1" } = await searchParams;
   const rol = await getRol();
+  if (rol === "simple") redirect("/proveedores/sugeridos");
+
+  const { q = "", proveedor = "", pagina = "1" } = await searchParams;
   const p = PERMISOS.proveedores;
   const esEditor = rol === "editor";
 

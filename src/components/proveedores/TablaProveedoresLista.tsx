@@ -46,10 +46,10 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
           <Table variant="compact" scrollX={false}>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="min-w-0">Proveedor</TableHead>
-                <TableHead className="w-24">Prefijo</TableHead>
-                <TableHead className="w-28">Cant. Productos</TableHead>
-                <TableHead className="w-36">Cant. Productos Provistos</TableHead>
+                <TableHead className="min-w-0">PROVEEDOR</TableHead>
+                <TableHead className="w-24">PREFIJO</TableHead>
+                <TableHead className="w-28">CANT. PRODUCTOS</TableHead>
+                <TableHead className="w-36">CANT. PRODUCTOS PROVISTOS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

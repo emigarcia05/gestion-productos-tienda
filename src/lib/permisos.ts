@@ -11,8 +11,13 @@ export type Rol = "simple" | "editor";
 
 export const PERMISOS = {
 
-  // ─── Página /proveedores ──────────────────────────────────────────────────
+  // ─── Página /proveedores (y submódulos en sidebar) ─────────────────────────
   proveedores: {
+    /** Acceso a Px Vta. Sugeridos (/proveedores/sugeridos). Solo este submódulo visible para simple. */
+    sugeridos:       { simple: true,  editor: true },
+    listaPrecios:   { simple: false, editor: true },
+    comparacionCat: { simple: false, editor: true },
+    lista:           { simple: false, editor: true },
     acciones: {
       nuevoProveedor: { simple: false, editor: true },
       importarLista:  { simple: false, editor: true },
@@ -43,15 +48,16 @@ export const PERMISOS = {
 
   // ─── Página /proveedores/comparacion-categorias ─────────────────────────────
   comparacionCategorias: {
-    acceso:  { simple: true,  editor: true },
+    acceso:  { simple: false, editor: true },
     editar:  { simple: false, editor: true }, // CRUD categorías/subcategorías/presentaciones y asignar productos
   },
 
-  // ─── Página /tienda ───────────────────────────────────────────────────────
+  // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
+    /** Comp. Px. Prov. (/tienda). */
     acceso: { simple: false, editor: true },
-    /** Control Aumentos: ver resumen de variación de precios tienda vs proveedores vinculados. */
-    controlAumentos: { simple: true, editor: true },
+    /** Control Aumentos (/tienda/aumentos). */
+    controlAumentos: { simple: false, editor: true },
     acciones: {
       sincronizar: { simple: false, editor: true },
     },

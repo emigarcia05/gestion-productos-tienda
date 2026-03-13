@@ -145,14 +145,14 @@ export default function AsignarProductosModal({
       open={open}
       onClose={() => onOpenChange(false)}
       selectionMode="multi"
-      title="Asignar productos a esta categoría"
-      subtitle="Filtrá por proveedor y descripción. Marcá los productos y presioná Asignar."
+      title="Asignar Productos A Esta Categoría"
+      subtitle="Filtrá Por Proveedor Y Descripción. Marcá Los Productos Y Presioná Asignar."
       filterContent={filterContent}
       columns={columns}
       rows={rows}
       getRowId={(row) => row.id}
       onConfirm={handleConfirm}
-      confirmLabel={(n) => `Asignar ${n} producto(s)`}
+      confirmLabel={(n) => `Asignar ${n} Producto(s)`}
       confirmPending={asignando}
       loading={loading}
       emptyMessage="No hay productos o no coinciden los filtros."

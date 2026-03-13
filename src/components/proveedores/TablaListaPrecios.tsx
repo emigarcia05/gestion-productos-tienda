@@ -55,9 +55,9 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
       <Table variant="compact">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="py-2 px-3 text-xs w-28">Proveedor</TableHead>
-            <TableHead className="py-2 px-3 text-xs">Descripción</TableHead>
-            <TableHead className="py-2 px-3 text-xs w-32 text-primary">Cantidad Urgente</TableHead>
+            <TableHead className="py-2 px-3 text-xs w-28">PROVEEDOR</TableHead>
+            <TableHead className="py-2 px-3 text-xs">DESCRIPCIÓN</TableHead>
+            <TableHead className="py-2 px-3 text-xs w-32 text-primary">CANTIDAD URGENTE</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

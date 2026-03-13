@@ -119,11 +119,11 @@ export default function EdicionMasivaListaPreciosModal({
           disabled={disabled || cantidad === 0}
         >
           <Pencil className="h-4 w-4 shrink-0" />
-          Edición masiva
+          Edición Masiva
         </Button>
       </DialogTrigger>
       <AppModal
-        title="Edición masiva"
+        title="Edición Masiva"
         actions={
           <>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>

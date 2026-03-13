@@ -16,19 +16,29 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``).  
    - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
 
-3. **Nueva página con filtros y tabla**  
+3. **Texto en mayúscula inicial (title case)**  
+   - **Títulos de modales** y **textos de botones**: cada palabra con primera letra en mayúscula. Ejemplos: "Importar Lista De Precios", "Nueva Importación".  
+   - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "LISTA PROVEEDORES", "PEDIDO MERCADERÍA"). Nombre del **submódulo**: primera letra en mayúscula y el resto en minúsculas (ej. "Lista precios", "Control aumentos", "Pedido urgente").  
+   - Encabezados de página (SectionHeader/ClassicPageHeader): title case. Aplicar también a `title`/`aria-label` cuando sean etiquetas de UI.
+4. **Abreviaciones con punto**  
+   - Toda abreviatura en la UI (encabezados, labels, placeholders, tooltips, nombres de archivo generados) debe terminar en punto. Ejemplos: Px., Cx., Dto., Desc., Cant., Prov., Cod., Cód., Sug., Disp., Ext., Transp., Finan., Vta., Comp., Cat., Últ., Mín., Act.
+5. **Mayúsculas en filtros y tablas**  
+   - **Filtros**: contador de resultados (ej. "X PRODUCTO(S)", "X ÍTEM(S)"), `aria-label` del FilterBar ("FILTROS DE BÚSQUEDA") y placeholders de búsqueda en mayúsculas (ej. "BUSCAR POR DESCRIPCIÓN O CÓDIGO...").  
+   - **Opciones de filtros desplegables**: placeholders de Select (PROVEEDOR, MARCA, RUBRO, etc.) y opciones por defecto (PROVEEDORES, TODAS, SELECCIONAR, etc.) en MAYÚSCULAS.  
+   - **Encabezados de tablas**: todo el texto de `<TableHead>` en MAYÚSCULAS (ej. PROVEEDOR, DESCRIPCIÓN, CANT. PRODUCTOS). Las abreviaciones en mayúsculas también llevan punto (PX., CX., DTO., etc.).
+6. **Nueva página con filtros y tabla**  
    - Estructura: `SectionHeader` o `ClassicPageHeader` → `FilterBar` (con `filtros-contenedor-tienda bg-card`) → contenido (tabla con `<Table variant="compact">`).  
    - Si la página tiene **input de búsqueda con debounce**: usa el hook `useFiltrosConBusqueda` y el componente `FiltroBusquedaInput` (ver sección 1, punto 3). No reimplementes debounce ni restauración de foco.  
    - Selects de filtros: `FILTER_SELECT_WRAPPER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `SelectContent` con `position="popper" side="bottom" align="start" className="select-content-filtro"`.  
-   - Contador de resultados: `cn(FILTER_COUNT_CLASS, "ml-auto")` si va alineado a la derecha.
+   - Contador de resultados: `cn(FILTER_COUNT_CLASS, "ml-auto")` si va alineado a la derecha; texto del contador en MAYÚSCULAS (PRODUCTO(S), ÍTEM(S), etc.).
 
-4. **Nuevo modal con tabla**  
+7. **Nuevo modal con tabla**  
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
 
-5. **Tablas**  
-   - Siempre `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` de `@/components/ui/table` con `variant="compact"`. No `<table>` en crudo con clases propias.
+8. **Tablas**  
+   - Siempre `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` de `@/components/ui/table` con `variant="compact"`. No `<table>` en crudo con clases propias. Encabezados (`TableHead`) en MAYÚSCULAS.
 
-6. **Al terminar un cambio**  
+9. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
 
 **Referencia rápida de tokens (usar en lugar de valores fijos):**
@@ -162,6 +172,7 @@ import SectionHeader from "@/components/SectionHeader";
 | **Estilos** | Siempre `cn()` de `@/lib/utils.ts` para combinar clases. No concatenar con `` `...${VAR}` ``. |
 | **Tokens** | Solo variables del tema: `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`. Evitar `bg-white`, `text-slate-*`, `bg-slate-*`. |
 | **Estructura** | Rutas en `src/app/`; componentes base shadcn en `src/components/ui/`; compartidos en `src/components/shared/`. |
+| **Texto UI** | Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo primera letra mayúscula resto minúscula. Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Toda abreviatura termina con punto (Px., Cx., Dto., Cod., etc.). |
 | **Sesiones** | Acceso a datos vía iron-session y helpers del proyecto. |
 
 ---
@@ -175,6 +186,7 @@ Antes de dar por terminada una tarea de frontend:
 - [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique.
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
 - [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` con fondo por defecto (no sobrescribir con `bg-white`).
+- [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo primera letra mayúscula resto minúscula. Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Abreviaciones con punto final (Px., Cx., Dto., etc.).
 - [ ] Iconos: `lucide-react`. Toasts: `sonner`. Fuente: Geist (vía layout/tema).
 - [ ] No hay `any`; validación de datos con Zod donde aplique.
 - [ ] Si se añade una clase global nueva, se registra en este documento (sección 2).
@@ -199,7 +211,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: cierre de auditoría — tokens en todas las páginas app, `cn()` en todos los componentes con clases combinadas.*
+*Última actualización: mayúsculas en filtros (contador, placeholders), opciones de desplegables y encabezados de tablas; documentado en secciones 1, 3 y 4.*
 
 ---
 

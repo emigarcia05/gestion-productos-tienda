@@ -100,8 +100,8 @@ export default function FiltrosProductos({
           </Select>
         </div>
         <span className={FILTER_COUNT_CLASS}>
-          {totalProductos.toLocaleString()} producto
-          {totalProductos !== 1 ? "s" : ""}
+          {totalProductos.toLocaleString()} PRODUCTO
+          {totalProductos !== 1 ? "S" : ""}
         </span>
       </FilterRowSelection>
       <div className="flex items-center gap-2">

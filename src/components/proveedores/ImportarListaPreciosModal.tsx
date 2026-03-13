@@ -48,8 +48,8 @@ type CampoDestinoListaPrecios =
 const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolean }[] = [
   { value: "codProdProv", label: "Cod. Proveedor", required: true },          // cod_prod_proveedor
   { value: "descripcion", label: "Descripcion Proveedor", required: false },
-  { value: "precioLista", label: "Px Lista Proveedor", required: true },
-  { value: "precioVentaSugerido", label: "Px Venta Sugerido", required: false },
+  { value: "precioLista", label: "Px. Lista Proveedor", required: true },
+  { value: "precioVentaSugerido", label: "Px. Venta Sugerido", required: false },
   { value: "ignorar", label: "Ignorar / (sin asignar)", required: false },
 ];
 
@@ -175,7 +175,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       <AppModal
         className="sm:max-w-3xl"
         bodyClassName="max-w-full min-w-0"
-        title="Importar lista de precios"
+        title="Importar Lista De Precios"
         actions={
           <>
             <Button variant="outline" onClick={() => handleClose(false)}>
@@ -187,7 +187,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                 disabled={!camposRequeridosMapeados || !proveedorId || sending}
                 className="gap-2 min-w-[130px]"
               >
-                <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} filas
+                <ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} Filas
               </Button>
             )}
           </>
@@ -203,7 +203,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                   onChange={(e) => setProveedorId(e.target.value)}
                   className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 border-primary"
                 >
-                  <option value="">Seleccionar proveedor...</option>
+                  <option value="">SELECCIONAR PROVEEDOR...</option>
                   {proveedores.map((p) => (
                     <option key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
@@ -354,8 +354,8 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                   <Table variant="compact" className="table-fixed w-full">
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="py-2 px-3 text-xs w-[45%]">Primera fila</TableHead>
-                        <TableHead className="py-2 px-3 text-xs w-[55%]">Mapear a</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-[45%]">PRIMERA FILA</TableHead>
+                        <TableHead className="py-2 px-3 text-xs w-[55%]">MAPEAR A</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

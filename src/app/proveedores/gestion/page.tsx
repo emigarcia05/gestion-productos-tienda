@@ -23,7 +23,7 @@ export default async function GestionProveedoresPage() {
     <div className="h-screen flex flex-col overflow-hidden">
       <SectionHeader
         titulo="Lista Proveedores"
-        subtitulo="Lista Proveedores (gestión de empresas)"
+        subtitulo="Lista Proveedores (Gestión De Empresas)"
         actions={acciones}
       />
 
