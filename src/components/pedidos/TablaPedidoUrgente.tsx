@@ -105,8 +105,8 @@ export default function TablaPedidoUrgente({
                     className={cn(puedeAgregar && "cursor-pointer")}
                     onDoubleClick={() => handleDobleClick(prod)}
                   >
-                    <TableCell className="font-mono text-sm">{prod.prefijo}</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="celda-datos celda-mono font-mono text-sm">{prod.prefijo}</TableCell>
+                    <TableCell className="celda-datos text-center">
                       {prod.regDux ? (
                         <Check
                           className="h-4 w-4 text-primary mx-auto"
@@ -116,16 +116,16 @@ export default function TablaPedidoUrgente({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="min-w-0 truncate" title={prod.descripcion}>
+                    <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
                       {prod.descripcion}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="celda-datos">
                       <Input
                         type="number"
                         min={0}
                         step={1}
                         placeholder="0"
-                        className="h-8 w-20 text-center text-sm tabular-nums"
+                        className="h-6 w-20 text-center text-sm tabular-nums"
                         value={valor}
                         onChange={(e) => {
                           const v = e.target.value.replace(/\D/g, "").slice(0, 5);
@@ -135,16 +135,16 @@ export default function TablaPedidoUrgente({
                         onDoubleClick={(e) => e.stopPropagation()}
                       />
                     </TableCell>
-                    <TableCell className="p-1 text-center">
+                    <TableCell className="celda-datos p-1 text-center">
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive [&_svg]:size-3.5"
                         onClick={(e) => borrarCantidad(prod.id, e)}
                         aria-label="Borrar cantidad pedida"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-3.5" />
                       </Button>
                     </TableCell>
                   </TableRow>
