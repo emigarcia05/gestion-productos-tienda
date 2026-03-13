@@ -57,10 +57,10 @@ const MODULES: {
     label: "LISTA PROVEEDORES",
     icon: <Handshake className={iconClass} />,
     submodules: [
-      { href: "/proveedores/sugeridos", label: "Px. vta. sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.sugeridos },
-      { href: "/proveedores/lista-precios", label: "Lista precios", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.listaPrecios },
-      { href: "/proveedores/comparacion-categorias", label: "Comp. por cat.", icon: <GitCompare className="h-4 w-4 shrink-0" />, permiso: PERMISOS.comparacionCategorias.acceso },
-      { href: "/proveedores/lista", label: "Lista proveedores", icon: <List className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.lista },
+      { href: "/proveedores/sugeridos", label: "Px. Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.sugeridos },
+      { href: "/proveedores/lista-precios", label: "Lista Precios", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.listaPrecios },
+      { href: "/proveedores/comparacion-categorias", label: "Comp. Por Cat.", icon: <GitCompare className="h-4 w-4 shrink-0" />, permiso: PERMISOS.comparacionCategorias.acceso },
+      { href: "/proveedores/lista", label: "Lista Proveedores", icon: <List className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.lista },
     ],
   },
   {
@@ -68,9 +68,9 @@ const MODULES: {
     label: "LISTA TIENDA",
     icon: <ShoppingBag className={iconClass} />,
     submodules: [
-      { href: "/tienda", label: "Comp. px. prov.", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
-      { href: "/tienda/aumentos", label: "Control aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
-      { href: "/stock", label: "Control stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
+      { href: "/tienda", label: "Comp. Px. Prov.", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
+      { href: "/tienda/aumentos", label: "Control Aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
+      { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
     ],
   },
   {
@@ -78,10 +78,10 @@ const MODULES: {
     label: "PEDIDO MERCADERÍA",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
-      { href: "/pedidos/urgente", label: "Pedido urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/tintometrico", label: "Pedido tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/reposicion", label: "Pedido reposición", icon: <RotateCw className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/historial", label: "Historial pedidos", icon: <History className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/tintometrico", label: "Pedido Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/reposicion", label: "Pedido Reposición", icon: <RotateCw className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
+      { href: "/pedidos/historial", label: "Historial Pedidos", icon: <History className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
     ],
   },
 ];

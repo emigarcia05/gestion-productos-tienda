@@ -18,7 +18,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 3. **Texto en mayúscula inicial (title case)**  
    - **Títulos de modales** y **textos de botones**: cada palabra con primera letra en mayúscula. Ejemplos: "Importar Lista De Precios", "Nueva Importación".  
-   - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "LISTA PROVEEDORES", "PEDIDO MERCADERÍA"). Nombre del **submódulo**: primera letra en mayúscula y el resto en minúsculas (ej. "Lista precios", "Control aumentos", "Pedido urgente").  
+   - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "LISTA PROVEEDORES", "PEDIDO MERCADERÍA"). Nombre del **submódulo**: primera letra de cada palabra en mayúscula (title case) (ej. "Lista Precios", "Control Aumentos", "Pedido Urgente", "Px. Vta. Sugeridos").  
    - Encabezados de página (SectionHeader/ClassicPageHeader): title case. Aplicar también a `title`/`aria-label` cuando sean etiquetas de UI.
 4. **Abreviaciones con punto**  
    - Toda abreviatura en la UI (encabezados, labels, placeholders, tooltips, nombres de archivo generados) debe terminar en punto. Ejemplos: Px., Cx., Dto., Desc., Cant., Prov., Cod., Cód., Sug., Disp., Ext., Transp., Finan., Vta., Comp., Cat., Últ., Mín., Act.
@@ -172,7 +172,7 @@ import SectionHeader from "@/components/SectionHeader";
 | **Estilos** | Siempre `cn()` de `@/lib/utils.ts` para combinar clases. No concatenar con `` `...${VAR}` ``. |
 | **Tokens** | Solo variables del tema: `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`. Evitar `bg-white`, `text-slate-*`, `bg-slate-*`. |
 | **Estructura** | Rutas en `src/app/`; componentes base shadcn en `src/components/ui/`; compartidos en `src/components/shared/`. |
-| **Texto UI** | Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo primera letra mayúscula resto minúscula. Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Toda abreviatura termina con punto (Px., Cx., Dto., Cod., etc.). |
+| **Texto UI** | Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Toda abreviatura termina con punto (Px., Cx., Dto., Cod., etc.). |
 | **Sesiones** | Acceso a datos vía iron-session y helpers del proyecto. |
 
 ---
@@ -186,7 +186,7 @@ Antes de dar por terminada una tarea de frontend:
 - [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique.
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
 - [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` con fondo por defecto (no sobrescribir con `bg-white`).
-- [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo primera letra mayúscula resto minúscula. Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Abreviaciones con punto final (Px., Cx., Dto., etc.).
+- [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Abreviaciones con punto final (Px., Cx., Dto., etc.).
 - [ ] Iconos: `lucide-react`. Toasts: `sonner`. Fuente: Geist (vía layout/tema).
 - [ ] No hay `any`; validación de datos con Zod donde aplique.
 - [ ] Si se añade una clase global nueva, se registra en este documento (sección 2).
