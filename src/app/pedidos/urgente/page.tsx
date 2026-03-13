@@ -5,6 +5,8 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import GenerarPedidoButton from "@/components/pedidos/GenerarPedidoButton";
+import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -54,8 +56,12 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       actions={<GenerarPedidoButton />}
       filters={filters}
     >
-      <div className="flex flex-col h-full min-h-0 rounded-xl border border-border bg-card p-6">
-        <p className="text-muted-foreground text-sm">Seleccioná una sucursal y usá los filtros para continuar.</p>
+      <div className="flex flex-col h-full min-h-0 gap-0.5">
+        <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+          <CardContent className="flex-1 min-h-0 overflow-x-auto overflow-y-visible p-0">
+            <TablaPedidoUrgente />
+          </CardContent>
+        </Card>
       </div>
     </ClassicFilteredTableLayout>
   );
