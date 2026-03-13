@@ -53,7 +53,8 @@ export default function TablaPedidoUrgente() {
             <TableHead className="w-28">PROVEEDOR</TableHead>
             <TableHead className="w-20 text-center">REG. DUX</TableHead>
             <TableHead>DESCRIPCIÓN</TableHead>
-            <TableHead className="w-36">CANT. PEDIDA</TableHead>
+            <TableHead className="w-36 text-center">CANT. PEDIDA</TableHead>
+            <TableHead className="w-14 text-center" aria-label="Borrar cantidad" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -76,7 +77,7 @@ export default function TablaPedidoUrgente() {
                 {fila.descripcion}
               </TableCell>
               <TableCell className="celda-datos">
-                <div className="flex items-center justify-center gap-1.5 w-full">
+                <div className="flex items-center justify-center min-h-0">
                   <Input
                     type="number"
                     min={0}
@@ -87,17 +88,19 @@ export default function TablaPedidoUrgente() {
                     onChange={(e) => handleCantChange(fila.id, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={(e) => borrarCant(fila.id, e)}
-                    aria-label="Borrar cantidad pedida"
-                  >
-                    <Trash2 />
-                  </Button>
                 </div>
+              </TableCell>
+              <TableCell className="celda-datos text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={(e) => borrarCant(fila.id, e)}
+                  aria-label="Borrar cantidad pedida"
+                >
+                  <Trash2 />
+                </Button>
               </TableCell>
             </TableRow>
           ))}

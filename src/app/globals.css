@@ -599,6 +599,11 @@
   transition: font-size 0.2s ease;
   overflow: hidden;
 }
+/* Contenido interno de celdas: no puede alterar la altura de la fila. */
+.tabla-gestion-compacta tbody td > div {
+  max-height: 100% !important;
+  min-height: 0;
+}
 /* Controles dentro de celdas: se adaptan al alto de fila (2.25rem − padding = 1.5rem). */
 .tabla-gestion-compacta tbody td input:not([type="checkbox"]) {
   max-height: 1.5rem !important;
