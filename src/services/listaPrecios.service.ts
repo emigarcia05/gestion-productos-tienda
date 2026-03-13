@@ -461,3 +461,99 @@ export async function actualizarListaPreciosMasivo(
     return { actualizados: 0, error: msg };
   }
 }
+
+// ─── Pedido Urgente: ítems con regDux y descripción unificada ─────────────────
+
+export interface PedidoUrgenteItem {
+  id: string;
+  codExt: string;
+  prefijo: string;
+  regDux: boolean;
+  descripcion: string;
+}
+
+/**
+ * Ítems de lista precios para la pantalla Pedido Urgente.
+ * Solo devuelve datos si sucursal está informada.
+ * regDux = existe en lista_tienda (idListaPrecioTienda no nulo).
+ * descripcion = descripcionTienda ?? descripcionProveedor.
+ */
+export async function getListaPreciosParaPedidoUrgente(
+  sucursal: string,
+  proveedorId: string | undefined,
+  q: string | undefined,
+  pagina: number,
+  pageSize: number
+): Promise<{
+  items: PedidoUrgenteItem[];
+  total: number;
+  totalPaginas: number;
+}> {
+  const sucursalTrim = sucursal?.trim() ?? "";
+  if (!sucursalTrim) {
+    return { items: [], total: 0, totalPaginas: 0 };
+  }
+
+  const prov = proveedorId?.trim() || undefined;
+  const busqueda = q?.trim() ?? "";
+  const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
+  if (prov) andParts.push({ idProveedor: prov });
+  if (busqueda.length >= 3) {
+    const tokens = busqueda.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length > 0) {
+      andParts.push({
+        AND: tokens.map((token) => ({
+          OR: [
+            { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
+            { codExt: { contains: token, mode: "insensitive" as const } },
+            { listaPrecioTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
+          ],
+        })),
+      });
+    }
+  }
+  const where: Prisma.ListaPrecioProveedorWhereInput =
+    andParts.length > 0 ? { AND: andParts } : {};
+
+  const [filas, total] = await Promise.all([
+    prisma.listaPrecioProveedor.findMany({
+      where,
+      include: {
+        proveedor: { select: { prefijo: true } },
+        listaPrecioTienda: { select: { id: true, descripcionTienda: true } },
+      },
+      orderBy: { codExt: "asc" },
+      skip: (pagina - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.listaPrecioProveedor.count({ where }),
+  ]);
+
+  const items: PedidoUrgenteItem[] = filas.map((f) => ({
+    id: f.id,
+    codExt: f.codExt,
+    prefijo: f.proveedor?.prefijo ?? "",
+    regDux: !!f.listaPrecioTienda,
+    descripcion:
+      (f.listaPrecioTienda?.descripcionTienda?.trim() && f.listaPrecioTienda.descripcionTienda) ||
+      f.descripcionProveedor,
+  }));
+
+  return {
+    items,
+    total,
+    totalPaginas: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
+/** Proveedores con al menos un ítem en lista de precios (para filtro Pedido Urgente). */
+export async function getProveedoresParaPedidoUrgente(): Promise<
+  { id: string; nombre: string; prefijo: string }[]
+> {
+  const list = await prisma.proveedor.findMany({
+    where: { listaPrecios: { some: {} } },
+    select: { id: true, nombre: true, prefijo: true },
+    orderBy: { prefijo: "asc" },
+  });
+  return list;
+}
