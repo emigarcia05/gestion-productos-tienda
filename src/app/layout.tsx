@@ -5,6 +5,7 @@ import AppShell from "@/components/layout/AppShell";
 import TooltipProvider from "@/components/providers/TooltipProvider";
 import { ImportResultProvider } from "@/components/import/ImportResultContext";
 import { getRol } from "@/lib/sesion";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,7 +32,11 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gris text-foreground`}
+        className={cn(
+          geistSans.variable,
+          geistMono.variable,
+          "antialiased min-h-screen bg-gris text-foreground",
+        )}
       >
         <TooltipProvider>
           <ImportResultProvider>

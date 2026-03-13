@@ -13,7 +13,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 2. **Estilos**  
    - **Nunca** uses `bg-white`, `text-slate-*`, `bg-slate-*`, `border-slate-*`. Usa **siempre** tokens: `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-muted`, `border-border`, `bg-primary`, etc.  
-   - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``).  
+   - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
    - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
 
 3. **Texto en mayúscula inicial (title case)**  
@@ -88,9 +88,9 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 4. **Modal con tabla y filtros**
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección).
 
-5. **Variantes: contador debajo y tabla sin scroll**
+5. **Variantes: contador debajo (sin paginación)**
    - **Contador debajo a la derecha**: cuando el diseño requiera el número de ítems en una fila inferior alineada a la derecha (ej. Pedido Urgente), usar una tercera fila dentro del `FilterBar`: `<div className="flex justify-end w-full"><span className={FILTER_COUNT_CLASS}>…</span></div>`. No incluir el contador dentro de `FilterRowSelection`.
-   - **Tabla sin scroll (solo paginación)**: no usar `overflow-auto` ni `max-h` en el contenedor de la tabla; mostrar solo los datos de la página actual. Encabezado fijo con `<Table variant="compact">` (clase `.tabla-gestion-compacta` en globals.css). En el contenedor de la tabla usar `overflow-y-visible` o sin overflow para evitar scroll vertical; paginación debajo.
+   - **Tablas sin paginación (todas las páginas)**: todas las tablas de páginas (`/tienda`, `/proveedores`, `/pedidos/urgente`, lista-precios, sugeridos, stock, etc.) muestran **todos los registros filtrados** en el front. El contenedor de tabla (`.contenedor-tabla-gestion` o card equivalente) debe ser `flex-1 min-h-0` con `overflow-y-auto` y ocupar el alto disponible hasta el margen inferior de la página. No usar UI de paginación (ni botones de página); el usuario navega con scroll vertical.
 
 ### Ejemplos de código (referencia para IA)
 
@@ -205,10 +205,11 @@ Antes de dar por terminada una tarea de frontend:
 
 - **SectionHeader**: eliminado `bg-white`; clase `.section-header` (fondo `var(--card)`). `cn()` en header. Subtítulo `<h3>`.
 - **Toolbars (Proveedores, Tienda, Pedidos)**: tokens `text-muted-foreground`, `hover:bg-muted`, `hover:text-foreground`.
-- **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha; tabla sin scroll (solo paginación); encabezado fijo con `Table variant="compact"` (sección 1, punto 5).
+- **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha; tabla sin paginación, con scroll vertical interno en el contenedor y encabezado fijo con `Table variant="compact"` (sección 1, punto 5).
+- **Altura de filas en tablas**: todas las tablas compactas usan `--tabla-body-row-min-height: 2.25rem` para filas y `.celda-datos` para celdas. En Pedido Urgente los `Input` de cantidad (`TablaPedidoUrgente`) y los botones de borrar se ajustan a esta altura (inputs con `h-6` y botones `size="icon-xs"`) para que el contenido respete la altura fija definida para el módulo "Comp. Por Cat.".
 - **ui/tooltip.tsx**, **ui/dialog.tsx**: tokens (border-border, bg-popover, bg-background).
 - **Modales y listados**: ImportarModal, ImportarListaPreciosModal, TablaProductosFiltrada, AppModal con `bg-card`, `text-muted-foreground`, `bg-muted` y `cn()` en todos los classNames combinados.
-- **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tabla importar `border-border`, `text-muted-foreground`; barra paginación `border-border bg-card/80`.
+- **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx`, `app/tienda/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tabla importar `border-border`, `text-muted-foreground`; sin barra de paginación al pie: la tabla se estira hasta el margen inferior de la página con scroll vertical interno.
 - **Componentes con `cn()`**: TablaAumentos, SyncButton, SyncDuxHeaderButton, UploadZone, ProveedorAlternativoRow, ImportarModal, ImportarListaPreciosModal (botones SÍ/NO y zona drag), FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros — todas las combinaciones de clase pasan por `cn()`.
 
 ### Auditoría cerrada

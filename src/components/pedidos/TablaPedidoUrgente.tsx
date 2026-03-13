@@ -102,7 +102,7 @@ export default function TablaPedidoUrgente({
                       min={0}
                       step={1}
                       placeholder="0"
-                      className="w-20 text-center text-sm tabular-nums"
+                      className="w-20 h-6 py-0 text-center text-sm tabular-nums"
                       value={cantPorId[prod.id] ?? ""}
                       onChange={(e) => handleCantChange(prod.id, e.target.value)}
                       onClick={(e) => e.stopPropagation()}
@@ -113,7 +113,7 @@ export default function TablaPedidoUrgente({
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
+                    size="icon-xs"
                     className="text-muted-foreground hover:text-destructive"
                     onClick={(e) => borrarCant(prod.id, e)}
                     aria-label="Borrar cantidad pedida"

@@ -4,13 +4,10 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
-import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
-
-const PAGE_SIZE = 20;
 
 interface Props {
   searchParams: Promise<{
@@ -38,7 +35,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     pagina = "1",
   } = await searchParams;
 
-  const { items, total, proveedores, marcas, rubros, subRubros, setMejorPrecio, totalPaginas } =
+  const { items, total, proveedores, marcas, rubros, subRubros, setMejorPrecio } =
     await getTiendaPageData({
       q,
       rubro,
@@ -48,7 +45,6 @@ export default async function TiendaPage({ searchParams }: Props) {
       mejorPrecio,
       pagina,
     });
-  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
 
   const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncDuxHeaderButton /> : undefined;
@@ -80,18 +76,6 @@ export default async function TiendaPage({ searchParams }: Props) {
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
             <TablaTienda items={items} setMejorPrecio={setMejorPrecio} rol={rol} sinFiltros={!hasFiltros} />
-          </div>
-          <div className="shrink-0 border-t border-border/50 py-3">
-            <PaginacionProductos
-              paginaActual={paginaNum}
-              totalPaginas={totalPaginas}
-              total={total}
-              pageSize={PAGE_SIZE}
-              q={q}
-              proveedor={proveedor}
-              basePath="/tienda"
-              extraParams={{ marca, rubro, subRubro, proveedor, mejorPrecio }}
-            />
           </div>
         </div>
       </ClassicFilteredTableLayout>

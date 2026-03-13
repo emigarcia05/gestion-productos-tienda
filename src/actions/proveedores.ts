@@ -35,18 +35,15 @@ export async function getProveedoresPageData(params: {
   proveedor?: string;
   pagina?: string;
 }) {
-  const { q = "", proveedor = "", pagina = "1" } = params;
+  const { q = "", proveedor = "" } = params;
   const proveedores = await getProveedores();
-  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const PAGE_SIZE = 50;
   const sinFiltros = !q && !proveedor;
   if (sinFiltros) {
     return { proveedores, productos: [], total: 0, totalPaginas: 0 };
   }
-  const skip = (paginaNum - 1) * PAGE_SIZE;
   const total = MOCK_PRODUCTOS.length;
-  const productos = MOCK_PRODUCTOS.slice(skip, skip + PAGE_SIZE);
-  return { proveedores, productos, total, totalPaginas: Math.ceil(total / PAGE_SIZE) };
+  const productos = MOCK_PRODUCTOS;
+  return { proveedores, productos, total, totalPaginas: 1 };
 }
 
 // ─── Crear: validación Zod + servicio (unique constraint → error amigable) ───

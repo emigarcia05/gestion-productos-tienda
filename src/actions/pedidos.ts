@@ -7,8 +7,6 @@ import {
   getProveedoresParaPedidoUrgente,
 } from "@/services/listaPrecios.service";
 
-const PAGE_SIZE = 50;
-
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
   q?: string;
@@ -27,7 +25,6 @@ export async function getPedidoUrgenteData(params: {
 
   const { sucursal = "", q = "", pagina = "1", proveedor = "" } = params;
   const sucursalValida = sucursal.trim();
-  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
@@ -36,8 +33,8 @@ export async function getPedidoUrgenteData(params: {
           sucursalValida,
           proveedor || undefined,
           q || undefined,
-          paginaNum,
-          PAGE_SIZE
+          undefined,
+          undefined
         )
       : Promise.resolve({ items: [], total: 0, totalPaginas: 0 }),
   ]);

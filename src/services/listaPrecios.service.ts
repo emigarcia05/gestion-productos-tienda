@@ -482,8 +482,8 @@ export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
   proveedorId: string | undefined,
   q: string | undefined,
-  pagina: number,
-  pageSize: number
+  pagina: number | undefined,
+  pageSize: number | undefined
 ): Promise<{
   items: PedidoUrgenteItem[];
   total: number;
@@ -523,8 +523,6 @@ export async function getListaPreciosParaPedidoUrgente(
         listaPrecioTienda: { select: { id: true, descripcionTienda: true } },
       },
       orderBy: { codExt: "asc" },
-      skip: (pagina - 1) * pageSize,
-      take: pageSize,
     }),
     prisma.listaPrecioProveedor.count({ where }),
   ]);
@@ -542,7 +540,7 @@ export async function getListaPreciosParaPedidoUrgente(
   return {
     items,
     total,
-    totalPaginas: Math.max(1, Math.ceil(total / pageSize)),
+    totalPaginas: 1,
   };
 }
 

@@ -5,7 +5,6 @@ import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltr
 import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
 import FiltrosProductos from "@/components/proveedores/FiltrosProductos";
 import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
-import PaginacionProductos from "@/components/proveedores/PaginacionProductos";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 import SectionHeader from "@/components/SectionHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,8 +14,6 @@ import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 50;
-
 interface Props {
   searchParams: Promise<{ q?: string; proveedor?: string; pagina?: string }>;
 }
@@ -25,12 +22,11 @@ export default async function ProveedoresPage({ searchParams }: Props) {
   const rol = await getRol();
   if (rol === "simple") redirect("/proveedores/sugeridos");
 
-  const { q = "", proveedor = "", pagina = "1" } = await searchParams;
+  const { q = "", proveedor = "" } = await searchParams;
   const p = PERMISOS.proveedores;
   const esEditor = rol === "editor";
 
-  const { proveedores, productos, total, totalPaginas } = await getProveedoresPageData({ q, proveedor, pagina });
-  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const { proveedores, productos, total } = await getProveedoresPageData({ q, proveedor });
   const hasFiltros = !!(q || proveedor);
 
   const titulo = "Lista Proveedores";
@@ -80,18 +76,6 @@ export default async function ProveedoresPage({ searchParams }: Props) {
             }
           </CardContent>
         </Card>
-      </div>
-
-      {/* Paginación */}
-      <div className="shrink-0 border-t border-border bg-card/80 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
-        <PaginacionProductos
-          paginaActual={paginaNum}
-          totalPaginas={totalPaginas}
-          total={total}
-          pageSize={PAGE_SIZE}
-          q={q}
-          proveedor={esEditor ? proveedor : ""}
-        />
       </div>
     </div>
   );

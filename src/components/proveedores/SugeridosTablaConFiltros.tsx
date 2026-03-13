@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
@@ -46,9 +45,6 @@ type FetchListaPreciosConOpcionesAction = (
   rubrosDisponibles: { id: string; nombre: string }[];
 }>;
 
-const BODY_ROW_HEIGHT_PX = 28;
-const HEADER_HEIGHT_PX = 56;
-
 interface ProveedorOption {
   id: string;
   nombre: string;
@@ -82,9 +78,6 @@ export default function SugeridosTablaConFiltros({
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
   const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
   const [loading, setLoading] = useState(false);
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(15);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const hasFilterActive =
     !!proveedorId || !!marcaNombre || busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA;
@@ -95,20 +88,6 @@ export default function SugeridosTablaConFiltros({
       setMarcasOptions(marcas);
     }
   }, [hasFilterActive, proveedores, marcas]);
-
-  useEffect(() => {
-    const el = tableContainerRef.current;
-    if (!el) return;
-    const updateRowsPerPage = () => {
-      const h = el.clientHeight;
-      const bodyRows = Math.max(1, Math.floor((h - HEADER_HEIGHT_PX) / BODY_ROW_HEIGHT_PX) - 1);
-      setRowsPerPage(bodyRows);
-    };
-    updateRowsPerPage();
-    const ro = new ResizeObserver(updateRowsPerPage);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!hasFilterActive) {
@@ -154,21 +133,6 @@ export default function SugeridosTablaConFiltros({
   }, [hasFilterActive, proveedorId, marcaNombre, busqueda, fetchListaPreciosConOpcionesAction]);
 
   const filteredFilas = filasData;
-  const totalPaginas = Math.max(1, Math.ceil(filteredFilas.length / rowsPerPage));
-  const filasPagina = useMemo(() => {
-    const desde = (paginaActual - 1) * rowsPerPage;
-    return filteredFilas.slice(desde, desde + rowsPerPage);
-  }, [filteredFilas, paginaActual, rowsPerPage]);
-
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [proveedorId, marcaNombre, busqueda]);
-
-  useEffect(() => {
-    if (totalPaginas > 0 && paginaActual > totalPaginas) {
-      setPaginaActual(totalPaginas);
-    }
-  }, [totalPaginas, paginaActual]);
 
   const hayFiltros = !!proveedorId || !!marcaNombre || !!busqueda.trim();
 
@@ -176,7 +140,6 @@ export default function SugeridosTablaConFiltros({
     setProveedorId("");
     setMarcaNombre("");
     setBusqueda("");
-    setPaginaActual(1);
   }
 
   return (
@@ -250,7 +213,7 @@ export default function SugeridosTablaConFiltros({
         </div>
       </FilterBar>
 
-      <div ref={tableContainerRef} className="contenedor-tabla-gestion no-scroll-x no-scrollbar">
+      <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar">
         <Table variant="compact" scrollX={false}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -260,7 +223,7 @@ export default function SugeridosTablaConFiltros({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {hasFilterActive && !loading && filasPagina.map((fila) => (
+            {hasFilterActive && !loading && filteredFilas.map((fila) => (
               <TableRow key={fila.id}>
                 <TableCell className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
@@ -275,7 +238,7 @@ export default function SugeridosTablaConFiltros({
                 </TableCell>
               </TableRow>
             ))}
-            {(!hasFilterActive || loading || filasPagina.length === 0) && (
+            {(!hasFilterActive || loading || filteredFilas.length === 0) && (
               <TableRow>
                 <TableCell
                   className="celda-datos py-8 text-muted-foreground text-center"
@@ -296,29 +259,11 @@ export default function SugeridosTablaConFiltros({
         <span className="text-sm text-muted-foreground tabular-nums">
           {filteredFilas.length === 0
             ? "Mostrando 0 de 0"
-            : `Mostrando ${(paginaActual - 1) * rowsPerPage + 1}–${Math.min(paginaActual * rowsPerPage, filteredFilas.length)} de ${filteredFilas.length.toLocaleString()}`}
+            : `Mostrando ${filteredFilas.length.toLocaleString()} de ${filteredFilas.length.toLocaleString()}`}
         </span>
         <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
-            disabled={paginaActual <= 1}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[7rem] text-center tabular-nums">
-            Página {paginaActual} de {totalPaginas}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
-            disabled={paginaActual >= totalPaginas}
-          >
-            <ChevronRight className="size-4" />
+          <Button type="button" variant="outline" size="sm" disabled>
+            —
           </Button>
         </div>
       </div>

@@ -8,8 +8,6 @@ import { calcPxCompraFinal } from "@/lib/calculos";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-const PAGE_SIZE = 50;
-
 /** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
 async function getTiendaEmptyWithOpciones() {
   const [proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
@@ -84,8 +82,6 @@ export async function getTiendaPageData(params: {
     mejorPrecio = "",
     pagina = "1",
   } = params;
-  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const skip = (paginaNum - 1) * PAGE_SIZE;
 
   const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
@@ -132,8 +128,6 @@ export async function getTiendaPageData(params: {
     prisma.listaPrecioTienda.findMany({
       where,
       orderBy: [{ descripcionTienda: "asc" }],
-      skip,
-      take: PAGE_SIZE,
       include: { _count: { select: { listaPreciosProveedores: true } } },
     }),
     prisma.listaPrecioTienda.count({ where }),
@@ -236,7 +230,7 @@ export async function getTiendaPageData(params: {
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     setMejorPrecio: new Set<string>(),
-    totalPaginas: Math.ceil(total / PAGE_SIZE),
+    totalPaginas: 1,
   };
 }
 
