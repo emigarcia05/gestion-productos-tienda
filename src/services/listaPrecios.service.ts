@@ -10,6 +10,7 @@ import { buildCodExt } from "@/lib/codigos";
 import { clampPercent } from "@/lib/calculos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
+import { PAGE_SIZE } from "@/lib/pagination";
 
 /** Fila para el cliente (lista-precios / sugeridos): proveedor + descripción tienda si existe. */
 export interface FilaListaPrecioParaCliente {
@@ -86,20 +87,28 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
  * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Sugeridos).
  * Regla de filtros: ver docs/FILTROS_DINAMICOS.md (simétrico: opciones de cada filtro según los demás).
  */
+export interface ListaPreciosFiltradaResult {
+  filas: FilaListaPrecioParaCliente[];
+  total: number;
+  totalPaginas: number;
+}
+
 export async function getListaPreciosConTiendaFiltrada(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
-  opciones?: ListaPreciosFiltradoOpciones
-): Promise<FilaListaPrecioParaCliente[]> {
+  opciones?: ListaPreciosFiltradoOpciones,
+  pagina?: number,
+  pageSize: number = PAGE_SIZE
+): Promise<ListaPreciosFiltradaResult> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
   const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || "";
   const tieneFiltro = !!prov || !!marca || !!rubro || habilitado !== undefined || q.length >= 3;
-  if (!tieneFiltro) return [];
+  if (!tieneFiltro) return { filas: [], total: 0, totalPaginas: 0 };
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
   if (prov) andParts.push({ idProveedor: prov });
@@ -125,13 +134,21 @@ export async function getListaPreciosConTiendaFiltrada(
   }
   const where: Prisma.ListaPrecioProveedorWhereInput = andParts.length ? { AND: andParts } : {};
 
-  const filas = await prisma.listaPrecioProveedor.findMany({
-    where,
-    include: { proveedor: true },
-    orderBy: { codExt: "asc" },
-  });
+  const skip = pagina != null ? (Math.max(1, pagina) - 1) * pageSize : 0;
+  const take = pagina != null ? pageSize : undefined;
 
-  const codExts = [...new Set(filas.map((r) => r.codExt))];
+  const [filasRaw, total] = await Promise.all([
+    prisma.listaPrecioProveedor.findMany({
+      where,
+      include: { proveedor: true },
+      orderBy: { codExt: "asc" },
+      skip,
+      take,
+    }),
+    prisma.listaPrecioProveedor.count({ where }),
+  ]);
+
+  const codExts = [...new Set(filasRaw.map((r) => r.codExt))];
   const tiendaRows =
     codExts.length > 0
       ? await prisma.listaPrecioTienda.findMany({
@@ -147,7 +164,7 @@ export async function getListaPreciosConTiendaFiltrada(
   );
 
   const incluirPxSugerido = opciones?.soloPxSugerido === true;
-  let result: FilaListaPrecioParaCliente[] = filas.map((f) => ({
+  let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => ({
     id: f.id,
     codExt: f.codExt,
     descripcionProveedor: f.descripcionProveedor,
@@ -174,7 +191,9 @@ export async function getListaPreciosConTiendaFiltrada(
     );
   }
 
-  return result;
+  const totalPaginas = pagina != null && total > 0 ? Math.ceil(total / pageSize) : 1;
+
+  return { filas: result, total, totalPaginas };
 }
 
 /** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
@@ -185,7 +204,7 @@ export async function getProveedoresDisponiblesListaPrecios(
   habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string; prefijo: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, rubroNombre, busqueda, habilitado, opciones);
+  const { filas } = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, rubroNombre, busqueda, habilitado, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string; prefijo: string }[] = [];
   for (const f of filas) {
@@ -205,7 +224,7 @@ export async function getMarcasDisponiblesListaPrecios(
   habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, rubroNombre, busqueda, habilitado, opciones);
+  const { filas } = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, rubroNombre, busqueda, habilitado, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
@@ -225,7 +244,7 @@ export async function getRubrosDisponiblesListaPrecios(
   habilitado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const filas = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, undefined, busqueda, habilitado, opciones);
+  const { filas } = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, undefined, busqueda, habilitado, opciones);
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
@@ -515,6 +534,10 @@ export async function getListaPreciosParaPedidoUrgente(
   const where: Prisma.ListaPrecioProveedorWhereInput =
     andParts.length > 0 ? { AND: andParts } : {};
 
+  const takeSize = pageSize ?? 100;
+  const paginaNum = Math.max(1, pagina ?? 1);
+  const skip = (paginaNum - 1) * takeSize;
+
   const [filas, total] = await Promise.all([
     prisma.listaPrecioProveedor.findMany({
       where,
@@ -523,6 +546,8 @@ export async function getListaPreciosParaPedidoUrgente(
         listaPrecioTienda: { select: { id: true, descripcionTienda: true } },
       },
       orderBy: { codExt: "asc" },
+      skip,
+      take: takeSize,
     }),
     prisma.listaPrecioProveedor.count({ where }),
   ]);
@@ -537,10 +562,12 @@ export async function getListaPreciosParaPedidoUrgente(
       f.descripcionProveedor,
   }));
 
+  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / takeSize);
+
   return {
     items,
     total,
-    totalPaginas: 1,
+    totalPaginas,
   };
 }
 

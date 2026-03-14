@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import PaginacionClient from "@/components/shared/PaginacionClient";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
@@ -37,9 +38,12 @@ type FetchListaPreciosConOpcionesAction = (
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
-  opciones?: ListaPreciosFiltradoOpciones
+  opciones?: ListaPreciosFiltradoOpciones,
+  pagina?: number
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
+  total: number;
+  totalPaginas: number;
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
   marcasDisponibles: { id: string; nombre: string }[];
   rubrosDisponibles: { id: string; nombre: string }[];
@@ -78,6 +82,9 @@ export default function SugeridosTablaConFiltros({
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
   const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
   const [loading, setLoading] = useState(false);
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const hasFilterActive =
     !!proveedorId || !!marcaNombre || busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA;
@@ -92,6 +99,8 @@ export default function SugeridosTablaConFiltros({
   useEffect(() => {
     if (!hasFilterActive) {
       setFilasData([]);
+      setTotal(0);
+      setTotalPaginas(1);
       return;
     }
     let cancelled = false;
@@ -102,11 +111,14 @@ export default function SugeridosTablaConFiltros({
       undefined,
       busqueda.trim() || undefined,
       undefined,
-      { soloPxSugerido: true }
+      { soloPxSugerido: true },
+      pagina
     )
       .then((res) => {
         if (cancelled) return;
         setFilasData(res.filas);
+        setTotal(res.total);
+        setTotalPaginas(res.totalPaginas);
         setProveedoresOptions((prev) => {
           const next = res.proveedoresDisponibles;
           const selected = prev.find((p) => p.id === proveedorId);
@@ -130,7 +142,11 @@ export default function SugeridosTablaConFiltros({
     return () => {
       cancelled = true;
     };
-  }, [hasFilterActive, proveedorId, marcaNombre, busqueda, fetchListaPreciosConOpcionesAction]);
+  }, [hasFilterActive, proveedorId, marcaNombre, busqueda, pagina, fetchListaPreciosConOpcionesAction]);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [proveedorId, marcaNombre, busqueda]);
 
   const filteredFilas = filasData;
 
@@ -257,15 +273,17 @@ export default function SugeridosTablaConFiltros({
       </div>
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
         <span className="text-sm text-muted-foreground tabular-nums">
-          {filteredFilas.length === 0
+          {!hasFilterActive || total === 0
             ? "Mostrando 0 de 0"
-            : `Mostrando ${filteredFilas.length.toLocaleString()} de ${filteredFilas.length.toLocaleString()}`}
+            : `Mostrando ${filteredFilas.length.toLocaleString()} de ${total.toLocaleString()}`}
         </span>
-        <div className="flex items-center gap-1">
-          <Button type="button" variant="outline" size="sm" disabled>
-            —
-          </Button>
-        </div>
+        {hasFilterActive && totalPaginas > 1 && (
+          <PaginacionClient
+            paginaActual={pagina}
+            totalPaginas={totalPaginas}
+            onPaginaChange={setPagina}
+          />
+        )}
       </div>
     </div>
   );

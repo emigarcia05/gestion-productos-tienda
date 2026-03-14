@@ -52,9 +52,9 @@ export default function TablaPedidoUrgente({
       toast.error("Seleccioná una sucursal para guardar el pedido.");
       return;
     }
-    const items = productos
-      .filter((p) => Number(cantPorId[p.id] || 0) > 0)
-      .map((p) => ({ id: p.id, cant: Number(cantPorId[p.id]) }));
+    const items = Object.entries(cantPorId)
+      .filter(([, c]) => Number(c) > 0)
+      .map(([id, c]) => ({ id, cant: Number(c) }));
     setGuardando(true);
     try {
       const result = await syncPedidoUrgenteEnvioAction(sucursal, items);

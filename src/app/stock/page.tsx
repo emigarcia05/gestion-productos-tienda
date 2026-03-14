@@ -14,6 +14,7 @@ interface Props {
     rubro?: string;
     subRubro?: string;
     soloNegativo?: string;
+    pagina?: string;
   }>;
 }
 
@@ -28,6 +29,7 @@ export default async function StockPage({ searchParams }: Props) {
     rubro = "",
     subRubro = "",
     soloNegativo = "",
+    pagina = "1",
   } = await searchParams;
 
   const sucursalValida: Sucursal | null =
@@ -35,6 +37,7 @@ export default async function StockPage({ searchParams }: Props) {
 
   const soloNegativoBool = soloNegativo === "true";
 
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const data = sucursalValida
     ? await getControlStock(sucursalValida, {
         q,
@@ -42,8 +45,9 @@ export default async function StockPage({ searchParams }: Props) {
         rubro,
         subRubro,
         soloNegativo: soloNegativoBool,
+        pagina: paginaNum,
       })
-    : { items: [], marcas: [], rubros: [], subRubros: [] };
+    : { items: [], total: 0, totalPaginas: 0, marcas: [], rubros: [], subRubros: [] };
 
   return (
     <StockPageWithActions
@@ -54,6 +58,8 @@ export default async function StockPage({ searchParams }: Props) {
       rubro={rubro}
       subRubro={subRubro}
       soloNegativo={soloNegativoBool}
+      paginaNum={paginaNum}
+      paramsPagina={{ sucursal: sucursalValida ?? "", q, marca, rubro, subRubro, soloNegativo }}
     />
   );
 }

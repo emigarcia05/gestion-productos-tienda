@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import { getTiendaPageData } from "@/actions/tienda";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
+import { PAGE_SIZE } from "@/lib/pagination";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -35,7 +37,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     pagina = "1",
   } = await searchParams;
 
-  const { items, total, proveedores, marcas, rubros, subRubros, setMejorPrecio } =
+  const { items, total, totalPaginas, proveedores, marcas, rubros, subRubros, setMejorPrecio } =
     await getTiendaPageData({
       q,
       rubro,
@@ -46,6 +48,7 @@ export default async function TiendaPage({ searchParams }: Props) {
       pagina,
     });
   const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncDuxHeaderButton /> : undefined;
 
@@ -77,6 +80,18 @@ export default async function TiendaPage({ searchParams }: Props) {
           <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
             <TablaTienda items={items} setMejorPrecio={setMejorPrecio} rol={rol} sinFiltros={!hasFiltros} />
           </div>
+          {hasFiltros && totalPaginas > 1 && (
+            <div className="flex justify-end pt-2 shrink-0">
+              <PaginacionTabla
+                basePath="/tienda"
+                params={{ q, rubro, subRubro, marca, proveedor, mejorPrecio }}
+                paginaActual={paginaNum}
+                totalPaginas={totalPaginas}
+                total={total}
+                pageSize={PAGE_SIZE}
+              />
+            </div>
+          )}
         </div>
       </ClassicFilteredTableLayout>
     </div>

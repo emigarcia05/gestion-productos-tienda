@@ -35,8 +35,13 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 7. **Nuevo modal con tabla**  
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
 
-8. **Tablas**  
-   - **Un solo diseño** para toda la app (referencia: Comp. Px. Prov.). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).
+8. **Tablas (encabezado fijo + paginación)**  
+   - **Un solo diseño** para toda la app (referencia: Comp. Px. Prov.). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).  
+   - **Encabezado fijo**: el `<thead>` de la tabla permanece visible; no hay scroll interno en el cuerpo de la tabla (solo scroll horizontal del contenedor si aplica).  
+   - **Paginación estándar**: todas las tablas de la app muestran **100 ítems por página** (`PAGE_SIZE` en `@/lib/pagination`). Cuando el total de filas supera 100, se muestran controles de paginación debajo de la tabla.  
+   - **Páginas con URL** (Pedido Urgente, Tienda, Stock): usar `PaginacionTabla` de `@/components/shared/PaginacionTabla.tsx` con `basePath` y `params` (query actual sin `pagina`).  
+   - **Páginas con datos en cliente** (Lista precios, Sugeridos): usar `PaginacionClient` de `@/components/shared/PaginacionClient.tsx` con `paginaActual`, `totalPaginas` y `onPaginaChange`.  
+   - En el backend, las consultas que alimentan tablas deben usar `skip` y `take` (p. ej. `take: PAGE_SIZE`, `skip: (pagina - 1) * PAGE_SIZE`) y devolver `total` y `totalPaginas` para que la UI muestre la paginación correctamente.
 
 9. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
@@ -88,9 +93,9 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 4. **Modal con tabla y filtros**
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección).
 
-5. **Variantes: contador debajo (sin paginación)**
+5. **Variantes: contador debajo**
    - **Contador debajo a la derecha**: cuando el diseño requiera el número de ítems en una fila inferior alineada a la derecha (ej. Pedido Urgente), usar una tercera fila dentro del `FilterBar`: `<div className="flex justify-end w-full"><span className={FILTER_COUNT_CLASS}>…</span></div>`. No incluir el contador dentro de `FilterRowSelection`.
-   - **Tablas sin paginación (todas las páginas)**: todas las tablas de páginas (`/tienda`, `/proveedores`, `/pedidos/urgente`, lista-precios, sugeridos, stock, etc.) muestran **todos los registros filtrados** en el front. El contenedor de tabla (`.contenedor-tabla-gestion` o card equivalente) debe ser `flex-1 min-h-0` con `overflow-y-auto` y ocupar el alto disponible hasta el margen inferior de la página. No usar UI de paginación (ni botones de página); el usuario navega con scroll vertical.
+   - **Tablas con paginación (estándar de la app)**: todas las tablas de páginas muestran **100 ítems por página**. No se cargan todos los registros; el backend aplica `skip`/`take` y devuelve `total` y `totalPaginas`. Debajo de la tabla se muestra la barra de paginación (`PaginacionTabla` o `PaginacionClient`) cuando `totalPaginas > 1`. El contenedor de tabla no hace scroll vertical interno; el usuario cambia de página con los controles. Ver sección "Guía para IA" punto 8.
 
 ### Ejemplos de código (referencia para IA)
 
@@ -165,6 +170,9 @@ import SectionHeader from "@/components/SectionHeader";
 | `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | Altura oficial de tablas (referencia: módulo Comp. Px. Prov.). No sobrescribir padding/height en celdas. |
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
+| `PAGE_SIZE` (`@/lib/pagination`) | Tamaño de página estándar para tablas: 100 ítems. |
+| `PaginacionTabla` (`@/components/shared/PaginacionTabla.tsx`) | Paginación por URL: `basePath`, `params`, `paginaActual`, `totalPaginas`, `total`, `pageSize`. |
+| `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
 | `--gris` | Fondo universal de modales y zonas secundarias. |
 | `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
 
@@ -205,11 +213,11 @@ Antes de dar por terminada una tarea de frontend:
 
 - **SectionHeader**: eliminado `bg-white`; clase `.section-header` (fondo `var(--card)`). `cn()` en header. Subtítulo `<h3>`.
 - **Toolbars (Proveedores, Tienda, Pedidos)**: tokens `text-muted-foreground`, `hover:bg-muted`, `hover:text-foreground`.
-- **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha; tabla sin paginación, con scroll vertical interno en el contenedor y encabezado fijo con `Table variant="compact"` (sección 1, punto 5).
+- **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha. **Tablas**: encabezado fijo, 100 ítems por página, paginación con `PaginacionTabla` (URL) o `PaginacionClient` (estado cliente); ver sección 1 punto 8.
 - **Altura de filas en tablas**: todas las tablas compactas usan `--tabla-body-row-min-height: 2.25rem` para filas y `.celda-datos` para celdas. En Pedido Urgente los `Input` de cantidad (`TablaPedidoUrgente`) y los botones de borrar se ajustan a esta altura (inputs con `h-6` y botones `size="icon-xs"`) para que el contenido respete la altura fija definida para el módulo "Comp. Por Cat.".
 - **ui/tooltip.tsx**, **ui/dialog.tsx**: tokens (border-border, bg-popover, bg-background).
 - **Modales y listados**: ImportarModal, ImportarListaPreciosModal, TablaProductosFiltrada, AppModal con `bg-card`, `text-muted-foreground`, `bg-muted` y `cn()` en todos los classNames combinados.
-- **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx`, `app/tienda/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tabla importar `border-border`, `text-muted-foreground`; sin barra de paginación al pie: la tabla se estira hasta el margen inferior de la página con scroll vertical interno.
+- **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx`, `app/tienda/page.tsx`, `app/stock/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tablas con 100 ítems por página y barra de paginación al pie cuando hay más de una página (`PaginacionTabla` o `PaginacionClient`).
 - **Componentes con `cn()`**: TablaAumentos, SyncButton, SyncDuxHeaderButton, UploadZone, ProveedorAlternativoRow, ImportarModal, ImportarListaPreciosModal (botones SÍ/NO y zona drag), FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros — todas las combinaciones de clase pasan por `cn()`.
 
 ### Auditoría cerrada
@@ -218,7 +226,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: diseño único de tablas (opción A): una sola clase `.tabla-gestion-compacta`; `<Table>` siempre la aplica; eliminado `.tabla-global`. Documentado en sección 1 punto 8 y catálogo.*
+*Última actualización: tablas con encabezado fijo y paginación de 100 ítems por página en toda la app; constante `PAGE_SIZE` y componentes `PaginacionTabla` / `PaginacionClient`. Documentado en sección "Guía para IA" punto 8, sección 1 punto 5 y 8, y catálogo.*
 
 ---
 

@@ -7,6 +7,7 @@ import { filtroTexto } from "@/lib/busqueda";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { PAGE_SIZE } from "@/lib/pagination";
 
 /** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
 async function getTiendaEmptyWithOpciones() {
@@ -117,6 +118,9 @@ export async function getTiendaPageData(params: {
   /* Sin filtros: no cargar ítems para que la navegación sea más rápida; solo opciones de filtros. */
   if (andParts.length === 0) return getTiendaEmptyWithOpciones();
 
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const skip = (paginaNum - 1) * PAGE_SIZE;
+
   /* Opciones de filtros: cada desplegable muestra siempre la lista completa de su dimensión (ver docs/FILTROS_DINAMICOS.md). Solo se aplica filtro de búsqueda (q) si existe. */
   const andPartsOnlyQ: Prisma.ListaPrecioTiendaWhereInput[] = [];
   if (textFilter.AND?.length) andPartsOnlyQ.push(textFilter);
@@ -129,6 +133,8 @@ export async function getTiendaPageData(params: {
       where,
       orderBy: [{ descripcionTienda: "asc" }],
       include: { _count: { select: { listaPreciosProveedores: true } } },
+      skip,
+      take: PAGE_SIZE,
     }),
     prisma.listaPrecioTienda.count({ where }),
     prisma.proveedor.findMany({ select: { nombre: true, prefijo: true } }),
@@ -222,6 +228,8 @@ export async function getTiendaPageData(params: {
     };
   });
 
+  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
+
   return {
     items,
     total,
@@ -230,7 +238,7 @@ export async function getTiendaPageData(params: {
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     setMejorPrecio: new Set<string>(),
-    totalPaginas: 1,
+    totalPaginas,
   };
 }
 

@@ -28,11 +28,14 @@ export async function getListaPreciosFiltradaAction(
   rubroNombre: string | undefined,
   busqueda: string | undefined
 ): Promise<FilaListaPrecioParaCliente[]> {
-  return getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, rubroNombre, busqueda, undefined);
+  const { filas } = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, rubroNombre, busqueda, undefined);
+  return filas;
 }
 
 export interface ListaPreciosConOpcionesResult {
   filas: FilaListaPrecioParaCliente[];
+  total: number;
+  totalPaginas: number;
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
   marcasDisponibles: { id: string; nombre: string }[];
   rubrosDisponibles: { id: string; nombre: string }[];
@@ -51,19 +54,27 @@ export async function getListaPreciosConOpcionesAction(
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
-  opciones?: ListaPreciosFiltradoOpciones
+  opciones?: ListaPreciosFiltradoOpciones,
+  pagina?: number
 ): Promise<ListaPreciosConOpcionesResult> {
   const prov = proveedorId?.trim() || undefined;
   const marca = marcaNombre?.trim() || undefined;
   const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || undefined;
-  const [filas, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles] = await Promise.all([
-    getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, habilitado, opciones),
+  const [tableResult, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles] = await Promise.all([
+    getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, habilitado, opciones, pagina),
     getProveedoresDisponiblesListaPrecios(marca, rubro, q, habilitado, opciones),
     getMarcasDisponiblesListaPrecios(prov, rubro, q, habilitado, opciones),
     getRubrosDisponiblesListaPrecios(prov, marca, q, habilitado, opciones),
   ]);
-  return { filas, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles };
+  return {
+    filas: tableResult.filas,
+    total: tableResult.total,
+    totalPaginas: tableResult.totalPaginas,
+    proveedoresDisponibles,
+    marcasDisponibles,
+    rubrosDisponibles,
+  };
 }
 
 /**

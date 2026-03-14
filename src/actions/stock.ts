@@ -7,6 +7,7 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
+import { PAGE_SIZE } from "@/lib/pagination";
 
 export type Sucursal = "guaymallen" | "maipu";
 
@@ -22,10 +23,12 @@ export interface ItemStock {
 }
 
 export interface ControlStockData {
-  items:     ItemStock[];
-  marcas:    string[];
-  rubros:    string[];
-  subRubros: string[];
+  items:         ItemStock[];
+  total:         number;
+  totalPaginas:  number;
+  marcas:        string[];
+  rubros:        string[];
+  subRubros:     string[];
 }
 
 export interface GetControlStockParams {
@@ -34,10 +37,13 @@ export interface GetControlStockParams {
   rubro?: string;
   subRubro?: string;
   soloNegativo?: boolean;
+  pagina?: number;
 }
 
 const emptyControlStock: ControlStockData = {
   items: [],
+  total: 0,
+  totalPaginas: 0,
   marcas: [],
   rubros: [],
   subRubros: [],
@@ -68,7 +74,11 @@ export async function getControlStock(
     rubro = "",
     subRubro = "",
     soloNegativo = false,
+    pagina = 1,
   } = params;
+
+  const paginaNum = Math.max(1, pagina);
+  const skip = (paginaNum - 1) * PAGE_SIZE;
 
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
 
@@ -139,8 +149,12 @@ export async function getControlStock(
     ultimaImpresion: null,
   }));
 
+  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
+
   return {
     items,
+    total,
+    totalPaginas,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => s.subRubro!),

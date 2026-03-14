@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import PaginacionClient from "@/components/shared/PaginacionClient";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
@@ -40,9 +41,13 @@ type FetchListaPreciosConOpcionesAction = (
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
-  habilitado: boolean | undefined
+  habilitado: boolean | undefined,
+  opciones?: { soloPxSugerido?: boolean },
+  pagina?: number
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
+  total: number;
+  totalPaginas: number;
   proveedoresDisponibles: ProveedorOption[];
   marcasDisponibles: MarcaOption[];
   rubrosDisponibles: RubroOption[];
@@ -86,6 +91,9 @@ export default function ListaPreciosTablaConFiltros({
   const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
   const [rubrosOptions, setRubrosOptions] = useState<RubroOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const hasFilterActive =
     !!proveedorId || !!marcaNombre || !!rubroNombre || habilitadoFilter === "si" || habilitadoFilter === "no" || (busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA);
@@ -101,6 +109,8 @@ export default function ListaPreciosTablaConFiltros({
   useEffect(() => {
     if (!hasFilterActive) {
       setFilasData([]);
+      setTotal(0);
+      setTotalPaginas(1);
       onFilteredIdsChange?.([]);
       return;
     }
@@ -111,11 +121,15 @@ export default function ListaPreciosTablaConFiltros({
       marcaNombre || undefined,
       rubroNombre || undefined,
       busqueda.trim() || undefined,
-      habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined
+      habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined,
+      undefined,
+      pagina
     )
       .then((res) => {
         if (cancelled) return;
         setFilasData(res.filas);
+        setTotal(res.total);
+        setTotalPaginas(res.totalPaginas);
         onFilteredIdsChange?.(res.filas.map((f) => f.id));
         setProveedoresOptions((prev) => {
           const next = res.proveedoresDisponibles;
@@ -155,9 +169,14 @@ export default function ListaPreciosTablaConFiltros({
     rubroNombre,
     habilitadoFilter,
     busqueda,
+    pagina,
     fetchListaPreciosConOpcionesAction,
     onFilteredIdsChange,
   ]);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [proveedorId, marcaNombre, rubroNombre, habilitadoFilter, busqueda]);
 
   const filteredFilas = filasData;
 
@@ -361,15 +380,17 @@ export default function ListaPreciosTablaConFiltros({
       </div>
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
         <span className="text-sm text-muted-foreground tabular-nums">
-          {filteredFilas.length === 0
+          {!hasFilterActive || total === 0
             ? "Mostrando 0 de 0"
-            : `Mostrando ${filteredFilas.length.toLocaleString()} de ${filteredFilas.length.toLocaleString()}`}
+            : `Mostrando ${filteredFilas.length.toLocaleString()} de ${total.toLocaleString()}`}
         </span>
-        <div className="flex items-center gap-1">
-          <Button type="button" variant="outline" size="sm" disabled>
-            —
-          </Button>
-        </div>
+        {hasFilterActive && totalPaginas > 1 && (
+          <PaginacionClient
+            paginaActual={pagina}
+            totalPaginas={totalPaginas}
+            onPaginaChange={setPagina}
+          />
+        )}
       </div>
     </div>
   );

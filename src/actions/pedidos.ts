@@ -12,6 +12,7 @@ import {
   type ItemPedidoUrgentePayload,
 } from "@/services/pedidosEnvio.service";
 import type { ActionResult } from "@/lib/types";
+import { PAGE_SIZE } from "@/lib/pagination";
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
@@ -32,6 +33,7 @@ export async function getPedidoUrgenteData(params: {
   const { sucursal = "", q = "", pagina = "1", proveedor = "" } = params;
   const sucursalValida = sucursal.trim();
 
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
     sucursalValida
@@ -39,8 +41,8 @@ export async function getPedidoUrgenteData(params: {
           sucursalValida,
           proveedor || undefined,
           q || undefined,
-          undefined,
-          undefined
+          paginaNum,
+          PAGE_SIZE
         )
       : Promise.resolve({ items: [], total: 0, totalPaginas: 0 }),
   ]);

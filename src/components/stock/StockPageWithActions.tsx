@@ -11,6 +11,8 @@ import ExportarStockInstructorModal from "@/components/stock/ExportarStockInstru
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
 import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
+import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import { PAGE_SIZE } from "@/lib/pagination";
 
 interface Props {
   data: ControlStockData;
@@ -20,6 +22,8 @@ interface Props {
   rubro: string;
   subRubro: string;
   soloNegativo: boolean;
+  paginaNum: number;
+  paramsPagina: Record<string, string>;
 }
 
 export default function StockPageWithActions({
@@ -30,6 +34,8 @@ export default function StockPageWithActions({
   rubro,
   subRubro,
   soloNegativo,
+  paginaNum,
+  paramsPagina,
 }: Props) {
   const tableRef = useRef<TablaStockHandle>(null);
   const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
@@ -89,6 +95,18 @@ export default function StockPageWithActions({
               onFiltradosCountChange={setTotalFiltrados}
             />
           </div>
+          {tieneSucursal && data.totalPaginas > 1 && (
+            <div className="flex justify-end pt-2 shrink-0">
+              <PaginacionTabla
+                basePath="/stock"
+                params={paramsPagina}
+                paginaActual={paginaNum}
+                totalPaginas={data.totalPaginas}
+                total={data.total}
+                pageSize={PAGE_SIZE}
+              />
+            </div>
+          )}
         </div>
       </ClassicFilteredTableLayout>
     </StockPageSyncGate>
