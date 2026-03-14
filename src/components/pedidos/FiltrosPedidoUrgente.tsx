@@ -18,6 +18,7 @@ import FilterBar, {
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { cn } from "@/lib/utils";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 export type SucursalPedido = "guaymallen" | "maipu";
@@ -186,8 +187,8 @@ export default function FiltrosPedidoUrgente({
           </div>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
-      <div className="flex items-center gap-2">
-        <FilterRowSearch>
+      <div className="flex items-center gap-3">
+        <FilterRowSearch className="flex-1">
           <FiltroBusquedaInput
             id="filtro-pedidos-busqueda"
             placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
@@ -198,9 +199,7 @@ export default function FiltrosPedidoUrgente({
           />
         </FilterRowSearch>
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-      </div>
-      <div className="flex justify-end w-full">
-        <span className={FILTER_COUNT_CLASS}>
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalProductos.toLocaleString()} PRODUCTO
           {totalProductos !== 1 ? "S" : ""}
         </span>

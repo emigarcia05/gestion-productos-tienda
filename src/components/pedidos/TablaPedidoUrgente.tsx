@@ -12,9 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, Save, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { syncPedidoUrgenteEnvioAction } from "@/actions/pedidos";
+import { Check, Trash2 } from "lucide-react";
 
 export interface ProductoPedidoUrgente {
   id: string;
@@ -35,6 +33,9 @@ interface Props {
   sinFiltros?: boolean;
   mensajeSinSucursal?: string;
   pedidoFilter?: PedidoFilterValor;
+  /** Cuando se provee, la tabla es controlada (estado en el padre para el botón Guardar Cambios en header). */
+  cantPorId?: Record<string, string>;
+  setCantPorId?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }
 
 export default function TablaPedidoUrgente({
@@ -43,34 +44,12 @@ export default function TablaPedidoUrgente({
   sinFiltros = false,
   mensajeSinSucursal = "Seleccioná una sucursal para ver los productos.",
   pedidoFilter = "",
+  cantPorId: cantPorIdProp,
+  setCantPorId: setCantPorIdProp,
 }: Props) {
-  const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
-  const [guardando, setGuardando] = useState(false);
-
-  async function handleGuardar() {
-    if (!sucursal) {
-      toast.error("Seleccioná una sucursal para guardar el pedido.");
-      return;
-    }
-    const items = Object.entries(cantPorId)
-      .filter(([, c]) => Number(c) > 0)
-      .map(([id, c]) => ({ id, cant: Number(c) }));
-    setGuardando(true);
-    try {
-      const result = await syncPedidoUrgenteEnvioAction(sucursal, items);
-      if (result.ok) {
-        toast.success(
-          result.data.creados === 0
-            ? "Pedido actualizado (sin ítems con cantidad)."
-            : `Se guardaron ${result.data.creados} ítem(s) en el pedido de envío.`
-        );
-      } else {
-        toast.error(result.error);
-      }
-    } finally {
-      setGuardando(false);
-    }
-  }
+  const [cantPorIdInternal, setCantPorIdInternal] = useState<Record<string, string>>({});
+  const cantPorId = cantPorIdProp ?? cantPorIdInternal;
+  const setCantPorId = setCantPorIdProp ?? setCantPorIdInternal;
 
   const visibleProductos =
     pedidoFilter === "si"
@@ -92,22 +71,7 @@ export default function TablaPedidoUrgente({
   }
 
   return (
-    <div className="w-full flex flex-col gap-2">
-      {sucursal && (
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            className="gap-2"
-            onClick={handleGuardar}
-            disabled={guardando}
-          >
-            <Save className="h-4 w-4" />
-            {guardando ? "Guardando…" : "Guardar pedido"}
-          </Button>
-        </div>
-      )}
+    <div className="w-full">
       <Table variant="compact" scrollX={false}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -147,7 +111,7 @@ export default function TablaPedidoUrgente({
                       min={0}
                       step={1}
                       placeholder="0"
-                      className="w-20 h-6 py-0 text-center text-sm tabular-nums"
+                      className="w-20 py-0 text-center text-sm tabular-nums"
                       value={cantPorId[prod.id] ?? ""}
                       onChange={(e) => handleCantChange(prod.id, e.target.value)}
                       onClick={(e) => e.stopPropagation()}

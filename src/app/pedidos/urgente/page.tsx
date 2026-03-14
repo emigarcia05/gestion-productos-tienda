@@ -2,13 +2,8 @@ import { getPedidoUrgenteData } from "@/actions/pedidos";
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
-import GenerarPedidoButton from "@/components/pedidos/GenerarPedidoButton";
-import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
-import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import { Card, CardContent } from "@/components/ui/card";
-import { PAGE_SIZE } from "@/lib/pagination";
+import PedidoUrgentePageClient from "@/components/pedidos/PedidoUrgentePageClient";
 
 export const dynamic = "force-dynamic";
 
@@ -55,42 +50,17 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   );
 
   return (
-    <ClassicFilteredTableLayout
-      title="Pedido Mercadería"
-      subtitle="Pedido Urgente"
-      actions={<GenerarPedidoButton />}
+    <PedidoUrgentePageClient
       filters={filters}
-    >
-      <div className="flex flex-col h-full min-h-0 gap-0.5">
-        <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-          <CardContent className="flex-1 min-h-0 overflow-x-auto overflow-y-visible p-0">
-            <TablaPedidoUrgente
-              productos={productos}
-              sucursal={sucursalValida}
-              sinFiltros={sinSucursal}
-              mensajeSinSucursal="Seleccioná una sucursal para ver los productos."
-              pedidoFilter={pedidoValida}
-            />
-          </CardContent>
-        </Card>
-        {sucursalValida && totalPaginas > 1 && (
-          <div className="flex justify-end pt-2">
-            <PaginacionTabla
-              basePath="/pedidos/urgente"
-              params={{
-                sucursal: sucursalValida,
-                proveedor,
-                q,
-                pedido: pedidoValida,
-              }}
-              paginaActual={paginaNum}
-              totalPaginas={totalPaginas}
-              total={total}
-              pageSize={PAGE_SIZE}
-            />
-          </div>
-        )}
-      </div>
-    </ClassicFilteredTableLayout>
+      productos={productos}
+      sucursalValida={sucursalValida}
+      sinSucursal={sinSucursal}
+      pedidoValida={pedidoValida}
+      total={total}
+      totalPaginas={totalPaginas}
+      paginaNum={paginaNum}
+      proveedor={proveedor}
+      q={q}
+    />
   );
 }
