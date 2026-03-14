@@ -13,6 +13,7 @@ model Proveedor {
   prefijo         String   @unique
   codigoUnico     String   @map("codigo_unico")
   idProveedorDux  String?  @map("id_proveedor_dux") // ID del proveedor en DUX (para POST actualización costos)
+  whatsapp        String?  @map("whatsapp") // Número para envío de pedido por WhatsApp (internacional sin +)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

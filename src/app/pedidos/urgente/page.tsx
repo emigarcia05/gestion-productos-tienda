@@ -35,8 +35,11 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
     q,
     pagina,
     proveedor,
+    pedido: pedidoValida,
   });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const tienenLosTresFiltros =
+    !!sucursalValida && !!proveedor.trim() && (pedidoValida === "si" || pedidoValida === "no");
 
   const filters = (
     <FiltrosPedidoUrgente
@@ -54,7 +57,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       filters={filters}
       productos={productos}
       sucursalValida={sucursalValida}
-      sinSucursal={sinSucursal}
+      sinFiltros={!tienenLosTresFiltros}
       pedidoValida={pedidoValida}
       total={total}
       totalPaginas={totalPaginas}

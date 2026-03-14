@@ -4,6 +4,7 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosEnviarPedido from "@/components/pedidos/FiltrosEnviarPedido";
+import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
 import {
   parseTiposParam,
   type SucursalPedido,
@@ -53,10 +54,19 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
     />
   );
 
+  const actions = sucursalValida && proveedor && tiposValidos.length > 0 ? (
+    <EnviarPedidoButton
+      proveedorId={proveedor}
+      sucursal={sucursalValida}
+      tipos={tiposValidos}
+    />
+  ) : undefined;
+
   return (
     <ClassicFilteredTableLayout
       title="Pedido Mercadería"
       subtitle="Enviar Pedido"
+      actions={actions}
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">

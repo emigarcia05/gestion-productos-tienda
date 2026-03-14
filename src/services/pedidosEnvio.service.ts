@@ -82,3 +82,74 @@ export async function syncPedidoUrgenteEnvio(
 
   return { creados };
 }
+
+/** Ítem para PDF de envío (descripción y cantidad). */
+export interface ItemPedidoParaPdf {
+  codExt: string;
+  codProveedor: string;
+  descripcion: string;
+  cantPedir: number;
+}
+
+/** Proveedor con datos para envío por WhatsApp. */
+export interface ProveedorParaEnvio {
+  id: string;
+  nombre: string;
+  prefijo: string;
+  whatsapp: string | null;
+}
+
+/**
+ * Obtiene ítems de pedidos_envio para el proveedor, sucursal y tipos dados,
+ * y los datos del proveedor (para PDF y WhatsApp).
+ */
+export async function getItemsYProveedorParaEnviar(
+  proveedorId: string,
+  sucursal: string,
+  tipos: string[]
+): Promise<{ items: ItemPedidoParaPdf[]; proveedor: ProveedorParaEnvio | null }> {
+  if (!proveedorId.trim() || !sucursal.trim() || tipos.length === 0) {
+    return { items: [], proveedor: null };
+  }
+
+  const [items, proveedor] = await Promise.all([
+    prisma.itemPedidoEnvio.findMany({
+      where: {
+        idProveedor: proveedorId,
+        sucursal,
+        tipoPedido: { in: tipos },
+        cantPedir: { gt: 0 },
+      },
+      orderBy: [{ codExt: "asc" }],
+      select: {
+        codExt: true,
+        codProveedor: true,
+        descripcionProveedor: true,
+        descripcionTienda: true,
+        cantPedir: true,
+      },
+    }),
+    prisma.proveedor.findUnique({
+      where: { id: proveedorId },
+      select: { id: true, nombre: true, prefijo: true, whatsapp: true },
+    }),
+  ]);
+
+  const itemsPdf: ItemPedidoParaPdf[] = items.map((i) => ({
+    codExt: i.codExt,
+    codProveedor: i.codProveedor,
+    descripcion: (i.descripcionTienda ?? i.descripcionProveedor) || "",
+    cantPedir: i.cantPedir,
+  }));
+
+  const prov: ProveedorParaEnvio | null = proveedor
+    ? {
+        id: proveedor.id,
+        nombre: proveedor.nombre,
+        prefijo: proveedor.prefijo,
+        whatsapp: proveedor.whatsapp ?? null,
+      }
+    : null;
+
+  return { items: itemsPdf, proveedor: prov };
+}

@@ -7,6 +7,7 @@ export interface CreateProveedorInput {
   nombre: string;
   prefijo: string;
   idProveedorDux?: string | null;
+  whatsapp?: string | null;
 }
 
 export interface UpdateProveedorInput {
@@ -14,6 +15,7 @@ export interface UpdateProveedorInput {
   nombre: string;
   prefijo: string;
   idProveedorDux?: string | null;
+  whatsapp?: string | null;
 }
 
 export interface ProveedorListItem {
@@ -23,6 +25,8 @@ export interface ProveedorListItem {
   prefijo: string;
   /** ID del proveedor en DUX (si está configurado). */
   idProveedorDux: string | null;
+  /** Número WhatsApp para envío de pedido (internacional sin +). */
+  whatsapp: string | null;
   /** Cantidad de ítems en precios_proveedores. */
   cantProductos: number;
   /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
@@ -60,16 +64,17 @@ export async function getProveedores(): Promise<ProveedorListItem[]> {
     codigoUnico: p.codigoUnico,
     prefijo: p.prefijo,
     idProveedorDux: p.idProveedorDux ?? null,
+    whatsapp: p.whatsapp ?? null,
     cantProductos: p._count.listaPrecios,
     cantProductosProvistos: provistosMap.get(p.id) ?? 0,
   }));
 }
 
 /** Obtiene un proveedor por id (para validaciones sin cargar toda la lista). */
-export async function getProveedorById(id: string): Promise<Pick<ProveedorListItem, "id" | "nombre" | "prefijo"> | null> {
+export async function getProveedorById(id: string): Promise<Pick<ProveedorListItem, "id" | "nombre" | "prefijo" | "whatsapp"> | null> {
   const p = await prisma.proveedor.findUnique({
     where: { id },
-    select: { id: true, nombre: true, prefijo: true },
+    select: { id: true, nombre: true, prefijo: true, whatsapp: true },
   });
   return p;
 }
@@ -88,6 +93,7 @@ export async function createProveedor(
       prefijo: prefijoNorm,
       codigoUnico: prefijoNorm,
       idProveedorDux: input.idProveedorDux?.trim() || null,
+      whatsapp: normalizarWhatsapp(input.whatsapp),
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
@@ -106,6 +112,14 @@ export async function updateProveedor(
       nombre: input.nombre.trim(),
       prefijo: prefijoNorm,
       idProveedorDux: input.idProveedorDux?.trim() || null,
+      whatsapp: normalizarWhatsapp(input.whatsapp),
     },
   });
+}
+
+/** Normaliza número WhatsApp: solo dígitos, null si queda vacío. */
+function normalizarWhatsapp(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  const digits = value.replace(/\D/g, "");
+  return digits.length > 0 ? digits : null;
 }

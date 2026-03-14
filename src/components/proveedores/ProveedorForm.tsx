@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
 interface Props {
-  proveedor?: { id: string; nombre: string; prefijo: string; idProveedorDux?: string };
+  proveedor?: { id: string; nombre: string; prefijo: string; idProveedorDux?: string; whatsapp?: string | null };
   onSuccess?: () => void;
   /** Id del form para asociar botón externo con form="id". */
   id?: string;
@@ -116,6 +116,21 @@ export default function ProveedorForm({
         />
         <p className="text-xs text-muted-foreground">
           Identificador del proveedor en el sistema DUX (se usa para actualizar costos vía API).
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="whatsapp">WhatsApp</Label>
+        <Input
+          id="whatsapp"
+          name="whatsapp"
+          placeholder="Ej: 5491112345678 (sin +)"
+          defaultValue={proveedor?.whatsapp ?? ""}
+          disabled={pending}
+          inputMode="numeric"
+        />
+        <p className="text-xs text-muted-foreground">
+          Número para envío de pedido por WhatsApp (internacional, 10 a 15 dígitos, sin +).
         </p>
       </div>
 

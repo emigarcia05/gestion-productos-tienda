@@ -13,7 +13,8 @@ interface Props {
   filters: React.ReactNode;
   productos: ProductoPedidoUrgente[];
   sucursalValida: "" | "guaymallen" | "maipu";
-  sinSucursal: boolean;
+  /** True cuando faltan uno o más de los 3 filtros obligatorios (Sucursal, Proveedor, Pedido). */
+  sinFiltros: boolean;
   pedidoValida: "si" | "no" | "";
   total: number;
   totalPaginas: number;
@@ -22,11 +23,14 @@ interface Props {
   q: string;
 }
 
+const MENSAJE_SIN_TRES_FILTROS =
+  "Configurá los 3 filtros (Sucursal, Proveedor y Pedido) para ver los productos.";
+
 export default function PedidoUrgentePageClient({
   filters,
   productos,
   sucursalValida,
-  sinSucursal,
+  sinFiltros,
   pedidoValida,
   total,
   totalPaginas,
@@ -37,7 +41,7 @@ export default function PedidoUrgentePageClient({
   const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
 
   const actions =
-    sucursalValida ? (
+    sucursalValida && !sinFiltros ? (
       <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
     ) : undefined;
 
@@ -55,14 +59,14 @@ export default function PedidoUrgentePageClient({
               <TablaPedidoUrgente
                 productos={productos}
                 sucursal={sucursalValida}
-                sinFiltros={sinSucursal}
-                mensajeSinSucursal="Seleccioná una sucursal para ver los productos."
+                sinFiltros={sinFiltros}
+                mensajeSinSucursal={MENSAJE_SIN_TRES_FILTROS}
                 pedidoFilter={pedidoValida}
                 cantPorId={cantPorId}
                 setCantPorId={setCantPorId}
               />
             </div>
-            {sucursalValida && (
+            {!sinFiltros && sucursalValida && (
               <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
                 <span className="text-sm text-muted-foreground tabular-nums">
                   {total === 0
