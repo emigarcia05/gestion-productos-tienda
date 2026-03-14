@@ -31,7 +31,7 @@ export async function syncPedidoUrgenteEnvio(
 
   await prisma.$transaction(async (tx) => {
     await tx.itemPedidoEnvio.deleteMany({
-      where: { sucursal, tipoPedido: TIPO_URGENTE },
+      where: { sucursalCodigo: sucursal, tipoPedido: TIPO_URGENTE },
     });
 
     if (ids.length === 0) {
@@ -53,7 +53,7 @@ export async function syncPedidoUrgenteEnvio(
         return {
           idProveedor: f.idProveedor,
           tipoPedido: TIPO_URGENTE,
-          sucursal,
+          sucursalCodigo: sucursal,
           codExt: f.codExt,
           codProveedor: f.codProdProveedor,
           codTienda: f.listaPrecioTienda?.codTienda ?? null,
@@ -65,7 +65,7 @@ export async function syncPedidoUrgenteEnvio(
       .filter(Boolean) as Array<{
       idProveedor: string;
       tipoPedido: string;
-      sucursal: string;
+      sucursalCodigo: string;
       codExt: string;
       codProveedor: string;
       codTienda: string | null;
@@ -116,7 +116,7 @@ export async function getItemsYProveedorParaEnviar(
     prisma.itemPedidoEnvio.findMany({
       where: {
         idProveedor: proveedorId,
-        sucursal,
+        sucursalCodigo: sucursal,
         tipoPedido: { in: tipos },
         cantPedir: { gt: 0 },
       },

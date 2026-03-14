@@ -23,6 +23,21 @@ model Proveedor {
   @@map("proveedores")
 }
 
+// Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX.
+model Sucursal {
+  id        String   @id @default(cuid())
+  codigo    String   @unique // guaymallen | maipu (estable en URLs y FKs)
+  nombre    String
+  whatsapp  String?  @map("whatsapp")
+  idDux     String?  @map("id_dux")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  itemsPedidoEnvio ItemPedidoEnvio[]
+
+  @@map("sucursales")
+}
+
 model ListaPrecioProveedor {
   id                String   @id @default(uuid())
   idProveedor       String   @map("id_proveedor")
@@ -156,17 +171,18 @@ model ItemPedidoEnvio {
   id                  String   @id @default(uuid())
   idProveedor         String   @map("id_proveedor")
   tipoPedido          String   @map("tipo_de_pedido") // URGENTE | TINTOMETRICO | REPOSICION
-  sucursal            String   @map("sucursal")
-  codExt              String   @map("cod_ext")
-  codProveedor        String   @map("cod_proveedor") // cod_prod_proveedor
-  codTienda           String?  @map("cod_tienda") // precios_tienda.cod_tienda; vacío si no existe
+  sucursalCodigo     String   @map("sucursal") // FK a sucursales.codigo
+  codExt             String   @map("cod_ext")
+  codProveedor       String   @map("cod_proveedor") // cod_prod_proveedor
+  codTienda          String?  @map("cod_tienda") // precios_tienda.cod_tienda; vacío si no existe
   descripcionProveedor String  @map("descripcion_proveedor")
   descripcionTienda   String?  @map("descripcion_tienda") // precios_tienda; vacío si no existe
-  cantPedir           Int      @map("cant_pedir") @default(0)
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  cantPedir          Int      @map("cant_pedir") @default(0)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
 
   @@map("pedidos_envio")
 }
