@@ -23,15 +23,16 @@ model Proveedor {
   @@map("proveedores")
 }
 
-// Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX.
+// Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX, Phone Number ID (Meta API).
 model Sucursal {
-  id        String   @id @default(cuid())
-  codigo    String   @unique // guaymallen | maipu (estable en URLs y FKs)
-  nombre    String
-  whatsapp  String?  @map("whatsapp")
-  idDux     String?  @map("id_dux")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  codigo         String   @unique // guaymallen | maipu (estable en URLs y FKs)
+  nombre         String
+  whatsapp       String?  @map("whatsapp")
+  phoneNumberId  String?  @map("phone_number_id") // Meta WhatsApp Cloud API: envío sin abrir pestaña
+  idDux          String?  @map("id_dux")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   itemsPedidoEnvio ItemPedidoEnvio[]
 

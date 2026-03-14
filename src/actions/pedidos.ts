@@ -13,6 +13,8 @@ import {
   type ItemPedidoUrgentePayload,
 } from "@/services/pedidosEnvio.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
+import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
+import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
 
@@ -120,8 +122,8 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 /**
- * Genera el PDF del pedido para el proveedor/sucursal/tipos seleccionados
- * y devuelve el base64 del PDF más el número WhatsApp del proveedor (si existe).
+ * Genera el PDF del pedido y, si está configurado (token + sucursal.phone_number_id + proveedor.whatsapp),
+ * lo envía por WhatsApp Cloud API sin abrir pestaña.
  */
 export async function generarPdfEnviarPedidoAction(params: {
   proveedorId: string;
@@ -133,6 +135,8 @@ export async function generarPdfEnviarPedidoAction(params: {
     whatsapp: string | null;
     nombreProveedor: string;
     filename: string;
+    /** true si se envió por API (no hace falta descargar ni abrir wa.me). */
+    sentViaWhatsApp: boolean;
   }>
 > {
   const rol = await getRol();
@@ -151,11 +155,14 @@ export async function generarPdfEnviarPedidoAction(params: {
   }
 
   try {
-    const { items, proveedor } = await getItemsYProveedorParaEnviar(
-      proveedorId.trim(),
-      sucursalValida,
-      tipos
-    );
+    const [result, sucursalRow] = await Promise.all([
+      getItemsYProveedorParaEnviar(proveedorId.trim(), sucursalValida, tipos),
+      prisma.sucursal.findUnique({
+        where: { codigo: sucursalValida },
+        select: { phoneNumberId: true },
+      }),
+    ]);
+    const { items, proveedor } = result;
     if (!proveedor) {
       return { ok: false, error: "Proveedor no encontrado." };
     }
@@ -167,8 +174,27 @@ export async function generarPdfEnviarPedidoAction(params: {
       sucursalLabel,
       tiposLabel
     );
-    const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
     const filename = `pedido_${proveedor.prefijo}_${sucursalValida}_${Date.now()}.pdf`;
+    const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
+
+    let sentViaWhatsApp = false;
+    const phoneNumberId = sucursalRow?.phoneNumberId?.trim();
+    if (phoneNumberId && proveedor.whatsapp?.trim()) {
+      const sendResult = await sendPedidoPdfViaWhatsApp(
+        phoneNumberId,
+        proveedor.whatsapp,
+        Buffer.from(pdfBuffer),
+        filename
+      );
+      sentViaWhatsApp = sendResult.ok;
+      if (!sendResult.ok) {
+        return {
+          ok: false,
+          error: sendResult.error ?? "Error al enviar por WhatsApp.",
+        };
+      }
+    }
+
     return {
       ok: true,
       data: {
@@ -176,6 +202,7 @@ export async function generarPdfEnviarPedidoAction(params: {
         whatsapp: proveedor.whatsapp,
         nombreProveedor: proveedor.nombre,
         filename,
+        sentViaWhatsApp,
       },
     };
   } catch (e) {

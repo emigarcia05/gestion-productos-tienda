@@ -48,7 +48,11 @@ export default function EnviarPedidoButton({
         toast.error(result.error);
         return;
       }
-      const { pdfBase64, whatsapp, nombreProveedor, filename } = result.data!;
+      const { pdfBase64, whatsapp, nombreProveedor, filename, sentViaWhatsApp } = result.data!;
+      if (sentViaWhatsApp) {
+        toast.success("Pedido enviado por WhatsApp al proveedor.");
+        return;
+      }
       descargarPdf(pdfBase64, filename);
       toast.success(`PDF generado: ${filename}`);
       if (whatsapp) {
