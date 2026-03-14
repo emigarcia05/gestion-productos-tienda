@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { syncPedidoUrgenteEnvioAction } from "@/actions/pedidos";
 
 export interface ProductoPedidoUrgente {
   id: string;
@@ -29,6 +31,7 @@ const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
 
 interface Props {
   productos: ProductoPedidoUrgente[];
+  sucursal?: "" | "guaymallen" | "maipu";
   sinFiltros?: boolean;
   mensajeSinSucursal?: string;
   pedidoFilter?: PedidoFilterValor;
@@ -36,11 +39,38 @@ interface Props {
 
 export default function TablaPedidoUrgente({
   productos,
+  sucursal = "",
   sinFiltros = false,
   mensajeSinSucursal = "Seleccioná una sucursal para ver los productos.",
   pedidoFilter = "",
 }: Props) {
   const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
+  const [guardando, setGuardando] = useState(false);
+
+  async function handleGuardar() {
+    if (!sucursal) {
+      toast.error("Seleccioná una sucursal para guardar el pedido.");
+      return;
+    }
+    const items = productos
+      .filter((p) => Number(cantPorId[p.id] || 0) > 0)
+      .map((p) => ({ id: p.id, cant: Number(cantPorId[p.id]) }));
+    setGuardando(true);
+    try {
+      const result = await syncPedidoUrgenteEnvioAction(sucursal, items);
+      if (result.ok) {
+        toast.success(
+          result.data.creados === 0
+            ? "Pedido actualizado (sin ítems con cantidad)."
+            : `Se guardaron ${result.data.creados} ítem(s) en el pedido de envío.`
+        );
+      } else {
+        toast.error(result.error);
+      }
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   const visibleProductos =
     pedidoFilter === "si"
@@ -62,7 +92,22 @@ export default function TablaPedidoUrgente({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col gap-2">
+      {sucursal && (
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            className="gap-2"
+            onClick={handleGuardar}
+            disabled={guardando}
+          >
+            <Save className="h-4 w-4" />
+            {guardando ? "Guardando…" : "Guardar pedido"}
+          </Button>
+        </div>
+      )}
       <Table variant="compact" scrollX={false}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">

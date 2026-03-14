@@ -63,6 +63,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
           <CardContent className="flex-1 min-h-0 overflow-x-auto overflow-y-auto p-0">
             <TablaPedidoUrgente
               productos={productos}
+              sucursal={sucursalValida}
               sinFiltros={sinSucursal}
               mensajeSinSucursal="Seleccioná una sucursal para ver los productos."
               pedidoFilter={pedidoValida}
