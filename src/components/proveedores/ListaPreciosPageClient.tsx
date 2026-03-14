@@ -31,9 +31,13 @@ type FetchListaPreciosConOpcionesAction = (
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
-  habilitado: boolean | undefined
+  habilitado: boolean | undefined,
+  opciones?: { soloPxSugerido?: boolean },
+  pagina?: number
 ) => Promise<{
   filas: FilaListaPrecioParaCliente[];
+  total: number;
+  totalPaginas: number;
   proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
   marcasDisponibles: { id: string; nombre: string }[];
   rubrosDisponibles: { id: string; nombre: string }[];
