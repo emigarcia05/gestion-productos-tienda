@@ -113,11 +113,14 @@ export async function getControlStock(
   const whereRubros = toWhereWithNotNull("rubro");
   const whereSubRubros = toWhereWithNotNull("subRubro");
 
-  const [rows, marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
+  const [rows, total, marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
       where: whereItems,
       orderBy: { descripcionTienda: "asc" },
+      skip,
+      take: PAGE_SIZE,
     }),
+    prisma.listaPrecioTienda.count({ where: whereItems }),
     prisma.listaPrecioTienda.findMany({
       select: { marca: true },
       distinct: ["marca"],
