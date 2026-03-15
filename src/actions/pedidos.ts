@@ -73,6 +73,39 @@ export async function getEnviarPedidoData() {
   return { proveedores };
 }
 
+/** Ítem de la tabla Enviar Pedido: cant_pedir y descripción (descripcion_tienda o descripcion_proveedor). */
+export type EnviarPedidoTablaItem = {
+  cantPedir: number;
+  descripcion: string;
+};
+
+/**
+ * Datos de la tabla Enviar Pedido. Solo devuelve ítems cuando están cargados los 3 filtros:
+ * sucursal, proveedor y al menos un tipo de pedido.
+ */
+export async function getEnviarPedidoTablaData(params: {
+  sucursal: string;
+  proveedor: string;
+  tipos: string[];
+}): Promise<{ items: EnviarPedidoTablaItem[] }> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { items: [] };
+  }
+  const { sucursal, proveedor, tipos } = params;
+  const sucursalValida =
+    sucursal?.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
+      ? (sucursal as SucursalPedidoEnvio)
+      : null;
+  if (!sucursalValida || !proveedor?.trim() || !Array.isArray(tipos) || tipos.length === 0) {
+    return { items: [] };
+  }
+  const { items } = await getItemsYProveedorParaEnviar(proveedor.trim(), sucursalValida, tipos);
+  return {
+    items: items.map((i) => ({ cantPedir: i.cantPedir, descripcion: i.descripcion })),
+  };
+}
+
 const SUCURSALES_VALIDAS: SucursalPedidoEnvio[] = ["guaymallen", "maipu"];
 
 /**

@@ -17,8 +17,9 @@ model Proveedor {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  listaPrecios     ListaPrecioProveedor[]
-  itemsPedidoEnvio ItemPedidoEnvio[]
+  listaPrecios         ListaPrecioProveedor[]
+  itemsPedidoEnvio     ItemPedidoEnvio[]
+  itemsPedidoReposicion ItemPedidoReposicion[]
 
   @@map("proveedores")
 }
@@ -34,7 +35,8 @@ model Sucursal {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  itemsPedidoEnvio ItemPedidoEnvio[]
+  itemsPedidoEnvio     ItemPedidoEnvio[]
+  itemsPedidoReposicion ItemPedidoReposicion[]
 
   @@map("sucursales")
 }
@@ -186,4 +188,29 @@ model ItemPedidoEnvio {
   sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
 
   @@map("pedidos_envio")
+}
+
+// ─── Pedido por reposición: reglas por producto/proveedor/sucursal; cant_pedir calculado desde stock de lista_tienda.
+enum FormaPedirReposicion {
+  CANT_MAXIMA // cant_pedir = max(0, cant - stock)
+  CANT_FIJA   // cant_pedir = cant
+}
+
+model ItemPedidoReposicion {
+  id               String             @id @default(uuid())
+  idProveedor      String             @map("id_proveedor")
+  sucursalCodigo   String             @map("sucursal")
+  codExt           String             @map("cod_ext")
+  puntoReposicion  Int                @map("punto_reposicion")
+  formaPedir       FormaPedirReposicion @map("forma_pedir")
+  cant             Int                @map("cant")
+  cantPedir        Int                @map("cant_pedir") @default(0)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
+
+  @@unique([idProveedor, sucursalCodigo, codExt])
+  @@map("pedidos_reposicion")
 }
