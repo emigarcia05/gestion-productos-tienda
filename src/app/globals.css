@@ -266,7 +266,8 @@
 
   /* ─── Clases maestras lista-precios / gestión (cascada desde una variable) ─── */
 
-  /* Contenedor de tabla: diseño global */
+  /* Contenedor de tabla: diseño global. Es el contenedor con scroll (overflow-y: auto);
+   * la tabla debe ir dentro para que el encabezado fijo (sticky) funcione: el encabezado no se mueve con el scroll. */
   .contenedor-tabla-gestion {
     flex: 1 1 0%;
     min-height: 0;
@@ -540,8 +541,10 @@
 
 /* ─── Diseño único de tablas (referencia: Comp. Px. Prov.). Aplica a todas las tablas de la app.
  * Usar <Table> de @/components/ui/table (siempre aplica esta clase). No usar otra clase de tabla.
- * Regla obligatoria: todas las tablas tienen encabezado fijo (sticky): al hacer scroll, los encabezados
- * no desaparecen y permanecen visibles. Implementado en .tabla-gestion-compacta thead más abajo. */
+ *
+ * ENCABEZADO FIJO (obligatorio): el encabezado de la tabla debe estar fijo y NO moverse con el scroll.
+ * La tabla debe ir dentro de .contenedor-tabla-gestion (que tiene overflow-y: auto). Así el <thead>
+ * con position: sticky permanece visible mientras el cuerpo de la tabla hace scroll. */
 .tabla-gestion-compacta {
   width: 100%;
   font-size: 0.75rem;
@@ -552,7 +555,7 @@
 .tabla-gestion-compacta td {
   text-align: center;
 }
-/* Encabezado fijo (sticky): al hacer scroll el usuario siempre ve los encabezados; no desaparecen. */
+/* Encabezado fijo: no se mueve con el scroll; permanece visible en la parte superior. */
 .tabla-gestion-compacta thead {
   position: sticky;
   top: 0;
@@ -633,6 +636,7 @@
   padding-bottom: 0.125rem !important;
   font-size: 0.75rem !important;
   color: #000 !important;
+  font-weight: normal !important;
 }
 .tabla-gestion-compacta tbody td [data-slot="select-trigger"]:focus-visible {
   outline: none !important;
@@ -645,6 +649,7 @@
   text-overflow: ellipsis;
   line-height: 1.25;
   color: #000 !important;
+  font-weight: normal !important;
 }
 /* Input número en tabla: sin botones de subir/bajar. */
 .tabla-gestion-compacta tbody td input[type="number"]::-webkit-inner-spin-button,

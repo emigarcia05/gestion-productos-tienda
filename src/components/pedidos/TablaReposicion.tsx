@@ -113,22 +113,22 @@ export default function TablaReposicion({
         <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "55%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "40%" }}>
                 DESCRIPCIÓN
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "20%" }}>
                 FORMA PEDIR
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
                 PUNTO REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
                 CANT. REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "7.5%" }}>
                 STOCK
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "7.5%" }}>
                 CANT. A PEDIR
               </TableHead>
               <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "5%" }} aria-hidden />
