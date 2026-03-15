@@ -207,6 +207,54 @@ export async function getReposicionData(
   };
 }
 
+export interface ItemSelectorReposicion {
+  idListaTienda: string;
+  codExt: string;
+  descripcionTienda: string | null;
+  idProveedor: string;
+}
+
+const SELECTOR_LIMIT = 300;
+
+/**
+ * Productos de lista_tienda con proveedor para el selector del modal "Agregar configuración".
+ * Búsqueda por descripción; máximo SELECTOR_LIMIT resultados.
+ */
+export async function getProductosReposicionSelector(
+  sucursal: SucursalReposicion | null,
+  q: string = ""
+): Promise<ItemSelectorReposicion[]> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) return [];
+  if (!sucursal) return [];
+
+  const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
+  const where: Prisma.ListaPrecioTiendaWhereInput =
+    textFilter.AND?.length ? textFilter : {};
+
+  const rows = await prisma.listaPrecioTienda.findMany({
+    where,
+    orderBy: { descripcionTienda: "asc" },
+    take: SELECTOR_LIMIT,
+    include: {
+      listaPreciosProveedores: {
+        take: 1,
+        orderBy: { idProveedor: "asc" },
+        select: { idProveedor: true },
+      },
+    },
+  });
+
+  return rows
+    .filter((r) => r.listaPreciosProveedores[0])
+    .map((r) => ({
+      idListaTienda: r.id,
+      codExt: r.codExt,
+      descripcionTienda: r.descripcionTienda,
+      idProveedor: r.listaPreciosProveedores[0].idProveedor,
+    }));
+}
+
 const upsertReglaSchema = z.object({
   idProveedor: z.string().min(1, "Proveedor requerido"),
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),

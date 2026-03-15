@@ -11,29 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import type {
-  ReposicionData,
-  ItemReposicion,
-  SucursalReposicion,
-  FormaPedirReposicionOption,
-} from "@/actions/reposicion";
-import { upsertReglaReposicion, deleteReglaReposicion } from "@/actions/reposicion";
+import type { ReposicionData, ItemReposicion, SucursalReposicion } from "@/actions/reposicion";
+import { deleteReglaReposicion } from "@/actions/reposicion";
+import ConfigurarReposicionModal from "./ConfigurarReposicionModal";
 
-const FORMA_PEDIR_OPTIONS: { value: FormaPedirReposicionOption; label: string }[] = [
-  { value: "", label: "—" },
-  { value: "CANT_MAXIMA", label: "CANT. MAX." },
-  { value: "CANT_FIJA", label: "CANT. FIJA" },
-];
+function formaPedirLabel(formaPedir: string): string {
+  if (formaPedir === "CANT_MAXIMA") return "CANT. MAX.";
+  if (formaPedir === "CANT_FIJA") return "CANT. FIJA";
+  return "—";
+}
 
 interface Props {
   data: ReposicionData;
@@ -48,7 +36,7 @@ export default function TablaReposicion({
 }: Props) {
   const router = useRouter();
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Record<string, { puntoReposicion?: number; cant?: number }>>({});
+  const [modalItem, setModalItem] = useState<ItemReposicion | null>(null);
   const items = data.items;
 
   const handleDelete = useCallback(
@@ -64,37 +52,6 @@ export default function TablaReposicion({
       }
     },
     [router]
-  );
-
-  const handleSave = useCallback(
-    async (item: ItemReposicion, updates: { formaPedir?: FormaPedirReposicionOption; puntoReposicion?: number; cant?: number }) => {
-      if (!sucursalActual || !item.idProveedor) return;
-      const formaPedir = updates.formaPedir ?? item.formaPedir;
-      const puntoReposicion = updates.puntoReposicion ?? item.puntoReposicion;
-      const cant = updates.cant ?? item.cant;
-      const key = `${item.idListaTienda}:${item.codExt}`;
-      setSavingId(key);
-      const res = await upsertReglaReposicion({
-        idProveedor: item.idProveedor,
-        sucursalCodigo: sucursalActual,
-        codExt: item.codExt,
-        formaPedir: formaPedir || undefined,
-        puntoReposicion,
-        cant,
-      });
-      setSavingId(null);
-      if (res.ok) {
-        setEditing((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-        router.refresh();
-        return;
-      }
-      toast.error(res.error ?? "Error al guardar.");
-    },
-    [sucursalActual, router]
   );
 
   const sucursalSeleccionada = sucursalActual !== null;
@@ -147,133 +104,32 @@ export default function TablaReposicion({
             )}
             {items.map((item) => {
               const key = `${item.idListaTienda}:${item.codExt}`;
-              const puedeEditar = !!item.idProveedor;
-              const formaElegida = !!item.formaPedir;
               const isSaving = savingId === key;
-              const editPunto = editing[key]?.puntoReposicion;
-              const editCant = editing[key]?.cant;
               const tieneRegla = item.idReposicion != null;
-              const puntoVal =
-                editPunto !== undefined
-                  ? editPunto
-                  : tieneRegla
-                    ? item.puntoReposicion
-                    : "";
-              const cantVal =
-                editCant !== undefined
-                  ? editCant
-                  : tieneRegla
-                    ? item.cant
-                    : "";
+              const puntoVal = tieneRegla ? item.puntoReposicion : "";
+              const cantVal = tieneRegla ? item.cant : "";
               const cantAPedirVal = tieneRegla ? item.cantPedir : "";
 
               return (
-                <TableRow key={key}>
+                <TableRow
+                  key={key}
+                  className="cursor-pointer"
+                  onDoubleClick={(e) => {
+                    if ((e.target as HTMLElement).closest("button[aria-label='Eliminar regla de reposición']")) return;
+                    setModalItem(item);
+                  }}
+                >
                   <TableCell className="px-3 py-2 text-xs">
                     {item.descripcionTienda ?? "—"}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs">
-                    {puedeEditar ? (
-                      <Select
-                        value={item.formaPedir || "none"}
-                        onValueChange={(v) => {
-                          const val = v === "none" ? "" : (v as FormaPedirReposicionOption);
-                          handleSave(item, { formaPedir: val });
-                        }}
-                        disabled={isSaving}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          side="bottom"
-                          align="start"
-                          className="select-content-filtro"
-                        >
-                          {FORMA_PEDIR_OPTIONS.map((opt) => (
-                            <SelectItem
-                              key={opt.value || "none"}
-                              value={opt.value || "none"}
-                            >
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      "—"
-                    )}
+                    {item.formaPedir ? formaPedirLabel(item.formaPedir) : "—"}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs">
-                    {puedeEditar ? (
-                      <Input
-                        type="number"
-                        min={0}
-                        className="h-8 text-center text-xs tabular-nums"
-                        value={puntoVal}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          if (raw === "") {
-                            setEditing((prev) => ({ ...prev, [key]: { ...prev[key], puntoReposicion: undefined } }));
-                            return;
-                          }
-                          const n = parseInt(raw, 10);
-                          if (!Number.isNaN(n) && n >= 0) {
-                            setEditing((prev) => ({ ...prev, [key]: { ...prev[key], puntoReposicion: n } }));
-                          }
-                        }}
-                        onBlur={(e) => {
-                          if (!formaElegida) return;
-                          const raw = e.target.value;
-                          const n = raw === "" ? 0 : parseInt(raw, 10);
-                          if (Number.isNaN(n) || n < 0) return;
-                          const prevVal = tieneRegla ? item.puntoReposicion : 0;
-                          if (n !== prevVal) {
-                            handleSave(item, { puntoReposicion: n });
-                          }
-                        }}
-                        disabled={!formaElegida || isSaving}
-                        placeholder=""
-                      />
-                    ) : (
-                      ""
-                    )}
+                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                    {puntoVal === "" ? "" : puntoVal}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs">
-                    {puedeEditar ? (
-                      <Input
-                        type="number"
-                        min={0}
-                        className="h-8 text-center text-xs tabular-nums"
-                        value={cantVal}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          if (raw === "") {
-                            setEditing((prev) => ({ ...prev, [key]: { ...prev[key], cant: undefined } }));
-                            return;
-                          }
-                          const n = parseInt(raw, 10);
-                          if (!Number.isNaN(n) && n >= 0) {
-                            setEditing((prev) => ({ ...prev, [key]: { ...prev[key], cant: n } }));
-                          }
-                        }}
-                        onBlur={(e) => {
-                          if (!formaElegida) return;
-                          const raw = e.target.value;
-                          const n = raw === "" ? 0 : parseInt(raw, 10);
-                          if (Number.isNaN(n) || n < 0) return;
-                          const prevVal = tieneRegla ? item.cant : 0;
-                          if (n !== prevVal) {
-                            handleSave(item, { cant: n });
-                          }
-                        }}
-                        disabled={!formaElegida || isSaving}
-                        placeholder=""
-                      />
-                    ) : (
-                      ""
-                    )}
+                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                    {cantVal === "" ? "" : cantVal}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
                     {item.stock}
@@ -303,6 +159,14 @@ export default function TablaReposicion({
             })}
           </TableBody>
         </Table>
+      )}
+      {sucursalActual && modalItem && (
+        <ConfigurarReposicionModal
+          open={!!modalItem}
+          onOpenChange={(open) => !open && setModalItem(null)}
+          item={modalItem}
+          sucursal={sucursalActual}
+        />
       )}
     </div>
   );
