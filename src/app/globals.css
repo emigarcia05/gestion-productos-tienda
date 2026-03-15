@@ -609,6 +609,16 @@
   max-height: 1.5rem !important;
   height: 1.5rem !important;
 }
+/* Inputs dentro de tabla: fondo transparente y recuadro suave #0072bb (diseño global para toda la app). */
+.tabla-gestion-compacta tbody td input:not([type="checkbox"]) {
+  background-color: transparent !important;
+  border: 1px solid #0072bb;
+  border-radius: calc(var(--radius) - 2px);
+}
+.tabla-gestion-compacta tbody td input:not([type="checkbox"]):focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklch, #0072bb 25%, transparent);
+}
 /* Input número en tabla: sin botones de subir/bajar. */
 .tabla-gestion-compacta tbody td input[type="number"]::-webkit-inner-spin-button,
 .tabla-gestion-compacta tbody td input[type="number"]::-webkit-outer-spin-button {

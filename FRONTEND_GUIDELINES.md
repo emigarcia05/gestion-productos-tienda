@@ -166,7 +166,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
-| `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Px. Prov.). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. Altura desde variables (abajo). |
+| `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Px. Prov.). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. Altura desde variables (abajo). **Inputs dentro de la tabla**: fondo transparente y borde suave #0072bb (definido en `globals.css`). |
 | `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | Altura oficial de tablas (referencia: módulo Comp. Px. Prov.). No sobrescribir padding/height en celdas. |
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |

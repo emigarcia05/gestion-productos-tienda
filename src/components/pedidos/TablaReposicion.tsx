@@ -26,7 +26,6 @@ import type {
   FormaPedirReposicionOption,
 } from "@/actions/reposicion";
 import { upsertReglaReposicion } from "@/actions/reposicion";
-import { cn } from "@/lib/utils";
 
 const SUCURSALES: { value: SucursalReposicion; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -102,17 +101,27 @@ export default function TablaReposicion({
           Seleccioná una sucursal para ver los ítems.
         </div>
       ) : (
-        <Table variant="compact">
+        <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs">DESCRIPCIÓN</TableHead>
-              <TableHead className="px-3 py-2 text-xs w-24">
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "50%" }}>
+                DESCRIPCIÓN
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
                 STOCK {sucursalLabel}
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs w-32">FORMA PEDIR</TableHead>
-              <TableHead className="px-3 py-2 text-xs w-28">PUNTO REPOSICIÓN</TableHead>
-              <TableHead className="px-3 py-2 text-xs w-24">CANT.</TableHead>
-              <TableHead className="px-3 py-2 text-xs w-24">CANT. PEDIDA</TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "15%" }}>
+                FORMA PEDIR
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+                PUNTO REPOSICIÓN
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+                CANT. REPOSICIÓN
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+                CANT. A PEDIR
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -133,8 +142,20 @@ export default function TablaReposicion({
               const isSaving = savingId === key;
               const editPunto = editing[key]?.puntoReposicion;
               const editCant = editing[key]?.cant;
-              const puntoVal = editPunto !== undefined ? editPunto : item.puntoReposicion;
-              const cantVal = editCant !== undefined ? editCant : item.cant;
+              const tieneRegla = item.idReposicion != null;
+              const puntoVal =
+                editPunto !== undefined
+                  ? editPunto
+                  : tieneRegla
+                    ? item.puntoReposicion
+                    : "";
+              const cantVal =
+                editCant !== undefined
+                  ? editCant
+                  : tieneRegla
+                    ? item.cant
+                    : "";
+              const cantAPedirVal = tieneRegla ? item.cantPedir : "";
 
               return (
                 <TableRow key={key}>
@@ -185,21 +206,31 @@ export default function TablaReposicion({
                         className="h-8 text-center text-xs tabular-nums"
                         value={puntoVal}
                         onChange={(e) => {
-                          const n = parseInt(e.target.value, 10);
+                          const raw = e.target.value;
+                          if (raw === "") {
+                            setEditing((prev) => ({ ...prev, [key]: { ...prev[key], puntoReposicion: undefined } }));
+                            return;
+                          }
+                          const n = parseInt(raw, 10);
                           if (!Number.isNaN(n) && n >= 0) {
                             setEditing((prev) => ({ ...prev, [key]: { ...prev[key], puntoReposicion: n } }));
                           }
                         }}
                         onBlur={(e) => {
-                          const n = parseInt(e.target.value, 10);
-                          if (!Number.isNaN(n) && n >= 0 && n !== item.puntoReposicion) {
+                          if (!formaElegida) return;
+                          const raw = e.target.value;
+                          const n = raw === "" ? 0 : parseInt(raw, 10);
+                          if (Number.isNaN(n) || n < 0) return;
+                          const prevVal = tieneRegla ? item.puntoReposicion : 0;
+                          if (n !== prevVal) {
                             handleSave(item, { puntoReposicion: n });
                           }
                         }}
                         disabled={!formaElegida || isSaving}
+                        placeholder=""
                       />
                     ) : (
-                      "—"
+                      ""
                     )}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs">
@@ -210,25 +241,35 @@ export default function TablaReposicion({
                         className="h-8 text-center text-xs tabular-nums"
                         value={cantVal}
                         onChange={(e) => {
-                          const n = parseInt(e.target.value, 10);
+                          const raw = e.target.value;
+                          if (raw === "") {
+                            setEditing((prev) => ({ ...prev, [key]: { ...prev[key], cant: undefined } }));
+                            return;
+                          }
+                          const n = parseInt(raw, 10);
                           if (!Number.isNaN(n) && n >= 0) {
                             setEditing((prev) => ({ ...prev, [key]: { ...prev[key], cant: n } }));
                           }
                         }}
                         onBlur={(e) => {
-                          const n = parseInt(e.target.value, 10);
-                          if (!Number.isNaN(n) && n >= 0 && n !== item.cant) {
+                          if (!formaElegida) return;
+                          const raw = e.target.value;
+                          const n = raw === "" ? 0 : parseInt(raw, 10);
+                          if (Number.isNaN(n) || n < 0) return;
+                          const prevVal = tieneRegla ? item.cant : 0;
+                          if (n !== prevVal) {
                             handleSave(item, { cant: n });
                           }
                         }}
                         disabled={!formaElegida || isSaving}
+                        placeholder=""
                       />
                     ) : (
-                      "—"
+                      ""
                     )}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
-                    {item.cantPedir}
+                    {cantAPedirVal === "" ? "" : cantAPedirVal}
                   </TableCell>
                 </TableRow>
               );
