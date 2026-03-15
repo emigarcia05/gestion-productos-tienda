@@ -188,7 +188,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                   DESCRIPCIÓN
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-28">
-                  STOCK {sucursalLabel}
+                  STOCK
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-28">
                   ÚLT. IMPRESIÓN

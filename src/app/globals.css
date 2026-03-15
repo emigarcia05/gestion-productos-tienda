@@ -539,7 +539,9 @@
 }
 
 /* ─── Diseño único de tablas (referencia: Comp. Px. Prov.). Aplica a todas las tablas de la app.
- * Usar <Table> de @/components/ui/table (siempre aplica esta clase). No usar otra clase de tabla. */
+ * Usar <Table> de @/components/ui/table (siempre aplica esta clase). No usar otra clase de tabla.
+ * Regla obligatoria: todas las tablas tienen encabezado fijo (sticky): al hacer scroll, los encabezados
+ * no desaparecen y permanecen visibles. Implementado en .tabla-gestion-compacta thead más abajo. */
 .tabla-gestion-compacta {
   width: 100%;
   font-size: 0.75rem;
@@ -550,7 +552,7 @@
 .tabla-gestion-compacta td {
   text-align: center;
 }
-/* Encabezado fijo al hacer scroll; altura fija; centrado. Sin -webkit-box en th para evitar distorsión del layout. */
+/* Encabezado fijo (sticky): al hacer scroll el usuario siempre ve los encabezados; no desaparecen. */
 .tabla-gestion-compacta thead {
   position: sticky;
   top: 0;
@@ -618,6 +620,29 @@
 .tabla-gestion-compacta tbody td input:not([type="checkbox"]):focus {
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in oklch, #0072bb 25%, transparent);
+}
+/* Listas desplegables (select) dentro de tabla: mismo estilo que inputs (fondo transparente, recuadro #0072bb); contenido al alto máximo de la fila. */
+.tabla-gestion-compacta tbody td [data-slot="select-trigger"] {
+  background-color: transparent !important;
+  border: 1px solid #0072bb !important;
+  border-radius: calc(var(--radius) - 2px);
+  max-height: var(--tabla-body-row-min-height) !important;
+  height: 1.5rem !important;
+  min-height: 1.5rem !important;
+  padding-top: 0.125rem !important;
+  padding-bottom: 0.125rem !important;
+  font-size: 0.75rem !important;
+}
+.tabla-gestion-compacta tbody td [data-slot="select-trigger"]:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px color-mix(in oklch, #0072bb 25%, transparent);
+}
+.tabla-gestion-compacta tbody td [data-slot="select-trigger"] [data-slot="select-value"],
+.tabla-gestion-compacta tbody td [data-slot="select-trigger"] span {
+  max-height: 1.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
 }
 /* Input número en tabla: sin botones de subir/bajar. */
 .tabla-gestion-compacta tbody td input[type="number"]::-webkit-inner-spin-button,

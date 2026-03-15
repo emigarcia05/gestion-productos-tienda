@@ -37,7 +37,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 8. **Tablas (encabezado fijo + paginación)**  
    - **Un solo diseño** para toda la app (referencia: Comp. Px. Prov.). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).  
-   - **Encabezado fijo**: el `<thead>` de la tabla permanece visible; no hay scroll interno en el cuerpo de la tabla (solo scroll horizontal del contenedor si aplica).  
+   - **Encabezado fijo (obligatorio)**: todas las tablas deben tener el encabezado fijo. Cuando el usuario hace scroll, los encabezados **no deben desaparecer** y permanecen visibles (implementado con `position: sticky` en el `<thead>` en `globals.css`). No hay scroll interno en el cuerpo de la tabla (solo scroll del contenedor si aplica).  
    - **Paginación estándar**: todas las tablas de la app muestran **100 ítems por página** (`PAGE_SIZE` en `@/lib/pagination`). Cuando el total de filas supera 100, se muestran controles de paginación debajo de la tabla.  
    - **Páginas con URL** (Pedido Urgente, Tienda, Stock): usar `PaginacionTabla` de `@/components/shared/PaginacionTabla.tsx` con `basePath` y `params` (query actual sin `pagina`).  
    - **Páginas con datos en cliente** (Lista precios, Sugeridos): usar `PaginacionClient` de `@/components/shared/PaginacionClient.tsx` con `paginaActual`, `totalPaginas` y `onPaginaChange`.  
@@ -166,7 +166,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
-| `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Px. Prov.). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. Altura desde variables (abajo). **Inputs dentro de la tabla**: fondo transparente y borde suave #0072bb (definido en `globals.css`). |
+| `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Px. Prov.). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. **Encabezado fijo obligatorio**: al hacer scroll los encabezados no desaparecen (`position: sticky` en `globals.css`). Altura desde variables (abajo). **Inputs y listas desplegables (select)** dentro de la tabla: fondo transparente, recuadro #0072bb; el contenido del select se ajusta al alto máximo de la fila (definido en `globals.css`). |
 | `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | Altura oficial de tablas (referencia: módulo Comp. Px. Prov.). No sobrescribir padding/height en celdas. |
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
@@ -187,6 +187,7 @@ import SectionHeader from "@/components/SectionHeader";
 | **Tokens** | Solo variables del tema: `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`. Evitar `bg-white`, `text-slate-*`, `bg-slate-*`. |
 | **Estructura** | Rutas en `src/app/`; componentes base shadcn en `src/components/ui/`; compartidos en `src/components/shared/`. |
 | **Texto UI** | Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Toda abreviatura termina con punto (Px., Cx., Dto., Cod., etc.). |
+| **Tablas** | Todas las tablas con encabezado fijo: al hacer scroll los encabezados no desaparecen. Usar `<Table>` de `@/components/ui/table` (aplica `.tabla-gestion-compacta` en `globals.css`). |
 | **Sesiones** | Acceso a datos vía iron-session y helpers del proyecto. |
 
 ---
@@ -197,7 +198,7 @@ Antes de dar por terminada una tarea de frontend:
 
 - [ ] No hay estilos inline ni clases hardcodeadas (`bg-white`, `text-slate-400`, etc.); se usan tokens (`bg-card`, `text-muted-foreground`).
 - [ ] Las clases condicionales o combinadas usan `cn(...)`.
-- [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique.
+- [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique; encabezado fijo (al hacer scroll los encabezados no desaparecen).
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
 - [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` con fondo por defecto (no sobrescribir con `bg-white`).
 - [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Abreviaciones con punto final (Px., Cx., Dto., etc.).

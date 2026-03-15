@@ -282,3 +282,31 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
     return { ok: false, error: message };
   }
 }
+
+const deleteReglaSchema = z.object({
+  id: z.string().uuid("ID de regla inválido"),
+});
+
+/**
+ * Elimina la regla de reposición por ID.
+ */
+export async function deleteReglaReposicion(raw: z.infer<typeof deleteReglaSchema>): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = deleteReglaSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "ID inválido." };
+  }
+  try {
+    await prisma.itemPedidoReposicion.delete({
+      where: { id: parsed.data.id },
+    });
+    revalidatePath("/pedidos/reposicion");
+    return { ok: true, data: undefined };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error al eliminar la regla.";
+    return { ok: false, error: message };
+  }
+}

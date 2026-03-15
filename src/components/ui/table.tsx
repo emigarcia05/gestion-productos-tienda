@@ -12,7 +12,8 @@ interface TableProps extends React.ComponentProps<"table"> {
   scrollX?: boolean
 }
 
-/** Diseño único de tablas (referencia: Comp. Px. Prov.). variant se mantiene por API pero ambos usan el mismo estilo. */
+/** Diseño único de tablas (referencia: Comp. Px. Prov.). Aplica .tabla-gestion-compacta (globals.css).
+ * Encabezado fijo: al hacer scroll los encabezados no desaparecen. variant se mantiene por API pero ambos usan el mismo estilo. */
 function Table({ className, variant, scrollX = true, ...props }: TableProps) {
   const tableClass = cn("tabla-gestion-compacta", className)
   return (

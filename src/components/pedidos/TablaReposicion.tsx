@@ -19,18 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import type {
   ReposicionData,
   ItemReposicion,
   SucursalReposicion,
   FormaPedirReposicionOption,
 } from "@/actions/reposicion";
-import { upsertReglaReposicion } from "@/actions/reposicion";
-
-const SUCURSALES: { value: SucursalReposicion; label: string }[] = [
-  { value: "guaymallen", label: "GUAYMALLÉN" },
-  { value: "maipu", label: "MAIPÚ" },
-];
+import { upsertReglaReposicion, deleteReglaReposicion } from "@/actions/reposicion";
 
 const FORMA_PEDIR_OPTIONS: { value: FormaPedirReposicionOption; label: string }[] = [
   { value: "", label: "—" },
@@ -53,6 +50,21 @@ export default function TablaReposicion({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Record<string, { puntoReposicion?: number; cant?: number }>>({});
   const items = data.items;
+
+  const handleDelete = useCallback(
+    async (item: ItemReposicion) => {
+      if (!item.idReposicion) return;
+      setSavingId(`${item.idListaTienda}:${item.codExt}`);
+      const res = await deleteReglaReposicion({ id: item.idReposicion });
+      setSavingId(null);
+      if (res.ok) {
+        router.refresh();
+      } else {
+        toast.error(res.error ?? "Error al eliminar.");
+      }
+    },
+    [router]
+  );
 
   const handleSave = useCallback(
     async (item: ItemReposicion, updates: { formaPedir?: FormaPedirReposicionOption; puntoReposicion?: number; cant?: number }) => {
@@ -86,9 +98,6 @@ export default function TablaReposicion({
   );
 
   const sucursalSeleccionada = sucursalActual !== null;
-  const sucursalLabel = sucursalActual
-    ? SUCURSALES.find((s) => s.value === sucursalActual)?.label ?? sucursalActual
-    : "";
 
   useEffect(() => {
     if (onFiltradosCountChange) onFiltradosCountChange(items.length);
@@ -104,11 +113,12 @@ export default function TablaReposicion({
         <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "50%" }}>
+              <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "3%" }} aria-hidden />
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "47%" }}>
                 DESCRIPCIÓN
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
-                STOCK {sucursalLabel}
+                STOCK
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "15%" }}>
                 FORMA PEDIR
@@ -128,7 +138,7 @@ export default function TablaReposicion({
             {items.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="text-center text-xs text-muted-foreground py-10"
                 >
                   Sin resultados
@@ -159,6 +169,23 @@ export default function TablaReposicion({
 
               return (
                 <TableRow key={key}>
+                  <TableCell className="px-1 py-2 text-xs" style={{ width: "3%" }}>
+                    {item.idReposicion ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(item)}
+                        disabled={isSaving}
+                        aria-label="Eliminar regla de reposición"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <span className="inline-block w-8" aria-hidden />
+                    )}
+                  </TableCell>
                   <TableCell className="px-3 py-2 text-xs">
                     {item.descripcionTienda ?? "—"}
                   </TableCell>
