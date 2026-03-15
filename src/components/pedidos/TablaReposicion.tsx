@@ -113,25 +113,25 @@ export default function TablaReposicion({
         <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "3%" }} aria-hidden />
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "47%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "55%" }}>
                 DESCRIPCIÓN
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "20%" }}>
+                FORMA PEDIR
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
+                PUNTO REPOSICIÓN
+              </TableHead>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
+                CANT. REPOSICIÓN
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
                 STOCK
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "15%" }}>
-                FORMA PEDIR
-              </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
-                PUNTO REPOSICIÓN
-              </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
-                CANT. REPOSICIÓN
-              </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "5%" }}>
                 CANT. A PEDIR
               </TableHead>
+              <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "5%" }} aria-hidden />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -169,28 +169,8 @@ export default function TablaReposicion({
 
               return (
                 <TableRow key={key}>
-                  <TableCell className="px-1 py-2 text-xs" style={{ width: "3%" }}>
-                    {item.idReposicion ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(item)}
-                        disabled={isSaving}
-                        aria-label="Eliminar regla de reposición"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <span className="inline-block w-8" aria-hidden />
-                    )}
-                  </TableCell>
                   <TableCell className="px-3 py-2 text-xs">
                     {item.descripcionTienda ?? "—"}
-                  </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums">
-                    {item.stock}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs">
                     {puedeEditar ? (
@@ -296,7 +276,27 @@ export default function TablaReposicion({
                     )}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
+                    {item.stock}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-xs tabular-nums">
                     {cantAPedirVal === "" ? "" : cantAPedirVal}
+                  </TableCell>
+                  <TableCell className="px-1 py-2 text-xs" style={{ width: "5%" }}>
+                    {item.idReposicion ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(item)}
+                        disabled={isSaving}
+                        aria-label="Eliminar regla de reposición"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <span className="inline-block w-8" aria-hidden />
+                    )}
                   </TableCell>
                 </TableRow>
               );

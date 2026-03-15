@@ -632,6 +632,7 @@
   padding-top: 0.125rem !important;
   padding-bottom: 0.125rem !important;
   font-size: 0.75rem !important;
+  color: #000 !important;
 }
 .tabla-gestion-compacta tbody td [data-slot="select-trigger"]:focus-visible {
   outline: none !important;
@@ -643,6 +644,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.25;
+  color: #000 !important;
 }
 /* Input número en tabla: sin botones de subir/bajar. */
 .tabla-gestion-compacta tbody td input[type="number"]::-webkit-inner-spin-button,
