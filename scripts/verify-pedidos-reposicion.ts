@@ -5,18 +5,16 @@
  * - Si la tabla no existe o las columnas no coinciden, Prisma lanzará error.
  * - Si todo está bien, imprime las columnas esperadas y un conteo de filas.
  */
-import { readFileSync, existsSync } from "fs";
+import dotenv from "dotenv";
 import { join } from "path";
 
-[join(__dirname, "..", ".env"), join(process.cwd(), ".env")].forEach((envPath) => {
-  if (existsSync(envPath)) {
-    const env = readFileSync(envPath, "utf-8");
-    for (const line of env.split("\n")) {
-      const m = line.match(/^([^#=]+)=(.*)$/);
-      if (m) process.env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, "");
-    }
-  }
-});
+dotenv.config({ path: join(__dirname, "..", ".env") });
+dotenv.config({ path: join(process.cwd(), ".env") });
+
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL no está definida. Crea un archivo .env en la raíz del proyecto con DATABASE_URL=...");
+  process.exit(1);
+}
 
 const ESQUEMA_ESPERADO = {
   tabla: "pedidos_reposicion",
