@@ -31,7 +31,7 @@ import { upsertReglaReposicion, deleteReglaReposicion } from "@/actions/reposici
 
 const FORMA_PEDIR_OPTIONS: { value: FormaPedirReposicionOption; label: string }[] = [
   { value: "", label: "—" },
-  { value: "CANT_MAXIMA", label: "CANT. MÁXIMA" },
+  { value: "CANT_MAXIMA", label: "CANT. MAX." },
   { value: "CANT_FIJA", label: "CANT. FIJA" },
 ];
 
@@ -113,10 +113,10 @@ export default function TablaReposicion({
         <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "40%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "45%" }}>
                 DESCRIPCIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "20%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "25%" }}>
                 FORMA PEDIR
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
