@@ -698,7 +698,8 @@
 .tabla-bloque-secundario-head-divider {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
   color: var(--muted-foreground);
-  border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
+  /* Encabezado: línea divisoria blanca para cortar visualmente el bloque secundario. */
+  border-left: 2px solid var(--primary-foreground);
 }
 .tabla-bloque-secundario-cell {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
@@ -707,6 +708,7 @@
 .tabla-bloque-secundario-cell-divider {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
   color: var(--muted-foreground);
+  /* Filas: línea divisoria gris más marcada (mezcla de border y foreground). */
   border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
 }
 

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { getProductosReposicionSelector, type ItemSelectorReposicion } from "@/actions/reposicion";
 import type { SucursalReposicion } from "@/actions/reposicion";
+import { LimpiarFiltrosButton } from "@/components/FilterBar";
 
 interface Props {
   open: boolean;
@@ -84,6 +85,10 @@ export default function SelectorProductosReposicionModal({
     onOpenChange(false);
   };
 
+  function limpiarDescripcion() {
+    setQ("");
+  }
+
   return (
     <Dialog
       open={open}
@@ -104,15 +109,18 @@ export default function SelectorProductosReposicionModal({
         <div className="flex flex-col gap-4 min-h-0 flex-1 px-6 py-4 overflow-auto">
           <div>
             <label className="text-sm font-medium text-foreground block mb-1">DESCRIPCIÓN</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="BUSCAR POR DESCRIPCIÓN..."
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="pl-9 input-filtro-unificado"
-              />
+            <div className="w-full flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="BUSCAR POR DESCRIPCIÓN..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  className="pl-9 input-filtro-unificado w-full"
+                />
+              </div>
+              <LimpiarFiltrosButton visible={!!q.trim()} onClick={limpiarDescripcion} />
             </div>
           </div>
           <div className="border border-border rounded-lg overflow-auto flex-1 min-h-0">

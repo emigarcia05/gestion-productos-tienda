@@ -138,15 +138,14 @@ export default function ConfigurarReposicionModal({
         >
           <div className="flex flex-col gap-6 items-stretch text-center">
             <div className="flex flex-col items-center gap-1">
-              <Label className="text-sm font-medium text-foreground">Producto</Label>
-              <p className="text-sm text-foreground mt-1 font-medium">{nombreProducto}</p>
+              <p className="text-sm text-foreground font-medium">{nombreProducto}</p>
             </div>
 
             <div className="flex flex-col items-stretch">
               <div className="grid grid-cols-3 gap-2 mb-2 text-center">
-                <Label className="text-xs font-medium text-muted-foreground">FORMA PEDIR</Label>
-                <Label className="text-xs font-medium text-muted-foreground">PUNTO REPOSICIÓN</Label>
-                <Label className="text-xs font-medium text-muted-foreground">CANT. REPOSICIÓN</Label>
+                <Label className="text-xs font-medium text-foreground">FORMA PEDIR</Label>
+                <Label className="text-xs font-medium text-foreground">PUNTO REPOSICIÓN</Label>
+                <Label className="text-xs font-medium text-foreground">CANT. REPOSICIÓN</Label>
               </div>
               <div className="grid grid-cols-3 gap-2 items-center text-center">
                 <Select
