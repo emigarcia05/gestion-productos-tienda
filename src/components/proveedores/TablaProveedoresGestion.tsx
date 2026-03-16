@@ -43,7 +43,7 @@ export default function TablaProveedoresGestion({ proveedores }: Props) {
   return (
     <>
       <Card className="card-contenedor-tabla h-full flex flex-col rounded-xl border border-card-border bg-card overflow-hidden shadow-sm">
-        <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+        <CardContent className="flex-1 min-h-0 p-0">
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
