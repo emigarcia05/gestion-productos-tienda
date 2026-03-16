@@ -16,6 +16,7 @@ import { Trash2 } from "lucide-react";
 import type { ReposicionData, ItemReposicion, SucursalReposicion } from "@/actions/reposicion";
 import { deleteReglaReposicion } from "@/actions/reposicion";
 import ConfigurarReposicionModal from "./ConfigurarReposicionModal";
+import { fmtCelda } from "@/lib/format";
 
 function formaPedirLabel(formaPedir: string): string {
   if (formaPedir === "CANT_MAXIMA") return "CANT. MAX.";
@@ -134,10 +135,10 @@ export default function TablaReposicion({
                 >
                   {/* Principal */}
                   <TableCell className="px-3 py-2 text-xs">
-                    {item.descripcionTienda ?? "—"}
+                    {fmtCelda(item.descripcionTienda)}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs">
-                    {item.formaPedir ? formaPedirLabel(item.formaPedir) : "—"}
+                    {item.formaPedir ? formaPedirLabel(item.formaPedir) : fmtCelda(null)}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
                     {puntoVal === "" ? "" : puntoVal}

@@ -698,7 +698,7 @@
 .tabla-bloque-secundario-head-divider {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
   color: var(--muted-foreground);
-  border-left: 1px solid var(--border);
+  border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
 }
 .tabla-bloque-secundario-cell {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
@@ -707,7 +707,7 @@
 .tabla-bloque-secundario-cell-divider {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
   color: var(--muted-foreground);
-  border-left: 1px solid var(--border);
+  border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
 }
 
 /* Tabla Lista Tienda: Cod. Tienda 15%, Descripción 65%, Px Compra Final 15%, Mejor Px disponible 5%. */
