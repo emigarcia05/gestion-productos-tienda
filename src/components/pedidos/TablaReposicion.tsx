@@ -71,7 +71,7 @@ export default function TablaReposicion({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {/* Información principal */}
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "40%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "46%" }}>
                 DESCRIPCIÓN
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "12%" }}>
@@ -84,21 +84,21 @@ export default function TablaReposicion({
                 CANT. REPOSICIÓN
               </TableHead>
               <TableHead
-                className="px-1 py-2 text-xs text-center bg-muted/30 text-muted-foreground"
+                className="px-1 py-2 text-xs text-center bg-muted/30 text-foreground"
                 style={{ width: "6%" }}
               >
                 {/* acciones */}
               </TableHead>
               {/* Información secundaria */}
               <TableHead
-                className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground border-l border-border"
-                style={{ width: "11%" }}
+                className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider"
+                style={{ width: "8%" }}
               >
                 STOCK
               </TableHead>
               <TableHead
-                className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground"
-                style={{ width: "11%" }}
+                className="px-3 py-2 text-xs tabla-bloque-secundario-head"
+                style={{ width: "8%" }}
               >
                 CANT. A PEDIR
               </TableHead>
@@ -151,7 +151,7 @@ export default function TablaReposicion({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 text-foreground hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(item)}
                         disabled={isSaving}
                         aria-label="Eliminar regla de reposición"
@@ -163,10 +163,10 @@ export default function TablaReposicion({
                     )}
                   </TableCell>
                   {/* Secundaria */}
-                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground border-l border-border">
+                  <TableCell className="px-3 py-2 text-xs tabular-nums tabla-bloque-secundario-cell-divider">
                     {item.stock}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground">
+                  <TableCell className="px-3 py-2 text-xs tabular-nums tabla-bloque-secundario-cell">
                     {cantAPedirVal === "" ? "" : cantAPedirVal}
                   </TableCell>
                 </TableRow>

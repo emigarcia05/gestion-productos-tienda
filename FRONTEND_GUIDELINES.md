@@ -97,6 +97,20 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - **Contador debajo a la derecha**: cuando el diseño requiera el número de ítems en una fila inferior alineada a la derecha (ej. Pedido Urgente), usar una tercera fila dentro del `FilterBar`: `<div className="flex justify-end w-full"><span className={FILTER_COUNT_CLASS}>…</span></div>`. No incluir el contador dentro de `FilterRowSelection`.
    - **Tablas con paginación (estándar de la app)**: todas las tablas de páginas muestran **100 ítems por página**. No se cargan todos los registros; el backend aplica `skip`/`take` y devuelve `total` y `totalPaginas`. Debajo de la tabla se muestra la barra de paginación (`PaginacionTabla` o `PaginacionClient`) cuando `totalPaginas > 1`. El contenedor de tabla no hace scroll vertical interno; el usuario cambia de página con los controles. Ver sección "Guía para IA" punto 8.
 
+### Tabla con bloque de información secundaria
+
+- Patrón pensado para tablas donde hay **datos principales** (configuración, acciones) y un **bloque de resumen secundario** (stock, métricas) en la misma fila.
+- Referencia: módulo **Pedido Reposición** (`TablaReposicion`).
+- Estructura:
+  - Columnas principales a la izquierda: DESCRIPCIÓN, FORMA PEDIR, PUNTO REPOSICIÓN, CANT. REPOSICIÓN, acciones (botón de basura).
+  - Bloque secundario a la derecha: STOCK, CANT. A PEDIR.
+- Clases globales:
+  - Encabezados secundarios: `tabla-bloque-secundario-head` / `tabla-bloque-secundario-head-divider` (esta última con línea divisoria vertical).
+  - Celdas secundarias: `tabla-bloque-secundario-cell` / `tabla-bloque-secundario-cell-divider`.
+- Uso recomendado:
+  - Aplicar estas clases solo a columnas de **información secundaria** (no editable o de resumen).
+  - Mantener siempre el orden lógico: primero las columnas principales, luego el bloque secundario.
+
 ### Ejemplos de código (referencia para IA)
 
 **Combinar clases con `cn()`:**
@@ -167,6 +181,8 @@ import SectionHeader from "@/components/SectionHeader";
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
 | `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Px. Prov.). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. **Encabezado fijo obligatorio**: al hacer scroll los encabezados no desaparecen (`position: sticky` en `globals.css`). Altura desde variables (abajo). **Inputs y listas desplegables (select)** dentro de la tabla: fondo transparente, recuadro #0072bb; el contenido del select se ajusta al alto máximo de la fila. **Listas desplegables en tablas**: texto en negro, sin bold (definido en `globals.css`). |
+| `.tabla-bloque-secundario-head`, `.tabla-bloque-secundario-head-divider` | Estilo para encabezados de columnas de **información secundaria** (bloque a la derecha): fondo `bg-muted` suavizado, texto `text-muted-foreground`. La variante `*-divider` agrega una línea vertical (`border-l border-border`) para separar visualmente el bloque secundario del principal. |
+| `.tabla-bloque-secundario-cell`, `.tabla-bloque-secundario-cell-divider` | Estilo para celdas de cuerpo de **información secundaria** (ej. STOCK, CANT. A PEDIR en Pedido Reposición). Fondo y color alineados con los encabezados secundarios. La variante `*-divider` agrega la línea divisoria vertical. |
 | `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | Altura oficial de tablas (referencia: módulo Comp. Px. Prov.). No sobrescribir padding/height en celdas. |
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |

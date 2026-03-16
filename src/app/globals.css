@@ -686,6 +686,30 @@
   font-size: var(--text-sm) !important;
 }
 
+/* ─── Bloque de información secundaria en tablas (ej. Pedido Reposición) ───
+ * Patrón: columnas principales a la izquierda (datos clave / configuraciones),
+ * y un bloque secundario a la derecha (stock, métricas, resúmenes) visualmente separado.
+ * Usar estas clases en <TableHead> y <TableCell> para el bloque secundario.
+ */
+.tabla-bloque-secundario-head {
+  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+}
+.tabla-bloque-secundario-head-divider {
+  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+  border-left: 1px solid var(--border);
+}
+.tabla-bloque-secundario-cell {
+  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+}
+.tabla-bloque-secundario-cell-divider {
+  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+  border-left: 1px solid var(--border);
+}
+
 /* Tabla Lista Tienda: Cod. Tienda 15%, Descripción 65%, Px Compra Final 15%, Mejor Px disponible 5%. */
 .tabla-tienda-listado {
   table-layout: fixed;
