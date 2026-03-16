@@ -15,6 +15,7 @@ interface Props {
   marca: string;
   rubro: string;
   subRubro: string;
+  configurado: "" | "si";
   paginaNum: number;
   paramsPagina: Record<string, string>;
 }
@@ -26,6 +27,7 @@ export default function ReposicionPageClient({
   marca,
   rubro,
   subRubro,
+  configurado,
   paginaNum,
   paramsPagina,
 }: Props) {
@@ -40,6 +42,7 @@ export default function ReposicionPageClient({
       marcaActual={marca}
       rubroActual={rubro}
       subRubroActual={subRubro}
+      configuradoActual={configurado}
       totalItems={totalFiltrados}
     />
   );

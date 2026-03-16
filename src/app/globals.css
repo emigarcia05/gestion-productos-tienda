@@ -555,12 +555,6 @@
 .tabla-gestion-compacta td {
   text-align: center;
 }
-/* Encabezado fijo: no se mueve con el scroll; permanece visible en la parte superior. */
-.tabla-gestion-compacta thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
 .tabla-gestion-compacta thead,
 .tabla-gestion-compacta thead tr,
 .tabla-gestion-compacta thead th {
@@ -572,6 +566,10 @@
   background-color: var(--primary) !important;
 }
 .tabla-gestion-compacta thead th {
+  /* Encabezado fijo (robusto): sticky por celda <th> (no usar sticky en <thead>). */
+  position: sticky;
+  top: 0;
+  z-index: 20;
   padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
   height: var(--tabla-thead-height) !important;
   min-height: var(--tabla-thead-height) !important;

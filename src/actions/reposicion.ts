@@ -43,6 +43,8 @@ export interface GetReposicionParams {
   marca?: string;
   rubro?: string;
   subRubro?: string;
+  /** "si" = solo ítems con regla de reposición configurada. */
+  configurado?: "" | "si";
   pagina?: number;
 }
 
@@ -86,14 +88,32 @@ export async function getReposicionData(
     return emptyReposicionData;
   }
 
-  const { q = "", marca = "", rubro = "", subRubro = "", pagina = 1 } = params;
+  const { q = "", marca = "", rubro = "", subRubro = "", configurado = "", pagina = 1 } = params;
   const paginaNum = Math.max(1, pagina);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  const whereItems: Prisma.ListaPrecioTiendaWhereInput =
-    baseWhere(sucursal, params).length > 0
-      ? { AND: baseWhere(sucursal, params) }
-      : {};
+  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan una regla en pedidos_reposicion para esta sucursal.
+  // Nota: la regla está ligada a (id_proveedor, sucursal, cod_ext). Para filtrar sin join complejo, usamos cod_ext distintos.
+  const codExtConfigurados =
+    configurado === "si"
+      ? await prisma.itemPedidoReposicion.findMany({
+          where: { sucursalCodigo: sucursal },
+          select: { codExt: true },
+          distinct: ["codExt"],
+        })
+      : null;
+  const codExtList = codExtConfigurados?.map((r) => r.codExt) ?? [];
+
+  const baseParts = baseWhere(sucursal, params);
+  const whereItems: Prisma.ListaPrecioTiendaWhereInput = (() => {
+    const parts = [...baseParts];
+    if (configurado === "si") {
+      // Si no hay configurados, devolvemos vacío rápido.
+      if (codExtList.length === 0) return { codExt: { in: ["__none__"] } };
+      parts.push({ codExt: { in: codExtList } });
+    }
+    return parts.length > 0 ? { AND: parts } : {};
+  })();
   const toWhereWithNotNull = (
     exclude: "marca" | "rubro" | "subRubro"
   ): Prisma.ListaPrecioTiendaWhereInput => {
@@ -102,7 +122,16 @@ export async function getReposicionData(
     const notNull = {
       [key]: { not: null },
     } as Prisma.ListaPrecioTiendaWhereInput;
-    return parts.length > 0 ? { AND: [...parts, notNull] } : notNull;
+    const extra = [];
+    if (configurado === "si") {
+      if (codExtList.length === 0) return { codExt: { in: ["__none__"] } };
+      extra.push({ codExt: { in: codExtList } });
+    }
+    return parts.length > 0
+      ? { AND: [...parts, ...extra, notNull] }
+      : extra.length > 0
+        ? { AND: [...extra, notNull] }
+        : notNull;
   };
   const whereMarcas = toWhereWithNotNull("marca");
   const whereRubros = toWhereWithNotNull("rubro");

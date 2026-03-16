@@ -33,6 +33,7 @@ interface Props {
   marcaActual: string;
   rubroActual: string;
   subRubroActual: string;
+  configuradoActual: "" | "si";
   totalItems: number;
 }
 
@@ -43,6 +44,7 @@ export default function FiltrosReposicion({
   marcaActual,
   rubroActual,
   subRubroActual,
+  configuradoActual,
   totalItems,
 }: Props) {
   const pathname = usePathname();
@@ -64,7 +66,8 @@ export default function FiltrosReposicion({
     q ||
     marcaActual ||
     rubroActual ||
-    subRubroActual
+    subRubroActual ||
+    configuradoActual
   );
 
   function buildParams(updates: {
@@ -73,6 +76,7 @@ export default function FiltrosReposicion({
     marca?: string;
     rubro?: string;
     subRubro?: string;
+    configurado?: "" | "si";
     pagina?: string;
   }): URLSearchParams {
     const p = new URLSearchParams();
@@ -83,12 +87,15 @@ export default function FiltrosReposicion({
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const subRubroVal =
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
+    const configuradoVal =
+      updates.configurado !== undefined ? updates.configurado : configuradoActual;
 
     if (sucursal) p.set("sucursal", sucursal);
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
+    if (configuradoVal) p.set("configurado", configuradoVal);
     if (updates.pagina) p.set("pagina", updates.pagina);
     return p;
   }
@@ -99,6 +106,7 @@ export default function FiltrosReposicion({
     marca?: string;
     rubro?: string;
     subRubro?: string;
+    configurado?: "" | "si";
     pagina?: string;
   }) {
     const p = buildParams(updates);
@@ -130,6 +138,10 @@ export default function FiltrosReposicion({
     navigate({ subRubro: value, pagina: "1" });
   }
 
+  function handleConfigurado(value: string) {
+    navigate({ configurado: value === "si" ? "si" : "", pagina: "1" });
+  }
+
   function limpiarFiltros() {
     setQ("");
     if (sucursalActual) {
@@ -141,6 +153,7 @@ export default function FiltrosReposicion({
 
   const sucursalValue = sucursalActual ?? "none";
   const sucursalSeleccionada = sucursalActual !== null;
+  const configuradoValue = configuradoActual || "none";
 
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
@@ -250,6 +263,29 @@ export default function FiltrosReposicion({
                     {s}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
+              value={configuradoValue}
+              onValueChange={(v) => handleConfigurado(v)}
+              disabled={!sucursalSeleccionada}
+            >
+              <SelectTrigger
+                id="filtro-reposicion-configurado"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="CONFIGURADO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">CONFIGURADO</SelectItem>
+                <SelectItem value="si">SÍ</SelectItem>
               </SelectContent>
             </Select>
           </div>
