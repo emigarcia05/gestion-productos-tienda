@@ -67,18 +67,30 @@ export default function TablaPedidoUrgente({
   const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 
   return (
-    <div className="w-full">
-      <Table variant="compact" scrollX={false}>
+    <div className="w-full min-w-full">
+      <Table variant="compact" scrollX={false} className="min-w-full">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-28">PROVEEDOR</TableHead>
-            <TableHead className="w-20 text-center">REG. DUX</TableHead>
-            <TableHead>DESCRIPCIÓN</TableHead>
-            <TableHead className="w-36 text-center">CANT. PEDIDA</TableHead>
-            <TableHead className="w-32 text-center tabla-bloque-secundario-head-divider">
+            <TableHead className="text-center" style={{ width: "10%" }}>
+              PROVEEDOR
+            </TableHead>
+            <TableHead className="text-center" style={{ width: "10%" }}>
+              REG. DUX
+            </TableHead>
+            <TableHead style={{ width: "60%" }}>DESCRIPCIÓN</TableHead>
+            <TableHead className="text-center" style={{ width: "10%" }}>
+              CANT. PEDIDA
+            </TableHead>
+            <TableHead
+              className="text-center tabla-bloque-secundario-head-divider"
+              style={{ width: "5%" }}
+            >
               CONF. REPOSICIÓN
             </TableHead>
-            <TableHead className="w-32 text-center tabla-bloque-secundario-head">
+            <TableHead
+              className="text-center tabla-bloque-secundario-head"
+              style={{ width: "5%" }}
+            >
               CANT. REPOSICIÓN
             </TableHead>
           </TableRow>
