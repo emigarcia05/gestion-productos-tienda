@@ -266,12 +266,13 @@
 
   /* ─── Clases maestras lista-precios / gestión (cascada desde una variable) ─── */
 
-  /* Contenedor de tabla: diseño global. Es el contenedor con scroll (overflow-y: auto);
-   * la tabla debe ir dentro para que el encabezado fijo (sticky) funcione: el encabezado no se mueve con el scroll. */
+  /* Contenedor de tabla: diseño global. NO tiene scroll vertical propio;
+   * el scroll se hace a nivel de página/main. Esto evita cajas de scroll anidadas
+   * y hace que el encabezado sticky funcione con el scroll principal. */
   .contenedor-tabla-gestion {
     flex: 1 1 0%;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: auto;
     border-radius: var(--radius);
     border: 1px solid var(--border);

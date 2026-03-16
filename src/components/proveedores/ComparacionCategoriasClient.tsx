@@ -202,7 +202,7 @@ export default function ComparacionCategoriasClient({
               </Button>
             )}
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto py-0 pb-3 px-0">
+          <CardContent className="flex-1 overflow-hidden py-0 pb-3 px-0">
             {loadingProductos ? (
               <p className="text-sm text-muted-foreground py-4">Cargando productos…</p>
             ) : !selectedPresentacionId ? (
