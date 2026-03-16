@@ -187,7 +187,7 @@ model ItemPedidoEnvio {
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
 
-  @@map("pedidos_envio")
+  @@map("pedidos_mercaderia")
 }
 
 // ─── Pedido por reposición: reglas por producto/proveedor/sucursal; cant_pedir calculado desde stock de lista_tienda.
@@ -213,4 +213,21 @@ model ItemPedidoReposicion {
 
   @@unique([idProveedor, sucursalCodigo, codExt])
   @@map("pedidos_reposicion")
+}
+
+// ─── Pedido Urgente: cantidades seleccionadas en el módulo Pedido Urgente ───
+model ItemPedidoUrgente {
+  id           String   @id @default(uuid())
+  idProveedor  String   @map("id_proveedor")
+  tipoPedido   String   @map("tipo_de_pedido") // siempre "URGENTE" para este módulo
+  sucursalCodigo String @map("sucursal") // FK a sucursales.codigo
+  codExt       String   @map("cod_ext")
+  cantPedir    Int      @map("cant_pedir") @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
+
+  @@map("pedidos_urgente")
 }

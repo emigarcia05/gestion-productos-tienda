@@ -10,21 +10,24 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Check, Trash2 } from "lucide-react";
+import { Check } from "lucide-react";
 
 export interface ProductoPedidoUrgente {
   id: string;
+  /** Código externo lista-precios proveedor. */
   codExt: string;
   prefijo: string;
   regDux: boolean;
   descripcion: string;
+  /** true si existe una regla de pedidos_reposicion para este proveedor/sucursal/cod_ext. */
+  confReposicion: boolean;
+  /** cant_pedir desde pedidos_reposicion (0 si no hay regla o no aplica). */
+  cantReposicion: number;
 }
 
 export type PedidoFilterValor = "si" | "no" | "";
 
-const COLUMNS = 5;
+const COLUMNS = 7;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
 
 interface Props {
@@ -33,9 +36,11 @@ interface Props {
   sinFiltros?: boolean;
   mensajeSinSucursal?: string;
   pedidoFilter?: PedidoFilterValor;
-  /** Cuando se provee, la tabla es controlada (estado en el padre para el botón Guardar Cambios en header). */
+  /** Estado de cantidades controlado desde el padre (PedidoUrgentePageClient). */
   cantPorId?: Record<string, string>;
   setCantPorId?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  /** Callback al hacer doble click en una fila para abrir el modal de edición de cantidad. */
+  onRowDoubleClick?: (producto: ProductoPedidoUrgente) => void;
 }
 
 export default function TablaPedidoUrgente({
@@ -46,6 +51,7 @@ export default function TablaPedidoUrgente({
   pedidoFilter = "",
   cantPorId: cantPorIdProp,
   setCantPorId: setCantPorIdProp,
+  onRowDoubleClick,
 }: Props) {
   const [cantPorIdInternal, setCantPorIdInternal] = useState<Record<string, string>>({});
   const cantPorId = cantPorIdProp ?? cantPorIdInternal;
@@ -60,16 +66,6 @@ export default function TablaPedidoUrgente({
 
   const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 
-  function handleCantChange(id: string, value: string) {
-    const soloDigitos = value.replace(/\D/g, "");
-    setCantPorId((prev) => ({ ...prev, [id]: soloDigitos }));
-  }
-
-  function borrarCant(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    setCantPorId((prev) => ({ ...prev, [id]: "" }));
-  }
-
   return (
     <div className="w-full">
       <Table variant="compact" scrollX={false}>
@@ -79,7 +75,12 @@ export default function TablaPedidoUrgente({
             <TableHead className="w-20 text-center">REG. DUX</TableHead>
             <TableHead>DESCRIPCIÓN</TableHead>
             <TableHead className="w-36 text-center">CANT. PEDIDA</TableHead>
-            <TableHead className="w-14 text-center" aria-label="Borrar cantidad" />
+            <TableHead className="w-32 text-center tabla-bloque-secundario-head-divider">
+              CONF. REPOSICIÓN
+            </TableHead>
+            <TableHead className="w-32 text-center tabla-bloque-secundario-head">
+              CANT. REPOSICIÓN
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,7 +88,11 @@ export default function TablaPedidoUrgente({
             <EmptyTableRow colSpan={COLUMNS} message={mensajeVacio} />
           ) : (
             visibleProductos.map((prod) => (
-              <TableRow key={prod.id}>
+              <TableRow
+                key={prod.id}
+                className="cursor-pointer"
+                onDoubleClick={() => onRowDoubleClick?.(prod)}
+              >
                 <TableCell className="celda-datos celda-mono font-mono text-sm">
                   {prod.prefijo}
                 </TableCell>
@@ -104,31 +109,23 @@ export default function TablaPedidoUrgente({
                 <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
                   {prod.descripcion}
                 </TableCell>
-                <TableCell className="celda-datos">
-                  <div className="flex items-center justify-center min-h-0">
-                    <Input
-                      type="number"
-                      min={0}
-                      step={1}
-                      placeholder="0"
-                      className="w-20 py-0 text-center text-sm tabular-nums"
-                      value={cantPorId[prod.id] ?? ""}
-                      onChange={(e) => handleCantChange(prod.id, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
+                <TableCell className="celda-datos text-center tabular-nums">
+                  {cantPorId[prod.id] && Number(cantPorId[prod.id]) > 0
+                    ? cantPorId[prod.id]
+                    : "—"}
                 </TableCell>
-                <TableCell className="celda-datos text-center">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={(e) => borrarCant(prod.id, e)}
-                    aria-label="Borrar cantidad pedida"
-                  >
-                    <Trash2 />
-                  </Button>
+                <TableCell className="celda-datos text-center tabla-bloque-secundario-cell-divider">
+                  {prod.confReposicion ? (
+                    <Check
+                      className="h-4 w-4 mx-auto text-primary"
+                      aria-label="Configurado en reposición"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="celda-datos text-center tabla-bloque-secundario-cell tabular-nums">
+                  {prod.confReposicion ? prod.cantReposicion : "—"}
                 </TableCell>
               </TableRow>
             ))

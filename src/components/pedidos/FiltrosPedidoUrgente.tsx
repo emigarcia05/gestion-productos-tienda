@@ -45,12 +45,6 @@ interface Props {
   totalProductos: number;
 }
 
-const OPCIONES_PEDIDO: { value: FiltroPedidoValor | "none"; label: string }[] = [
-  { value: "none", label: "PEDIDO" },
-  { value: "si", label: "SÍ" },
-  { value: "no", label: "NO" },
-];
-
 export default function FiltrosPedidoUrgente({
   q,
   sucursal,
@@ -177,11 +171,8 @@ export default function FiltrosPedidoUrgente({
                 align="start"
                 className="select-content-filtro"
               >
-                {OPCIONES_PEDIDO.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="none">PEDIDO</SelectItem>
+                <SelectItem value="si">SÍ</SelectItem>
               </SelectContent>
             </Select>
           </div>

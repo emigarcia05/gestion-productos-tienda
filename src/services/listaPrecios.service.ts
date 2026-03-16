@@ -489,6 +489,10 @@ export interface PedidoUrgenteItem {
   prefijo: string;
   regDux: boolean;
   descripcion: string;
+  /** true si el producto tiene configuración de reposición para este proveedor/sucursal/cod_ext. */
+  confReposicion: boolean;
+  /** cant_pedir de pedidos_reposicion (0 si no hay regla). */
+  cantReposicion: number;
 }
 
 /**
@@ -542,7 +546,7 @@ export async function getListaPreciosParaPedidoUrgente(
     prisma.listaPrecioProveedor.findMany({
       where,
       include: {
-        proveedor: { select: { prefijo: true } },
+        proveedor: { select: { id: true, prefijo: true } },
         listaPrecioTienda: { select: { id: true, descripcionTienda: true } },
       },
       orderBy: { codExt: "asc" },
@@ -552,15 +556,58 @@ export async function getListaPreciosParaPedidoUrgente(
     prisma.listaPrecioProveedor.count({ where }),
   ]);
 
-  const items: PedidoUrgenteItem[] = filas.map((f) => ({
-    id: f.id,
-    codExt: f.codExt,
-    prefijo: f.proveedor?.prefijo ?? "",
-    regDux: !!f.listaPrecioTienda,
-    descripcion:
-      (f.listaPrecioTienda?.descripcionTienda?.trim() && f.listaPrecioTienda.descripcionTienda) ||
-      f.descripcionProveedor,
-  }));
+  const pairs = filas
+    .filter((f) => f.proveedor?.id)
+    .map((f) => ({
+      idProveedor: f.proveedor!.id,
+      codExt: f.codExt,
+    }));
+
+  const reglasMap = new Map<
+    string,
+    {
+      cantPedir: number;
+    }
+  >();
+
+  if (pairs.length > 0) {
+    const reglas = await prisma.itemPedidoReposicion.findMany({
+      where: {
+        sucursalCodigo: sucursalTrim,
+        OR: pairs.map((p) => ({
+          idProveedor: p.idProveedor,
+          codExt: p.codExt,
+        })),
+      },
+      select: {
+        idProveedor: true,
+        codExt: true,
+        cantPedir: true,
+      },
+    });
+
+    for (const r of reglas) {
+      reglasMap.set(`${r.idProveedor}:${r.codExt}`, { cantPedir: r.cantPedir });
+    }
+  }
+
+  const items: PedidoUrgenteItem[] = filas.map((f) => {
+    const idProveedor = f.proveedor?.id ?? "";
+    const key = idProveedor ? `${idProveedor}:${f.codExt}` : "";
+    const regla = key ? reglasMap.get(key) ?? null : null;
+
+    return {
+      id: f.id,
+      codExt: f.codExt,
+      prefijo: f.proveedor?.prefijo ?? "",
+      regDux: !!f.listaPrecioTienda,
+      descripcion:
+        (f.listaPrecioTienda?.descripcionTienda?.trim() && f.listaPrecioTienda.descripcionTienda) ||
+        f.descripcionProveedor,
+      confReposicion: !!regla,
+      cantReposicion: regla?.cantPedir ?? 0,
+    };
+  });
 
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / takeSize);
 

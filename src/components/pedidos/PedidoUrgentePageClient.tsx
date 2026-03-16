@@ -8,6 +8,9 @@ import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Card, CardContent } from "@/components/ui/card";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { ProductoPedidoUrgente } from "@/components/pedidos/TablaPedidoUrgente";
+import CantidadPedidoUrgenteModal, {
+  type ProductoPedidoUrgenteModal,
+} from "@/components/pedidos/CantidadPedidoUrgenteModal";
 
 interface Props {
   filters: React.ReactNode;
@@ -39,11 +42,31 @@ export default function PedidoUrgentePageClient({
   q,
 }: Props) {
   const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] =
+    useState<ProductoPedidoUrgenteModal | null>(null);
 
   const actions =
     sucursalValida && !sinFiltros ? (
       <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
     ) : undefined;
+
+  function abrirModalCantidad(prod: ProductoPedidoUrgente) {
+    setProductoSeleccionado({
+      id: prod.id,
+      descripcion: prod.descripcion,
+    });
+    setModalOpen(true);
+  }
+
+  function confirmarCantidad(cantidad: number) {
+    if (!productoSeleccionado) return;
+    const id = productoSeleccionado.id;
+    setCantPorId((prev) => ({
+      ...prev,
+      [id]: cantidad > 0 ? String(cantidad) : "",
+    }));
+  }
 
   return (
     <ClassicFilteredTableLayout
@@ -64,6 +87,7 @@ export default function PedidoUrgentePageClient({
                 pedidoFilter={pedidoValida}
                 cantPorId={cantPorId}
                 setCantPorId={setCantPorId}
+                onRowDoubleClick={abrirModalCantidad}
               />
             </div>
             {!sinFiltros && sucursalValida && (
@@ -92,6 +116,12 @@ export default function PedidoUrgentePageClient({
             )}
           </CardContent>
         </Card>
+        <CantidadPedidoUrgenteModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          producto={productoSeleccionado}
+          onConfirmar={confirmarCantidad}
+        />
       </div>
     </ClassicFilteredTableLayout>
   );
