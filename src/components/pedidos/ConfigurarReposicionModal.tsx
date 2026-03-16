@@ -75,6 +75,18 @@ export default function ConfigurarReposicionModal({
     });
   };
 
+  const handleEliminarProductoAdicional = (producto: ItemSelectorReposicion) => {
+    setProductosAdicionales((prev) =>
+      prev.filter(
+        (p) =>
+          !(
+            p.idListaTienda === producto.idListaTienda &&
+            p.codExt === producto.codExt
+          )
+      )
+    );
+  };
+
   const handleGuardar = async () => {
     if (!item.idProveedor) {
       toast.error("Este producto no tiene proveedor asignado.");
@@ -143,16 +155,22 @@ export default function ConfigurarReposicionModal({
 
             <div className="flex flex-col items-stretch">
               <div className="grid grid-cols-3 gap-2 mb-2 text-center">
-                <Label className="text-xs font-medium text-foreground">FORMA PEDIR</Label>
-                <Label className="text-xs font-medium text-foreground">PUNTO REPOSICIÓN</Label>
-                <Label className="text-xs font-medium text-foreground">CANT. REPOSICIÓN</Label>
+                <Label className="text-xs font-medium text-foreground text-center">
+                  FORMA PEDIR
+                </Label>
+                <Label className="text-xs font-medium text-foreground text-center">
+                  PUNTO REPOSICIÓN
+                </Label>
+                <Label className="text-xs font-medium text-foreground text-center">
+                  CANT. REPOSICIÓN
+                </Label>
               </div>
               <div className="grid grid-cols-3 gap-2 items-center text-center">
                 <Select
                   value={formaPedir || "none"}
                   onValueChange={(v) => setFormaPedir(v === "none" ? "" : (v as FormaPedirReposicionOption))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full text-center">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" side="bottom" align="start">
@@ -169,7 +187,7 @@ export default function ConfigurarReposicionModal({
                   step={1}
                   value={puntoReposicion}
                   onChange={(e) => setPuntoReposicion(parseInt(e.target.value, 10) || 0)}
-                  className="tabular-nums"
+                  className="tabular-nums text-center"
                 />
                 <Input
                   type="number"
@@ -177,7 +195,7 @@ export default function ConfigurarReposicionModal({
                   step={1}
                   value={cant}
                   onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
-                  className="tabular-nums"
+                  className="tabular-nums text-center"
                 />
               </div>
             </div>
@@ -207,6 +225,7 @@ export default function ConfigurarReposicionModal({
                     <TableHeader>
                       <TableRow className="hover:bg-transparent bg-muted/50">
                         <TableHead className="text-xs text-center">DESCRIPCIÓN</TableHead>
+                        <TableHead className="w-10 text-xs text-center" aria-label="Acciones" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -214,6 +233,30 @@ export default function ConfigurarReposicionModal({
                         <TableRow key={`${p.idListaTienda}:${p.codExt}`}>
                           <TableCell className="text-xs py-2 text-left">
                             {p.descripcionTienda ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-xs py-2 text-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              className="text-muted-foreground hover:text-destructive"
+                              aria-label="Quitar producto de la configuración"
+                              onClick={() => handleEliminarProductoAdicional(p)}
+                            >
+                              <Plus className="hidden" aria-hidden="true" />
+                              {/* Reutilizamos el icono de basura para indicar eliminar */}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                className="w-4 h-4"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M9 3h6a1 1 0 0 1 .993.883L16 4v1h4a1 1 0 1 1 0 2h-1.07l-.845 11.037A2 2 0 0 1 16.093 20H7.907a2 2 0 0 1-1.992-1.963L5.07 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 .883-.993L9 3Zm6 4H9l-.8 10.4a0 0 0 0 0 0 0h7.6a0 0 0 0 0 0 0L15 7Zm-3 2a1 1 0 0 1 .993.883L13 10v6a1 1 0 0 1-1.993.117L11 16v-6a1 1 0 0 1 1-1Z"
+                                  fill="currentColor"
+                                />
+                              </svg>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}

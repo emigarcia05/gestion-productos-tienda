@@ -111,6 +111,18 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
   - Aplicar estas clases solo a columnas de **información secundaria** (no editable o de resumen).
   - Mantener siempre el orden lógico: primero las columnas principales, luego el bloque secundario.
 
+### Modales con tabla de selección (patrón `modal-app`)
+
+- Para modales que muestran una tabla de selección (ej. **Seleccionar Producto** en Tienda y **Seleccionar Productos** en Pedido Reposición) usar siempre el patrón `modal-app`:
+  - `DialogContent` con clase `modal-app` y límites de ancho/alto.
+  - `DialogHeader` con clase `modal-app__header` y `DialogTitle` con `modal-app__title` (color de fondo y botón de cierre `X` unificados).
+  - `modal-app__body`:
+    - Filtros fijos arriba.
+    - Encabezado de tabla fijo (Table con solo `<TableHeader>`) fuera del contenedor con scroll.
+    - Cuerpo con scroll: `<TableBody>` dentro de un `div` con `overflow-y: auto`.
+  - `modal-app__footer` con botones alineados (`Cancelar`, `Agregar`, etc.).
+- Ejemplos: `SeleccionarProductoModal` (Tienda) y `SelectorProductosReposicionModal` (Pedido Reposición).
+
 ### Ejemplos de código (referencia para IA)
 
 **Combinar clases con `cn()`:**
