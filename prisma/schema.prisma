@@ -20,6 +20,7 @@ model Proveedor {
   listaPrecios         ListaPrecioProveedor[]
   itemsPedidoEnvio     ItemPedidoEnvio[]
   itemsPedidoReposicion ItemPedidoReposicion[]
+  itemsPedidoUrgente   ItemPedidoUrgente[]
 
   @@map("proveedores")
 }
@@ -37,6 +38,7 @@ model Sucursal {
 
   itemsPedidoEnvio     ItemPedidoEnvio[]
   itemsPedidoReposicion ItemPedidoReposicion[]
+  itemsPedidoUrgente   ItemPedidoUrgente[]
 
   @@map("sucursales")
 }
