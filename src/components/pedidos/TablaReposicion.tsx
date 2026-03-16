@@ -70,25 +70,38 @@ export default function TablaReposicion({
         <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "50%" }}>
+              {/* Información principal */}
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "40%" }}>
                 DESCRIPCIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "12%" }}>
                 FORMA PEDIR
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "8%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
                 PUNTO REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "8%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
                 CANT. REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground" style={{ width: "8%" }}>
+              <TableHead
+                className="px-1 py-2 text-xs text-center bg-muted/30 text-muted-foreground"
+                style={{ width: "6%" }}
+              >
+                {/* acciones */}
+              </TableHead>
+              {/* Información secundaria */}
+              <TableHead
+                className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground border-l border-border"
+                style={{ width: "11%" }}
+              >
                 STOCK
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground" style={{ width: "8%" }}>
+              <TableHead
+                className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground"
+                style={{ width: "11%" }}
+              >
                 CANT. A PEDIR
               </TableHead>
-              <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "4%" }} aria-hidden />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -119,6 +132,7 @@ export default function TablaReposicion({
                     setModalItem(item);
                   }}
                 >
+                  {/* Principal */}
                   <TableCell className="px-3 py-2 text-xs">
                     {item.descripcionTienda ?? "—"}
                   </TableCell>
@@ -131,13 +145,7 @@ export default function TablaReposicion({
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
                     {cantVal === "" ? "" : cantVal}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground">
-                    {item.stock}
-                  </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground">
-                    {cantAPedirVal === "" ? "" : cantAPedirVal}
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-xs" style={{ width: "4%" }}>
+                  <TableCell className="px-1 py-2 text-xs text-center bg-muted/30">
                     {item.idReposicion ? (
                       <Button
                         type="button"
@@ -153,6 +161,13 @@ export default function TablaReposicion({
                     ) : (
                       <span className="inline-block w-8" aria-hidden />
                     )}
+                  </TableCell>
+                  {/* Secundaria */}
+                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground border-l border-border">
+                    {item.stock}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground">
+                    {cantAPedirVal === "" ? "" : cantAPedirVal}
                   </TableCell>
                 </TableRow>
               );
