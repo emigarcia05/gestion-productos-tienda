@@ -70,25 +70,25 @@ export default function TablaReposicion({
         <Table variant="compact" className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "45%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "50%" }}>
                 DESCRIPCIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "25%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
                 FORMA PEDIR
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "8%" }}>
                 PUNTO REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "8%" }}>
                 CANT. REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "7.5%" }}>
+              <TableHead className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground" style={{ width: "8%" }}>
                 STOCK
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "7.5%" }}>
+              <TableHead className="px-3 py-2 text-xs bg-muted/30 text-muted-foreground" style={{ width: "8%" }}>
                 CANT. A PEDIR
               </TableHead>
-              <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "5%" }} aria-hidden />
+              <TableHead className="px-1 py-2 text-xs w-0" style={{ width: "4%" }} aria-hidden />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -131,13 +131,13 @@ export default function TablaReposicion({
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
                     {cantVal === "" ? "" : cantVal}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground">
                     {item.stock}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                  <TableCell className="px-3 py-2 text-xs tabular-nums bg-muted/30 text-muted-foreground">
                     {cantAPedirVal === "" ? "" : cantAPedirVal}
                   </TableCell>
-                  <TableCell className="px-1 py-2 text-xs" style={{ width: "5%" }}>
+                  <TableCell className="px-1 py-2 text-xs" style={{ width: "4%" }}>
                     {item.idReposicion ? (
                       <Button
                         type="button"
