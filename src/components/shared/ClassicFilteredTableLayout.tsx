@@ -59,7 +59,7 @@ export default function ClassicFilteredTableLayout({
             {filters}
           </div>
         )}
-        <div className="flex-1 min-h-0 overflow-auto w-full flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden w-full flex flex-col">
           {children}
         </div>
       </div>

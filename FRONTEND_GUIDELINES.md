@@ -79,6 +79,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - `SectionHeader` o `ClassicPageHeader`: título + subtítulo + acciones (botones a la derecha, `h-10 px-4`).
    - `FilterBar` con `filtros-contenedor-tienda bg-card`: `FilterRowSelection` > `FilaFiltrosDesplegables` (5 columnas) + `FilterRowSearch` (input ~75%) + `LimpiarFiltrosButton`.
    - Contenido: tabla con `<Table>` de `@/components/ui/table` (diseño único `.tabla-gestion-compacta` en `globals.css`).
+  - **Scroll vertical**: solo debe haber **un contenedor con `overflow-y: auto`** alrededor de la tabla. En páginas, usar siempre `.contenedor-tabla-gestion` o `.contenedor-tabla-paginada` como única “caja de scroll”. Los wrappers internos (cards, divs de tabla) **no** deben tener `overflow-auto`, para que el encabezado sticky funcione correctamente.
 
 2. **Clases de filtros (SSOT en FilterBar / globals.css)**
    - Input y SelectTrigger: `INPUT_FILTER_CLASS` / `SELECT_TRIGGER_FILTER_CLASS` = `"input-filtro-unificado"`.

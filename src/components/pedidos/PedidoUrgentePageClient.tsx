@@ -55,7 +55,7 @@ export default function PedidoUrgentePageClient({
       <div className="flex flex-col h-full min-h-0 gap-0.5">
         <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
-            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0 overflow-auto">
+            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
               <TablaPedidoUrgente
                 productos={productos}
                 sucursal={sucursalValida}

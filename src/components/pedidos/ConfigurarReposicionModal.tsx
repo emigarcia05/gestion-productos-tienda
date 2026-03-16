@@ -149,26 +149,21 @@ export default function ConfigurarReposicionModal({
           }
         >
           <div className="flex flex-col gap-6 items-stretch text-center">
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2 w-full">
               <p className="text-sm text-foreground font-medium">{nombreProducto}</p>
+              <div className="w-full h-px bg-[#0072BB]" />
             </div>
 
-            <div className="flex flex-col items-stretch">
-              <div className="grid grid-cols-3 gap-2 mb-2 text-center">
+            <div className="grid grid-cols-3 gap-4 items-center">
+              <div className="flex flex-col items-center gap-1">
                 <Label className="text-xs font-medium text-foreground text-center">
                   FORMA PEDIR
                 </Label>
-                <Label className="text-xs font-medium text-foreground text-center">
-                  PUNTO REPOSICIÓN
-                </Label>
-                <Label className="text-xs font-medium text-foreground text-center">
-                  CANT. REPOSICIÓN
-                </Label>
-              </div>
-              <div className="grid grid-cols-3 gap-2 items-center text-center">
                 <Select
                   value={formaPedir || "none"}
-                  onValueChange={(v) => setFormaPedir(v === "none" ? "" : (v as FormaPedirReposicionOption))}
+                  onValueChange={(v) =>
+                    setFormaPedir(v === "none" ? "" : (v as FormaPedirReposicionOption))
+                  }
                 >
                   <SelectTrigger className="w-full text-center">
                     <SelectValue />
@@ -181,6 +176,12 @@ export default function ConfigurarReposicionModal({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex flex-col items-center gap-1">
+                <Label className="text-xs font-medium text-foreground text-center">
+                  PUNTO REPOSICIÓN
+                </Label>
                 <Input
                   type="number"
                   min={0}
@@ -189,6 +190,12 @@ export default function ConfigurarReposicionModal({
                   onChange={(e) => setPuntoReposicion(parseInt(e.target.value, 10) || 0)}
                   className="tabular-nums text-center"
                 />
+              </div>
+
+              <div className="flex flex-col items-center gap-1">
+                <Label className="text-xs font-medium text-foreground text-center">
+                  CANT. REPOSICIÓN
+                </Label>
                 <Input
                   type="number"
                   min={0}
