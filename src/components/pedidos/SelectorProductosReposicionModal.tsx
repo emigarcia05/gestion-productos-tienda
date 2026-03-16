@@ -95,7 +95,7 @@ export default function SelectorProductosReposicionModal({
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col bg-gris p-0 gap-0">
+      <DialogContent className="sm:max-w-[40rem] w-full max-h-[85vh] flex flex-col bg-gris p-0 gap-0">
         <DialogHeader className="shrink-0 bg-primary px-6 py-4 rounded-t-lg">
           <DialogTitle className="text-primary-foreground font-semibold text-lg text-center">
             Seleccionar Productos

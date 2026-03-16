@@ -16,6 +16,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AppModal from "@/components/shared/AppModal";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import SelectorProductosReposicionModal from "./SelectorProductosReposicionModal";
 import type { ItemReposicion, SucursalReposicion, FormaPedirReposicionOption } from "@/actions/reposicion";
 import { upsertReglaReposicion } from "@/actions/reposicion";
@@ -128,19 +136,19 @@ export default function ConfigurarReposicionModal({
             </div>
           }
         >
-          <div className="flex flex-col gap-6">
-            <div>
+          <div className="flex flex-col gap-6 items-stretch text-center">
+            <div className="flex flex-col items-center gap-1">
               <Label className="text-sm font-medium text-foreground">Producto</Label>
               <p className="text-sm text-foreground mt-1 font-medium">{nombreProducto}</p>
             </div>
 
-            <div>
-              <div className="grid grid-cols-3 gap-2 mb-2">
+            <div className="flex flex-col items-stretch">
+              <div className="grid grid-cols-3 gap-2 mb-2 text-center">
                 <Label className="text-xs font-medium text-muted-foreground">FORMA PEDIR</Label>
                 <Label className="text-xs font-medium text-muted-foreground">PUNTO REPOSICIÓN</Label>
                 <Label className="text-xs font-medium text-muted-foreground">CANT. REPOSICIÓN</Label>
               </div>
-              <div className="grid grid-cols-3 gap-2 items-center">
+              <div className="grid grid-cols-3 gap-2 items-center text-center">
                 <Select
                   value={formaPedir || "none"}
                   onValueChange={(v) => setFormaPedir(v === "none" ? "" : (v as FormaPedirReposicionOption))}
@@ -175,8 +183,10 @@ export default function ConfigurarReposicionModal({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-foreground">Agregar esta configuración a estos productos</span>
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-sm text-foreground">
+                Agregar esta configuración a estos productos
+              </span>
               <Button
                 type="button"
                 variant="outline"
@@ -189,8 +199,28 @@ export default function ConfigurarReposicionModal({
               </Button>
             </div>
             {productosAdicionales.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                {productosAdicionales.length} producto(s) agregado(s) para aplicar la misma configuración.
+              <div className="flex flex-col gap-2">
+                <div className="text-xs text-muted-foreground text-center">
+                  {productosAdicionales.length} producto(s) agregado(s) para aplicar la misma configuración.
+                </div>
+                <div className="border border-border rounded-lg overflow-auto max-h-64">
+                  <Table variant="compact" scrollX={false} className="w-full tabla-gestion-compacta">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent bg-muted/50">
+                        <TableHead className="text-xs text-center">DESCRIPCIÓN</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {productosAdicionales.map((p) => (
+                        <TableRow key={`${p.idListaTienda}:${p.codExt}`}>
+                          <TableCell className="text-xs py-2 text-left">
+                            {p.descripcionTienda ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </div>

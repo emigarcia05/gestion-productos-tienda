@@ -256,18 +256,20 @@ export default function FiltrosReposicion({
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-3">
-        <FilterRowSearch className="flex-1">
-          <FiltroBusquedaInput
-            id="filtro-reposicion-busqueda"
-            placeholder="DESCRIPCIÓN"
-            value={q}
-            onChange={handleQChange}
-            isDebouncing={isDebouncing}
-            inputRef={inputRef}
-            disabled={!sucursalSeleccionada}
-          />
-        </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <div className="flex items-center gap-2 flex-1">
+          <FilterRowSearch className="flex-1">
+            <FiltroBusquedaInput
+              id="filtro-reposicion-busqueda"
+              placeholder="DESCRIPCIÓN"
+              value={q}
+              onChange={handleQChange}
+              isDebouncing={isDebouncing}
+              inputRef={inputRef}
+              disabled={!sucursalSeleccionada}
+            />
+          </FilterRowSearch>
+          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        </div>
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString("es-AR")} ÍTEM
           {totalItems !== 1 ? "S" : ""}
