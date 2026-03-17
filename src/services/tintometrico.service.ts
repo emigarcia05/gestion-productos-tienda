@@ -13,6 +13,12 @@ export type ProveedorTintometrico = {
   prefijo: string;
 };
 
+export type SucursalTintometrica = {
+  id: string;
+  codigo: string;
+  nombre: string;
+};
+
 export async function getProveedoresTintometricos(): Promise<ProveedorTintometrico[]> {
   const where: Prisma.ProveedorWhereInput = {
     id: { in: [...PROVEEDORES_TINTOMETRICOS_IDS] },
@@ -32,6 +38,14 @@ export async function getProveedoresTintometricos(): Promise<ProveedorTintometri
     const bi = order.get(b.id) ?? 999;
     return ai - bi;
   });
+}
+
+export async function getSucursalesTintometricas(): Promise<SucursalTintometrica[]> {
+  const rows = await prisma.sucursal.findMany({
+    select: { id: true, codigo: true, nombre: true },
+    orderBy: { nombre: "asc" },
+  });
+  return rows;
 }
 
 export type BaseTintometricaRow = {

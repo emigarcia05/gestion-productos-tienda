@@ -20,12 +20,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus } from "lucide-react";
-import type { ProveedorTintometrico, BaseTintometricaRow } from "@/services/tintometrico.service";
+import { Plus, Trash2 } from "lucide-react";
+import type {
+  ProveedorTintometrico,
+  BaseTintometricaRow,
+  SucursalTintometrica,
+} from "@/services/tintometrico.service";
 import SeleccionarBaseTintometricaModal from "@/components/pedidos/SeleccionarBaseTintometricaModal";
 import { cn } from "@/lib/utils";
 
 export type NuevoItemTintometricoDraft = {
+  sucursalCodigo: string;
   proveedorId: string;
   codTintometrico: string;
   base: BaseTintometricaRow;
@@ -36,11 +41,13 @@ export default function NuevoItemTintometricoModal({
   open,
   onOpenChange,
   proveedores,
+  sucursales,
   onAgregar,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   proveedores: ProveedorTintometrico[];
+  sucursales: SucursalTintometrica[];
   onAgregar: (draft: NuevoItemTintometricoDraft) => void;
 }) {
   const [sucursal, setSucursal] = useState("");
@@ -77,7 +84,8 @@ export default function NuevoItemTintometricoModal({
   }, [bases, cantPorBaseId]);
 
   const codValido = codTintometrico.trim().length > 0;
-  const tieneCantidadValida = Object.keys(cantidadesValidasPorBase).length > 0;
+  const tieneCantidadValida =
+    bases.length > 0 && bases.every((b) => (cantidadesValidasPorBase[b.id] ?? 0) > 0);
   const puedeAgregar =
     !!sucursal && !!proveedorId && codValido && bases.length > 0 && tieneCantidadValida;
 
@@ -88,6 +96,7 @@ export default function NuevoItemTintometricoModal({
       const cant = cantidadesValidasPorBase[b.id];
       if (!cant || cant <= 0) continue;
       onAgregar({
+        sucursalCodigo: sucursal,
         proveedorId,
         codTintometrico: codigo,
         base: b,
@@ -117,20 +126,23 @@ export default function NuevoItemTintometricoModal({
       >
         <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-muted-foreground">Sucursal</span>
+            <span className="text-xs text-foreground">Sucursal</span>
             <Select value={sucursal} onValueChange={setSucursal}>
               <SelectTrigger className="h-10 w-full">
                 <SelectValue placeholder="Seleccionar Sucursal" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                <SelectItem value="guaymallen">Guaymallén</SelectItem>
-                <SelectItem value="maipu">Maipú</SelectItem>
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.codigo}>
+                    {s.nombre}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-muted-foreground">Proveedor</span>
+            <span className="text-xs text-foreground">Proveedor</span>
             <Select value={proveedorId} onValueChange={setProveedorId}>
               <SelectTrigger className="h-10 w-full">
                 <SelectValue placeholder="Seleccionar Proveedor" />
@@ -146,7 +158,7 @@ export default function NuevoItemTintometricoModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-muted-foreground">Cod. Tintométricos</span>
+            <span className="text-xs text-foreground">Cod. Tintométricos</span>
             <div className="flex items-center gap-2">
               <Input
                 value={codTintometrico}
@@ -172,40 +184,24 @@ export default function NuevoItemTintometricoModal({
             </div>
           </div>
 
-          {codValido && (
-            <div className="flex flex-col gap-2">
-              <span className="text-xs text-muted-foreground">Seleccione La Base</span>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={
-                    bases.length === 0
-                      ? ""
-                      : bases.map((b) => b.descripcionTienda).join(" / ")
-                  }
-                  readOnly
-                  className={cn("h-10", bases.length === 0 && "text-muted-foreground")}
-                  placeholder="Seleccionar Base..."
-                />
-              </div>
-            </div>
-          )}
-
           {bases.length > 0 && codValido && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs text-muted-foreground">Detalle Del Ítem</span>
               <Table variant="compact" className="w-full table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[6rem]">CANT</TableHead>
+                    <TableHead className="w-[4.5rem] text-center">CANT</TableHead>
                     <TableHead>DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[3rem]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bases.map((b) => {
+                    const baseTexto = (b.descripcionTienda ?? "").trim();
+                    const codigo = codTintometrico.trim();
                     const descripcion =
-                      b.descripcionTienda && codValido
-                        ? `${b.descripcionTienda} Cod. ${codTintometrico.trim()}`
-                        : b.descripcionTienda;
+                      baseTexto && codigo
+                        ? `${baseTexto} - COD. ${codigo}`.toUpperCase()
+                        : (baseTexto || "").toUpperCase();
                     const valor = cantPorBaseId[b.id] ?? "";
                     return (
                       <TableRow key={b.id}>
@@ -228,12 +224,32 @@ export default function NuevoItemTintometricoModal({
                                 return { ...prev, [b.id]: String(Math.floor(n)) };
                               });
                             }}
-                            className="h-8 w-20 text-right"
+                            className="h-8 w-16 text-center"
                             placeholder="0"
                           />
                         </TableCell>
                         <TableCell className="celda-datos text-xs">
                           {descripcion}
+                        </TableCell>
+                        <TableCell className="celda-datos text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => {
+                              setBases((prev) => prev.filter((x) => x.id !== b.id));
+                              setCantPorBaseId((prev) => {
+                                const next = { ...prev };
+                                delete next[b.id];
+                                return next;
+                              });
+                            }}
+                            className="text-foreground hover:text-destructive"
+                            aria-label="Borrar Ítem"
+                            title="Borrar Ítem"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

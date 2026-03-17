@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import type { ProveedorTintometrico } from "@/services/tintometrico.service";
+import type { ProveedorTintometrico, SucursalTintometrica } from "@/services/tintometrico.service";
 import NuevoItemTintometricoModal, {
   type NuevoItemTintometricoDraft,
 } from "@/components/pedidos/NuevoItemTintometricoModal";
@@ -26,8 +26,10 @@ type ItemTintometrico = NuevoItemTintometricoDraft & {
 
 export default function PedidoTintometricoPageClient({
   proveedores,
+  sucursales,
 }: {
   proveedores: ProveedorTintometrico[];
+  sucursales: SucursalTintometrica[];
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [items, setItems] = useState<ItemTintometrico[]>([]);
@@ -37,6 +39,12 @@ export default function PedidoTintometricoPageClient({
     for (const p of proveedores) map.set(p.id, p);
     return map;
   }, [proveedores]);
+
+  const sucursalPorCodigo = useMemo(() => {
+    const map = new Map<string, SucursalTintometrica>();
+    for (const s of sucursales) map.set(s.codigo, s);
+    return map;
+  }, [sucursales]);
 
   function agregarItem(draft: NuevoItemTintometricoDraft) {
     const key = `${draft.proveedorId}:${draft.codTintometrico}:${draft.base.id}`;
@@ -82,12 +90,11 @@ export default function PedidoTintometricoPageClient({
               <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[12rem]">PROVEEDOR</TableHead>
-                    <TableHead className="w-[6rem] text-right">CANT</TableHead>
-                    <TableHead className="w-[12rem]">CÓD. TINTOMÉTRICO</TableHead>
-                    <TableHead className="w-[10rem]">CÓD. TIENDA</TableHead>
-                    <TableHead>DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[4rem] text-right">ACC.</TableHead>
+                    <TableHead className="w-[10%]">PROVEEDOR</TableHead>
+                    <TableHead className="w-[10%]">SUCURSAL</TableHead>
+                    <TableHead className="w-[8%] text-right">CANT.</TableHead>
+                    <TableHead className="w-[64%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[8%] text-right">ACC.</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -100,22 +107,20 @@ export default function PedidoTintometricoPageClient({
                   ) : (
                     items.map((i) => {
                       const prov = proveedoresById.get(i.proveedorId);
+                      const suc = sucursalPorCodigo.get(i.sucursalCodigo);
                       return (
                         <TableRow key={i.key}>
                           <TableCell className="celda-datos text-xs">
-                            {(prov?.nombre ?? "").trim()}
+                            {(prov?.prefijo ?? "").trim()}
+                          </TableCell>
+                          <TableCell className="celda-datos text-xs">
+                            {(suc?.nombre ?? "").trim()}
                           </TableCell>
                       <TableCell className="celda-datos text-xs text-right tabular-nums">
                         {i.cantidad.toLocaleString()}
                       </TableCell>
-                      <TableCell className="celda-datos text-xs tabular-nums">
-                            {i.codTintometrico}
-                          </TableCell>
-                          <TableCell className="celda-datos text-xs tabular-nums">
-                            {i.base.codTienda}
-                          </TableCell>
                           <TableCell className="celda-datos text-xs">
-                            {i.base.descripcionTienda}
+                            {`${i.base.descripcionTienda ?? ""} - COD. ${i.codTintometrico}`.toUpperCase()}
                           </TableCell>
                           <TableCell className="celda-datos text-right">
                             <Button
@@ -144,6 +149,7 @@ export default function PedidoTintometricoPageClient({
           open={modalOpen}
           onOpenChange={setModalOpen}
           proveedores={proveedores}
+          sucursales={sucursales}
           onAgregar={agregarItem}
         />
       </div>
