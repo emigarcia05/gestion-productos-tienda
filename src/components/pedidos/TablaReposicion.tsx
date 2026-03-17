@@ -72,34 +72,36 @@ export default function TablaReposicion({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {/* Información principal */}
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "46%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "50%" }}>
                 DESCRIPCIÓN
               </TableHead>
               <TableHead className="px-3 py-2 text-xs" style={{ width: "12%" }}>
                 FORMA PEDIR
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "8%" }}>
                 PUNTO REPOSICIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs" style={{ width: "10%" }}>
+              <TableHead className="px-3 py-2 text-xs" style={{ width: "8%" }}>
                 CANT. REPOSICIÓN
               </TableHead>
               <TableHead
                 className="px-1 py-2 text-xs text-center bg-muted/30 text-foreground"
-                style={{ width: "6%" }}
+                style={{ width: "8%" }}
               >
-                {/* acciones */}
+                <div className="flex items-center justify-center w-full">
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </div>
               </TableHead>
               {/* Información secundaria */}
               <TableHead
                 className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider"
-                style={{ width: "8%" }}
+                style={{ width: "7%" }}
               >
                 STOCK
               </TableHead>
               <TableHead
                 className="px-3 py-2 text-xs tabla-bloque-secundario-head"
-                style={{ width: "8%" }}
+                style={{ width: "7%" }}
               >
                 CANT. A PEDIR
               </TableHead>

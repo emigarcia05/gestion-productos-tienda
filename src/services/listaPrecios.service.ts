@@ -588,19 +588,19 @@ export async function getListaPreciosParaPedidoUrgente(
         idProveedor: true,
         codExt: true,
         tipoPedido: true,
-        cantPedirUrgente: true,
-        cantPedirReposicion: true,
+        urgenteCantPedir: true,
+        reposicionCantConf: true,
       },
     });
 
     for (const r of rows) {
       const key = `${r.idProveedor}:${r.codExt}`;
       if (r.tipoPedido === "URGENTE") {
-        mercaderiaMapUrgente.set(key, Math.max(0, Number(r.cantPedirUrgente ?? 0)));
+        mercaderiaMapUrgente.set(key, Math.max(0, Number(r.urgenteCantPedir ?? 0)));
       }
       if (r.tipoPedido === "REPOSICION") {
         mercaderiaRepoSet.add(key);
-        mercaderiaMapRepo.set(key, Math.max(0, Number(r.cantPedirReposicion ?? 0)));
+        mercaderiaMapRepo.set(key, Math.max(0, Number(r.reposicionCantConf ?? 0)));
       }
     }
   }

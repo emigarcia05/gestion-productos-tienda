@@ -68,7 +68,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
       descripcionProveedor: item.descripcionProveedor,
       descripcionTienda: tienda?.descripcionTienda?.trim() || null,
       cantPedir: cantNorm,
-      cantPedirUrgente: cantNorm,
+      urgenteCantPedir: cantNorm,
     };
 
     if (existing) {
@@ -140,7 +140,7 @@ export async function syncPedidoUrgenteEnvio(
           codTienda: f.listaPrecioTienda?.codTienda ?? null,
           descripcionProveedor: f.descripcionProveedor,
           descripcionTienda: f.listaPrecioTienda?.descripcionTienda?.trim() || null,
-          cantPedirUrgente: cant,
+          urgenteCantPedir: cant,
           // Compatibilidad: el flujo de "Enviar Pedido" hoy usa cant_pedir.
           cantPedir: cant,
         };
@@ -154,7 +154,7 @@ export async function syncPedidoUrgenteEnvio(
       codTienda: string | null;
       descripcionProveedor: string;
       descripcionTienda: string | null;
-      cantPedirUrgente: number;
+      urgenteCantPedir: number;
       cantPedir: number;
     }>;
 

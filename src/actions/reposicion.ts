@@ -184,6 +184,7 @@ export async function getReposicionData(
       formaPedir: FormaPedirReposicionOption;
       puntoReposicion: number;
       cant: number;
+      cantPedir: number;
     }
   >();
   if (pairs.length > 0) {
@@ -197,17 +198,19 @@ export async function getReposicionData(
         id: true,
         idProveedor: true,
         codExt: true,
-        formaPedidoReposicion: true,
-        puntoPedido: true,
-        cantPedirReposicion: true,
+        reposicionFormaPedido: true,
+        reposicionPuntoPedido: true,
+        reposicionCantConf: true,
+        cantPedir: true,
       },
     });
     for (const r of reglas) {
       reglasMap.set(`${r.idProveedor}:${r.codExt}`, {
         id: r.id,
-        formaPedir: (r.formaPedidoReposicion as FormaPedirReposicionOption) ?? "",
-        puntoReposicion: Math.max(0, Math.floor(Number(r.puntoPedido ?? 0))),
-        cant: Math.max(0, Math.floor(Number(r.cantPedirReposicion ?? 0))),
+        formaPedir: (r.reposicionFormaPedido as FormaPedirReposicionOption) ?? "",
+        puntoReposicion: Math.max(0, Math.floor(Number(r.reposicionPuntoPedido ?? 0))),
+        cant: Math.max(0, Math.floor(Number(r.reposicionCantConf ?? 0))),
+        cantPedir: Math.max(0, Math.floor(Number(r.cantPedir ?? 0))),
       });
     }
   }
@@ -224,12 +227,7 @@ export async function getReposicionData(
     const forma = regla?.formaPedir ?? "";
     const punto = regla?.puntoReposicion ?? 0;
     const cantCfg = regla?.cant ?? 0;
-    const cantAPedir =
-      !forma
-        ? 0
-        : forma === "CANT_FIJA"
-          ? cantCfg
-          : Math.max(0, cantCfg - stock);
+    const cantAPedir = regla?.cantPedir ?? 0;
     return {
       idListaTienda: r.id,
       codExt: r.codExt,
@@ -358,9 +356,9 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
     });
 
     const dataBase = {
-      formaPedidoReposicion: formaPedir,
-      puntoPedido: puntoReposicion,
-      cantPedirReposicion: cant,
+      reposicionFormaPedido: formaPedir,
+      reposicionPuntoPedido: puntoReposicion,
+      reposicionCantConf: cant,
     };
 
     if (existing) {

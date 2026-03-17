@@ -181,13 +181,16 @@ model ItemPedidoEnvio {
   descripcionProveedor   String   @map("descripcion_proveedor")
   descripcionTienda      String?  @map("descripcion_tienda") // precios_tienda; vacío si no existe
   cantPedir              Int      @map("cant_pedir") @default(0)
-  // Columnas nuevas (reposición, urgente, tintométrico)
-  formaPedidoReposicion  String?  @map("forma_pedido_reposicion") // CANT_MAXIMA | CANT_FIJA
-  puntoPedido            Int?     @map("punto_pedido")
-  cantPedirReposicion    Int?     @map("cant_pedir_reposicion") @default(0)
-  cantPedirUrgente       Int?     @map("cant_pedir_urgente") @default(0)
-  cantPedirTintometrico  Int?     @map("cant_pedir_tintometrico") @default(0)
-  descripcionTintometrico String? @map("descripcion_tintometrico")
+  // Reposición (prefijo reposicion_*)
+  reposicionFormaPedido  String? @map("reposicion_forma_pedido") // CANT_MAXIMA | CANT_FIJA
+  reposicionPuntoPedido  Int?    @map("reposicion_punto_pedido")
+  reposicionCantConf     Int?    @map("reposicion_cant_conf") @default(0)
+  reposicionCantPedir    Int?    @map("reposicion_cant_pedir") @default(0)
+  // Urgente (prefijo urgente_*)
+  urgenteCantPedir       Int?    @map("urgente_cant_pedir") @default(0)
+  // Tintométrico (prefijo tintometrico_*)
+  tintometrioCantPedir   Int?    @map("tintometrio_cant_pedir") @default(0)
+  tintometricoDescripcion String? @map("tintometrico_descripcion")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
