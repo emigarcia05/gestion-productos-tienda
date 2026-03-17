@@ -12,6 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Plus } from "lucide-react";
 import type { ProveedorTintometrico, BaseTintometricaRow } from "@/services/tintometrico.service";
 import SeleccionarBaseTintometricaModal from "@/components/pedidos/SeleccionarBaseTintometricaModal";
@@ -21,6 +29,7 @@ export type NuevoItemTintometricoDraft = {
   proveedorId: string;
   codTintometrico: string;
   base: BaseTintometricaRow;
+  cantidad: number;
 };
 
 export default function NuevoItemTintometricoModal({
@@ -34,16 +43,20 @@ export default function NuevoItemTintometricoModal({
   proveedores: ProveedorTintometrico[];
   onAgregar: (draft: NuevoItemTintometricoDraft) => void;
 }) {
+  const [sucursal, setSucursal] = useState("");
   const [proveedorId, setProveedorId] = useState("");
   const [codTintometrico, setCodTintometrico] = useState("");
   const [baseModalOpen, setBaseModalOpen] = useState(false);
   const [base, setBase] = useState<BaseTintometricaRow | null>(null);
+  const [cantidad, setCantidad] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
+    setSucursal("");
     setProveedorId("");
     setCodTintometrico("");
     setBase(null);
+    setCantidad("");
   }, [open]);
 
   const proveedorSeleccionado = useMemo(
@@ -51,8 +64,19 @@ export default function NuevoItemTintometricoModal({
     [proveedores, proveedorId]
   );
 
+  const cantidadNumero = useMemo(() => {
+    const n = Number(cantidad);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.floor(n));
+  }, [cantidad]);
+
   const codValido = codTintometrico.trim().length > 0;
-  const puedeAgregar = !!proveedorId && codValido && base != null;
+  const tieneCantidadValida = cantidadNumero > 0;
+  const puedeAgregar =
+    !!sucursal && !!proveedorId && codValido && base != null && tieneCantidadValida;
+
+  const descripcionLinea =
+    base && codValido ? `${base.descripcionTienda} Cod. ${codTintometrico.trim()}` : "";
 
   function handleAgregar() {
     if (!puedeAgregar || !base) return;
@@ -60,6 +84,7 @@ export default function NuevoItemTintometricoModal({
       proveedorId,
       codTintometrico: codTintometrico.trim(),
       base,
+      cantidad: cantidadNumero,
     });
     onOpenChange(false);
   }
@@ -82,6 +107,19 @@ export default function NuevoItemTintometricoModal({
         }
       >
         <div className="grid grid-cols-1 gap-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-muted-foreground">Sucursal</span>
+            <Select value={sucursal} onValueChange={setSucursal}>
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder="Seleccionar Sucursal" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="guaymallen">Guaymallén</SelectItem>
+                <SelectItem value="maipu">Maipú</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex flex-col gap-2">
             <span className="text-xs text-muted-foreground">Proveedor</span>
             <Select value={proveedorId} onValueChange={setProveedorId}>
@@ -131,6 +169,47 @@ export default function NuevoItemTintometricoModal({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+          )}
+
+          {base && codValido && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">Detalle Del Ítem</span>
+              <Table variant="compact" className="w-full table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[6rem]">CANT</TableHead>
+                    <TableHead>DESCRIPCIÓN</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="celda-datos align-middle">
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={cantidad}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (!value) {
+                            setCantidad("");
+                            return;
+                          }
+                          const n = Number(value);
+                          if (!Number.isFinite(n) || n <= 0) return;
+                          setCantidad(String(Math.floor(n)));
+                        }}
+                        className="h-8 w-20 text-right"
+                        placeholder="0"
+                      />
+                    </TableCell>
+                    <TableCell className="celda-datos text-xs">
+                      {descripcionLinea}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>

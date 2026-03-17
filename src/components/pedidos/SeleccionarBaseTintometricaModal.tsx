@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/shared/ModalTablaConFiltros";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
-import { Button } from "@/components/ui/button";
 import { buscarBasesTintometricasAction } from "@/actions/tintometrico";
 import type { BaseTintometricaRow } from "@/services/tintometrico.service";
+import { LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const EMPTY: { items: BaseTintometricaRow[]; total: number } = { items: [], total: 0 };
 
@@ -57,30 +57,18 @@ export default function SeleccionarBaseTintometricaModal({
   const columns: ColumnaModalTabla<BaseTintometricaRow>[] = useMemo(
     () => [
       {
-        key: "codTienda",
-        label: "CÓD. TIENDA",
-        className: "py-2 px-3 text-xs w-[10rem]",
-        render: (r) => <span className="tabular-nums">{r.codTienda}</span>,
-      },
-      {
         key: "descripcion",
         label: "DESCRIPCIÓN",
         className: "py-2 px-3 text-xs",
         render: (r) => r.descripcionTienda,
-      },
-      {
-        key: "marca",
-        label: "MARCA",
-        className: "py-2 px-3 text-xs w-[12rem]",
-        render: (r) => r.marca ?? "",
       },
     ],
     []
   );
 
   const filterContent = (
-    <div className="flex items-center gap-2">
-      <div className="w-[75%] max-w-2xl min-w-0">
+    <div className="flex items-center gap-3">
+      <div className="flex-1 min-w-0">
         <FiltroBusquedaInput
           id="busqueda-base-tintometrica"
           placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
@@ -90,18 +78,13 @@ export default function SeleccionarBaseTintometricaModal({
           inputRef={ref}
         />
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
+      <LimpiarFiltrosButton
+        visible={!!q.trim() || !!errorMsg}
         onClick={() => {
           setQ("");
           fetch("");
         }}
-        disabled={!q.trim() && !errorMsg}
-      >
-        Borrar
-      </Button>
+      />
       {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
     </div>
   );
@@ -111,6 +94,7 @@ export default function SeleccionarBaseTintometricaModal({
       open={open}
       onClose={() => onOpenChange(false)}
       title="Seleccione Una Base"
+      selectionMode="multi"
       filterContent={filterContent}
       columns={columns}
       rows={data.items}
@@ -119,6 +103,11 @@ export default function SeleccionarBaseTintometricaModal({
       emptyMessage="Sin Resultados"
       getRowId={(r) => r.id}
       onRowDoubleClick={onSeleccionar}
+      onConfirm={(ids) => {
+        const firstId = ids[0];
+        const row = data.items.find((r) => r.id === firstId);
+        if (row) onSeleccionar(row);
+      }}
     />
   );
 }

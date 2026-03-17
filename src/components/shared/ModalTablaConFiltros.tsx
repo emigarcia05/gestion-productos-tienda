@@ -39,11 +39,12 @@ interface ModalTablaConFiltrosBase<T> {
   emptyMessage?: string;
   count?: number;
   contentClassName?: string;
+  /** Maneja doble clic en fila (single o multi). En multi puede usarse como “selección rápida” de un solo ítem. */
+  onRowDoubleClick?: (row: T) => void;
 }
 
 interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
   selectionMode?: "single";
-  onRowDoubleClick: (row: T) => void;
   onConfirm?: never;
   confirmLabel?: never;
   confirmPending?: never;
@@ -53,7 +54,6 @@ interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
 
 interface ModalTablaMultiSelect<T> extends ModalTablaConFiltrosBase<T> {
   selectionMode: "multi";
-  onRowDoubleClick?: never;
   onConfirm: (ids: string[]) => void | Promise<void>;
   confirmLabel?: (count: number) => string;
   confirmPending?: boolean;
@@ -223,15 +223,18 @@ export default function ModalTablaConFiltros<T>({
                       <TableBody>
                         {rows.map((row) => {
                           const id = getRowId(row);
+                          const isSelected = selectedIds.has(id);
                           return (
                             <TableRow
                               key={id}
-                              onDoubleClick={!isMulti ? () => onRowDoubleClick?.(row) : undefined}
+                              onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row) : undefined}
                               className={cn(
                                 !isMulti && "cursor-pointer select-none hover:bg-primary/5",
-                                isMulti && selectedIds.has(id) && "bg-primary/5"
+                                isMulti && isSelected && "bg-primary/5"
                               )}
-                              title={!isMulti ? "Doble Clic Para Seleccionar" : undefined}
+                              title={
+                                onRowDoubleClick ? "Doble Clic Para Seleccionar" : undefined
+                              }
                             >
                               {isMulti && (
                                 <TableCell className="py-2.5 px-2 w-10">

@@ -83,6 +83,7 @@ export default function PedidoTintometricoPageClient({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[12rem]">PROVEEDOR</TableHead>
+                    <TableHead className="w-[6rem] text-right">CANT</TableHead>
                     <TableHead className="w-[12rem]">CÓD. TINTOMÉTRICO</TableHead>
                     <TableHead className="w-[10rem]">CÓD. TIENDA</TableHead>
                     <TableHead>DESCRIPCIÓN</TableHead>
@@ -104,7 +105,10 @@ export default function PedidoTintometricoPageClient({
                           <TableCell className="celda-datos text-xs">
                             {(prov?.nombre ?? "").trim()}
                           </TableCell>
-                          <TableCell className="celda-datos text-xs tabular-nums">
+                      <TableCell className="celda-datos text-xs text-right tabular-nums">
+                        {i.cantidad.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="celda-datos text-xs tabular-nums">
                             {i.codTintometrico}
                           </TableCell>
                           <TableCell className="celda-datos text-xs tabular-nums">
