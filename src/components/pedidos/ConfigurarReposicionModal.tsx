@@ -70,6 +70,7 @@ export default function ConfigurarReposicionModal({
     formaPedir
       ? FORMA_PEDIR_OPTIONS.find((o) => o.value === formaPedir)?.label ?? ""
       : "";
+  const mostrarCant = Boolean(formaPedir);
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -205,18 +206,27 @@ export default function ConfigurarReposicionModal({
               </div>
 
               <div className="flex flex-col items-center gap-1">
-                <Label className="text-xs font-medium text-foreground text-center">
-                  {tituloCant}
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={cant}
-                  onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
-                  className="tabular-nums text-center"
-                  aria-label="Cantidad reposición"
-                />
+                {mostrarCant ? (
+                  <>
+                    <Label className="text-xs font-medium text-foreground text-center">
+                      {tituloCant}
+                    </Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={cant}
+                      onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
+                      className="tabular-nums text-center"
+                      aria-label="Cantidad reposición"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="h-4" />
+                    <div className="h-10 w-full" />
+                  </>
+                )}
               </div>
             </div>
 
