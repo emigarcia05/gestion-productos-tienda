@@ -79,47 +79,60 @@ export default function PedidoTintometricoPageClient({
 
   const filters = (
     <FilterBar className="filtros-contenedor-tienda bg-card">
-      <FilterRowSelection className="items-center justify-between gap-4 flex-wrap">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1 min-w-[10rem]">
-            <span className="text-xs text-foreground">Sucursal</span>
-            <Select
-              value={filtroSucursal}
-              onValueChange={(value) => setFiltroSucursal(value === "todas" ? "" : value)}
+      {/* Fila 1: filtros de Sucursal y Proveedor */}
+      <FilterRowSelection className="justify-center gap-6 flex-wrap">
+        <div className="flex flex-col gap-1 min-w-[10rem]">
+          <span className="text-xs text-foreground">Sucursal</span>
+          <Select
+            value={filtroSucursal}
+            onValueChange={(value) => setFiltroSucursal(value === "todas" ? "" : value)}
+          >
+            <SelectTrigger className="h-10 w-[12rem]">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent
+              className="select-content-filtro"
+              position="popper"
+              side="bottom"
+              align="start"
             >
-              <SelectTrigger className="h-10 w-[12rem]">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                <SelectItem value="todas">TODAS</SelectItem>
-                {sucursales.map((s) => (
-                  <SelectItem key={s.id} value={s.codigo}>
-                    {s.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1 min-w-[12rem]">
-            <span className="text-xs text-foreground">Proveedor</span>
-            <Select
-              value={filtroProveedor}
-              onValueChange={(value) => setFiltroProveedor(value === "todos" ? "" : value)}
-            >
-              <SelectTrigger className="h-10 w-[14rem]">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                <SelectItem value="todos">TODOS</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {`${p.prefijo} - ${p.nombre}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <SelectItem value="todas">TODAS</SelectItem>
+              {sucursales.map((s) => (
+                <SelectItem key={s.id} value={s.codigo}>
+                  {s.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+        <div className="flex flex-col gap-1 min-w-[12rem]">
+          <span className="text-xs text-foreground">Proveedor</span>
+          <Select
+            value={filtroProveedor}
+            onValueChange={(value) => setFiltroProveedor(value === "todos" ? "" : value)}
+          >
+            <SelectTrigger className="h-10 w-[14rem]">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent
+              className="select-content-filtro"
+              position="popper"
+              side="bottom"
+              align="start"
+            >
+              <SelectItem value="todos">TODOS</SelectItem>
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {`${p.prefijo} - ${p.nombre}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </FilterRowSelection>
+
+      {/* Fila 2: botón + centrado */}
+      <FilterRowSelection className="justify-center mt-2">
         <Button
           type="button"
           variant="default"
