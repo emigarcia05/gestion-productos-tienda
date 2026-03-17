@@ -67,7 +67,7 @@ export default function ConfigurarReposicionModal({
 
   const nombreProducto = item.descripcionTienda ?? "—";
   const tituloCant =
-    formaPedir && formaPedir !== ""
+    formaPedir
       ? FORMA_PEDIR_OPTIONS.find((o) => o.value === formaPedir)?.label ?? ""
       : "";
 
