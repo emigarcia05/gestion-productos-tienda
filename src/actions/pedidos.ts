@@ -191,7 +191,7 @@ const TIPO_LABEL: Record<string, string> = {
 
 const pedidoTintometricoItemSchema = z.object({
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
-  proveedorId: z.string().uuid("Proveedor inválido."),
+  proveedorId: z.string().min(1, "Proveedor inválido."),
   codTienda: z.string().min(1, "Cod. Tienda requerido."),
   cantidad: z.number().int().min(1, "Cant. debe ser mayor a 0."),
   descripcion: z.string().min(1, "Descripción requerida."),
@@ -232,7 +232,7 @@ export async function upsertPedidoTintometricoItemsAction(
 
 const deleteTintometricoItemSchema = z.object({
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
-  proveedorId: z.string().uuid("Proveedor inválido."),
+  proveedorId: z.string().min(1, "Proveedor inválido."),
   codTienda: z.string().min(1, "Cod. Tienda requerido."),
 });
 

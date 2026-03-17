@@ -270,7 +270,7 @@ export default function NuevoItemTintometricoModal({
                     const valor = cantPorBaseId[b.id] ?? "";
                     return (
                       <TableRow key={b.id}>
-                        <TableCell className="celda-datos align-middle">
+                        <TableCell className="celda-datos align-middle text-center">
                           <Input
                             type="number"
                             min={1}
@@ -289,7 +289,7 @@ export default function NuevoItemTintometricoModal({
                                 return { ...prev, [b.id]: String(Math.floor(n)) };
                               });
                             }}
-                            className="h-8 w-12 text-center"
+                            className="h-7 w-10 px-1 text-center mx-auto"
                             placeholder="0"
                           />
                         </TableCell>
