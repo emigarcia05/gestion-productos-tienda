@@ -9,6 +9,7 @@ import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { revalidatePath } from "next/cache";
+import { upsertPedidoMercaderiaReposicionConfig } from "@/services/pedidosEnvio.service";
 
 export type SucursalReposicion = "guaymallen" | "maipu";
 
@@ -309,14 +310,14 @@ const upsertReglaSchema = z.object({
   idProveedor: z.string().min(1, "Proveedor requerido"),
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   codExt: z.string().min(1, "Código requerido"),
-  formaPedir: z.enum(["CANT_MAXIMA", "CANT_FIJA"]).optional(),
-  puntoReposicion: z.number().int().min(0),
-  cant: z.number().int().min(0),
+  formaPedir: z.enum(["CANT_MAXIMA", "CANT_FIJA"]),
+  puntoReposicion: z.number().int().min(1, "Punto reposición requerido"),
+  cant: z.number().int().min(1, "Cant. reposición requerida"),
 });
 
 /**
  * Crea o actualiza la regla de reposición para (proveedor, sucursal, cod_ext).
- * Si formaPedir no se envía o está vacío, se elimina la regla (o no se crea).
+ * Validación estricta: no guarda nada si falta Forma/Punto/Cant.
  */
 export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchema>): Promise<ActionResult<void>> {
   const rol = await getRol();
@@ -332,56 +333,15 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
   const { idProveedor, sucursalCodigo, codExt, formaPedir, puntoReposicion, cant } = parsed.data;
 
   try {
-    if (!formaPedir) {
-      await prisma.itemPedidoEnvio.deleteMany({
-        where: {
-          idProveedor,
-          tipoPedido: "REPOSICION",
-          sucursalCodigo,
-          codExt,
-        },
-      });
-      revalidatePath("/pedidos/reposicion");
-      return { ok: true, data: undefined };
-    }
-
-    const existing = await prisma.itemPedidoEnvio.findFirst({
-      where: {
-        idProveedor,
-        tipoPedido: "REPOSICION",
-        sucursalCodigo,
-        codExt,
-      },
-      select: { id: true },
+    const result = await upsertPedidoMercaderiaReposicionConfig({
+      sucursal: sucursalCodigo,
+      idProveedor,
+      codExt,
+      formaPedir,
+      puntoReposicion,
+      cantConf: cant,
     });
-
-    const dataBase = {
-      reposicionFormaPedido: formaPedir,
-      reposicionPuntoPedido: puntoReposicion,
-      reposicionCantConf: cant,
-    };
-
-    if (existing) {
-      await prisma.itemPedidoEnvio.update({
-        where: { id: existing.id },
-        data: dataBase,
-      });
-    } else {
-      await prisma.itemPedidoEnvio.create({
-        data: {
-          idProveedor,
-          tipoPedido: "REPOSICION",
-          sucursalCodigo,
-          codExt,
-          codProveedor: "__AUTO__",
-          codTienda: null,
-          descripcionProveedor: "__AUTO__",
-          descripcionTienda: null,
-          cantPedir: 0,
-          ...dataBase,
-        },
-      });
-    }
+    if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/pedidos/reposicion");
     return { ok: true, data: undefined };
   } catch (e: unknown) {

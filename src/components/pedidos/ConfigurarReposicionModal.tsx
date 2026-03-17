@@ -98,6 +98,14 @@ export default function ConfigurarReposicionModal({
     }
     const punto = Math.max(0, Math.floor(Number(puntoReposicion)) || 0);
     const cantNum = Math.max(0, Math.floor(Number(cant)) || 0);
+    if (punto <= 0) {
+      toast.error("Completá Punto Reposición.");
+      return;
+    }
+    if (cantNum <= 0) {
+      toast.error("Completá Cant. Reposición.");
+      return;
+    }
 
     setGuardando(true);
     try {
@@ -184,7 +192,7 @@ export default function ConfigurarReposicionModal({
                 </Label>
                 <Input
                   type="number"
-                  min={0}
+                  min={1}
                   step={1}
                   value={puntoReposicion}
                   onChange={(e) => setPuntoReposicion(parseInt(e.target.value, 10) || 0)}
@@ -198,7 +206,7 @@ export default function ConfigurarReposicionModal({
                 </Label>
                 <Input
                   type="number"
-                  min={0}
+                  min={1}
                   step={1}
                   value={cant}
                   onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}

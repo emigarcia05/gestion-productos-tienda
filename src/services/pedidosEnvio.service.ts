@@ -6,12 +6,103 @@
 import { prisma } from "@/lib/prisma";
 
 const TIPO_URGENTE = "URGENTE";
+const TIPO_REPOSICION = "REPOSICION";
 
 export type SucursalPedidoEnvio = "guaymallen" | "maipu";
 
 export interface ItemPedidoUrgentePayload {
   id: string;
   cant: number;
+}
+
+export async function upsertPedidoMercaderiaReposicionConfig(params: {
+  sucursal: SucursalPedidoEnvio;
+  idProveedor: string;
+  codExt: string;
+  formaPedir: "CANT_MAXIMA" | "CANT_FIJA";
+  puntoReposicion: number;
+  cantConf: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { sucursal, idProveedor, codExt, formaPedir, puntoReposicion, cantConf } = params;
+
+  const punto = Math.max(0, Math.floor(Number(puntoReposicion) || 0));
+  const cant = Math.max(0, Math.floor(Number(cantConf) || 0));
+  if (!idProveedor.trim()) return { ok: false, error: "Proveedor requerido." };
+  if (!codExt.trim()) return { ok: false, error: "Código requerido." };
+  if (!formaPedir) return { ok: false, error: "Seleccioná Forma Pedir." };
+  if (punto <= 0) return { ok: false, error: "Punto reposición inválido." };
+  if (cant <= 0) return { ok: false, error: "Cant. reposición inválida." };
+
+  try {
+    const provRow = await prisma.listaPrecioProveedor.findFirst({
+      where: { idProveedor: idProveedor.trim(), codExt: codExt.trim() },
+      select: {
+        codProdProveedor: true,
+        descripcionProveedor: true,
+      },
+    });
+    if (!provRow) return { ok: false, error: "No se encontró el ítem en precios_proveedores." };
+
+    const tienda = await prisma.listaPrecioTienda.findUnique({
+      where: { codExt: codExt.trim() },
+      select: {
+        codTienda: true,
+        descripcionTienda: true,
+        stockMaipu: true,
+        stockGuaymallen: true,
+      },
+    });
+
+    const stock =
+      sucursal === "maipu"
+        ? Number(tienda?.stockMaipu ?? 0)
+        : Number(tienda?.stockGuaymallen ?? 0);
+    const cantPedir = formaPedir === "CANT_FIJA" ? cant : Math.max(0, cant - stock);
+
+    const existing = await prisma.itemPedidoEnvio.findFirst({
+      where: {
+        idProveedor: idProveedor.trim(),
+        tipoPedido: TIPO_REPOSICION,
+        sucursalCodigo: sucursal,
+        codExt: codExt.trim(),
+      },
+      select: { id: true },
+    });
+
+    const dataBase = {
+      codProveedor: provRow.codProdProveedor,
+      codTienda: tienda?.codTienda ?? null,
+      descripcionProveedor: provRow.descripcionProveedor,
+      descripcionTienda: tienda?.descripcionTienda?.trim() || null,
+      cantPedir,
+      reposicionFormaPedido: formaPedir,
+      reposicionPuntoPedido: punto,
+      reposicionCantConf: cant,
+      reposicionCantPedir: cantPedir,
+    };
+
+    if (existing) {
+      await prisma.itemPedidoEnvio.update({
+        where: { id: existing.id },
+        data: dataBase,
+      });
+    } else {
+      await prisma.itemPedidoEnvio.create({
+        data: {
+          idProveedor: idProveedor.trim(),
+          tipoPedido: TIPO_REPOSICION,
+          sucursalCodigo: sucursal,
+          codExt: codExt.trim(),
+          ...dataBase,
+        },
+      });
+    }
+
+    return { ok: true };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error al guardar la configuración.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function upsertPedidoMercaderiaUrgenteItem(params: {
