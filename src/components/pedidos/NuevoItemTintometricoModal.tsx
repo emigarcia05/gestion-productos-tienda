@@ -169,7 +169,7 @@ export default function NuevoItemTintometricoModal({
       <AppModal
         title="Nuevo Ítem Tintométrico"
         scrollBody={false}
-        className="sm:max-w-2xl"
+        className="sm:max-w-[46.2rem] max-h-[99vh]"
         bodyClassName="flex flex-col gap-4"
         actions={
           <>

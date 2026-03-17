@@ -14,6 +14,7 @@ import {
   upsertPedidoMercaderiaUrgenteItem,
   upsertPedidoTintometricoItems,
   type ItemPedidoTintometricoPayload,
+  deletePedidoTintometricoItem,
 } from "@/services/pedidosEnvio.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
@@ -227,6 +228,32 @@ export async function upsertPedidoTintometricoItemsAction(
     return { ok: false, error };
   }
   return { ok: true, data: { actualizados } };
+}
+
+const deleteTintometricoItemSchema = z.object({
+  sucursalCodigo: z.enum(["guaymallen", "maipu"]),
+  proveedorId: z.string().uuid("Proveedor inválido."),
+  codTienda: z.string().min(1, "Cod. Tienda requerido."),
+});
+
+export async function deletePedidoTintometricoItemAction(
+  raw: z.infer<typeof deleteTintometricoItemSchema>
+): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = deleteTintometricoItemSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos para borrar el ítem." };
+  }
+
+  const result = await deletePedidoTintometricoItem(parsed.data);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+  return { ok: true, data: undefined };
 }
 
 /**

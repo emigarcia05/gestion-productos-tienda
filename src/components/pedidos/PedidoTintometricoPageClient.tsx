@@ -1,8 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import FilterBar, { FilterRowSelection } from "@/components/FilterBar";
+import FilterBar, {
+  FILTER_COUNT_CLASS,
+  FILTER_SELECT_WRAPPER_CLASS,
+  FilaFiltrosDesplegables,
+  FilterRowSearch,
+  FilterRowSelection,
+  SELECT_TRIGGER_FILTER_CLASS,
+} from "@/components/FilterBar";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,25 +32,64 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ProveedorTintometrico, SucursalTintometrica } from "@/services/tintometrico.service";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import NuevoItemTintometricoModal, {
   type NuevoItemTintometricoDraft,
 } from "@/components/pedidos/NuevoItemTintometricoModal";
+import { deletePedidoTintometricoItemAction } from "@/actions/pedidos";
 
-type ItemTintometrico = NuevoItemTintometricoDraft & {
+type ItemTintometrico = {
   key: string;
+  sucursalCodigo: string;
+  proveedorId: string;
+  codExt: string;
+  codTienda: string;
+  cantidad: number;
+  descripcion: string;
 };
+
+const MODAL_PARAM = "nuevo-item-tintometrico";
 
 export default function PedidoTintometricoPageClient({
   proveedores,
   sucursales,
+  initialItems,
 }: {
   proveedores: ProveedorTintometrico[];
   sucursales: SucursalTintometrica[];
+  initialItems: Array<{
+    sucursalCodigo: string;
+    proveedorId: string;
+    codExt: string;
+    codTienda: string;
+    cantidad: number;
+    descripcion: string;
+  }>;
 }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [items, setItems] = useState<ItemTintometrico[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [items, setItems] = useState<ItemTintometrico[]>(
+    initialItems.map((i) => ({
+      ...i,
+      key: `${i.proveedorId}:TINTOMETRICO:${i.sucursalCodigo}:${i.codExt}`,
+    }))
+  );
   const [filtroSucursal, setFiltroSucursal] = useState<string>("");
   const [filtroProveedor, setFiltroProveedor] = useState<string>("");
+  const [q, setQ] = useState("");
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const modalOpen = searchParams.get("modal") === MODAL_PARAM;
+
+  function setModalOpenInUrl(open: boolean) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (open) params.set("modal", MODAL_PARAM);
+    else params.delete("modal");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }
 
   const proveedoresById = useMemo(() => {
     const map = new Map<string, ProveedorTintometrico>();
@@ -60,92 +108,141 @@ export default function PedidoTintometricoPageClient({
       items.filter((i) => {
         if (filtroSucursal && i.sucursalCodigo !== filtroSucursal) return false;
         if (filtroProveedor && i.proveedorId !== filtroProveedor) return false;
+        if (q.trim()) {
+          const texto = `${i.descripcion} ${i.codTienda} ${i.codExt}`.toLowerCase();
+          if (!texto.includes(q.trim().toLowerCase())) return false;
+        }
         return true;
       }),
-    [items, filtroSucursal, filtroProveedor]
+    [items, filtroSucursal, filtroProveedor, q]
   );
 
   function agregarItem(draft: NuevoItemTintometricoDraft) {
-    const key = `${draft.proveedorId}:${draft.codTintometrico}:${draft.base.id}`;
+    const codTienda = draft.base.codTienda.trim();
+    const codExt = `TINT-${codTienda}`;
+    const descripcionBase = (draft.base.descripcionTienda ?? "").trim();
+    const codigo = draft.codTintometrico.trim();
+    const descripcion =
+      descripcionBase && codigo
+        ? `${descripcionBase} - COD. ${codigo}`.toUpperCase()
+        : (descripcionBase || "").toUpperCase();
+    const key = `${draft.proveedorId}:TINTOMETRICO:${draft.sucursalCodigo}:${codExt}`;
+
     setItems((prev) => {
-      if (prev.some((p) => p.key === key)) return prev;
-      return [...prev, { ...draft, key }];
+      const idx = prev.findIndex((p) => p.key === key);
+      const nextItem: ItemTintometrico = {
+        key,
+        sucursalCodigo: draft.sucursalCodigo,
+        proveedorId: draft.proveedorId,
+        codExt,
+        codTienda,
+        cantidad: draft.cantidad,
+        descripcion,
+      };
+      if (idx === -1) return [...prev, nextItem];
+      const next = [...prev];
+      next[idx] = nextItem;
+      return next;
     });
   }
 
-  function borrarItem(key: string) {
-    setItems((prev) => prev.filter((i) => i.key !== key));
+  async function borrarItem(item: ItemTintometrico) {
+    setDeletingKey(item.key);
+    const res = await deletePedidoTintometricoItemAction({
+      sucursalCodigo: item.sucursalCodigo as "guaymallen" | "maipu",
+      proveedorId: item.proveedorId,
+      codTienda: item.codTienda,
+    });
+    setDeletingKey(null);
+    if (!res.ok) {
+      toast.error(res.error ?? "Error al borrar el ítem.");
+      return;
+    }
+    setItems((prev) => prev.filter((i) => i.key !== item.key));
   }
 
   const filters = (
     <FilterBar className="filtros-contenedor-tienda bg-card">
-      {/* Fila 1: filtros de Sucursal y Proveedor */}
-      <FilterRowSelection className="justify-center gap-6 flex-wrap">
-        <div className="flex flex-col gap-1 min-w-[10rem]">
-          <span className="text-xs text-foreground">Sucursal</span>
-          <Select
-            value={filtroSucursal}
-            onValueChange={(value) => setFiltroSucursal(value === "todas" ? "" : value)}
-          >
-            <SelectTrigger className="h-10 w-[12rem]">
-              <SelectValue placeholder="Todas" />
-            </SelectTrigger>
-            <SelectContent
-              className="select-content-filtro"
-              position="popper"
-              side="bottom"
-              align="start"
+      <FilterRowSelection>
+        <FilaFiltrosDesplegables>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
+              value={filtroSucursal || "todas"}
+              onValueChange={(value) => setFiltroSucursal(value === "todas" ? "" : value)}
             >
-              <SelectItem value="todas">TODAS</SelectItem>
-              {sucursales.map((s) => (
-                <SelectItem key={s.id} value={s.codigo}>
-                  {s.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1 min-w-[12rem]">
-          <span className="text-xs text-foreground">Proveedor</span>
-          <Select
-            value={filtroProveedor}
-            onValueChange={(value) => setFiltroProveedor(value === "todos" ? "" : value)}
-          >
-            <SelectTrigger className="h-10 w-[14rem]">
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent
-              className="select-content-filtro"
-              position="popper"
-              side="bottom"
-              align="start"
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="SUCURSAL" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="todas">SUCURSAL</SelectItem>
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.codigo}>
+                    {s.nombre.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
+              value={filtroProveedor || "todos"}
+              onValueChange={(value) => setFiltroProveedor(value === "todos" ? "" : value)}
             >
-              <SelectItem value="todos">TODOS</SelectItem>
-              {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {`${p.prefijo} - ${p.nombre}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="PROVEEDORES" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="todos">PROVEEDORES</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {`${p.prefijo} - ${p.nombre}`.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select value="tintometrico" disabled>
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="PEDIDO" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="tintometrico">PEDIDO TINTOMÉTRICO</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS} />
+          <div className={FILTER_SELECT_WRAPPER_CLASS} />
+        </FilaFiltrosDesplegables>
       </FilterRowSelection>
 
-      {/* Fila 2: botón + centrado */}
-      <FilterRowSelection className="justify-center mt-2">
+      <div className="flex items-center gap-3">
+        <FilterRowSearch className="flex-1">
+          <FiltroBusquedaInput
+            id="filtro-tintometrico-busqueda"
+            placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+            value={q}
+            onChange={setQ}
+            isDebouncing={false}
+            inputRef={searchRef}
+          />
+        </FilterRowSearch>
         <Button
           type="button"
           variant="default"
           size="lg"
-          onClick={() => setModalOpen(true)}
+          onClick={() => setModalOpenInUrl(true)}
           aria-label="Agregar Ítem"
           title="Agregar Ítem"
-          className="h-10 min-h-10 px-8"
+          className="h-10 min-h-10 px-6 shrink-0"
         >
           <Plus className="h-4 w-4" />
           <span>Agregar Ítem</span>
         </Button>
-      </FilterRowSelection>
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+          {itemsFiltrados.length.toLocaleString("es-AR")} PRODUCTO{itemsFiltrados.length !== 1 ? "S" : ""}
+        </span>
+      </div>
     </FilterBar>
   );
 
@@ -190,18 +287,19 @@ export default function PedidoTintometricoPageClient({
                           <TableCell className="celda-datos text-xs">
                             {(suc?.nombre ?? "").trim()}
                           </TableCell>
-                      <TableCell className="celda-datos text-xs text-right tabular-nums">
-                        {i.cantidad.toLocaleString()}
-                      </TableCell>
+                          <TableCell className="celda-datos text-xs text-right tabular-nums">
+                            {i.cantidad.toLocaleString()}
+                          </TableCell>
                           <TableCell className="celda-datos text-xs">
-                            {`${i.base.descripcionTienda ?? ""} - COD. ${i.codTintometrico}`.toUpperCase()}
+                            {i.descripcion}
                           </TableCell>
                           <TableCell className="celda-datos text-right">
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon-sm"
-                              onClick={() => borrarItem(i.key)}
+                              onClick={() => borrarItem(i)}
+                              disabled={deletingKey === i.key}
                               className={cn("text-foreground hover:text-destructive")}
                               aria-label="Borrar Ítem"
                               title="Borrar Ítem"
@@ -221,7 +319,7 @@ export default function PedidoTintometricoPageClient({
 
         <NuevoItemTintometricoModal
           open={modalOpen}
-          onOpenChange={setModalOpen}
+          onOpenChange={setModalOpenInUrl}
           proveedores={proveedores}
           sucursales={sucursales}
           onAgregar={agregarItem}
@@ -230,4 +328,3 @@ export default function PedidoTintometricoPageClient({
     </ClassicFilteredTableLayout>
   );
 }
-

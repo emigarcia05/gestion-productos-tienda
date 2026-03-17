@@ -24,6 +24,15 @@ export interface ItemPedidoTintometricoPayload {
   descripcion: string;
 }
 
+export interface ItemPedidoTintometricoPersistido {
+  sucursalCodigo: SucursalPedidoEnvio;
+  proveedorId: string;
+  codExt: string;
+  codTienda: string;
+  cantidad: number;
+  descripcion: string;
+}
+
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
   sucursal: SucursalPedidoEnvio;
   idProveedor: string;
@@ -328,6 +337,62 @@ export async function upsertPedidoTintometricoItems(
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error al guardar ítems tintométricos.";
     return { actualizados: 0, error: msg };
+  }
+}
+
+export async function getPedidoTintometricoItems(): Promise<ItemPedidoTintometricoPersistido[]> {
+  const rows = await prisma.itemPedidoEnvio.findMany({
+    where: {
+      tipoPedido: TIPO_TINTOMETRICO,
+      cantPedir: { gt: 0 },
+    },
+    orderBy: [{ updatedAt: "desc" }],
+    select: {
+      sucursalCodigo: true,
+      idProveedor: true,
+      codExt: true,
+      codTienda: true,
+      tintometricoDescripcion: true,
+      descripcionTienda: true,
+      descripcionProveedor: true,
+      tintometrioCantPedir: true,
+      cantPedir: true,
+    },
+  });
+
+  return rows.map((r) => ({
+    sucursalCodigo: r.sucursalCodigo as SucursalPedidoEnvio,
+    proveedorId: r.idProveedor,
+    codExt: r.codExt,
+    codTienda: r.codTienda ?? "",
+    cantidad: Number(r.tintometrioCantPedir ?? r.cantPedir ?? 0),
+    descripcion:
+      r.tintometricoDescripcion ??
+      r.descripcionTienda ??
+      r.descripcionProveedor ??
+      "",
+  }));
+}
+
+export async function deletePedidoTintometricoItem(params: {
+  sucursalCodigo: SucursalPedidoEnvio;
+  proveedorId: string;
+  codTienda: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const codExt = `TINT-${params.codTienda.trim()}`;
+  try {
+    await prisma.itemPedidoEnvio.deleteMany({
+      where: {
+        sucursalCodigo: params.sucursalCodigo,
+        idProveedor: params.proveedorId.trim(),
+        tipoPedido: TIPO_TINTOMETRICO,
+        codExt,
+      },
+    });
+    return { ok: true };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error al borrar ítem tintométrico.";
+    return { ok: false, error: message };
   }
 }
 
