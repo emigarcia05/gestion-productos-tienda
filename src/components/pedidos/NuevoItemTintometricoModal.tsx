@@ -189,7 +189,7 @@ export default function NuevoItemTintometricoModal({
               <Table variant="compact" className="w-full table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[4.5rem] text-center">CANT</TableHead>
+                    <TableHead className="w-[3.5rem] text-center">CANT</TableHead>
                     <TableHead>DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[3rem]" />
                   </TableRow>
@@ -224,7 +224,7 @@ export default function NuevoItemTintometricoModal({
                                 return { ...prev, [b.id]: String(Math.floor(n)) };
                               });
                             }}
-                            className="h-8 w-16 text-center"
+                            className="h-8 w-12 text-center"
                             placeholder="0"
                           />
                         </TableCell>
