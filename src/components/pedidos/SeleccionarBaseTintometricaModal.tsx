@@ -17,7 +17,7 @@ export default function SeleccionarBaseTintometricaModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSeleccionar: (row: BaseTintometricaRow) => void;
+  onSeleccionar: (rows: BaseTintometricaRow[]) => void;
 }) {
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
@@ -102,11 +102,14 @@ export default function SeleccionarBaseTintometricaModal({
       loading={loading}
       emptyMessage="Sin Resultados"
       getRowId={(r) => r.id}
-      onRowDoubleClick={onSeleccionar}
+      onRowDoubleClick={(row) => {
+        onSeleccionar([row]);
+      }}
       onConfirm={(ids) => {
-        const firstId = ids[0];
-        const row = data.items.find((r) => r.id === firstId);
-        if (row) onSeleccionar(row);
+        const seleccionadas = data.items.filter((r) => ids.includes(r.id));
+        if (seleccionadas.length > 0) {
+          onSeleccionar(seleccionadas);
+        }
       }}
     />
   );

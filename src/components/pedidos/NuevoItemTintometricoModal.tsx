@@ -47,16 +47,16 @@ export default function NuevoItemTintometricoModal({
   const [proveedorId, setProveedorId] = useState("");
   const [codTintometrico, setCodTintometrico] = useState("");
   const [baseModalOpen, setBaseModalOpen] = useState(false);
-  const [base, setBase] = useState<BaseTintometricaRow | null>(null);
-  const [cantidad, setCantidad] = useState<string>("");
+  const [bases, setBases] = useState<BaseTintometricaRow[]>([]);
+  const [cantPorBaseId, setCantPorBaseId] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!open) return;
     setSucursal("");
     setProveedorId("");
     setCodTintometrico("");
-    setBase(null);
-    setCantidad("");
+    setBases([]);
+    setCantPorBaseId({});
   }, [open]);
 
   const proveedorSeleccionado = useMemo(
@@ -64,28 +64,36 @@ export default function NuevoItemTintometricoModal({
     [proveedores, proveedorId]
   );
 
-  const cantidadNumero = useMemo(() => {
-    const n = Number(cantidad);
-    if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.floor(n));
-  }, [cantidad]);
+  const cantidadesValidasPorBase: Record<string, number> = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const b of bases) {
+      const raw = cantPorBaseId[b.id];
+      const n = Number(raw);
+      if (Number.isFinite(n) && n > 0) {
+        out[b.id] = Math.floor(n);
+      }
+    }
+    return out;
+  }, [bases, cantPorBaseId]);
 
   const codValido = codTintometrico.trim().length > 0;
-  const tieneCantidadValida = cantidadNumero > 0;
+  const tieneCantidadValida = Object.keys(cantidadesValidasPorBase).length > 0;
   const puedeAgregar =
-    !!sucursal && !!proveedorId && codValido && base != null && tieneCantidadValida;
-
-  const descripcionLinea =
-    base && codValido ? `${base.descripcionTienda} Cod. ${codTintometrico.trim()}` : "";
+    !!sucursal && !!proveedorId && codValido && bases.length > 0 && tieneCantidadValida;
 
   function handleAgregar() {
-    if (!puedeAgregar || !base) return;
-    onAgregar({
-      proveedorId,
-      codTintometrico: codTintometrico.trim(),
-      base,
-      cantidad: cantidadNumero,
-    });
+    if (!puedeAgregar) return;
+    const codigo = codTintometrico.trim();
+    for (const b of bases) {
+      const cant = cantidadesValidasPorBase[b.id];
+      if (!cant || cant <= 0) continue;
+      onAgregar({
+        proveedorId,
+        codTintometrico: codigo,
+        base: b,
+        cantidad: cant,
+      });
+    }
     onOpenChange(false);
   }
 
@@ -94,6 +102,7 @@ export default function NuevoItemTintometricoModal({
       <AppModal
         title="Nuevo Ítem Tintométrico"
         scrollBody={false}
+        className="sm:max-w-2xl"
         bodyClassName="flex flex-col gap-4"
         actions={
           <>
@@ -138,13 +147,29 @@ export default function NuevoItemTintometricoModal({
 
           <div className="flex flex-col gap-2">
             <span className="text-xs text-muted-foreground">Cod. Tintométricos</span>
-            <Input
-              value={codTintometrico}
-              onChange={(e) => setCodTintometrico(e.target.value)}
-              disabled={!proveedorSeleccionado}
-              className="h-10"
-              placeholder="Ingresar Código..."
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                value={codTintometrico}
+                onChange={(e) => setCodTintometrico(e.target.value)}
+                disabled={!proveedorSeleccionado}
+                className="h-10"
+                placeholder="Ingresar Código..."
+              />
+              <Button
+                type="button"
+                variant="primaryIcon"
+                size="icon-lg"
+                onClick={() => {
+                  if (!proveedorSeleccionado || !codValido) return;
+                  setBaseModalOpen(true);
+                }}
+                aria-label="Seleccionar Base"
+                title="Seleccionar Base"
+                className="h-10 min-h-10 shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {codValido && (
@@ -152,27 +177,20 @@ export default function NuevoItemTintometricoModal({
               <span className="text-xs text-muted-foreground">Seleccione La Base</span>
               <div className="flex items-center gap-2">
                 <Input
-                  value={base?.descripcionTienda ?? ""}
+                  value={
+                    bases.length === 0
+                      ? ""
+                      : bases.map((b) => b.descripcionTienda).join(" / ")
+                  }
                   readOnly
-                  className={cn("h-10", !base && "text-muted-foreground")}
+                  className={cn("h-10", bases.length === 0 && "text-muted-foreground")}
                   placeholder="Seleccionar Base..."
                 />
-                <Button
-                  type="button"
-                  variant="primaryIcon"
-                  size="icon-lg"
-                  onClick={() => setBaseModalOpen(true)}
-                  aria-label="Seleccionar Base"
-                  title="Seleccionar Base"
-                  className="h-10 min-h-10 shrink-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           )}
 
-          {base && codValido && (
+          {bases.length > 0 && codValido && (
             <div className="flex flex-col gap-2">
               <span className="text-xs text-muted-foreground">Detalle Del Ítem</span>
               <Table variant="compact" className="w-full table-fixed">
@@ -183,31 +201,43 @@ export default function NuevoItemTintometricoModal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell className="celda-datos align-middle">
-                      <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={cantidad}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (!value) {
-                            setCantidad("");
-                            return;
-                          }
-                          const n = Number(value);
-                          if (!Number.isFinite(n) || n <= 0) return;
-                          setCantidad(String(Math.floor(n)));
-                        }}
-                        className="h-8 w-20 text-right"
-                        placeholder="0"
-                      />
-                    </TableCell>
-                    <TableCell className="celda-datos text-xs">
-                      {descripcionLinea}
-                    </TableCell>
-                  </TableRow>
+                  {bases.map((b) => {
+                    const descripcion =
+                      b.descripcionTienda && codValido
+                        ? `${b.descripcionTienda} Cod. ${codTintometrico.trim()}`
+                        : b.descripcionTienda;
+                    const valor = cantPorBaseId[b.id] ?? "";
+                    return (
+                      <TableRow key={b.id}>
+                        <TableCell className="celda-datos align-middle">
+                          <Input
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={valor}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setCantPorBaseId((prev) => {
+                                if (!value) {
+                                  const next = { ...prev };
+                                  delete next[b.id];
+                                  return next;
+                                }
+                                const n = Number(value);
+                                if (!Number.isFinite(n) || n <= 0) return prev;
+                                return { ...prev, [b.id]: String(Math.floor(n)) };
+                              });
+                            }}
+                            className="h-8 w-20 text-right"
+                            placeholder="0"
+                          />
+                        </TableCell>
+                        <TableCell className="celda-datos text-xs">
+                          {descripcion}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -217,8 +247,12 @@ export default function NuevoItemTintometricoModal({
         <SeleccionarBaseTintometricaModal
           open={baseModalOpen}
           onOpenChange={setBaseModalOpen}
-          onSeleccionar={(row) => {
-            setBase(row);
+          onSeleccionar={(rows) => {
+            setBases((prev) => {
+              const existingIds = new Set(prev.map((b) => b.id));
+              const nuevos = rows.filter((r) => !existingIds.has(r.id));
+              return nuevos.length > 0 ? [...prev, ...nuevos] : prev;
+            });
             setBaseModalOpen(false);
           }}
         />
