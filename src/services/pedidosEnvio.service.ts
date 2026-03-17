@@ -33,6 +33,17 @@ export interface ItemPedidoTintometricoPersistido {
   descripcion: string;
 }
 
+async function getSucursalIdByCodigo(codigo: SucursalPedidoEnvio): Promise<string> {
+  const sucursal = await prisma.sucursal.findUnique({
+    where: { codigo },
+    select: { id: true },
+  });
+  if (!sucursal) {
+    throw new Error(`No se encontró la sucursal '${codigo}'.`);
+  }
+  return sucursal.id;
+}
+
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
   sucursal: SucursalPedidoEnvio;
   idProveedor: string;
@@ -52,6 +63,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
   if (cant <= 0) return { ok: false, error: "Cant. reposición inválida." };
 
   try {
+    const sucursalId = await getSucursalIdByCodigo(sucursal);
     const provRow = await prisma.listaPrecioProveedor.findFirst({
       where: { idProveedor: idProveedor.trim(), codExt: codExt.trim() },
       select: {
@@ -81,7 +93,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       where: {
         idProveedor: idProveedor.trim(),
         tipoPedido: TIPO_REPOSICION,
-        sucursalCodigo: sucursal,
+        sucursalId,
         codExt: codExt.trim(),
       },
       select: { id: true },
@@ -109,7 +121,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         data: {
           idProveedor: idProveedor.trim(),
           tipoPedido: TIPO_REPOSICION,
-          sucursalCodigo: sucursal,
+          sucursalId,
           codExt: codExt.trim(),
           ...dataBase,
         },
@@ -132,6 +144,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
   const cantNorm = Math.max(0, Math.floor(Number(cant) || 0));
 
   try {
+    const sucursalId = await getSucursalIdByCodigo(sucursal);
     const item = await prisma.listaPrecioProveedor.findUnique({
       where: { id: listaPrecioProveedorId },
       select: {
@@ -154,7 +167,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
         where: {
           idProveedor: item.idProveedor,
           tipoPedido: TIPO_URGENTE,
-          sucursalCodigo: sucursal,
+          sucursalId,
           codExt: item.codExt,
         },
       });
@@ -165,7 +178,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
       where: {
         idProveedor: item.idProveedor,
         tipoPedido: TIPO_URGENTE,
-        sucursalCodigo: sucursal,
+        sucursalId,
         codExt: item.codExt,
       },
       select: { id: true },
@@ -190,7 +203,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
         data: {
           idProveedor: item.idProveedor,
           tipoPedido: TIPO_URGENTE,
-          sucursalCodigo: sucursal,
+          sucursalId,
           codExt: item.codExt,
           ...dataBase,
         },
@@ -219,9 +232,10 @@ export async function syncPedidoUrgenteEnvio(
 
   let creados = 0;
 
+  const sucursalId = await getSucursalIdByCodigo(sucursal);
   await prisma.$transaction(async (tx) => {
     await tx.itemPedidoEnvio.deleteMany({
-      where: { sucursalCodigo: sucursal, tipoPedido: TIPO_URGENTE },
+      where: { sucursalId, tipoPedido: TIPO_URGENTE },
     });
 
     if (ids.length === 0) {
@@ -243,7 +257,7 @@ export async function syncPedidoUrgenteEnvio(
         return {
           idProveedor: f.idProveedor,
           tipoPedido: TIPO_URGENTE,
-          sucursalCodigo: sucursal,
+          sucursalId,
           codExt: f.codExt,
           codProveedor: f.codProdProveedor,
           codTienda: f.listaPrecioTienda?.codTienda ?? null,
@@ -257,7 +271,7 @@ export async function syncPedidoUrgenteEnvio(
       .filter(Boolean) as Array<{
       idProveedor: string;
       tipoPedido: string;
-      sucursalCodigo: string;
+      sucursalId: string;
       codExt: string;
       codProveedor: string;
       codTienda: string | null;
@@ -285,6 +299,7 @@ export async function upsertPedidoTintometricoItems(
   let actualizados = 0;
 
   try {
+    const sucursalId = await getSucursalIdByCodigo(sucursal);
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
         const codTiendaTrim = item.codTienda.trim();
@@ -294,7 +309,7 @@ export async function upsertPedidoTintometricoItems(
           where: {
             idProveedor: item.proveedorId.trim(),
             tipoPedido: TIPO_TINTOMETRICO,
-            sucursalCodigo: sucursal,
+            sucursalId,
             codExt,
           },
           select: { id: true },
@@ -323,7 +338,7 @@ export async function upsertPedidoTintometricoItems(
             data: {
               idProveedor: item.proveedorId.trim(),
               tipoPedido: TIPO_TINTOMETRICO,
-              sucursalCodigo: sucursal,
+              sucursalId,
               ...dataBase,
             },
           });
@@ -348,7 +363,7 @@ export async function getPedidoTintometricoItems(): Promise<ItemPedidoTintometri
     },
     orderBy: [{ updatedAt: "desc" }],
     select: {
-      sucursalCodigo: true,
+      sucursal: { select: { codigo: true } },
       idProveedor: true,
       codExt: true,
       codTienda: true,
@@ -361,7 +376,7 @@ export async function getPedidoTintometricoItems(): Promise<ItemPedidoTintometri
   });
 
   return rows.map((r) => ({
-    sucursalCodigo: r.sucursalCodigo as SucursalPedidoEnvio,
+    sucursalCodigo: r.sucursal.codigo as SucursalPedidoEnvio,
     proveedorId: r.idProveedor,
     codExt: r.codExt,
     codTienda: r.codTienda ?? "",
@@ -381,9 +396,10 @@ export async function deletePedidoTintometricoItem(params: {
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const codExt = `TINT-${params.codTienda.trim()}`;
   try {
+    const sucursalId = await getSucursalIdByCodigo(params.sucursalCodigo);
     await prisma.itemPedidoEnvio.deleteMany({
       where: {
-        sucursalCodigo: params.sucursalCodigo,
+        sucursalId,
         idProveedor: params.proveedorId.trim(),
         tipoPedido: TIPO_TINTOMETRICO,
         codExt,
@@ -425,11 +441,17 @@ export async function getItemsYProveedorParaEnviar(
     return { items: [], proveedor: null };
   }
 
+  const sucursalRow = await prisma.sucursal.findUnique({
+    where: { codigo: sucursal.trim() },
+    select: { id: true },
+  });
+  if (!sucursalRow) return { items: [], proveedor: null };
+
   const [items, proveedor] = await Promise.all([
     prisma.itemPedidoEnvio.findMany({
       where: {
         idProveedor: proveedorId,
-        sucursalCodigo: sucursal,
+        sucursalId: sucursalRow.id,
         tipoPedido: { in: tipos },
         cantPedir: { gt: 0 },
       },

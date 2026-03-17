@@ -201,16 +201,7 @@ export default function PedidoTintometricoPageClient({
               </SelectContent>
             </Select>
           </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select value="tintometrico" disabled>
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="PEDIDO" />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                <SelectItem value="tintometrico">PEDIDO TINTOMÉTRICO</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS} />
           <div className={FILTER_SELECT_WRAPPER_CLASS} />
           <div className={FILTER_SELECT_WRAPPER_CLASS} />
         </FilaFiltrosDesplegables>

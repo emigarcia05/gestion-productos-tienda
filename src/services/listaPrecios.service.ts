@@ -580,7 +580,7 @@ export async function getListaPreciosParaPedidoUrgente(
   if (pairs.length > 0) {
     const rows = await prisma.itemPedidoEnvio.findMany({
       where: {
-        sucursalCodigo: sucursalTrim,
+        sucursal: { codigo: sucursalTrim },
         tipoPedido: { in: ["URGENTE", "REPOSICION"] },
         OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
       },

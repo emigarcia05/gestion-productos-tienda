@@ -88,7 +88,7 @@ export async function getReposicionData(
     return emptyReposicionData;
   }
 
-  const { q = "", marca = "", rubro = "", subRubro = "", configurado = "", pagina = 1 } = params;
+  const { configurado = "", pagina = 1 } = params;
   const paginaNum = Math.max(1, pagina);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
@@ -96,7 +96,7 @@ export async function getReposicionData(
   const codExtConfigurados =
     configurado === "si"
       ? await prisma.itemPedidoEnvio.findMany({
-          where: { sucursalCodigo: sucursal, tipoPedido: "REPOSICION" },
+          where: { sucursal: { codigo: sucursal }, tipoPedido: "REPOSICION" },
           select: { codExt: true },
           distinct: ["codExt"],
         })
@@ -191,7 +191,7 @@ export async function getReposicionData(
   if (pairs.length > 0) {
     const reglas = await prisma.itemPedidoEnvio.findMany({
       where: {
-        sucursalCodigo: sucursal,
+        sucursal: { codigo: sucursal },
         tipoPedido: "REPOSICION",
         OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
       },

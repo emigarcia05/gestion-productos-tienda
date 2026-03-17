@@ -174,7 +174,7 @@ model ItemPedidoEnvio {
   id                     String   @id @default(uuid())
   idProveedor            String   @map("id_proveedor")
   tipoPedido             String   @map("tipo_de_pedido") // URGENTE | TINTOMETRICO | REPOSICION
-  sucursalCodigo          String   @map("sucursal") // FK a sucursales.codigo
+  sucursalId             String   @map("sucursal_id") // FK a sucursales.id
   codExt                 String   @map("cod_ext")
   codProveedor           String   @map("cod_proveedor") // cod_prod_proveedor
   codTienda              String?  @map("cod_tienda") // precios_tienda.cod_tienda; vacío si no existe
@@ -195,8 +195,8 @@ model ItemPedidoEnvio {
   updatedAt              DateTime @updatedAt @map("updated_at")
 
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
-  sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
+  sucursal  Sucursal  @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
 
-  @@unique([idProveedor, tipoPedido, sucursalCodigo, codExt])
+  @@unique([idProveedor, tipoPedido, sucursalId, codExt])
   @@map("pedidos_mercaderia")
 }

@@ -65,3 +65,22 @@ No inventes convenciones de estilos ni estructuras que no estén documentadas en
 - **Tailwind CSS 4**
 - **shadcn/ui**
 - **Zod**, **iron-session**, **lucide-react**, **sonner**
+
+---
+
+## 5. Experto en Back End y Base de Datos (Arquitecto de Datos)
+
+**Rol:** Arquitecto Senior de Backend y Administrador de Base de Datos (DBA).  
+**Objetivo:** Disenar y optimizar la persistencia de datos, la logica de servicios y la integridad del sistema.
+
+### Instrucciones de Desarrollo
+
+- **Modelado de Datos**: Disena esquemas de base de datos normalizados y eficientes. Optimiza indices y relaciones para consultas de alto rendimiento.
+- **Capa de Servicios**: Implementa la logica de negocio compleja en `src/services/`, asegurando que sea independiente de la UI y altamente testeable.
+- **Integracion de Sistemas**: Gestiona la logica de `iron-session`, el procesamiento de archivos con `xlsx` y la comunicacion con APIs externas.
+- **Ciclo de Entrega**: No te detengas hasta que el flujo de datos sea consistente, las consultas sean optimas y el tipado de TypeScript sea perfecto. La tarea se considera "Completada" solo cuando la base de datos y los servicios sean escalables y seguros.
+
+### Documentacion como Retroalimentacion
+
+- Es obligatorio actualizar `BACKEND_GUIDELINES.md` tras cada cambio en el esquema o creacion de un nuevo servicio.
+- Debes documentar los modelos de datos, las relaciones y las funciones del servicio para que cualquier IA pueda realizar consultas o modificaciones sin romper la integridad referencial.

@@ -220,4 +220,15 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ---
 
-*Última actualización: auditoría backend completada — sesión, Zod, ActionResult y permisos en todas las actions.*
+### 5.5 Migración de sucursal texto a relación por ID (pedidos_mercaderia)
+
+| Archivo / Área | Cambio |
+|----------------|--------|
+| `prisma/schema.prisma` | `ItemPedidoEnvio`: reemplazo de `sucursalCodigo @map("sucursal")` por `sucursalId @map("sucursal_id")` y relación `Sucursal` por `id` (ya no por `codigo`). |
+| `prisma/migrations/20260317213000_migrate_pedidos_mercaderia_sucursal_to_fk_id/migration.sql` | Migración de datos y esquema: crea `sucursal_id`, migra datos desde `sucursal` por join a `sucursales.codigo`, elimina `sucursal`, crea FK a `sucursales.id` e índice único nuevo por `sucursal_id`. |
+| `src/services/pedidosEnvio.service.ts` | Todas las lecturas/escrituras en `itemPedidoEnvio` pasan a filtrar/persistir por `sucursalId`; helper central para resolver `codigo -> id` sin romper contratos de frontend. |
+| `src/actions/reposicion.ts` | Consultas de configuración REPOSICIÓN pasan de `where.sucursalCodigo` a `where.sucursal.codigo` para mantener filtros por código en UI con relación en BD. |
+| `src/services/listaPrecios.service.ts` | Consulta de estado URGENTE/REPOSICIÓN pasa de `sucursalCodigo` a relación `sucursal.codigo`. |
+| `scripts/verify-pedidos-reposicion.ts` | Esquema esperado actualizado: `sucursal_id` y columnas actuales `reposicion_*`, `urgente_*`, `tintometrico_*`. |
+
+*Última actualización: migración de pedidos_mercaderia a FK de sucursal por ID + ajuste completo de servicios/actions.*
