@@ -66,6 +66,10 @@ export default function ConfigurarReposicionModal({
   }, [open, item.idListaTienda, item.codExt, item.formaPedir, item.puntoReposicion, item.cant]);
 
   const nombreProducto = item.descripcionTienda ?? "—";
+  const tituloCant =
+    formaPedir && formaPedir !== ""
+      ? FORMA_PEDIR_OPTIONS.find((o) => o.value === formaPedir)?.label ?? ""
+      : "";
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -202,7 +206,7 @@ export default function ConfigurarReposicionModal({
 
               <div className="flex flex-col items-center gap-1">
                 <Label className="text-xs font-medium text-foreground text-center">
-                  CANT. REPOSICIÓN
+                  {tituloCant}
                 </Label>
                 <Input
                   type="number"
@@ -211,6 +215,7 @@ export default function ConfigurarReposicionModal({
                   value={cant}
                   onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
                   className="tabular-nums text-center"
+                  aria-label="Cantidad reposición"
                 />
               </div>
             </div>
