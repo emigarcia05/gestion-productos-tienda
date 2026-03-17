@@ -19,9 +19,11 @@ export interface ProductoPedidoUrgente {
   prefijo: string;
   regDux: boolean;
   descripcion: string;
-  /** true si existe una regla de pedidos_reposicion para este proveedor/sucursal/cod_ext. */
+  /** Cantidad pedida (URGENTE) desde pedidos_mercaderia. */
+  cantPedidaUrgente: number;
+  /** true si existe el cod_ext en pedidos_mercaderia con tipo_de_pedido = REPOSICION. */
   confReposicion: boolean;
-  /** cant_pedir desde pedidos_reposicion (0 si no hay regla o no aplica). */
+  /** cant_pedir_reposicion desde pedidos_mercaderia (0 si no hay). */
   cantReposicion: number;
 }
 

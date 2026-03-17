@@ -489,17 +489,19 @@ export interface PedidoUrgenteItem {
   prefijo: string;
   regDux: boolean;
   descripcion: string;
-  /** true si el producto tiene configuración de reposición para este proveedor/sucursal/cod_ext. */
+  /** Cantidad pedida (URGENTE) desde pedidos_mercaderia.cant_pedir_urgente. */
+  cantPedidaUrgente: number;
+  /** true si existe el cod_ext en pedidos_mercaderia con tipo_de_pedido = REPOSICION. */
   confReposicion: boolean;
-  /** cant_pedir de pedidos_reposicion (0 si no hay regla). */
+  /** cant_pedir_reposicion desde pedidos_mercaderia. */
   cantReposicion: number;
 }
 
 /**
  * Ítems de lista precios para la pantalla Pedido Urgente.
  * Solo devuelve datos si sucursal está informada.
- * regDux = existe en lista_tienda (idListaPrecioTienda no nulo).
- * descripcion = descripcionTienda ?? descripcionProveedor.
+ * regDux = existe en precios_tienda para cod_ext.
+ * descripcion = descripcion_tienda si existe; si no, descripcion_proveedor.
  */
 export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
@@ -546,8 +548,7 @@ export async function getListaPreciosParaPedidoUrgente(
     prisma.listaPrecioProveedor.findMany({
       where,
       include: {
-        proveedor: { select: { id: true, prefijo: true } },
-        listaPrecioTienda: { select: { id: true, descripcionTienda: true } },
+        proveedor: { select: { prefijo: true } },
       },
       orderBy: { codExt: "asc" },
       skip,
@@ -556,56 +557,68 @@ export async function getListaPreciosParaPedidoUrgente(
     prisma.listaPrecioProveedor.count({ where }),
   ]);
 
-  const pairs = filas
-    .filter((f) => f.proveedor?.id)
-    .map((f) => ({
-      idProveedor: f.proveedor!.id,
-      codExt: f.codExt,
-    }));
+  const codExts = [...new Set(filas.map((f) => f.codExt))];
+  const tiendaRows =
+    codExts.length > 0
+      ? await prisma.listaPrecioTienda.findMany({
+          where: { codExt: { in: codExts } },
+          select: { codExt: true, descripcionTienda: true },
+        })
+      : [];
 
-  const reglasMap = new Map<
-    string,
-    {
-      cantPedir: number;
-    }
-  >();
+  const descripcionTiendaPorCodExt = new Map(
+    tiendaRows
+      .filter((t) => t.descripcionTienda != null && t.descripcionTienda.trim() !== "")
+      .map((t) => [t.codExt, t.descripcionTienda as string])
+  );
+
+  const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
+  const mercaderiaMapUrgente = new Map<string, number>();
+  const mercaderiaRepoSet = new Set<string>();
+  const mercaderiaMapRepo = new Map<string, number>();
 
   if (pairs.length > 0) {
-    const reglas = await prisma.itemPedidoReposicion.findMany({
+    const rows = await prisma.itemPedidoEnvio.findMany({
       where: {
         sucursalCodigo: sucursalTrim,
-        OR: pairs.map((p) => ({
-          idProveedor: p.idProveedor,
-          codExt: p.codExt,
-        })),
+        tipoPedido: { in: ["URGENTE", "REPOSICION"] },
+        OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
       },
       select: {
         idProveedor: true,
         codExt: true,
-        cantPedir: true,
+        tipoPedido: true,
+        cantPedirUrgente: true,
+        cantPedirReposicion: true,
       },
     });
 
-    for (const r of reglas) {
-      reglasMap.set(`${r.idProveedor}:${r.codExt}`, { cantPedir: r.cantPedir });
+    for (const r of rows) {
+      const key = `${r.idProveedor}:${r.codExt}`;
+      if (r.tipoPedido === "URGENTE") {
+        mercaderiaMapUrgente.set(key, Math.max(0, Number(r.cantPedirUrgente ?? 0)));
+      }
+      if (r.tipoPedido === "REPOSICION") {
+        mercaderiaRepoSet.add(key);
+        mercaderiaMapRepo.set(key, Math.max(0, Number(r.cantPedirReposicion ?? 0)));
+      }
     }
   }
 
   const items: PedidoUrgenteItem[] = filas.map((f) => {
-    const idProveedor = f.proveedor?.id ?? "";
-    const key = idProveedor ? `${idProveedor}:${f.codExt}` : "";
-    const regla = key ? reglasMap.get(key) ?? null : null;
+    const key = `${f.idProveedor}:${f.codExt}`;
+    const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
+    const cantUrgente = mercaderiaMapUrgente.get(key) ?? 0;
 
     return {
       id: f.id,
       codExt: f.codExt,
       prefijo: f.proveedor?.prefijo ?? "",
-      regDux: !!f.listaPrecioTienda,
-      descripcion:
-        (f.listaPrecioTienda?.descripcionTienda?.trim() && f.listaPrecioTienda.descripcionTienda) ||
-        f.descripcionProveedor,
-      confReposicion: !!regla,
-      cantReposicion: regla?.cantPedir ?? 0,
+      regDux: descripcionTiendaPorCodExt.has(f.codExt),
+      descripcion: (descTienda?.trim() && descTienda) || f.descripcionProveedor,
+      cantPedidaUrgente: cantUrgente,
+      confReposicion: mercaderiaRepoSet.has(key),
+      cantReposicion: mercaderiaMapRepo.get(key) ?? 0,
     };
   });
 

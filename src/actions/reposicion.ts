@@ -1,7 +1,6 @@
 "use server";
 
 import type { Prisma } from "@prisma/client";
-import { FormaPedirReposicion } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import { getRol } from "@/lib/sesion";
@@ -13,7 +12,7 @@ import { revalidatePath } from "next/cache";
 
 export type SucursalReposicion = "guaymallen" | "maipu";
 
-export type FormaPedirReposicionOption = FormaPedirReposicion | "";
+export type FormaPedirReposicionOption = "CANT_MAXIMA" | "CANT_FIJA" | "";
 
 export interface ItemReposicion {
   idListaTienda: string;
@@ -22,7 +21,7 @@ export interface ItemReposicion {
   stock: number;
   idProveedor: string | null;
   nombreProveedor: string | null;
-  idReposicion: string | null;
+  idReposicion: string | null; // id del registro en pedidos_mercaderia (tipo REPOSICION)
   formaPedir: FormaPedirReposicionOption;
   puntoReposicion: number;
   cant: number;
@@ -74,7 +73,7 @@ function baseWhere(
 
 /**
  * Datos para Pedido Reposición: lista_tienda filtrada por sucursal (stock), marca, rubro, sub-rubro, descripción.
- * Cada ítem incluye la regla de pedidos_reposicion (si existe) para el primer proveedor vinculado.
+ * Cada ítem incluye la configuración REPOSICION en pedidos_mercaderia (si existe) para el primer proveedor vinculado.
  */
 export async function getReposicionData(
   sucursal: SucursalReposicion | null,
@@ -92,12 +91,11 @@ export async function getReposicionData(
   const paginaNum = Math.max(1, pagina);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan una regla en pedidos_reposicion para esta sucursal.
-  // Nota: la regla está ligada a (id_proveedor, sucursal, cod_ext). Para filtrar sin join complejo, usamos cod_ext distintos.
+  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan configuración REPOSICION en pedidos_mercaderia para esta sucursal.
   const codExtConfigurados =
     configurado === "si"
-      ? await prisma.itemPedidoReposicion.findMany({
-          where: { sucursalCodigo: sucursal },
+      ? await prisma.itemPedidoEnvio.findMany({
+          where: { sucursalCodigo: sucursal, tipoPedido: "REPOSICION" },
           select: { codExt: true },
           distinct: ["codExt"],
         })
@@ -179,21 +177,37 @@ export async function getReposicionData(
       idProveedor: r.listaPreciosProveedores[0].idProveedor,
       codExt: r.codExt,
     }));
-  const reglasMap = new Map<string, { id: string; formaPedir: FormaPedirReposicion; puntoReposicion: number; cant: number; cantPedir: number }>();
+  const reglasMap = new Map<
+    string,
+    {
+      id: string;
+      formaPedir: FormaPedirReposicionOption;
+      puntoReposicion: number;
+      cant: number;
+    }
+  >();
   if (pairs.length > 0) {
-    const reglas = await prisma.itemPedidoReposicion.findMany({
+    const reglas = await prisma.itemPedidoEnvio.findMany({
       where: {
         sucursalCodigo: sucursal,
+        tipoPedido: "REPOSICION",
         OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+      },
+      select: {
+        id: true,
+        idProveedor: true,
+        codExt: true,
+        formaPedidoReposicion: true,
+        puntoPedido: true,
+        cantPedirReposicion: true,
       },
     });
     for (const r of reglas) {
       reglasMap.set(`${r.idProveedor}:${r.codExt}`, {
         id: r.id,
-        formaPedir: r.formaPedir,
-        puntoReposicion: r.puntoReposicion,
-        cant: r.cant,
-        cantPedir: r.cantPedir,
+        formaPedir: (r.formaPedidoReposicion as FormaPedirReposicionOption) ?? "",
+        puntoReposicion: Math.max(0, Math.floor(Number(r.puntoPedido ?? 0))),
+        cant: Math.max(0, Math.floor(Number(r.cantPedirReposicion ?? 0))),
       });
     }
   }
@@ -207,6 +221,15 @@ export async function getReposicionData(
     const key = idProveedor ? `${idProveedor}:${r.codExt}` : "";
     const regla = key ? reglasMap.get(key) : null;
     const stock = Number(r[stockField] ?? 0);
+    const forma = regla?.formaPedir ?? "";
+    const punto = regla?.puntoReposicion ?? 0;
+    const cantCfg = regla?.cant ?? 0;
+    const cantAPedir =
+      !forma
+        ? 0
+        : forma === "CANT_FIJA"
+          ? cantCfg
+          : Math.max(0, cantCfg - stock);
     return {
       idListaTienda: r.id,
       codExt: r.codExt,
@@ -215,10 +238,10 @@ export async function getReposicionData(
       idProveedor,
       nombreProveedor,
       idReposicion: regla?.id ?? null,
-      formaPedir: regla?.formaPedir ?? "",
-      puntoReposicion: regla?.puntoReposicion ?? 0,
-      cant: regla?.cant ?? 0,
-      cantPedir: regla?.cantPedir ?? 0,
+      formaPedir: forma,
+      puntoReposicion: punto,
+      cant: cantCfg,
+      cantPedir: cantAPedir,
     };
   });
 
@@ -311,47 +334,48 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
   const { idProveedor, sucursalCodigo, codExt, formaPedir, puntoReposicion, cant } = parsed.data;
 
   try {
-    const existing = await prisma.itemPedidoReposicion.findUnique({
-      where: {
-        idProveedor_sucursalCodigo_codExt: { idProveedor, sucursalCodigo, codExt },
-      },
-    });
-
     if (!formaPedir) {
-      if (existing) {
-        await prisma.itemPedidoReposicion.delete({
-          where: { id: existing.id },
-        });
-      }
+      await prisma.itemPedidoEnvio.deleteMany({
+        where: {
+          idProveedor,
+          tipoPedido: "REPOSICION",
+          sucursalCodigo,
+          codExt,
+        },
+      });
       revalidatePath("/pedidos/reposicion");
       return { ok: true, data: undefined };
     }
 
-    const cantPedir = formaPedir === "CANT_FIJA" ? cant : 0;
-
-    if (existing) {
-      await prisma.itemPedidoReposicion.update({
-        where: { id: existing.id },
-        data: {
-          formaPedir: formaPedir as FormaPedirReposicion,
-          puntoReposicion,
-          cant,
-          cantPedir,
-        },
-      });
-    } else {
-      await prisma.itemPedidoReposicion.create({
-        data: {
+    await prisma.itemPedidoEnvio.upsert({
+      where: {
+        idProveedor_tipoPedido_sucursalCodigo_codExt: {
           idProveedor,
+          tipoPedido: "REPOSICION",
           sucursalCodigo,
           codExt,
-          formaPedir: formaPedir as FormaPedirReposicion,
-          puntoReposicion,
-          cant,
-          cantPedir,
         },
-      });
-    }
+      },
+      create: {
+        idProveedor,
+        tipoPedido: "REPOSICION",
+        sucursalCodigo,
+        codExt,
+        codProveedor: "__AUTO__",
+        codTienda: null,
+        descripcionProveedor: "__AUTO__",
+        descripcionTienda: null,
+        cantPedir: 0,
+        formaPedidoReposicion: formaPedir,
+        puntoPedido: puntoReposicion,
+        cantPedirReposicion: cant,
+      },
+      update: {
+        formaPedidoReposicion: formaPedir,
+        puntoPedido: puntoReposicion,
+        cantPedirReposicion: cant,
+      },
+    });
     revalidatePath("/pedidos/reposicion");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
@@ -377,7 +401,7 @@ export async function deleteReglaReposicion(raw: z.infer<typeof deleteReglaSchem
     return { ok: false, error: "ID inválido." };
   }
   try {
-    await prisma.itemPedidoReposicion.delete({
+    await prisma.itemPedidoEnvio.delete({
       where: { id: parsed.data.id },
     });
     revalidatePath("/pedidos/reposicion");

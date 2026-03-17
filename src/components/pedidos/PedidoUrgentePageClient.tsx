@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GuardarCambiosPedidoButton from "@/components/pedidos/GuardarCambiosPedidoButton";
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
@@ -11,6 +11,8 @@ import type { ProductoPedidoUrgente } from "@/components/pedidos/TablaPedidoUrge
 import CantidadPedidoUrgenteModal, {
   type ProductoPedidoUrgenteModal,
 } from "@/components/pedidos/CantidadPedidoUrgenteModal";
+import { toast } from "sonner";
+import { upsertPedidoUrgenteMercaderiaItemAction } from "@/actions/pedidos";
 
 interface Props {
   filters: React.ReactNode;
@@ -26,8 +28,8 @@ interface Props {
   q: string;
 }
 
-const MENSAJE_SIN_TRES_FILTROS =
-  "Configurá los 3 filtros (Sucursal, Proveedor y Pedido) para ver los productos.";
+const MENSAJE_SIN_FILTROS =
+  "Configurá Sucursal y al menos un filtro más (Proveedor, Pedido o Descripción) para ver los productos.";
 
 export default function PedidoUrgentePageClient({
   filters,
@@ -46,6 +48,19 @@ export default function PedidoUrgentePageClient({
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<ProductoPedidoUrgenteModal | null>(null);
 
+  useEffect(() => {
+    if (productos.length === 0) return;
+    setCantPorId((prev) => {
+      const next = { ...prev };
+      for (const p of productos) {
+        if (next[p.id] !== undefined) continue;
+        const cant = Math.max(0, Math.floor(Number(p.cantPedidaUrgente) || 0));
+        next[p.id] = cant > 0 ? String(cant) : "";
+      }
+      return next;
+    });
+  }, [productos]);
+
   const actions =
     sucursalValida && !sinFiltros ? (
       <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
@@ -59,13 +74,27 @@ export default function PedidoUrgentePageClient({
     setModalOpen(true);
   }
 
-  function confirmarCantidad(cantidad: number) {
+  async function confirmarCantidad(cantidad: number) {
     if (!productoSeleccionado) return;
+    if (!sucursalValida) {
+      toast.error("Seleccioná una sucursal para guardar.");
+      return;
+    }
     const id = productoSeleccionado.id;
-    setCantPorId((prev) => ({
-      ...prev,
-      [id]: cantidad > 0 ? String(cantidad) : "",
-    }));
+    const prevValue = cantPorId[id];
+    setCantPorId((prev) => ({ ...prev, [id]: cantidad > 0 ? String(cantidad) : "" }));
+
+    const res = await upsertPedidoUrgenteMercaderiaItemAction({
+      sucursal: sucursalValida,
+      listaPrecioProveedorId: id,
+      cant: cantidad,
+    });
+    if (!res.ok) {
+      setCantPorId((prev) => ({ ...prev, [id]: prevValue ?? "" }));
+      toast.error(res.error ?? "Error al guardar.");
+      return;
+    }
+    toast.success("Ítem guardado.");
   }
 
   return (
@@ -83,7 +112,7 @@ export default function PedidoUrgentePageClient({
                 productos={productos}
                 sucursal={sucursalValida}
                 sinFiltros={sinFiltros}
-                mensajeSinSucursal={MENSAJE_SIN_TRES_FILTROS}
+                mensajeSinSucursal={MENSAJE_SIN_FILTROS}
                 pedidoFilter={pedidoValida}
                 cantPorId={cantPorId}
                 setCantPorId={setCantPorId}

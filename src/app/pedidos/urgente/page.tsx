@@ -26,9 +26,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   const { q = "", pagina = "1", sucursal = "", proveedor = "", pedido = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" =
     sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
-  const pedidoValida: "si" | "no" | "" =
-    pedido === "si" ? "si" : pedido === "no" ? "no" : "";
-  const sinSucursal = !sucursalValida;
+  const pedidoValida: "si" | "" = pedido === "si" ? "si" : "";
 
   const { proveedores, productos, total, totalPaginas } = await getPedidoUrgenteData({
     sucursal: sucursalValida,
@@ -38,8 +36,9 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
     pedido: pedidoValida,
   });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const tienenLosTresFiltros =
-    !!sucursalValida && !!proveedor.trim() && (pedidoValida === "si" || pedidoValida === "no");
+  const qValida = q.trim().length >= 3;
+  const tienenFiltrosNecesarios =
+    !!sucursalValida && (!!proveedor.trim() || pedidoValida === "si" || qValida);
 
   const filters = (
     <FiltrosPedidoUrgente
@@ -57,7 +56,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       filters={filters}
       productos={productos}
       sucursalValida={sucursalValida}
-      sinFiltros={!tienenLosTresFiltros}
+      sinFiltros={!tienenFiltrosNecesarios}
       pedidoValida={pedidoValida}
       total={total}
       totalPaginas={totalPaginas}

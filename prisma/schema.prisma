@@ -19,8 +19,7 @@ model Proveedor {
 
   listaPrecios         ListaPrecioProveedor[]
   itemsPedidoEnvio     ItemPedidoEnvio[]
-  itemsPedidoReposicion ItemPedidoReposicion[]
-  itemsPedidoUrgente   ItemPedidoUrgente[]
+  // Tabla única de pedidos: pedidos_mercaderia
 
   @@map("proveedores")
 }
@@ -37,8 +36,7 @@ model Sucursal {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   itemsPedidoEnvio     ItemPedidoEnvio[]
-  itemsPedidoReposicion ItemPedidoReposicion[]
-  itemsPedidoUrgente   ItemPedidoUrgente[]
+  // Tabla única de pedidos: pedidos_mercaderia
 
   @@map("sucursales")
 }
@@ -196,47 +194,6 @@ model ItemPedidoEnvio {
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
 
+  @@unique([idProveedor, tipoPedido, sucursalCodigo, codExt])
   @@map("pedidos_mercaderia")
-}
-
-// ─── Pedido por reposición: reglas por producto/proveedor/sucursal; cant_pedir calculado desde stock de lista_tienda.
-enum FormaPedirReposicion {
-  CANT_MAXIMA // cant_pedir = max(0, cant - stock)
-  CANT_FIJA   // cant_pedir = cant
-}
-
-model ItemPedidoReposicion {
-  id               String             @id @default(uuid())
-  idProveedor      String             @map("id_proveedor")
-  sucursalCodigo   String             @map("sucursal")
-  codExt           String             @map("cod_ext")
-  puntoReposicion  Int                @map("punto_reposicion")
-  formaPedir       FormaPedirReposicion @map("forma_pedir")
-  cant             Int                @map("cant")
-  cantPedir        Int                @map("cant_pedir") @default(0)
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
-
-  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
-  sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
-
-  @@unique([idProveedor, sucursalCodigo, codExt])
-  @@map("pedidos_reposicion")
-}
-
-// ─── Pedido Urgente: cantidades seleccionadas en el módulo Pedido Urgente ───
-model ItemPedidoUrgente {
-  id           String   @id @default(uuid())
-  idProveedor  String   @map("id_proveedor")
-  tipoPedido   String   @map("tipo_de_pedido") // siempre "URGENTE" para este módulo
-  sucursalCodigo String @map("sucursal") // FK a sucursales.codigo
-  codExt       String   @map("cod_ext")
-  cantPedir    Int      @map("cant_pedir") @default(0)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
-  sucursal  Sucursal  @relation(fields: [sucursalCodigo], references: [codigo], onDelete: Restrict)
-
-  @@map("pedidos_urgente")
 }

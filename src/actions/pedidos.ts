@@ -11,12 +11,14 @@ import {
   getItemsYProveedorParaEnviar,
   type SucursalPedidoEnvio,
   type ItemPedidoUrgentePayload,
+  upsertPedidoMercaderiaUrgenteItem,
 } from "@/services/pedidosEnvio.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { z } from "zod";
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
@@ -38,17 +40,19 @@ export async function getPedidoUrgenteData(params: {
   const { sucursal = "", q = "", pagina = "1", proveedor = "", pedido = "" } = params;
   const sucursalValida = sucursal.trim();
   const proveedorValido = proveedor.trim();
-  const pedidoValido = pedido === "si" || pedido === "no";
-  const tienenLosTresFiltros = !!sucursalValida && !!proveedorValido && pedidoValido;
+  const pedidoValido = pedido === "si";
+  const qValida = q.trim().length >= 3;
+  const tienenFiltrosNecesarios =
+    !!sucursalValida && (!!proveedorValido || pedidoValido || qValida);
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
-    tienenLosTresFiltros
+    tienenFiltrosNecesarios
       ? getListaPreciosParaPedidoUrgente(
           sucursalValida,
           proveedorValido || undefined,
-          q || undefined,
+          qValida ? q : undefined,
           paginaNum,
           PAGE_SIZE
         )
@@ -141,6 +145,34 @@ export async function syncPedidoUrgenteEnvioAction(
     const message = e instanceof Error ? e.message : "Error al guardar el pedido.";
     return { ok: false, error: message };
   }
+}
+
+const upsertPedidoUrgenteItemSchema = z.object({
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  listaPrecioProveedorId: z.string().uuid("ID inválido"),
+  cant: z.number().int().min(0),
+});
+
+export async function upsertPedidoUrgenteMercaderiaItemAction(raw: z.infer<typeof upsertPedidoUrgenteItemSchema>): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  const parsed = upsertPedidoUrgenteItemSchema.safeParse(raw);
+  if (!parsed.success) {
+    const msg = parsed.error.flatten().fieldErrors;
+    const first = Object.values(msg).flat().find(Boolean);
+    return { ok: false, error: (first as string) ?? "Datos inválidos." };
+  }
+
+  const result = await upsertPedidoMercaderiaUrgenteItem({
+    sucursal: parsed.data.sucursal,
+    listaPrecioProveedorId: parsed.data.listaPrecioProveedorId,
+    cant: parsed.data.cant,
+  });
+
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true, data: undefined };
 }
 
 const SUCURSAL_LABEL: Record<string, string> = {

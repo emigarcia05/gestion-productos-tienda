@@ -1,5 +1,5 @@
 /**
- * Servicio pedidos_envio: sincroniza ítems de Pedido Urgente a la tabla de envío.
+ * Servicio pedidos_mercaderia: sincroniza ítems de Pedido Urgente.
  * El servidor construye las filas a partir de ids de ListaPrecioProveedor + cantidades (opción B).
  */
 
@@ -14,10 +14,86 @@ export interface ItemPedidoUrgentePayload {
   cant: number;
 }
 
+export async function upsertPedidoMercaderiaUrgenteItem(params: {
+  sucursal: SucursalPedidoEnvio;
+  listaPrecioProveedorId: string;
+  cant: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { sucursal, listaPrecioProveedorId, cant } = params;
+  const cantNorm = Math.max(0, Math.floor(Number(cant) || 0));
+
+  try {
+    const item = await prisma.listaPrecioProveedor.findUnique({
+      where: { id: listaPrecioProveedorId },
+      select: {
+        idProveedor: true,
+        codExt: true,
+        codProdProveedor: true,
+        descripcionProveedor: true,
+      },
+    });
+
+    if (!item) return { ok: false, error: "Producto no encontrado." };
+
+    const tienda = await prisma.listaPrecioTienda.findUnique({
+      where: { codExt: item.codExt },
+      select: { codTienda: true, descripcionTienda: true },
+    });
+
+    if (cantNorm <= 0) {
+      await prisma.itemPedidoEnvio.deleteMany({
+        where: {
+          idProveedor: item.idProveedor,
+          tipoPedido: TIPO_URGENTE,
+          sucursalCodigo: sucursal,
+          codExt: item.codExt,
+        },
+      });
+      return { ok: true };
+    }
+
+    await prisma.itemPedidoEnvio.upsert({
+      where: {
+        idProveedor_tipoPedido_sucursalCodigo_codExt: {
+          idProveedor: item.idProveedor,
+          tipoPedido: TIPO_URGENTE,
+          sucursalCodigo: sucursal,
+          codExt: item.codExt,
+        },
+      },
+      create: {
+        idProveedor: item.idProveedor,
+        tipoPedido: TIPO_URGENTE,
+        sucursalCodigo: sucursal,
+        codExt: item.codExt,
+        codProveedor: item.codProdProveedor,
+        codTienda: tienda?.codTienda ?? null,
+        descripcionProveedor: item.descripcionProveedor,
+        descripcionTienda: tienda?.descripcionTienda?.trim() || null,
+        cantPedir: cantNorm,
+        cantPedirUrgente: cantNorm,
+      },
+      update: {
+        codProveedor: item.codProdProveedor,
+        codTienda: tienda?.codTienda ?? null,
+        descripcionProveedor: item.descripcionProveedor,
+        descripcionTienda: tienda?.descripcionTienda?.trim() || null,
+        cantPedir: cantNorm,
+        cantPedirUrgente: cantNorm,
+      },
+    });
+
+    return { ok: true };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error al guardar el ítem.";
+    return { ok: false, error: message };
+  }
+}
+
 /**
  * Reemplaza todos los ítems de tipo URGENTE para la sucursal dada por el conjunto
  * (id lista precio, cantidad). Carga datos desde precios_proveedores + precios_tienda
- * y escribe en pedidos_envio.
+ * y escribe en pedidos_mercaderia.
  */
 export async function syncPedidoUrgenteEnvio(
   sucursal: SucursalPedidoEnvio,
@@ -59,6 +135,8 @@ export async function syncPedidoUrgenteEnvio(
           codTienda: f.listaPrecioTienda?.codTienda ?? null,
           descripcionProveedor: f.descripcionProveedor,
           descripcionTienda: f.listaPrecioTienda?.descripcionTienda?.trim() || null,
+          cantPedirUrgente: cant,
+          // Compatibilidad: el flujo de "Enviar Pedido" hoy usa cant_pedir.
           cantPedir: cant,
         };
       })
@@ -71,6 +149,7 @@ export async function syncPedidoUrgenteEnvio(
       codTienda: string | null;
       descripcionProveedor: string;
       descripcionTienda: string | null;
+      cantPedirUrgente: number;
       cantPedir: number;
     }>;
 
