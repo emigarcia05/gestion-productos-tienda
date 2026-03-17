@@ -23,7 +23,10 @@ export async function getProveedoresTintometricos(): Promise<ProveedorTintometri
     select: { id: true, nombre: true, prefijo: true },
   });
 
-  const order = new Map(PROVEEDORES_TINTOMETRICOS_IDS.map((id, i) => [id, i]));
+  const order = new Map<string, number>(
+    PROVEEDORES_TINTOMETRICOS_IDS.map((id, i) => [id, i])
+  );
+
   return [...rows].sort((a, b) => {
     const ai = order.get(a.id) ?? 999;
     const bi = order.get(b.id) ?? 999;
