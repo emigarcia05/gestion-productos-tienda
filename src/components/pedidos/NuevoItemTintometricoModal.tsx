@@ -186,7 +186,12 @@ export default function NuevoItemTintometricoModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <span className="text-xs text-foreground">Sucursal</span>
-              <Select value={sucursal} onValueChange={setSucursal}>
+              <Select
+                value={sucursal}
+                onValueChange={(value) =>
+                  setSucursal((value === "" ? "" : (value as "guaymallen" | "maipu")))
+                }
+              >
                 <SelectTrigger className="h-10 w-full">
                   <SelectValue placeholder="Seleccionar Sucursal" />
                 </SelectTrigger>
