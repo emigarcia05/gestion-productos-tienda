@@ -31,6 +31,12 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Servicios** (`src/services/`): Encapsulan acceso a datos (Prisma, SQL raw) y lógica de negocio. Las Actions los invocan; no al revés.
 - **Actions**: Orquestan: sesión → validación → servicio → revalidatePath → respuesta.
 
+### 1.6 Listados de solo lectura (catálogos)
+
+- Para catálogos de solo lectura (ej. `precios_tienda`), exponer búsquedas mediante:
+  - **Servicio** (consulta Prisma) + **Action** con sesión/rol + Zod + `ActionResult`.
+- Ejemplo aplicado: `buscarBasesTintometricasAction` (módulo Pedido Tintométrico) consulta `precios_tienda` filtrando por `rubro = "Tintometrico"` y búsqueda por descripción/códigos.
+
 ### 1.5 Manejo de errores y respuestas
 
 - **Formato estándar para el frontend**:  

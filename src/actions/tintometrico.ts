@@ -1,0 +1,34 @@
+"use server";
+
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
+import type { ActionResult } from "@/lib/types";
+import { z } from "zod";
+import { buscarBasesTintometricas } from "@/services/tintometrico.service";
+
+const buscarBasesSchema = z.object({
+  q: z.string().optional().default(""),
+});
+
+export async function buscarBasesTintometricasAction(
+  raw: z.infer<typeof buscarBasesSchema>
+): Promise<ActionResult<{ items: Awaited<ReturnType<typeof buscarBasesTintometricas>>["items"]; total: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = buscarBasesSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Parámetros inválidos." };
+  }
+
+  try {
+    const { items, total } = await buscarBasesTintometricas(parsed.data.q, 100);
+    return { ok: true, data: { items, total } };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error al buscar bases.";
+    return { ok: false, error: message };
+  }
+}
+
