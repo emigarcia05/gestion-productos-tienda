@@ -74,7 +74,8 @@ export default function ConfigurarReposicionModal({
   const puntoValido = Math.max(0, Math.floor(Number(puntoReposicion) || 0)) > 0;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
   const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoValido);
-  const cols = mostrarCant ? 3 : mostrarPunto ? 2 : 1;
+  const invisPunto = !mostrarPunto;
+  const invisCant = !mostrarCant;
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -171,12 +172,7 @@ export default function ConfigurarReposicionModal({
               <div className="w-full h-px bg-[#0072BB]" />
             </div>
 
-            <div
-              className={[
-                "grid gap-4 items-center",
-                cols === 1 ? "grid-cols-1" : cols === 2 ? "grid-cols-2" : "grid-cols-3",
-              ].join(" ")}
-            >
+            <div className="grid grid-cols-3 gap-4 items-center">
               <div className="flex flex-col items-center gap-1">
                 <Label className="text-xs font-medium text-foreground text-center">
                   FORMA PEDIR
@@ -208,38 +204,48 @@ export default function ConfigurarReposicionModal({
                 </Select>
               </div>
 
-              {mostrarPunto ? (
-                <div className="flex flex-col items-center gap-1">
-                  <Label className="text-xs font-medium text-foreground text-center">
-                    PUNTO REPOSICIÓN
-                  </Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={puntoReposicion}
-                    onChange={(e) => setPuntoReposicion(parseInt(e.target.value, 10) || 0)}
-                    className="tabular-nums text-center"
-                  />
-                </div>
-              ) : null}
+              <div
+                className={[
+                  "flex flex-col items-center gap-1",
+                  invisPunto ? "invisible pointer-events-none select-none" : "",
+                ].join(" ")}
+                aria-hidden={invisPunto}
+              >
+                <Label className="text-xs font-medium text-foreground text-center">
+                  PUNTO REPOSICIÓN
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={puntoReposicion}
+                  onChange={(e) => setPuntoReposicion(parseInt(e.target.value, 10) || 0)}
+                  className="tabular-nums text-center"
+                  tabIndex={invisPunto ? -1 : 0}
+                />
+              </div>
 
-              {mostrarCant ? (
-                <div className="flex flex-col items-center gap-1">
-                  <Label className="text-xs font-medium text-foreground text-center">
-                    {tituloCant}
-                  </Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={cant}
-                    onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
-                    className="tabular-nums text-center"
-                    aria-label="Cantidad reposición"
-                  />
-                </div>
-              ) : null}
+              <div
+                className={[
+                  "flex flex-col items-center gap-1",
+                  invisCant ? "invisible pointer-events-none select-none" : "",
+                ].join(" ")}
+                aria-hidden={invisCant}
+              >
+                <Label className="text-xs font-medium text-foreground text-center">
+                  {tituloCant}
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={cant}
+                  onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
+                  className="tabular-nums text-center"
+                  aria-label="Cantidad reposición"
+                  tabIndex={invisCant ? -1 : 0}
+                />
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-3">

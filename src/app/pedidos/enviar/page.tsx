@@ -88,8 +88,8 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">
         <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-          <CardContent className="flex-1 min-h-0 overflow-x-auto overflow-y-visible p-0">
-            <div className="w-full">
+          <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
+            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -99,29 +99,20 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                 </TableHeader>
                 <TableBody>
                   {!tienenLosTresFiltros ? (
-                    <EmptyTableRow
-                      colSpan={2}
-                      message={MENSAJE_SIN_FILTROS}
-                    />
+                    <EmptyTableRow colSpan={2} message={MENSAJE_SIN_FILTROS} />
                   ) : itemsTabla.length === 0 ? (
-                    <EmptyTableRow
-                      colSpan={2}
-                      message={MENSAJE_SIN_ITEMS}
-                    />
+                    <EmptyTableRow colSpan={2} message={MENSAJE_SIN_ITEMS} />
                   ) : (
                     itemsTabla.map((item, idx) => (
                       <TableRow
                         key={idx}
-                        className={cn(
-                          "hover:bg-transparent",
-                          idx % 2 === 1 && "bg-muted/30"
-                        )}
+                        className={cn("hover:bg-transparent", idx % 2 === 1 && "bg-muted/30")}
                       >
-                        <TableCell className="tabular-nums text-right w-28">
+                        <TableCell className="celda-datos celda-numero text-right w-28">
                           {item.cantPedir.toLocaleString("es-AR")}
                         </TableCell>
-                        <TableCell className="min-w-0 text-foreground">
-                          {item.descripcion || "—"}
+                        <TableCell className="celda-datos min-w-0 text-foreground">
+                          {item.descripcion || ""}
                         </TableCell>
                       </TableRow>
                     ))

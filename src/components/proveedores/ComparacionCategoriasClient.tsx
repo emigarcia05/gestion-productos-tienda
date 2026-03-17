@@ -202,7 +202,7 @@ export default function ComparacionCategoriasClient({
               </Button>
             )}
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden py-0 pb-3 px-0">
+          <CardContent className="flex-1 min-h-0 overflow-hidden py-0 pb-3 px-0">
             {loadingProductos ? (
               <p className="text-sm text-muted-foreground py-4">Cargando productos…</p>
             ) : !selectedPresentacionId ? (
@@ -214,98 +214,100 @@ export default function ComparacionCategoriasClient({
                 No hay productos asignados a esta categoría. Usá «Asignar productos» para agregar.
               </p>
             ) : (
-              <Table variant="compact" className="tabla-comparacion-cat tabla-gestion-compacta">
-                <colgroup>
-                  <col style={{ width: "5%" }} />
-                  <col style={{ width: "9%" }} />
-                  <col style={{ width: "9%" }} />
-                  <col style={{ width: "42%" }} />
-                  <col style={{ width: "8%" }} />
-                  <col style={{ width: "17%" }} />
-                  <col style={{ width: "10%" }} />
-                </colgroup>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-center w-[5%] p-1 align-middle" />
-                    <TableHead>PROVEEDOR</TableHead>
-                    <TableHead>MARCA</TableHead>
-                    <TableHead>DESCRIPCION</TableHead>
-                    <TableHead className="text-center">DTO. EXTRA</TableHead>
-                    <TableHead>PX. FINAL COMPRA</TableHead>
-                    <TableHead className="text-center">VARIACIÓN</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {productos.map((p) => {
-                    const selected = selectedProductoId === p.id;
-                    const dtoStr = dtoEspecial[p.id] ?? "";
-                    const pxOriginal = p.pxCompraFinal;
-                    const pxConDescuento = pxConDto(pxOriginal, dtoStr);
-                    const pxEfectivo = pxConDescuento ?? pxOriginal;
-                    const varData = variacionVsReferencia(pxEfectivo);
-                    return (
-                      <TableRow
-                        key={p.id}
-                        className={cn(selected && "bg-primary/10")}
-                      >
-                        <TableCell className="celda-datos w-[5%] p-1">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedProductoId(selected ? null : p.id)}
-                            className={cn(
-                              "selector-cuadro selector-cuadro--circle",
-                              selected && "selector-cuadro--selected"
+              <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
+                <Table variant="compact" scrollX={false} className="tabla-comparacion-cat">
+                  <colgroup>
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "9%" }} />
+                    <col style={{ width: "9%" }} />
+                    <col style={{ width: "42%" }} />
+                    <col style={{ width: "8%" }} />
+                    <col style={{ width: "17%" }} />
+                    <col style={{ width: "10%" }} />
+                  </colgroup>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-center w-[5%] p-1 align-middle" />
+                      <TableHead>PROVEEDOR</TableHead>
+                      <TableHead>MARCA</TableHead>
+                      <TableHead>DESCRIPCION</TableHead>
+                      <TableHead className="text-center">DTO. EXTRA</TableHead>
+                      <TableHead>PX. FINAL COMPRA</TableHead>
+                      <TableHead className="text-center">VARIACIÓN</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {productos.map((p) => {
+                      const selected = selectedProductoId === p.id;
+                      const dtoStr = dtoEspecial[p.id] ?? "";
+                      const pxOriginal = p.pxCompraFinal;
+                      const pxConDescuento = pxConDto(pxOriginal, dtoStr);
+                      const pxEfectivo = pxConDescuento ?? pxOriginal;
+                      const varData = variacionVsReferencia(pxEfectivo);
+                      return (
+                        <TableRow
+                          key={p.id}
+                          className={cn(selected && "bg-primary/10")}
+                        >
+                          <TableCell className="celda-datos w-[5%] p-1">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedProductoId(selected ? null : p.id)}
+                              className={cn(
+                                "selector-cuadro selector-cuadro--circle",
+                                selected && "selector-cuadro--selected"
+                              )}
+                              aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
+                            >
+                              {selected ? (
+                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                              ) : null}
+                            </button>
+                          </TableCell>
+                          <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
+                          <TableCell className="celda-datos">{p.marca ?? "—"}</TableCell>
+                          <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
+                          <TableCell className="celda-datos p-1">
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={2}
+                                placeholder="%"
+                                value={dtoStr}
+                                onChange={(e) => {
+                                  const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                                  setDtoEspecial((prev) => ({ ...prev, [p.id]: v }));
+                                }}
+                                className="h-8 w-14 text-center text-sm tabular-nums"
+                              />
+                              <span className="text-muted-foreground text-xs shrink-0">%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="celda-datos celda-numero">
+                            {pxEfectivo != null ? `$${fmtPrecio(pxEfectivo)}` : "—"}
+                          </TableCell>
+                          <TableCell className="celda-datos text-center">
+                            {varData == null ? (
+                              "—"
+                            ) : (
+                              <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
+                                {varData.pct > 0 && (
+                                  <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
+                                )}
+                                {varData.pct < 0 && (
+                                  <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
+                                )}
+                                <span>{fmtPctEntero(varData.pct)}</span>
+                              </span>
                             )}
-                            aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
-                          >
-                            {selected ? (
-                              <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                            ) : null}
-                          </button>
-                        </TableCell>
-                        <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
-                        <TableCell className="celda-datos">{p.marca ?? "—"}</TableCell>
-                        <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
-                        <TableCell className="celda-datos p-1">
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={2}
-                              placeholder="%"
-                              value={dtoStr}
-                              onChange={(e) => {
-                                const v = e.target.value.replace(/\D/g, "").slice(0, 2);
-                                setDtoEspecial((prev) => ({ ...prev, [p.id]: v }));
-                              }}
-                              className="h-8 w-14 text-center text-sm tabular-nums"
-                            />
-                            <span className="text-muted-foreground text-xs shrink-0">%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="celda-datos celda-numero">
-                          {pxEfectivo != null ? `$${fmtPrecio(pxEfectivo)}` : "—"}
-                        </TableCell>
-                        <TableCell className="celda-datos text-center">
-                          {varData == null ? (
-                            "—"
-                          ) : (
-                            <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
-                              {varData.pct > 0 && (
-                                <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
-                              )}
-                              {varData.pct < 0 && (
-                                <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
-                              )}
-                              <span>{fmtPctEntero(varData.pct)}</span>
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

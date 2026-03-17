@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -42,38 +41,38 @@ export default function TablaProveedoresGestion({ proveedores }: Props) {
 
   return (
     <>
-      <Card className="card-contenedor-tabla h-full flex flex-col rounded-xl border border-card-border bg-card overflow-hidden shadow-sm">
-        <CardContent className="flex-1 min-h-0 p-0">
-          <Table variant="compact">
+      <div className="flex flex-col h-full min-h-0 gap-0.5">
+        <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
+          <Table variant="compact" scrollX={false}>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>PROVEEDOR</TableHead>
-                <TableHead>PREFIJO</TableHead>
-                <TableHead>CÓDIGO</TableHead>
-                <TableHead>PRODUCTOS</TableHead>
+                <TableHead className="min-w-0">PROVEEDOR</TableHead>
+                <TableHead className="w-24">PREFIJO</TableHead>
+                <TableHead className="w-28">CÓDIGO</TableHead>
+                <TableHead className="w-28">PRODUCTOS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {proveedores.map((prov) => (
                 <TableRow key={prov.id}>
-                  <TableCell>
+                  <TableCell className="celda-datos min-w-0">
                     <button
                       type="button"
                       onClick={() => openEdit(prov)}
-                      className="text-primary hover:underline text-left"
+                      className="text-primary hover:underline truncate block text-left w-full"
                     >
                       {prov.nombre}
                     </button>
                   </TableCell>
-                  <TableCell>{prov.prefijo}</TableCell>
-                  <TableCell className="font-mono text-xs">{prov.codigoUnico}</TableCell>
-                  <TableCell>{prov.cantProductos}</TableCell>
+                  <TableCell className="celda-datos celda-mono whitespace-nowrap">{prov.prefijo}</TableCell>
+                  <TableCell className="celda-datos celda-mono whitespace-nowrap">{prov.codigoUnico}</TableCell>
+                  <TableCell className="celda-datos celda-numero">{prov.cantProductos.toLocaleString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <ProveedorModal
