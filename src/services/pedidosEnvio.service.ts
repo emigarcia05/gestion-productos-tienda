@@ -52,36 +52,41 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
       return { ok: true };
     }
 
-    await prisma.itemPedidoEnvio.upsert({
+    const existing = await prisma.itemPedidoEnvio.findFirst({
       where: {
-        idProveedor_tipoPedido_sucursalCodigo_codExt: {
-          idProveedor: item.idProveedor,
-          tipoPedido: TIPO_URGENTE,
-          sucursalCodigo: sucursal,
-          codExt: item.codExt,
-        },
-      },
-      create: {
         idProveedor: item.idProveedor,
         tipoPedido: TIPO_URGENTE,
         sucursalCodigo: sucursal,
         codExt: item.codExt,
-        codProveedor: item.codProdProveedor,
-        codTienda: tienda?.codTienda ?? null,
-        descripcionProveedor: item.descripcionProveedor,
-        descripcionTienda: tienda?.descripcionTienda?.trim() || null,
-        cantPedir: cantNorm,
-        cantPedirUrgente: cantNorm,
       },
-      update: {
-        codProveedor: item.codProdProveedor,
-        codTienda: tienda?.codTienda ?? null,
-        descripcionProveedor: item.descripcionProveedor,
-        descripcionTienda: tienda?.descripcionTienda?.trim() || null,
-        cantPedir: cantNorm,
-        cantPedirUrgente: cantNorm,
-      },
+      select: { id: true },
     });
+
+    const dataBase = {
+      codProveedor: item.codProdProveedor,
+      codTienda: tienda?.codTienda ?? null,
+      descripcionProveedor: item.descripcionProveedor,
+      descripcionTienda: tienda?.descripcionTienda?.trim() || null,
+      cantPedir: cantNorm,
+      cantPedirUrgente: cantNorm,
+    };
+
+    if (existing) {
+      await prisma.itemPedidoEnvio.update({
+        where: { id: existing.id },
+        data: dataBase,
+      });
+    } else {
+      await prisma.itemPedidoEnvio.create({
+        data: {
+          idProveedor: item.idProveedor,
+          tipoPedido: TIPO_URGENTE,
+          sucursalCodigo: sucursal,
+          codExt: item.codExt,
+          ...dataBase,
+        },
+      });
+    }
 
     return { ok: true };
   } catch (e: unknown) {

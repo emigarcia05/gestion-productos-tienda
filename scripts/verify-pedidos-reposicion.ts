@@ -1,6 +1,6 @@
 /**
- * Verifica que la tabla pedidos_reposicion en Neon coincida con el modelo Prisma.
- * Ejecutar: npm run db:verify-reposicion
+ * Verifica que la tabla pedidos_mercaderia en Neon coincida con el modelo Prisma.
+ * Ejecutar: npm run db:verify-mercaderia (o el script equivalente)
  *
  * - Si la tabla no existe o las columnas no coinciden, Prisma lanzará error.
  * - Si todo está bien, imprime las columnas esperadas y un conteo de filas.
@@ -17,38 +17,44 @@ if (!process.env.DATABASE_URL) {
 }
 
 const ESQUEMA_ESPERADO = {
-  tabla: "pedidos_reposicion",
+  tabla: "pedidos_mercaderia",
   columnas: [
     "id",
     "id_proveedor",
     "sucursal",
     "cod_ext",
-    "punto_reposicion",
-    "forma_pedir",
-    "cant",
     "cant_pedir",
+    "cod_proveedor",
+    "cod_tienda",
+    "descripcion_proveedor",
+    "descripcion_tienda",
+    "tipo_de_pedido",
+    "forma_pedido_reposicion",
+    "punto_pedido",
+    "cant_pedir_reposicion",
+    "cant_pedir_urgente",
+    "cant_pedir_tintometrico",
+    "descripcion_tintometrico",
     "created_at",
     "updated_at",
   ],
-  enum: "FormaPedirReposicion (CANT_MAXIMA | CANT_FIJA)",
 };
 
 async function main() {
   const { prisma } = await import("../src/lib/prisma");
 
-  console.log("Verificando tabla pedidos_reposicion vs esquema Prisma...\n");
+  console.log("Verificando tabla pedidos_mercaderia vs esquema Prisma...\n");
   console.log("Esquema esperado (backend):");
   console.log("  Tabla:", ESQUEMA_ESPERADO.tabla);
   console.log("  Columnas:", ESQUEMA_ESPERADO.columnas.join(", "));
-  console.log("  Tipo forma_pedir:", ESQUEMA_ESPERADO.enum);
   console.log("");
 
   try {
-    const count = await prisma.itemPedidoReposicion.count();
-    const sample = await prisma.itemPedidoReposicion.findMany({ take: 1 });
+    const count = await prisma.itemPedidoEnvio.count();
+    const sample = await prisma.itemPedidoEnvio.findMany({ take: 1 });
 
     console.log("✓ Conexión OK. Prisma puede leer la tabla.");
-    console.log("  Filas en pedidos_reposicion:", count);
+    console.log("  Filas en pedidos_mercaderia:", count);
     if (sample.length > 0) {
       console.log("  Ejemplo de fila (campos):", Object.keys(sample[0]).join(", "));
     } else {
@@ -58,7 +64,7 @@ async function main() {
     await prisma.$disconnect();
     process.exit(0);
   } catch (err) {
-    console.error("✗ Error al leer pedidos_reposicion:", err);
+    console.error("✗ Error al leer pedidos_mercaderia:", err);
     await prisma.$disconnect();
     process.exit(1);
   }

@@ -347,35 +347,43 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
       return { ok: true, data: undefined };
     }
 
-    await prisma.itemPedidoEnvio.upsert({
+    const existing = await prisma.itemPedidoEnvio.findFirst({
       where: {
-        idProveedor_tipoPedido_sucursalCodigo_codExt: {
-          idProveedor,
-          tipoPedido: "REPOSICION",
-          sucursalCodigo,
-          codExt,
-        },
-      },
-      create: {
         idProveedor,
         tipoPedido: "REPOSICION",
         sucursalCodigo,
         codExt,
-        codProveedor: "__AUTO__",
-        codTienda: null,
-        descripcionProveedor: "__AUTO__",
-        descripcionTienda: null,
-        cantPedir: 0,
-        formaPedidoReposicion: formaPedir,
-        puntoPedido: puntoReposicion,
-        cantPedirReposicion: cant,
       },
-      update: {
-        formaPedidoReposicion: formaPedir,
-        puntoPedido: puntoReposicion,
-        cantPedirReposicion: cant,
-      },
+      select: { id: true },
     });
+
+    const dataBase = {
+      formaPedidoReposicion: formaPedir,
+      puntoPedido: puntoReposicion,
+      cantPedirReposicion: cant,
+    };
+
+    if (existing) {
+      await prisma.itemPedidoEnvio.update({
+        where: { id: existing.id },
+        data: dataBase,
+      });
+    } else {
+      await prisma.itemPedidoEnvio.create({
+        data: {
+          idProveedor,
+          tipoPedido: "REPOSICION",
+          sucursalCodigo,
+          codExt,
+          codProveedor: "__AUTO__",
+          codTienda: null,
+          descripcionProveedor: "__AUTO__",
+          descripcionTienda: null,
+          cantPedir: 0,
+          ...dataBase,
+        },
+      });
+    }
     revalidatePath("/pedidos/reposicion");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
