@@ -23,6 +23,7 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { upsertPedidoTintometricoItemsAction } from "@/actions/pedidos";
+import type { ItemPedidoTintometricoPayload } from "@/services/pedidosEnvio.service";
 import type {
   ProveedorTintometrico,
   BaseTintometricaRow,
@@ -113,29 +114,30 @@ export default function NuevoItemTintometricoModal({
           base: b,
         };
       })
-      .filter(Boolean) as Array<
-      {
-        sucursalCodigo: string;
+      .filter(Boolean) as Array<{
+        sucursalCodigo: "guaymallen" | "maipu";
         proveedorId: string;
         codTienda: string;
         cantidad: number;
         descripcion: string;
         base: BaseTintometricaRow;
-      }
-    >;
+      }>;
 
     if (payload.length === 0) return;
 
     setGuardando(true);
     try {
       const result = await upsertPedidoTintometricoItemsAction(
-        payload.map(({ sucursalCodigo, proveedorId, codTienda, cantidad, descripcion }) => ({
-          sucursalCodigo,
-          proveedorId,
-          codTienda,
-          cantidad,
-          descripcion,
-        }))
+        payload.map(
+          ({ sucursalCodigo, proveedorId, codTienda, cantidad, descripcion }) =>
+            ({
+              sucursalCodigo,
+              proveedorId,
+              codTienda,
+              cantidad,
+              descripcion,
+            } as ItemPedidoTintometricoPayload)
+        )
       );
       if (!result.ok) {
         toast.error(result.error ?? "Error al guardar ítems tintométricos.");
