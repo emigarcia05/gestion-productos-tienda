@@ -45,11 +45,13 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
     .header h1 { font-size: 16pt; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
     .header .meta { text-align: right; font-size: 8pt; color: #555; line-height: 1.5; }
     .header .meta strong { color: #111; }
+    .header-sucursal { font-size:10pt; font-weight:700; color:#333; margin-top:2px; }
 
     table { width: 100%; border-collapse: collapse; }
     thead tr { background: var(--primary); color: #fff; }
     thead th { padding: 5px 6px; text-align: left; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
     thead th.cant { text-align: right; width: 60px; }
+    thead th.cod  { width: 80px; }
 
     tbody tr:nth-child(even) { background: #f4f8fc; }
     tbody td { padding: 3.5px 6px; border-bottom: 1px solid #e0e8f0; font-size: 8.5pt; }
@@ -64,7 +66,7 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
   <div class="header">
     <div>
       <h1>Control de Stock</h1>
-      <div style="font-size:10pt; font-weight:700; color:#333; margin-top:2px;">Sucursal: ${sucursal}</div>
+      <div class="header-sucursal">Sucursal: ${sucursal}</div>
     </div>
     <div class="meta">
       <div><strong>Fecha:</strong> ${fecha}</div>
@@ -75,7 +77,7 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
   <table class="tabla-gestion-compacta">
     <thead>
       <tr>
-        <th style="width:80px">Código</th>
+        <th class="cod">Código</th>
         <th>Descripción</th>
         <th class="cant">Stock</th>
       </tr>

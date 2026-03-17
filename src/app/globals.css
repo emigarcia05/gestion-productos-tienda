@@ -535,6 +535,14 @@
   .sidebar-container {
     box-shadow: var(--sidebar-shadow);
   }
+
+  /* Toaster (sonner): tokens configurados vía clase, sin style inline en el componente. */
+  .toaster {
+    --normal-bg: var(--popover);
+    --normal-text: var(--popover-foreground);
+    --normal-border: var(--border);
+    --border-radius: var(--radius);
+  }
 }
 
 @layer utilities {

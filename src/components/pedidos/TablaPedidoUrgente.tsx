@@ -76,30 +76,28 @@ export default function TablaPedidoUrgente({
       <Table variant="compact" scrollX={false} className="min-w-full">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="text-center" style={{ width: "10%" }}>
+            <TableHead className="text-center w-[10%]">
               PROVEEDOR
             </TableHead>
-            <TableHead className="text-center" style={{ width: "5%" }}>
+            <TableHead className="text-center w-[5%]">
               REG. DUX
             </TableHead>
-            <TableHead style={{ width: "55%" }}>DESCRIPCIÓN</TableHead>
-            <TableHead className="text-center" style={{ width: "8%" }}>
+            <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
+            <TableHead className="text-center w-[8%]">
               CANT. PEDIDA
             </TableHead>
-            <TableHead className="text-center" style={{ width: "8%" }} aria-label="Eliminar">
+            <TableHead className="text-center w-[8%]" aria-label="Eliminar">
               <div className="flex items-center justify-center w-full">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
             <TableHead
               className="text-center tabla-bloque-secundario-head-divider"
-              style={{ width: "7%" }}
             >
               CONF. REPO.
             </TableHead>
             <TableHead
               className="text-center tabla-bloque-secundario-head"
-              style={{ width: "7%" }}
             >
               CANT. REPO.
             </TableHead>

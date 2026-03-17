@@ -217,13 +217,13 @@ export default function ComparacionCategoriasClient({
               <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
                 <Table variant="compact" scrollX={false} className="tabla-comparacion-cat">
                   <colgroup>
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "9%" }} />
-                    <col style={{ width: "9%" }} />
-                    <col style={{ width: "42%" }} />
-                    <col style={{ width: "8%" }} />
-                    <col style={{ width: "17%" }} />
-                    <col style={{ width: "10%" }} />
+                    <col className="w-[5%]" />
+                    <col className="w-[9%]" />
+                    <col className="w-[9%]" />
+                    <col className="w-[42%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[17%]" />
+                    <col className="w-[10%]" />
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
