@@ -37,7 +37,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 8. **Tablas (encabezado fijo + paginación)**  
    - **Un solo diseño** para toda la app (referencia: Comp. Px. Prov.). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).  
-   - **Encabezado fijo (obligatorio)**: el encabezado de la tabla debe estar fijo y **no moverse con el scroll**. Cuando el usuario hace scroll, los encabezados permanecen visibles en la parte superior (implementado con `position: sticky` en el `<thead>` en `globals.css`). La tabla debe ir dentro de `.contenedor-tabla-gestion` (contenedor con `overflow-y: auto`) para que el encabezado fijo funcione correctamente.  
+   - **Encabezado fijo (obligatorio)**: el encabezado de la tabla debe estar fijo y **no moverse con el scroll**. Cuando el usuario hace scroll, los encabezados permanecen visibles en la parte superior (implementado con `position: sticky` por celda `<th>` en `globals.css`). La tabla debe ir dentro de `.contenedor-tabla-gestion` (contenedor con `overflow-y: auto`) para que el encabezado fijo funcione correctamente.  
    - **Paginación estándar**: todas las tablas de la app muestran **100 ítems por página** (`PAGE_SIZE` en `@/lib/pagination`). Cuando el total de filas supera 100, se muestran controles de paginación debajo de la tabla.  
    - **Páginas con URL** (Pedido Urgente, Tienda, Stock): usar `PaginacionTabla` de `@/components/shared/PaginacionTabla.tsx` con `basePath` y `params` (query actual sin `pagina`).  
    - **Páginas con datos en cliente** (Lista precios, Sugeridos): usar `PaginacionClient` de `@/components/shared/PaginacionClient.tsx` con `paginaActual`, `totalPaginas` y `onPaginaChange`.  
@@ -80,6 +80,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - `FilterBar` con `filtros-contenedor-tienda bg-card`: `FilterRowSelection` > `FilaFiltrosDesplegables` (5 columnas) + `FilterRowSearch` (input ~75%) + `LimpiarFiltrosButton`.
    - Contenido: tabla con `<Table>` de `@/components/ui/table` (diseño único `.tabla-gestion-compacta` en `globals.css`).
   - **Scroll vertical (obligatorio en tablas)**: el scroll debe estar **dentro del contenedor de tabla** (`.contenedor-tabla-gestion`), para que solo se deslicen las filas y el encabezado quede fijo. Evitar `overflow-auto` en wrappers internos (cards/divs) y evitar scroll en el `main` de la app para no crear scrolls anidados.
+  - **Scrollbar visible (recomendado)**: en páginas, **no** usar `no-scrollbar` en `.contenedor-tabla-gestion` para que el usuario vea el scroll dentro de la tabla (como en “Px. Vta. Sugeridos”). Reservar `no-scrollbar` solo para casos muy puntuales.
   - **Encabezado fijo (detalle crítico)**: el sticky se implementa **por celda** (`.tabla-gestion-compacta thead th { position: sticky; top: 0; }`). **No** usar `position: sticky` en `<thead>` porque es menos confiable entre navegadores y puede fallar cuando hay contenedores con scroll.
 
 2. **Clases de filtros (SSOT en FilterBar / globals.css)**

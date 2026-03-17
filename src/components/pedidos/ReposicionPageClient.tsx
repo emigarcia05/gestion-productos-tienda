@@ -54,7 +54,7 @@ export default function ReposicionPageClient({
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">
-        <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
+        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
           <TablaReposicion
             data={data}
             sucursalActual={sucursalValida}

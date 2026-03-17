@@ -70,7 +70,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 flex flex-col">
         <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 p-0">
-            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
+            <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
               {esEditor ? (
                 <TablaProductosFiltrada productos={productos} rol={rol} sinFiltros={!hasFiltros} />
               ) : (

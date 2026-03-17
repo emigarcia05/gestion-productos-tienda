@@ -128,7 +128,7 @@ export default async function ImportarPage() {
             <CardDescription>Últimas importaciones realizadas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="contenedor-tabla-gestion max-h-[24rem]">
               <Table variant="compact">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-border">

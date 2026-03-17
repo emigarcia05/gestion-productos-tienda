@@ -304,7 +304,7 @@ export default function ListaPreciosTablaConFiltros({
         </div>
       </FilterBar>
 
-      <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar">
+      <div className="contenedor-tabla-gestion no-scroll-x">
         <Table variant="compact" scrollX={false}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">

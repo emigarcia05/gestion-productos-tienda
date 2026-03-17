@@ -214,7 +214,7 @@ export default function ComparacionCategoriasClient({
                 No hay productos asignados a esta categoría. Usá «Asignar productos» para agregar.
               </p>
             ) : (
-              <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar flex-1 min-h-0">
+              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
                 <Table variant="compact" scrollX={false} className="tabla-comparacion-cat">
                   <colgroup>
                     <col style={{ width: "5%" }} />
