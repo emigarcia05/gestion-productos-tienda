@@ -82,26 +82,26 @@ export default function TablaPedidoUrgente({
             <TableHead className="text-center" style={{ width: "5%" }}>
               REG. DUX
             </TableHead>
-            <TableHead style={{ width: "50%" }}>DESCRIPCIÓN</TableHead>
-            <TableHead className="text-center" style={{ width: "10%" }}>
+            <TableHead style={{ width: "55%" }}>DESCRIPCIÓN</TableHead>
+            <TableHead className="text-center" style={{ width: "8%" }}>
               CANT. PEDIDA
             </TableHead>
-            <TableHead className="text-center" style={{ width: "10%" }} aria-label="Eliminar">
+            <TableHead className="text-center" style={{ width: "8%" }} aria-label="Eliminar">
               <div className="flex items-center justify-center w-full">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
             <TableHead
               className="text-center tabla-bloque-secundario-head-divider"
-              style={{ width: "7.5%" }}
+              style={{ width: "7%" }}
             >
-              CONF. REPOSICIÓN
+              CONF. REPO.
             </TableHead>
             <TableHead
               className="text-center tabla-bloque-secundario-head"
-              style={{ width: "7.5%" }}
+              style={{ width: "7%" }}
             >
-              CANT. REPOSICIÓN
+              CANT. REPO.
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -143,7 +143,7 @@ export default function TablaPedidoUrgente({
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        className="text-muted-foreground hover:text-destructive"
+                        className="text-foreground hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
                           onRowDeleteClick?.(prod);

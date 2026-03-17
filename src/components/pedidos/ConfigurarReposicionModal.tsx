@@ -246,7 +246,7 @@ export default function ConfigurarReposicionModal({
                               type="button"
                               variant="ghost"
                               size="icon-xs"
-                              className="text-muted-foreground hover:text-destructive"
+                              className="text-foreground hover:text-destructive"
                               aria-label="Quitar producto de la configuración"
                               onClick={() => handleEliminarProductoAdicional(p)}
                             >

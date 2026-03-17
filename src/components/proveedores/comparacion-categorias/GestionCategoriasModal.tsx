@@ -347,7 +347,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 text-foreground hover:text-destructive"
                             onClick={() => handleEliminar(fila.id)}
                             disabled={pendingDeleteId === fila.id}
                             title="Eliminar Combinación"
