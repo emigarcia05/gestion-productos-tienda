@@ -203,7 +203,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                               active
                                 ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
                                 : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
-                              active && sub.isUrgente && "[&_svg]:text-accent2",
                               sub.isUrgente && "relative"
                             )}
                           >
@@ -227,7 +226,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                                         childActive
                                           ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
                                           : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
-                                        childActive && c.isUrgente && "[&_svg]:text-accent2",
                                         c.isUrgente && "relative"
                                       )}
                                     >
