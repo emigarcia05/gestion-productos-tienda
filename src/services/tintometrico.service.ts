@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
-const PROVEEDORES_TINTOMETRICOS = ["Merino", "Rex", "Garage"] as const;
+const PROVEEDORES_TINTOMETRICOS_IDS = [
+  "cmm546hyj000004lbskwbrvb6",
+  "cmm5a3iaq000004l8shjzf4cz",
+  "cmm5473mk000104jro6bcypp5",
+] as const;
 
 export type ProveedorTintometrico = {
   id: string;
@@ -11,22 +15,18 @@ export type ProveedorTintometrico = {
 
 export async function getProveedoresTintometricos(): Promise<ProveedorTintometrico[]> {
   const where: Prisma.ProveedorWhereInput = {
-    OR: PROVEEDORES_TINTOMETRICOS.map((n) => ({
-      nombre: { equals: n, mode: "insensitive" as const },
-    })),
+    id: { in: [...PROVEEDORES_TINTOMETRICOS_IDS] },
   };
 
   const rows = await prisma.proveedor.findMany({
     where,
     select: { id: true, nombre: true, prefijo: true },
-    orderBy: { nombre: "asc" },
   });
 
-  // Mantener orden esperado: Merino, Rex, Garage (si existen).
-  const order = new Map(PROVEEDORES_TINTOMETRICOS.map((n, i) => [n.toLowerCase(), i]));
+  const order = new Map(PROVEEDORES_TINTOMETRICOS_IDS.map((id, i) => [id, i]));
   return [...rows].sort((a, b) => {
-    const ai = order.get(a.nombre.toLowerCase()) ?? 999;
-    const bi = order.get(b.nombre.toLowerCase()) ?? 999;
+    const ai = order.get(a.id) ?? 999;
+    const bi = order.get(b.id) ?? 999;
     return ai - bi;
   });
 }

@@ -85,13 +85,13 @@ export default function NuevoItemTintometricoModal({
           <div className="flex flex-col gap-2">
             <span className="text-xs text-muted-foreground">Proveedor</span>
             <Select value={proveedorId} onValueChange={setProveedorId}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger className="h-10 w-full">
                 <SelectValue placeholder="Seleccionar Proveedor" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.nombre}
+                    {`${p.prefijo} - ${p.nombre}`}
                   </SelectItem>
                 ))}
               </SelectContent>
