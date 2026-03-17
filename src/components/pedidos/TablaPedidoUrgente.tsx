@@ -10,7 +10,8 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface ProductoPedidoUrgente {
   id: string;
@@ -43,6 +44,7 @@ interface Props {
   setCantPorId?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   /** Callback al hacer doble click en una fila para abrir el modal de edición de cantidad. */
   onRowDoubleClick?: (producto: ProductoPedidoUrgente) => void;
+  onRowDeleteClick?: (producto: ProductoPedidoUrgente) => void;
 }
 
 export default function TablaPedidoUrgente({
@@ -54,6 +56,7 @@ export default function TablaPedidoUrgente({
   cantPorId: cantPorIdProp,
   setCantPorId: setCantPorIdProp,
   onRowDoubleClick,
+  onRowDeleteClick,
 }: Props) {
   const [cantPorIdInternal, setCantPorIdInternal] = useState<Record<string, string>>({});
   const cantPorId = cantPorIdProp ?? cantPorIdInternal;
@@ -79,10 +82,11 @@ export default function TablaPedidoUrgente({
             <TableHead className="text-center" style={{ width: "10%" }}>
               REG. DUX
             </TableHead>
-            <TableHead style={{ width: "60%" }}>DESCRIPCIÓN</TableHead>
+            <TableHead style={{ width: "57%" }}>DESCRIPCIÓN</TableHead>
             <TableHead className="text-center" style={{ width: "10%" }}>
               CANT. PEDIDA
             </TableHead>
+            <TableHead className="text-center" style={{ width: "3%" }} aria-label="Eliminar" />
             <TableHead
               className="text-center tabla-bloque-secundario-head-divider"
               style={{ width: "5%" }}
@@ -127,6 +131,25 @@ export default function TablaPedidoUrgente({
                   {cantPorId[prod.id] && Number(cantPorId[prod.id]) > 0
                     ? cantPorId[prod.id]
                     : "—"}
+                </TableCell>
+                <TableCell className="celda-datos text-center">
+                  {Number(cantPorId[prod.id] || 0) > 0 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRowDeleteClick?.(prod);
+                      }}
+                      aria-label="Eliminar cantidad pedida"
+                    >
+                      <Trash2 />
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="celda-datos text-center tabla-bloque-secundario-cell-divider">
                   {prod.confReposicion ? (

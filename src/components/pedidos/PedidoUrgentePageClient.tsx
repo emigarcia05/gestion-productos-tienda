@@ -74,6 +74,28 @@ export default function PedidoUrgentePageClient({
     setModalOpen(true);
   }
 
+  async function borrarCantidad(prod: ProductoPedidoUrgente) {
+    if (!sucursalValida) {
+      toast.error("Seleccioná una sucursal para guardar.");
+      return;
+    }
+    const id = prod.id;
+    const prevValue = cantPorId[id];
+    setCantPorId((prev) => ({ ...prev, [id]: "" }));
+
+    const res = await upsertPedidoUrgenteMercaderiaItemAction({
+      sucursal: sucursalValida,
+      listaPrecioProveedorId: id,
+      cant: 0,
+    });
+    if (!res.ok) {
+      setCantPorId((prev) => ({ ...prev, [id]: prevValue ?? "" }));
+      toast.error(res.error ?? "Error al borrar.");
+      return;
+    }
+    toast.success("Ítem borrado.");
+  }
+
   async function confirmarCantidad(cantidad: number) {
     if (!productoSeleccionado) return;
     if (!sucursalValida) {
@@ -117,6 +139,7 @@ export default function PedidoUrgentePageClient({
                 cantPorId={cantPorId}
                 setCantPorId={setCantPorId}
                 onRowDoubleClick={abrirModalCantidad}
+                onRowDeleteClick={borrarCantidad}
               />
             </div>
             {!sinFiltros && sucursalValida && (
