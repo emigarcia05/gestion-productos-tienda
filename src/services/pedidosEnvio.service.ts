@@ -7,12 +7,21 @@ import { prisma } from "@/lib/prisma";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
+const TIPO_TINTOMETRICO = "TINTOMETRICO";
 
 export type SucursalPedidoEnvio = "guaymallen" | "maipu";
 
 export interface ItemPedidoUrgentePayload {
   id: string;
   cant: number;
+}
+
+export interface ItemPedidoTintometricoPayload {
+  sucursalCodigo: SucursalPedidoEnvio;
+  proveedorId: string;
+  codTienda: string;
+  cantidad: number;
+  descripcion: string;
 }
 
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
@@ -256,6 +265,68 @@ export async function syncPedidoUrgenteEnvio(
   });
 
   return { creados };
+}
+
+export async function upsertPedidoTintometricoItems(
+  sucursal: SucursalPedidoEnvio,
+  items: ItemPedidoTintometricoPayload[]
+): Promise<{ actualizados: number; error?: string }> {
+  if (items.length === 0) return { actualizados: 0 };
+
+  let actualizados = 0;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const codTiendaTrim = item.codTienda.trim();
+        const codExt = `TINT-${codTiendaTrim}`;
+
+        const existing = await tx.itemPedidoEnvio.findFirst({
+          where: {
+            idProveedor: item.proveedorId.trim(),
+            tipoPedido: TIPO_TINTOMETRICO,
+            sucursalCodigo: sucursal,
+            codExt,
+          },
+          select: { id: true },
+        });
+
+        const dataBase = {
+          codExt,
+          codProveedor: "",
+          codTienda: codTiendaTrim,
+          descripcionProveedor: null as string | null,
+          descripcionTienda: item.descripcion,
+          tintometricoDescripcion: item.descripcion,
+          tintometrioCantPedir: item.cantidad,
+          cantPedir: item.cantidad,
+        };
+
+        if (existing) {
+          await tx.itemPedidoEnvio.update({
+            where: { id: existing.id },
+            data: dataBase,
+          });
+        } else {
+          await tx.itemPedidoEnvio.create({
+            data: {
+              idProveedor: item.proveedorId.trim(),
+              tipoPedido: TIPO_TINTOMETRICO,
+              sucursalCodigo: sucursal,
+              ...dataBase,
+            },
+          });
+        }
+
+        actualizados += 1;
+      }
+    });
+
+    return { actualizados };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al guardar ítems tintométricos.";
+    return { actualizados: 0, error: msg };
+  }
 }
 
 /** Ítem para PDF de envío (descripción y cantidad). */

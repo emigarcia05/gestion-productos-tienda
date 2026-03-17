@@ -12,6 +12,8 @@ import {
   type SucursalPedidoEnvio,
   type ItemPedidoUrgentePayload,
   upsertPedidoMercaderiaUrgenteItem,
+  upsertPedidoTintometricoItems,
+  type ItemPedidoTintometricoPayload,
 } from "@/services/pedidosEnvio.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
@@ -185,6 +187,47 @@ const TIPO_LABEL: Record<string, string> = {
   TINTOMETRICO: "Tintométrico",
   REPOSICION: "Reposición",
 };
+
+const pedidoTintometricoItemSchema = z.object({
+  sucursalCodigo: z.enum(["guaymallen", "maipu"]),
+  proveedorId: z.string().uuid("Proveedor inválido."),
+  codTienda: z.string().min(1, "Cod. Tienda requerido."),
+  cantidad: z.number().int().min(1, "Cant. debe ser mayor a 0."),
+  descripcion: z.string().min(1, "Descripción requerida."),
+});
+
+export async function upsertPedidoTintometricoItemsAction(
+  items: ItemPedidoTintometricoPayload[]
+): Promise<ActionResult<{ actualizados: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return { ok: false, error: "No hay ítems para guardar." };
+  }
+
+  const parsed = z.array(pedidoTintometricoItemSchema).safeParse(items);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos de ítems tintométricos inválidos." };
+  }
+
+  const sucursal = parsed.data[0].sucursalCodigo;
+  const todosMismaSucursal = parsed.data.every((i) => i.sucursalCodigo === sucursal);
+  if (!todosMismaSucursal) {
+    return { ok: false, error: "Todos los ítems deben ser de la misma sucursal." };
+  }
+
+  const { actualizados, error } = await upsertPedidoTintometricoItems(
+    sucursal,
+    parsed.data
+  );
+  if (error) {
+    return { ok: false, error };
+  }
+  return { ok: true, data: { actualizados } };
+}
 
 /**
  * Genera el PDF del pedido y, si está configurado (token + sucursal.phone_number_id + proveedor.whatsapp),

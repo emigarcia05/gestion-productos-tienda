@@ -21,6 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { upsertPedidoTintometricoItemsAction } from "@/actions/pedidos";
 import type {
   ProveedorTintometrico,
   BaseTintometricaRow,
@@ -56,6 +58,7 @@ export default function NuevoItemTintometricoModal({
   const [baseModalOpen, setBaseModalOpen] = useState(false);
   const [bases, setBases] = useState<BaseTintometricaRow[]>([]);
   const [cantPorBaseId, setCantPorBaseId] = useState<Record<string, string>>({});
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -89,21 +92,74 @@ export default function NuevoItemTintometricoModal({
   const puedeAgregar =
     !!sucursal && !!proveedorId && codValido && bases.length > 0 && tieneCantidadValida;
 
-  function handleAgregar() {
-    if (!puedeAgregar) return;
+  async function handleAgregar() {
+    if (!puedeAgregar || guardando) return;
     const codigo = codTintometrico.trim();
-    for (const b of bases) {
-      const cant = cantidadesValidasPorBase[b.id];
-      if (!cant || cant <= 0) continue;
-      onAgregar({
-        sucursalCodigo: sucursal,
-        proveedorId,
-        codTintometrico: codigo,
-        base: b,
-        cantidad: cant,
+    const payload = bases
+      .map((b) => {
+        const cant = cantidadesValidasPorBase[b.id];
+        if (!cant || cant <= 0) return null;
+        const descripcionBase = (b.descripcionTienda ?? "").trim();
+        const descripcion =
+          descripcionBase && codigo
+            ? `${descripcionBase} - COD. ${codigo}`.toUpperCase()
+            : (descripcionBase || "").toUpperCase();
+        return {
+          sucursalCodigo: sucursal,
+          proveedorId,
+          codTienda: b.codTienda,
+          cantidad: cant,
+          descripcion,
+          base: b,
+        };
+      })
+      .filter(Boolean) as Array<
+      {
+        sucursalCodigo: string;
+        proveedorId: string;
+        codTienda: string;
+        cantidad: number;
+        descripcion: string;
+        base: BaseTintometricaRow;
+      }
+    >;
+
+    if (payload.length === 0) return;
+
+    setGuardando(true);
+    try {
+      const result = await upsertPedidoTintometricoItemsAction(
+        payload.map(({ sucursalCodigo, proveedorId, codTienda, cantidad, descripcion }) => ({
+          sucursalCodigo,
+          proveedorId,
+          codTienda,
+          cantidad,
+          descripcion,
+        }))
+      );
+      if (!result.ok) {
+        toast.error(result.error ?? "Error al guardar ítems tintométricos.");
+        return;
+      }
+
+      payload.forEach(({ sucursalCodigo, proveedorId, base, cantidad }) => {
+        onAgregar({
+          sucursalCodigo,
+          proveedorId,
+          codTintometrico: codigo,
+          base,
+          cantidad,
+        });
       });
+      toast.success(
+        result.data.actualizados === 1
+          ? "Se guardó 1 ítem tintométrico."
+          : `Se guardaron ${result.data.actualizados} ítems tintométricos.`
+      );
+      onOpenChange(false);
+    } finally {
+      setGuardando(false);
     }
-    onOpenChange(false);
   }
 
   return (
@@ -118,43 +174,45 @@ export default function NuevoItemTintometricoModal({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleAgregar} disabled={!puedeAgregar}>
+            <Button type="button" onClick={handleAgregar} disabled={!puedeAgregar || guardando}>
               Agregar
             </Button>
           </>
         }
       >
         <div className="grid grid-cols-1 gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="text-xs text-foreground">Sucursal</span>
-            <Select value={sucursal} onValueChange={setSucursal}>
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue placeholder="Seleccionar Sucursal" />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                {sucursales.map((s) => (
-                  <SelectItem key={s.id} value={s.codigo}>
-                    {s.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-foreground">Sucursal</span>
+              <Select value={sucursal} onValueChange={setSucursal}>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder="Seleccionar Sucursal" />
+                </SelectTrigger>
+                <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                  {sucursales.map((s) => (
+                    <SelectItem key={s.id} value={s.codigo}>
+                      {s.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-xs text-foreground">Proveedor</span>
-            <Select value={proveedorId} onValueChange={setProveedorId}>
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue placeholder="Seleccionar Proveedor" />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {`${p.prefijo} - ${p.nombre}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-foreground">Proveedor</span>
+              <Select value={proveedorId} onValueChange={setProveedorId}>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder="Seleccionar Proveedor" />
+                </SelectTrigger>
+                <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                  {proveedores.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {`${p.prefijo} - ${p.nombre}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

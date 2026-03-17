@@ -14,6 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ProveedorTintometrico, SucursalTintometrica } from "@/services/tintometrico.service";
 import NuevoItemTintometricoModal, {
@@ -33,6 +40,8 @@ export default function PedidoTintometricoPageClient({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [items, setItems] = useState<ItemTintometrico[]>([]);
+  const [filtroSucursal, setFiltroSucursal] = useState<string>("");
+  const [filtroProveedor, setFiltroProveedor] = useState<string>("");
 
   const proveedoresById = useMemo(() => {
     const map = new Map<string, ProveedorTintometrico>();
@@ -45,6 +54,16 @@ export default function PedidoTintometricoPageClient({
     for (const s of sucursales) map.set(s.codigo, s);
     return map;
   }, [sucursales]);
+
+  const itemsFiltrados = useMemo(
+    () =>
+      items.filter((i) => {
+        if (filtroSucursal && i.sucursalCodigo !== filtroSucursal) return false;
+        if (filtroProveedor && i.proveedorId !== filtroProveedor) return false;
+        return true;
+      }),
+    [items, filtroSucursal, filtroProveedor]
+  );
 
   function agregarItem(draft: NuevoItemTintometricoDraft) {
     const key = `${draft.proveedorId}:${draft.codTintometrico}:${draft.base.id}`;
@@ -60,7 +79,47 @@ export default function PedidoTintometricoPageClient({
 
   const filters = (
     <FilterBar className="filtros-contenedor-tienda bg-card">
-      <FilterRowSelection className="justify-center">
+      <FilterRowSelection className="items-center justify-between gap-4 flex-wrap">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1 min-w-[10rem]">
+            <span className="text-xs text-foreground">Sucursal</span>
+            <Select
+              value={filtroSucursal}
+              onValueChange={(value) => setFiltroSucursal(value === "todas" ? "" : value)}
+            >
+              <SelectTrigger className="h-10 w-[12rem]">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="todas">TODAS</SelectItem>
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.codigo}>
+                    {s.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1 min-w-[12rem]">
+            <span className="text-xs text-foreground">Proveedor</span>
+            <Select
+              value={filtroProveedor}
+              onValueChange={(value) => setFiltroProveedor(value === "todos" ? "" : value)}
+            >
+              <SelectTrigger className="h-10 w-[14rem]">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="todos">TODOS</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {`${p.prefijo} - ${p.nombre}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <Button
           type="button"
           variant="default"
@@ -94,18 +153,20 @@ export default function PedidoTintometricoPageClient({
                     <TableHead className="w-[10%]">SUCURSAL</TableHead>
                     <TableHead className="w-[8%] text-right">CANT.</TableHead>
                     <TableHead className="w-[64%]">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[8%] text-right">ACC.</TableHead>
+                    <TableHead className="w-[8%] text-right">
+                      <Trash2 className="h-4 w-4 mx-auto" />
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.length === 0 ? (
+                  {itemsFiltrados.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-muted-foreground text-sm py-10 text-center">
                         Sin Ítems. Presioná “+” Para Agregar.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    items.map((i) => {
+                    itemsFiltrados.map((i) => {
                       const prov = proveedoresById.get(i.proveedorId);
                       const suc = sucursalPorCodigo.get(i.sucursalCodigo);
                       return (
