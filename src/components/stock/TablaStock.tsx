@@ -174,7 +174,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
   return (
     <>
-      <div className="flex-1 rounded-lg border border-card-border bg-card">
+      <div className="contenedor-tabla-gestion no-scroll-x">
         {!sucursalSeleccionada ? (
           <div className="flex h-full min-h-[200px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Seleccioná una sucursal para ver el stock.

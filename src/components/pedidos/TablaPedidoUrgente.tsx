@@ -72,7 +72,7 @@ export default function TablaPedidoUrgente({
   const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 
   return (
-    <div className="w-full min-w-full">
+    <div className="contenedor-tabla-gestion no-scroll-x">
       <Table variant="compact" scrollX={false} className="min-w-full">
         <TableHeader>
           <TableRow className="hover:bg-transparent">

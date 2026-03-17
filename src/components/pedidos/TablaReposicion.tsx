@@ -62,7 +62,7 @@ export default function TablaReposicion({
   }, [items.length, onFiltradosCountChange]);
 
   return (
-    <div className="flex-1 rounded-lg border border-border bg-card">
+    <div className="contenedor-tabla-gestion no-scroll-x">
       {!sucursalSeleccionada ? (
         <div className="flex h-full min-h-[200px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
           Seleccioná una sucursal para ver los ítems.
