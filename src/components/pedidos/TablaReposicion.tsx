@@ -21,7 +21,7 @@ import { fmtCelda } from "@/lib/format";
 function formaPedirLabel(formaPedir: string): string {
   if (formaPedir === "CANT_MAXIMA") return "CANT. MAX.";
   if (formaPedir === "CANT_FIJA") return "CANT. FIJA";
-  return "—";
+  return "";
 }
 
 interface Props {

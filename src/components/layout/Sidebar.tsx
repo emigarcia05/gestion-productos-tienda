@@ -45,6 +45,7 @@ interface SubmoduleItem {
   isUrgente?: boolean;
   /** Permiso para ver este enlace (por rol). Si no se define, solo editor. */
   permiso?: { simple: boolean; editor: boolean };
+  children?: SubmoduleItem[];
 }
 
 const MODULES: {
@@ -53,6 +54,46 @@ const MODULES: {
   icon: React.ReactNode;
   submodules: SubmoduleItem[];
 }[] = [
+  {
+    id: "pedidos",
+    label: "PEDIDO DE MERCADERÍA",
+    icon: <ClipboardList className={iconClass} />,
+    submodules: [
+      {
+        href: "/pedidos/enviar",
+        label: "Enviar Pedido",
+        icon: <Send className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.pedidos.acceso,
+        children: [
+          {
+            href: "/pedidos/urgente",
+            label: "Urgente",
+            icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />,
+            isUrgente: true,
+            permiso: PERMISOS.pedidos.acceso,
+          },
+          {
+            href: "/pedidos/tintometrico",
+            label: "Tintométrico",
+            icon: <Pipette className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.pedidos.acceso,
+          },
+          {
+            href: "/pedidos/reposicion",
+            label: "Reposición",
+            icon: <RotateCw className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.pedidos.acceso,
+          },
+        ],
+      },
+      {
+        href: "/pedidos/historial",
+        label: "Historial Pedidos",
+        icon: <History className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.pedidos.acceso,
+      },
+    ],
+  },
   {
     id: "proveedores",
     label: "LISTA PROVEEDORES",
@@ -72,18 +113,6 @@ const MODULES: {
       { href: "/tienda", label: "Comp. Px. Prov.", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
       { href: "/tienda/aumentos", label: "Control Aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
       { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
-    ],
-  },
-  {
-    id: "pedidos",
-    label: "PEDIDO MERCADERÍA",
-    icon: <ClipboardList className={iconClass} />,
-    submodules: [
-      { href: "/pedidos/urgente", label: "Pedido Urgente", icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />, isUrgente: true, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/enviar", label: "Enviar Pedido", icon: <Send className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/tintometrico", label: "Pedido Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/reposicion", label: "Pedido Reposición", icon: <RotateCw className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
-      { href: "/pedidos/historial", label: "Historial Pedidos", icon: <History className="h-4 w-4 shrink-0" />, permiso: PERMISOS.pedidos.acceso },
     ],
   },
 ];
@@ -121,7 +150,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
-          module.submodules.some((sub) => !sub.permiso || puede(rol, sub.permiso))
+          module.submodules.some((sub) => {
+            const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
+            const childAllowed =
+              sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
+            return selfAllowed || childAllowed;
+          })
         ).map((module) => {
           const isOpen = openId === module.id;
           return (
@@ -151,28 +185,62 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               <CollapsibleContent>
                 <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-indicator space-y-0.5 py-1">
                   {module.submodules
-                    .filter((sub) => !sub.permiso || puede(rol, sub.permiso))
+                    .filter((sub) => {
+                      const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
+                      const childAllowed =
+                        sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
+                      return selfAllowed || childAllowed;
+                    })
                     .map((sub) => {
-                    const active = isSubmoduleActive(pathname, sub.href);
-                    return (
-                      <Link
-                        key={sub.href}
-                        href={sub.href}
-                        className={cn(
-                          "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
-                          "border-l-2 -ml-[2px] pl-[10px]",
-                          active
-                            ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-                            : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
-                          active && sub.isUrgente && "[&_svg]:text-accent2",
-                          sub.isUrgente && "relative"
-                        )}
-                      >
-                        {sub.icon}
-                        <span className="min-w-0 truncate">{sub.label}</span>
-                      </Link>
-                    );
-                  })}
+                      const active = isSubmoduleActive(pathname, sub.href);
+                      return (
+                        <div key={sub.href} className="space-y-0.5">
+                          <Link
+                            href={sub.href}
+                            className={cn(
+                              "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
+                              "border-l-2 -ml-[2px] pl-[10px]",
+                              active
+                                ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
+                                : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
+                              active && sub.isUrgente && "[&_svg]:text-accent2",
+                              sub.isUrgente && "relative"
+                            )}
+                          >
+                            {sub.icon}
+                            <span className="min-w-0 truncate">{sub.label}</span>
+                          </Link>
+
+                          {sub.children && sub.children.length > 0 && (
+                            <div className="ml-4 space-y-0.5">
+                              {sub.children
+                                .filter((c) => !c.permiso || puede(rol, c.permiso))
+                                .map((c) => {
+                                  const childActive = isSubmoduleActive(pathname, c.href);
+                                  return (
+                                    <Link
+                                      key={c.href}
+                                      href={c.href}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
+                                        "border-l-2 -ml-[2px] pl-[10px]",
+                                        childActive
+                                          ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
+                                          : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
+                                        childActive && c.isUrgente && "[&_svg]:text-accent2",
+                                        c.isUrgente && "relative"
+                                      )}
+                                    >
+                                      {c.icon}
+                                      <span className="min-w-0 truncate">{c.label}</span>
+                                    </Link>
+                                  );
+                                })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </CollapsibleContent>
             </Collapsible>

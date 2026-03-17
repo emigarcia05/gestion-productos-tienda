@@ -6,16 +6,16 @@ export function fmtPrecio(n: number): string {
   return Math.round(n).toLocaleString("es-AR", OPCIONES_ENTERO);
 }
 
-/** Formatea un valor numérico para tabla: 0 decimales, punto miles. Vacío/null → "—". */
+/** Formatea un valor numérico para tabla: 0 decimales, punto miles. Vacío/null → "" (vacío). */
 export function fmtNumero(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "—";
+  if (n == null || Number.isNaN(n)) return "";
   return Math.round(n).toLocaleString("es-AR", OPCIONES_ENTERO);
 }
 
-/** Valor para celda: si está vacío o es nulo, devuelve "—" (guion medio); si no, String(val). */
+/** Valor para celda: si está vacío o es nulo, devuelve "" (vacío); si no, String(val). */
 export function fmtCelda<T>(val: T | null | undefined): string {
-  if (val === null || val === undefined) return "—";
-  if (typeof val === "string" && val.trim() === "") return "—";
+  if (val === null || val === undefined) return "";
+  if (typeof val === "string" && val.trim() === "") return "";
   return String(val);
 }
 

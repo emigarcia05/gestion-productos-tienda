@@ -86,7 +86,11 @@ export default function TablaPedidoUrgente({
             <TableHead className="text-center" style={{ width: "10%" }}>
               CANT. PEDIDA
             </TableHead>
-            <TableHead className="text-center" style={{ width: "3%" }} aria-label="Eliminar" />
+            <TableHead className="text-center" style={{ width: "3%" }} aria-label="Eliminar">
+              <div className="flex items-center justify-center w-full">
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </div>
+            </TableHead>
             <TableHead
               className="text-center tabla-bloque-secundario-head-divider"
               style={{ width: "5%" }}
@@ -121,7 +125,7 @@ export default function TablaPedidoUrgente({
                       aria-label="Registrado en Dux"
                     />
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    ""
                   )}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
@@ -130,25 +134,27 @@ export default function TablaPedidoUrgente({
                 <TableCell className="celda-datos text-center tabular-nums">
                   {cantPorId[prod.id] && Number(cantPorId[prod.id]) > 0
                     ? cantPorId[prod.id]
-                    : "—"}
+                    : ""}
                 </TableCell>
                 <TableCell className="celda-datos text-center">
                   {Number(cantPorId[prod.id] || 0) > 0 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRowDeleteClick?.(prod);
-                      }}
-                      aria-label="Eliminar cantidad pedida"
-                    >
-                      <Trash2 />
-                    </Button>
+                    <div className="flex items-center justify-center w-full">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRowDeleteClick?.(prod);
+                        }}
+                        aria-label="Eliminar cantidad pedida"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    ""
                   )}
                 </TableCell>
                 <TableCell className="celda-datos text-center tabla-bloque-secundario-cell-divider">
@@ -158,11 +164,11 @@ export default function TablaPedidoUrgente({
                       aria-label="Configurado en reposición"
                     />
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    ""
                   )}
                 </TableCell>
                 <TableCell className="celda-datos text-center tabla-bloque-secundario-cell tabular-nums">
-                  {prod.confReposicion ? prod.cantReposicion : "—"}
+                  {prod.confReposicion ? prod.cantReposicion : ""}
                 </TableCell>
               </TableRow>
             ))

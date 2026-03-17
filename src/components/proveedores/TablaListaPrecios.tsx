@@ -75,7 +75,7 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
             >
               <TableCell className="py-2 px-3 text-xs font-mono">{prod.proveedor.prefijo}</TableCell>
               <TableCell className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</TableCell>
-              <TableCell className="py-2 px-3 text-center tabular-nums text-xs">—</TableCell>
+              <TableCell className="py-2 px-3 text-center tabular-nums text-xs" />
             </TableRow>
           ))
           )}

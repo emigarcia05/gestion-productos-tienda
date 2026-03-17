@@ -113,7 +113,7 @@ function CeldaPorcentaje({
       className="w-full text-center text-xs tabular-nums text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
       title="Clic Para Editar"
     >
-      {valor > 0 ? fmtPorcentaje(valor) : <span className="text-muted-foreground">—</span>}
+      {valor > 0 ? fmtPorcentaje(valor) : ""}
     </button>
   );
 }

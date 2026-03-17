@@ -47,7 +47,7 @@ function exportarStockExcel(
 }
 
 function fmtFecha(d: Date | null): string {
-  if (!d) return "—";
+  if (!d) return "";
   return new Date(d).toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "2-digit",
