@@ -295,7 +295,9 @@ export async function upsertPedidoTintometricoItems(
           codExt,
           codProveedor: "",
           codTienda: codTiendaTrim,
-          descripcionProveedor: null as string | null,
+          // Para ítems tintométricos no hay descripción de proveedor real;
+          // reutilizamos la descripción visible para mantener consistencia.
+          descripcionProveedor: item.descripcion,
           descripcionTienda: item.descripcion,
           tintometricoDescripcion: item.descripcion,
           tintometrioCantPedir: item.cantidad,
