@@ -52,7 +52,7 @@ export default function NuevoItemTintometricoModal({
   sucursales: SucursalTintometrica[];
   onAgregar: (draft: NuevoItemTintometricoDraft) => void;
 }) {
-  const [sucursal, setSucursal] = useState("");
+  const [sucursal, setSucursal] = useState<"" | "guaymallen" | "maipu">("");
   const [proveedorId, setProveedorId] = useState("");
   const [codTintometrico, setCodTintometrico] = useState("");
   const [baseModalOpen, setBaseModalOpen] = useState(false);
@@ -189,8 +189,8 @@ export default function NuevoItemTintometricoModal({
                   <SelectValue placeholder="Seleccionar Sucursal" />
                 </SelectTrigger>
                 <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                  {sucursales.map((s) => (
-                    <SelectItem key={s.id} value={s.codigo}>
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.codigo as "guaymallen" | "maipu"}>
                       {s.nombre}
                     </SelectItem>
                   ))}
