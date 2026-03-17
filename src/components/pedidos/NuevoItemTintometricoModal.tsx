@@ -5,7 +5,13 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import type { ProveedorTintometrico, BaseTintometricaRow } from "@/services/tintometrico.service";
 import SeleccionarBaseTintometricaModal from "@/components/pedidos/SeleccionarBaseTintometricaModal";
@@ -28,18 +34,17 @@ export default function NuevoItemTintometricoModal({
   proveedores: ProveedorTintometrico[];
   onAgregar: (draft: NuevoItemTintometricoDraft) => void;
 }) {
-  const firstProveedorId = proveedores[0]?.id ?? "";
-  const [proveedorId, setProveedorId] = useState(firstProveedorId);
+  const [proveedorId, setProveedorId] = useState("");
   const [codTintometrico, setCodTintometrico] = useState("");
   const [baseModalOpen, setBaseModalOpen] = useState(false);
   const [base, setBase] = useState<BaseTintometricaRow | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setProveedorId(firstProveedorId);
+    setProveedorId("");
     setCodTintometrico("");
     setBase(null);
-  }, [open, firstProveedorId]);
+  }, [open]);
 
   const proveedorSeleccionado = useMemo(
     () => proveedores.find((p) => p.id === proveedorId) ?? null,
@@ -79,21 +84,18 @@ export default function NuevoItemTintometricoModal({
         <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-col gap-2">
             <span className="text-xs text-muted-foreground">Proveedor</span>
-            <Tabs value={proveedorId} onValueChange={setProveedorId} className="w-full">
-              <TabsList className="w-full justify-start">
+            <Select value={proveedorId} onValueChange={setProveedorId}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Seleccionar Proveedor" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 {proveedores.map((p) => (
-                  <TabsTrigger key={p.id} value={p.id}>
+                  <SelectItem key={p.id} value={p.id}>
                     {p.nombre}
-                  </TabsTrigger>
+                  </SelectItem>
                 ))}
-              </TabsList>
-
-              {proveedores.map((p) => (
-                <TabsContent key={p.id} value={p.id} className="hidden">
-                  {p.nombre}
-                </TabsContent>
-              ))}
-            </Tabs>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-2">

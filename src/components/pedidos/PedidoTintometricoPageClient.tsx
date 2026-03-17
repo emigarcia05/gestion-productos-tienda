@@ -52,17 +52,18 @@ export default function PedidoTintometricoPageClient({
 
   const filters = (
     <FilterBar className="filtros-contenedor-tienda bg-card">
-      <FilterRowSelection className="justify-end">
+      <FilterRowSelection className="justify-center">
         <Button
           type="button"
-          variant="primaryIcon"
-          size="icon-lg"
+          variant="default"
+          size="lg"
           onClick={() => setModalOpen(true)}
           aria-label="Agregar Ítem"
           title="Agregar Ítem"
-          className="h-10 min-h-10"
+          className="h-10 min-h-10 px-8"
         >
           <Plus className="h-4 w-4" />
+          <span>Agregar Ítem</span>
         </Button>
       </FilterRowSelection>
     </FilterBar>
