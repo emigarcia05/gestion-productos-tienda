@@ -14,11 +14,14 @@ import FilterBar, {
   FilaFiltrosDesplegables,
   FILTER_SELECT_WRAPPER_CLASS,
   SELECT_TRIGGER_FILTER_CLASS,
+  FilterRowSearch,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedidos";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -42,6 +45,7 @@ interface Props {
   proveedor: string;
   tipos: TipoPedido[];
   proveedores: Proveedor[];
+  q: string;
 }
 
 export default function FiltrosEnviarPedido({
@@ -49,6 +53,7 @@ export default function FiltrosEnviarPedido({
   proveedor,
   tipos,
   proveedores,
+  q: qActual,
 }: Props) {
   const pathname = usePathname();
   const multiRef = useRef<HTMLDivElement>(null);
@@ -58,19 +63,23 @@ export default function FiltrosEnviarPedido({
     sucursal?: string;
     proveedor?: string;
     tipos?: TipoPedido[];
+    q?: string;
   }) {
     const next = {
       sucursal: sucursal || "",
       proveedor: proveedor || "",
       tipos: tipos ?? [],
+      q: qActual || "",
     };
     if (updates.sucursal !== undefined) next.sucursal = updates.sucursal;
     if (updates.proveedor !== undefined) next.proveedor = updates.proveedor;
     if (updates.tipos !== undefined) next.tipos = updates.tipos;
+    if (updates.q !== undefined) next.q = updates.q;
     const search = new URLSearchParams();
     if (next.sucursal) search.set("sucursal", next.sucursal);
     if (next.proveedor) search.set("proveedor", next.proveedor);
     if (next.tipos.length > 0) search.set("tipo", next.tipos.join(","));
+    if (next.q.trim()) search.set("q", next.q.trim());
     window.location.href = `${pathname}?${search.toString()}`;
   }
 
@@ -92,9 +101,11 @@ export default function FiltrosEnviarPedido({
   }, [multiOpen]);
 
   const hayFiltros = !!(sucursal || proveedor || tipos.length > 0);
+  const hayFiltrosOBusqueda = hayFiltros || !!qActual.trim();
 
   function limpiarFiltros() {
-    updateUrl({ sucursal: "", proveedor: "", tipos: [] });
+    setQ("");
+    updateUrl({ sucursal: "", proveedor: "", tipos: [], q: "" });
   }
 
   const labelTipo =
@@ -103,6 +114,14 @@ export default function FiltrosEnviarPedido({
       : tipos.length === TIPOS_PEDIDO.length
         ? "TODOS"
         : tipos.map((t) => OPCIONES_TIPO.find((o) => o.value === t)?.label ?? t).join(", ");
+
+  const { q, setQ, ref: inputRef, handleQChange, isDebouncing } = useFiltrosConBusqueda({
+    qActual,
+    debounceMs: 400,
+    onDebouncedSearch: (value) => {
+      updateUrl({ q: value });
+    },
+  });
 
   return (
     <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
@@ -196,8 +215,18 @@ export default function FiltrosEnviarPedido({
           </div>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
-      <div className="flex justify-end w-full">
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+      <div className="flex items-center gap-2">
+        <FilterRowSearch>
+          <FiltroBusquedaInput
+            id="enviar-pedido-descripcion"
+            placeholder="BUSCAR POR DESCRIPCIÓN..."
+            value={q}
+            onChange={handleQChange}
+            isDebouncing={isDebouncing}
+            inputRef={inputRef}
+          />
+        </FilterRowSearch>
+        <LimpiarFiltrosButton visible={hayFiltrosOBusqueda} onClick={limpiarFiltros} />
       </div>
     </FilterBar>
   );

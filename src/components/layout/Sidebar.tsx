@@ -151,9 +151,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
       <div className="pt-4 px-4 pb-3">
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold text-sidebar-foreground/80 tracking-wide">
-            PERFIL
-          </span>
           <SelectorRol rolActual={rol} compact />
         </div>
       </div>
@@ -261,7 +258,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <ImportStatusIndicator />
         </div>
         <div className="px-4 py-4 flex justify-center">
-          <div className="w-full max-w-[45%] flex justify-center items-center">
+          <div className="w-full flex flex-col items-center gap-3">
+            <div className="h-px w-[70%] bg-sidebar-foreground/70" aria-hidden />
+            <div className="w-full max-w-[45%] flex justify-center items-center">
             <Image
               src="/logo_tiendacolor.png"
               alt="Logo de la empresa"
@@ -269,6 +268,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               height={100}
               className="w-full h-auto object-contain"
             />
+            </div>
           </div>
         </div>
       </div>

@@ -94,12 +94,13 @@ export async function getEnviarPedidoTablaData(params: {
   sucursal: string;
   proveedor: string;
   tipos: string[];
+  q?: string;
 }): Promise<{ items: EnviarPedidoTablaItem[] }> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { items: [] };
   }
-  const { sucursal, proveedor, tipos } = params;
+  const { sucursal, proveedor, tipos, q } = params;
   const sucursalValida =
     sucursal?.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
       ? (sucursal as SucursalPedidoEnvio)
@@ -107,7 +108,8 @@ export async function getEnviarPedidoTablaData(params: {
   if (!sucursalValida || !proveedor?.trim() || !Array.isArray(tipos) || tipos.length === 0) {
     return { items: [] };
   }
-  const { items } = await getItemsYProveedorParaEnviar(proveedor.trim(), sucursalValida, tipos);
+  const qNorm = q?.trim() ? q.trim() : undefined;
+  const { items } = await getItemsYProveedorParaEnviar(proveedor.trim(), sucursalValida, tipos, qNorm);
   return {
     items: items.map((i) => ({ cantPedir: i.cantPedir, descripcion: i.descripcion })),
   };

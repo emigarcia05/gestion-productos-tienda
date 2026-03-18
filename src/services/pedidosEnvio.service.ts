@@ -436,7 +436,8 @@ export interface ProveedorParaEnvio {
 export async function getItemsYProveedorParaEnviar(
   proveedorId: string,
   sucursal: string,
-  tipos: string[]
+  tipos: string[],
+  q?: string
 ): Promise<{ items: ItemPedidoParaPdf[]; proveedor: ProveedorParaEnvio | null }> {
   if (!proveedorId.trim() || !sucursal.trim() || tipos.length === 0) {
     return { items: [], proveedor: null };
@@ -448,6 +449,8 @@ export async function getItemsYProveedorParaEnviar(
   });
   if (!sucursalRow) return { items: [], proveedor: null };
 
+  const qNorm = q?.trim() ? q.trim() : "";
+
   const [items, proveedor] = await Promise.all([
     prisma.itemPedidoEnvio.findMany({
       where: {
@@ -455,6 +458,14 @@ export async function getItemsYProveedorParaEnviar(
         sucursalId: sucursalRow.id,
         tipoPedido: { in: tipos },
         cantPedir: { gt: 0 },
+        ...(qNorm
+          ? {
+              OR: [
+                { descripcionTienda: { contains: qNorm, mode: "insensitive" } },
+                { descripcionProveedor: { contains: qNorm, mode: "insensitive" } },
+              ],
+            }
+          : {}),
       },
       orderBy: [{ codExt: "asc" }],
       select: {

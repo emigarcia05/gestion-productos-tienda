@@ -33,6 +33,7 @@ interface Props {
     sucursal?: string;
     proveedor?: string;
     tipo?: string;
+    q?: string;
   }>;
 }
 
@@ -40,10 +41,11 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
 
-  const { sucursal = "", proveedor = "", tipo = "" } = await searchParams;
+  const { sucursal = "", proveedor = "", tipo = "", q = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" =
     sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
   const tiposValidos: TipoPedido[] = parseTiposParam(tipo);
+  const qNorm = q.trim();
 
   const tienenLosTresFiltros =
     !!sucursalValida && !!proveedor && tiposValidos.length > 0;
@@ -55,6 +57,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
           sucursal: sucursalValida,
           proveedor,
           tipos: tiposValidos,
+          q: qNorm,
         })
       : Promise.resolve({ items: [] }),
   ]);
@@ -68,6 +71,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
       proveedor={proveedor}
       tipos={tiposValidos}
       proveedores={proveedores}
+      q={qNorm}
     />
   );
 

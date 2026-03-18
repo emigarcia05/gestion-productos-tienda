@@ -37,6 +37,13 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Servicio** (consulta Prisma) + **Action** con sesión/rol + Zod + `ActionResult`.
 - Ejemplo aplicado: `buscarBasesTintometricasAction` (módulo Pedido Tintométrico) consulta `precios_tienda` filtrando por `rubro = "Tintometrico"` y búsqueda por descripción/códigos.
 
+### 1.7 Filtros de búsqueda por texto (lecturas)
+
+- Cuando se agrega un filtro de texto (ej. `q`) en un listado de lectura:
+  - **Normalizar**: `q?.trim()` y tratar vacío como `undefined`.
+  - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
+  - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
+
 ### 1.5 Manejo de errores y respuestas
 
 - **Formato estándar para el frontend**:  
