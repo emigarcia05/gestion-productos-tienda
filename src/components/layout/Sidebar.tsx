@@ -149,12 +149,14 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
-      <div className="pt-4 px-4 pb-3">
+      <div className="pt-3 px-4 pb-2">
         <div className="flex flex-col gap-1">
           <SelectorRol rolActual={rol} compact />
         </div>
       </div>
-      <Separator className="mx-4 bg-primary/50" />
+      <div className="flex justify-center px-4 pb-1" aria-hidden>
+        <div className="h-px w-[80%] bg-sidebar-foreground/70" />
+      </div>
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
           module.submodules.some((sub) => {
@@ -259,7 +261,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         </div>
         <div className="px-4 py-4 flex justify-center">
           <div className="w-full flex flex-col items-center gap-3">
-            <div className="h-px w-[70%] bg-sidebar-foreground/70" aria-hidden />
+            <div className="h-px w-[80%] bg-sidebar-foreground/70" aria-hidden />
             <div className="w-full max-w-[45%] flex justify-center items-center">
             <Image
               src="/logo_tiendacolor.png"
