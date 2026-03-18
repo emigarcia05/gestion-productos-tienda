@@ -1,0 +1,14 @@
+---
+description: Flujo end-to-end para tareas full stack
+alwaysApply: true
+---
+
+# Flujo de trabajo full stack
+
+1. Entender el objetivo y restricciones funcionales.
+2. Implementar de punta a punta (UI, acciones, servicios y validación cuando aplique).
+3. Ajustar iterativamente hasta dejar el código estable y consistente con el proyecto.
+4. Verificar regresiones básicas del flujo tocado.
+5. Cerrar con retroalimentación:
+   - actualizar `FRONTEND_GUIDELINES.md` si se creó/ajustó patrón frontend;
+   - actualizar `BACKEND_GUIDELINES.md` si se creó/ajustó regla backend.

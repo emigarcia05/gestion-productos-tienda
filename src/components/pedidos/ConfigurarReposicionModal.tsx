@@ -212,7 +212,7 @@ export default function ConfigurarReposicionModal({
                 aria-hidden={invisPunto}
               >
                 <Label className="text-xs font-medium text-foreground text-center">
-                  PUNTO REPOSICIÓN
+                  PUNTO REPOSIC.
                 </Label>
                 <Input
                   type="number"

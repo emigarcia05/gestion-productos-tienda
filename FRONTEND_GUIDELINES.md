@@ -258,6 +258,7 @@ Antes de dar por terminada una tarea de frontend:
 - **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx`, `app/tienda/page.tsx`, `app/stock/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tablas con 100 ítems por página y barra de paginación al pie cuando hay más de una página (`PaginacionTabla` o `PaginacionClient`).
 - **Componentes con `cn()`**: TablaAumentos, SyncButton, SyncDuxHeaderButton, UploadZone, ProveedorAlternativoRow, ImportarModal, ImportarListaPreciosModal (botones SÍ/NO y zona drag), FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros — todas las combinaciones de clase pasan por `cn()`.
 - **Eliminación de estilos inline estructurales**: anchos de columnas en `TablaPedidoUrgente`, `TablaReposicion` y `ComparacionCategoriasClient` migrados a utilidades Tailwind (`w-[x%]`) y clases globales; plantilla de impresión de stock (`PrintStock`) sin atributos `style`, usando solo clases CSS internas.
+- **Sidebar — Sincronización DUX (persistente y accionable)**: `SyncStatusIndicator` permanece siempre visible en la slidenav. En reposo muestra bloque centrado con "Sincronización DUX", "Última Consulta Disponible" y fecha en formato Argentina (`dd/mm hh:mm`) solo si existe última sync exitosa. El bloque completo funciona como botón para iniciar `POST /api/sync-lista-precios-tienda` sin modal de confirmación; durante ejecución mantiene el mensaje de progreso reutilizable.
 
 ### Auditoría cerrada
 
@@ -265,7 +266,17 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: tablas con encabezado fijo y paginación de 100 ítems por página en toda la app; constante `PAGE_SIZE` y componentes `PaginacionTabla` / `PaginacionClient`. Documentado en sección "Guía para IA" punto 8, sección 1 punto 5 y 8, y catálogo.*
+*Última actualización: sidebar con bloque permanente de Sincronización DUX (centrado, con última consulta disponible y click directo para iniciar sync), manteniendo indicador de progreso durante ejecución.*
+
+---
+
+## 6. Organización en Cursor (prompts y reglas persistentes)
+
+- Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`.
+- Reglas persistentes activas en `.cursor/rules/`:
+  - `manuales-obligatorios.mdc`: obliga lectura de `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md` antes de codificar.
+  - `flujo-fullstack-end-to-end.mdc`: define ciclo de implementación end-to-end y cierre con retroalimentación documental.
+- Si se agrega un nuevo patrón visual, clase global, componente compartido o convención de UI, debe actualizarse este documento y mantenerse alineado con las reglas de `.cursor/rules/`.
 
 ---
 

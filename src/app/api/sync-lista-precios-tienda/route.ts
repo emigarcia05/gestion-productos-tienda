@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { syncListaPrecioTiendaFromDux } from "@/services/syncListaPrecioTienda.service";
-import { getSyncProgress, setSyncRunning, setSyncProgress } from "@/lib/syncProgressStore";
+import {
+  getSyncDuxStatusFromDb,
+  setSyncDuxErrorInDb,
+  setSyncDuxProgressInDb,
+  setSyncDuxSuccessInDb,
+  startSyncDuxInDb,
+} from "@/lib/syncDuxStatusDb";
 
 /** Evita ejecutar dos sincronizaciones a la vez (p. ej. doble clic). */
 let syncInProgress = false;
@@ -26,26 +32,30 @@ export async function GET() {
  * El cliente debe esperar con timeout largo (ej. 5 min).
  */
 export async function POST() {
-  if (syncInProgress || getSyncProgress().running) {
+  const current = await getSyncDuxStatusFromDb();
+  if (syncInProgress || current.running) {
     return NextResponse.json(
       { ok: false, error: "Sincronización ya en curso" },
       { status: 409 }
     );
   }
   syncInProgress = true;
-  setSyncRunning(true);
-  setSyncProgress(0, 0, "sincronizando");
+  await startSyncDuxInDb();
   try {
+    let finalProcessed = 0;
+    let finalTotal = 0;
     const result = await syncListaPrecioTiendaFromDux({
       onProgress(processed, total, phase) {
-        setSyncProgress(processed, total, phase);
+        finalProcessed = processed;
+        finalTotal = total;
+        void setSyncDuxProgressInDb(processed, total, phase);
       },
     });
-    setSyncRunning(false);
+    await setSyncDuxSuccessInDb(finalProcessed, finalTotal);
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
-    setSyncRunning(false);
     const message = e instanceof Error ? e.message : String(e);
+    await setSyncDuxErrorInDb(message);
     console.error("Error en sync lista_precios_tienda:", message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   } finally {

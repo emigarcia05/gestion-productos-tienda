@@ -1,0 +1,11 @@
+---
+description: Consulta obligatoria de manuales frontend y backend
+alwaysApply: true
+---
+
+# Manuales obligatorios antes de codificar
+
+- Antes de crear o modificar código, leer `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md`.
+- No proponer convenciones nuevas que contradigan esos documentos.
+- Si hay conflicto, priorizar la guía específica del área (frontend o backend).
+- La tarea no se considera cerrada hasta documentar cambios relevantes en los manuales.

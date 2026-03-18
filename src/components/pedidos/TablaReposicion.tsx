@@ -79,10 +79,10 @@ export default function TablaReposicion({
                 FORMA PEDIR
               </TableHead>
               <TableHead className="px-3 py-2 text-xs w-[8%]">
-                PUNTO REPOSICIÓN
+                PUNTO REPOSIC.
               </TableHead>
               <TableHead className="px-3 py-2 text-xs w-[8%]">
-                CANT. REPOSICIÓN
+                CANT. REPOSIC.
               </TableHead>
               <TableHead
                 className="px-1 py-2 text-xs text-center bg-muted/30 text-foreground w-[8%]"
