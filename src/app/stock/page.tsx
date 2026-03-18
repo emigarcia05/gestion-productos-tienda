@@ -12,8 +12,8 @@ interface Props {
     q?: string;
     marca?: string;
     rubro?: string;
-    subRubro?: string;
     soloNegativo?: string;
+    orden?: string;
     pagina?: string;
   }>;
 }
@@ -27,8 +27,8 @@ export default async function StockPage({ searchParams }: Props) {
     q = "",
     marca = "",
     rubro = "",
-    subRubro = "",
     soloNegativo = "",
+    orden = "tiempoSinControl",
     pagina = "1",
   } = await searchParams;
 
@@ -43,11 +43,11 @@ export default async function StockPage({ searchParams }: Props) {
         q,
         marca,
         rubro,
-        subRubro,
         soloNegativo: soloNegativoBool,
+        orden,
         pagina: paginaNum,
       })
-    : { items: [], total: 0, totalPaginas: 0, marcas: [], rubros: [], subRubros: [] };
+    : { items: [], total: 0, totalPaginas: 0, marcas: [], rubros: [] };
 
   return (
     <StockPageWithActions
@@ -56,10 +56,10 @@ export default async function StockPage({ searchParams }: Props) {
       q={q}
       marca={marca}
       rubro={rubro}
-      subRubro={subRubro}
       soloNegativo={soloNegativoBool}
+      orden={orden}
       paginaNum={paginaNum}
-      paramsPagina={{ sucursal: sucursalValida ?? "", q, marca, rubro, subRubro, soloNegativo }}
+      paramsPagina={{ sucursal: sucursalValida ?? "", q, marca, rubro, soloNegativo, orden }}
     />
   );
 }

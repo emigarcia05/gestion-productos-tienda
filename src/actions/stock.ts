@@ -17,7 +17,6 @@ export interface ItemStock {
   descripcion:     string;
   marca:           string | null;
   rubro:           string | null;
-  subRubro:        string | null;
   stock:           number;
   ultimaExportacionExcel: Date | null;
 }
@@ -28,15 +27,14 @@ export interface ControlStockData {
   totalPaginas:  number;
   marcas:        string[];
   rubros:        string[];
-  subRubros:     string[];
 }
 
 export interface GetControlStockParams {
   q?: string;
   marca?: string;
   rubro?: string;
-  subRubro?: string;
   soloNegativo?: boolean;
+  orden?: string;
   pagina?: number;
 }
 
@@ -46,7 +44,6 @@ const emptyControlStock: ControlStockData = {
   totalPaginas: 0,
   marcas: [],
   rubros: [],
-  subRubros: [],
 };
 
 /**
@@ -72,8 +69,8 @@ export async function getControlStock(
     q = "",
     marca = "",
     rubro = "",
-    subRubro = "",
     soloNegativo = false,
+    orden = "tiempoSinControl",
     pagina = 1,
   } = params;
 
@@ -82,12 +79,11 @@ export async function getControlStock(
 
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
 
-  function baseWhere(exclude?: "marca" | "rubro" | "subRubro"): Prisma.ListaPrecioTiendaWhereInput[] {
+  function baseWhere(exclude?: "marca" | "rubro"): Prisma.ListaPrecioTiendaWhereInput[] {
     const parts: Prisma.ListaPrecioTiendaWhereInput[] = [];
     if (textFilter.AND?.length) parts.push(textFilter);
     if (exclude !== "marca" && marca) parts.push({ marca });
     if (exclude !== "rubro" && rubro) parts.push({ rubro });
-    if (exclude !== "subRubro" && subRubro) parts.push({ subRubro });
     if (soloNegativo) {
       parts.push(
         sucursal === "maipu"
@@ -99,7 +95,7 @@ export async function getControlStock(
   }
 
   const toWhereWithNotNull = (
-    exclude: "marca" | "rubro" | "subRubro"
+    exclude: "marca" | "rubro"
   ): Prisma.ListaPrecioTiendaWhereInput => {
     const parts = baseWhere(exclude);
     const key = exclude;
@@ -111,12 +107,17 @@ export async function getControlStock(
     baseWhere().length > 0 ? { AND: baseWhere() } : {};
   const whereMarcas = toWhereWithNotNull("marca");
   const whereRubros = toWhereWithNotNull("rubro");
-  const whereSubRubros = toWhereWithNotNull("subRubro");
 
-  const [rows, total, marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
+  const [rows, total, marcasDistinct, rubrosDistinct] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
       where: whereItems,
-      orderBy: { descripcionTienda: "asc" },
+      orderBy:
+        orden === "tiempoSinControl"
+          ? [
+              { ultimaExportacionExcel: { sort: "asc", nulls: "first" } },
+              { descripcionTienda: "asc" },
+            ]
+          : { descripcionTienda: "asc" },
       skip,
       take: PAGE_SIZE,
     }),
@@ -133,12 +134,6 @@ export async function getControlStock(
       where: whereRubros,
       orderBy: { rubro: "asc" },
     }),
-    prisma.listaPrecioTienda.findMany({
-      select: { subRubro: true },
-      distinct: ["subRubro"],
-      where: whereSubRubros,
-      orderBy: { subRubro: "asc" },
-    }),
   ]);
 
   const items: ItemStock[] = rows.map((r) => ({
@@ -147,7 +142,6 @@ export async function getControlStock(
     descripcion: r.descripcionTienda ?? "",
     marca: r.marca,
     rubro: r.rubro,
-    subRubro: r.subRubro,
     stock: sucursal === "maipu" ? r.stockMaipu : r.stockGuaymallen,
     ultimaExportacionExcel: r.ultimaExportacionExcel,
   }));
@@ -160,7 +154,6 @@ export async function getControlStock(
     totalPaginas,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
-    subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => s.subRubro!),
   };
 }
 

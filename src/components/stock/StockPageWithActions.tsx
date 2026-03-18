@@ -18,8 +18,8 @@ interface Props {
   q: string;
   marca: string;
   rubro: string;
-  subRubro: string;
   soloNegativo: boolean;
+  orden: string;
   paginaNum: number;
   paramsPagina: Record<string, string>;
 }
@@ -30,8 +30,8 @@ export default function StockPageWithActions({
   q,
   marca,
   rubro,
-  subRubro,
   soloNegativo,
+  orden,
   paginaNum,
   paramsPagina,
 }: Props) {
@@ -63,8 +63,8 @@ export default function StockPageWithActions({
       qActual={q}
       marcaActual={marca}
       rubroActual={rubro}
-      subRubroActual={subRubro}
       soloNegativoActual={soloNegativo}
+      ordenActual={orden}
       totalItems={totalFiltrados}
     />
   );
@@ -87,7 +87,6 @@ export default function StockPageWithActions({
               qActual={q}
               marcaActual={marca}
               rubroActual={rubro}
-              subRubroActual={subRubro}
               soloNegativoActual={soloNegativo}
               onFiltradosCountChange={setTotalFiltrados}
             />

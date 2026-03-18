@@ -32,8 +32,8 @@ interface Props {
   qActual: string;
   marcaActual: string;
   rubroActual: string;
-  subRubroActual: string;
   soloNegativoActual: boolean;
+  ordenActual: string;
   totalItems: number;
 }
 
@@ -43,8 +43,8 @@ export default function FiltrosStock({
   qActual,
   marcaActual,
   rubroActual,
-  subRubroActual,
   soloNegativoActual,
+  ordenActual,
   totalItems,
 }: Props) {
   const pathname = usePathname();
@@ -66,7 +66,6 @@ export default function FiltrosStock({
     q ||
     marcaActual ||
     rubroActual ||
-    subRubroActual ||
     soloNegativoActual
   );
 
@@ -75,8 +74,8 @@ export default function FiltrosStock({
     q?: string;
     marca?: string;
     rubro?: string;
-    subRubro?: string;
     soloNegativo?: boolean;
+    orden?: string;
   }): URLSearchParams {
     const p = new URLSearchParams();
     const sucursal =
@@ -84,19 +83,18 @@ export default function FiltrosStock({
     const qVal = updates.q !== undefined ? updates.q : q;
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
-    const subRubroVal =
-      updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
     const soloVal =
       updates.soloNegativo !== undefined
         ? updates.soloNegativo
         : soloNegativoActual;
+    const ordenVal = updates.orden !== undefined ? updates.orden : ordenActual;
 
     if (sucursal) p.set("sucursal", sucursal);
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
-    if (subRubroVal) p.set("subRubro", subRubroVal);
     if (soloVal) p.set("soloNegativo", "true");
+    if (ordenVal) p.set("orden", ordenVal);
     return p;
   }
 
@@ -105,8 +103,8 @@ export default function FiltrosStock({
     q?: string;
     marca?: string;
     rubro?: string;
-    subRubro?: string;
     soloNegativo?: boolean;
+    orden?: string;
   }) {
     const p = buildParams(updates);
     const query = p.toString();
@@ -122,21 +120,21 @@ export default function FiltrosStock({
       sucursal: value as Sucursal,
       marca: "",
       rubro: "",
-      subRubro: "",
     });
   }
 
   function handleMarca(value: string) {
-    navigate({ marca: value, rubro: "", subRubro: "" });
+    navigate({ marca: value, rubro: "" });
   }
   function handleRubro(value: string) {
-    navigate({ rubro: value, subRubro: "" });
-  }
-  function handleSubRubro(value: string) {
-    navigate({ subRubro: value });
+    navigate({ rubro: value });
   }
   function handleSoloNegativo(value: string) {
     navigate({ soloNegativo: value === "negativo" });
+  }
+
+  function handleOrden(value: string) {
+    navigate({ orden: value });
   }
 
   function limpiarFiltros() {
@@ -237,15 +235,15 @@ export default function FiltrosStock({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={subRubroActual || "none"}
-              onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}
+              value={ordenActual}
+              onValueChange={(v) => handleOrden(v)}
               disabled={!sucursalSeleccionada}
             >
               <SelectTrigger
-                id="filtro-stock-subrubro"
+                id="filtro-stock-orden"
                 className="input-filtro-unificado"
               >
-                <SelectValue placeholder="SUB-RUBRO" />
+                <SelectValue placeholder="ORDEN" />
               </SelectTrigger>
               <SelectContent
                 position="popper"
@@ -253,12 +251,9 @@ export default function FiltrosStock({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUB-RUBRO</SelectItem>
-                {data.subRubros.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
+                <SelectItem value="tiempoSinControl">
+                  TIEMPO SIN CONTROL
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

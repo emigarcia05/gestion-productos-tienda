@@ -228,14 +228,14 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/components/proveedores/ImportarModal.tsx` | Manejo de respuesta: comprueba `res.ok` y usa `res.data` o `res.error` según corresponda. |
 | **Fase 2 (cierre de auditoría)** | |
 | `src/actions/pedidos.ts` | `getPedidoUrgenteData`: comprobación `getRol()` + `puede(rol, PERMISOS.pedidos.acceso)`; si no hay acceso se devuelve estructura vacía (proveedores mock, productos [], total 0). |
-| `src/actions/stock.ts` | `getControlStock`: comprobación `getRol()` + `puede(rol, PERMISOS.stock.acceso)`; retorno vacío si no hay acceso. `registrarImpresion`: retorno `ActionResult<void>`, validación de `ids` con Zod (UUIDs), comprobación de acceso; componente muestra toast en error. |
+| `src/actions/stock.ts` | `getControlStock`: comprobación `getRol()` + `puede(rol, PERMISOS.stock.acceso)`; retorno vacío si no hay acceso. `registrarExportacionExcelStock`: persiste `ultimaExportacionExcel` (ActionResult<void>), validación de `ids` con Zod (UUIDs), comprobación de acceso; componente muestra toast en error. Además, `getControlStock` soporta ordenamiento por `ultima_exportacion_excel` con `NULL` como “más antiguo”. |
 | `src/actions/vinculos.ts` | `vincularProducto` y `desvincularProducto`: validación de IDs con `uuidSchema` antes de tocar Prisma. |
 | `src/actions/productos.ts` | `editarProducto`: validación con `editarProductoSchema` (id + campos). `aplicarCampoMasivo`: validación con `aplicarCampoMasivoSchema` (proveedorId, campo, valor, q). |
 | `src/actions/comparacionCategorias.ts` | Todas las acciones devuelven `ActionResult<T>` unificado; validación Zod para todos los parámetros (UUIDs, nombres, etc.) vía `src/lib/validations/comparacionCategorias.ts`; respuestas de error solo `{ ok: false, error }`; asignar/quitar asignación devuelven `data: { count }`. |
 | `src/lib/validations/common.ts` | Nuevo: `uuidSchema`, `uuidsSchema`, `paramsPaginaSchema` reutilizables. |
 | `src/lib/validations/productos.ts` | Nuevo: `camposEditablesProductoSchema`, `editarProductoSchema`, `campoMasivoSchema`, `aplicarCampoMasivoSchema`. |
 | `src/lib/validations/comparacionCategorias.ts` | Nuevo: esquemas para CRUD categorías, subcategorías, presentaciones y asignación de productos. |
-| Componentes comparación/stock | `ComparacionCategoriasClient`: uso de `res.data` en `getProductosPorPresentacionAction`. `AsignarProductosModal`: uso de `res.data?.count`. `TablaStock`: manejo de `registrarImpresion` con toast en error. |
+| Componentes comparación/stock | `ComparacionCategoriasClient`: uso de `res.data` en `getProductosPorPresentacionAction`. `AsignarProductosModal`: uso de `res.data?.count`. `TablaStock`: manejo de `registrarExportacionExcelStock` con toast en error. |
 
 ---
 

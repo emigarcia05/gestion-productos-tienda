@@ -68,7 +68,6 @@ interface Props {
   qActual: string;
   marcaActual: string;
   rubroActual: string;
-  subRubroActual: string;
   soloNegativoActual: boolean;
   onFiltradosCountChange?: (count: number) => void;
 }
@@ -85,7 +84,6 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     qActual,
     marcaActual,
     rubroActual,
-    subRubroActual,
     soloNegativoActual,
     onFiltradosCountChange,
   },
