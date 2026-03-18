@@ -54,7 +54,7 @@ export const PERMISOS = {
 
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
-    /** Comp. Px. Prov. (/tienda). */
+    /** Comp. Proveedores (/tienda). */
     acceso: { simple: false, editor: true },
     /** Control Aumentos (/tienda/aumentos). */
     controlAumentos: { simple: false, editor: true },

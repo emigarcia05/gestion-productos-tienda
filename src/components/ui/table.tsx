@@ -12,7 +12,7 @@ interface TableProps extends React.ComponentProps<"table"> {
   scrollX?: boolean
 }
 
-/** Diseño único de tablas (referencia: Comp. Px. Prov.). Aplica .tabla-gestion-compacta (globals.css).
+/** Diseño único de tablas (referencia: Comp. Proveedores). Aplica .tabla-gestion-compacta (globals.css).
  * Encabezado fijo: al hacer scroll los encabezados no desaparecen. variant se mantiene por API pero ambos usan el mismo estilo. */
 function Table({ className, variant, scrollX = true, ...props }: TableProps) {
   const tableClass = cn("tabla-gestion-compacta", className)
@@ -83,7 +83,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "bg-transparent text-primary-foreground font-bold text-center align-middle whitespace-nowrap uppercase",
+        "bg-transparent text-primary-foreground font-normal text-center align-middle whitespace-nowrap uppercase",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}

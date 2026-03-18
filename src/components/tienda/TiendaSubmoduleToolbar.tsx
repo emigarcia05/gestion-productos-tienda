@@ -23,7 +23,7 @@ export default function TiendaSubmoduleToolbar({ activo }: { activo: TiendaSubmo
       >
         <Link href="/tienda" className="gap-2">
           <Link2 className="h-4 w-4 shrink-0" />
-          Comp. Px. Prov.
+          Comp. Proveedores
         </Link>
       </Button>
       <Button

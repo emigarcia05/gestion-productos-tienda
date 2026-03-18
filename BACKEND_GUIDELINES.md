@@ -53,7 +53,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 
 - En `getTiendaPageData` (listado “Comp. Proveedores”), cuando hay mejora por un proveedor **no-oficial**:
   - el “mejor proveedor” se define por el menor `px_compra_final` entre proveedores no-oficiales;
-  - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` (ej. `+12%`) y se setea en `difMejorPrecioPctEntero`;
+  - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);
   - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
 
 ### 1.5 Manejo de errores y respuestas

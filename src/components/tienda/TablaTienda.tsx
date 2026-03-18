@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import { fmtPctEntero, fmtPrecio } from "@/lib/format";
+import { fmtPrecio } from "@/lib/format";
 
 interface ItemTienda {
   id: string;
@@ -38,6 +38,14 @@ interface ItemTienda {
 const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
 const MENSAJE_SIN_RESULTADOS = "No se encontraron items.";
 
+/** DIF.: porcentaje renderizado como reducción con signo "-" (ej. -12%). */
+function fmtDifPctEnteroMinus(n: number): string {
+  const entero = Math.round(n);
+  if (entero > 0) return `-${entero}%`;
+  if (entero < 0) return `${entero}%`;
+  return "0%";
+}
+
 export default function TablaTienda({
   items,
   setMejorPrecio,
@@ -59,13 +67,13 @@ export default function TablaTienda({
       <Table variant="compact" scrollX={false}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[15%]">COD. TIENDA</TableHead>
-            <TableHead className="w-[60%]">DESCRIPCIÓN</TableHead>
-            <TableHead className="w-[15%]">PX. COMPRA FINAL</TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider w-[5%]">
+            <TableHead className="w-[14%]">COD. TIENDA</TableHead>
+            <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
+            <TableHead className="w-[12%]">PX. COMPRA FINAL</TableHead>
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider w-[12%]">
               MEJOR PROV.
             </TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head w-[5%]">
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head w-[12%]">
               DIF.
             </TableHead>
           </TableRow>
@@ -83,20 +91,20 @@ export default function TablaTienda({
                 onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
                 className={puedeVincular ? "cursor-pointer" : ""}
               >
-                <TableCell className="celda-datos celda-mono w-[15%] whitespace-nowrap">
+                <TableCell className="celda-datos celda-mono w-[14%] whitespace-nowrap">
                   {item.codItem}
                 </TableCell>
-                <TableCell className="celda-datos celda-destacado w-[60%] min-w-0 overflow-hidden">
+                <TableCell className="celda-datos celda-destacado w-[50%] min-w-0 overflow-hidden">
                   {item.descripcion}
                 </TableCell>
-                <TableCell className="celda-datos celda-numero celda-destacado w-[15%]">
+                <TableCell className="celda-datos celda-numero celda-destacado w-[12%]">
                   ${fmtPrecio(item.costo)}
                 </TableCell>
-                <TableCell className="celda-datos celda-mono w-[5%] tabla-bloque-secundario-cell-divider">
+                <TableCell className="celda-datos celda-mono w-[12%] tabla-bloque-secundario-cell-divider">
                   {item.mejorProveedorNoOficialPrefijo ?? ""}
                 </TableCell>
-                <TableCell className="celda-datos celda-numero w-[5%] tabla-bloque-secundario-cell">
-                  {item.difMejorPrecioPctEntero != null ? fmtPctEntero(item.difMejorPrecioPctEntero) : ""}
+                <TableCell className="celda-datos celda-numero w-[12%] tabla-bloque-secundario-cell">
+                  {item.difMejorPrecioPctEntero != null ? fmtDifPctEnteroMinus(item.difMejorPrecioPctEntero) : ""}
                 </TableCell>
               </TableRow>
             ))

@@ -10,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
-import { registrarImpresion } from "@/actions/stock";
+import { registrarExportacionExcelStock } from "@/actions/stock";
 import PrintStock from "./PrintStock";
 
 function exportarStockExcel(
@@ -90,10 +91,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
   ref
 ) {
   const [imprimiendo, setImprimiendo] = useState(false);
-  const [impresiones, setImpresiones] = useState<Record<string, Date>>(() => {
+  const [exportaciones, setExportaciones] = useState<Record<string, Date>>(() => {
     const m: Record<string, Date> = {};
     for (const i of data.items)
-      if (i.ultimaImpresion) m[i.id] = new Date(i.ultimaImpresion);
+      if (i.ultimaExportacionExcel) m[i.id] = new Date(i.ultimaExportacionExcel);
     return m;
   });
   const [stocksEditados, setStocksEditados] = useState<Record<string, string>>(
@@ -130,6 +131,17 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     setStocksEditados((prev) => ({ ...prev, [id]: value }));
   }
 
+  function ajustarStockUnidad(id: string, stockBase: number, delta: -1 | 1) {
+    setStocksEditados((prev) => {
+      const raw = prev[id];
+      const parsed =
+        raw !== undefined && raw !== "" ? Number(raw) : stockBase;
+      const base = Number.isFinite(parsed) ? parsed : stockBase;
+      const next = base + delta;
+      return { ...prev, [id]: Number.isInteger(next) ? next.toFixed(0) : String(next) };
+    });
+  }
+
   const items = data.items;
 
   useEffect(() => {
@@ -138,19 +150,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
   async function handleImprimir() {
     setImprimiendo(true);
-    const ids = items.map((i) => i.id);
-    const ahora = new Date();
-    registrarImpresion(ids).then((res) => {
-      if (res.ok) {
-        setImpresiones((prev) => {
-          const next = { ...prev };
-          for (const id of ids) next[id] = ahora;
-          return next;
-        });
-      } else {
-        toast.error(res.error ?? "Error al registrar impresión.");
-      }
-    });
+    // Imprimir no registra fecha en DB (solo abre la vista de impresión).
   }
 
   const handleImprimirRef = useRef(handleImprimir);
@@ -163,7 +163,22 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
   useImperativeHandle(ref, () => ({
     openPrint: () => handleImprimirRef.current(),
-    triggerExport: () => exportarStockExcel(items, stocksEditadosRef.current),
+    triggerExport: () => {
+      exportarStockExcel(items, stocksEditadosRef.current);
+      const ids = items.map((i) => i.id);
+      const ahora = new Date();
+      registrarExportacionExcelStock(ids).then((res) => {
+        if (res.ok) {
+          setExportaciones((prev) => {
+            const next = { ...prev };
+            for (const id of ids) next[id] = ahora;
+            return next;
+          });
+        } else {
+          toast.error(res.error ?? "Error al registrar exportación.");
+        }
+      });
+    },
   }));
 
   const sucursalSeleccionada = sucursalActual !== null;
@@ -191,7 +206,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                   STOCK
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-28">
-                  ÚLT. IMPRESIÓN
+                  ÚLT. EXPORT. EXCEL
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -215,17 +230,37 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                     {item.descripcion}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-sm tabular-nums">
-                    <Input
-                      type="number"
-                      value={stocksEditados[item.id] ?? ""}
-                      onChange={(e) =>
-                        handleCambioStock(item.id, e.target.value)
-                      }
-                      className="h-8 text-center text-sm font-semibold"
-                    />
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-xs"
+                        aria-label="Disminuir stock"
+                        onClick={() => ajustarStockUnidad(item.id, item.stock, -1)}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        type="number"
+                        value={stocksEditados[item.id] ?? ""}
+                        onChange={(e) =>
+                          handleCambioStock(item.id, e.target.value)
+                        }
+                        className="h-6 w-16 text-center text-sm font-normal"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-xs"
+                        aria-label="Aumentar stock"
+                        onClick={() => ajustarStockUnidad(item.id, item.stock, 1)}
+                      >
+                        +
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs tabular-nums">
-                    {fmtFecha(impresiones[item.id] ?? item.ultimaImpresion)}
+                    {fmtFecha(exportaciones[item.id] ?? item.ultimaExportacionExcel)}
                   </TableCell>
                 </TableRow>
               ))}

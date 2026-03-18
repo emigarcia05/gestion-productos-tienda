@@ -144,6 +144,7 @@ model ListaPrecioTienda {
   stockMaipu      Int      @map("stock_maipu") @default(0)
   stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
   lastSync        DateTime @default(now()) @map("last_sync")
+  ultimaExportacionExcel DateTime? @map("ultima_exportacion_excel")
 
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // 1 tienda → N proveedores (vinculados por id_lista_precios_tienda)

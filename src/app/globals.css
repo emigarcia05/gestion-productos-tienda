@@ -188,7 +188,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 
-  /* ─── Tablas: altura oficial (referencia: módulo Comp. Px. Prov. / TablaTienda). SSOT para todas las tablas. */
+  /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
   --tabla-thead-height: 3.5rem;
   --tabla-body-row-min-height: 2.25rem;
   --tabla-body-cell-padding-y: 0.375rem;
@@ -307,7 +307,7 @@
     flex-direction: column;
   }
 
-  /* Celdas de datos: mismo padding que tabla oficial (Comp. Px. Prov.). */
+  /* Celdas de datos: mismo padding que tabla oficial (Comp. Proveedores). */
   .celda-datos {
     padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
     font-size: 0.75rem;
@@ -322,7 +322,7 @@
   }
   .celda-datos.celda-destacado,
   .celda-destacado {
-    font-weight: 700;
+    font-weight: 400;
   }
   .celda-datos.celda-numero {
     font-variant-numeric: tabular-nums;
@@ -549,7 +549,7 @@
   /* Reservado: diseño único de tablas está en .tabla-gestion-compacta (fuera de @layer). */
 }
 
-/* ─── Diseño único de tablas (referencia: Comp. Px. Prov.). Aplica a todas las tablas de la app.
+/* ─── Diseño único de tablas (referencia: Comp. Proveedores). Aplica a todas las tablas de la app.
  * Usar <Table> de @/components/ui/table (siempre aplica esta clase). No usar otra clase de tabla.
  *
  * ENCABEZADO FIJO (obligatorio): el encabezado de la tabla debe estar fijo y NO moverse con el scroll.
@@ -585,7 +585,7 @@
   min-height: var(--tabla-thead-height) !important;
   max-height: var(--tabla-thead-height) !important;
   font-size: 0.75rem !important;
-  font-weight: 700;
+  font-weight: 400;
   text-align: center;
   vertical-align: middle;
   color: var(--primary-foreground);
@@ -701,38 +701,40 @@
  */
 .tabla-bloque-secundario-head {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
 }
 .tabla-bloque-secundario-head-divider {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
   /* Encabezado: línea divisoria blanca para cortar visualmente el bloque secundario. */
   border-left: 2px solid var(--primary-foreground);
 }
 .tabla-bloque-secundario-cell {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 .tabla-bloque-secundario-cell-divider {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--muted-foreground);
+  color: var(--foreground);
   /* Filas: línea divisoria gris más marcada (mezcla de border y foreground). */
   border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
 }
 
-/* Tabla Lista Tienda: Cod. Tienda 15%, Descripción 65%, Px Compra Final 15%, Mejor Px disponible 5%. */
+/* Tabla Tienda / Comp. Proveedores: Cod. Tienda 14%, Descripción 50%, Px Compra Final 12%, Mejor Proveedor 12%, DIF. 12%. */
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
 }
 .tabla-tienda-listado thead th:nth-child(1),
-.tabla-tienda-listado tbody td:nth-child(1) { width: 15%; }
+.tabla-tienda-listado tbody td:nth-child(1) { width: 14%; }
 .tabla-tienda-listado thead th:nth-child(2),
-.tabla-tienda-listado tbody td:nth-child(2) { width: 65%; }
+.tabla-tienda-listado tbody td:nth-child(2) { width: 50%; }
 .tabla-tienda-listado thead th:nth-child(3),
-.tabla-tienda-listado tbody td:nth-child(3) { width: 15%; }
+.tabla-tienda-listado tbody td:nth-child(3) { width: 12%; }
 .tabla-tienda-listado thead th:nth-child(4),
-.tabla-tienda-listado tbody td:nth-child(4) { width: 5%; }
+.tabla-tienda-listado tbody td:nth-child(4) { width: 12%; }
+.tabla-tienda-listado thead th:nth-child(5),
+.tabla-tienda-listado tbody td:nth-child(5) { width: 12%; }
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */
 .card-contenedor-tabla {

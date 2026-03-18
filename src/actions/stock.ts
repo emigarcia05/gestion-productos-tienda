@@ -19,7 +19,7 @@ export interface ItemStock {
   rubro:           string | null;
   subRubro:        string | null;
   stock:           number;
-  ultimaImpresion: Date | null;
+  ultimaExportacionExcel: Date | null;
 }
 
 export interface ControlStockData {
@@ -149,7 +149,7 @@ export async function getControlStock(
     rubro: r.rubro,
     subRubro: r.subRubro,
     stock: sucursal === "maipu" ? r.stockMaipu : r.stockGuaymallen,
-    ultimaImpresion: null,
+    ultimaExportacionExcel: r.ultimaExportacionExcel,
   }));
 
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
@@ -167,10 +167,10 @@ export async function getControlStock(
 const idsUuidSchema = z.array(z.string().uuid()).optional().default([]);
 
 /**
- * Registra impresión de ítems (no-op: persistencia opcional).
- * Solo editor. Valida que ids sean UUIDs.
+ * Registra la última exportación Excel de stock para una lista de ítems (persistente).
+ * Se usa para la columna "ÚLT. EXPORT. EXCEL" en Control Stock.
  */
-export async function registrarImpresion(ids: string[]): Promise<ActionResult<void>> {
+export async function registrarExportacionExcelStock(ids: string[]): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) {
     return { ok: false, error: "Sin acceso." };
@@ -179,6 +179,10 @@ export async function registrarImpresion(ids: string[]): Promise<ActionResult<vo
   if (!parsed.success) {
     return { ok: false, error: "IDs inválidos." };
   }
-  // no-op: persistencia de última impresión opcional
+  const ahora = new Date();
+  await prisma.listaPrecioTienda.updateMany({
+    where: { id: { in: parsed.data } },
+    data: { ultimaExportacionExcel: ahora },
+  });
   return { ok: true, data: undefined };
 }
