@@ -238,6 +238,116 @@ import SectionHeader from "@/components/SectionHeader";
 
 ---
 
+## 3.1 Catálogo de componentes compartidos (`src/components/shared/`)
+
+Estos componentes son **SSOT** para patrones repetidos. Reglas:
+
+- **Siempre** combinar clases con `cn()` (`@/lib/utils.ts`).
+- **Variantes**: cuando haya duplicación de clases o combinaciones, usar **CVA** (`class-variance-authority`) dentro del componente.
+- **Accesibilidad**: inputs de selección deben tener `aria-label` si no hay texto visible.
+
+### `AppModal` (`src/components/shared/AppModal.tsx`)
+
+Modal estándar (header corporativo + cuerpo en capas `bg-gris → bg-card` + footer con acciones).
+
+- **Props**
+  - **`title`**: `ReactNode` (título del modal, en title case).
+  - **`children`**: `ReactNode` (contenido del cuerpo).
+  - **`actions`**: `ReactNode` (botonera del footer).
+  - **`size`**: `"sm" | "md" | "lg" | "xl"` (default `"md"`).
+  - **`padding`**: `"sm" | "default" | "lg"` (default `"default"`).
+  - **`scrollBody`**: `boolean` (default `true`).
+  - **`showCloseButton`**: `boolean` (default `true`).
+  - **`className`** / **`bodyClassName`**: overrides puntuales (evitar duplicar estilos base).
+
+### `ModalTablaConFiltros` (`src/components/shared/ModalTablaConFiltros.tsx`)
+
+Modal reutilizable de **título + filtros + tabla**, con dos modos:
+
+- **Single** (default): selección por **doble clic** en fila (definido por el padre con `onRowDoubleClick`).
+- **Multi**: selección por checkbox + confirmación con botón.
+
+- **Props base**
+  - **`open`**, **`onClose`**.
+  - **`title`**: `string` (title case).
+  - **`subtitle`**: `string?`.
+  - **`filterContent`**: `ReactNode` (filtros del modal).
+  - **`columns`**: `{ key, label, className?, render(row) }[]`.
+  - **`rows`**, **`getRowId(row)`**.
+  - **`loading`**: `boolean?`.
+  - **`emptyMessage`**: `string?` (default `"Sin resultados"`).
+  - **`count`**: `number?` (si se pasa, muestra “X resultado(s)” en el footer).
+  - **`contentClassName`**: `string?` (solo para ajustes puntuales del contenedor).
+
+- **Props single**
+  - **`selectionMode`**: `"single"` (default).
+  - **`onRowDoubleClick(row)`**: handler de selección.
+  - **`footerRight`**: `ReactNode?` (por defecto renderiza “Cancelar”).
+
+- **Props multi**
+  - **`selectionMode`**: `"multi"` (obligatorio).
+  - **`onConfirm(ids)`**: callback async/sync (si resuelve OK, el modal se cierra).
+  - **`confirmLabel(count)`**: texto del botón (default: `Asignar N producto(s)`).
+  - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
+
+- **Notas de implementación**
+  - **Estilos de tabla**: las celdas repetidas (header/body) y estilos de fila usan **CVA** para evitar duplicación.
+  - **Accesibilidad**: los checkboxes incluyen `aria-label` (no hay texto visible).
+
+### `FiltroBusquedaInput` (`src/components/shared/FiltroBusquedaInput.tsx`)
+
+Input unificado para búsqueda en filtros (ícono Search + limpiar + loader). Usar junto a `useFiltrosConBusqueda`.
+
+- **Props**
+  - **`id`**: `string`.
+  - **`placeholder`**: `string` (en MAYÚSCULAS cuando sea placeholder de filtro).
+  - **`value`** / **`onChange(value)`**.
+  - **`isDebouncing`**: `boolean`.
+  - **`inputRef`**: `RefObject<HTMLInputElement | null>`.
+  - **`disabled`**: `boolean?`.
+  - **`className`**: `string?`.
+
+### `ClassicPageHeader` (`src/components/shared/ClassicPageHeader.tsx`)
+
+Encabezado estándar para páginas de layout clásico (alineado con `.section-header` en `globals.css`).
+
+- **Props**
+  - **`title`**: `string` (title case).
+  - **`subtitle`**: `string?`.
+  - **`actions`**: `ReactNode?` (botones a la derecha, tamaño uniforme `h-10 px-4`).
+  - **`className`**: `string?`.
+
+### Slidenav — Botón de usuario (perfil) (`src/components/SelectorRol.tsx`)
+
+En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**:
+
+- **Formato**: ícono `User` + texto **`SIMPLE` / `EDITOR`** (según `rolActual`).
+- **Interacción**
+  - En **SIMPLE**: click abre modal de contraseña para pasar a **EDITOR**.
+  - En **EDITOR**: click vuelve a **SIMPLE** sin modal.
+- **Feedback visual**: el botón debe tener hover claro (ej. `hover:bg-sidebar-accent/80`) y `focus-visible:ring-*` para accesibilidad.
+
+### Slidenav — Sincronización DUX (`src/components/layout/SyncStatusIndicator.tsx`)
+
+Botón/indicador persistente en la parte inferior de la slidenav.
+
+- **Estados**
+  - **Reposo**: muestra “Sincronización DUX” + “Últ. Act. dd/mm hh:mm”.
+  - **Consulta (progreso)**: muestra “Sincronizando DUX” + “X de Y”.
+- **Feedback visual por estado**
+  - **Reposo**: `bg-sidebar-accent` con hover suave.
+  - **Consulta**: **fondo amarillo de marca** `bg-accent2` (token `--accent2`) para indicar proceso activo.
+
+### Sincronización DUX — Solo desde la slidenav
+
+Regla de UX: la acción de sincronizar/importar datos de DUX **no debe aparecer como botón en encabezados de módulos**.  
+Debe ejecutarse **solo** desde el indicador/botón persistente de la slidenav (`SyncStatusIndicator`).
+
+### Stock — No mostrar modal al entrar (`/stock`)
+
+Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
+La sincronización se inicia solo desde los botones existentes (header y/o slidenav).
+
 ## 4. Checklist de PR (Cursor / desarrollador)
 
 Antes de dar por terminada una tarea de frontend:

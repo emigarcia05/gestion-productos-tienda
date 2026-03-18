@@ -78,6 +78,8 @@ export default function SyncStatusIndicator() {
       : "…"
     : `Últ. Act. ${lastCompletedLabel ?? "—"}`;
 
+  const tone = running ? "running" : "idle";
+
   return (
     <button
       type="button"
@@ -85,14 +87,21 @@ export default function SyncStatusIndicator() {
       disabled={disabled}
       className={cn(
         "w-full rounded-lg px-3 py-2 text-center",
-        "bg-sidebar-accent text-sidebar-foreground",
-        "hover:bg-sidebar-accent/80 transition-colors",
+        tone === "idle" && "bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80",
+        // Consulta/progreso: usar amarillo de marca (accent2) para indicar proceso activo.
+        tone === "running" && "bg-accent2 text-foreground hover:bg-accent2/90",
+        "transition-colors",
+        "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         disabled && "cursor-not-allowed opacity-90"
       )}
       aria-label={running ? "Sincronización DUX en progreso" : "Iniciar sincronización DUX"}
     >
-      <div className="text-sm font-semibold text-sidebar-foreground">{line1}</div>
-      <div className="text-xs text-sidebar-foreground/80">{line2}</div>
+      <div className={cn("text-sm font-semibold", tone === "running" ? "text-foreground" : "text-sidebar-foreground")}>
+        {line1}
+      </div>
+      <div className={cn("text-xs", tone === "running" ? "text-foreground/80" : "text-sidebar-foreground/80")}>
+        {line2}
+      </div>
     </button>
   );
 }

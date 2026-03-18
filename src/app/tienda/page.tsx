@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getTiendaPageData } from "@/actions/tienda";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -50,7 +49,7 @@ export default async function TiendaPage({ searchParams }: Props) {
   const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
-  const actions = puede(rol, PERMISOS.tienda.acciones.sincronizar) ? <SyncDuxHeaderButton /> : undefined;
+  const actions = undefined;
 
   const filters = (
     <FiltrosTienda

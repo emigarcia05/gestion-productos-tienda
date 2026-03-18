@@ -4,13 +4,11 @@ import { useRef, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaStock from "@/components/stock/TablaStock";
 import FiltrosStock from "@/components/stock/FiltrosStock";
-import StockPageSyncGate from "@/components/stock/StockPageSyncGate";
 import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
 import ExportarStockButton from "@/components/stock/ExportarStockButton";
 import ExportarStockInstructorModal from "@/components/stock/ExportarStockInstructorModal";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
-import SyncDuxHeaderButton from "@/components/shared/SyncDuxHeaderButton";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { PAGE_SIZE } from "@/lib/pagination";
 
@@ -46,7 +44,6 @@ export default function StockPageWithActions({
 
   const actions = (
     <div className="flex items-center justify-end gap-2">
-      <SyncDuxHeaderButton />
       {tieneSucursal && tieneItems && (
         <>
           <ExportarStockButton
@@ -73,7 +70,7 @@ export default function StockPageWithActions({
   );
 
   return (
-    <StockPageSyncGate>
+    <>
       <ExportarStockInstructorModal open={showInstructor} onOpenChange={setShowInstructor} />
       <ClassicFilteredTableLayout
         title="Lista Tienda"
@@ -109,7 +106,7 @@ export default function StockPageWithActions({
           )}
         </div>
       </ClassicFilteredTableLayout>
-    </StockPageSyncGate>
+    </>
   );
 }
 

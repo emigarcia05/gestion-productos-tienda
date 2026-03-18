@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,54 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const modalTablaContentVariants = cva(
+  "modal-app max-w-[84rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden"
+);
+
+const modalTablaHeadCellVariants = cva(
+  "bg-primary text-primary-foreground font-bold uppercase",
+  {
+    variants: {
+      kind: {
+        select: "py-2 px-2 w-10",
+        data: "text-xs py-2 px-3",
+      },
+    },
+    defaultVariants: {
+      kind: "data",
+    },
+  }
+);
+
+const modalTablaBodyCellVariants = cva("text-xs py-2.5 px-3", {
+  variants: {
+    kind: {
+      select: "py-2.5 px-2 w-10",
+      data: "",
+    },
+  },
+  defaultVariants: {
+    kind: "data",
+  },
+});
+
+const modalTablaRowVariants = cva("", {
+  variants: {
+    interaction: {
+      none: "",
+      single: "cursor-pointer select-none hover:bg-primary/5",
+    },
+    selected: {
+      true: "bg-primary/5",
+      false: "",
+    },
+  },
+  defaultVariants: {
+    interaction: "none",
+    selected: false,
+  },
+});
 
 export interface ColumnaModalTabla<T> {
   key: string;
@@ -61,6 +110,8 @@ interface ModalTablaMultiSelect<T> extends ModalTablaConFiltrosBase<T> {
 }
 
 type ModalTablaConFiltrosProps<T> = ModalTablaSingleSelect<T> | ModalTablaMultiSelect<T>;
+
+type ModalTablaContentProps = VariantProps<typeof modalTablaContentVariants>;
 
 /**
  * Modal reutilizable: título + filtros + tabla.
@@ -159,7 +210,7 @@ export default function ModalTablaConFiltros<T>({
     >
       <DialogContent
         className={cn(
-          "modal-app max-w-[84rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden",
+          modalTablaContentVariants({} satisfies ModalTablaContentProps),
           contentClassName
         )}
       >
@@ -192,13 +243,14 @@ export default function ModalTablaConFiltros<T>({
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
                           {isMulti && (
-                            <TableHead className="py-2 px-2 w-10 bg-primary text-primary-foreground font-bold">
+                            <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
                               <label className="flex items-center justify-center cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={rows.length > 0 && selectedIds.size === rows.length}
                                   onChange={toggleSelectAll}
                                   className="rounded border-input"
+                                  aria-label="Seleccionar Todos"
                                 />
                               </label>
                             </TableHead>
@@ -207,8 +259,8 @@ export default function ModalTablaConFiltros<T>({
                             <TableHead
                               key={col.key}
                               className={cn(
-                                col.className ?? "py-2 px-3 text-xs",
-                                "bg-primary text-primary-foreground font-bold"
+                                modalTablaHeadCellVariants({ kind: "data" }),
+                                col.className
                               )}
                             >
                               {col.label}
@@ -229,21 +281,24 @@ export default function ModalTablaConFiltros<T>({
                               key={id}
                               onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row) : undefined}
                               className={cn(
-                                !isMulti && "cursor-pointer select-none hover:bg-primary/5",
-                                isMulti && isSelected && "bg-primary/5"
+                                modalTablaRowVariants({
+                                  interaction: isMulti ? "none" : "single",
+                                  selected: isMulti ? isSelected : false,
+                                })
                               )}
                               title={
                                 onRowDoubleClick ? "Doble Clic Para Seleccionar" : undefined
                               }
                             >
                               {isMulti && (
-                                <TableCell className="py-2.5 px-2 w-10">
+                                <TableCell className={modalTablaBodyCellVariants({ kind: "select" })}>
                                   <label className="flex items-center justify-center cursor-pointer">
                                     <input
                                       type="checkbox"
                                       checked={selectedIds.has(id)}
                                       onChange={() => toggleSelect(id)}
                                       className="rounded border-input"
+                                      aria-label="Seleccionar"
                                     />
                                   </label>
                                 </TableCell>
@@ -251,7 +306,7 @@ export default function ModalTablaConFiltros<T>({
                               {columns.map((col) => (
                                 <TableCell
                                   key={col.key}
-                                  className={col.className ?? "py-2.5 px-3 text-xs"}
+                                  className={cn(modalTablaBodyCellVariants({ kind: "data" }), col.className)}
                                 >
                                   {col.render(row)}
                                 </TableCell>
