@@ -70,7 +70,7 @@ export async function getControlStock(
     marca = "",
     rubro = "",
     soloNegativo = false,
-    orden = "tiempoSinControl",
+    orden = "",
     pagina = 1,
   } = params;
 
@@ -112,7 +112,7 @@ export async function getControlStock(
     prisma.listaPrecioTienda.findMany({
       where: whereItems,
       orderBy:
-        orden === "tiempoSinControl"
+        orden === "segunTiempoControl"
           ? [
               { ultimaExportacionExcel: { sort: "asc", nulls: "first" } },
               { descripcionTienda: "asc" },

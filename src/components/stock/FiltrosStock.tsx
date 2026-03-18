@@ -66,7 +66,8 @@ export default function FiltrosStock({
     q ||
     marcaActual ||
     rubroActual ||
-    soloNegativoActual
+    soloNegativoActual ||
+    ordenActual === "segunTiempoControl"
   );
 
   function buildParams(updates: {
@@ -134,7 +135,7 @@ export default function FiltrosStock({
   }
 
   function handleOrden(value: string) {
-    navigate({ orden: value });
+    navigate({ orden: value === "none" ? "" : value });
   }
 
   function limpiarFiltros() {
@@ -235,30 +236,6 @@ export default function FiltrosStock({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={ordenActual}
-              onValueChange={(v) => handleOrden(v)}
-              disabled={!sucursalSeleccionada}
-            >
-              <SelectTrigger
-                id="filtro-stock-orden"
-                className="input-filtro-unificado"
-              >
-                <SelectValue placeholder="ORDEN" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="tiempoSinControl">
-                  TIEMPO SIN CONTROL
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select
               value={soloNegativoActual ? "negativo" : "none"}
               onValueChange={handleSoloNegativo}
               disabled={!sucursalSeleccionada}
@@ -277,6 +254,30 @@ export default function FiltrosStock({
               >
                 <SelectItem value="none">STOCK</SelectItem>
                 <SelectItem value="negativo">STOCK NEGATIVO</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
+              value={ordenActual || ""}
+              onValueChange={(v) => handleOrden(v)}
+              disabled={!sucursalSeleccionada}
+            >
+              <SelectTrigger
+                id="filtro-stock-orden"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="ORDEN" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="segunTiempoControl">
+                  SEGUN TIEMPO CONTROL
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

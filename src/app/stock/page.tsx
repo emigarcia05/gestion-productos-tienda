@@ -28,9 +28,12 @@ export default async function StockPage({ searchParams }: Props) {
     marca = "",
     rubro = "",
     soloNegativo = "",
-    orden = "tiempoSinControl",
+    orden = "",
     pagina = "1",
   } = await searchParams;
+
+  const ordenNormalizado =
+    orden === "tiempoSinControl" ? "segunTiempoControl" : orden;
 
   const sucursalValida: Sucursal | null =
     sucursal === "guaymallen" || sucursal === "maipu" ? sucursal : null;
@@ -44,7 +47,7 @@ export default async function StockPage({ searchParams }: Props) {
         marca,
         rubro,
         soloNegativo: soloNegativoBool,
-        orden,
+        orden: ordenNormalizado,
         pagina: paginaNum,
       })
     : { items: [], total: 0, totalPaginas: 0, marcas: [], rubros: [] };
@@ -57,9 +60,9 @@ export default async function StockPage({ searchParams }: Props) {
       marca={marca}
       rubro={rubro}
       soloNegativo={soloNegativoBool}
-      orden={orden}
+      orden={ordenNormalizado}
       paginaNum={paginaNum}
-      paramsPagina={{ sucursal: sucursalValida ?? "", q, marca, rubro, soloNegativo, orden }}
+      paramsPagina={{ sucursal: sucursalValida ?? "", q, marca, rubro, soloNegativo, orden: ordenNormalizado }}
     />
   );
 }
