@@ -44,6 +44,18 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
 
+### 1.8 Fuente de costo final (`px_compra_final`)
+
+- En listados/exportaciones donde el "costo" represente el valor final calculado para el proveedor (ej. **Control Aumentos**), usar como fuente **`px_compra_final`** de `precios_proveedores` (campo `pxCompraFinal` en Prisma).
+- Evitar exportar un costo derivado de la tabla de tienda (`costo_compra`/`costoTienda`) si existe una columna final calculada en `precios_proveedores`.
+
+### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
+
+- En `getTiendaPageData` (listado “Comp. Proveedores”), cuando hay mejora por un proveedor **no-oficial**:
+  - el “mejor proveedor” se define por el menor `px_compra_final` entre proveedores no-oficiales;
+  - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` (ej. `+12%`) y se setea en `difMejorPrecioPctEntero`;
+  - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
+
 ### 1.5 Manejo de errores y respuestas
 
 - **Formato estándar para el frontend**:  

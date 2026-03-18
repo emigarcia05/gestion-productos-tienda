@@ -328,6 +328,11 @@ En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de
   - En **EDITOR**: click vuelve a **SIMPLE** sin modal.
 - **Feedback visual**: el botón debe tener hover claro (ej. `hover:bg-sidebar-accent/80`) y `focus-visible:ring-*` para accesibilidad.
 
+#### Modal “Acceso De Editor” (mismo archivo)
+
+- El modal se adapta al diseño estándar usando `AppModal` (header corporativo + footer con botonera).
+- Botones y título respetan el Title Case (ej. `Acceso De Editor`, `Activar Modo Editor`).
+
 ### Slidenav — Sincronización DUX (`src/components/layout/SyncStatusIndicator.tsx`)
 
 Botón/indicador persistente en la parte inferior de la slidenav.
@@ -372,6 +377,8 @@ Antes de dar por terminada una tarea de frontend:
 - **SectionHeader**: eliminado `bg-white`; clase `.section-header` (fondo `var(--card)`). `cn()` en header. Subtítulo `<h3>`.
 - **Toolbars (Proveedores, Tienda, Pedidos)**: tokens `text-muted-foreground`, `hover:bg-muted`, `hover:text-foreground`.
 - **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha. **Tablas**: encabezado fijo, 100 ítems por página, paginación con `PaginacionTabla` (URL) o `PaginacionClient` (estado cliente); ver sección 1 punto 8. Pedido Urgente, Pedido Reposición y Control Stock usan el contenedor estándar `.contenedor-tabla-gestion` para que el encabezado permanezca siempre visible al hacer scroll interno de filas.
+- **TablaTienda / Comp. Proveedores**: reemplazo de la columna `✓` por columnas secundarias con estilo `tabla-bloque-secundario-*`: `MEJOR PROV.` (prefijo del proveedor no-oficial con menor `px_compra_final`) y `DIF.` (porcentaje entero de mejora). En filas sin mejora se muestran vacías.
+- **Control Aumentos (Export Excel)**: la columna `"COSTO"` del Excel exportado proviene de `px_compra_final` (campo `pxCompraFinal` en `precios_proveedores`), manteniendo el nombre `"COSTO"` y exportando solo ítems con variación real (`pctAumento !== 0`).
 - **Altura de filas en tablas**: todas las tablas compactas usan `--tabla-body-row-min-height: 2.25rem` para filas y `.celda-datos` para celdas. En Pedido Urgente los `Input` de cantidad (`TablaPedidoUrgente`) y los botones de borrar se ajustan a esta altura (inputs con `h-6` y botones `size="icon-xs"`) para que el contenido respete la altura fija definida para el módulo "Comp. Por Cat.".
 - **ui/tooltip.tsx**, **ui/dialog.tsx**, **ui/sonner.tsx**: tokens (border-border, bg-popover, bg-background) y configuración del toaster vía clase global `.toaster` (sin `style` inline).
 - **Modales y listados**: ImportarModal, ImportarListaPreciosModal, TablaProductosFiltrada, AppModal con `bg-card`, `text-muted-foreground`, `bg-muted` y `cn()` en todos los classNames combinados.

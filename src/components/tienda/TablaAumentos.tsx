@@ -30,7 +30,8 @@ function exportarXLS(items: ItemAumento[]) {
       "CODIGO":           i.codItem,
       "CODIGO EXTERNO":   i.codigoExterno,
       "PROVEEDOR":        i.proveedorNombre ?? i.proveedorDux ?? "",
-      "COSTO":            parseFloat(i.costoTienda.toFixed(2)),
+      // "COSTO" del Excel debe provenir de la fórmula oficial en precios_proveedores (px_compra_final).
+      "COSTO":            parseFloat(i.pxCompraFinal.toFixed(2)),
     }));
 
     const hoja   = XLSX.utils.json_to_sheet(filas);

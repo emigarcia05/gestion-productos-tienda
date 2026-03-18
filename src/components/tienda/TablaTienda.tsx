@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import { fmtPrecio } from "@/lib/format";
+import { fmtPctEntero, fmtPrecio } from "@/lib/format";
 
 interface ItemTienda {
   id: string;
@@ -31,7 +31,8 @@ interface ItemTienda {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
-  diferenciaMejorPrecio: number | null;
+  mejorProveedorNoOficialPrefijo: string | null;
+  difMejorPrecioPctEntero: number | null;
 }
 
 const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
@@ -51,7 +52,7 @@ export default function TablaTienda({
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const puedeVincular = puede(rol, col.vinculos);
-  const COLUMNS = 4;
+  const COLUMNS = 5;
 
   return (
     <>
@@ -59,14 +60,14 @@ export default function TablaTienda({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-[15%]">COD. TIENDA</TableHead>
-            <TableHead className="w-[65%]">DESCRIPCIÓN</TableHead>
+            <TableHead className="w-[60%]">DESCRIPCIÓN</TableHead>
             <TableHead className="w-[15%]">PX. COMPRA FINAL</TableHead>
-          <TableHead
-            className="w-[5%] text-center"
-            title="✓ = MENOR DISPONIBLE: ≥2 proveedores vinculados y al menos un no oficial con px menor que costo_compra. Filtrable por COSTO → MENOR DISPONIBLE."
-          >
-            ✓
-          </TableHead>
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider w-[5%]">
+              MEJOR PROV.
+            </TableHead>
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head w-[5%]">
+              DIF.
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -85,18 +86,17 @@ export default function TablaTienda({
                 <TableCell className="celda-datos celda-mono w-[15%] whitespace-nowrap">
                   {item.codItem}
                 </TableCell>
-                <TableCell className="celda-datos celda-destacado w-[65%] min-w-0 overflow-hidden">
+                <TableCell className="celda-datos celda-destacado w-[60%] min-w-0 overflow-hidden">
                   {item.descripcion}
                 </TableCell>
                 <TableCell className="celda-datos celda-numero celda-destacado w-[15%]">
                   ${fmtPrecio(item.costo)}
                 </TableCell>
-                <TableCell className="celda-datos text-center w-[5%]">
-                  {item.diferenciaMejorPrecio != null ? (
-                    <span className="font-semibold text-primary" title="Hay ≥2 proveedores vinculados y al menos un no oficial con mejor precio que el principal">
-                      ✓
-                    </span>
-                  ) : null}
+                <TableCell className="celda-datos celda-mono w-[5%] tabla-bloque-secundario-cell-divider">
+                  {item.mejorProveedorNoOficialPrefijo ?? ""}
+                </TableCell>
+                <TableCell className="celda-datos celda-numero w-[5%] tabla-bloque-secundario-cell">
+                  {item.difMejorPrecioPctEntero != null ? fmtPctEntero(item.difMejorPrecioPctEntero) : ""}
                 </TableCell>
               </TableRow>
             ))

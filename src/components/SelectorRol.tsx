@@ -5,17 +5,12 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, User, LogOut, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { activarModoEditor, volverModoSimple } from "@/actions/sesion";
 import type { Rol } from "@/lib/permisos";
+import AppModal from "@/components/shared/AppModal";
 
 interface Props {
   rolActual: Rol;
@@ -114,17 +109,30 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
 
         {rolActual === "simple" && (
           <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
-            <DialogContent className="sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+            <AppModal
+              size="sm"
+              title={
+                <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-accent2" />
-                  Acceso de Editor
-                </DialogTitle>
-                <DialogDescription>
+                  <span>Acceso De Editor</span>
+                </div>
+              }
+              actions={
+                <>
+                  <Button variant="ghost" onClick={() => setModalAbierto(false)} disabled={pending}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleActivar} disabled={pending || !clave}>
+                    {pending ? "Verificando..." : "Activar Modo Editor"}
+                  </Button>
+                </>
+              }
+            >
+              <div className="space-y-4">
+                <p className="text-sm text-foreground">
                   Ingresá la clave para activar el modo de edición.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
+                </p>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="clave-editor">Clave</Label>
                   <div className="relative">
@@ -132,8 +140,13 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                       id="clave-editor"
                       type={mostrarClave ? "text" : "password"}
                       value={clave}
-                      onChange={(e) => { setClave(e.target.value); setError(""); }}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleActivar(); }}
+                      onChange={(e) => {
+                        setClave(e.target.value);
+                        setError("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleActivar();
+                      }}
                       placeholder="••••••••"
                       autoFocus
                       className="pr-10"
@@ -143,22 +156,15 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                       onClick={() => setMostrarClave((v) => !v)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
+                      aria-label={mostrarClave ? "Ocultar Clave" : "Mostrar Clave"}
                     >
                       {mostrarClave ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {error && <p className="text-xs text-destructive">{error}</p>}
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" onClick={() => setModalAbierto(false)} disabled={pending}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleActivar} disabled={pending || !clave}>
-                    {pending ? "Verificando..." : "Activar modo Editor"}
-                  </Button>
-                </div>
               </div>
-            </DialogContent>
+            </AppModal>
           </Dialog>
         )}
       </>
@@ -178,18 +184,30 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
 
       {/* Modal de clave */}
       <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <AppModal
+          size="sm"
+          title={
+            <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-accent2" />
-              Acceso de Editor
-            </DialogTitle>
-            <DialogDescription>
+              <span>Acceso De Editor</span>
+            </div>
+          }
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => setModalAbierto(false)} disabled={pending}>
+                Cancelar
+              </Button>
+              <Button onClick={handleActivar} disabled={pending || !clave}>
+                {pending ? "Verificando..." : "Activar Modo Editor"}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
               Ingresá la clave para activar el modo de edición.
-            </DialogDescription>
-          </DialogHeader>
+            </p>
 
-          <div className="space-y-4 pt-2">
             <div className="space-y-1.5">
               <Label htmlFor="clave-editor">Clave</Label>
               <div className="relative">
@@ -197,8 +215,13 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                   id="clave-editor"
                   type={mostrarClave ? "text" : "password"}
                   value={clave}
-                  onChange={(e) => { setClave(e.target.value); setError(""); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleActivar(); }}
+                  onChange={(e) => {
+                    setClave(e.target.value);
+                    setError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleActivar();
+                  }}
                   placeholder="••••••••"
                   autoFocus
                   className="pr-10"
@@ -208,23 +231,15 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                   onClick={() => setMostrarClave((v) => !v)}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
+                  aria-label={mostrarClave ? "Ocultar Clave" : "Mostrar Clave"}
                 >
                   {mostrarClave ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setModalAbierto(false)} disabled={pending}>
-                Cancelar
-              </Button>
-              <Button onClick={handleActivar} disabled={pending || !clave}>
-                {pending ? "Verificando..." : "Activar modo Editor"}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
+        </AppModal>
       </Dialog>
     </>
   );

@@ -56,8 +56,17 @@ export interface ItemTiendaParaTabla {
   stockMaipu: number;
   habilitado: boolean;
   _count: { productos: number };
-  /** Si hay ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra: diferencia (costo - mejor px no oficial). Null en caso contrario. */
-  diferenciaMejorPrecio: number | null;
+  /**
+   * Si hay ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra:
+   * prefijo del proveedor no-oficial con el menor px_compra_final. Null en caso contrario.
+   */
+  mejorProveedorNoOficialPrefijo: string | null;
+  /**
+   * Si hay mejora (no-oficial mejora el costo):
+   * diferencia en porcentaje entero de la mejora vs costo (ej. +12%).
+   * Null en caso contrario.
+   */
+  difMejorPrecioPctEntero: number | null;
 }
 
 /**
@@ -168,8 +177,9 @@ export async function getTiendaPageData(params: {
     proveedorOficialPorTienda.set(r.id, txt);
   }
 
-  // Mínimo px_compra_final solo entre proveedores NO oficiales por ítem tienda (para tilde "Menor Cx Disponible").
-  const minPxNoOficialPorTienda = new Map<string, number>();
+  // Mínimo px_compra_final solo entre proveedores NO oficiales por ítem tienda.
+  // Guardamos también el nombre (normalizado) del mejor proveedor no-oficial para poder resolver su prefijo luego.
+  const minPxNoOficialPorTienda = new Map<string, { px: number; mejorProveedorNombre: string | null }>();
   for (const lp of linkedPrices) {
     if (!lp.idListaPrecioTienda) continue;
     const oficial = proveedorOficialPorTienda.get(lp.idListaPrecioTienda) ?? "";
@@ -191,7 +201,9 @@ export async function getTiendaPageData(params: {
       );
     }
     const prev = minPxNoOficialPorTienda.get(lp.idListaPrecioTienda);
-    if (prev === undefined || n < prev) minPxNoOficialPorTienda.set(lp.idListaPrecioTienda, n);
+    if (prev === undefined || n < prev.px) {
+      minPxNoOficialPorTienda.set(lp.idListaPrecioTienda, { px: n, mejorProveedorNombre: nombreProveedor || null });
+    }
   }
 
   const nombreToPrefijo = new Map(proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo]));
@@ -200,13 +212,20 @@ export async function getTiendaPageData(params: {
     const proveedorTexto = r.proveedor?.trim() ?? null;
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
     const costo = Number(r.costoCompra);
-    const minPxNoOficial = minPxNoOficialPorTienda.get(r.id);
+    const minData = minPxNoOficialPorTienda.get(r.id);
     const cantidadVinculos = r._count.listaPreciosProveedores;
-    /* Tilde "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
-    const diferenciaMejorPrecio =
-      cantidadVinculos >= 2 && minPxNoOficial != null && minPxNoOficial < costo
-        ? Math.round((costo - minPxNoOficial) * 100) / 100
-        : null;
+
+    /* Solo hay mejora si hay ≥2 vinculados y un no-oficial mejora el costo */
+    const tieneMejora = cantidadVinculos >= 2 && minData?.px != null && minData.px < costo && costo > 0;
+
+    const mejorProveedorNoOficialPrefijo = tieneMejora
+      ? nombreToPrefijo.get(minData?.mejorProveedorNombre ?? "") ?? null
+      : null;
+
+    const difMejorPrecioPctEntero = tieneMejora
+      ? Math.round(((costo - minData!.px) / costo) * 100)
+      : null;
+
     return {
       id: r.id,
       codItem: r.codTienda,
@@ -224,7 +243,8 @@ export async function getTiendaPageData(params: {
       stockMaipu: r.stockMaipu,
       habilitado: true,
       _count: { productos: r._count.listaPreciosProveedores },
-      diferenciaMejorPrecio,
+      mejorProveedorNoOficialPrefijo,
+      difMejorPrecioPctEntero,
     };
   });
 
