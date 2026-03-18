@@ -12,7 +12,7 @@ export async function GET() {
   const progress = await getSyncDuxStatusFromDb();
   const remainingItems = Math.max(0, progress.total - progress.processed);
   const remainingBatches = Math.ceil(remainingItems / ITEMS_PER_BATCH);
-  const remainingSeconds = progress.running && !progress.done
+  const remainingSeconds = progress.running
     ? remainingBatches * SYNC_SECONDS_PER_BATCH
     : 0;
   const remainingMinutes = Math.ceil(remainingSeconds / 60);
