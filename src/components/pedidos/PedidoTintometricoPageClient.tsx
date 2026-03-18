@@ -218,18 +218,6 @@ export default function PedidoTintometricoPageClient({
             inputRef={searchRef}
           />
         </FilterRowSearch>
-        <Button
-          type="button"
-          variant="default"
-          size="lg"
-          onClick={() => setModalOpenInUrl(true)}
-          aria-label="Agregar Ítem"
-          title="Agregar Ítem"
-          className="h-10 min-h-10 px-6 shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Agregar Ítem</span>
-        </Button>
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {itemsFiltrados.length.toLocaleString("es-AR")} PRODUCTO{itemsFiltrados.length !== 1 ? "S" : ""}
         </span>
@@ -241,6 +229,20 @@ export default function PedidoTintometricoPageClient({
     <ClassicFilteredTableLayout
       title="Pedido Mercadería"
       subtitle="Pedido Tintométrico"
+      actions={
+        <Button
+          type="button"
+          variant="default"
+          size="lg"
+          onClick={() => setModalOpenInUrl(true)}
+          aria-label="+ Agregar Tintométrico"
+          title="+ Agregar Tintométrico"
+          className="h-10 min-h-10 px-6 shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+          <span>+ Agregar Tintométrico</span>
+        </Button>
+      }
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">

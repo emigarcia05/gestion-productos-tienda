@@ -230,5 +230,8 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/actions/reposicion.ts` | Consultas de configuración REPOSICIÓN pasan de `where.sucursalCodigo` a `where.sucursal.codigo` para mantener filtros por código en UI con relación en BD. |
 | `src/services/listaPrecios.service.ts` | Consulta de estado URGENTE/REPOSICIÓN pasa de `sucursalCodigo` a relación `sucursal.codigo`. |
 | `scripts/verify-pedidos-reposicion.ts` | Esquema esperado actualizado: `sucursal_id` y columnas actuales `reposicion_*`, `urgente_*`, `tintometrico_*`. |
+| `src/services/pedidosEnvio.service.ts` | Regla de fallback en vinculación por `cod_ext`: si no existe vínculo a tienda, `cod_tienda = "1503"`; si falta código proveedor, `cod_proveedor = ""` (vacío). |
+| `prisma/migrations/20260317223000_sync_cant_pedir_por_tipo_pedido/migration.sql` | Regla de negocio a nivel BD: `cant_pedir` se sincroniza automáticamente por `tipo_de_pedido` (`TINTOMETRICO -> tintometrio_cant_pedir`, `URGENTE -> urgente_cant_pedir`, `REPOSICION -> reposicion_cant_pedir`) con trigger `BEFORE INSERT OR UPDATE`. |
+| `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` se calcula por forma (`CANT_FIJA`/`CANT. FIJA` => `reposicion_cant_conf`; `CANT_MAXIMA`/`CANT. MAX.` => `reposicion_cant_conf - stock sucursal`) y luego `cant_pedir` toma ese valor para `REPOSICION`. |
 
 *Última actualización: migración de pedidos_mercaderia a FK de sucursal por ID + ajuste completo de servicios/actions.*

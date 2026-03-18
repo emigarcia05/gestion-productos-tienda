@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
 const TIPO_TINTOMETRICO = "TINTOMETRICO";
+const COD_TIENDA_FALLBACK = "1503";
 
 export type SucursalPedidoEnvio = "guaymallen" | "maipu";
 
@@ -100,8 +101,8 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
     });
 
     const dataBase = {
-      codProveedor: provRow.codProdProveedor,
-      codTienda: tienda?.codTienda ?? null,
+      codProveedor: (provRow.codProdProveedor ?? "").trim(),
+      codTienda: tienda?.codTienda?.trim() || COD_TIENDA_FALLBACK,
       descripcionProveedor: provRow.descripcionProveedor,
       descripcionTienda: tienda?.descripcionTienda?.trim() || null,
       cantPedir,
@@ -185,8 +186,8 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
     });
 
     const dataBase = {
-      codProveedor: item.codProdProveedor,
-      codTienda: tienda?.codTienda ?? null,
+      codProveedor: (item.codProdProveedor ?? "").trim(),
+      codTienda: tienda?.codTienda?.trim() || COD_TIENDA_FALLBACK,
       descripcionProveedor: item.descripcionProveedor,
       descripcionTienda: tienda?.descripcionTienda?.trim() || null,
       cantPedir: cantNorm,
@@ -259,8 +260,8 @@ export async function syncPedidoUrgenteEnvio(
           tipoPedido: TIPO_URGENTE,
           sucursalId,
           codExt: f.codExt,
-          codProveedor: f.codProdProveedor,
-          codTienda: f.listaPrecioTienda?.codTienda ?? null,
+          codProveedor: (f.codProdProveedor ?? "").trim(),
+          codTienda: f.listaPrecioTienda?.codTienda?.trim() || COD_TIENDA_FALLBACK,
           descripcionProveedor: f.descripcionProveedor,
           descripcionTienda: f.listaPrecioTienda?.descripcionTienda?.trim() || null,
           urgenteCantPedir: cant,
@@ -274,7 +275,7 @@ export async function syncPedidoUrgenteEnvio(
       sucursalId: string;
       codExt: string;
       codProveedor: string;
-      codTienda: string | null;
+      codTienda: string;
       descripcionProveedor: string;
       descripcionTienda: string | null;
       urgenteCantPedir: number;
