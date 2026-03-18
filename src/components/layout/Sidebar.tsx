@@ -23,6 +23,7 @@ import {
   GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 import {
   Collapsible,
   CollapsibleContent,
@@ -148,6 +149,15 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
+      <div className="pt-4 px-4 pb-3">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-sidebar-foreground/80 tracking-wide">
+            PERFIL
+          </span>
+          <SelectorRol rolActual={rol} compact />
+        </div>
+      </div>
+      <Separator className="mx-4 bg-primary/50" />
       <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
           module.submodules.some((sub) => {
@@ -249,20 +259,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         <div className="px-4 pb-2 flex flex-col gap-2">
           <SyncStatusIndicator />
           <ImportStatusIndicator />
-        </div>
-        <div className="p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-2.5 backdrop-blur-sm">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary-foreground"
-              aria-hidden
-            >
-              <User className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1 [&_button]:!text-sidebar-foreground [&_button:hover]:!text-sidebar-foreground [&_svg]:text-inherit">
-              <p className="text-sm font-medium text-sidebar-foreground">{perfilNombre}</p>
-              <SelectorRol rolActual={rol} compact />
-            </div>
-          </div>
         </div>
         <div className="px-4 py-4 flex justify-center">
           <div className="w-full max-w-[45%] flex justify-center items-center">

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import {
   DialogContent,
   DialogHeader,
@@ -8,11 +9,59 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+const appModalContentVariants = cva(
+  [
+    // Base layout (3 rows: header / body / footer)
+    "app-modal grid grid-rows-[auto_minmax(0,1fr)_auto] gap-0 p-0 w-full max-h-[90vh]",
+    // Position + animation
+    "fixed top-[50%] left-[50%] z-50 translate-x-[-50%] translate-y-[-50%] duration-200",
+    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+    // Surface
+    "max-w-[calc(100%-2rem)] bg-gris rounded-xl overflow-hidden outline-none border-0 shadow-xl",
+  ].join(" "),
+  {
+    variants: {
+      size: {
+        sm: "sm:max-w-md",
+        md: "sm:max-w-lg",
+        lg: "sm:max-w-xl",
+        xl: "sm:max-w-3xl",
+      },
+    },
+    defaultVariants: {
+      size: "md",
+    },
+  }
+);
+
+const appModalBodyCardVariants = cva(
+  "app-modal__body w-full max-w-full bg-card rounded-lg shadow-sm min-h-0",
+  {
+    variants: {
+      padding: {
+        default: "p-6",
+        sm: "p-4",
+        lg: "p-8",
+      },
+      scroll: {
+        auto: "overflow-auto",
+        hidden: "overflow-hidden flex flex-col",
+      },
+    },
+    defaultVariants: {
+      padding: "default",
+      scroll: "auto",
+    },
+  }
+);
+
 /**
  * Props del modal estándar de la app.
  * Layout wrapper: header corporativo + cuerpo en capas (gris → card blanca) + footer con botonera.
  */
-export interface AppModalProps {
+export interface AppModalProps
+  extends VariantProps<typeof appModalContentVariants>,
+    VariantProps<typeof appModalBodyCardVariants> {
   /** Título del modal. Fuente Geist, blanco sobre fondo corporativo. Puede ser string o ReactNode (ej. título + indicador de pasos). */
   title: React.ReactNode;
   /** Contenido dinámico: formulario o datos. Se renderiza dentro de la card blanca centrada en el cuerpo. */
@@ -43,6 +92,8 @@ export default function AppModal({
   title,
   children,
   actions,
+  size,
+  padding,
   className,
   bodyClassName,
   showCloseButton = true,
@@ -51,10 +102,7 @@ export default function AppModal({
   return (
     <DialogContent
       className={cn(
-        "app-modal grid grid-rows-[auto_minmax(0,1fr)_auto] gap-0 p-0 max-w-[calc(100%-2rem)] w-full sm:max-w-lg max-h-[90vh] bg-gris",
-        "rounded-xl overflow-hidden outline-none border-0 shadow-xl",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-        "fixed top-[50%] left-[50%] z-50 translate-x-[-50%] translate-y-[-50%] duration-200",
+        appModalContentVariants({ size }),
         className
       )}
       showCloseButton={showCloseButton}
@@ -67,12 +115,19 @@ export default function AppModal({
       </DialogHeader>
 
       {/* Cuerpo: scroll cuando scrollBody; si no, overflow-hidden para que el contenido se adapte */}
-      <div className={cn("min-h-0 flex flex-col bg-gris", scrollBody ? "overflow-auto" : "overflow-hidden")}>
-        <div className="min-h-0 flex items-stretch justify-center p-4 flex-1 min-h-0">
+      <div
+        className={cn(
+          "min-h-0 flex flex-col bg-gris",
+          scrollBody ? "overflow-auto" : "overflow-hidden"
+        )}
+      >
+        <div className="min-h-0 flex items-stretch justify-center p-4 flex-1">
           <div
             className={cn(
-              "app-modal__body w-full max-w-full bg-card rounded-lg p-6 shadow-sm min-h-0",
-              scrollBody ? "overflow-auto" : "overflow-hidden flex flex-col",
+              appModalBodyCardVariants({
+                padding,
+                scroll: scrollBody ? "auto" : "hidden",
+              }),
               bodyClassName
             )}
           >

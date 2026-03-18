@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import MensajeProceso from "@/components/shared/MensajeProceso";
 import { cn } from "@/lib/utils";
 
 const POLL_INTERVAL_MS = 1500;
@@ -54,20 +53,6 @@ export default function SyncStatusIndicator() {
     };
   }, []);
 
-  const mensaje =
-    phase === "guardando"
-      ? "Guardando!"
-      : running
-        ? "Sincronizando!"
-        : "Sincronización finalizada";
-
-  const detalle =
-    total > 0
-      ? { procesados: processed, total }
-      : running
-        ? "…"
-        : null;
-
   async function handleStartSync() {
     if (running || requestingStart) return;
     setRequestingStart(true);
@@ -83,22 +68,15 @@ export default function SyncStatusIndicator() {
   const lastCompletedLabel = formatLastCompletedAt(lastCompletedAt);
   const disabled = running || requestingStart;
 
-  if (running) {
-    return (
-      <button
-        type="button"
-        onClick={handleStartSync}
-        disabled={disabled}
-        className={cn(
-          "w-full text-left rounded-md transition-opacity",
-          disabled && "cursor-not-allowed opacity-90"
-        )}
-        aria-label="Sincronización DUX en progreso"
-      >
-        <MensajeProceso variant="sidebar" mensaje={mensaje} detalle={detalle} />
-      </button>
-    );
-  }
+  const line1 = running
+    ? "Sincronizando DUX"
+    : "Sincronización DUX";
+
+  const line2 = running
+    ? total > 0
+      ? `${processed.toLocaleString("es-AR")} de ${total.toLocaleString("es-AR")}`
+      : "…"
+    : `Últ. Act. ${lastCompletedLabel ?? "—"}`;
 
   return (
     <button
@@ -106,17 +84,15 @@ export default function SyncStatusIndicator() {
       onClick={handleStartSync}
       disabled={disabled}
       className={cn(
-        "w-full rounded-md border border-border bg-card px-3 py-2 text-center",
-        "hover:bg-muted transition-colors",
+        "w-full rounded-lg px-3 py-2 text-center",
+        "bg-sidebar-accent text-sidebar-foreground",
+        "hover:bg-sidebar-accent/80 transition-colors",
         disabled && "cursor-not-allowed opacity-90"
       )}
-      aria-label="Iniciar sincronización DUX"
+      aria-label={running ? "Sincronización DUX en progreso" : "Iniciar sincronización DUX"}
     >
-      <div className="text-sm font-semibold text-foreground">Sincronización DUX</div>
-      <div className="text-xs text-muted-foreground">Última Consulta Disponible</div>
-      {lastCompletedLabel ? (
-        <div className="text-xs font-medium text-foreground mt-0.5">{lastCompletedLabel}</div>
-      ) : null}
+      <div className="text-sm font-semibold text-sidebar-foreground">{line1}</div>
+      <div className="text-xs text-sidebar-foreground/80">{line2}</div>
     </button>
   );
 }

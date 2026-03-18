@@ -34,6 +34,10 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 7. **Nuevo modal con tabla**  
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
+   - `AppModal` (wrapper estándar) expone variantes con **CVA** para evitar duplicación de clases:
+     - `size`: `"sm" | "md" | "lg" | "xl"` (default `"md"` = `sm:max-w-lg`).
+     - `padding`: `"sm" | "default" | "lg"` (default `"default"`).
+     - `scrollBody`: `boolean` (default `true`) controla el overflow del cuerpo sin reescribir clases.
 
 8. **Tablas (encabezado fijo + paginación)**  
    - **Un solo diseño** para toda la app (referencia: Comp. Px. Prov.). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).  
@@ -45,6 +49,11 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 9. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
+   - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
+     - `SyncStatusIndicator` (sidebar): siempre **2 líneas centradas**.
+       - Reposo: "Sincronización DUX" + "Últ. Act. dd/mm hh:mm".
+       - En curso: "Sincronizando DUX" + "X de Y".
+     - Estilo de botones de sidebar: usar tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
 **Referencia rápida de tokens (usar en lugar de valores fijos):**
 
