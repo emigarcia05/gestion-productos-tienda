@@ -149,15 +149,15 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
-      <div className="pt-3 px-4 pb-2">
+      <div className="pt-3 px-4 pb-1">
         <div className="flex flex-col gap-1">
           <SelectorRol rolActual={rol} compact />
         </div>
       </div>
-      <div className="flex justify-center px-4 pb-1" aria-hidden>
+      <div className="flex justify-center px-4 pt-3 pb-1" aria-hidden>
         <div className="h-px w-[80%] bg-sidebar-foreground/70" />
       </div>
-      <nav className="flex flex-col gap-0.5 p-4 overflow-y-auto" aria-label="Navegación principal">
+      <nav className="flex flex-col gap-0.5 px-4 pt-1 pb-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
           module.submodules.some((sub) => {
             const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
