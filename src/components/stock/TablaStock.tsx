@@ -49,11 +49,12 @@ function exportarStockExcel(
 
 function fmtFecha(d: Date | null): string {
   if (!d) return "";
-  return new Date(d).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
+  const dt = new Date(d);
+  const dd = String(dt.getDate()).padStart(2, "0");
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const hh = String(dt.getHours()).padStart(2, "0");
+  const min = String(dt.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm} ${hh}:${min}`;
 }
 
 export interface TablaStockHandle {
@@ -110,6 +111,8 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     }
   );
 
+  const idsKey = data.items.map((i) => i.id).join("|");
+
   useEffect(() => {
     if (data.items.length === 0) return;
     setStocksEditados((prev) => {
@@ -125,7 +128,22 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
       }
       return hasNew ? next : prev;
     });
-  }, [data.items.length]);
+  }, [idsKey]);
+
+  useEffect(() => {
+    if (data.items.length === 0) return;
+    setExportaciones((prev) => {
+      let hasNew = false;
+      const next = { ...prev };
+      for (const i of data.items) {
+        if (i.ultimaExportacionExcel && next[i.id] === undefined) {
+          hasNew = true;
+          next[i.id] = new Date(i.ultimaExportacionExcel);
+        }
+      }
+      return hasNew ? next : prev;
+    });
+  }, [idsKey]);
 
   function handleCambioStock(id: string, value: string) {
     setStocksEditados((prev) => ({ ...prev, [id]: value }));
@@ -198,14 +216,14 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-3 py-2 text-xs w-28">CÓD.</TableHead>
-                <TableHead className="px-3 py-2 text-xs">
+                <TableHead className="px-3 py-2 text-xs w-[10%]">CÓD.</TableHead>
+                <TableHead className="px-3 py-2 text-xs w-[50%]">
                   DESCRIPCIÓN
                 </TableHead>
-                <TableHead className="px-3 py-2 text-xs w-28">
+                <TableHead className="px-3 py-2 text-xs w-[20%]">
                   STOCK
                 </TableHead>
-                <TableHead className="px-3 py-2 text-xs w-28">
+                <TableHead className="px-3 py-2 text-xs w-[20%]">
                   ÚLT. EXPORT. EXCEL
                 </TableHead>
               </TableRow>
@@ -223,13 +241,13 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
               )}
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="px-3 py-2 text-xs font-mono">
+                  <TableCell className="px-3 py-2 text-xs font-mono w-[10%] whitespace-nowrap">
                     {item.codItem}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs">
+                  <TableCell className="px-3 py-2 text-xs w-[50%] min-w-0 overflow-hidden">
                     {item.descripcion}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-sm tabular-nums">
+                  <TableCell className="px-3 py-2 text-sm tabular-nums w-[20%]">
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         type="button"
@@ -259,7 +277,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                  <TableCell className="px-3 py-2 text-xs tabular-nums w-[20%]">
                     {fmtFecha(exportaciones[item.id] ?? item.ultimaExportacionExcel)}
                   </TableCell>
                 </TableRow>
