@@ -15,6 +15,7 @@ import FilterBar, {
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
 import {
   Table,
   TableBody,
@@ -230,18 +231,25 @@ export default function PedidoTintometricoPageClient({
       title="Pedido Mercadería"
       subtitle="Pedido Tintométrico"
       actions={
-        <Button
-          type="button"
-          variant="default"
-          size="lg"
-          onClick={() => setModalOpenInUrl(true)}
-          aria-label="+ Agregar Tintométrico"
-          title="+ Agregar Tintométrico"
-          className="h-10 min-h-10 px-6 shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          <span>+ Agregar Tintométrico</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="default"
+            size="lg"
+            onClick={() => setModalOpenInUrl(true)}
+            aria-label="+ Agregar Tintométrico"
+            title="+ Agregar Tintométrico"
+            className="h-10 min-h-10 px-6 shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            <span>+ Agregar Tintométrico</span>
+          </Button>
+          <EnviarPedidoButton
+            proveedorId={filtroProveedor}
+            sucursal={filtroSucursal}
+            tipos={["TINTOMETRICO"]}
+          />
+        </div>
       }
       filters={filters}
     >

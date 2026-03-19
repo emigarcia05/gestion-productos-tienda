@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GuardarCambiosPedidoButton from "@/components/pedidos/GuardarCambiosPedidoButton";
+import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,9 +62,19 @@ export default function PedidoUrgentePageClient({
     });
   }, [productos]);
 
+  const mostrarGuardar = !!(sucursalValida && !sinFiltros);
+  const mostrarGenerar = !!(sucursalValida && proveedor.trim());
+
   const actions =
-    sucursalValida && !sinFiltros ? (
-      <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
+    mostrarGuardar || mostrarGenerar ? (
+      <div className="flex items-center gap-2">
+        {mostrarGuardar ? (
+          <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
+        ) : null}
+        {mostrarGenerar ? (
+          <EnviarPedidoButton proveedorId={proveedor} sucursal={sucursalValida} tipos={["URGENTE"]} />
+        ) : null}
+      </div>
     ) : undefined;
 
   function abrirModalCantidad(prod: ProductoPedidoUrgente) {

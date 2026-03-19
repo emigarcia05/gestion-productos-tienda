@@ -60,7 +60,7 @@ const MODULES: {
     submodules: [
       {
         href: "/pedidos/enviar",
-        label: "Enviar Pedido",
+        label: "Generar Pedido",
         icon: <Send className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.pedidos.acceso,
         children: [

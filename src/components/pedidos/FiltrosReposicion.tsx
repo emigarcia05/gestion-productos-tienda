@@ -35,6 +35,8 @@ interface Props {
   subRubroActual: string;
   configuradoActual: "" | "si";
   totalItems: number;
+  proveedorActual: string;
+  onProveedorChange: (proveedorId: string) => void;
 }
 
 export default function FiltrosReposicion({
@@ -46,6 +48,8 @@ export default function FiltrosReposicion({
   subRubroActual,
   configuradoActual,
   totalItems,
+  proveedorActual,
+  onProveedorChange,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -64,6 +68,7 @@ export default function FiltrosReposicion({
 
   const hayFiltros = !!(
     q ||
+    proveedorActual ||
     marcaActual ||
     rubroActual ||
     subRubroActual ||
@@ -77,6 +82,7 @@ export default function FiltrosReposicion({
     rubro?: string;
     subRubro?: string;
     configurado?: "" | "si";
+    proveedor?: string;
     pagina?: string;
   }): URLSearchParams {
     const p = new URLSearchParams();
@@ -89,6 +95,7 @@ export default function FiltrosReposicion({
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
     const configuradoVal =
       updates.configurado !== undefined ? updates.configurado : configuradoActual;
+    const proveedorVal = updates.proveedor !== undefined ? updates.proveedor : proveedorActual;
 
     if (sucursal) p.set("sucursal", sucursal);
     if (qVal) p.set("q", qVal);
@@ -96,6 +103,7 @@ export default function FiltrosReposicion({
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
     if (configuradoVal) p.set("configurado", configuradoVal);
+    if (proveedorVal) p.set("proveedor", proveedorVal);
     if (updates.pagina) p.set("pagina", updates.pagina);
     return p;
   }
@@ -107,6 +115,7 @@ export default function FiltrosReposicion({
     rubro?: string;
     subRubro?: string;
     configurado?: "" | "si";
+    proveedor?: string;
     pagina?: string;
   }) {
     const p = buildParams(updates);
@@ -124,6 +133,7 @@ export default function FiltrosReposicion({
       marca: "",
       rubro: "",
       subRubro: "",
+      proveedor: "",
       pagina: "1",
     });
   }
@@ -144,6 +154,7 @@ export default function FiltrosReposicion({
 
   function limpiarFiltros() {
     setQ("");
+    onProveedorChange("");
     if (sucursalActual) {
       router.push(`${pathname}?sucursal=${sucursalActual}`);
     } else {
@@ -154,6 +165,16 @@ export default function FiltrosReposicion({
   const sucursalValue = sucursalActual ?? "none";
   const sucursalSeleccionada = sucursalActual !== null;
   const configuradoValue = configuradoActual || "none";
+
+  const proveedoresDisponibles = Array.from(
+    new Map(
+      data.items
+        .filter((i): i is { idProveedor: string; nombreProveedor: string } => !!i.idProveedor && !!i.nombreProveedor)
+        .map((i) => [i.idProveedor, i.nombreProveedor] as const)
+    ).entries()
+  )
+    .map(([id, nombre]) => ({ id, nombre }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es-AR", { sensitivity: "base" }));
 
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
@@ -293,7 +314,35 @@ export default function FiltrosReposicion({
       </FilterRowSelection>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 flex-1">
-          <FilterRowSearch className="flex-1">
+          <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "flex-none w-56")}>
+            <Select
+              value={proveedorActual || "none"}
+              onValueChange={(v) => {
+                const next = v === "none" ? "" : v;
+                onProveedorChange(next);
+                navigate({ proveedor: next, pagina: "1" });
+              }}
+              disabled={!sucursalSeleccionada}
+            >
+              <SelectTrigger className="input-filtro-unificado">
+                <SelectValue placeholder="PROVEEDOR" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PROVEEDOR</SelectItem>
+                {proveedoresDisponibles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nombre.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <FilterRowSearch className="flex-1 w-auto max-w-none">
             <FiltroBusquedaInput
               id="filtro-reposicion-busqueda"
               placeholder="DESCRIPCIÓN"

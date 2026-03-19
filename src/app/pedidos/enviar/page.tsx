@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 
 const MENSAJE_SIN_FILTROS =
   "Cargá los 3 filtros (Sucursal, Proveedor y Tipo de pedido) para ver la tabla.";
-const MENSAJE_SIN_ITEMS = "No hay ítems para enviar con los filtros seleccionados.";
+const MENSAJE_SIN_ITEMS = "No hay ítems para generar el pedido con los filtros seleccionados.";
 
 interface Props {
   searchParams: Promise<{
@@ -86,7 +86,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
   return (
     <ClassicFilteredTableLayout
       title="Pedido Mercadería"
-      subtitle="Enviar Pedido"
+      subtitle="Generar Pedido"
       actions={actions}
       filters={filters}
     >

@@ -70,7 +70,7 @@ export async function getPedidoUrgenteData(params: {
   };
 }
 
-/** Datos iniciales para la página Enviar Pedido (filtros: proveedores). */
+/** Datos iniciales para la página Generar Pedido (filtros: proveedores). */
 export async function getEnviarPedidoData() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -80,14 +80,14 @@ export async function getEnviarPedidoData() {
   return { proveedores };
 }
 
-/** Ítem de la tabla Enviar Pedido: cant_pedir y descripción (descripcion_tienda o descripcion_proveedor). */
+/** Ítem de la tabla Generar Pedido: cant_pedir y descripción (descripcion_tienda o descripcion_proveedor). */
 export type EnviarPedidoTablaItem = {
   cantPedir: number;
   descripcion: string;
 };
 
 /**
- * Datos de la tabla Enviar Pedido. Solo devuelve ítems cuando están cargados los 3 filtros:
+ * Datos de la tabla Generar Pedido. Solo devuelve ítems cuando están cargados los 3 filtros:
  * sucursal, proveedor y al menos un tipo de pedido.
  */
 export async function getEnviarPedidoTablaData(params: {
@@ -291,6 +291,23 @@ export async function generarPdfEnviarPedidoAction(params: {
     return { ok: false, error: "Sucursal inválida." };
   }
 
+  function pad2(n: number): string {
+    return String(n).padStart(2, "0");
+  }
+
+  function fmtDdMmHHmm(d: Date): string {
+    const dd = pad2(d.getDate());
+    const mm = pad2(d.getMonth() + 1);
+    const hh = pad2(d.getHours());
+    const min = pad2(d.getMinutes());
+    return `${dd}-${mm} ${hh}:${min}`;
+  }
+
+  function sanitizeFilenamePart(s: string): string {
+    // Reemplaza caracteres no válidos para nombres de archivo (Windows y, por compatibilidad, también para WhatsApp).
+    return s.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_").trim();
+  }
+
   try {
     const [result, sucursalRow] = await Promise.all([
       getItemsYProveedorParaEnviar(proveedorId.trim(), sucursalValida, tipos),
@@ -311,7 +328,10 @@ export async function generarPdfEnviarPedidoAction(params: {
       sucursalLabel,
       tiposLabel
     );
-    const filename = `pedido_${proveedor.prefijo}_${sucursalValida}_${Date.now()}.pdf`;
+    const nombreProveedor = sanitizeFilenamePart(proveedor.nombre || "Proveedor");
+    const prefijoProveedor = sanitizeFilenamePart(proveedor.prefijo || "");
+    const fechaStr = fmtDdMmHHmm(new Date());
+    const filename = `NP - ${nombreProveedor}. (${prefijoProveedor}) - ${fechaStr}.pdf`;
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
     let sentViaWhatsApp = false;

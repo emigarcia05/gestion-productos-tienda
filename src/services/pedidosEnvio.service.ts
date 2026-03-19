@@ -265,7 +265,7 @@ export async function syncPedidoUrgenteEnvio(
           descripcionProveedor: f.descripcionProveedor,
           descripcionTienda: f.listaPrecioTienda?.descripcionTienda?.trim() || null,
           urgenteCantPedir: cant,
-          // Compatibilidad: el flujo de "Enviar Pedido" hoy usa cant_pedir.
+          // Compatibilidad: el flujo de "Generar Pedido" hoy usa cant_pedir.
           cantPedir: cant,
         };
       })
@@ -471,6 +471,7 @@ export async function getItemsYProveedorParaEnviar(
       select: {
         codExt: true,
         codProveedor: true,
+          tintometricoDescripcion: true,
         descripcionProveedor: true,
         descripcionTienda: true,
         cantPedir: true,
@@ -484,8 +485,15 @@ export async function getItemsYProveedorParaEnviar(
 
   const itemsPdf: ItemPedidoParaPdf[] = items.map((i) => ({
     codExt: i.codExt,
-    codProveedor: i.codProveedor,
-    descripcion: (i.descripcionTienda ?? i.descripcionProveedor) || "",
+    codProveedor: (i.codProveedor ?? "").trim(),
+    // Para "Generar Pedido", el campo visible de descripción depende del tipo:
+    // - Preferimos `descripcion_proveedor` cuando exista
+    // - Si no está, usamos `tintometrico_descripcion`
+    // - Como fallback final, `descripcion_tienda`
+    descripcion:
+      (i.descripcionProveedor ?? "").trim() ||
+      (i.tintometricoDescripcion ?? "").trim() ||
+      (i.descripcionTienda ?? "").trim(),
     cantPedir: i.cantPedir,
   }));
 

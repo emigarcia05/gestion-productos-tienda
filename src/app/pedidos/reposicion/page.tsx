@@ -15,6 +15,7 @@ interface Props {
     subRubro?: string;
     configurado?: string;
     pagina?: string;
+    proveedor?: string;
   }>;
 }
 
@@ -30,6 +31,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
     subRubro = "",
     configurado = "",
     pagina = "1",
+    proveedor = "",
   } = await searchParams;
 
   const sucursalValida: SucursalReposicion | null =
@@ -62,6 +64,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
     rubro,
     subRubro,
     configurado: configurado === "si" ? "si" : "",
+    proveedor,
   };
 
   return (
@@ -73,6 +76,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
       rubro={rubro}
       subRubro={subRubro}
       configurado={configurado === "si" ? "si" : ""}
+      proveedor={proveedor}
       paginaNum={paginaNum}
       paramsPagina={paramsPagina}
     />

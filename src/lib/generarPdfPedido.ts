@@ -9,11 +9,20 @@ const MARGIN = 14;
 const ROW_HEIGHT = 7;
 const FONT_SIZE = 10;
 const HEADER_FONT_SIZE = 9;
-const MAX_DESC_LEN = 50;
+const TITLE_FONT_SIZE = 12;
+const DATE_FONT_SIZE = 10;
+const MAX_DESC_LEN = 55;
 
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
   return str.slice(0, max - 2) + "…";
+}
+
+function fmtFechaNotaPedido(d: Date): string {
+  const weekday = d.toLocaleDateString("es-ES", { weekday: "long" });
+  const month = d.toLocaleDateString("es-ES", { month: "long" });
+  const year = d.getFullYear();
+  return `${weekday} de ${month} de ${year}`;
 }
 
 /**
@@ -30,17 +39,16 @@ export function generarPdfPedido(
   const pageHeight = 297;
   let y = MARGIN;
 
-  doc.setFontSize(12);
-  doc.text("Pedido de mercadería", MARGIN, y);
+  // Nota de Pedido
+  doc.setFontSize(TITLE_FONT_SIZE);
+  doc.setFont("helvetica", "normal");
+  doc.text("Nota de Pedido", MARGIN, y);
   y += 8;
 
-  doc.setFontSize(FONT_SIZE);
-  doc.text(`Proveedor: ${proveedorNombre}`, MARGIN, y);
-  y += 6;
-  doc.text(`Sucursal: ${sucursal}`, MARGIN, y);
-  y += 6;
-  doc.text(`Tipos: ${tiposLabel}`, MARGIN, y);
-  y += 10;
+  // Fecha
+  doc.setFontSize(DATE_FONT_SIZE);
+  doc.text(`Fecha: ${fmtFechaNotaPedido(new Date())}`, MARGIN, y);
+  y += 8;
 
   if (items.length === 0) {
     doc.text("Sin ítems con cantidad.", MARGIN, y);
@@ -48,15 +56,21 @@ export function generarPdfPedido(
     return new Uint8Array(buf instanceof ArrayBuffer ? buf : (buf as unknown as ArrayBuffer));
   }
 
-  const colCod = MARGIN;
-  const colDesc = colCod + 28;
-  const colCant = pageWidth - MARGIN - 18;
+  // Tabla: CANT. - COD. - DESCRIPCION
+  const contentWidth = pageWidth - 2 * MARGIN;
+  const wCant = 18;
+  const wCod = 26;
+  const wDesc = contentWidth - wCant - wCod;
+
+  const colCant = MARGIN;
+  const colCod = colCant + wCant;
+  const colDesc = colCod + wCod;
 
   doc.setFontSize(HEADER_FONT_SIZE);
   doc.setFont("helvetica", "bold");
-  doc.text("Código", colCod, y);
-  doc.text("Descripción", colDesc, y);
-  doc.text("Cant.", colCant, y);
+  doc.text("CANT.", colCant, y);
+  doc.text("COD.", colCod, y);
+  doc.text("DESCRIPCION", colDesc, y);
   y += ROW_HEIGHT;
 
   doc.setFont("helvetica", "normal");
@@ -68,16 +82,16 @@ export function generarPdfPedido(
       y = MARGIN;
       doc.setFontSize(HEADER_FONT_SIZE);
       doc.setFont("helvetica", "bold");
-      doc.text("Código", colCod, y);
-      doc.text("Descripción", colDesc, y);
-      doc.text("Cant.", colCant, y);
+      doc.text("CANT.", colCant, y);
+      doc.text("COD.", colCod, y);
+      doc.text("DESCRIPCION", colDesc, y);
       y += ROW_HEIGHT;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(FONT_SIZE);
     }
-    doc.text(truncate(row.codExt, 16), colCod, y);
+    doc.text(String(row.cantPedir), colCant + wCant - 2, y, { align: "right" });
+    doc.text(truncate(row.codProveedor ?? "", 16), colCod, y);
     doc.text(truncate(row.descripcion, MAX_DESC_LEN), colDesc, y);
-    doc.text(String(row.cantPedir), colCant, y);
     y += ROW_HEIGHT;
   }
 

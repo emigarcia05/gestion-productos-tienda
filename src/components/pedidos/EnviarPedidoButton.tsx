@@ -50,7 +50,7 @@ export default function EnviarPedidoButton({
       }
       const { pdfBase64, whatsapp, nombreProveedor, filename, sentViaWhatsApp } = result.data!;
       if (sentViaWhatsApp) {
-        toast.success("Pedido enviado por WhatsApp al proveedor.");
+        toast.success("Pedido generado y enviado por WhatsApp al proveedor.");
         return;
       }
       descargarPdf(pdfBase64, filename);
@@ -84,7 +84,7 @@ export default function EnviarPedidoButton({
       ) : (
         <Send className="h-4 w-4" />
       )}
-      Enviar Pedido
+      Generar Pedido
     </Button>
   );
 }
