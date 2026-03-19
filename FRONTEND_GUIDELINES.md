@@ -352,16 +352,18 @@ Botón/indicador persistente en la parte inferior de la slidenav.
 
 En el módulo **`Comp. Por Cat.`** (`src/components/proveedores/ComparacionCategoriasClient.tsx`) el campo `DTO. EXTRA` es editable por ítem y se guarda en backend con `actualizarDtoExtraComparacionAction`.
 
-La columna **VARIACIÓN** se calcula vs el **mínimo de la presentación** (sin “referente” clickeado), usando el `DTO. EXTRA` vigente.
+**Layout de la tabla**: no hay un segundo encabezado de tarjeta con la ruta (marca / categoría / presentación) encima de la grilla; el contexto queda en los filtros y en los mensajes vacíos dentro del área de tabla.
+
+La columna **VARIACIÓN** usa siempre precio efectivo con `DTO. EXTRA` y un **mínimo como base**: sin casillas `SEL.`, base = mínimo de **toda** la tabla visible; con una o más casillas marcadas, base = mínimo **solo entre las filas marcadas** y solo esas filas muestran porcentaje (el resto en blanco).
 
 La tabla incluye una última columna de acciones con ícono de cesto:
 - Encabezado: cesto visual.
 - Filas: botón cesto que quita el ítem de la presentación (desasigna la fila) usando `quitarAsignacionPresentacionAction`.
 
-Comparación puntual entre 2 productos (solo front):
-- Columna `SEL.` con casilla clickeable por fila.
-- Se permiten hasta 2 filas seleccionadas.
-- En columna `VARIACIÓN`, solo las filas seleccionadas muestran diferencia; filas no seleccionadas quedan en blanco.
+Comparación con casillas `SEL.` (solo front):
+- Columna `SEL.` con casilla por fila; se pueden marcar **varias** a la vez.
+- **Sin casillas**: `VARIACIÓN` en **todas** las filas vs el **menor precio** de la tabla visible.
+- **Con casillas**: solo las filas marcadas muestran `VARIACIÓN`, cada una vs el **menor precio entre las marcadas**; filas sin tilde quedan en blanco.
 
 ### Sincronización DUX — Solo desde la slidenav
 

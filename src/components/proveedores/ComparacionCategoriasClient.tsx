@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -70,7 +70,6 @@ export default function ComparacionCategoriasClient({
     presentacionIdInicial || null
   );
   const [productos, setProductos] = useState<ProductoEnCategoria[]>([]);
-  const [labelCompleto, setLabelCompleto] = useState("");
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalGestion, setModalGestion] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
@@ -123,6 +122,24 @@ export default function ComparacionCategoriasClient({
     return Math.min(...valores);
   }, [productosFiltrados, dtoEspecial]);
 
+  /** Mínimo efectivo solo entre filas con casilla SEL. marcada (misma lógica de DTO. EXTRA). */
+  const pxMinEntreSeleccionados = useMemo(() => {
+    if (selectedCompareIds.length === 0) return null;
+    const sel = new Set(selectedCompareIds);
+    const valores = productosFiltrados
+      .filter((p) => sel.has(p.id))
+      .map((p) => {
+        const dtoStr = dtoEspecial[p.id] ?? "";
+        const pxOriginal = p.pxCompraFinal;
+        const pxConDescuento = pxConDto(pxOriginal, dtoStr);
+        return pxConDescuento ?? pxOriginal;
+      })
+      .filter((n): n is number => n != null && n > 0);
+
+    if (valores.length === 0) return null;
+    return Math.min(...valores);
+  }, [productosFiltrados, selectedCompareIds, dtoEspecial]);
+
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
     setDtoEspecial({});
@@ -132,7 +149,6 @@ export default function ComparacionCategoriasClient({
       const res = await getProductosPorPresentacionAction(presentacionId);
       if (res.ok && res.data) {
         setProductos(res.data.productos);
-        setLabelCompleto(res.data.labelCompleto ?? "");
         setDtoEspecial(
           res.data.productos.reduce<Record<string, string>>((acc, pr) => {
             acc[pr.id] = pr.dtoExtraComparacion != null ? String(pr.dtoExtraComparacion) : "";
@@ -232,11 +248,9 @@ export default function ComparacionCategoriasClient({
   );
 
   const toggleCompareSelection = useCallback((itemId: string) => {
-    setSelectedCompareIds((prev) => {
-      if (prev.includes(itemId)) return prev.filter((id) => id !== itemId);
-      if (prev.length >= 2) return prev;
-      return [...prev, itemId];
-    });
+    setSelectedCompareIds((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
   }, []);
 
   const acciones = puedeEditar ? (
@@ -291,17 +305,6 @@ export default function ComparacionCategoriasClient({
       >
         <div className="flex-1 min-h-0 flex py-3">
           <Card className="flex-1 flex flex-col min-h-0 min-w-0 gap-0 pt-0">
-          <CardHeader className="py-3 flex flex-row items-center gap-2 flex-wrap px-6">
-            <div>
-              {selectedPresentacionId ? (
-                <h2 className="text-sm font-bold text-foreground">{labelCompleto || "Cargando…"}</h2>
-              ) : (
-                <h2 className="text-sm font-bold text-muted-foreground">
-                  Seleccioná una presentación con los filtros (Marca, Categoría, Subcategoría, Presentación)
-                </h2>
-              )}
-            </div>
-          </CardHeader>
           <CardContent className="flex-1 min-h-0 overflow-hidden py-0 pb-3 px-0">
             {loadingProductos ? (
               <p className="text-sm text-muted-foreground py-4">Cargando productos…</p>
@@ -364,10 +367,6 @@ export default function ComparacionCategoriasClient({
                               type="checkbox"
                               checked={isSelectedForCompare}
                               onChange={() => toggleCompareSelection(p.id)}
-                              disabled={
-                                !isSelectedForCompare &&
-                                selectedCompareIds.length >= 2
-                              }
                               className="h-4 w-4 accent-primary cursor-pointer"
                               aria-label={`Seleccionar ${p.descripcionProveedor} para comparar`}
                             />
@@ -405,46 +404,7 @@ export default function ComparacionCategoriasClient({
                           </TableCell>
                           <TableCell className="celda-datos text-center">
                             {(() => {
-                              // Solo mostrar variación en filas con casilla marcada.
-                              if (!isSelectedForCompare) return "";
-
-                              if (selectedCompareIds.length === 2) {
-                                const [idA, idB] = selectedCompareIds;
-                                const rowA = productosFiltrados.find((pr) => pr.id === idA);
-                                const rowB = productosFiltrados.find((pr) => pr.id === idB);
-                                if (!rowA || !rowB) return "";
-
-                                const dtoA = dtoEspecial[rowA.id] ?? "";
-                                const dtoB = dtoEspecial[rowB.id] ?? "";
-                                const pxA = (pxConDto(rowA.pxCompraFinal, dtoA) ?? rowA.pxCompraFinal) as number | null;
-                                const pxB = (pxConDto(rowB.pxCompraFinal, dtoB) ?? rowB.pxCompraFinal) as number | null;
-                                if (pxA == null || pxB == null || pxA <= 0 || pxB <= 0) return "";
-
-                                // Comparación entre los 2 seleccionados: base = menor precio.
-                                const base = Math.min(pxA, pxB);
-                                if (base <= 0) return "";
-                                const precioActual = p.id === idA ? pxA : pxB;
-                                const pct = ((precioActual - base) / base) * 100;
-
-                                return (
-                                  <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
-                                    {pct > 0 && (
-                                      <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
-                                    )}
-                                    {pct < 0 && (
-                                      <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
-                                    )}
-                                    <span>{fmtPctEntero(pct)}</span>
-                                  </span>
-                                );
-                              }
-
-                              // Si hay solo 1 seleccionado, mostrar variación vs mínimo para esa fila.
-                              if (pxEfectivo == null || pxEfectivo <= 0 || pxMinEfectivo == null || pxMinEfectivo <= 0) {
-                                return "";
-                              }
-                              const pct = ((pxEfectivo - pxMinEfectivo) / pxMinEfectivo) * 100;
-                              return (
+                              const renderPct = (pct: number) => (
                                 <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
                                   {pct > 0 && (
                                     <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
@@ -455,6 +415,17 @@ export default function ComparacionCategoriasClient({
                                   <span>{fmtPctEntero(pct)}</span>
                                 </span>
                               );
+
+                              const haySeleccion = selectedCompareIds.length > 0;
+                              const baseMin = haySeleccion ? pxMinEntreSeleccionados : pxMinEfectivo;
+
+                              if (haySeleccion && !isSelectedForCompare) return "";
+
+                              if (pxEfectivo == null || pxEfectivo <= 0 || baseMin == null || baseMin <= 0) {
+                                return "";
+                              }
+                              const pct = ((pxEfectivo - baseMin) / baseMin) * 100;
+                              return renderPct(pct);
                             })()}
                           </TableCell>
                           {puedeEditar && (
