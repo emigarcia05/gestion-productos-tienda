@@ -169,8 +169,10 @@ export default function FiltrosReposicion({
   const proveedoresDisponibles = Array.from(
     new Map(
       data.items
-        .filter((i): i is { idProveedor: string; nombreProveedor: string } => !!i.idProveedor && !!i.nombreProveedor)
-        .map((i) => [i.idProveedor, i.nombreProveedor] as const)
+        .map((i): readonly [string, string] | null =>
+          i.idProveedor && i.nombreProveedor ? [i.idProveedor, i.nombreProveedor] : null
+        )
+        .filter((v): v is readonly [string, string] => v !== null)
     ).entries()
   )
     .map(([id, nombre]) => ({ id, nombre }))
