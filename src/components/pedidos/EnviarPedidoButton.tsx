@@ -48,22 +48,13 @@ export default function EnviarPedidoButton({
         toast.error(result.error);
         return;
       }
-      const { pdfBase64, whatsapp, nombreProveedor, filename, sentViaWhatsApp } = result.data!;
+      const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
       if (sentViaWhatsApp) {
-        toast.success("Pedido generado y enviado por WhatsApp al proveedor.");
+        toast.success("Pedido generado y enviado al proveedor.");
         return;
       }
       descargarPdf(pdfBase64, filename);
       toast.success(`PDF generado: ${filename}`);
-      if (whatsapp) {
-        toast.info(
-          "El proveedor tiene WhatsApp configurado, pero el envío por API no está disponible. Podés enviar el PDF manualmente."
-        );
-      } else {
-        toast.info(
-          `El proveedor "${nombreProveedor}" no tiene número de WhatsApp configurado. Podés agregarlo en la gestión de proveedores.`
-        );
-      }
     } finally {
       setLoading(false);
     }

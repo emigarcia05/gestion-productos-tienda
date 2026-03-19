@@ -47,16 +47,17 @@ export function generarPdfPedido(
   const headerTopY = y;
   const contentWidth = pageWidth - 2 * MARGIN;
   const lineY = headerTopY + 9;
+  const centerX = MARGIN + contentWidth / 2;
 
   doc.setTextColor(17, 17, 17);
   doc.setFontSize(TITLE_FONT_SIZE);
   doc.setFont("helvetica", "bold");
-  doc.text("Nota de Pedido", MARGIN, headerTopY);
+  doc.text("Nota de Pedido", centerX, headerTopY, { align: "center" });
 
   // Fecha (más chico)
   doc.setFontSize(DATE_FONT_SIZE);
   doc.setFont("helvetica", "normal");
-  doc.text(`Fecha: ${fmtFechaNotaPedido(new Date())}`, MARGIN, headerTopY + 6);
+  doc.text(`Fecha: ${fmtFechaNotaPedido(new Date())}`, centerX, headerTopY + 6, { align: "center" });
 
   // Línea separadora (estilo Control Stock impreso)
   doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
@@ -79,6 +80,9 @@ export function generarPdfPedido(
   const colCant = MARGIN;
   const colCod = colCant + wCant;
   const colDesc = colCod + wCod;
+  const xCantCenter = colCant + wCant / 2;
+  const xCodCenter = colCod + wCod / 2;
+  const xDescCenter = colDesc + wDesc / 2;
 
   function drawHeaderRow(headerY: number) {
     doc.setFillColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
@@ -87,9 +91,9 @@ export function generarPdfPedido(
     doc.setFontSize(HEADER_FONT_SIZE);
     doc.setFont("helvetica", "bold");
     const textY = headerY + 4;
-    doc.text("CANT.", colCant, textY);
-    doc.text("COD.", colCod, textY);
-    doc.text("DESCRIPCION", colDesc, textY);
+    doc.text("CANT.", xCantCenter, textY, { align: "center" });
+    doc.text("COD.", xCodCenter, textY, { align: "center" });
+    doc.text("DESCRIPCION", xDescCenter, textY, { align: "center" });
   }
 
   function drawRow(rowY: number, idx: number, row: ItemPedidoParaPdf) {
@@ -108,9 +112,9 @@ export function generarPdfPedido(
     doc.setFont("helvetica", "normal");
 
     const textY = rowY + 5;
-    doc.text(String(row.cantPedir), colCant + wCant - 2, textY, { align: "right" });
-    doc.text(truncate(row.codProveedor ?? "", 16), colCod, textY);
-    doc.text(truncate(row.descripcion, MAX_DESC_LEN), colDesc, textY);
+    doc.text(String(row.cantPedir), xCantCenter, textY, { align: "center" });
+    doc.text(truncate(row.codProveedor ?? "", 16), xCodCenter, textY, { align: "center" });
+    doc.text(truncate(row.descripcion, MAX_DESC_LEN), xDescCenter, textY, { align: "center" });
   }
 
   drawHeaderRow(y);
