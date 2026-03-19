@@ -44,6 +44,8 @@ export interface ProductoEnCategoria {
   marca: string | null;
   pxCompraFinal: number | null;
   proveedorPrefijo: string | null;
+  /** DTO. EXTRA (0-99) persistido para "Comp. Por Cat." por ítem. */
+  dtoExtraComparacion: number | null;
   costoCompraObjetivo: number | null;
   diferenciaVsObjetivo: number | null; // pxCompraFinal - objetivo (negativo = bajo objetivo)
 }
@@ -91,13 +93,11 @@ export async function getProductosPorPresentacion(
     where: { id: presentacionId },
     include: {
       subcategoria: { include: { categoria: true } },
-      productoReferencia: {
-        select: {
-          pxCompraFinal: true,
-        },
-      },
       listaPrecios: {
-        include: { proveedor: { select: { prefijo: true } } },
+        include: {
+          proveedor: { select: { prefijo: true } },
+          dtoExtraComparacion: { select: { dtoExtra: true } },
+        },
         orderBy: { pxCompraFinal: "asc" },
       },
     },
@@ -107,13 +107,10 @@ export async function getProductosPorPresentacion(
     return { productos: [], costoCompraObjetivo: null, labelCompleto: "" };
   }
 
-  const objetivo = getObjetivoFromPresentacion(presentacion);
   const labelCompleto = `${presentacion.subcategoria.categoria.nombre} - ${presentacion.subcategoria.nombre} - ${presentacion.nombre}`;
 
   const productos: ProductoEnCategoria[] = presentacion.listaPrecios.map((lp) => {
     const pxFinal = lp.pxCompraFinal != null ? Number(lp.pxCompraFinal) : null;
-    const diferencia =
-      objetivo != null && pxFinal != null ? Math.round((pxFinal - objetivo) * 100) / 100 : null;
     return {
       id: lp.id,
       codExt: lp.codExt,
@@ -121,12 +118,14 @@ export async function getProductosPorPresentacion(
       marca: lp.marca ?? null,
       pxCompraFinal: pxFinal,
       proveedorPrefijo: lp.proveedor?.prefijo ?? null,
-      costoCompraObjetivo: objetivo,
-      diferenciaVsObjetivo: diferencia,
+      dtoExtraComparacion: lp.dtoExtraComparacion?.dtoExtra ?? null,
+      // En "Comp. Por Cat." ya no existe un referente/clic; la VARIACIÓN se calcula vs mínimo en frontend.
+      costoCompraObjetivo: null,
+      diferenciaVsObjetivo: null,
     };
   });
 
-  return { productos, costoCompraObjetivo: objetivo, labelCompleto };
+  return { productos, costoCompraObjetivo: null, labelCompleto };
 }
 
 /** Marcas distintas de lista_tienda (precios_tienda.marca) para filtros. */
@@ -332,4 +331,23 @@ export async function quitarAsignacionPresentacion(idsProductos: string[]): Prom
     data: { idPresentacion: null },
   });
   return { count: result.count };
+}
+
+/** Persistir DTO. EXTRA para "Comp. Por Cat." por ítem (ListaPrecioProveedor). */
+export async function actualizarDtoExtraComparacionItem(
+  listaPrecioProveedorId: string,
+  dtoExtra: number | null
+): Promise<void> {
+  if (dtoExtra === null) {
+    await prisma.comparacionDtoExtraItem.deleteMany({
+      where: { listaPrecioProveedorId },
+    });
+    return;
+  }
+
+  await prisma.comparacionDtoExtraItem.upsert({
+    where: { listaPrecioProveedorId },
+    create: { listaPrecioProveedorId, dtoExtra },
+    update: { dtoExtra },
+  });
 }

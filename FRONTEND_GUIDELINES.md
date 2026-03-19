@@ -345,6 +345,12 @@ Botón/indicador persistente en la parte inferior de la slidenav.
   - **Reposo**: `bg-sidebar-accent` con hover suave.
   - **Consulta**: **fondo amarillo de marca** `bg-accent2` (token `--accent2`) para indicar proceso activo.
 
+### Comp. Por Cat. — DTO. EXTRA Persistente
+
+En el módulo **`Comp. Por Cat.`** (`src/components/proveedores/ComparacionCategoriasClient.tsx`) el campo `DTO. EXTRA` es editable por ítem y se guarda en backend con `actualizarDtoExtraComparacionAction`.
+
+La columna **VARIACIÓN** se calcula vs el **mínimo de la presentación** (sin “referente” clickeado), usando el `DTO. EXTRA` vigente.
+
 ### Sincronización DUX — Solo desde la slidenav
 
 Regla de UX: la acción de sincronizar/importar datos de DUX **no debe aparecer como botón en encabezados de módulos**.  

@@ -53,3 +53,8 @@ export const idsProductosSchema = z.array(uuidSchema);
 
 /** Solo presentacionId para lectura. */
 export const presentacionIdSchema = uuidSchema;
+
+export const actualizarDtoExtraComparacionSchema = z.object({
+  listaPrecioProveedorId: uuidSchema,
+  dtoExtra: z.number().int().min(0).max(99).nullable(),
+});

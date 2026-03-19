@@ -70,9 +70,22 @@ model ListaPrecioProveedor {
   listaPrecioTienda ListaPrecioTienda? @relation(fields: [idListaPrecioTienda], references: [id], onDelete: SetNull)
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
+  dtoExtraComparacion ComparacionDtoExtraItem?
 
   @@unique([idProveedor, codProdProveedor])
   @@map("precios_proveedores")
+}
+
+model ComparacionDtoExtraItem {
+  id                     String @id @default(cuid())
+  listaPrecioProveedorId String @unique @map("id_lista_precios_proveedores")
+  dtoExtra               Int? @map("dto_extra") // 0-99, null si está vacío
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorId], references: [id], onDelete: Cascade)
+
+  @@map("comparacion_dto_extra_items")
 }
 
 // ─── Comparación por categorías (Categoria → Subcategoria → Presentacion) ───

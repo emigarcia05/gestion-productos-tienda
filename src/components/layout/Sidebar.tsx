@@ -19,11 +19,9 @@ import {
   RotateCw,
   Pipette,
   History,
-  User,
   GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import {
   Collapsible,
   CollapsibleContent,
@@ -144,8 +142,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   useEffect(() => {
     setOpenId(pathModule);
   }, [pathModule]);
-
-  const perfilNombre = rol === "editor" ? "Editor" : "Simple";
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">

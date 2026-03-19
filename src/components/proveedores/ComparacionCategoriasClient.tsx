@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, UserPlus, Check, ArrowUp, ArrowDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Plus, UserPlus, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosComparacionCategorias, {
@@ -24,9 +23,10 @@ import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.
 import type { ProductoEnCategoria } from "@/services/categoriasComparacion.service";
 import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getProductosPorPresentacionAction } from "@/actions/comparacionCategorias";
+import { getProductosPorPresentacionAction, actualizarDtoExtraComparacionAction } from "@/actions/comparacionCategorias";
 import GestionCategoriasModal from "@/components/proveedores/comparacion-categorias/GestionCategoriasModal";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
+import { toast } from "sonner";
 
 interface Props {
   arbolInicial: CategoriaComparacionTree[];
@@ -70,8 +70,8 @@ export default function ComparacionCategoriasClient({
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalGestion, setModalGestion] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
-  const [selectedProductoId, setSelectedProductoId] = useState<string | null>(null);
   const [dtoEspecial, setDtoEspecial] = useState<Record<string, string>>({});
+  const [savingDtoExtra, setSavingDtoExtra] = useState<Record<string, boolean>>({});
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
@@ -82,27 +82,23 @@ export default function ComparacionCategoriasClient({
     return pxOriginal * (1 - n / 100);
   }
 
-  const productoReferencia = useMemo(
-    () => (selectedProductoId ? productos.find((pr) => pr.id === selectedProductoId) : null),
-    [productos, selectedProductoId]
-  );
-  const pxReferenciaOriginal = productoReferencia?.pxCompraFinal ?? null;
-  const dtoRef = productoReferencia ? dtoEspecial[productoReferencia.id] ?? "" : "";
-  const pxReferencia = useMemo(() => {
-    if (pxReferenciaOriginal == null) return null;
-    const conDto = pxConDto(pxReferenciaOriginal, dtoRef);
-    return conDto != null ? conDto : pxReferenciaOriginal;
-  }, [pxReferenciaOriginal, dtoRef]);
+  const pxMinEfectivo = useMemo(() => {
+    const valores = productos
+      .map((p) => {
+        const dtoStr = dtoEspecial[p.id] ?? "";
+        const pxOriginal = p.pxCompraFinal;
+        const pxConDescuento = pxConDto(pxOriginal, dtoStr);
+        const pxEfectivo = pxConDescuento ?? pxOriginal;
+        return pxEfectivo;
+      })
+      .filter((n): n is number => n != null && n > 0);
 
-  function variacionVsReferencia(pxRow: number | null): { pct: number } | null {
-    if (pxReferencia == null || pxReferencia <= 0 || pxRow == null) return null;
-    const pct = ((pxRow - pxReferencia) / pxReferencia) * 100;
-    return { pct };
-  }
+    if (valores.length === 0) return null;
+    return Math.min(...valores);
+  }, [productos, dtoEspecial]);
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
-    setSelectedProductoId(null);
     setDtoEspecial({});
     setLoadingProductos(true);
     try {
@@ -110,6 +106,12 @@ export default function ComparacionCategoriasClient({
       if (res.ok && res.data) {
         setProductos(res.data.productos);
         setLabelCompleto(res.data.labelCompleto ?? "");
+        setDtoEspecial(
+          res.data.productos.reduce<Record<string, string>>((acc, pr) => {
+            acc[pr.id] = pr.dtoExtraComparacion != null ? String(pr.dtoExtraComparacion) : "";
+            return acc;
+          }, {})
+        );
       } else {
         setProductos([]);
         setLabelCompleto("");
@@ -119,6 +121,50 @@ export default function ComparacionCategoriasClient({
     }
   }, []);
 
+  const guardarDtoExtra = useCallback(
+    async (listaPrecioProveedorId: string, draft: string) => {
+      if (savingDtoExtra[listaPrecioProveedorId]) return;
+
+      const prev = productos.find((p) => p.id === listaPrecioProveedorId);
+      const dtoPrev = prev?.dtoExtraComparacion ?? null;
+
+      const trimmed = draft.trim();
+      const dtoExtra = trimmed === "" ? null : parseInt(trimmed, 10);
+      if (dtoExtra !== null && (Number.isNaN(dtoExtra) || dtoExtra < 0 || dtoExtra > 99)) {
+        setDtoEspecial((prevMap) => ({
+          ...prevMap,
+          [listaPrecioProveedorId]: dtoPrev != null ? String(dtoPrev) : "",
+        }));
+        return;
+      }
+
+      if (dtoPrev === dtoExtra) return;
+
+      setSavingDtoExtra((prevMap) => ({ ...prevMap, [listaPrecioProveedorId]: true }));
+      try {
+        const res = await actualizarDtoExtraComparacionAction(listaPrecioProveedorId, dtoExtra);
+        if (!res.ok) {
+          toast.error(res.error ?? "Error al guardar DTO extra.");
+          setDtoEspecial((prevMap) => ({
+            ...prevMap,
+            [listaPrecioProveedorId]: dtoPrev != null ? String(dtoPrev) : "",
+          }));
+          return;
+        }
+
+        // Mantener UI consistente.
+        setProductos((prevList) =>
+          prevList.map((p) =>
+            p.id === listaPrecioProveedorId ? { ...p, dtoExtraComparacion: dtoExtra } : p
+          )
+        );
+      } finally {
+        setSavingDtoExtra((prevMap) => ({ ...prevMap, [listaPrecioProveedorId]: false }));
+      }
+    },
+    [productos, savingDtoExtra]
+  );
+
   useEffect(() => {
     if (presentacionIdInicial) {
       loadProductos(presentacionIdInicial);
@@ -126,11 +172,6 @@ export default function ComparacionCategoriasClient({
   }, [presentacionIdInicial, loadProductos]);
 
   const refreshArbol = useCallback(() => {
-    router.refresh();
-  }, [router]);
-
-  const onGestionClose = useCallback(() => {
-    setModalGestion(false);
     router.refresh();
   }, [router]);
 
@@ -217,7 +258,6 @@ export default function ComparacionCategoriasClient({
               <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
                 <Table variant="compact" scrollX={false} className="tabla-comparacion-cat">
                   <colgroup>
-                    <col className="w-[5%]" />
                     <col className="w-[9%]" />
                     <col className="w-[9%]" />
                     <col className="w-[42%]" />
@@ -227,7 +267,6 @@ export default function ComparacionCategoriasClient({
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-center w-[5%] p-1 align-middle" />
                       <TableHead>PROVEEDOR</TableHead>
                       <TableHead>MARCA</TableHead>
                       <TableHead>DESCRIPCION</TableHead>
@@ -238,32 +277,16 @@ export default function ComparacionCategoriasClient({
                   </TableHeader>
                   <TableBody>
                     {productos.map((p) => {
-                      const selected = selectedProductoId === p.id;
                       const dtoStr = dtoEspecial[p.id] ?? "";
                       const pxOriginal = p.pxCompraFinal;
                       const pxConDescuento = pxConDto(pxOriginal, dtoStr);
                       const pxEfectivo = pxConDescuento ?? pxOriginal;
-                      const varData = variacionVsReferencia(pxEfectivo);
+
                       return (
                         <TableRow
                           key={p.id}
-                          className={cn(selected && "bg-primary/10")}
+                          className="hover:bg-transparent"
                         >
-                          <TableCell className="celda-datos w-[5%] p-1">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedProductoId(selected ? null : p.id)}
-                              className={cn(
-                                "selector-cuadro selector-cuadro--circle",
-                                selected && "selector-cuadro--selected"
-                              )}
-                              aria-label={selected ? "Deseleccionar fila" : "Seleccionar fila"}
-                            >
-                              {selected ? (
-                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                              ) : null}
-                            </button>
-                          </TableCell>
                           <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
                           <TableCell className="celda-datos">{p.marca ?? "—"}</TableCell>
                           <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
@@ -279,27 +302,40 @@ export default function ComparacionCategoriasClient({
                                   const v = e.target.value.replace(/\D/g, "").slice(0, 2);
                                   setDtoEspecial((prev) => ({ ...prev, [p.id]: v }));
                                 }}
+                                onBlur={() => guardarDtoExtra(p.id, dtoStr)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+                                }}
                                 className="h-8 w-14 text-center text-sm tabular-nums"
+                                disabled={savingDtoExtra[p.id] ?? false}
                               />
                               <span className="text-muted-foreground text-xs shrink-0">%</span>
+                              {savingDtoExtra[p.id] ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
+                              ) : null}
                             </div>
                           </TableCell>
                           <TableCell className="celda-datos celda-numero">
                             {pxEfectivo != null ? `$${fmtPrecio(pxEfectivo)}` : "—"}
                           </TableCell>
                           <TableCell className="celda-datos text-center">
-                            {varData == null ? (
+                            {pxEfectivo == null || pxEfectivo <= 0 || pxMinEfectivo == null || pxMinEfectivo <= 0 ? (
                               "—"
                             ) : (
-                              <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
-                                {varData.pct > 0 && (
-                                  <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
-                                )}
-                                {varData.pct < 0 && (
-                                  <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
-                                )}
-                                <span>{fmtPctEntero(varData.pct)}</span>
-                              </span>
+                              (() => {
+                                const pct = ((pxEfectivo - pxMinEfectivo) / pxMinEfectivo) * 100;
+                                return (
+                                  <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
+                                    {pct > 0 && (
+                                      <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
+                                    )}
+                                    {pct < 0 && (
+                                      <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
+                                    )}
+                                    <span>{fmtPctEntero(pct)}</span>
+                                  </span>
+                                );
+                              })()
                             )}
                           </TableCell>
                         </TableRow>

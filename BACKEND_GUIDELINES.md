@@ -236,6 +236,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/lib/validations/productos.ts` | Nuevo: `camposEditablesProductoSchema`, `editarProductoSchema`, `campoMasivoSchema`, `aplicarCampoMasivoSchema`. |
 | `src/lib/validations/comparacionCategorias.ts` | Nuevo: esquemas para CRUD categorías, subcategorías, presentaciones y asignación de productos. |
 | Componentes comparación/stock | `ComparacionCategoriasClient`: uso de `res.data` en `getProductosPorPresentacionAction`. `AsignarProductosModal`: uso de `res.data?.count`. `TablaStock`: manejo de `registrarExportacionExcelStock` con toast en error. |
+| Comp. Por Cat. | Nueva persistencia de `DTO. EXTRA` (0-99 o null) por ítem aislada en tabla `comparacion_dto_extra_items`, con Action `actualizarDtoExtraComparacionAction` y servicio `getProductosPorPresentacion` que devuelve `dtoExtraComparacion`. |
 
 ---
 

@@ -17,6 +17,7 @@ import {
   deletePresentacion,
   asignarProductosAPresentacion,
   quitarAsignacionPresentacion,
+  actualizarDtoExtraComparacionItem,
 } from "@/services/categoriasComparacion.service";
 import { listarProductosProveedoresParaVincular } from "@/services/listaPrecios.service";
 import { getRol } from "@/lib/sesion";
@@ -33,6 +34,7 @@ import {
   asignarProductosSchema,
   idsProductosSchema,
   uuidSchema,
+  actualizarDtoExtraComparacionSchema,
 } from "@/lib/validations/comparacionCategorias";
 
 const PATH = "/proveedores/comparacion-categorias";
@@ -279,5 +281,24 @@ export async function quitarAsignacionPresentacionAction(
     return { ok: true, data: { count } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al quitar asignación." };
+  }
+}
+
+/** Persistir DTO. EXTRA (0-99 o null) para "Comp. Por Cat." por ítem (ListaPrecioProveedor). */
+export async function actualizarDtoExtraComparacionAction(
+  listaPrecioProveedorId: string,
+  dtoExtra: number | null
+): Promise<ActionResult<{ dtoExtra: number | null }>> {
+  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+
+  const parsed = actualizarDtoExtraComparacionSchema.safeParse({ listaPrecioProveedorId, dtoExtra });
+  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
+
+  try {
+    await actualizarDtoExtraComparacionItem(parsed.data.listaPrecioProveedorId, parsed.data.dtoExtra);
+    revalidatePath(PATH);
+    return { ok: true, data: { dtoExtra: parsed.data.dtoExtra } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al guardar DTO extra." };
   }
 }

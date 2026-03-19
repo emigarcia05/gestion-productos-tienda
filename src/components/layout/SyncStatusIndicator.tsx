@@ -25,7 +25,6 @@ export default function SyncStatusIndicator() {
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [total, setTotal] = useState(0);
-  const [phase, setPhase] = useState<"sincronizando" | "guardando" | null>(null);
   const [lastCompletedAt, setLastCompletedAt] = useState<string | null>(null);
   const [requestingStart, setRequestingStart] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -40,7 +39,6 @@ export default function SyncStatusIndicator() {
           setRunning(isRunning);
           setProcessed(data.processed ?? 0);
           setTotal(data.total ?? 0);
-          setPhase(data.phase ?? null);
           setLastCompletedAt(data.lastCompletedAt ?? null);
         })
         .catch(() => {});
