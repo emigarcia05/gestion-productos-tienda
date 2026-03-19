@@ -26,7 +26,8 @@ function fmtFechaNotaPedido(d: Date): string {
   const weekday = d.toLocaleDateString("es-ES", { weekday: "long" });
   const month = d.toLocaleDateString("es-ES", { month: "long" });
   const year = d.getFullYear();
-  return `${weekday} de ${month} de ${year}`;
+  const day = d.getDate();
+  return `${weekday} ${day} de ${month} de ${year}`;
 }
 
 /**
@@ -57,14 +58,10 @@ export function generarPdfPedido(
   // Fecha (más chico)
   doc.setFontSize(DATE_FONT_SIZE);
   doc.setFont("helvetica", "normal");
-  doc.text(`Fecha: ${fmtFechaNotaPedido(new Date())}`, centerX, headerTopY + 6, { align: "center" });
+  doc.text(fmtFechaNotaPedido(new Date()), centerX, headerTopY + 6, { align: "center" });
 
-  // Línea separadora (estilo Control Stock impreso)
-  doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
-  doc.setLineWidth(0.4);
-  doc.line(MARGIN, lineY, MARGIN + contentWidth, lineY);
-
-  y = lineY + 4;
+  // (Sin línea divisoria: el encabezado de tabla ya separa visualmente)
+  y = headerTopY + 17;
 
   if (items.length === 0) {
     doc.text("Sin ítems con cantidad.", MARGIN, y);

@@ -300,7 +300,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     const mm = pad2(d.getMonth() + 1);
     const hh = pad2(d.getHours());
     const min = pad2(d.getMinutes());
-    return `${dd}-${mm} ${hh}:${min}`;
+    return `${dd}/${mm} ${hh}:${min}`;
   }
 
   function sanitizeFilenamePart(s: string): string {
@@ -330,7 +330,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     );
     const prefijoProveedor = sanitizeFilenamePart(proveedor.prefijo || "");
     const fechaStr = fmtDdMmHHmm(new Date());
-    const filename = `NP - ${prefijoProveedor} - ${fechaStr}.pdf`;
+    const filename = `Nota Pedido - ${prefijoProveedor} - ${fechaStr}.pdf`;
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
     let sentViaWhatsApp = false;
