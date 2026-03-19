@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const uuidSchema = z.string().uuid("ID inválido.");
+export const comparacionIdSchema = z.string().cuid("ID inválido.");
 
 export const nombreCategoriaSchema = z
   .string()
@@ -11,48 +12,48 @@ export const nombreCategoriaSchema = z
 export const createCategoriaSchema = z.object({ nombre: nombreCategoriaSchema });
 
 export const updateCategoriaSchema = z.object({
-  id: uuidSchema,
+  id: comparacionIdSchema,
   data: z.object({ nombre: z.string().min(1).optional() }),
 });
 
 export const createSubcategoriaSchema = z.object({
-  categoriaId: uuidSchema,
+  categoriaId: comparacionIdSchema,
   nombre: nombreCategoriaSchema,
 });
 
 export const updateSubcategoriaSchema = z.object({
-  id: uuidSchema,
+  id: comparacionIdSchema,
   data: z.object({
     nombre: z.string().min(1).optional(),
-    categoriaId: uuidSchema.optional(),
+    categoriaId: comparacionIdSchema.optional(),
   }),
 });
 
 export const createPresentacionSchema = z.object({
-  subcategoriaId: uuidSchema,
+  subcategoriaId: comparacionIdSchema,
   nombre: nombreCategoriaSchema,
   costoCompraObjetivo: z.number().positive().nullable().optional(),
 });
 
 export const updatePresentacionSchema = z.object({
-  id: uuidSchema,
+  id: comparacionIdSchema,
   data: z.object({
     nombre: z.string().min(1).optional(),
-    subcategoriaId: uuidSchema.optional(),
+    subcategoriaId: comparacionIdSchema.optional(),
     costoCompraObjetivo: z.number().positive().nullable().optional(),
     idProductoReferencia: uuidSchema.nullable().optional(),
   }),
 });
 
 export const asignarProductosSchema = z.object({
-  presentacionId: uuidSchema,
+  presentacionId: comparacionIdSchema,
   idsProductos: z.array(uuidSchema),
 });
 
 export const idsProductosSchema = z.array(uuidSchema);
 
 /** Solo presentacionId para lectura. */
-export const presentacionIdSchema = uuidSchema;
+export const presentacionIdSchema = comparacionIdSchema;
 
 export const actualizarDtoExtraComparacionSchema = z.object({
   listaPrecioProveedorId: uuidSchema,

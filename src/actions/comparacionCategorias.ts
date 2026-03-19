@@ -33,7 +33,7 @@ import {
   updatePresentacionSchema,
   asignarProductosSchema,
   idsProductosSchema,
-  uuidSchema,
+  comparacionIdSchema,
   actualizarDtoExtraComparacionSchema,
 } from "@/lib/validations/comparacionCategorias";
 
@@ -142,7 +142,7 @@ export async function updateCategoriaAction(id: string, data: { nombre?: string 
 
 export async function deleteCategoriaAction(id: string): Promise<ActionResult> {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
-  const parsed = uuidSchema.safeParse(id);
+  const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
     await deleteCategoria(parsed.data);
@@ -188,7 +188,7 @@ export async function updateSubcategoriaAction(
 
 export async function deleteSubcategoriaAction(id: string): Promise<ActionResult> {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
-  const parsed = uuidSchema.safeParse(id);
+  const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
     await deleteSubcategoria(parsed.data);
@@ -238,7 +238,7 @@ export async function updatePresentacionAction(
 
 export async function deletePresentacionAction(id: string): Promise<ActionResult> {
   if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
-  const parsed = uuidSchema.safeParse(id);
+  const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
     await deletePresentacion(parsed.data);
