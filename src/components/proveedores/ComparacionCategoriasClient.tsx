@@ -157,7 +157,6 @@ export default function ComparacionCategoriasClient({
         );
       } else {
         setProductos([]);
-        setLabelCompleto("");
       }
     } finally {
       setLoadingProductos(false);
