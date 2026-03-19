@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, UserPlus, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { Plus, UserPlus, ArrowUp, ArrowDown, Loader2, Trash2 } from "lucide-react";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosComparacionCategorias, {
@@ -23,7 +23,11 @@ import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.
 import type { ProductoEnCategoria } from "@/services/categoriasComparacion.service";
 import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getProductosPorPresentacionAction, actualizarDtoExtraComparacionAction } from "@/actions/comparacionCategorias";
+import {
+  getProductosPorPresentacionAction,
+  actualizarDtoExtraComparacionAction,
+  quitarAsignacionPresentacionAction,
+} from "@/actions/comparacionCategorias";
 import GestionCategoriasModal from "@/components/proveedores/comparacion-categorias/GestionCategoriasModal";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
 import { toast } from "sonner";
@@ -72,6 +76,8 @@ export default function ComparacionCategoriasClient({
   const [modalAsignar, setModalAsignar] = useState(false);
   const [dtoEspecial, setDtoEspecial] = useState<Record<string, string>>({});
   const [savingDtoExtra, setSavingDtoExtra] = useState<Record<string, boolean>>({});
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
+  const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
@@ -100,6 +106,7 @@ export default function ComparacionCategoriasClient({
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
     setDtoEspecial({});
+    setSelectedCompareIds([]);
     setLoadingProductos(true);
     try {
       const res = await getProductosPorPresentacionAction(presentacionId);
@@ -180,6 +187,38 @@ export default function ComparacionCategoriasClient({
     if (selectedPresentacionId) loadProductos(selectedPresentacionId);
   }, [selectedPresentacionId, loadProductos]);
 
+  const handleQuitarFila = useCallback(
+    async (itemId: string) => {
+      if (!selectedPresentacionId || removingItemId != null) return;
+      setRemovingItemId(itemId);
+      try {
+        const res = await quitarAsignacionPresentacionAction([itemId]);
+        if (!res.ok) {
+          toast.error(res.error ?? "Error al quitar la fila.");
+          return;
+        }
+        setProductos((prev) => prev.filter((p) => p.id !== itemId));
+        setSelectedCompareIds((prev) => prev.filter((id) => id !== itemId));
+        setDtoEspecial((prev) => {
+          const next = { ...prev };
+          delete next[itemId];
+          return next;
+        });
+      } finally {
+        setRemovingItemId(null);
+      }
+    },
+    [removingItemId, selectedPresentacionId]
+  );
+
+  const toggleCompareSelection = useCallback((itemId: string) => {
+    setSelectedCompareIds((prev) => {
+      if (prev.includes(itemId)) return prev.filter((id) => id !== itemId);
+      if (prev.length >= 2) return prev;
+      return [...prev, itemId];
+    });
+  }, []);
+
   const acciones = puedeEditar ? (
     <div className="flex items-center gap-2">
       <Button
@@ -258,25 +297,34 @@ export default function ComparacionCategoriasClient({
               <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
                 <Table variant="compact" scrollX={false} className="tabla-comparacion-cat">
                   <colgroup>
-                    <col className="w-[9%]" />
-                    <col className="w-[9%]" />
-                    <col className="w-[42%]" />
-                    <col className="w-[8%]" />
-                    <col className="w-[17%]" />
+                    <col className="w-[2%]" />
                     <col className="w-[10%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[50%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[8%]" />
+                    {puedeEditar && <col className="w-[4%]" />}
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-center w-[6%]">SEL.</TableHead>
                       <TableHead>PROVEEDOR</TableHead>
                       <TableHead>MARCA</TableHead>
                       <TableHead>DESCRIPCION</TableHead>
                       <TableHead className="text-center">DTO. EXTRA</TableHead>
                       <TableHead>PX. FINAL COMPRA</TableHead>
                       <TableHead className="text-center">VARIACIÓN</TableHead>
+                      {puedeEditar && (
+                        <TableHead className="text-center">
+                          <Trash2 className="h-4 w-4 mx-auto text-foreground" aria-hidden />
+                        </TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {productos.map((p) => {
+                      const isSelectedForCompare = selectedCompareIds.includes(p.id);
                       const dtoStr = dtoEspecial[p.id] ?? "";
                       const pxOriginal = p.pxCompraFinal;
                       const pxConDescuento = pxConDto(pxOriginal, dtoStr);
@@ -287,6 +335,19 @@ export default function ComparacionCategoriasClient({
                           key={p.id}
                           className="hover:bg-transparent"
                         >
+                          <TableCell className="celda-datos text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelectedForCompare}
+                              onChange={() => toggleCompareSelection(p.id)}
+                              disabled={
+                                !isSelectedForCompare &&
+                                selectedCompareIds.length >= 2
+                              }
+                              className="h-4 w-4 accent-primary cursor-pointer"
+                              aria-label={`Seleccionar ${p.descripcionProveedor} para comparar`}
+                            />
+                          </TableCell>
                           <TableCell className="celda-datos celda-mono">{p.proveedorPrefijo ?? "—"}</TableCell>
                           <TableCell className="celda-datos">{p.marca ?? "—"}</TableCell>
                           <TableCell className="celda-datos min-w-0 truncate">{p.descripcionProveedor}</TableCell>
@@ -319,11 +380,28 @@ export default function ComparacionCategoriasClient({
                             {pxEfectivo != null ? `$${fmtPrecio(pxEfectivo)}` : "—"}
                           </TableCell>
                           <TableCell className="celda-datos text-center">
-                            {pxEfectivo == null || pxEfectivo <= 0 || pxMinEfectivo == null || pxMinEfectivo <= 0 ? (
-                              "—"
-                            ) : (
-                              (() => {
-                                const pct = ((pxEfectivo - pxMinEfectivo) / pxMinEfectivo) * 100;
+                            {(() => {
+                              // Solo mostrar variación en filas con casilla marcada.
+                              if (!isSelectedForCompare) return "";
+
+                              if (selectedCompareIds.length === 2) {
+                                const [idA, idB] = selectedCompareIds;
+                                const rowA = productos.find((pr) => pr.id === idA);
+                                const rowB = productos.find((pr) => pr.id === idB);
+                                if (!rowA || !rowB) return "";
+
+                                const dtoA = dtoEspecial[rowA.id] ?? "";
+                                const dtoB = dtoEspecial[rowB.id] ?? "";
+                                const pxA = (pxConDto(rowA.pxCompraFinal, dtoA) ?? rowA.pxCompraFinal) as number | null;
+                                const pxB = (pxConDto(rowB.pxCompraFinal, dtoB) ?? rowB.pxCompraFinal) as number | null;
+                                if (pxA == null || pxB == null || pxA <= 0 || pxB <= 0) return "";
+
+                                // Comparación entre los 2 seleccionados: base = menor precio.
+                                const base = Math.min(pxA, pxB);
+                                if (base <= 0) return "";
+                                const precioActual = p.id === idA ? pxA : pxB;
+                                const pct = ((precioActual - base) / base) * 100;
+
                                 return (
                                   <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
                                     {pct > 0 && (
@@ -335,9 +413,45 @@ export default function ComparacionCategoriasClient({
                                     <span>{fmtPctEntero(pct)}</span>
                                   </span>
                                 );
-                              })()
-                            )}
+                              }
+
+                              // Si hay solo 1 seleccionado, mostrar variación vs mínimo para esa fila.
+                              if (pxEfectivo == null || pxEfectivo <= 0 || pxMinEfectivo == null || pxMinEfectivo <= 0) {
+                                return "";
+                              }
+                              const pct = ((pxEfectivo - pxMinEfectivo) / pxMinEfectivo) * 100;
+                              return (
+                                <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
+                                  {pct > 0 && (
+                                    <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
+                                  )}
+                                  {pct < 0 && (
+                                    <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
+                                  )}
+                                  <span>{fmtPctEntero(pct)}</span>
+                                </span>
+                              );
+                            })()}
                           </TableCell>
+                          {puedeEditar && (
+                            <TableCell className="celda-datos text-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-foreground hover:text-destructive"
+                                onClick={() => handleQuitarFila(p.id)}
+                                disabled={removingItemId === p.id}
+                                title="Quitar fila"
+                              >
+                                {removingItemId === p.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}

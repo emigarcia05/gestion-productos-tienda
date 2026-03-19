@@ -351,6 +351,15 @@ En el módulo **`Comp. Por Cat.`** (`src/components/proveedores/ComparacionCateg
 
 La columna **VARIACIÓN** se calcula vs el **mínimo de la presentación** (sin “referente” clickeado), usando el `DTO. EXTRA` vigente.
 
+La tabla incluye una última columna de acciones con ícono de cesto:
+- Encabezado: cesto visual.
+- Filas: botón cesto que quita el ítem de la presentación (desasigna la fila) usando `quitarAsignacionPresentacionAction`.
+
+Comparación puntual entre 2 productos (solo front):
+- Columna `SEL.` con casilla clickeable por fila.
+- Se permiten hasta 2 filas seleccionadas.
+- En columna `VARIACIÓN`, solo las filas seleccionadas muestran diferencia; filas no seleccionadas quedan en blanco.
+
 ### Sincronización DUX — Solo desde la slidenav
 
 Regla de UX: la acción de sincronizar/importar datos de DUX **no debe aparecer como botón en encabezados de módulos**.  
