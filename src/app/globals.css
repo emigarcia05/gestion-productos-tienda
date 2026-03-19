@@ -694,10 +694,13 @@
   font-size: var(--text-sm) !important;
 }
 
-/* ─── Bloque de información secundaria en tablas (ej. Pedido Reposición) ───
- * Patrón: columnas principales a la izquierda (datos clave / configuraciones),
- * y un bloque secundario a la derecha (stock, métricas, resúmenes) visualmente separado.
- * Usar estas clases en <TableHead> y <TableCell> para el bloque secundario.
+/* ─── Bloques de columnas en tablas (1ra / 2da+3ra importancia) ───
+ * Patrón: columnas principales a la izquierda (1ra importancia: sin estas clases).
+ * Columnas de 2da y 3ra importancia pueden compartir el mismo fondo (`*-cell` / `*-head`);
+ * la separación entre grupos se marca con `*-divider` en la **primera** celda de cada grupo
+ * (línea vertical entre bloques de datos distintos).
+ * Ej. Comp. Proveedores: 1ra COD/DESC/PX → 2da MARGEN (divider) → 3ra MEJOR PROV. (divider) + DIF.
+ * Otros módulos (ej. Pedido Reposición): un solo bloque secundario a la derecha.
  */
 .tabla-bloque-secundario-head {
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
@@ -720,21 +723,23 @@
   border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
 }
 
-/* Tabla Tienda / Comp. Proveedores: Cod. Tienda 14%, Descripción 50%, Px Compra Final 12%, Mejor Proveedor 12%, DIF. 12%. */
+/* Tabla Tienda / Comp. Proveedores: Cod. 10%, Desc. 50%, Px. Compra Final 10%, Margen s/ IVA 10%, Mejor Prov. 10%, DIF. 10%. */
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
 }
 .tabla-tienda-listado thead th:nth-child(1),
-.tabla-tienda-listado tbody td:nth-child(1) { width: 14%; }
+.tabla-tienda-listado tbody td:nth-child(1) { width: 10%; }
 .tabla-tienda-listado thead th:nth-child(2),
 .tabla-tienda-listado tbody td:nth-child(2) { width: 50%; }
 .tabla-tienda-listado thead th:nth-child(3),
-.tabla-tienda-listado tbody td:nth-child(3) { width: 12%; }
+.tabla-tienda-listado tbody td:nth-child(3) { width: 10%; }
 .tabla-tienda-listado thead th:nth-child(4),
-.tabla-tienda-listado tbody td:nth-child(4) { width: 12%; }
+.tabla-tienda-listado tbody td:nth-child(4) { width: 10%; }
 .tabla-tienda-listado thead th:nth-child(5),
-.tabla-tienda-listado tbody td:nth-child(5) { width: 12%; }
+.tabla-tienda-listado tbody td:nth-child(5) { width: 10%; }
+.tabla-tienda-listado thead th:nth-child(6),
+.tabla-tienda-listado tbody td:nth-child(6) { width: 10%; }
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */
 .card-contenedor-tabla {

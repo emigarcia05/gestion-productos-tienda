@@ -29,3 +29,21 @@ export function calcPxCompraFinal(
     (1 + cxTransporte / 100)
   );
 }
+
+/**
+ * Marcación / margen sobre costo **sin IVA** (lista tienda neto vs costo de compra).
+ * Fórmula: ((px_lista_tienda / (1 + IVA%)) / costo_compra - 1) × 100.
+ * `porcIva` en puntos porcentuales (ej. 21 → divisor 1,21).
+ */
+export function calcMargenSinIvaPct(
+  pxListaTienda: number,
+  costoCompra: number,
+  porcIva: number = 21
+): number | null {
+  if (!(costoCompra > 0) || !(pxListaTienda > 0)) return null;
+  if (!Number.isFinite(pxListaTienda) || !Number.isFinite(costoCompra)) return null;
+  const factorIva = 1 + porcIva / 100;
+  if (!(factorIva > 0)) return null;
+  const neto = pxListaTienda / factorIva;
+  return ((neto / costoCompra) - 1) * 100;
+}

@@ -56,6 +56,10 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);
   - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
 
+### 1.10 Margen sin IVA (Comp. Proveedores, `/tienda`)
+
+- La columna **MARGEN S/ IVA** en la tabla usa `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
+
 ### 1.5 Manejo de errores y respuestas
 
 - **Formato estándar para el frontend**:  

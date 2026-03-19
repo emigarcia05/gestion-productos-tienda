@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/table";
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import { fmtPrecio } from "@/lib/format";
+import { fmtPrecio, fmtPctEntero } from "@/lib/format";
+import { calcMargenSinIvaPct } from "@/lib/calculos";
 
 interface ItemTienda {
   id: string;
@@ -60,20 +61,23 @@ export default function TablaTienda({
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const puedeVincular = puede(rol, col.vinculos);
-  const COLUMNS = 5;
+  const COLUMNS = 6;
 
   return (
     <>
-      <Table variant="compact" scrollX={false}>
+      <Table variant="compact" scrollX={false} className="tabla-tienda-listado">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[14%]">COD. TIENDA</TableHead>
-            <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
-            <TableHead className="w-[12%]">PX. COMPRA FINAL</TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider w-[12%]">
+            <TableHead>COD. TIENDA</TableHead>
+            <TableHead>DESCRIPCIÓN</TableHead>
+            <TableHead>PX. COMPRA FINAL</TableHead>
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
+              MARGEN S/ IVA
+            </TableHead>
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
               MEJOR PROV.
             </TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head w-[12%]">
+            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head">
               DIF.
             </TableHead>
           </TableRow>
@@ -85,29 +89,39 @@ export default function TablaTienda({
               message={sinFiltros ? MENSAJE_SIN_FILTRO : MENSAJE_SIN_RESULTADOS}
             />
           ) : (
-            items.map((item) => (
-              <TableRow
-                key={item.id}
-                onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
-                className={puedeVincular ? "cursor-pointer" : ""}
-              >
-                <TableCell className="celda-datos celda-mono w-[14%] whitespace-nowrap">
-                  {item.codItem}
-                </TableCell>
-                <TableCell className="celda-datos celda-destacado w-[50%] min-w-0 overflow-hidden">
-                  {item.descripcion}
-                </TableCell>
-                <TableCell className="celda-datos celda-numero celda-destacado w-[12%]">
-                  ${fmtPrecio(item.costo)}
-                </TableCell>
-                <TableCell className="celda-datos celda-mono w-[12%] tabla-bloque-secundario-cell-divider">
-                  {item.mejorProveedorNoOficialPrefijo ?? ""}
-                </TableCell>
-                <TableCell className="celda-datos celda-numero w-[12%] tabla-bloque-secundario-cell">
-                  {item.difMejorPrecioPctEntero != null ? fmtDifPctEnteroMinus(item.difMejorPrecioPctEntero) : ""}
-                </TableCell>
-              </TableRow>
-            ))
+            items.map((item) => {
+              const margenSinIvaPct = calcMargenSinIvaPct(
+                item.precioLista,
+                item.costo,
+                item.porcIva
+              );
+              return (
+                <TableRow
+                  key={item.id}
+                  onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
+                  className={puedeVincular ? "cursor-pointer" : ""}
+                >
+                  <TableCell className="celda-datos celda-mono whitespace-nowrap">
+                    {item.codItem}
+                  </TableCell>
+                  <TableCell className="celda-datos celda-destacado min-w-0 overflow-hidden">
+                    {item.descripcion}
+                  </TableCell>
+                  <TableCell className="celda-datos celda-numero celda-destacado">
+                    ${fmtPrecio(item.costo)}
+                  </TableCell>
+                  <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell-divider">
+                    {margenSinIvaPct != null ? fmtPctEntero(margenSinIvaPct) : ""}
+                  </TableCell>
+                  <TableCell className="celda-datos celda-mono tabla-bloque-secundario-cell-divider">
+                    {item.mejorProveedorNoOficialPrefijo ?? ""}
+                  </TableCell>
+                  <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell">
+                    {item.difMejorPrecioPctEntero != null ? fmtDifPctEnteroMinus(item.difMejorPrecioPctEntero) : ""}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
