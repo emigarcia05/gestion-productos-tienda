@@ -103,6 +103,8 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - **Componente:** `FiltroBusquedaInput` en `@/components/shared/FiltroBusquedaInput.tsx`: icono Search, input con estilo unificado, botón X y Loader. Usar junto al hook para nueva pantallas con filtro de búsqueda (ej. FiltrosProductos, FiltrosTienda, FiltrosStock).
    - **Nota**: Si la página ya usa filtros por URL (Server Component) y necesitás una segunda fila con búsqueda (ej. “Generar Pedido”), agregá `q` en `searchParams`, pasalo al componente de filtros, y debounceá la navegación con `useFiltrosConBusqueda` (placeholder en MAYÚSCULAS).
    - En los módulos de Pedido Mercadería (`Urgente`, `Tintométrico` y `Reposición`), el botón `Generar Pedido` se muestra sólo cuando están seleccionados `SUCURSAL` y `PROVEEDOR`; el tipo de pedido lo determina el módulo actual.
+- En `Generar Pedido`, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `TIPO DE PEDIDO`.
+- En `Pedido Reposición`, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `MARCA` → `RUBRO` → `CONFIGURADO` (sin `SUB-RUBRO`).
 
 4. **Modal con tabla y filtros**
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección).

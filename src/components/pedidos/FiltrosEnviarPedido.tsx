@@ -129,6 +129,29 @@ export default function FiltrosEnviarPedido({
         <FilaFiltrosDesplegables>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
+              value={sucursal || "none"}
+              onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="SUCURSAL" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">SUCURSAL</SelectItem>
+                {SUCURSALES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
               value={proveedor || "none"}
               onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
             >
@@ -145,31 +168,6 @@ export default function FiltrosEnviarPedido({
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     [{p.prefijo}] {p.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select
-              value={sucursal || "none"}
-              onValueChange={(v) =>
-                updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })
-              }
-            >
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="SUCURSAL" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">SUCURSAL</SelectItem>
-                {SUCURSALES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -32,7 +32,6 @@ interface Props {
   qActual: string;
   marcaActual: string;
   rubroActual: string;
-  subRubroActual: string;
   configuradoActual: "" | "si";
   totalItems: number;
   proveedorActual: string;
@@ -45,7 +44,6 @@ export default function FiltrosReposicion({
   qActual,
   marcaActual,
   rubroActual,
-  subRubroActual,
   configuradoActual,
   totalItems,
   proveedorActual,
@@ -71,7 +69,6 @@ export default function FiltrosReposicion({
     proveedorActual ||
     marcaActual ||
     rubroActual ||
-    subRubroActual ||
     configuradoActual
   );
 
@@ -80,7 +77,6 @@ export default function FiltrosReposicion({
     q?: string;
     marca?: string;
     rubro?: string;
-    subRubro?: string;
     configurado?: "" | "si";
     proveedor?: string;
     pagina?: string;
@@ -91,8 +87,6 @@ export default function FiltrosReposicion({
     const qVal = updates.q !== undefined ? updates.q : q;
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
-    const subRubroVal =
-      updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
     const configuradoVal =
       updates.configurado !== undefined ? updates.configurado : configuradoActual;
     const proveedorVal = updates.proveedor !== undefined ? updates.proveedor : proveedorActual;
@@ -101,7 +95,6 @@ export default function FiltrosReposicion({
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
-    if (subRubroVal) p.set("subRubro", subRubroVal);
     if (configuradoVal) p.set("configurado", configuradoVal);
     if (proveedorVal) p.set("proveedor", proveedorVal);
     if (updates.pagina) p.set("pagina", updates.pagina);
@@ -113,7 +106,6 @@ export default function FiltrosReposicion({
     q?: string;
     marca?: string;
     rubro?: string;
-    subRubro?: string;
     configurado?: "" | "si";
     proveedor?: string;
     pagina?: string;
@@ -132,20 +124,16 @@ export default function FiltrosReposicion({
       sucursal: value as SucursalReposicion,
       marca: "",
       rubro: "",
-      subRubro: "",
       proveedor: "",
       pagina: "1",
     });
   }
 
   function handleMarca(value: string) {
-    navigate({ marca: value, rubro: "", subRubro: "", pagina: "1" });
+    navigate({ marca: value, rubro: "", pagina: "1" });
   }
   function handleRubro(value: string) {
-    navigate({ rubro: value, subRubro: "", pagina: "1" });
-  }
-  function handleSubRubro(value: string) {
-    navigate({ subRubro: value, pagina: "1" });
+    navigate({ rubro: value, pagina: "1" });
   }
 
   function handleConfigurado(value: string) {
@@ -210,6 +198,37 @@ export default function FiltrosReposicion({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
+              value={proveedorActual || "none"}
+              onValueChange={(v) => {
+                const next = v === "none" ? "" : v;
+                onProveedorChange(next);
+                navigate({ proveedor: next, pagina: "1" });
+              }}
+              disabled={!sucursalSeleccionada}
+            >
+              <SelectTrigger
+                id="filtro-reposicion-proveedor"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="PROVEEDOR" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PROVEEDOR</SelectItem>
+                {proveedoresDisponibles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nombre.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <Select
               value={marcaActual || "none"}
               onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
               disabled={!sucursalSeleccionada}
@@ -264,33 +283,6 @@ export default function FiltrosReposicion({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={subRubroActual || "none"}
-              onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}
-              disabled={!sucursalSeleccionada}
-            >
-              <SelectTrigger
-                id="filtro-reposicion-subrubro"
-                className="input-filtro-unificado"
-              >
-                <SelectValue placeholder="SUB-RUBRO" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">SUB-RUBRO</SelectItem>
-                {data.subRubros.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
-            <Select
               value={configuradoValue}
               onValueChange={(v) => handleConfigurado(v)}
               disabled={!sucursalSeleccionada}
@@ -316,34 +308,6 @@ export default function FiltrosReposicion({
       </FilterRowSelection>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 flex-1">
-          <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "flex-none w-56")}>
-            <Select
-              value={proveedorActual || "none"}
-              onValueChange={(v) => {
-                const next = v === "none" ? "" : v;
-                onProveedorChange(next);
-                navigate({ proveedor: next, pagina: "1" });
-              }}
-              disabled={!sucursalSeleccionada}
-            >
-              <SelectTrigger className="input-filtro-unificado">
-                <SelectValue placeholder="PROVEEDOR" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">PROVEEDOR</SelectItem>
-                {proveedoresDisponibles.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nombre.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <FilterRowSearch className="flex-1 w-auto max-w-none">
             <FiltroBusquedaInput
               id="filtro-reposicion-busqueda"

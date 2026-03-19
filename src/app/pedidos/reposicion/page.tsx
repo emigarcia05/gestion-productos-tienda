@@ -12,7 +12,6 @@ interface Props {
     q?: string;
     marca?: string;
     rubro?: string;
-    subRubro?: string;
     configurado?: string;
     pagina?: string;
     proveedor?: string;
@@ -28,7 +27,6 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
     q = "",
     marca = "",
     rubro = "",
-    subRubro = "",
     configurado = "",
     pagina = "1",
     proveedor = "",
@@ -44,7 +42,6 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
         q,
         marca,
         rubro,
-        subRubro,
         configurado: configurado === "si" ? "si" : "",
         pagina: paginaNum,
       })
@@ -62,7 +59,6 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
     q,
     marca,
     rubro,
-    subRubro,
     configurado: configurado === "si" ? "si" : "",
     proveedor,
   };
@@ -74,7 +70,6 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
       q={q}
       marca={marca}
       rubro={rubro}
-      subRubro={subRubro}
       configurado={configurado === "si" ? "si" : ""}
       proveedor={proveedor}
       paginaNum={paginaNum}

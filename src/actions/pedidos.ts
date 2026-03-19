@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
@@ -313,7 +314,7 @@ export async function generarPdfEnviarPedidoAction(params: {
       getItemsYProveedorParaEnviar(proveedorId.trim(), sucursalValida, tipos),
       prisma.sucursal.findUnique({
         where: { codigo: sucursalValida },
-        select: { phoneNumberId: true },
+        select: { id: true, phoneNumberId: true },
       }),
     ]);
     const { items, proveedor } = result;
@@ -350,6 +351,23 @@ export async function generarPdfEnviarPedidoAction(params: {
         };
       }
     }
+
+    // Al "enviar" (generar y devolver el PDF), limpiar pedidos_mercaderia de los tipos
+    // URGENTE/TINTOMETRICO para la sucursal configurada.
+    const tiposBorrar = tipos.filter((t) => t === "URGENTE" || t === "TINTOMETRICO");
+    if (sucursalRow?.id && tiposBorrar.length > 0) {
+      await prisma.itemPedidoEnvio.deleteMany({
+        where: {
+          sucursalId: sucursalRow.id,
+          tipoPedido: { in: tiposBorrar },
+        },
+      });
+    }
+
+    // Refrescar listados afectados para que no queden ítems viejos.
+    revalidatePath("/pedidos/enviar");
+    revalidatePath("/pedidos/urgente");
+    revalidatePath("/pedidos/tintometrico");
 
     return {
       ok: true,
