@@ -88,8 +88,28 @@ export default function ComparacionCategoriasClient({
     return pxOriginal * (1 - n / 100);
   }
 
+  const productosFiltrados = useMemo(() => {
+    const q = qInicial.trim().toUpperCase();
+    if (!q) return productos;
+    const terms = q.split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return productos;
+
+    return productos.filter((p) => {
+      const searchable = [
+        p.descripcionProveedor,
+        p.codExt,
+        p.marca ?? "",
+        p.proveedorPrefijo ?? "",
+      ]
+        .join(" ")
+        .toUpperCase();
+
+      return terms.every((term) => searchable.includes(term));
+    });
+  }, [productos, qInicial]);
+
   const pxMinEfectivo = useMemo(() => {
-    const valores = productos
+    const valores = productosFiltrados
       .map((p) => {
         const dtoStr = dtoEspecial[p.id] ?? "";
         const pxOriginal = p.pxCompraFinal;
@@ -101,7 +121,7 @@ export default function ComparacionCategoriasClient({
 
     if (valores.length === 0) return null;
     return Math.min(...valores);
-  }, [productos, dtoEspecial]);
+  }, [productosFiltrados, dtoEspecial]);
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setSelectedPresentacionId(presentacionId);
@@ -221,6 +241,18 @@ export default function ComparacionCategoriasClient({
 
   const acciones = puedeEditar ? (
     <div className="flex items-center gap-2">
+      {selectedPresentacionId && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-9"
+          onClick={() => setModalAsignar(true)}
+        >
+          <UserPlus className="h-4 w-4" />
+          Asignar productos
+        </Button>
+      )}
       <Button
         type="button"
         variant="default"
@@ -259,7 +291,7 @@ export default function ComparacionCategoriasClient({
       >
         <div className="flex-1 min-h-0 flex py-3">
           <Card className="flex-1 flex flex-col min-h-0 min-w-0 gap-0 pt-0">
-          <CardHeader className="py-3 flex flex-row items-center justify-between gap-2 flex-wrap px-6">
+          <CardHeader className="py-3 flex flex-row items-center gap-2 flex-wrap px-6">
             <div>
               {selectedPresentacionId ? (
                 <h2 className="text-sm font-bold text-foreground">{labelCompleto || "Cargando…"}</h2>
@@ -269,18 +301,6 @@ export default function ComparacionCategoriasClient({
                 </h2>
               )}
             </div>
-            {selectedPresentacionId && puedeEditar && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5 h-9"
-                onClick={() => setModalAsignar(true)}
-              >
-                <UserPlus className="h-4 w-4" />
-                Asignar productos
-              </Button>
-            )}
           </CardHeader>
           <CardContent className="flex-1 min-h-0 overflow-hidden py-0 pb-3 px-0">
             {loadingProductos ? (
@@ -292,6 +312,10 @@ export default function ComparacionCategoriasClient({
             ) : productos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">
                 No hay productos asignados a esta categoría. Usá «Asignar productos» para agregar.
+              </p>
+            ) : productosFiltrados.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">
+                No hay productos que coincidan con la descripción buscada.
               </p>
             ) : (
               <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
@@ -317,13 +341,13 @@ export default function ComparacionCategoriasClient({
                       <TableHead className="text-center">VARIACIÓN</TableHead>
                       {puedeEditar && (
                         <TableHead className="text-center">
-                          <Trash2 className="h-4 w-4 mx-auto text-foreground" aria-hidden />
+                          <Trash2 className="h-4 w-4 mx-auto text-primary-foreground" aria-hidden />
                         </TableHead>
                       )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {productos.map((p) => {
+                    {productosFiltrados.map((p) => {
                       const isSelectedForCompare = selectedCompareIds.includes(p.id);
                       const dtoStr = dtoEspecial[p.id] ?? "";
                       const pxOriginal = p.pxCompraFinal;
@@ -386,8 +410,8 @@ export default function ComparacionCategoriasClient({
 
                               if (selectedCompareIds.length === 2) {
                                 const [idA, idB] = selectedCompareIds;
-                                const rowA = productos.find((pr) => pr.id === idA);
-                                const rowB = productos.find((pr) => pr.id === idB);
+                                const rowA = productosFiltrados.find((pr) => pr.id === idA);
+                                const rowB = productosFiltrados.find((pr) => pr.id === idB);
                                 if (!rowA || !rowB) return "";
 
                                 const dtoA = dtoEspecial[rowA.id] ?? "";

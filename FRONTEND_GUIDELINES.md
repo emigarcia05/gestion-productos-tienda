@@ -368,6 +368,14 @@ Comparación puntual entre 2 productos (solo front):
 Regla de UX: la acción de sincronizar/importar datos de DUX **no debe aparecer como botón en encabezados de módulos**.  
 Debe ejecutarse **solo** desde el indicador/botón persistente de la slidenav (`SyncStatusIndicator`).
 
+### Orden y labels — LISTA PROVEEDORES (sidebar)
+
+En `Sidebar` (`src/components/layout/Sidebar.tsx`), el orden estándar de submódulos en `LISTA PROVEEDORES` es:
+1. `Lista Px Proveedores` (`/proveedores/lista-precios`)
+2. `Px. Vta. Sugeridos` (`/proveedores/sugeridos`)
+3. `Comp. Por Cat.` (`/proveedores/comparacion-categorias`)
+4. `Lista Proveedores` (`/proveedores/lista`)
+
 ### Stock — No mostrar modal al entrar (`/stock`)
 
 Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
