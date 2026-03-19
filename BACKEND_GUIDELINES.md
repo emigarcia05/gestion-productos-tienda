@@ -216,7 +216,7 @@ Antes de entregar código nuevo o modificado, verificar:
 - Acción de sincronización DUX protegida por rol.
 - Estandarizar respuestas de error: no `throw`, sí `ActionResult` con `error`.
 - Documentar uso de `getRol()` + `puede()` para permisos granulares.
-- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden. Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`. El archivo exportado debe llamarse `NP - {Nombre Proveedor}. ({Prefijo Proveedor}) - dd-mm hh:mm.pdf`.
+- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden. Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`. El archivo exportado debe llamarse `NP - {Prefijo Proveedor} - dd-mm hh:mm.pdf`.
 
 ### 5.4 Cambios aplicados en esta auditoría
 

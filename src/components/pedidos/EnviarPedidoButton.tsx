@@ -56,8 +56,9 @@ export default function EnviarPedidoButton({
       descargarPdf(pdfBase64, filename);
       toast.success(`PDF generado: ${filename}`);
       if (whatsapp) {
-        const url = `https://wa.me/${whatsapp}`;
-        window.open(url, "_blank", "noopener,noreferrer");
+        toast.info(
+          "El proveedor tiene WhatsApp configurado, pero el envío por API no está disponible. Podés enviar el PDF manualmente."
+        );
       } else {
         toast.info(
           `El proveedor "${nombreProveedor}" no tiene número de WhatsApp configurado. Podés agregarlo en la gestión de proveedores.`

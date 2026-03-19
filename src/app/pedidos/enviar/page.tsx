@@ -75,12 +75,10 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
     />
   );
 
-  const actions = tienenLosTresFiltros ? (
-    <EnviarPedidoButton
-      proveedorId={proveedor}
-      sucursal={sucursalValida}
-      tipos={tiposValidos}
-    />
+  const accionesPuedeGenerar = tienenLosTresFiltros && itemsTabla.length > 0;
+
+  const actions = accionesPuedeGenerar ? (
+    <EnviarPedidoButton proveedorId={proveedor} sucursal={sucursalValida} tipos={tiposValidos} />
   ) : undefined;
 
   return (

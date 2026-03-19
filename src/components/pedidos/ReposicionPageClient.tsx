@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosReposicion from "@/components/pedidos/FiltrosReposicion";
 import TablaReposicion from "@/components/pedidos/TablaReposicion";
@@ -35,13 +35,8 @@ export default function ReposicionPageClient({
   paramsPagina,
 }: Props) {
   const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
-  const [proveedorActual, setProveedorActual] = useState<string>(proveedor);
   const tieneSucursal = sucursalValida !== null;
-
-  useEffect(() => {
-    if (sucursalValida === null) setProveedorActual("");
-    else setProveedorActual(proveedor);
-  }, [proveedor, sucursalValida]);
+  const proveedorActual = proveedor;
 
   const filters = (
     <FiltrosReposicion
@@ -54,7 +49,7 @@ export default function ReposicionPageClient({
       configuradoActual={configurado}
       totalItems={totalFiltrados}
       proveedorActual={proveedorActual}
-      onProveedorChange={setProveedorActual}
+      onProveedorChange={() => {}}
     />
   );
 
@@ -63,11 +58,15 @@ export default function ReposicionPageClient({
       title="Pedido Mercadería"
       subtitle="Pedido Reposición"
       actions={
-        <EnviarPedidoButton
-          proveedorId={proveedorActual}
-          sucursal={sucursalValida ?? ""}
-          tipos={["REPOSICION"]}
-        />
+        tieneSucursal && proveedorActual
+          ? data.items.some((i) => i.idProveedor === proveedorActual) ? (
+              <EnviarPedidoButton
+                proveedorId={proveedorActual}
+                sucursal={sucursalValida ?? ""}
+                tipos={["REPOSICION"]}
+              />
+            ) : null
+          : null
       }
       filters={filters}
     >

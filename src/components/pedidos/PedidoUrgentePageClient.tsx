@@ -63,7 +63,7 @@ export default function PedidoUrgentePageClient({
   }, [productos]);
 
   const mostrarGuardar = !!(sucursalValida && !sinFiltros);
-  const mostrarGenerar = !!(sucursalValida && proveedor.trim());
+  const mostrarGenerar = !!(sucursalValida && proveedor.trim() && productos.length > 0);
 
   const actions =
     mostrarGuardar || mostrarGenerar ? (

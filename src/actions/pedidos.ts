@@ -328,10 +328,9 @@ export async function generarPdfEnviarPedidoAction(params: {
       sucursalLabel,
       tiposLabel
     );
-    const nombreProveedor = sanitizeFilenamePart(proveedor.nombre || "Proveedor");
     const prefijoProveedor = sanitizeFilenamePart(proveedor.prefijo || "");
     const fechaStr = fmtDdMmHHmm(new Date());
-    const filename = `NP - ${nombreProveedor}. (${prefijoProveedor}) - ${fechaStr}.pdf`;
+    const filename = `NP - ${prefijoProveedor} - ${fechaStr}.pdf`;
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
     let sentViaWhatsApp = false;

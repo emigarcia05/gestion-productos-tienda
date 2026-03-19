@@ -244,11 +244,13 @@ export default function PedidoTintometricoPageClient({
             <Plus className="h-4 w-4" />
             <span>+ Agregar Tintométrico</span>
           </Button>
-          <EnviarPedidoButton
-            proveedorId={filtroProveedor}
-            sucursal={filtroSucursal}
-            tipos={["TINTOMETRICO"]}
-          />
+          {itemsFiltrados.length > 0 ? (
+            <EnviarPedidoButton
+              proveedorId={filtroProveedor}
+              sucursal={filtroSucursal}
+              tipos={["TINTOMETRICO"]}
+            />
+          ) : null}
         </div>
       }
       filters={filters}
