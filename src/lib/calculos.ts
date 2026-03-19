@@ -5,7 +5,9 @@ export function clampPercent(value: number): number {
 
 /**
  * Precio de compra final: todos los dto y cx_transporte son porcentajes.
- * Fórmula: precioLista × (1 - dto/100) por cada descuento × (1 + cxTransporte/100).
+ * Fórmula con descuento acumulado:
+ *   precioLista × (1 - dtoTotal/100) × (1 + cxTransporte/100)
+ * donde dtoTotal = dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero (capado 0-100).
  * Parámetros opcionales (dtoProveedor, dtoMarca, dtoFinanciero) default 0 para compatibilidad.
  */
 export function calcPxCompraFinal(
@@ -17,13 +19,13 @@ export function calcPxCompraFinal(
   dtoMarca:           number = 0,
   dtoFinanciero:      number = 0
 ): number {
+  const dtoTotal = clampPercent(
+    dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero
+  );
+
   return (
     precioLista *
-    (1 - dtoProveedor / 100) *
-    (1 - dtoMarca / 100) *
-    (1 - dtoRubro / 100) *
-    (1 - dtoCantidad / 100) *
-    (1 - dtoFinanciero / 100) *
+    (1 - dtoTotal / 100) *
     (1 + cxTransporte / 100)
   );
 }
