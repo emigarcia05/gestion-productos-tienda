@@ -401,7 +401,8 @@ export default function PedidoHistoriaDetalleModal({
               </Button>
             </div>
 
-            <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
@@ -496,7 +497,7 @@ export default function PedidoHistoriaDetalleModal({
                                   }}
                                   disabled={locked || busy}
                                   className={cn(
-                                    "h-8 w-[4.5rem] min-w-[4.5rem] text-center",
+                                    "h-8 w-[3.5rem] min-w-[3.5rem] text-center",
                                     inputBorderClassName
                                   )}
                                 />
@@ -561,35 +562,41 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 </TableBody>
               </Table>
-            </div>
-
-            <div className="grid grid-cols-[9%_62.5%_10.5%_10.5%_15%] w-full items-center pt-1 pb-2">
-              <div className="col-start-4 flex justify-end pr-1">
-                <span className="text-xs text-foreground shrink-0 whitespace-nowrap">TOTAL PEDIDO</span>
               </div>
-              <div className="col-start-5 flex items-center">
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  inputMode="decimal"
-                  value={totalPedido}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const normalized = raw.replace(",", ".");
 
-                    // Permitir: "" | "12" | "12." | "12.3" | "12.34" (máx 2 decimales)
-                    if (normalized === "") {
-                      setTotalPedido("");
-                      return;
-                    }
-                    if (!/^\d*\.?\d{0,2}$/.test(normalized)) return;
-                    setTotalPedido(normalized);
-                  }}
-                  disabled={locked || loading}
-                  className={cn("h-10 w-full tabular-nums text-center", inputBorderClassName)}
-                  aria-label="Total Pedido"
-                />
+              <div className="grid grid-cols-[9%_62.5%_10.5%_10.5%_15%] w-full px-[1px] items-center pt-1 pb-2">
+                <div className="col-start-4 flex justify-end pr-1">
+                  <span className="text-xs text-foreground shrink-0 whitespace-nowrap font-semibold">
+                    TOTAL PEDIDO
+                  </span>
+                </div>
+                <div className="col-start-5 flex items-center">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    inputMode="decimal"
+                    value={totalPedido}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const normalized = raw.replace(",", ".");
+
+                      // Permitir: "" | "12" | "12." | "12.3" | "12.34" (máx 2 decimales)
+                      if (normalized === "") {
+                        setTotalPedido("");
+                        return;
+                      }
+                      if (!/^\d*\.?\d{0,2}$/.test(normalized)) return;
+                      setTotalPedido(normalized);
+                    }}
+                    disabled={locked || loading}
+                    className={cn(
+                      "h-10 w-full tabular-nums text-center",
+                      inputBorderClassName
+                    )}
+                    aria-label="Total Pedido"
+                  />
+                </div>
               </div>
             </div>
           </div>
