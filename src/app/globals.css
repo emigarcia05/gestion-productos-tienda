@@ -732,7 +732,24 @@
   background-color: var(--primary) !important;
 }
 .tabla-bloque-secundario-head-divider {
-  border-left: 2px solid var(--primary-foreground);
+  border-left: none !important;
+  position: sticky;
+  z-index: 24 !important;
+}
+/* Divisor de encabezado sólido durante scroll sticky:
+ * usar capa propia evita artefactos de border-collapse con el separador del tbody. */
+.tabla-gestion-compacta thead th.tabla-bloque-secundario-head-divider {
+  position: sticky;
+}
+.tabla-gestion-compacta thead th.tabla-bloque-secundario-head-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--primary-foreground);
+  pointer-events: none;
 }
 .tabla-bloque-secundario-cell {
   background-color: transparent;

@@ -567,13 +567,13 @@ export default function PedidoHistoriaDetalleModal({
               </Table>
               </div>
 
-              <div className="grid grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] w-full items-center mt-1 py-2 border-t border-border/70 shrink-0">
-                <div className="col-start-4 flex justify-end pr-[var(--tabla-body-cell-padding-x)]">
+              <div className="grid grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] w-full items-center border-t border-border/70 shrink-0">
+                <div className="col-start-4 flex h-[var(--tabla-body-row-min-height)] items-center justify-end px-[var(--tabla-body-cell-padding-x)]">
                   <span className="text-xs text-foreground shrink-0 whitespace-nowrap font-semibold">
                     TOTAL PEDIDO
                   </span>
                 </div>
-                <div className="col-start-5 flex items-center pr-[var(--tabla-body-cell-padding-x)]">
+                <div className="col-start-5 flex h-[var(--tabla-body-row-min-height)] items-center px-[var(--tabla-body-cell-padding-x)]">
                   <Input
                     type="number"
                     min={0}
@@ -594,7 +594,7 @@ export default function PedidoHistoriaDetalleModal({
                     }}
                     disabled={locked || loading}
                     className={cn(
-                      "h-10 w-full tabular-nums text-right pr-3",
+                      "h-6 min-h-6 max-h-6 w-full tabular-nums text-right pr-2",
                       inputBorderClassName
                     )}
                     aria-label="Total Pedido"
