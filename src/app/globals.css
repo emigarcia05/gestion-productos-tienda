@@ -597,7 +597,7 @@
   overflow-wrap: break-word;
 }
 .tabla-gestion-compacta tbody tr {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--primary-foreground) !important;
   transition: background-color 0.2s ease;
   height: var(--tabla-body-row-min-height) !important;
   max-height: var(--tabla-body-row-min-height) !important;
@@ -725,7 +725,7 @@
 
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───
  * Encabezado: fondo primary opaco + línea blanca (evita que al hacer scroll se vea el separador gris del tbody por border-collapse).
- * Cuerpo: celdas transparentes (cebra de fila); separador con box-shadow inset (no participa del grid de bordes colapsados).
+ * Cuerpo: celdas transparentes (cebra de fila); separador vertical #0072bb vía box-shadow inset (no participa del grid de bordes colapsados).
  */
 .tabla-bloque-secundario-head,
 .tabla-bloque-secundario-head-divider {
@@ -740,7 +740,7 @@
 .tabla-bloque-secundario-cell-divider {
   background-color: transparent;
   border-left: none;
-  box-shadow: inset 1px 0 0 var(--border);
+  box-shadow: inset 1px 0 0 #0072bb;
 }
 
 /* Tabla Tienda / Comp. Proveedores: Cod. 10%, Desc. 50%, Px. Compra Final 10%, Margen s/ IVA 10%, Mejor Prov. 10%, DIF. 10%. */
