@@ -13,24 +13,19 @@ export interface SyncDuxStatusState {
   lastCompletedAt: Date | null;
 }
 
-interface SyncDuxStatusRow {
-  running: boolean;
-  phase: string | null;
-  processed: number;
-  total: number;
-  error: string | null;
-  last_completed_at: Date | null;
-}
-
 export async function getSyncDuxStatusFromDb(): Promise<SyncDuxStatusState> {
-  const rows = await prisma.$queryRaw<SyncDuxStatusRow[]>`
-    SELECT running, phase, processed, total, error, last_completed_at
-    FROM sync_dux_status
-    WHERE id = ${SYNC_DUX_STATUS_ID}
-    LIMIT 1
-  `;
+  const row = await prisma.syncDuxStatus.findUnique({
+    where: { id: SYNC_DUX_STATUS_ID },
+    select: {
+      running: true,
+      phase: true,
+      processed: true,
+      total: true,
+      error: true,
+      lastCompletedAt: true,
+    },
+  });
 
-  const row = rows[0];
   if (!row) {
     return {
       running: false,
@@ -44,29 +39,34 @@ export async function getSyncDuxStatusFromDb(): Promise<SyncDuxStatusState> {
 
   return {
     running: row.running,
-    phase:
-      row.phase === "sincronizando" || row.phase === "guardando"
-        ? row.phase
-        : null,
+    phase: row.phase === "sincronizando" || row.phase === "guardando" ? row.phase : null,
     processed: row.processed,
     total: row.total,
     error: row.error,
-    lastCompletedAt: row.last_completed_at,
+    lastCompletedAt: row.lastCompletedAt,
   };
 }
 
 export async function startSyncDuxInDb(): Promise<void> {
-  await prisma.$executeRaw`
-    INSERT INTO sync_dux_status (id, running, phase, processed, total, error, updated_at)
-    VALUES (${SYNC_DUX_STATUS_ID}, true, 'sincronizando', 0, 0, NULL, NOW())
-    ON CONFLICT (id) DO UPDATE
-    SET running = true,
-        phase = 'sincronizando',
-        processed = 0,
-        total = 0,
-        error = NULL,
-        updated_at = NOW()
-  `;
+  await prisma.syncDuxStatus.upsert({
+    where: { id: SYNC_DUX_STATUS_ID },
+    create: {
+      id: SYNC_DUX_STATUS_ID,
+      running: true,
+      phase: "sincronizando",
+      processed: 0,
+      total: 0,
+      error: null,
+      lastCompletedAt: null,
+    },
+    update: {
+      running: true,
+      phase: "sincronizando",
+      processed: 0,
+      total: 0,
+      error: null,
+    },
+  });
 }
 
 export async function setSyncDuxProgressInDb(
@@ -74,52 +74,61 @@ export async function setSyncDuxProgressInDb(
   total: number,
   phase?: SyncDuxPhase | null
 ): Promise<void> {
+  const processedNorm = Math.max(0, Math.floor(processed));
+  const totalNorm = Math.max(0, Math.floor(total));
+
   if (phase === undefined) {
-    await prisma.$executeRaw`
-      UPDATE sync_dux_status
-      SET processed = ${processed},
-          total = ${total},
-          updated_at = NOW()
-      WHERE id = ${SYNC_DUX_STATUS_ID}
-    `;
+    await prisma.syncDuxStatus.update({
+      where: { id: SYNC_DUX_STATUS_ID },
+      data: { processed: processedNorm, total: totalNorm },
+    });
     return;
   }
 
-  await prisma.$executeRaw`
-    UPDATE sync_dux_status
-    SET processed = ${processed},
-        total = ${total},
-        phase = ${phase},
-        updated_at = NOW()
-    WHERE id = ${SYNC_DUX_STATUS_ID}
-  `;
+  await prisma.syncDuxStatus.update({
+    where: { id: SYNC_DUX_STATUS_ID },
+    data: { processed: processedNorm, total: totalNorm, phase },
+  });
 }
 
 export async function setSyncDuxSuccessInDb(
   processed: number,
   total: number
 ): Promise<void> {
-  await prisma.$executeRaw`
-    UPDATE sync_dux_status
-    SET running = false,
-        phase = NULL,
-        processed = ${processed},
-        total = ${total},
-        error = NULL,
-        last_completed_at = NOW(),
-        updated_at = NOW()
-    WHERE id = ${SYNC_DUX_STATUS_ID}
-  `;
+  const processedNorm = Math.max(0, Math.floor(processed));
+  const totalNorm = Math.max(0, Math.floor(total));
+
+  await prisma.syncDuxStatus.update({
+    where: { id: SYNC_DUX_STATUS_ID },
+    data: {
+      running: false,
+      phase: null,
+      processed: processedNorm,
+      total: totalNorm,
+      error: null,
+      lastCompletedAt: new Date(),
+    },
+  });
 }
 
 export async function setSyncDuxErrorInDb(message: string): Promise<void> {
-  await prisma.$executeRaw`
-    INSERT INTO sync_dux_status (id, running, phase, processed, total, error, updated_at)
-    VALUES (${SYNC_DUX_STATUS_ID}, false, NULL, 0, 0, ${message}, NOW())
-    ON CONFLICT (id) DO UPDATE
-    SET running = false,
-        phase = NULL,
-        error = ${message},
-        updated_at = NOW()
-  `;
+  // Mantiene semantics: en caso de conflicto, no resetea `processed/total`,
+  // solo marca error y desactiva running.
+  await prisma.syncDuxStatus.upsert({
+    where: { id: SYNC_DUX_STATUS_ID },
+    create: {
+      id: SYNC_DUX_STATUS_ID,
+      running: false,
+      phase: null,
+      processed: 0,
+      total: 0,
+      error: message,
+      lastCompletedAt: null,
+    },
+    update: {
+      running: false,
+      phase: null,
+      error: message,
+    },
+  });
 }

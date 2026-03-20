@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncListaPrecioTiendaFromDux } from "@/services/syncListaPrecioTienda.service";
+import { esEditor } from "@/lib/sesion";
 import {
   getSyncDuxStatusFromDb,
   setSyncDuxErrorInDb,
@@ -16,6 +17,9 @@ let syncInProgress = false;
  * Para prueba: abre en el navegador o usa curl http://localhost:3000/api/sync-lista-precios-tienda
  */
 export async function GET() {
+  if (!(await esEditor())) {
+    return NextResponse.json({ ok: false, error: "Sin permisos de editor." }, { status: 403 });
+  }
   try {
     const result = await syncListaPrecioTiendaFromDux();
     return NextResponse.json({ ok: true, ...result });
@@ -32,6 +36,9 @@ export async function GET() {
  * El cliente debe esperar con timeout largo (ej. 5 min).
  */
 export async function POST() {
+  if (!(await esEditor())) {
+    return NextResponse.json({ ok: false, error: "Sin permisos de editor." }, { status: 403 });
+  }
   const current = await getSyncDuxStatusFromDb();
   if (syncInProgress || current.running) {
     return NextResponse.json(

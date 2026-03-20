@@ -261,11 +261,18 @@ Antes de entregar código nuevo o modificado, verificar:
 | `prisma/migrations/20260317223000_sync_cant_pedir_por_tipo_pedido/migration.sql` | Regla de negocio a nivel BD: `cant_pedir` se sincroniza automáticamente por `tipo_de_pedido` (`TINTOMETRICO -> tintometrio_cant_pedir`, `URGENTE -> urgente_cant_pedir`, `REPOSICION -> reposicion_cant_pedir`) con trigger `BEFORE INSERT OR UPDATE`. |
 | `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` se calcula por forma (`CANT_FIJA`/`CANT. FIJA` => `reposicion_cant_conf`; `CANT_MAXIMA`/`CANT. MAX.` => `reposicion_cant_conf - stock sucursal`) y luego `cant_pedir` toma ese valor para `REPOSICION`. |
 | `prisma/migrations/20260318000000_add_sync_dux_status/migration.sql` | Nueva tabla `sync_dux_status` para persistir estado de sincronización DUX en BD (`running`, `phase`, `processed`, `total`, `error`, `last_completed_at`, `updated_at`) y soportar polling estable en sidebar. |
-| `src/lib/syncDuxStatusDb.ts` | Nuevo helper de persistencia de estado DUX (start/progress/success/error + lectura). `last_completed_at` se actualiza **solo en sync OK**. |
-| `src/app/api/sync-lista-precios-tienda/route.ts` | `POST` pasa a persistir estado en BD con helper; evita doble ejecución y guarda progreso por lotes. |
+| `prisma/schema.prisma` | Nuevo modelo `SyncDuxStatus` (mapeo a `sync_dux_status`) para tipado fuerte y evitar SQL raw en lecturas/escrituras. |
+| `src/lib/syncDuxStatusDb.ts` | Helper tipado de persistencia de estado DUX (start/progress/success/error + lectura) usando Prisma. `last_completed_at` se actualiza **solo en sync OK**; en error se mantiene `processed/total` (no se resetean al hacer update por conflicto). |
+| `src/app/api/sync-lista-precios-tienda/route.ts` | `GET` y `POST` validan `esEditor()` antes de mutar; sigue evitando doble ejecución y persiste progreso/resultado vía helper. |
 | `src/app/api/sync-lista-precios-tienda/status/route.ts` | `GET` lee estado desde BD y expone `lastCompletedAt` para UI de sidebar. |
 
 ---
+
+### 5.6 Optimización de persistencia (lista precios)
+
+| Archivo / Área | Cambio |
+|----------------|--------|
+| `src/services/listaPrecios.service.ts` | `upsertListaPrecios()`: optimiza el conteo `creados/actualizados` con un prefetch en chunks de `codProdProv`, evitando el `findUnique()` por fila (patrón N+1) sin cambiar la lógica final del `upsert`. |
 
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
@@ -275,4 +282,4 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: persistencia en BD del estado de sincronización DUX con `sync_dux_status` y exposición de `lastCompletedAt` para sidebar.*
+*Última actualización: tipado fuerte de persistencia DUX con modelo Prisma `SyncDuxStatus` y protección por rol editor en `/api/sync-lista-precios-tienda`.*

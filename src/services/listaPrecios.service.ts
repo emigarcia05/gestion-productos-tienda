@@ -335,6 +335,23 @@ export async function upsertListaPrecios(
   const onProgress = options?.onProgress;
   const total = filas.length;
 
+  // Prefetch: evita el `findUnique()` por fila (N+1).
+  // Solo usamos esto para el conteo (creados/actualizados); el estado final lo define el `upsert`.
+  const uniqueCodProdProvs = [...new Set(filas.map((f) => f.codProdProv))];
+  const existentesCodProdSet = new Set<string>();
+  const CHUNK_PREFETCH = 500;
+  for (let i = 0; i < uniqueCodProdProvs.length; i += CHUNK_PREFETCH) {
+    const chunk = uniqueCodProdProvs.slice(i, i + CHUNK_PREFETCH);
+    const existentes = await prisma.listaPrecioProveedor.findMany({
+      where: {
+        idProveedor: proveedorId,
+        codProdProveedor: { in: chunk },
+      },
+      select: { codProdProveedor: true },
+    });
+    for (const row of existentes) existentesCodProdSet.add(row.codProdProveedor);
+  }
+
   for (let i = 0; i < filas.length; i++) {
     if (onProgress && (i % 10 === 0 || i === total - 1)) {
       onProgress(i + 1, total);
@@ -343,10 +360,7 @@ export async function upsertListaPrecios(
     const codExt = buildCodExt(prefijo, fila.codProdProv);
 
     try {
-      const existente = await prisma.listaPrecioProveedor.findUnique({
-        where: { idProveedor_codProdProveedor: { idProveedor: proveedorId, codProdProveedor: fila.codProdProv } },
-        select: { id: true },
-      });
+      const existia = existentesCodProdSet.has(fila.codProdProv);
 
       await prisma.listaPrecioProveedor.upsert({
         where: { idProveedor_codProdProveedor: { idProveedor: proveedorId, codProdProveedor: fila.codProdProv } },
@@ -373,8 +387,10 @@ export async function upsertListaPrecios(
         },
       });
 
-      if (existente) actualizados++;
+      if (existia) actualizados++;
       else creados++;
+      // Para duplicados en el input: si lo creamos en esta corrida, luego debe contarse como "update".
+      existentesCodProdSet.add(fila.codProdProv);
     } catch (e) {
       errores.push(`Fila ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
     }

@@ -214,3 +214,21 @@ model ItemPedidoEnvio {
   @@unique([idProveedor, tipoPedido, sucursalId, codExt])
   @@map("pedidos_mercaderia")
 }
+
+// ─── Estado de sincronización DUX (singleton) ─────────────────────────────
+// Persistencia para que el polling en sidebar sea consistente incluso en serverless.
+model SyncDuxStatus {
+  id String @id
+
+  running Boolean @default(false)
+  phase String?
+  processed Int @default(0)
+  total Int @default(0)
+  error String?
+
+  lastCompletedAt DateTime? @map("last_completed_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("sync_dux_status")
+  @@index([updatedAt])
+}

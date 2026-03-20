@@ -69,7 +69,7 @@ export default function SyncStatusIndicator() {
     return (
       <MensajeProceso
         variant="sidebar"
-        mensaje="Sincronizando DUX"
+        mensaje="SINCRONIZANDO DUX"
         detalle={total > 0 ? { procesados: processed, total } : "…"}
       />
     );
@@ -89,11 +89,11 @@ export default function SyncStatusIndicator() {
       aria-label="Iniciar sincronización DUX"
     >
       <span className="relative flex items-center justify-center min-h-[1.125rem]">
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-          SINCRO DUX
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold whitespace-nowrap transition-opacity duration-150 opacity-100 group-hover:opacity-0">
+          SINCRONIZACION DUX
         </span>
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold transition-opacity duration-150 opacity-0 group-hover:opacity-100">
-          SINCRONIZAR
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold whitespace-nowrap transition-opacity duration-150 opacity-0 group-hover:opacity-100">
+          SINCRONIZAR DUX
         </span>
       </span>
 

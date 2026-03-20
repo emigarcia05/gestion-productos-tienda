@@ -154,7 +154,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="h-px w-[80%] bg-sidebar-foreground/70" />
         </div>
       </div>
-      <nav className="flex flex-col gap-0.5 px-4 pt-2 pb-4 overflow-y-auto" aria-label="Navegación principal">
+      <nav className="flex flex-col gap-0.5 px-4 pt-1 pb-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
           module.submodules.some((sub) => {
             const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
@@ -204,7 +204,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                           <Link
                             href={sub.href}
                             className={cn(
-                              "flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
+                              "group flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
                               "border-l-2 -ml-[2px] pl-[10px]",
                               active
                                 ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
@@ -213,7 +213,14 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                             )}
                           >
                             {sub.icon}
-                            <span className="min-w-0 truncate">{sub.label}</span>
+                            <span
+                              className={cn(
+                                "min-w-0 truncate",
+                                active ? "underline underline-offset-4 decoration-[1px]" : "group-hover:underline group-hover:underline-offset-4 group-hover:decoration-[1px]"
+                              )}
+                            >
+                              {sub.label}
+                            </span>
                           </Link>
 
                           {sub.children && sub.children.length > 0 && (
@@ -227,7 +234,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                                       key={c.href}
                                       href={c.href}
                                       className={cn(
-                                        "flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
+                                        "group flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
                                         "border-l-2 -ml-[2px] pl-[10px]",
                                         childActive
                                           ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
@@ -236,7 +243,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                                       )}
                                     >
                                       {c.icon}
-                                      <span className="min-w-0 truncate">{c.label}</span>
+                                      <span
+                                        className={cn(
+                                          "min-w-0 truncate",
+                                          childActive
+                                            ? "underline underline-offset-4 decoration-[1px]"
+                                            : "group-hover:underline group-hover:underline-offset-4 group-hover:decoration-[1px]"
+                                        )}
+                                      >
+                                        {c.label}
+                                      </span>
                                     </Link>
                                   );
                                 })}

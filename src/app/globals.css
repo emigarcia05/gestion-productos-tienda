@@ -1305,7 +1305,17 @@ main button:hover:not(:disabled),
 .mensaje-proceso--sidebar .mensaje-proceso__linea1 {
   display: block;
   font-weight: 500;
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mensaje-proceso--sidebar .mensaje-proceso__detalle {
   display: block;
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
