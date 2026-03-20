@@ -273,7 +273,7 @@ export default function PedidoHistoriaDetalleModal({
           title="Detalle Del Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[62rem] max-h-[95vh]"
+          className="sm:max-w-[72rem] max-h-[95vh]"
           bodyShellClassName="p-0"
           actions={
             <>
@@ -461,7 +461,7 @@ export default function PedidoHistoriaDetalleModal({
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
-                              <div className="flex items-center gap-1">
+                              <div className="flex w-full items-center justify-center gap-1">
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -495,7 +495,10 @@ export default function PedidoHistoriaDetalleModal({
                                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                                   }}
                                   disabled={locked || busy}
-                                  className={cn("h-8 w-full text-center", inputBorderClassName)}
+                                  className={cn(
+                                    "h-8 w-[4.5rem] min-w-[4.5rem] text-center",
+                                    inputBorderClassName
+                                  )}
                                 />
                                 <Button
                                   type="button"
@@ -560,18 +563,29 @@ export default function PedidoHistoriaDetalleModal({
               </Table>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <span className="text-xs text-foreground shrink-0">TOTAL PEDIDO</span>
-              <div className="w-[15%]">
+            <div className="grid grid-cols-[9%_62.5%_10.5%_10.5%_15%] w-full items-center pt-1 pb-2">
+              <div className="col-start-4 flex justify-end pr-1">
+                <span className="text-xs text-foreground shrink-0 whitespace-nowrap">TOTAL PEDIDO</span>
+              </div>
+              <div className="col-start-5 flex items-center">
                 <Input
                   type="number"
                   min={0}
-                  step={1}
-                  inputMode="numeric"
+                  step={0.01}
+                  inputMode="decimal"
                   value={totalPedido}
-                  onChange={(e) =>
-                    setTotalPedido(e.target.value.replace(/\D/g, "").slice(0, 2))
-                  }
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const normalized = raw.replace(",", ".");
+
+                    // Permitir: "" | "12" | "12." | "12.3" | "12.34" (máx 2 decimales)
+                    if (normalized === "") {
+                      setTotalPedido("");
+                      return;
+                    }
+                    if (!/^\d*\.?\d{0,2}$/.test(normalized)) return;
+                    setTotalPedido(normalized);
+                  }}
                   disabled={locked || loading}
                   className={cn("h-10 w-full tabular-nums text-center", inputBorderClassName)}
                   aria-label="Total Pedido"
