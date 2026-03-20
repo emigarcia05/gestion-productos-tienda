@@ -39,6 +39,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
      - `padding`: `"sm" | "default" | "lg"` (default `"default"`).
      - `scrollBody`: `boolean` (default `true`) controla el overflow del cuerpo sin reescribir clases.
      - `bodyShellClassName`: `string?` — se combina con el `div` gris que envuelve la card (`p-4` por defecto). Ej. `p-1.5 sm:p-2` en modales compactos (`VincularModal`).
+   - Cuando el modal tiene una **tabla + bloque inferior fijo** (ej. resúmenes como `TOTAL PEDIDO`), el contenedor de tabla debe consumir el espacio con `flex-1 min-h-0` y **no** debe forzarse con `h-0` u otros height absolutos. Además, como `.contenedor-tabla-gestion` tiene `height: 100%` en `globals.css`, conviene sobrescribir con `!h-auto` para que no se solape/empuxe el bloque inferior y el scroll quede exclusivamente en la tabla.
 
 8. **Tablas (encabezado fijo + paginación)**  
 - **Un solo diseño** para toda la app (referencia: Comp. Proveedores). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).  

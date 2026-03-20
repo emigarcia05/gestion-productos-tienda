@@ -401,8 +401,8 @@ export default function PedidoHistoriaDetalleModal({
               </Button>
             </div>
 
-            <div className="flex flex-col flex-1 min-h-0">
-              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 h-0">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 !h-auto">
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
