@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import MensajeProceso, {
-  clasesContenedorMensajeProcesoSidebar,
-} from "@/components/shared/MensajeProceso";
+import MensajeProceso from "@/components/shared/MensajeProceso";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -83,15 +81,16 @@ export default function SyncStatusIndicator() {
       onClick={handleStartSync}
       disabled={requestingStart}
       className={cn(
-        clasesContenedorMensajeProcesoSidebar,
-        "w-full cursor-pointer text-center font-inherit outline-none transition-opacity",
+        "flex w-full min-h-[3.5rem] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-2.5 py-1.5 text-center font-inherit outline-none transition-colors",
+        "bg-sidebar text-sidebar-foreground border border-transparent",
+        "hover:bg-sidebar-accent",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         requestingStart && "cursor-wait opacity-90"
       )}
       aria-label="Iniciar sincronización DUX"
     >
-      <span className="mensaje-proceso__linea1">Sincronización DUX</span>
-      <span className="mensaje-proceso__detalle">
+      <span className="text-sm font-semibold">Sincronización DUX</span>
+      <span className="text-xs text-sidebar-foreground/80">
         {requestingStart ? "…" : `Últ. Act. ${lastCompletedLabel ?? "—"}`}
       </span>
     </button>

@@ -145,15 +145,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
-      <div className="pt-3 px-4 pb-1">
+      {/* Slidenav: espacio intermedio (gap-3) usuario↔línea y línea↔logo; poco (pt-2) línea↔nav y línea↔sync */}
+      <div className="flex flex-col gap-3 px-4 pt-3">
         <div className="flex flex-col gap-1">
           <SelectorRol rolActual={rol} compact />
         </div>
+        <div className="flex justify-center" aria-hidden>
+          <div className="h-px w-[80%] bg-sidebar-foreground/70" />
+        </div>
       </div>
-      <div className="flex justify-center px-4 pt-3 pb-1" aria-hidden>
-        <div className="h-px w-[80%] bg-sidebar-foreground/70" />
-      </div>
-      <nav className="flex flex-col gap-0.5 px-4 pt-1 pb-4 overflow-y-auto" aria-label="Navegación principal">
+      <nav className="flex flex-col gap-0.5 px-4 pt-2 pb-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
           module.submodules.some((sub) => {
             const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
@@ -250,15 +251,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           );
         })}
       </nav>
-      <div className="mt-auto flex flex-col">
-        <div className="px-4 pb-2 flex flex-col gap-2">
+      <div className="mt-auto flex flex-col px-4 pb-4">
+        <div className="flex flex-col gap-2">
           <SyncStatusIndicator />
           <ImportStatusIndicator />
         </div>
-        <div className="px-4 py-4 flex justify-center">
-          <div className="w-full flex flex-col items-center gap-3">
-            <div className="h-px w-[80%] bg-sidebar-foreground/70" aria-hidden />
-            <div className="w-full max-w-[45%] flex justify-center items-center">
+        <div className="flex justify-center pt-2" aria-hidden>
+          <div className="h-px w-[80%] bg-sidebar-foreground/70" />
+        </div>
+        <div className="flex flex-col items-center pt-3">
+          <div className="w-full max-w-[45%] flex justify-center items-center">
             <Image
               src="/logo_tiendacolor.png"
               alt="Logo de la empresa"
@@ -266,7 +268,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               height={100}
               className="w-full h-auto object-contain"
             />
-            </div>
           </div>
         </div>
       </div>
