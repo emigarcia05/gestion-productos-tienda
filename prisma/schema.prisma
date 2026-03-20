@@ -19,6 +19,7 @@ model Proveedor {
 
   listaPrecios         ListaPrecioProveedor[]
   itemsPedidoEnvio     ItemPedidoEnvio[]
+  pedidosHistoria     PedidoHistoria[]
   // Tabla única de pedidos: pedidos_mercaderia
 
   @@map("proveedores")
@@ -36,6 +37,7 @@ model Sucursal {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   itemsPedidoEnvio     ItemPedidoEnvio[]
+  pedidosHistoria     PedidoHistoria[]
   // Tabla única de pedidos: pedidos_mercaderia
 
   @@map("sucursales")
@@ -213,6 +215,42 @@ model ItemPedidoEnvio {
 
   @@unique([idProveedor, tipoPedido, sucursalId, codExt])
   @@map("pedidos_mercaderia")
+}
+
+// ─── Historial de pedidos (cabecera + items editables) ────────────────
+model PedidoHistoria {
+  id            String   @id @default(cuid())
+  generadoAt    DateTime @default(now()) @map("generado_at")
+  estado        String   @default("PEDIDO") @map("estado") // PEDIDO | REGISTRADO
+  registradoAt  DateTime? @map("registrado_at")
+  proveedorId   String   @map("proveedor_id")
+  sucursalId    String   @map("sucursal_id")
+  items         PedidoHistoriaItem[]
+  proveedor     Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  sucursal      Sucursal  @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([sucursalId, generadoAt])
+  @@index([generadoAt])
+  @@index([proveedorId, generadoAt])
+  @@map("pedidos_historia")
+}
+
+model PedidoHistoriaItem {
+  id String @id @default(cuid())
+
+  pedidoHistoriaId String @map("pedido_historia_id")
+  codTienda        String @map("cod_tienda")
+  cantPedida       Int    @map("cant_pedida") @default(0)
+  cantRecibida     Int    @map("cant_recibida") @default(0)
+
+  pedidoHistoria PedidoHistoria @relation(fields: [pedidoHistoriaId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@unique([pedidoHistoriaId, codTienda])
+  @@index([pedidoHistoriaId])
+  @@map("pedidos_historia_items")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────

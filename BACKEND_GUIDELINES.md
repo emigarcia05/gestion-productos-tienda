@@ -163,6 +163,62 @@ export type ServiceResult<T = void> =
   | { success: false; error: string };
 ```
 
+### 2.5 Historial de pedidos (PedidoHistoria)
+
+Este módulo agrega persistencia para el historial de pedidos generados por el flujo de “Generar Pedido”.
+
+- Cabecera: `pedido_historia` (Prisma: `PedidoHistoria`)
+  - `generado_at`: fecha/hora del snapshot (momento en que se arma el pedido y se guarda el detalle).
+  - `estado`: `PEDIDO | REGISTRADO`.
+    - `PEDIDO`: snapshot creado.
+    - `REGISTRADO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
+  - `registrado_at`: fecha/hora cuando se cambia a `REGISTRADO` (nullable).
+  - Relaciones: `proveedor_id -> proveedores.id` y `sucursal_id -> sucursales.id`.
+
+- Items: `pedido_historia_items` (Prisma: `PedidoHistoriaItem`)
+  - `pedido_historia_id -> pedidos_historia.id` (FK, `onDelete: CASCADE`).
+  - `cod_tienda`: identificador del producto en la tabla `precios_tienda` (se guarda como texto).
+  - Cantidades:
+    - `cant_pedida`: snapshot inicial (cargado al generar).
+    - `cant_recibida`: editable por UI (OK/Editar/Cesto). El “cesto” implica `cant_recibida = 0`.
+
+Constraint:
+- `UNIQUE (pedido_historia_id, cod_tienda)` para evitar duplicados de producto dentro de un mismo pedido.
+- Índices: además de `(sucursal_id, generado_at)` y `(proveedor_id, generado_at)`, se agrega índice sobre `generado_at` para listar por fecha con buen rendimiento.
+
+### 2.6 Servicio `pedidosHistoria.service.ts`
+
+Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consistencia e integridad:
+
+1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo? })`
+   - Uso: obtener página de cabeceras para el módulo de historial (`/pedidos/historial`).
+   - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
+
+2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`
+   - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar `pedidos_mercaderia` (cuando corresponda).
+   - Crea `PedidoHistoria` con `estado = "PEDIDO"`.
+   - Lee `ItemPedidoEnvio` filtrando por `idProveedor`, `sucursalId`, `tipoPedido IN tipos` y `cant_pedir > 0`.
+   - Inserta `PedidoHistoriaItem` consolidando por `cod_tienda` (para respetar UNIQUE por `cod_tienda`).
+   - Inicializa `cant_recibida = cant_pedida` para representar la suposición “llegó igual”.
+
+3. `getPedidoHistoriaDetalle({ pedidoHistoriaId })`
+   - Devuelve cabecera + lista de items ordenados por `codTienda`.
+   - Incluye `cant_pedida` y `cant_recibida` para editar desde UI.
+
+4. `agregarPedidoHistoriaItem({ pedidoHistoriaId, codTienda, cantRecibida })`
+   - Reglas:
+     - Solo permitido si el pedido está en estado `"PEDIDO"`.
+     - Respeta UNIQUE(`pedido_historia_id`, `cod_tienda`): si el item ya existe devuelve error.
+   - Inicializa `cant_pedida = cant_recibida = cantRecibida` (asumiendo igualdad para filas agregadas).
+
+5. `actualizarPedidoHistoriaItemCantRecibida({ pedidoHistoriaItemId, cantRecibida })`
+   - Reglas:
+     - Solo permitido si el pedido asociado está en estado `"PEDIDO"`.
+     - Actualiza únicamente `cant_recibida` (sin tocar `cant_pedida`).
+
+6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`
+   - Transición: setea `estado = "REGISTRADO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
+
 ---
 
 ## 3. Diccionario de tipos

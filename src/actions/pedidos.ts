@@ -16,6 +16,7 @@ import {
   type ItemPedidoTintometricoPayload,
   deletePedidoTintometricoItem,
 } from "@/services/pedidosEnvio.service";
+import { crearPedidoHistoriaSnapshot } from "@/services/pedidosHistoria.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
 import { prisma } from "@/lib/prisma";
@@ -321,6 +322,16 @@ export async function generarPdfEnviarPedidoAction(params: {
     if (!proveedor) {
       return { ok: false, error: "Proveedor no encontrado." };
     }
+
+    const historiaRes = await crearPedidoHistoriaSnapshot({
+      proveedorId: proveedorId.trim(),
+      sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
+      tipos,
+    });
+    if (!historiaRes.success) {
+      return { ok: false, error: historiaRes.error };
+    }
+
     const tiposLabel = tipos.map((t) => TIPO_LABEL[t] ?? t).join(", ");
     const sucursalLabel = SUCURSAL_LABEL[sucursalValida] ?? sucursalValida;
     const pdfBuffer = generarPdfPedido(
@@ -368,6 +379,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     revalidatePath("/pedidos/enviar");
     revalidatePath("/pedidos/urgente");
     revalidatePath("/pedidos/tintometrico");
+    revalidatePath("/pedidos/historial");
 
     return {
       ok: true,

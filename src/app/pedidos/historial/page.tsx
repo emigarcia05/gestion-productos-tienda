@@ -1,21 +1,48 @@
-import SectionHeader from "@/components/SectionHeader";
-import GenerarPedidoButton from "@/components/pedidos/GenerarPedidoButton";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { redirect } from "next/navigation";
+import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
+import HistorialPedidosPageClient from "@/components/pedidos/HistorialPedidosPageClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function HistorialPedidosPage() {
+interface Props {
+  searchParams: Promise<{
+    pagina?: string;
+  }>;
+}
+
+export default async function HistorialPedidosPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
 
-  return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <SectionHeader titulo="Pedido Mercadería" subtitulo="Historial Pedidos" actions={<GenerarPedidoButton />} />
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Historial Pedidos — en construcción.</p>
+  const { pagina = "1" } = await searchParams;
+  const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+
+  const res = await pedidosHistoriaService.listarPedidosHistoria({
+    pagina: paginaNum,
+  });
+
+  if (!res.success) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden">
+        <HistorialPedidosPageClient items={[]} total={0} totalPaginas={1} paginaNum={paginaNum} />
       </div>
-    </div>
+    );
+  }
+
+  const items = res.data.items.map((it) => ({
+    ...it,
+    generadoAt: it.generadoAt.toISOString(),
+    registradoAt: it.registradoAt ? it.registradoAt.toISOString() : null,
+  }));
+
+  return (
+    <HistorialPedidosPageClient
+      items={items}
+      total={res.data.total}
+      totalPaginas={res.data.totalPaginas}
+      paginaNum={res.data.paginaActual}
+    />
   );
 }
