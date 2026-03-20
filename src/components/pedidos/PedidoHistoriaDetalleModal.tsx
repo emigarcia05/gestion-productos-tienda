@@ -254,6 +254,13 @@ export default function PedidoHistoriaDetalleModal({
     });
   }
 
+  function ajustarEditingValue(delta: number) {
+    if (locked || busy) return;
+    const current = parseIntSafe(editingValue);
+    const next = Math.max(0, current + delta);
+    setEditingValue(next === 0 ? "" : String(next));
+  }
+
   const items = detalle?.items ?? [];
   const itemsControlled =
     items.length > 0 &&
@@ -266,7 +273,7 @@ export default function PedidoHistoriaDetalleModal({
           title="Detalle Del Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[55.2rem]"
+          className="sm:max-w-[62rem] max-h-[95vh]"
           bodyShellClassName="p-0"
           actions={
             <>
@@ -454,29 +461,55 @@ export default function PedidoHistoriaDetalleModal({
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
-                              <Input
-                                type="number"
-                                min={0}
-                                step={1}
-                                inputMode="numeric"
-                                value={editingValue}
-                                onChange={(e) => setEditingValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                data-edit-input={item.id}
-                                onBlur={() => {
-                                  const v = parseIntSafe(editingValue);
-                                  if (v === item.cantRecibida) {
-                                    setEditingItemId(null);
-                                    setEditingValue("");
-                                    return;
-                                  }
-                                  void actualizarItemCantRecibida(item.id, v);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                                }}
-                                disabled={locked || busy}
-                                className={cn("h-8 w-full text-center", inputBorderClassName)}
-                              />
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon-xs"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => ajustarEditingValue(-1)}
+                                  disabled={locked || busy}
+                                  aria-label="Disminuir"
+                                  title="Disminuir"
+                                >
+                                  <span className="text-sm leading-none">-</span>
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step={1}
+                                  inputMode="numeric"
+                                  value={editingValue}
+                                  onChange={(e) => setEditingValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                  data-edit-input={item.id}
+                                  onBlur={() => {
+                                    const v = parseIntSafe(editingValue);
+                                    if (v === item.cantRecibida) {
+                                      setEditingItemId(null);
+                                      setEditingValue("");
+                                      return;
+                                    }
+                                    void actualizarItemCantRecibida(item.id, v);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                  }}
+                                  disabled={locked || busy}
+                                  className={cn("h-8 w-full text-center", inputBorderClassName)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon-xs"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => ajustarEditingValue(1)}
+                                  disabled={locked || busy}
+                                  aria-label="Aumentar"
+                                  title="Aumentar"
+                                >
+                                  <span className="text-sm leading-none">+</span>
+                                </Button>
+                              </div>
                             ) : (
                               cantRecibidaVisible
                             )}
@@ -527,19 +560,23 @@ export default function PedidoHistoriaDetalleModal({
               </Table>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-1 w-[15%] ml-auto">
+            <div className="flex items-center justify-end gap-2 pt-1">
               <span className="text-xs text-foreground shrink-0">TOTAL PEDIDO</span>
-              <Input
+              <div className="w-[15%]">
+                <Input
                   type="number"
                   min={0}
                   step={1}
                   inputMode="numeric"
                   value={totalPedido}
-                  onChange={(e) => setTotalPedido(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  onChange={(e) =>
+                    setTotalPedido(e.target.value.replace(/\D/g, "").slice(0, 2))
+                  }
                   disabled={locked || loading}
                   className={cn("h-10 w-full tabular-nums text-center", inputBorderClassName)}
                   aria-label="Total Pedido"
-              />
+                />
+              </div>
             </div>
           </div>
         </div>
