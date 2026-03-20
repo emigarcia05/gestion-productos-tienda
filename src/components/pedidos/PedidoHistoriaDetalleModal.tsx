@@ -319,10 +319,10 @@ export default function PedidoHistoriaDetalleModal({
         >
         <div className="flex flex-col gap-4 h-full min-h-0">
           <div className="flex flex-col gap-1">
-            <div className="text-sm font-medium text-foreground">
+            <div className="text-sm font-medium text-foreground text-center w-full">
               {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground text-center w-full">
               {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
             </div>
           </div>
@@ -401,8 +401,8 @@ export default function PedidoHistoriaDetalleModal({
               </Button>
             </div>
 
-            <div className="flex flex-col flex-1 min-h-0">
-              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+            <div className="flex flex-col flex-1 min-h-0 h-full">
+              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 h-auto">
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
@@ -564,7 +564,7 @@ export default function PedidoHistoriaDetalleModal({
               </Table>
               </div>
 
-              <div className="grid grid-cols-[9%_62.5%_10.5%_10.5%_15%] w-full px-[1px] items-center pt-1 pb-2">
+              <div className="grid grid-cols-[9%_62.5%_10.5%_10.5%_15%] w-full px-[1px] items-center pt-1 pb-4 shrink-0">
                 <div className="col-start-4 flex justify-end pr-1">
                   <span className="text-xs text-foreground shrink-0 whitespace-nowrap font-semibold">
                     TOTAL PEDIDO
