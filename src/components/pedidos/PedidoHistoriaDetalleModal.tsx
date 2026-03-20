@@ -567,7 +567,7 @@ export default function PedidoHistoriaDetalleModal({
               </Table>
               </div>
 
-              <div className="grid grid-cols-[9%_62.5%_10.5%_10.5%_15%] w-full items-center mt-1 py-2 border-t border-border/70 shrink-0">
+              <div className="grid grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] w-full items-center mt-1 py-2 border-t border-border/70 shrink-0">
                 <div className="col-start-4 flex justify-end pr-[var(--tabla-body-cell-padding-x)]">
                   <span className="text-xs text-foreground shrink-0 whitespace-nowrap font-semibold">
                     TOTAL PEDIDO
