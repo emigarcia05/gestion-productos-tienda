@@ -52,6 +52,17 @@ function toDate(value: string | Date | null | undefined): Date | null {
 
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
+/** Igual que anchos de tabla (COD. / DESC. / CANT. PED. / CANT. REC. / ACCIONES): fecha, fila de alta y columna ACCIONES comparten columna 5. */
+const GRID_ALINEACION_TABLA_PEDIDO_HISTORIA =
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] sm:gap-0";
+
+const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
+
+const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
+  CELDA_TABLA_PADDING_X,
+  "sm:shadow-[inset_1px_0_0_#0072bb]"
+);
+
 /** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
   if (norm === "") return "";
@@ -360,6 +371,10 @@ export default function PedidoHistoriaDetalleModal({
           size="xl"
           className="sm:max-w-[72rem] max-h-[95vh]"
           bodyShellClassName="p-0"
+          padding="sm"
+          headerClassName="pt-3 pb-3"
+          footerClassName="py-3"
+          bodyClassName="px-3 py-2 sm:px-4 sm:py-2.5"
           actions={
             <>
               <Button
@@ -402,24 +417,32 @@ export default function PedidoHistoriaDetalleModal({
             </>
           }
         >
-        <div className="flex flex-col gap-4 min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
           {/* Mismas proporciones que la tabla (COD. / DESC. / CANT. PED. / CANT. REC. / ACCIONES) para alinear FECHA RECEPCIÓN con la columna ACCIONES */}
-          <div className="grid min-w-0 w-full grid-cols-1 items-start gap-3 sm:grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] sm:gap-0">
-            <div className="flex min-w-0 flex-col gap-1 text-center sm:col-span-4">
-              <div className="text-sm font-medium text-foreground text-center w-full">
+          <div
+            className={cn(
+              GRID_ALINEACION_TABLA_PEDIDO_HISTORIA,
+              "items-start"
+            )}
+          >
+            <div className="flex min-w-0 flex-col gap-0.5 text-center sm:col-span-4">
+              <div className="text-center text-sm font-medium leading-snug text-foreground w-full">
                 {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
               </div>
-              <div className="text-xs text-muted-foreground text-center w-full">
+              <div className="text-center text-xs leading-tight text-muted-foreground w-full">
                 {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
               </div>
             </div>
             <label
               className={cn(
-                "flex min-w-0 w-full flex-col gap-1 px-[var(--tabla-body-cell-padding-x)] sm:shadow-[inset_1px_0_0_#0072bb]",
+                "flex min-w-0 w-full flex-col gap-0.5",
+                COLUMNA_ACCIONES_EXTERNA_CLASS,
                 locked || loading ? "cursor-default" : "cursor-pointer"
               )}
             >
-              <span className="text-xs text-foreground text-center w-full">FECHA RECEPCIÓN</span>
+              <span className="text-center text-xs text-foreground leading-tight w-full">
+                FECHA RECEPCIÓN
+              </span>
               <Input
                 type="date"
                 value={fechaRecepcion}
@@ -427,7 +450,7 @@ export default function PedidoHistoriaDetalleModal({
                 disabled={locked || loading}
                 aria-label="Fecha recepción"
                 className={cn(
-                  "h-10 w-full min-w-0 tabular-nums text-center",
+                  "h-9 w-full min-w-0 tabular-nums text-center",
                   inputBorderClassName,
                   locked || loading ? "cursor-not-allowed" : "cursor-pointer"
                 )}
@@ -435,10 +458,23 @@ export default function PedidoHistoriaDetalleModal({
             </label>
           </div>
 
-          <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
-            <div className="flex items-end gap-2">
-              <div className="flex flex-col gap-1 flex-1">
-                <span className="text-xs text-foreground">DESCRIPCIÓN</span>
+          <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
+            <div
+              className={cn(GRID_ALINEACION_TABLA_PEDIDO_HISTORIA, "sm:items-end")}
+            >
+              <div
+                className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+                aria-hidden
+              />
+              <div
+                className={cn(
+                  "flex min-w-0 flex-col justify-end gap-0.5",
+                  CELDA_TABLA_PADDING_X
+                )}
+              >
+                <span className="text-xs leading-tight text-foreground">
+                  DESCRIPCIÓN
+                </span>
                 {productoSeleccionado ? (
                   <Input
                     value={productoSeleccionado.descripcionTienda}
@@ -460,7 +496,7 @@ export default function PedidoHistoriaDetalleModal({
                       }
                     }}
                     className={cn(
-                      "h-10 cursor-pointer",
+                      "h-9 min-w-0 w-full cursor-pointer",
                       inputBorderClassName,
                       locked || loading ? "cursor-not-allowed" : ""
                     )}
@@ -469,7 +505,7 @@ export default function PedidoHistoriaDetalleModal({
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 justify-start"
+                    className="h-9 w-full min-w-0 justify-start px-3"
                     onClick={() => setAgregarProductosOpen(true)}
                     disabled={locked || loading}
                   >
@@ -477,36 +513,55 @@ export default function PedidoHistoriaDetalleModal({
                   </Button>
                 )}
               </div>
-
-              <div className="flex flex-col gap-1 w-40">
-                <span className="text-xs text-foreground">CANT.</span>
+              <div
+                className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+                aria-hidden
+              />
+              <div
+                className={cn(
+                  "flex min-w-0 flex-col justify-end gap-0.5",
+                  CELDA_TABLA_PADDING_X
+                )}
+              >
+                <span className="text-xs leading-tight text-foreground">CANT.</span>
                 <Input
                   type="number"
                   min={0}
                   step={1}
                   inputMode="numeric"
                   value={cantRecibidaNueva}
-                  onChange={(e) => setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) =>
+                    setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
                   data-cant-input="detalle"
                   disabled={locked || loading}
-                  className={cn("h-10 tabular-nums text-center", inputBorderClassName)}
+                  className={cn(
+                    "h-9 w-full min-w-0 tabular-nums text-center",
+                    inputBorderClassName
+                  )}
                 />
               </div>
-
-              <Button
-                type="button"
-                onClick={agregarNuevaFila}
-                disabled={
-                  locked ||
-                  loading ||
-                  guardando != null ||
-                  !productoSeleccionado ||
-                  parseIntSafe(cantRecibidaNueva) <= 0
-                }
-                className="h-10"
+              <div
+                className={cn(
+                  "flex min-w-0 w-full flex-col justify-end gap-0.5",
+                  COLUMNA_ACCIONES_EXTERNA_CLASS
+                )}
               >
-                + AGREGAR
-              </Button>
+                <Button
+                  type="button"
+                  onClick={agregarNuevaFila}
+                  disabled={
+                    locked ||
+                    loading ||
+                    guardando != null ||
+                    !productoSeleccionado ||
+                    parseIntSafe(cantRecibidaNueva) <= 0
+                  }
+                  className="h-9 w-full min-w-0 shrink-0 px-2"
+                >
+                  + AGREGAR
+                </Button>
+              </div>
             </div>
 
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden">

@@ -77,6 +77,10 @@ export interface AppModalProps
    * Ej.: `p-1.5 sm:p-2` para modales compactos.
    */
   bodyShellClassName?: string;
+  /** Clases adicionales del header (fondo primary). Ej. `pt-3 pb-3` para modales densos. */
+  headerClassName?: string;
+  /** Clases adicionales del footer (botonera). Ej. `py-3` para reducir altura. */
+  footerClassName?: string;
   /** Si se muestra el botón de cerrar (X). Por defecto true. */
   showCloseButton?: boolean;
   /** Si false, el cuerpo no hace scroll y el contenido debe caber (overflow-hidden). Por defecto true. */
@@ -102,6 +106,8 @@ export default function AppModal({
   className,
   bodyClassName,
   bodyShellClassName,
+  headerClassName,
+  footerClassName,
   showCloseButton = true,
   scrollBody = true,
 }: AppModalProps) {
@@ -114,7 +120,12 @@ export default function AppModal({
       showCloseButton={showCloseButton}
     >
       {/* Header: fondo corporativo #0072BB, texto blanco Geist, centrado; sin bordes internos */}
-      <DialogHeader className="shrink-0 bg-primary px-6 pt-5 pb-4 pr-12">
+      <DialogHeader
+        className={cn(
+          "shrink-0 bg-primary px-6 pt-5 pb-4 pr-12",
+          headerClassName
+        )}
+      >
         <DialogTitle className="font-sans text-lg font-semibold text-primary-foreground tracking-tight w-full flex items-center justify-center gap-3 text-center">
           {title}
         </DialogTitle>
@@ -148,7 +159,12 @@ export default function AppModal({
       </div>
 
       {/* Footer: mismo gris universal que cuerpo externo; botonera centrada verticalmente */}
-      <div className="shrink-0 flex flex-row items-center justify-end gap-2 px-6 py-4 bg-gris">
+      <div
+        className={cn(
+          "shrink-0 flex flex-row items-center justify-end gap-2 px-6 py-4 bg-gris",
+          footerClassName
+        )}
+      >
         {actions}
       </div>
     </DialogContent>
