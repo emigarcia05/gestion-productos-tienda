@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import {
@@ -12,13 +12,17 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type {
-  PedidoHistoriaResumen,
-} from "@/services/pedidosHistoria.service";
+import type { PedidoHistoriaResumen } from "@/services/pedidosHistoria.service";
 import PedidoHistoriaDetalleModal from "@/components/pedidos/PedidoHistoriaDetalleModal";
+import GenerarPedidoButton from "@/components/pedidos/GenerarPedidoButton";
+import FiltrosHistorialPedidos, {
+  type EstadoFiltroPedido,
+} from "@/components/pedidos/FiltrosHistorialPedidos";
+import { Eye } from "lucide-react";
 
 type PedidoHistoriaResumenClient = Omit<PedidoHistoriaResumen, "generadoAt" | "registradoAt"> & {
   generadoAt: string;
@@ -30,6 +34,10 @@ interface Props {
   total: number;
   totalPaginas: number;
   paginaNum: number;
+  proveedores: Array<{ id: string; nombre: string; prefijo: string }>;
+  proveedorId: string;
+  sucursalCodigo: string;
+  estado: PedidoHistoriaResumen["estado"] | "";
 }
 
 function formatFechaNotaPedido(d: Date): string {
@@ -52,6 +60,10 @@ export default function HistorialPedidosPageClient({
   total,
   totalPaginas,
   paginaNum,
+  proveedores,
+  proveedorId,
+  sucursalCodigo,
+  estado,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [pedidoHistoriaId, setPedidoHistoriaId] = useState<string | null>(null);
@@ -61,9 +73,11 @@ export default function HistorialPedidosPageClient({
   const title = "Pedido Mercadería";
   const subtitle = "Historial Pedidos";
 
-  const actions = useMemo(() => {
-    return undefined;
-  }, []);
+  const actions = (
+    <div className="flex items-center gap-2">
+      <GenerarPedidoButton />
+    </div>
+  );
 
   async function openDetalle(item: PedidoHistoriaResumenClient) {
     setPedidoHistoriaId(item.id);
@@ -71,7 +85,15 @@ export default function HistorialPedidosPageClient({
   }
 
   return (
-    <ClassicFilteredTableLayout title={title} subtitle={subtitle} actions={actions}>
+    <ClassicFilteredTableLayout title={title} subtitle={subtitle} actions={actions} filters={
+      <FiltrosHistorialPedidos
+        proveedores={proveedores}
+        proveedorId={proveedorId}
+        sucursalCodigo={sucursalCodigo}
+        estado={(estado as EstadoFiltroPedido) || ""}
+        total={total}
+      />
+    }>
       <div className="flex flex-col h-full min-h-0 gap-0.5">
         <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
@@ -80,7 +102,9 @@ export default function HistorialPedidosPageClient({
                 <Table variant="compact" scrollX={false} className="min-w-full">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[70%]">FECHA - PROVEEDOR - SUCURSAL</TableHead>
+                      <TableHead className="w-[20%]">FECHA</TableHead>
+                      <TableHead className="w-[30%]">PROVEEDOR</TableHead>
+                      <TableHead className="w-[20%]">SUCURSAL</TableHead>
                       <TableHead className="w-[15%]">ESTADO</TableHead>
                       <TableHead className="w-[15%]">VER</TableHead>
                     </TableRow>
@@ -88,28 +112,44 @@ export default function HistorialPedidosPageClient({
                   <TableBody>
                     {showingEmpty ? (
                       <EmptyTableRow
-                        colSpan={3}
+                        colSpan={5}
                         message="No se encontraron pedidos."
                       />
                     ) : (
                       items.map((it, idx) => {
                         const fecha = parseDate(it.generadoAt);
                         const fechaStr = fecha ? formatFechaNotaPedido(fecha) : "";
-                        const rowLabel = `${fechaStr} - ${it.proveedorNombre} - ${it.sucursalNombre}`;
                         return (
                           <TableRow
                             key={it.id}
-                            className={cn("cursor-pointer", idx % 2 === 1 && "bg-muted/30")}
-                            onClick={() => void openDetalle(it)}
+                            className={cn(idx % 2 === 1 && "bg-muted/30")}
                           >
-                            <TableCell className="celda-datos text-left min-w-0 break-words">
-                              {rowLabel}
+                            <TableCell className="celda-datos tabular-nums">
+                              {fechaStr}
+                            </TableCell>
+                            <TableCell className="celda-datos min-w-0 truncate" title={it.proveedorNombre}>
+                              {it.proveedorNombre}
+                            </TableCell>
+                            <TableCell className="celda-datos min-w-0 truncate" title={it.sucursalNombre}>
+                              {it.sucursalNombre}
                             </TableCell>
                             <TableCell className="celda-datos">
                               {it.estado === "REGISTRADO" ? "Registrado" : "Pedido"}
                             </TableCell>
                             <TableCell className="celda-datos">
-                              Ver
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void openDetalle(it);
+                                }}
+                                aria-label="Ver detalle"
+                                title="Ver"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
@@ -128,7 +168,11 @@ export default function HistorialPedidosPageClient({
                   </span>
                   <PaginacionTabla
                     basePath="/pedidos/historial"
-                    params={{}}
+                    params={{
+                      proveedor: proveedorId,
+                      sucursal: sucursalCodigo,
+                      estado: estado as string,
+                    }}
                     paginaActual={paginaNum}
                     totalPaginas={totalPaginas}
                     total={total}
