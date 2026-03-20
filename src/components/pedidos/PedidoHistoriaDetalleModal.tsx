@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -51,6 +52,38 @@ function toDate(value: string | Date | null | undefined): Date | null {
 
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
+/** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). */
+function normalizedMontoToDisplayAr(norm: string): string {
+  if (norm === "") return "$0,00";
+  const n = Number(norm);
+  if (!Number.isFinite(n) || n < 0) return "$0,00";
+  const [ent, frac] = n.toFixed(2).split(".");
+  const entFmt = Number(ent).toLocaleString("es-AR", {
+    useGrouping: true,
+    maximumFractionDigits: 0,
+  });
+  return `$${entFmt},${frac}`;
+}
+
+/** Parsea texto con $, miles (.), decimales (,) a string normalizado "" | "123" | "123.45". */
+function parseMontoArInputToNormalized(display: string): string {
+  const s = display.replace(/\$/g, "").replace(/\s/g, "").trim();
+  if (s === "") return "";
+  const lastComma = s.lastIndexOf(",");
+  let integerRaw: string;
+  let fracRaw: string;
+  if (lastComma !== -1) {
+    integerRaw = s.slice(0, lastComma).replace(/\./g, "").replace(/\D/g, "");
+    fracRaw = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
+  } else {
+    integerRaw = s.replace(/\./g, "").replace(/\D/g, "");
+    fracRaw = "";
+  }
+  if (integerRaw === "" && fracRaw === "") return "";
+  if (fracRaw === "") return integerRaw;
+  return `${integerRaw === "" ? "0" : integerRaw}.${fracRaw}`;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -72,7 +105,10 @@ export default function PedidoHistoriaDetalleModal({
 
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoTiendaRowBusqueda | null>(null);
   const [cantRecibidaNueva, setCantRecibidaNueva] = useState<string>("");
+  /** Valor normalizado para lógica futura: "" | "123" | "123.45" (punto decimal). */
   const [totalPedido, setTotalPedido] = useState<string>("");
+  const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("$0,00");
+  const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
@@ -108,6 +144,8 @@ export default function PedidoHistoriaDetalleModal({
       setProductoSeleccionado(null);
       setCantRecibidaNueva("");
       setTotalPedido("");
+      setTotalPedidoDraft("$0,00");
+      setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
     });
 
@@ -564,42 +602,56 @@ export default function PedidoHistoriaDetalleModal({
                     })
                   )}
                 </TableBody>
+                <TableFooter
+                  className={cn(
+                    "border-t border-border/70 bg-transparent p-0",
+                    "[&>tr]:border-b-0"
+                  )}
+                >
+                  <TableRow className="hover:bg-transparent border-b-0 bg-card">
+                    <TableCell
+                      colSpan={3}
+                      className="celda-datos border-b-0"
+                      aria-hidden
+                    />
+                    <TableCell className="celda-datos border-b-0 text-right align-middle">
+                      <span className="text-xs font-semibold text-foreground whitespace-nowrap">
+                        TOTAL PEDIDO
+                      </span>
+                    </TableCell>
+                    <TableCell className="celda-datos w-[15%] border-b-0 tabla-bloque-secundario-cell-divider">
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        disabled={locked || loading}
+                        value={
+                          totalPedidoFocused
+                            ? totalPedidoDraft
+                            : normalizedMontoToDisplayAr(totalPedido)
+                        }
+                        onFocus={() => {
+                          setTotalPedidoDraft(normalizedMontoToDisplayAr(totalPedido));
+                          setTotalPedidoFocused(true);
+                        }}
+                        onChange={(e) => {
+                          if (!totalPedidoFocused) return;
+                          setTotalPedidoDraft(e.target.value);
+                        }}
+                        onBlur={() => {
+                          setTotalPedido(parseMontoArInputToNormalized(totalPedidoDraft));
+                          setTotalPedidoFocused(false);
+                        }}
+                        className={cn(
+                          "h-6 min-h-6 max-h-6 w-full tabular-nums text-right pr-2",
+                          inputBorderClassName
+                        )}
+                        aria-label="Total Pedido"
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
-              </div>
-
-              <div className="grid grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] w-full items-center border-t border-border/70 shrink-0">
-                <div className="col-start-4 flex h-[var(--tabla-body-row-min-height)] items-center justify-end px-[var(--tabla-body-cell-padding-x)]">
-                  <span className="text-xs text-foreground shrink-0 whitespace-nowrap font-semibold">
-                    TOTAL PEDIDO
-                  </span>
-                </div>
-                <div className="col-start-5 flex h-[var(--tabla-body-row-min-height)] items-center px-[var(--tabla-body-cell-padding-x)]">
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    inputMode="decimal"
-                    value={totalPedido}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      const normalized = raw.replace(",", ".");
-
-                      // Permitir: "" | "12" | "12." | "12.3" | "12.34" (máx 2 decimales)
-                      if (normalized === "") {
-                        setTotalPedido("");
-                        return;
-                      }
-                      if (!/^\d*\.?\d{0,2}$/.test(normalized)) return;
-                      setTotalPedido(normalized);
-                    }}
-                    disabled={locked || loading}
-                    className={cn(
-                      "h-6 min-h-6 max-h-6 w-full tabular-nums text-right pr-2",
-                      inputBorderClassName
-                    )}
-                    aria-label="Total Pedido"
-                  />
-                </div>
               </div>
             </div>
           </div>
