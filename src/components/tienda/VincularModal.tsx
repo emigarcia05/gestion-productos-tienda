@@ -125,6 +125,15 @@ export default function VincularModal({
 
   const prefijoPrincipal = (prefijoProveedor ?? "").trim().toLowerCase();
 
+  const lineaMarcaRubroSub = useMemo(
+    () =>
+      [marca, rubro, subRubro]
+        .map((s) => (s ?? "").trim())
+        .filter(Boolean)
+        .join(" - "),
+    [marca, rubro, subRubro]
+  );
+
   const filasOrdenadas = useMemo(() => {
     const conPx = vinculados.map((p) => ({ producto: p, px: pxCompraDeProducto(p) }));
     const principalItem =
@@ -259,14 +268,8 @@ export default function VincularModal({
         >
           <div className="flex shrink-0 flex-col gap-1 pb-2 text-center">
             <p className="text-sm font-semibold text-foreground break-words">{itemDescripcion}</p>
-            {marca ? (
-              <p className="text-xs text-muted-foreground">{marca}</p>
-            ) : null}
-            {rubro ? (
-              <p className="text-xs text-muted-foreground">{rubro}</p>
-            ) : null}
-            {subRubro ? (
-              <p className="text-xs text-muted-foreground">{subRubro}</p>
+            {lineaMarcaRubroSub ? (
+              <p className="text-xs text-muted-foreground break-words">{lineaMarcaRubroSub}</p>
             ) : null}
           </div>
 
@@ -279,9 +282,16 @@ export default function VincularModal({
             ) : vinculados.length === 0 ? (
               <p className="p-4 text-center text-sm text-muted-foreground">Sin vínculos aún.</p>
             ) : (
-              <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] mx-auto flex justify-center">
-                <div className="inline-block max-w-full align-top">
-                  <Table variant="compact" scrollX={false} className="tabla-vinculos-modal">
+              <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] w-full min-w-0">
+                <Table variant="compact" scrollX={false} className="tabla-vinculos-modal">
+                  <colgroup>
+                    <col style={{ width: "16%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "22%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "24%" }} />
+                    <col style={{ width: "10%" }} />
+                  </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead>OFICIAL</TableHead>
@@ -352,7 +362,6 @@ export default function VincularModal({
                     })}
                   </TableBody>
                 </Table>
-                </div>
               </div>
             )}
           </div>
