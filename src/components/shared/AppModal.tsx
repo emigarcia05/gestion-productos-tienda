@@ -72,6 +72,11 @@ export interface AppModalProps
   className?: string;
   /** Clases adicionales del contenedor interno (card blanca del cuerpo). */
   bodyClassName?: string;
+  /**
+   * Padding del contenedor gris alrededor de la card (por defecto `p-4` vía `cn`).
+   * Ej.: `p-1.5 sm:p-2` para modales compactos.
+   */
+  bodyShellClassName?: string;
   /** Si se muestra el botón de cerrar (X). Por defecto true. */
   showCloseButton?: boolean;
   /** Si false, el cuerpo no hace scroll y el contenido debe caber (overflow-hidden). Por defecto true. */
@@ -96,6 +101,7 @@ export default function AppModal({
   padding,
   className,
   bodyClassName,
+  bodyShellClassName,
   showCloseButton = true,
   scrollBody = true,
 }: AppModalProps) {
@@ -121,7 +127,12 @@ export default function AppModal({
           scrollBody ? "overflow-auto" : "overflow-hidden"
         )}
       >
-        <div className="min-h-0 flex items-stretch justify-center p-4 flex-1">
+        <div
+          className={cn(
+            "min-h-0 flex items-stretch justify-center flex-1 p-4",
+            bodyShellClassName
+          )}
+        >
           <div
             className={cn(
               appModalBodyCardVariants({

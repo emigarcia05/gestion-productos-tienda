@@ -98,6 +98,7 @@ export default function VincularModal({
   porcIva,
   marca,
   rubro,
+  subRubro,
   prefijoProveedor,
   open: openProp,
   onOpenChange,
@@ -237,7 +238,8 @@ export default function VincularModal({
           size="lg"
           className="sm:max-w-2xl w-[calc(100%-2rem)]"
           scrollBody={false}
-          bodyClassName="flex flex-col min-h-0 overflow-hidden p-3 sm:p-4"
+          bodyShellClassName="p-1.5 sm:p-2"
+          bodyClassName="flex flex-col min-h-0 overflow-hidden p-2 sm:p-3"
           actions={
             <>
               <Button
@@ -255,25 +257,27 @@ export default function VincularModal({
             </>
           }
         >
-          <div className="pb-3 text-center shrink-0">
-            <p className="text-sm text-foreground font-semibold truncate text-center" title={itemDescripcion}>
-              {itemDescripcion}
-            </p>
-            {(marca || rubro) && (
-              <p className="text-xs text-muted-foreground mt-0.5 text-center">
-                {[marca, rubro].filter(Boolean).join(" · ")}
-              </p>
-            )}
+          <div className="flex shrink-0 flex-col gap-1 pb-2 text-center">
+            <p className="text-sm font-semibold text-foreground break-words">{itemDescripcion}</p>
+            {marca ? (
+              <p className="text-xs text-muted-foreground">{marca}</p>
+            ) : null}
+            {rubro ? (
+              <p className="text-xs text-muted-foreground">{rubro}</p>
+            ) : null}
+            {subRubro ? (
+              <p className="text-xs text-muted-foreground">{subRubro}</p>
+            ) : null}
           </div>
 
-          <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card overflow-hidden">
+          <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-hidden">
             {cargando ? (
-              <div className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
                 Cargando...
               </div>
             ) : vinculados.length === 0 ? (
-              <p className="p-6 text-center text-sm text-muted-foreground">Sin vínculos aún.</p>
+              <p className="p-4 text-center text-sm text-muted-foreground">Sin vínculos aún.</p>
             ) : (
               <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] mx-auto flex justify-center">
                 <div className="inline-block max-w-full align-top">
@@ -283,15 +287,11 @@ export default function VincularModal({
                       <TableHead>OFICIAL</TableHead>
                       <TableHead>PREFIJO</TableHead>
                       <TableHead>PX. FINAL COMPRA</TableHead>
-                      <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
-                        VARIAC.
-                      </TableHead>
-                      <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
-                        MARGEN S/ IVA
-                      </TableHead>
-                      <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head">
+                      <TableHead>VARIAC.</TableHead>
+                      <TableHead>MARGEN S/ IVA</TableHead>
+                      <TableHead>
                         <span className="sr-only">DESVINC.</span>
-                        <Trash2 className="h-4 w-4 mx-auto text-primary-foreground" aria-hidden />
+                        <Trash2 className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -325,13 +325,13 @@ export default function VincularModal({
                           <TableCell className="celda-datos celda-numero celda-destacado">
                             ${fmtPrecio(px)}
                           </TableCell>
-                          <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos celda-numero">
                             <DifCosto costoTienda={costoTienda} pxCompraFinal={px} />
                           </TableCell>
-                          <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos celda-numero">
                             {margenPct != null ? fmtPctEntero(margenPct) : ""}
                           </TableCell>
-                          <TableCell className="celda-datos tabla-bloque-secundario-cell">
+                          <TableCell className="celda-datos">
                             <div className="flex justify-center">
                               <Button
                                 type="button"

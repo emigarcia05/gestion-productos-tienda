@@ -713,33 +713,21 @@
   font-size: var(--text-sm) !important;
 }
 
-/* ─── Bloques de columnas en tablas (1ra / 2da+3ra importancia) ───
- * Patrón: columnas principales a la izquierda (1ra importancia: sin estas clases).
- * Columnas de 2da y 3ra importancia pueden compartir el mismo fondo (`*-cell` / `*-head`);
- * la separación entre grupos se marca con `*-divider` en la **primera** celda de cada grupo
- * (línea vertical entre bloques de datos distintos).
- * Ej. Comp. Proveedores: 1ra COD/DESC/PX → 2da MARGEN (divider) → 3ra MEJOR PROV. (divider) + DIF.
- * Otros módulos (ej. Pedido Reposición): un solo bloque secundario a la derecha.
+/* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───
+ * Misma tipografía y fondo de fila (cebra) que el resto; sin fondo muted en secundarias.
+ * `*-divider`: primera celda del sub-grupo → borde izquierdo. `*-head` / `*-cell`: marcado semántico.
  */
-.tabla-bloque-secundario-head {
-  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--primary-foreground);
+.tabla-bloque-secundario-head,
+.tabla-bloque-secundario-cell {
+  background-color: transparent;
 }
 .tabla-bloque-secundario-head-divider {
-  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--primary-foreground);
-  /* Encabezado: línea divisoria blanca para cortar visualmente el bloque secundario. */
+  background-color: transparent;
   border-left: 2px solid var(--primary-foreground);
 }
-.tabla-bloque-secundario-cell {
-  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--foreground);
-}
 .tabla-bloque-secundario-cell-divider {
-  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-  color: var(--foreground);
-  /* Filas: línea divisoria gris más marcada (mezcla de border y foreground). */
-  border-left: 2px solid color-mix(in oklab, var(--border) 40%, var(--foreground) 60%);
+  background-color: transparent;
+  border-left: 1px solid var(--border);
 }
 
 /* Tabla Tienda / Comp. Proveedores: Cod. 10%, Desc. 50%, Px. Compra Final 10%, Margen s/ IVA 10%, Mejor Prov. 10%, DIF. 10%. */

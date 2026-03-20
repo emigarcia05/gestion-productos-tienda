@@ -101,10 +101,10 @@ export default function TablaReposicion({
                 </div>
               </TableHead>
               {/* Información secundaria */}
-              <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider w-[7%]">
+              <TableHead className="tabla-bloque-secundario-head-divider w-[7%]">
                 STOCK
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head w-[7%]">
+              <TableHead className="tabla-bloque-secundario-head w-[7%]">
                 CANT. A PEDIR
               </TableHead>
             </TableRow>
@@ -179,10 +179,10 @@ export default function TablaReposicion({
                     )}
                   </TableCell>
                   {/* Secundaria */}
-                  <TableCell className="px-3 py-2 text-xs tabular-nums tabla-bloque-secundario-cell-divider">
+                  <TableCell className="celda-datos celda-numero tabular-nums tabla-bloque-secundario-cell-divider">
                     {item.stock}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums tabla-bloque-secundario-cell">
+                  <TableCell className="celda-datos celda-numero tabular-nums tabla-bloque-secundario-cell">
                     {cantAPedirVal === "" ? "" : cantAPedirVal}
                   </TableCell>
                 </TableRow>

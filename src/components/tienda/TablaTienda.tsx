@@ -71,13 +71,13 @@ export default function TablaTienda({
             <TableHead>COD. TIENDA</TableHead>
             <TableHead>DESCRIPCIÓN</TableHead>
             <TableHead>PX. COMPRA FINAL</TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
+            <TableHead className="tabla-bloque-secundario-head-divider">
               MARGEN S/ IVA
             </TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
+            <TableHead className="tabla-bloque-secundario-head-divider">
               MEJOR PROV.
             </TableHead>
-            <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head">
+            <TableHead className="tabla-bloque-secundario-head">
               DIF.
             </TableHead>
           </TableRow>

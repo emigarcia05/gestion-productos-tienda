@@ -38,6 +38,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
      - `size`: `"sm" | "md" | "lg" | "xl"` (default `"md"` = `sm:max-w-lg`).
      - `padding`: `"sm" | "default" | "lg"` (default `"default"`).
      - `scrollBody`: `boolean` (default `true`) controla el overflow del cuerpo sin reescribir clases.
+     - `bodyShellClassName`: `string?` — se combina con el `div` gris que envuelve la card (`p-4` por defecto). Ej. `p-1.5 sm:p-2` en modales compactos (`VincularModal`).
 
 8. **Tablas (encabezado fijo + paginación)**  
 - **Un solo diseño** para toda la app (referencia: Comp. Proveedores). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. No usar `<table>` en crudo ni otras clases de tabla. Encabezados (`TableHead`) en MAYÚSCULAS. No sobrescribir padding ni altura en celdas (el diseño global manda).  
@@ -125,12 +126,13 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
   - Columnas principales a la izquierda: DESCRIPCIÓN, FORMA PEDIR, PUNTO REPOSICIÓN, CANT. REPOSICIÓN, acciones (botón de basura).
   - Bloque secundario a la derecha: STOCK, CANT. A PEDIR.
 - Clases globales:
-  - Encabezados secundarios: `tabla-bloque-secundario-head` / `tabla-bloque-secundario-head-divider` (esta última con línea divisoria vertical).
-  - Celdas secundarias: `tabla-bloque-secundario-cell` / `tabla-bloque-secundario-cell-divider`.
+  - Encabezados secundarios: `tabla-bloque-secundario-head` / `tabla-bloque-secundario-head-divider` (misma tipografía que el resto del encabezado; `*-divider` añade **solo** borde izquierdo entre sub-grupos).
+  - Celdas secundarias: `tabla-bloque-secundario-cell` / `tabla-bloque-secundario-cell-divider` (sin fondo distinto; heredan cebra de fila; `*-divider` = borde izquierdo).
 - Uso recomendado:
   - Aplicar estas clases solo a columnas de **información secundaria** (no editable o de resumen).
   - Mantener siempre el orden lógico: primero las columnas principales, luego el bloque secundario.
-- **Varios sub-bloques (misma “2da/3ra” estética):** en **Comp. Proveedores** hay tres grupos: columnas principales sin clase; cada grupo siguiente empieza con `*-divider` (línea vertical) y comparte fondo muted; la última columna del bloque derecho usa `*-head` / `*-cell` sin divider. Así se distinguen datos distintos sin duplicar estilos entre 2da y 3ra importancia.
+  - **No** añadir `px-3 py-2 text-xs` extra en cabeceras/celdas secundarias: el tamaño lo define `.tabla-gestion-compacta` / `.celda-datos`.
+- **Varios sub-bloques:** en **Comp. Proveedores** (`TablaTienda`) hay tres grupos: columnas principales sin clase; cada grupo siguiente empieza con `*-divider` (línea vertical). La última columna del bloque derecho usa `*-head` / `*-cell` sin divider.
 
 ### Modales con tabla de selección (patrón `modal-app`)
 
@@ -146,9 +148,10 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 
 ### Tienda — Modal **Vínculos con Proveedores** (`VincularModal.tsx`)
 
-- **Tabla estándar**: `<Table variant="compact" className="tabla-vinculos-modal">` envuelta en `inline-block max-w-full` dentro de `.contenedor-tabla-gestion` con `flex justify-center` (tabla al ancho del contenido). **`tabla-vinculos-modal`** en `globals.css`: menos padding horizontal y `table-layout: auto`. **AppModal** `size="lg"` + `sm:max-w-2xl`. **No** usar el listado legacy `.modal-vinculos-*`.
+- **Tabla estándar**: `<Table variant="compact" className="tabla-vinculos-modal">` envuelta en `inline-block max-w-full` dentro de `.contenedor-tabla-gestion` con `flex justify-center` (tabla al ancho del contenido). **`tabla-vinculos-modal`** en `globals.css`: menos padding horizontal y `table-layout: auto`. **AppModal** `size="lg"` + `sm:max-w-2xl`, `bodyShellClassName` compacto, **sin** card/borde extra alrededor de la tabla. **No** usar el listado legacy `.modal-vinculos-*`.
 - **Orden de filas**: primero el proveedor **oficial** (coincide `prefijoProveedor` / `proveedorDux` con el prefijo del vínculo); el resto ordenado por **px. final de compra** ascendente. Si no hay oficial reconocido, todas las filas solo por precio.
-- **Columnas / importancia** (igual que **`TablaTienda`**, solo cambian los títulos y el contenido): **3 columnas principales** sin clases de bloque (`OFICIAL`, `PREFIJO`, `PX. FINAL COMPRA` — celdas `celda-datos`, prefijo `celda-mono`, precio `celda-numero celda-destacado`); **3 columnas secundarias** con líneas verticales entre grupos: `tabla-bloque-secundario-head-divider` + `tabla-bloque-secundario-cell-divider` en **VARIAC.** y **MARGEN S/ IVA**; última columna **DESVINC.** (ícono) con `tabla-bloque-secundario-head` + `tabla-bloque-secundario-cell` (como **DIF.** en tienda). Márgenes con `calcMargenSinIvaPct` como la grilla tienda.
+- **Columnas** (misma jerarquía visual **unificada**, sin `tabla-bloque-*` en este modal): `OFICIAL`, `PREFIJO`, `PX. FINAL COMPRA`, `VARIAC.`, `MARGEN S/ IVA`, `DESVINC.` (ícono). Celdas con `celda-datos` / `celda-mono` / `celda-numero` / `celda-destacado` como en la grilla tienda donde aplique. Márgenes con `calcMargenSinIvaPct` como `TablaTienda`.
+- **Encabezado del producto**: descripción en varias líneas (`break-words`); `marca`, `rubro`, `subRubro` en líneas aparte si vienen informados.
 - **Props**: además de `costoTienda`, el modal recibe `precioListaTienda` y `porcIva` desde la fila de tienda para el margen.
 
 ### Ejemplos de código (referencia para IA)
@@ -222,8 +225,8 @@ import SectionHeader from "@/components/SectionHeader";
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
 | `.tabla-gestion-compacta.tabla-vinculos-modal` | Solo **modal Vínculos** (Tienda): `width: auto`, `table-layout: auto`, padding horizontal ~3px en celdas. No aplicar al resto de tablas. |
 | `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Proveedores). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. **Encabezado fijo obligatorio**: al hacer scroll los encabezados no desaparecen (`position: sticky` en `globals.css`). Altura desde variables (abajo). **TableHead sin negrita** (usa `font-normal`). **Inputs y listas desplegables (select)** dentro de la tabla: fondo transparente, recuadro #0072bb; el contenido del select se ajusta al alto máximo de la fila. **Listas desplegables en tablas**: texto en negro, sin bold (definido en `globals.css`). |
-| `.tabla-bloque-secundario-head`, `.tabla-bloque-secundario-head-divider` | Encabezados de columnas de **información secundaria** (uno o más sub-bloques a la derecha): fondo muted suavizado, texto `primary-foreground`. `*-divider` en la **primera** columna de cada sub-bloque: línea vertical blanca respecto del grupo anterior (ver Comp. Proveedores: MARGEN vs MEJOR PROV.). |
-| `.tabla-bloque-secundario-cell`, `.tabla-bloque-secundario-cell-divider` | Celdas de cuerpo de **información secundaria**: fondo muted suavizado, texto `foreground`. `*-divider` en la primera celda de cada sub-bloque: línea vertical gris. |
+| `.tabla-bloque-secundario-head`, `.tabla-bloque-secundario-head-divider` | Marcador de columnas de **información secundaria**; mismo aspecto que el resto del `<thead>` (sin fondo propio). `*-divider` en la **primera** columna de cada sub-bloque: borde izquierdo blanco (`2px solid primary-foreground`) frente al grupo anterior (ej. `TablaTienda`: MARGEN vs MEJOR PROV.). |
+| `.tabla-bloque-secundario-cell`, `.tabla-bloque-secundario-cell-divider` | Celdas de cuerpo de **información secundaria**; fondo transparente (cebra de fila igual que columnas principales). `*-divider`: borde izquierdo `1px solid border`. **No** usar en el modal **Vínculos** (tabla totalmente unificada). |
 | `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | Altura oficial de tablas (referencia: módulo Comp. Proveedores). No sobrescribir padding/height en celdas. |
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
@@ -275,6 +278,7 @@ Modal estándar (header corporativo + cuerpo en capas `bg-gris → bg-card` + fo
   - **`scrollBody`**: `boolean` (default `true`).
   - **`showCloseButton`**: `boolean` (default `true`).
   - **`className`** / **`bodyClassName`**: overrides puntuales (evitar duplicar estilos base).
+  - **`bodyShellClassName`**: opcional; se aplica al `div` gris que rodea la card del cuerpo (junto con `p-4` por defecto). Útil para reducir padding en modales densos (ej. `VincularModal`: `p-1.5 sm:p-2`).
 
 ### `ModalTablaConFiltros` (`src/components/shared/ModalTablaConFiltros.tsx`)
 
@@ -455,7 +459,8 @@ Antes de dar por terminada una tarea de frontend:
 - **SectionHeader**: eliminado `bg-white`; clase `.section-header` (fondo `var(--card)`). `cn()` en header. Subtítulo `<h3>`.
 - **Toolbars (Proveedores, Tienda, Pedidos)**: tokens `text-muted-foreground`, `hover:bg-muted`, `hover:text-foreground`.
 - **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha. **Tablas**: encabezado fijo, 100 ítems por página, paginación con `PaginacionTabla` (URL) o `PaginacionClient` (estado cliente); ver sección 1 punto 8. Pedido Urgente, Pedido Reposición y Control Stock usan el contenedor estándar `.contenedor-tabla-gestion` para que el encabezado permanezca siempre visible al hacer scroll interno de filas. **Control Stock**: se elimina el filtro `SUB-RUBRO` y se agrega el desplegable `ORDEN` con opción única `TIEMPO SIN CONTROL` para ordenar por `ÚLT. EXPORT. EXCEL`.
-- **TablaTienda / Comp. Proveedores** (`TablaTienda.tsx`, clase `tabla-tienda-listado` en `globals.css`): **tres grupos de columnas** separados visualmente con `tabla-bloque-secundario-head-divider` / `tabla-bloque-secundario-cell-divider` al **inicio** de cada grupo distinto (línea vertical entre bloques; 2da y 3ra importancia comparten fondo muted, sin otro estilo distinto entre sí). **1ra importancia** (sin clases de bloque): `COD. TIENDA`, `DESCRIPCIÓN`, `PX. COMPRA FINAL`. **2da**: `MARGEN S/ IVA` (marcación sin IVA con `calcMargenSinIvaPct` en `@/lib/calculos.ts`, `fmtPctEntero`; celda vacía sin datos válidos). **3ra**: `MEJOR PROV.` (divider) + `DIF.` (`tabla-bloque-secundario-head` / `tabla-bloque-secundario-cell` en la última columna). Anchos: 10% / 50% / 10% / 10% / 10% / 10%.
+- **TablaTienda / Comp. Proveedores** (`TablaTienda.tsx`, clase `tabla-tienda-listado` en `globals.css`): **tres grupos de columnas** separados con `tabla-bloque-secundario-head-divider` / `tabla-bloque-secundario-cell-divider` al **inicio** de cada grupo (solo línea vertical; sin fondo muted en secundarias). **1ra importancia** (sin clases de bloque): `COD. TIENDA`, `DESCRIPCIÓN`, `PX. COMPRA FINAL`. **2da**: `MARGEN S/ IVA` (`calcMargenSinIvaPct`, `fmtPctEntero`). **3ra**: `MEJOR PROV.` (divider) + `DIF.` (`tabla-bloque-secundario-head` / `tabla-bloque-secundario-cell` en la última columna). Encabezados secundarios **sin** `px-3 py-2 text-xs`. Anchos: 10% / 50% / 10% / 10% / 10% / 10%.
+- **Modal Vínculos** (`VincularModal.tsx`): tabla sin `tabla-bloque-*`; `AppModal` con `bodyShellClassName` compacto; sin borde/card envolviendo la tabla; título de ítem multilínea.
 - **Control Aumentos (Export Excel)**: la columna `"COSTO"` del Excel exportado proviene de `px_compra_final` (campo `pxCompraFinal` en `precios_proveedores`), manteniendo el nombre `"COSTO"` y exportando solo ítems con variación real (`pctAumento !== 0`).
 - **Altura de filas en tablas**: todas las tablas compactas usan `--tabla-body-row-min-height: 2.25rem` para filas y `.celda-datos` para celdas. En Pedido Urgente los `Input` de cantidad (`TablaPedidoUrgente`) y los botones de borrar se ajustan a esta altura (inputs con `h-6` y botones `size="icon-xs"`) para que el contenido respete la altura fija definida para el módulo "Comp. Por Cat.".
 - **ui/tooltip.tsx**, **ui/dialog.tsx**, **ui/sonner.tsx**: tokens (border-border, bg-popover, bg-background) y configuración del toaster vía clase global `.toaster` (sin `style` inline).
