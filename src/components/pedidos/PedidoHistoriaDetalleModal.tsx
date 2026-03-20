@@ -23,6 +23,7 @@ import {
   actualizarPedidoHistoriaItemCantRecibidaAction,
   agregarPedidoHistoriaItemAction,
   getPedidoHistoriaDetalleAction,
+  marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ export default function PedidoHistoriaDetalleModal({
 
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoTiendaRowBusqueda | null>(null);
   const [cantRecibidaNueva, setCantRecibidaNueva] = useState<string>("");
+  const [totalPedido, setTotalPedido] = useState<string>("");
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
@@ -103,6 +105,7 @@ export default function PedidoHistoriaDetalleModal({
       setEditingValue("");
       setProductoSeleccionado(null);
       setCantRecibidaNueva("");
+      setTotalPedido("");
       setAgregarProductosOpen(false);
     });
 
@@ -250,6 +253,9 @@ export default function PedidoHistoriaDetalleModal({
   }
 
   const items = detalle?.items ?? [];
+  const itemsControlled =
+    items.length > 0 &&
+    items.every((it) => it.cantPedida > 0 && it.cantRecibida === it.cantPedida);
 
   return (
     <>
@@ -258,11 +264,48 @@ export default function PedidoHistoriaDetalleModal({
           title="Detalle Del Pedido"
           scrollBody={false}
           size="xl"
+          className="sm:max-w-[55.2rem]"
           bodyShellClassName="p-0"
           actions={
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  if (!pedidoHistoriaId) return;
+                  if (!itemsControlled) return;
+                  if (locked) return;
+                  if (guardando) return;
+
+                  setGuardando("sync");
+                  try {
+                    const res = await marcarPedidoHistoriaRegistradoAction({
+                      pedidoHistoriaId,
+                    });
+                    if (!res.ok) {
+                      toast.error(res.error ?? "Error al sincronizar con DUX.");
+                      return;
+                    }
+
+                    setLoading(true);
+                    await cargarDetalle(pedidoHistoriaId);
+                    toast.success("Pedido sincronizado con DUX.");
+                  } finally {
+                    setLoading(false);
+                    setGuardando(null);
+                  }
+                }}
+                disabled={!itemsControlled || locked || busy || !pedidoHistoriaId}
+              >
+                Sincronizar Con DUX
+              </Button>
+            </>
           }
         >
         <div className="flex flex-col gap-4 h-full min-h-0">
@@ -350,10 +393,12 @@ export default function PedidoHistoriaDetalleModal({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[9%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[60%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
-                    <TableHead className="w-[8%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[8%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[15%]">ACCIONES</TableHead>
+                    <TableHead className="w-[62.5%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
+                    <TableHead className="w-[10.5%]">CANT. PEDIDA</TableHead>
+                    <TableHead className="w-[10.5%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[15%] tabla-bloque-secundario-head-divider">
+                      ACCIONES
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -367,22 +412,39 @@ export default function PedidoHistoriaDetalleModal({
                     items.map((item) => {
                       const isEditing = editingItemId === item.id;
                       const cantRecibidaVisible = item.cantRecibida > 0 ? String(item.cantRecibida) : "";
+                      const isControlado =
+                        item.cantPedida > 0 && item.cantRecibida === item.cantPedida;
+                      // Si por cualquier motivo el backend registra `cantPedida` en 0 pero el usuario
+                      // ya cargó `cantRecibida` al agregar el producto, mostramos `cantRecibida` para
+                      // que ambas columnas queden consistentes.
+                      const cantPedidaVisible =
+                        item.cantPedida > 0
+                          ? item.cantPedida.toLocaleString("es-AR")
+                          : item.cantRecibida > 0
+                            ? item.cantRecibida.toLocaleString("es-AR")
+                            : "";
 
                       return (
-                        <TableRow key={item.id} className="hover:bg-transparent">
+                        <TableRow
+                          key={item.id}
+                          className={cn(
+                            "hover:bg-transparent",
+                            isControlado && "bg-primary/10 hover:bg-primary/10"
+                          )}
+                        >
                           <TableCell className="celda-datos min-w-0 truncate w-[9%]" title={item.codTienda}>
                             {item.codTienda}
                           </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate w-[60%]"
+                            className="celda-datos min-w-0 truncate w-[62.5%]"
                             title={item.descripcionTienda}
                           >
                             {item.descripcionTienda}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[8%]">
-                            {item.cantPedida > 0 ? item.cantPedida.toLocaleString("es-AR") : ""}
+                          <TableCell className="celda-datos tabular-nums w-[10.5%]">
+                            {cantPedidaVisible}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[8%]">
+                          <TableCell className="celda-datos tabular-nums w-[10.5%]">
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
@@ -413,14 +475,14 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos w-[15%]">
+                          <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={onClickOk(item)}
-                                disabled={locked || busy}
+                                disabled={locked || busy || isControlado}
                                 aria-label="OK"
                                 title="OK"
                               >
@@ -456,6 +518,23 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <span className="text-xs text-muted-foreground shrink-0">TOTAL PEDIDO</span>
+              <div className="flex items-center justify-end">
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  value={totalPedido}
+                  onChange={(e) => setTotalPedido(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  disabled={locked || loading}
+                  className="h-10 w-24 tabular-nums text-center"
+                  aria-label="Total Pedido"
+                />
+              </div>
             </div>
           </div>
         </div>
