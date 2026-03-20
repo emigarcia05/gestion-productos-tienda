@@ -81,17 +81,23 @@ export default function SyncStatusIndicator() {
       onClick={handleStartSync}
       disabled={requestingStart}
       className={cn(
-        "flex w-full min-h-[3.5rem] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-2.5 py-1.5 text-center font-inherit outline-none transition-colors",
+        "group flex w-full min-h-[3.5rem] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-2.5 py-1.5 text-center font-inherit outline-none",
         "bg-sidebar-accent text-sidebar-foreground",
-        "ring-1 ring-transparent hover:ring-sidebar-ring/50 hover:shadow-sm",
-        "transition-shadow",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         requestingStart && "cursor-wait opacity-90"
       )}
       aria-label="Iniciar sincronización DUX"
     >
-      <span className="text-sm font-semibold">Sincronización DUX</span>
-      <span className="text-xs text-sidebar-foreground/80">
+      <span className="relative flex items-center justify-center min-h-[1.125rem]">
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold transition-opacity duration-150 opacity-100 group-hover:opacity-0">
+          Sincronización DUX
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold transition-opacity duration-150 opacity-0 group-hover:opacity-100">
+          SINCRONIZAR
+        </span>
+      </span>
+
+      <span className="text-xs text-sidebar-foreground/80 transition-opacity duration-150 group-hover:opacity-0">
         {requestingStart ? "…" : `Últ. Act. ${lastCompletedLabel ?? "—"}`}
       </span>
     </button>

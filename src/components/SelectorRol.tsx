@@ -90,9 +90,8 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
           className={cn(
             "w-full rounded-lg px-3 py-2",
             "flex items-center justify-center gap-2",
+            "group",
             "bg-sidebar-accent text-sidebar-foreground",
-            "ring-1 ring-transparent hover:ring-sidebar-ring/50 hover:shadow-sm",
-            "transition-shadow",
             "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pending && "cursor-not-allowed opacity-90"
           )}
@@ -103,8 +102,16 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
           }
         >
           <User className="h-4 w-4 shrink-0" />
-          <span className="text-sm font-semibold tracking-wide">
-            {rolActual === "editor" ? "EDITOR" : "SIMPLE"}
+          <span className="relative flex items-center justify-center">
+            <span className="invisible whitespace-nowrap text-sm font-semibold tracking-wide">
+              Cambiar De Usuarios
+            </span>
+            <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
+              {rolActual === "editor" ? "EDITOR" : "SIMPLE"}
+            </span>
+            <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
+              Cambiar De Usuarios
+            </span>
           </span>
         </button>
 
