@@ -49,6 +49,8 @@ function toDate(value: string | Date | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -191,8 +193,7 @@ export default function PedidoHistoriaDetalleModal({
     }
 
     const codTiendaAdded = productoSeleccionado.codTienda;
-    let nextEditItemId: string | null = null;
-    let nextEditValue: string = "";
+    let nextOkItemId: string | null = null;
     const cant = parseIntSafe(cantRecibidaNueva);
     if (cant <= 0) {
       toast.error("Ingresá una Cant. Recibida mayor a 0.");
@@ -223,20 +224,21 @@ export default function PedidoHistoriaDetalleModal({
       // Enfocar la fila recién agregada en la columna editable "CANT. RECIBIDA".
       const itemNuevo = detalleNuevo?.items.find((it) => it.codTienda === codTiendaAdded);
       if (itemNuevo) {
-        nextEditItemId = itemNuevo.id;
-        nextEditValue = String(itemNuevo.cantRecibida);
+        nextOkItemId = itemNuevo.id;
       }
     } finally {
       setLoading(false);
       setGuardando(null);
       queueMicrotask(() => {
-        if (nextEditItemId) {
-          setEditingValue(nextEditValue);
-          setEditingItemId(nextEditItemId);
-        } else {
-          setEditingItemId(null);
-          setEditingValue("");
+        // UX: luego de agregar el producto, enfocar el botón OK (check) de la fila.
+        if (nextOkItemId) {
+          const okBtn = document.querySelector<HTMLButtonElement>(
+            `button[data-ok-button="${nextOkItemId}"]`
+          );
+          okBtn?.focus();
         }
+        setEditingItemId(null);
+        setEditingValue("");
       });
     }
   }
@@ -321,7 +323,7 @@ export default function PedidoHistoriaDetalleModal({
           <div className="flex flex-col gap-3">
             <div className="flex items-end gap-2">
               <div className="flex flex-col gap-1 flex-1">
-                <span className="text-xs text-muted-foreground">DESCRIPCIÓN</span>
+                <span className="text-xs text-foreground">DESCRIPCIÓN</span>
                 {productoSeleccionado ? (
                   <Input
                     value={productoSeleccionado.descripcionTienda}
@@ -342,7 +344,11 @@ export default function PedidoHistoriaDetalleModal({
                         setAgregarProductosOpen(true);
                       }
                     }}
-                    className={cn("h-10 cursor-pointer", locked || loading ? "cursor-not-allowed" : "")}
+                    className={cn(
+                      "h-10 cursor-pointer",
+                      inputBorderClassName,
+                      locked || loading ? "cursor-not-allowed" : ""
+                    )}
                   />
                 ) : (
                   <Button
@@ -358,7 +364,7 @@ export default function PedidoHistoriaDetalleModal({
               </div>
 
               <div className="flex flex-col gap-1 w-40">
-                <span className="text-xs text-muted-foreground">CANT.</span>
+                <span className="text-xs text-foreground">CANT.</span>
                 <Input
                   type="number"
                   min={0}
@@ -368,7 +374,7 @@ export default function PedidoHistoriaDetalleModal({
                   onChange={(e) => setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   data-cant-input="detalle"
                   disabled={locked || loading}
-                  className="h-10 tabular-nums text-center"
+                  className={cn("h-10 tabular-nums text-center", inputBorderClassName)}
                 />
               </div>
 
@@ -469,7 +475,7 @@ export default function PedidoHistoriaDetalleModal({
                                   if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                                 }}
                                 disabled={locked || busy}
-                                className="h-8 w-24 text-center"
+                                className={cn("h-8 w-full text-center", inputBorderClassName)}
                               />
                             ) : (
                               cantRecibidaVisible
@@ -482,9 +488,10 @@ export default function PedidoHistoriaDetalleModal({
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={onClickOk(item)}
-                                disabled={locked || busy || isControlado}
+                                disabled={locked || busy}
                                 aria-label="OK"
                                 title="OK"
+                                data-ok-button={item.id}
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
@@ -520,10 +527,9 @@ export default function PedidoHistoriaDetalleModal({
               </Table>
             </div>
 
-            <div className="flex items-center justify-between gap-4 pt-1">
-              <span className="text-xs text-muted-foreground shrink-0">TOTAL PEDIDO</span>
-              <div className="flex items-center justify-end">
-                <Input
+            <div className="flex items-center justify-end gap-2 pt-1 w-[15%] ml-auto">
+              <span className="text-xs text-foreground shrink-0">TOTAL PEDIDO</span>
+              <Input
                   type="number"
                   min={0}
                   step={1}
@@ -531,10 +537,9 @@ export default function PedidoHistoriaDetalleModal({
                   value={totalPedido}
                   onChange={(e) => setTotalPedido(e.target.value.replace(/\D/g, "").slice(0, 2))}
                   disabled={locked || loading}
-                  className="h-10 w-24 tabular-nums text-center"
+                  className={cn("h-10 w-full tabular-nums text-center", inputBorderClassName)}
                   aria-label="Total Pedido"
-                />
-              </div>
+              />
             </div>
           </div>
         </div>
