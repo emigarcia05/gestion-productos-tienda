@@ -68,7 +68,7 @@ function normalizedMontoToDisplayAr(norm: string): string {
 /** Parsea texto con $, miles (.), decimales (,) a string normalizado "" | "123" | "123.45". */
 function parseMontoArInputToNormalized(display: string): string {
   const s = display.replace(/\$/g, "").replace(/\s/g, "").trim();
-  if (s === "") return "";
+  if (s === "" || s === "$") return "";
   const lastComma = s.lastIndexOf(",");
   let integerRaw: string;
   let fracRaw: string;
@@ -82,6 +82,50 @@ function parseMontoArInputToNormalized(display: string): string {
   if (integerRaw === "" && fracRaw === "") return "";
   if (fracRaw === "") return integerRaw;
   return `${integerRaw === "" ? "0" : integerRaw}.${fracRaw}`;
+}
+
+/**
+ * Con foco: siempre incluye $; miles con "." en vivo; decimales tras una coma (máx. 2).
+ */
+function formatLiveTotalPedidoInput(raw: string): string {
+  const s = raw.replace(/\$/g, "").replace(/\s/g, "");
+  if (s === "") return "$";
+
+  const lastComma = s.lastIndexOf(",");
+  const hasComma = lastComma !== -1;
+  const trailingComma = hasComma && lastComma === s.length - 1;
+
+  let intDigits: string;
+  let fracDigits: string;
+  if (hasComma) {
+    intDigits = s.slice(0, lastComma).replace(/\D/g, "");
+    fracDigits = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
+  } else {
+    intDigits = s.replace(/\D/g, "");
+    fracDigits = "";
+  }
+
+  if (intDigits === "" && fracDigits === "") {
+    if (trailingComma) return "$0,";
+    return "$";
+  }
+
+  let intForFormat = intDigits;
+  if (intForFormat === "") {
+    intForFormat = "0";
+  } else if (intForFormat.length > 1) {
+    intForFormat = intForFormat.replace(/^0+/, "") || "0";
+  }
+
+  const intShown = intForFormat.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  if (!hasComma) {
+    return `$${intShown}`;
+  }
+  if (trailingComma) {
+    return `$${intShown},`;
+  }
+  return `$${intShown},${fracDigits}`;
 }
 
 interface Props {
@@ -633,21 +677,21 @@ export default function PedidoHistoriaDetalleModal({
                         onFocus={() => {
                           setTotalPedidoDraft(
                             totalPedido === ""
-                              ? ""
+                              ? "$"
                               : normalizedMontoToDisplayAr(totalPedido)
                           );
                           setTotalPedidoFocused(true);
                         }}
                         onChange={(e) => {
                           if (!totalPedidoFocused) return;
-                          setTotalPedidoDraft(e.target.value);
+                          setTotalPedidoDraft(formatLiveTotalPedidoInput(e.target.value));
                         }}
                         onBlur={() => {
                           setTotalPedido(parseMontoArInputToNormalized(totalPedidoDraft));
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "h-6 min-h-6 max-h-6 w-full tabular-nums text-center px-2",
+                          "h-6 min-h-6 max-h-6 w-full tabular-nums text-center px-2 font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
