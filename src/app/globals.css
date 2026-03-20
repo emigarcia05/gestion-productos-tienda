@@ -714,20 +714,23 @@
 }
 
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───
- * Misma tipografía y fondo de fila (cebra) que el resto; sin fondo muted en secundarias.
- * `*-divider`: primera celda del sub-grupo → borde izquierdo. `*-head` / `*-cell`: marcado semántico.
+ * Encabezado: fondo primary opaco + línea blanca (evita que al hacer scroll se vea el separador gris del tbody por border-collapse).
+ * Cuerpo: celdas transparentes (cebra de fila); separador con box-shadow inset (no participa del grid de bordes colapsados).
  */
 .tabla-bloque-secundario-head,
+.tabla-bloque-secundario-head-divider {
+  background-color: var(--primary) !important;
+}
+.tabla-bloque-secundario-head-divider {
+  border-left: 2px solid var(--primary-foreground);
+}
 .tabla-bloque-secundario-cell {
   background-color: transparent;
 }
-.tabla-bloque-secundario-head-divider {
-  background-color: transparent;
-  border-left: 2px solid var(--primary-foreground);
-}
 .tabla-bloque-secundario-cell-divider {
   background-color: transparent;
-  border-left: 1px solid var(--border);
+  border-left: none;
+  box-shadow: inset 1px 0 0 var(--border);
 }
 
 /* Tabla Tienda / Comp. Proveedores: Cod. 10%, Desc. 50%, Px. Compra Final 10%, Margen s/ IVA 10%, Mejor Prov. 10%, DIF. 10%. */
