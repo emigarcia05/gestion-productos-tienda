@@ -1,0 +1,73 @@
+import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
+import type { ServiceResult } from "@/types";
+
+export interface ProductoTiendaRowBusqueda {
+  id: string;
+  codTienda: string;
+  descripcionTienda: string;
+}
+
+function normalizeTokens(q: string): string[] {
+  return q
+    .trim()
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+export async function buscarProductosTiendaPorDescripcion(params: {
+  q?: string;
+  take?: number;
+}): Promise<ServiceResult<{ items: ProductoTiendaRowBusqueda[]; total: number }>> {
+  const q = params.q ?? "";
+  const take = Math.max(1, Math.floor(Number(params.take) || 100));
+
+  try {
+    const query = q.trim();
+    const tokens = normalizeTokens(query);
+
+    // Si no hay búsqueda, mostramos un subset estable para que el modal sea útil.
+    const whereDescripcion: Prisma.ListaPrecioTiendaWhereInput =
+      tokens.length === 0
+        ? {
+            AND: [
+              { descripcionTienda: { not: null } },
+              { descripcionTienda: { not: "" } },
+            ],
+          }
+        : {
+            AND: [
+              { descripcionTienda: { not: null } },
+              { descripcionTienda: { not: "" } },
+              {
+                OR: tokens.map((t) => ({
+                  descripcionTienda: { contains: t, mode: "insensitive" as const },
+                })),
+              },
+            ],
+          };
+
+    const [rows, total] = await Promise.all([
+      prisma.listaPrecioTienda.findMany({
+        where: whereDescripcion,
+        select: { id: true, codTienda: true, descripcionTienda: true },
+        orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
+        take,
+      }),
+      prisma.listaPrecioTienda.count({ where: whereDescripcion }),
+    ]);
+
+    const items: ProductoTiendaRowBusqueda[] = rows.map((r) => ({
+      id: r.id,
+      codTienda: r.codTienda,
+      descripcionTienda: (r.descripcionTienda ?? "").trim(),
+    }));
+
+    return { success: true, data: { items, total } };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al buscar productos en tienda.";
+    return { success: false, error: msg };
+  }
+}
+

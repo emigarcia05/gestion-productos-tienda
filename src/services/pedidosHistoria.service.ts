@@ -6,7 +6,7 @@ import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/paginatio
 
 const COD_TIENDA_FALLBACK = "1503";
 
-export type PedidoHistoriaEstado = "PEDIDO" | "REGISTRADO";
+export type PedidoHistoriaEstado = "PEDIDO" | "RECIBIDO";
 
 export interface PedidoHistoriaResumen {
   id: string;
@@ -262,7 +262,7 @@ export async function agregarPedidoHistoriaItem(params: {
       select: { id: true, estado: true },
     });
     if (!header) return { success: false, error: "Pedido no encontrado." };
-    if (header.estado === "REGISTRADO") return { success: false, error: "Pedido ya registrado en DUX." };
+    if (header.estado === "RECIBIDO") return { success: false, error: "Pedido ya recibido (registrado en DUX)." };
 
     const existing = await prisma.pedidoHistoriaItem.findUnique({
       where: { pedidoHistoriaId_codTienda: { pedidoHistoriaId: header.id, codTienda: cod } },
@@ -307,8 +307,8 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
     });
     if (!item) return { success: false, error: "Ítem no encontrado." };
 
-    if (item.pedidoHistoria.estado === "REGISTRADO") {
-      return { success: false, error: "Pedido ya registrado en DUX." };
+    if (item.pedidoHistoria.estado === "RECIBIDO") {
+      return { success: false, error: "Pedido ya recibido (registrado en DUX)." };
     }
 
     await prisma.pedidoHistoriaItem.update({
@@ -333,7 +333,7 @@ export async function marcarPedidoHistoriaRegistrado(params: {
   try {
     await prisma.pedidoHistoria.update({
       where: { id },
-      data: { estado: "REGISTRADO", registradoAt: new Date() },
+      data: { estado: "RECIBIDO", registradoAt: new Date() },
     });
     return { success: true, data: undefined };
   } catch (e) {

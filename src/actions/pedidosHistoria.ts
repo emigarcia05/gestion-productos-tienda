@@ -28,7 +28,7 @@ const marcarRegistradoSchema = z.object({
 
 const listarPedidosHistoriaSchema = z.object({
   pagina: z.coerce.number().int().min(1).optional().default(1),
-  estado: z.enum(["PEDIDO", "REGISTRADO"]).optional(),
+  estado: z.enum(["PEDIDO", "RECIBIDO"]).optional(),
   proveedorId: z.string().optional(),
   sucursalCodigo: z.enum(["guaymallen", "maipu"]).optional(),
 });

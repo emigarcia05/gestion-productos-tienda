@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,13 @@ import { Check, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
+import type { ProductoTiendaRowBusqueda } from "@/services/productosTienda.service";
 import {
   actualizarPedidoHistoriaItemCantRecibidaAction,
   agregarPedidoHistoriaItemAction,
   getPedidoHistoriaDetalleAction,
 } from "@/actions/pedidosHistoria";
+import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 
 function parseIntSafe(value: string): number {
   const n = Math.max(0, Math.floor(Number(value) || 0));
@@ -64,11 +66,13 @@ export default function PedidoHistoriaDetalleModal({
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
 
-  const [newCodTienda, setNewCodTienda] = useState("");
-  const [newCantRecibida, setNewCantRecibida] = useState("");
+  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoTiendaRowBusqueda | null>(null);
+  const [cantRecibidaNueva, setCantRecibidaNueva] = useState<string>("");
+  const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
+  const descripcionInputRef = useRef<HTMLInputElement | null>(null);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
-  const locked = estado === "REGISTRADO";
+  const locked = estado === "RECIBIDO";
   const busy = guardando != null || loading;
 
   const generadoAtStr = useMemo(() => {
@@ -96,8 +100,9 @@ export default function PedidoHistoriaDetalleModal({
       setLoading(true);
       setEditingItemId(null);
       setEditingValue("");
-      setNewCodTienda("");
-      setNewCantRecibida("");
+      setProductoSeleccionado(null);
+      setCantRecibidaNueva("");
+      setAgregarProductosOpen(false);
     });
 
     void (async () => {
@@ -176,10 +181,13 @@ export default function PedidoHistoriaDetalleModal({
     if (locked) return;
     if (!pedidoHistoriaId) return;
 
-    const cod = newCodTienda.trim();
-    const cant = parseIntSafe(newCantRecibida);
-    if (!cod || cant <= 0) {
-      toast.error("Ingresá un Cod. Tienda y una Cant. Recibida mayor a 0.");
+    if (!productoSeleccionado) {
+      toast.error("Seleccioná un producto y agregá una Cant. Recibida mayor a 0.");
+      return;
+    }
+    const cant = parseIntSafe(cantRecibidaNueva);
+    if (cant <= 0) {
+      toast.error("Ingresá una Cant. Recibida mayor a 0.");
       return;
     }
 
@@ -187,7 +195,7 @@ export default function PedidoHistoriaDetalleModal({
     try {
       const res = await agregarPedidoHistoriaItemAction({
         pedidoHistoriaId,
-        codTienda: cod,
+        codTienda: productoSeleccionado.codTienda,
         cantRecibida: cant,
       });
       if (!res.ok) {
@@ -199,68 +207,105 @@ export default function PedidoHistoriaDetalleModal({
       setLoading(true);
       await cargarDetalle(pedidoHistoriaId);
       toast.success("Ítem agregado.");
+      // Limpieza UX: volver a estado "Seleccionar Producto".
+      setProductoSeleccionado(null);
+      setCantRecibidaNueva("");
+      setEditingItemId(null);
+      setEditingValue("");
+      setAgregarProductosOpen(false);
     } finally {
       setLoading(false);
       setGuardando(null);
     }
   }
 
+  function onSeleccionarProducto(row: ProductoTiendaRowBusqueda) {
+    setProductoSeleccionado(row);
+    setAgregarProductosOpen(false);
+    queueMicrotask(() => {
+      descripcionInputRef.current?.focus();
+      descripcionInputRef.current?.select?.();
+    });
+  }
+
   const items = detalle?.items ?? [];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <AppModal
-        title="Detalle Del Pedido"
-        scrollBody={false}
-        size="xl"
-        bodyShellClassName="p-0"
-        actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
-        }
-      >
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <AppModal
+          title="Detalle Del Pedido"
+          scrollBody={false}
+          size="xl"
+          bodyShellClassName="p-0"
+          actions={
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          }
+        >
         <div className="flex flex-col gap-4 h-full min-h-0">
           <div className="flex flex-col gap-1">
             <div className="text-sm font-medium text-foreground">
               {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
             </div>
             <div className="text-xs text-muted-foreground">
-              {generadoAtStr || "—"} · {estado === "REGISTRADO" ? "Registrado" : "Pedido"}
+              {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col gap-1 w-56">
-                <span className="text-xs text-muted-foreground">Cod. Tienda</span>
-                <Input
-                  value={newCodTienda}
-                  onChange={(e) => setNewCodTienda(e.target.value)}
-                  placeholder="Ingresar…"
-                  disabled={locked || loading}
-                  className="h-10"
-                />
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col gap-1 flex-1">
+                <span className="text-xs text-muted-foreground">DESCRIPCIÓN</span>
+                {productoSeleccionado ? (
+                  <Input
+                    ref={descripcionInputRef}
+                    value={productoSeleccionado.descripcionTienda}
+                    readOnly
+                    disabled={locked || loading}
+                    className="h-10"
+                  />
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 justify-start"
+                    onClick={() => setAgregarProductosOpen(true)}
+                    disabled={locked || loading}
+                  >
+                    Seleccionar Producto
+                  </Button>
+                )}
               </div>
+
               <div className="flex flex-col gap-1 w-40">
-                <span className="text-xs text-muted-foreground">Cant. Recibida</span>
+                <span className="text-xs text-muted-foreground">CANT.</span>
                 <Input
                   type="number"
                   min={0}
                   step={1}
                   inputMode="numeric"
-                  value={newCantRecibida}
-                  onChange={(e) => setNewCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  value={cantRecibidaNueva}
+                  onChange={(e) => setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   disabled={locked || loading}
                   className="h-10 tabular-nums text-center"
                 />
               </div>
+
               <Button
                 type="button"
                 onClick={agregarNuevaFila}
-                disabled={locked || loading || guardando != null || newCodTienda.trim().length === 0 || parseIntSafe(newCantRecibida) <= 0}
+                disabled={
+                  locked ||
+                  loading ||
+                  guardando != null ||
+                  !productoSeleccionado ||
+                  parseIntSafe(cantRecibidaNueva) <= 0
+                }
+                className="h-10"
               >
-                Agregar
+                + AGREGAR
               </Button>
             </div>
 
@@ -371,8 +416,17 @@ export default function PedidoHistoriaDetalleModal({
             </div>
           </div>
         </div>
-      </AppModal>
-    </Dialog>
+        </AppModal>
+      </Dialog>
+
+      <AgregarProductosModal
+        open={agregarProductosOpen}
+        onOpenChange={setAgregarProductosOpen}
+        onSeleccionar={(row) => {
+          onSeleccionarProducto(row);
+        }}
+      />
+    </>
   );
 }
 

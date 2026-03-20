@@ -30,7 +30,7 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
     sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
 
   const estadoNormalizado: PedidoHistoriaEstado | "" =
-    estado === "REGISTRADO" ? "REGISTRADO" : estado === "PEDIDO" ? "PEDIDO" : "";
+    estado === "RECIBIDO" ? "RECIBIDO" : estado === "PEDIDO" ? "PEDIDO" : "";
 
   const proveedores = await prisma.proveedor.findMany({
     select: { id: true, nombre: true, prefijo: true },

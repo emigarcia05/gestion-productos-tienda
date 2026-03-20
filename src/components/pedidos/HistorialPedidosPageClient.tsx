@@ -134,7 +134,7 @@ export default function HistorialPedidosPageClient({
                               {it.sucursalNombre}
                             </TableCell>
                             <TableCell className="celda-datos">
-                              {it.estado === "REGISTRADO" ? "Registrado" : "Pedido"}
+                              {it.estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
                             </TableCell>
                             <TableCell className="celda-datos">
                               <Button

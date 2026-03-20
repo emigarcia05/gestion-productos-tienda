@@ -169,10 +169,10 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
 
 - Cabecera: `pedido_historia` (Prisma: `PedidoHistoria`)
   - `generado_at`: fecha/hora del snapshot (momento en que se arma el pedido y se guarda el detalle).
-  - `estado`: `PEDIDO | REGISTRADO`.
+  - `estado`: `PEDIDO | RECIBIDO`.
     - `PEDIDO`: snapshot creado.
-    - `REGISTRADO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
-  - `registrado_at`: fecha/hora cuando se cambia a `REGISTRADO` (nullable).
+    - `RECIBIDO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
+  - `registrado_at`: fecha/hora cuando se cambia a `RECIBIDO` (nullable).
   - Relaciones: `proveedor_id -> proveedores.id` y `sucursal_id -> sucursales.id`.
 
 - Items: `pedido_historia_items` (Prisma: `PedidoHistoriaItem`)
@@ -217,7 +217,22 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
      - Actualiza únicamente `cant_recibida` (sin tocar `cant_pedida`).
 
 6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`
-   - Transición: setea `estado = "REGISTRADO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
+   - Transición: setea `estado = "RECIBIDO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
+
+---
+
+### 2.7 Servicio `productosTienda.service.ts`
+
+Contrato para resolver listados de productos en `precios_tienda` destinados a selección en UI (p. ej. “Agregar Productos” dentro del modal de historial de pedidos).
+
+Función:
+1. `buscarProductosTiendaPorDescripcion({ q?, take? })`
+   - Devuelve `ServiceResult` con:
+     - `items`: array de `{ id, codTienda, descripcionTienda }`
+     - `total`: total de coincidencias (para mostrar conteo en el modal).
+   - Búsqueda:
+     - Si `q` está vacío, devuelve un subset ordenado por `descripcionTienda`.
+     - Si `q` tiene valor, filtra por `descripcionTienda` usando coincidencia insensible a mayúsculas/minúsculas.
 
 ---
 

@@ -23,7 +23,7 @@ const SUCURSALES = [
   { value: "maipu", label: "MAIPÚ" },
 ] as const;
 
-export type EstadoFiltroPedido = "PEDIDO" | "REGISTRADO" | "";
+export type EstadoFiltroPedido = "PEDIDO" | "RECIBIDO" | "";
 
 interface Proveedor {
   id: string;
@@ -121,7 +121,7 @@ export default function FiltrosHistorialPedidos({
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
               value={estado || "none"}
-              onValueChange={(v) => updateUrl({ estado: v === "none" ? "" : (v as "PEDIDO" | "REGISTRADO") })}
+              onValueChange={(v) => updateUrl({ estado: v === "none" ? "" : (v as "PEDIDO" | "RECIBIDO") })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="ESTADO" />
@@ -134,7 +134,7 @@ export default function FiltrosHistorialPedidos({
               >
                 <SelectItem value="none">ESTADO</SelectItem>
                 <SelectItem value="PEDIDO">PEDIDO</SelectItem>
-                <SelectItem value="REGISTRADO">REGISTRADO</SelectItem>
+                <SelectItem value="RECIBIDO">RECIBIDO</SelectItem>
               </SelectContent>
             </Select>
           </div>
