@@ -104,13 +104,13 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
           <User className="h-4 w-4 shrink-0" />
           <span className="relative flex items-center justify-center">
             <span className="invisible whitespace-nowrap text-sm font-semibold tracking-wide">
-              Cambiar De Usuarios
+              CAMBIAR USUARIO
             </span>
             <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
               {rolActual === "editor" ? "EDITOR" : "SIMPLE"}
             </span>
             <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
-              Cambiar De Usuarios
+              CAMBIAR USUARIO
             </span>
           </span>
         </button>
