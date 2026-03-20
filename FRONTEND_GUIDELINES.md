@@ -281,9 +281,10 @@ Modal estándar (header corporativo + cuerpo en capas `bg-gris → bg-card` + fo
 
 ### `ModalTablaConFiltros` (`src/components/shared/ModalTablaConFiltros.tsx`)
 
-Modal reutilizable de **título + filtros + tabla**, con dos modos:
+Modal reutilizable de **título + filtros + tabla** con modos:
 
 - **Single** (default): selección por **doble clic** en fila (definido por el padre con `onRowDoubleClick`).
+- **SingleConfirm**: selección por **click** en fila + confirmación con botón (default: `confirmSingleLabel="AGREGAR"`).
 - **Multi**: selección por checkbox + confirmación con botón.
 
 - **Props base**
@@ -307,6 +308,12 @@ Modal reutilizable de **título + filtros + tabla**, con dos modos:
   - **`selectionMode`**: `"multi"` (obligatorio).
   - **`onConfirm(ids)`**: callback async/sync (si resuelve OK, el modal se cierra).
   - **`confirmLabel(count)`**: texto del botón (default: `Asignar N producto(s)`).
+  - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
+
+- **Props singleConfirm**
+  - **`selectionMode`**: `"singleConfirm"` (obligatorio).
+  - **`onConfirmSingle(row)`**: callback async/sync. Si resuelve OK, el modal se cierra.
+  - **`confirmSingleLabel`**: texto del botón de confirmación (default: `AGREGAR`).
   - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
 
 - **Notas de implementación**

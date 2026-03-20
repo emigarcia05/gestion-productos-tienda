@@ -107,6 +107,11 @@ export default function AgregarProductosModal({
       loading={loading}
       emptyMessage="Sin resultados"
       count={data.total}
+      selectionMode="singleConfirm"
+      confirmSingleLabel="AGREGAR"
+      onConfirmSingle={(row) => {
+        onSeleccionar(row);
+      }}
       onRowDoubleClick={(row) => {
         onSeleccionar(row);
         onOpenChange(false);

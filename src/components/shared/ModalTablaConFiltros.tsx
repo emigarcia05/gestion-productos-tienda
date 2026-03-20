@@ -101,6 +101,8 @@ interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
   onConfirm?: never;
   confirmLabel?: never;
   confirmPending?: never;
+  onConfirmSingle?: never;
+  confirmSingleLabel?: never;
   /** Contenido a la derecha del footer (ej. botón Cancelar). En multi se ignora. */
   footerRight?: React.ReactNode;
 }
@@ -110,10 +112,25 @@ interface ModalTablaMultiSelect<T> extends ModalTablaConFiltrosBase<T> {
   onConfirm: (ids: string[]) => void | Promise<void>;
   confirmLabel?: (count: number) => string;
   confirmPending?: boolean;
+  onConfirmSingle?: never;
+  confirmSingleLabel?: never;
   footerRight?: never;
 }
 
-type ModalTablaConFiltrosProps<T> = ModalTablaSingleSelect<T> | ModalTablaMultiSelect<T>;
+interface ModalTablaSingleConfirmSelect<T> extends ModalTablaConFiltrosBase<T> {
+  selectionMode: "singleConfirm";
+  onConfirm?: never;
+  confirmLabel?: never;
+  onConfirmSingle: (row: T) => void | Promise<void>;
+  confirmSingleLabel?: string;
+  confirmPending?: boolean;
+  footerRight?: never;
+}
+
+type ModalTablaConFiltrosProps<T> =
+  | ModalTablaSingleSelect<T>
+  | ModalTablaMultiSelect<T>
+  | ModalTablaSingleConfirmSelect<T>;
 
 type ModalTablaContentProps = VariantProps<typeof modalTablaContentVariants>;
 
@@ -133,8 +150,10 @@ export default function ModalTablaConFiltros<T>({
   getRowId,
   onRowDoubleClick,
   onConfirm,
+  onConfirmSingle,
   selectionMode = "single",
   confirmLabel = (n) => `Asignar ${n} producto(s)`,
+  confirmSingleLabel = "AGREGAR",
   confirmPending = false,
   loading = false,
   emptyMessage = "Sin resultados",
@@ -149,6 +168,7 @@ export default function ModalTablaConFiltros<T>({
   }, [open]);
 
   const isMulti = selectionMode === "multi";
+  const isSingleConfirm = selectionMode === "singleConfirm";
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -156,6 +176,14 @@ export default function ModalTablaConFiltros<T>({
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
+    });
+  }
+
+  function selectSingle(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.size === 1 && next.has(id)) return new Set();
+      return new Set([id]);
     });
   }
 
@@ -171,6 +199,19 @@ export default function ModalTablaConFiltros<T>({
     if (!isMulti || selectedIds.size === 0 || !onConfirm) return;
     try {
       await onConfirm(Array.from(selectedIds));
+      onClose();
+    } catch {
+      /* El padre muestra toast de error; no cerramos */
+    }
+  }
+
+  async function handleConfirmSingle() {
+    if (!isSingleConfirm || selectedIds.size === 0 || !onConfirmSingle) return;
+    try {
+      const selectedId = Array.from(selectedIds)[0];
+      const selectedRow = rows.find((r) => getRowId(r) === selectedId);
+      if (!selectedRow) return;
+      await onConfirmSingle(selectedRow);
       onClose();
     } catch {
       /* El padre muestra toast de error; no cerramos */
@@ -195,6 +236,26 @@ export default function ModalTablaConFiltros<T>({
         disabled={confirmPending || selectedIds.size === 0}
       >
         {confirmPending ? <Loader2 className="h-4 w-4 animate-spin" /> : confirmLabel(selectedIds.size)}
+      </Button>
+    </>
+  ) : isSingleConfirm ? (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onClose}
+        disabled={confirmPending}
+      >
+        Cancelar
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        onClick={handleConfirmSingle}
+        disabled={confirmPending || selectedIds.size === 0}
+      >
+        {confirmPending ? <Loader2 className="h-4 w-4 animate-spin" /> : confirmSingleLabel}
       </Button>
     </>
   ) : (
@@ -366,10 +427,11 @@ export default function ModalTablaConFiltros<T>({
                             <TableRow
                               key={id}
                               onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row) : undefined}
+                              onClick={isSingleConfirm ? () => selectSingle(id) : undefined}
                               className={cn(
                                 modalTablaRowVariants({
                                   interaction: isMulti ? "none" : "single",
-                                  selected: isMulti ? isSelected : false,
+                                  selected: isMulti || isSingleConfirm ? isSelected : false,
                                 })
                               )}
                               title={

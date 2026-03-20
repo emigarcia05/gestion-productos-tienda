@@ -25,6 +25,7 @@ import {
   getPedidoHistoriaDetalleAction,
 } from "@/actions/pedidosHistoria";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
+import { cn } from "@/lib/utils";
 
 function parseIntSafe(value: string): number {
   const n = Math.max(0, Math.floor(Number(value) || 0));
@@ -239,9 +240,10 @@ export default function PedidoHistoriaDetalleModal({
 
   function onSeleccionarProducto(row: ProductoTiendaRowBusqueda) {
     setProductoSeleccionado(row);
+    setCantRecibidaNueva("");
     setAgregarProductosOpen(false);
     queueMicrotask(() => {
-      const el = document.querySelector<HTMLInputElement>('input[data-desc-input="detalle"]');
+      const el = document.querySelector<HTMLInputElement>('input[data-cant-input="detalle"]');
       el?.focus();
       el?.select?.();
     });
@@ -283,7 +285,21 @@ export default function PedidoHistoriaDetalleModal({
                     readOnly
                     disabled={locked || loading}
                     data-desc-input="detalle"
-                    className="h-10"
+                    aria-label="Seleccionar Producto"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (locked || loading) return;
+                      setAgregarProductosOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (locked || loading) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setAgregarProductosOpen(true);
+                      }
+                    }}
+                    className={cn("h-10 cursor-pointer", locked || loading ? "cursor-not-allowed" : "")}
                   />
                 ) : (
                   <Button
@@ -333,11 +349,11 @@ export default function PedidoHistoriaDetalleModal({
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[8%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[50%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
+                    <TableHead className="w-[9%]">COD. TIENDA</TableHead>
+                    <TableHead className="w-[60%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
                     <TableHead className="w-[8%]">CANT. PEDIDA</TableHead>
                     <TableHead className="w-[8%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[26%]">ACCIONES</TableHead>
+                    <TableHead className="w-[15%]">ACCIONES</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -354,19 +370,19 @@ export default function PedidoHistoriaDetalleModal({
 
                       return (
                         <TableRow key={item.id} className="hover:bg-transparent">
-                          <TableCell className="celda-datos min-w-0 truncate" title={item.codTienda}>
+                          <TableCell className="celda-datos min-w-0 truncate w-[9%]" title={item.codTienda}>
                             {item.codTienda}
                           </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate"
+                            className="celda-datos min-w-0 truncate w-[60%]"
                             title={item.descripcionTienda}
                           >
                             {item.descripcionTienda}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums">
+                          <TableCell className="celda-datos tabular-nums w-[8%]">
                             {item.cantPedida > 0 ? item.cantPedida.toLocaleString("es-AR") : ""}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums">
+                          <TableCell className="celda-datos tabular-nums w-[8%]">
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
@@ -397,7 +413,7 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos">
+                          <TableCell className="celda-datos w-[15%]">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
