@@ -690,6 +690,25 @@
 .tabla-gestion-compacta tbody tr:hover {
   background-color: color-mix(in oklab, var(--primary) 20%, transparent);
 }
+/* Modal vínculos (Tienda): menos padding horizontal, columnas al ancho del contenido, modal más angosto posible */
+.tabla-gestion-compacta.tabla-vinculos-modal {
+  width: auto !important;
+  max-width: 100%;
+  table-layout: auto;
+}
+.tabla-gestion-compacta.tabla-vinculos-modal thead th {
+  padding-top: var(--tabla-body-cell-padding-y) !important;
+  padding-bottom: var(--tabla-body-cell-padding-y) !important;
+  padding-left: 0.1875rem !important;
+  padding-right: 0.1875rem !important;
+}
+.tabla-gestion-compacta.tabla-vinculos-modal tbody td {
+  padding-top: var(--tabla-body-cell-padding-y) !important;
+  padding-bottom: var(--tabla-body-cell-padding-y) !important;
+  padding-left: 0.1875rem !important;
+  padding-right: 0.1875rem !important;
+}
+
 .tabla-gestion-compacta tbody tr:hover td {
   font-size: var(--text-sm) !important;
 }

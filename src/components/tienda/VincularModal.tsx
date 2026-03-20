@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -235,10 +234,10 @@ export default function VincularModal({
 
         <AppModal
           title="Vínculos con Proveedores"
-          size="xl"
-          className="sm:max-w-5xl"
+          size="lg"
+          className="sm:max-w-2xl w-[calc(100%-2rem)]"
           scrollBody={false}
-          bodyClassName="flex flex-col min-h-0 overflow-hidden p-4 sm:p-6"
+          bodyClassName="flex flex-col min-h-0 overflow-hidden p-3 sm:p-4"
           actions={
             <>
               <Button
@@ -276,16 +275,21 @@ export default function VincularModal({
             ) : vinculados.length === 0 ? (
               <p className="p-6 text-center text-sm text-muted-foreground">Sin vínculos aún.</p>
             ) : (
-              <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem]">
-                <Table variant="compact" scrollX={false}>
+              <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] mx-auto flex justify-center">
+                <div className="inline-block max-w-full align-top">
+                  <Table variant="compact" scrollX={false} className="tabla-vinculos-modal">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[14%]">OFICIAL</TableHead>
-                      <TableHead className="w-[12%]">PREFIJO</TableHead>
-                      <TableHead className="w-[18%]">PX. FINAL COMPRA</TableHead>
-                      <TableHead className="w-[20%]">VARIAC.</TableHead>
-                      <TableHead className="w-[16%]">MARGEN S/ IVA</TableHead>
-                      <TableHead className="w-[10%]">
+                      <TableHead>OFICIAL</TableHead>
+                      <TableHead>PREFIJO</TableHead>
+                      <TableHead>PX. FINAL COMPRA</TableHead>
+                      <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
+                        VARIAC.
+                      </TableHead>
+                      <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head-divider">
+                        MARGEN S/ IVA
+                      </TableHead>
+                      <TableHead className="px-3 py-2 text-xs tabla-bloque-secundario-head">
                         <span className="sr-only">DESVINC.</span>
                         <Trash2 className="h-4 w-4 mx-auto text-primary-foreground" aria-hidden />
                       </TableHead>
@@ -305,7 +309,7 @@ export default function VincularModal({
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-8 gap-1.5 px-2 text-xs font-semibold"
+                                className="h-7 gap-1 px-1.5 text-[0.6875rem] font-semibold shrink-0"
                                 disabled={isPending}
                                 title="Marcar Como Proveedor Oficial Del Ítem"
                                 onClick={() => handleConvertir(p)}
@@ -315,21 +319,19 @@ export default function VincularModal({
                               </Button>
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos">
-                            <Badge variant="secondary" className="text-xs font-medium">
-                              {p.proveedor.prefijo}
-                            </Badge>
+                          <TableCell className="celda-datos celda-mono whitespace-nowrap">
+                            {p.proveedor.prefijo}
                           </TableCell>
                           <TableCell className="celda-datos celda-numero celda-destacado">
                             ${fmtPrecio(px)}
                           </TableCell>
-                          <TableCell className="celda-datos">
+                          <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell-divider">
                             <DifCosto costoTienda={costoTienda} pxCompraFinal={px} />
                           </TableCell>
-                          <TableCell className="celda-datos celda-numero">
+                          <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell-divider">
                             {margenPct != null ? fmtPctEntero(margenPct) : ""}
                           </TableCell>
-                          <TableCell className="celda-datos">
+                          <TableCell className="celda-datos tabla-bloque-secundario-cell">
                             <div className="flex justify-center">
                               <Button
                                 type="button"
@@ -350,6 +352,7 @@ export default function VincularModal({
                     })}
                   </TableBody>
                 </Table>
+                </div>
               </div>
             )}
           </div>
