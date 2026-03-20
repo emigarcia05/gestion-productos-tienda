@@ -82,8 +82,9 @@ export default function SyncStatusIndicator() {
       disabled={requestingStart}
       className={cn(
         "flex w-full min-h-[3.5rem] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-2.5 py-1.5 text-center font-inherit outline-none transition-colors",
-        "bg-sidebar text-sidebar-foreground border border-transparent",
-        "hover:bg-sidebar-accent",
+        "bg-sidebar-accent text-sidebar-foreground",
+        "ring-1 ring-transparent hover:ring-sidebar-ring/50 hover:shadow-sm",
+        "transition-shadow",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         requestingStart && "cursor-wait opacity-90"
       )}

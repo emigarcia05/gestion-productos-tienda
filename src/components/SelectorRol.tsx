@@ -91,7 +91,8 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
             "w-full rounded-lg px-3 py-2",
             "flex items-center justify-center gap-2",
             "bg-sidebar-accent text-sidebar-foreground",
-            "hover:bg-sidebar-accent/80 transition-colors",
+            "ring-1 ring-transparent hover:ring-sidebar-ring/50 hover:shadow-sm",
+            "transition-shadow",
             "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pending && "cursor-not-allowed opacity-90"
           )}
