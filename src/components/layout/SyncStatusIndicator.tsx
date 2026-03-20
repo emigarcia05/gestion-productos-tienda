@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import MensajeProceso, {
+  clasesContenedorMensajeProcesoSidebar,
+} from "@/components/shared/MensajeProceso";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -35,8 +38,7 @@ export default function SyncStatusIndicator() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (!data) return;
-          const isRunning = !!data.running;
-          setRunning(isRunning);
+          setRunning(!!data.running);
           setProcessed(data.processed ?? 0);
           setTotal(data.total ?? 0);
           setLastCompletedAt(data.lastCompletedAt ?? null);
@@ -64,42 +66,34 @@ export default function SyncStatusIndicator() {
   }
 
   const lastCompletedLabel = formatLastCompletedAt(lastCompletedAt);
-  const disabled = running || requestingStart;
 
-  const line1 = running
-    ? "Sincronizando DUX"
-    : "Sincronización DUX";
-
-  const line2 = running
-    ? total > 0
-      ? `${processed.toLocaleString("es-AR")} de ${total.toLocaleString("es-AR")}`
-      : "…"
-    : `Últ. Act. ${lastCompletedLabel ?? "—"}`;
-
-  const tone = running ? "running" : "idle";
+  if (running) {
+    return (
+      <MensajeProceso
+        variant="sidebar"
+        mensaje="Sincronizando DUX"
+        detalle={total > 0 ? { procesados: processed, total } : "…"}
+      />
+    );
+  }
 
   return (
     <button
       type="button"
       onClick={handleStartSync}
-      disabled={disabled}
+      disabled={requestingStart}
       className={cn(
-        "w-full rounded-lg px-3 py-2 text-center",
-        tone === "idle" && "bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80",
-        // Consulta/progreso: usar amarillo de marca (accent2) para indicar proceso activo.
-        tone === "running" && "bg-accent2 text-foreground hover:bg-accent2/90",
-        "transition-colors",
-        "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-        disabled && "cursor-not-allowed opacity-90"
+        clasesContenedorMensajeProcesoSidebar,
+        "w-full cursor-pointer text-center font-inherit outline-none transition-opacity",
+        "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+        requestingStart && "cursor-wait opacity-90"
       )}
-      aria-label={running ? "Sincronización DUX en progreso" : "Iniciar sincronización DUX"}
+      aria-label="Iniciar sincronización DUX"
     >
-      <div className={cn("text-sm font-semibold", tone === "running" ? "text-foreground" : "text-sidebar-foreground")}>
-        {line1}
-      </div>
-      <div className={cn("text-xs", tone === "running" ? "text-foreground/80" : "text-sidebar-foreground/80")}>
-        {line2}
-      </div>
+      <span className="mensaje-proceso__linea1">Sincronización DUX</span>
+      <span className="mensaje-proceso__detalle">
+        {requestingStart ? "…" : `Últ. Act. ${lastCompletedLabel ?? "—"}`}
+      </span>
     </button>
   );
 }

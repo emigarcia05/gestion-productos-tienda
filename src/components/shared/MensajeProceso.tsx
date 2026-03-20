@@ -15,6 +15,11 @@ const mensajeProcesoVariants = cva("mensaje-proceso", {
   },
 });
 
+/** Mismas clases que el contenedor de `<MensajeProceso variant="sidebar" />` (p. ej. acción en reposo como `<button>`). */
+export const clasesContenedorMensajeProcesoSidebar = mensajeProcesoVariants({
+  variant: "sidebar",
+});
+
 /**
  * Detalle de progreso: texto "X de Y" con números formateados (locale es-AR).
  * Si solo se pasa un mensaje sin números, usar `detalle` como string.

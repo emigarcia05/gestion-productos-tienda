@@ -51,10 +51,8 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 9. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-     - `SyncStatusIndicator` (sidebar): siempre **2 líneas centradas**.
-       - Reposo: "Sincronización DUX" + "Últ. Act. dd/mm hh:mm".
-       - En curso: "Sincronizando DUX" + "X de Y".
-     - Estilo de botones de sidebar: usar tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
+     - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): mismo contenedor visual **`MensajeProceso` `variant="sidebar"`** (`.mensaje-proceso` / `.mensaje-proceso--sidebar` en `globals.css`). `ImportStatusIndicator` solo se muestra con import en curso. `SyncStatusIndicator`: en curso = `<MensajeProceso mensaje="Sincronizando DUX" detalle={…} />`; en reposo = **`<button>`** con `clasesContenedorMensajeProcesoSidebar` + `mensaje-proceso__linea1` / `mensaje-proceso__detalle` (textos: "Sincronización DUX" + "Últ. Act. …"). **2 líneas centradas** en ambos casos.
+     - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
 **Referencia rápida de tokens (usar en lugar de valores fijos):**
 
