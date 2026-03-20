@@ -327,7 +327,7 @@ export default function PedidoHistoriaDetalleModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
             <div className="flex items-end gap-2">
               <div className="flex flex-col gap-1 flex-1">
                 <span className="text-xs text-foreground">DESCRIPCIÓN</span>
@@ -401,8 +401,11 @@ export default function PedidoHistoriaDetalleModal({
               </Button>
             </div>
 
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 !h-auto">
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div
+                className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0"
+                style={{ height: "auto" }}
+              >
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
