@@ -317,7 +317,7 @@ export default function PedidoHistoriaDetalleModal({
             </>
           }
         >
-        <div className="flex flex-col gap-4 h-full min-h-0">
+        <div className="flex flex-col gap-4 min-h-0 flex-1">
           <div className="flex flex-col gap-1">
             <div className="text-sm font-medium text-foreground text-center w-full">
               {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
@@ -401,8 +401,8 @@ export default function PedidoHistoriaDetalleModal({
               </Button>
             </div>
 
-            <div className="flex flex-col flex-1 min-h-0 h-full">
-              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 h-auto">
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 h-0">
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
