@@ -233,16 +233,95 @@ export default function ModalTablaConFiltros<T>({
 
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
               {loading ? (
-                <div
-                  className={modalListLoadingVariants({ padding: "panel" })}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
-                  Cargando...
-                </div>
+                <>
+                  <div className="shrink-0 overflow-hidden">
+                    <Table variant="compact" className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          {isMulti && (
+                            <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
+                              <label className="flex items-center justify-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={rows.length > 0 && selectedIds.size === rows.length}
+                                  onChange={toggleSelectAll}
+                                  className="rounded border-input"
+                                  aria-label="Seleccionar Todos"
+                                />
+                              </label>
+                            </TableHead>
+                          )}
+                          {columns.map((col) => (
+                            <TableHead
+                              key={col.key}
+                              className={cn(
+                                modalTablaHeadCellVariants({ kind: "data" }),
+                                col.className
+                              )}
+                            >
+                              {col.label}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                    </Table>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
+                    <div
+                      className={cn(
+                        modalListLoadingVariants({ padding: "panel" }),
+                        "h-full w-full flex items-center justify-center"
+                      )}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                      Cargando...
+                    </div>
+                  </div>
+                </>
               ) : rows.length === 0 ? (
-                <TableEmptyState message={emptyMessage} placement="panel" />
+                <>
+                  <div className="shrink-0 overflow-hidden">
+                    <Table variant="compact" className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          {isMulti && (
+                            <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
+                              <label className="flex items-center justify-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={rows.length > 0 && selectedIds.size === rows.length}
+                                  onChange={toggleSelectAll}
+                                  className="rounded border-input"
+                                  aria-label="Seleccionar Todos"
+                                />
+                              </label>
+                            </TableHead>
+                          )}
+                          {columns.map((col) => (
+                            <TableHead
+                              key={col.key}
+                              className={cn(
+                                modalTablaHeadCellVariants({ kind: "data" }),
+                                col.className
+                              )}
+                            >
+                              {col.label}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                    </Table>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
+                    <div className="h-full w-full flex items-center justify-center px-2">
+                      <TableEmptyState message={emptyMessage} placement="panel" />
+                    </div>
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="shrink-0 overflow-hidden">

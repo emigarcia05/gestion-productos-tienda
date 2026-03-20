@@ -20,6 +20,7 @@ export interface PedidoHistoriaResumen {
 export interface PedidoHistoriaItemDetalle {
   id: string;
   codTienda: string;
+  descripcionTienda: string;
   cantPedida: number;
   cantRecibida: number;
 }
@@ -147,6 +148,22 @@ export async function getPedidoHistoriaDetalle(params: {
 
     if (!pedido) return { success: false, error: "Pedido no encontrado." };
 
+    const codTiendaSet = Array.from(new Set(pedido.items.map((i) => i.codTienda)));
+    const descRows = await prisma.listaPrecioTienda.findMany({
+      where: { codTienda: { in: codTiendaSet } },
+      select: { codTienda: true, descripcionTienda: true, codExt: true },
+      orderBy: [{ codTienda: "asc" }, { codExt: "asc" }],
+    });
+
+    const descripcionPorCodTienda = new Map<string, string>();
+    for (const r of descRows) {
+      const key = r.codTienda;
+      if (descripcionPorCodTienda.has(key)) continue;
+      const desc = (r.descripcionTienda ?? "").trim();
+      if (!desc) continue;
+      descripcionPorCodTienda.set(key, desc);
+    }
+
     return {
       success: true,
       data: {
@@ -160,6 +177,7 @@ export async function getPedidoHistoriaDetalle(params: {
         items: pedido.items.map((i) => ({
           id: i.id,
           codTienda: i.codTienda,
+          descripcionTienda: descripcionPorCodTienda.get(i.codTienda) ?? "",
           cantPedida: i.cantPedida,
           cantRecibida: i.cantRecibida,
         })),

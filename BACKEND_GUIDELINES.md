@@ -203,7 +203,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 3. `getPedidoHistoriaDetalle({ pedidoHistoriaId })`
    - Devuelve cabecera + lista de items ordenados por `codTienda`.
-   - Incluye `cant_pedida` y `cant_recibida` para editar desde UI.
+   - Incluye `cant_pedida`, `cant_recibida` y `descripcionTienda` (resuelta desde `precios_tienda`) para renderizar la columna DESCRIPCIÓN en UI.
 
 4. `agregarPedidoHistoriaItem({ pedidoHistoriaId, codTienda, cantRecibida })`
    - Reglas:

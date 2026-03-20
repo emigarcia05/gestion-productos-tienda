@@ -41,7 +41,9 @@ export async function buscarProductosTiendaPorDescripcion(params: {
               { descripcionTienda: { not: null } },
               { descripcionTienda: { not: "" } },
               {
-                OR: tokens.map((t) => ({
+                // Cada token debe estar presente en la descripción.
+                // Esto hace el filtrado predecible (no “demasiado amplio”).
+                AND: tokens.map((t) => ({
                   descripcionTienda: { contains: t, mode: "insensitive" as const },
                 })),
               },

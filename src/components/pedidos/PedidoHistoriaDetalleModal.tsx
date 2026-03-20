@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,6 @@ export default function PedidoHistoriaDetalleModal({
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoTiendaRowBusqueda | null>(null);
   const [cantRecibidaNueva, setCantRecibidaNueva] = useState<string>("");
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
-  const descripcionInputRef = useRef<HTMLInputElement | null>(null);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const locked = estado === "RECIBIDO";
@@ -80,15 +79,16 @@ export default function PedidoHistoriaDetalleModal({
     return d ? formatDdMmHHmm(d) : "";
   }, [detalle?.generadoAt]);
 
-  async function cargarDetalle(id: string) {
+  async function cargarDetalle(id: string): Promise<PedidoHistoriaDetalle | null> {
     const res = await getPedidoHistoriaDetalleAction({ pedidoHistoriaId: id });
     if (!res.ok) {
       setDetalle(null);
       setErrorMsg(res.error ?? "Error al cargar detalle.");
-      return;
+      return null;
     }
     setDetalle(res.data);
     setErrorMsg(null);
+    return res.data;
   }
 
   useEffect(() => {
@@ -185,6 +185,10 @@ export default function PedidoHistoriaDetalleModal({
       toast.error("Seleccioná un producto y agregá una Cant. Recibida mayor a 0.");
       return;
     }
+
+    const codTiendaAdded = productoSeleccionado.codTienda;
+    let nextEditItemId: string | null = null;
+    let nextEditValue: string = "";
     const cant = parseIntSafe(cantRecibidaNueva);
     if (cant <= 0) {
       toast.error("Ingresá una Cant. Recibida mayor a 0.");
@@ -205,17 +209,31 @@ export default function PedidoHistoriaDetalleModal({
 
       // Recargar detalle para reflejar el consolidado por cod_tienda.
       setLoading(true);
-      await cargarDetalle(pedidoHistoriaId);
+      const detalleNuevo = await cargarDetalle(pedidoHistoriaId);
       toast.success("Ítem agregado.");
       // Limpieza UX: volver a estado "Seleccionar Producto".
       setProductoSeleccionado(null);
       setCantRecibidaNueva("");
-      setEditingItemId(null);
-      setEditingValue("");
       setAgregarProductosOpen(false);
+
+      // Enfocar la fila recién agregada en la columna editable "CANT. RECIBIDA".
+      const itemNuevo = detalleNuevo?.items.find((it) => it.codTienda === codTiendaAdded);
+      if (itemNuevo) {
+        nextEditItemId = itemNuevo.id;
+        nextEditValue = String(itemNuevo.cantRecibida);
+      }
     } finally {
       setLoading(false);
       setGuardando(null);
+      queueMicrotask(() => {
+        if (nextEditItemId) {
+          setEditingValue(nextEditValue);
+          setEditingItemId(nextEditItemId);
+        } else {
+          setEditingItemId(null);
+          setEditingValue("");
+        }
+      });
     }
   }
 
@@ -223,8 +241,9 @@ export default function PedidoHistoriaDetalleModal({
     setProductoSeleccionado(row);
     setAgregarProductosOpen(false);
     queueMicrotask(() => {
-      descripcionInputRef.current?.focus();
-      descripcionInputRef.current?.select?.();
+      const el = document.querySelector<HTMLInputElement>('input[data-desc-input="detalle"]');
+      el?.focus();
+      el?.select?.();
     });
   }
 
@@ -260,10 +279,10 @@ export default function PedidoHistoriaDetalleModal({
                 <span className="text-xs text-muted-foreground">DESCRIPCIÓN</span>
                 {productoSeleccionado ? (
                   <Input
-                    ref={descripcionInputRef}
                     value={productoSeleccionado.descripcionTienda}
                     readOnly
                     disabled={locked || loading}
+                    data-desc-input="detalle"
                     className="h-10"
                   />
                 ) : (
@@ -288,6 +307,7 @@ export default function PedidoHistoriaDetalleModal({
                   inputMode="numeric"
                   value={cantRecibidaNueva}
                   onChange={(e) => setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  data-cant-input="detalle"
                   disabled={locked || loading}
                   className="h-10 tabular-nums text-center"
                 />
@@ -313,19 +333,20 @@ export default function PedidoHistoriaDetalleModal({
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[25%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[20%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[20%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[35%]">ACCIONES</TableHead>
+                    <TableHead className="w-[8%]">COD. TIENDA</TableHead>
+                    <TableHead className="w-[50%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
+                    <TableHead className="w-[8%]">CANT. PEDIDA</TableHead>
+                    <TableHead className="w-[8%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[26%]">ACCIONES</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <EmptyTableRow colSpan={4} message="Cargando…" />
+                    <EmptyTableRow colSpan={5} message="Cargando…" />
                   ) : errorMsg ? (
-                    <EmptyTableRow colSpan={4} message={errorMsg} />
+                    <EmptyTableRow colSpan={5} message={errorMsg} />
                   ) : items.length === 0 ? (
-                    <EmptyTableRow colSpan={4} message="Sin ítems." />
+                    <EmptyTableRow colSpan={5} message="Sin ítems." />
                   ) : (
                     items.map((item) => {
                       const isEditing = editingItemId === item.id;
@@ -335,6 +356,12 @@ export default function PedidoHistoriaDetalleModal({
                         <TableRow key={item.id} className="hover:bg-transparent">
                           <TableCell className="celda-datos min-w-0 truncate" title={item.codTienda}>
                             {item.codTienda}
+                          </TableCell>
+                          <TableCell
+                            className="celda-datos min-w-0 truncate"
+                            title={item.descripcionTienda}
+                          >
+                            {item.descripcionTienda}
                           </TableCell>
                           <TableCell className="celda-datos tabular-nums">
                             {item.cantPedida > 0 ? item.cantPedida.toLocaleString("es-AR") : ""}
