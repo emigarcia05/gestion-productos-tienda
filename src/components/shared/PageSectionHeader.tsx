@@ -1,0 +1,66 @@
+import type { ReactNode } from "react";
+import { Separator } from "@/components/ui/separator";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+
+const pageSectionHeaderRootVariants = cva("section-header shrink-0 w-full", {
+  variants: {
+    tone: {
+      /** Confía en `.section-header` (globals.css) para `--card`. */
+      default: "",
+      /** Refuerzo explícito con token Tailwind cuando el contexto lo requiera. */
+      card: "bg-card",
+    },
+  },
+  defaultVariants: {
+    tone: "default",
+  },
+});
+
+export type PageSectionHeaderProps = {
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
+  className?: string;
+} & VariantProps<typeof pageSectionHeaderRootVariants>;
+
+/**
+ * Núcleo compartido de encabezados de página (barra primaria, título, subtítulo, acciones).
+ * Usar vía `SectionHeader` o `ClassicPageHeader` para no romper APIs existentes.
+ */
+export default function PageSectionHeader({
+  title,
+  subtitle,
+  actions,
+  className,
+  tone = "default",
+}: PageSectionHeaderProps) {
+  const showSubtitle = subtitle != null && subtitle !== "";
+
+  return (
+    <header
+      className={cn(pageSectionHeaderRootVariants({ tone }), className)}
+      role="banner"
+    >
+      <div className="section-header__inner flex flex-nowrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="section-header__bar" aria-hidden />
+          <div className="min-w-0 flex flex-col gap-0.5">
+            <h1 className="section-header__titulo">{title}</h1>
+            {showSubtitle && (
+              <h3 className="section-header__subtitulo">{subtitle}</h3>
+            )}
+          </div>
+        </div>
+        {actions != null && (
+          <div className="section-header-actions flex flex-wrap items-center justify-end gap-2 shrink-0">
+            {actions}
+          </div>
+        )}
+      </div>
+      <Separator className={cn("section-header-divider", "bg-border")} />
+    </header>
+  );
+}
+
+export { pageSectionHeaderRootVariants };

@@ -144,6 +144,13 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
   - `modal-app__footer` con botones alineados (`Cancelar`, `Agregar`, etc.).
 - Ejemplos: `SeleccionarProductoModal` (Tienda) y `SelectorProductosReposicionModal` (Pedido Reposición).
 
+### Tienda — Modal **Vínculos con Proveedores** (`VincularModal.tsx`)
+
+- **Tabla estándar**: `<Table variant="compact">` dentro de `.contenedor-tabla-gestion` (encabezado fijo al scroll), mismo criterio que el resto de la app. **No** usar el listado legacy con clases `.modal-vinculos-*` (eliminadas de `globals.css`).
+- **Orden de filas**: primero el proveedor **oficial** (coincide `prefijoProveedor` / `proveedorDux` con el prefijo del vínculo); el resto ordenado por **px. final de compra** ascendente. Si no hay oficial reconocido, todas las filas solo por precio.
+- **Columnas** (`TableHead` en MAYÚSCULAS): OFICIAL (botón ícono + “Oficial” para marcar principal; celda vacía + `sr-only` en la fila ya oficial), PREFIJO, PX. FINAL COMPRA, VARIAC., MARGEN S/ IVA (con `calcMargenSinIvaPct(precioListaTienda, pxFila, porcIva)` como `TablaTienda`), última columna desvincular (ícono cesto, `text-foreground` / hover `destructive`).
+- **Props**: además de `costoTienda`, el modal recibe `precioListaTienda` y `porcIva` desde la fila de tienda para el margen.
+
 ### Ejemplos de código (referencia para IA)
 
 **Combinar clases con `cn()`:**
@@ -220,9 +227,11 @@ import SectionHeader from "@/components/SectionHeader";
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
+| *(retiradas)* `.modal-vinculos-*`, `.btn-convertir-proveedor-principal*`, `.btn-desvincular-icono`, `.modal-vinculos-footer` | El modal **Vínculos con Proveedores** pasó a `<Table>` estándar; no reintroducir estas clases. |
 | `PAGE_SIZE` (`@/lib/pagination`) | Tamaño de página estándar para tablas: 100 ítems. |
 | `PaginacionTabla` (`@/components/shared/PaginacionTabla.tsx`) | Paginación por URL: `basePath`, `params`, `paginaActual`, `totalPaginas`, `total`, `pageSize`. |
 | `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
+| `TableEmptyState` + CVA (`@/components/shared/TableEmptyState.tsx`) | Mensajes de lista/tabla vacía; `EmptyTableRow` en `ui/table` reutiliza las mismas variantes. |
 | `--gris` | Fondo universal de modales y zonas secundarias. |
 | `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
 
@@ -313,15 +322,52 @@ Input unificado para búsqueda en filtros (ícono Search + limpiar + loader). Us
   - **`disabled`**: `boolean?`.
   - **`className`**: `string?`.
 
-### `ClassicPageHeader` (`src/components/shared/ClassicPageHeader.tsx`)
+### `PageSectionHeader` (`src/components/shared/PageSectionHeader.tsx`)
 
-Encabezado estándar para páginas de layout clásico (alineado con `.section-header` en `globals.css`).
+Núcleo **único** del encabezado de página (barra primaria, `h1`, `h3`, acciones, `Separator`). Variantes con **CVA** (`pageSectionHeaderRootVariants`) para evitar duplicar clases entre rutas.
 
 - **Props**
   - **`title`**: `string` (title case).
-  - **`subtitle`**: `string?`.
-  - **`actions`**: `ReactNode?` (botones a la derecha, tamaño uniforme `h-10 px-4`).
+  - **`subtitle`**: `string?` (vacío o `undefined` no renderiza el `h3`).
+  - **`actions`**: `ReactNode?` (botones a la derecha, tamaño uniforme `h-10 px-4` vía CSS global).
+  - **`tone`**: `"default" | "card"` (default `"default"`). `"card"` añade `bg-card` como refuerzo del token; el layout global `.section-header` ya usa `var(--card)`.
   - **`className`**: `string?`.
+- **Accesibilidad**: `role="banner"` en el `<header>`; barra decorativa con `aria-hidden`.
+
+**Consumo recomendado:** no importar este componente directamente salvo nuevos layouts; usar `SectionHeader` (API en español) o `ClassicPageHeader` (inglés + `tone="card"`).
+
+### `ClassicPageHeader` (`src/components/shared/ClassicPageHeader.tsx`)
+
+Wrapper sobre `PageSectionHeader` con **`tone="card"`** (misma API que antes: `title`, `subtitle`, `actions`, `className`).
+
+### `SectionHeader` (`src/components/SectionHeader.tsx`)
+
+API histórica (`titulo`, `subtitulo`, `actions`). Delega en `PageSectionHeader` con `tone` default (sin refuerzo `bg-card` explícito en Tailwind).
+
+### `TableEmptyState` (`src/components/shared/TableEmptyState.tsx`)
+
+Mensaje de **lista/tabla vacía** con tokens (`text-muted-foreground`) y densidades unificadas. Exporta **CVA**: `tableEmptyStateContainerVariants`, `tableEmptyStateMessageVariants`.
+
+- **Props (`TableEmptyState`)**
+  - **`message`**: `string`.
+  - **`placement`**: `"tableCell" | "panel" | "compact"` — `tableCell` ≈ fila vacía estándar (`py-8`); `panel` para modales (`py-12`); `compact` para paneles secundarios (`py-6`).
+  - **`textSize`**: `"sm" | "xs"`.
+  - **`maxWidth`**: `"readable" | "full"` — `readable` aplica `max-w-md` al texto (comportamiento de `EmptyTableRow` en `ui/table`).
+  - **`as`**: `"div" | "p"` (default `"div"`). Usar `"p"` cuando el padre requiera un párrafo semántico.
+  - **`className`** / **`messageClassName`**: overrides puntuales.
+
+**Integración:** `EmptyTableRow` (`@/components/ui/table`) y `ModalTablaConFiltros` usan estas variantes para no duplicar utilidades. Paneles secundarios (ej. **Control Aumentos**) pueden usar `<TableEmptyState as="p" … />` para mantener densidad y tokens.
+
+### `MensajeProceso` (`src/components/shared/MensajeProceso.tsx`)
+
+Indicador de **proceso en curso** (modal, importación, barra lateral). Clases globales `.mensaje-proceso` / `.mensaje-proceso--sidebar`; contenedor variantado con **CVA** (`mensajeProcesoVariants`).
+
+- **Props**
+  - **`mensaje`**: `string`.
+  - **`detalle`**: `{ procesados: number; total: number } | string | null | undefined` — objeto muestra “X de Y” con locale `es-AR`.
+  - **`variant`**: `"default" | "sidebar"`.
+  - **`className`**: `string?`.
+- **Accesibilidad**: `role="status"`, `aria-live="polite"`.
 
 ### Slidenav — Botón de usuario (perfil) (`src/components/SelectorRol.tsx`)
 
@@ -392,7 +438,8 @@ Antes de dar por terminada una tarea de frontend:
 - [ ] Las clases condicionales o combinadas usan `cn(...)`.
 - [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique; encabezado fijo (al hacer scroll los encabezados no desaparecen).
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
-- [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` con fondo por defecto (no sobrescribir con `bg-white`).
+- [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` (implementación única vía `PageSectionHeader`; no duplicar markup de `.section-header`).
+- [ ] Mensajes de tabla/lista vacía reutilizan `TableEmptyRow` o `TableEmptyState` (variantes CVA), sin copiar `py-* text-muted-foreground text-center` sueltos.
 - [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Abreviaciones con punto final (Px., Cx., Dto., etc.).
 - [ ] Iconos: `lucide-react`. Toasts: `sonner`. Fuente: Geist (vía layout/tema).
 - [ ] No hay `any`; validación de datos con Zod donde aplique.
@@ -423,7 +470,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: sidebar con bloque permanente de Sincronización DUX (centrado, con última consulta disponible y click directo para iniciar sync), manteniendo indicador de progreso durante ejecución.*
+*Última actualización: `PageSectionHeader` (CVA) como núcleo de `SectionHeader` / `ClassicPageHeader`; `TableEmptyState` (CVA) unifica vacíos de tabla, modales y paneles; `MensajeProceso` con variantes CVA en contenedor.*
 
 ---
 

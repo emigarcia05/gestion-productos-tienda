@@ -2,6 +2,10 @@
 
 import * as React from "react"
 
+import {
+  tableEmptyStateContainerVariants,
+  tableEmptyStateMessageVariants,
+} from "@/components/shared/TableEmptyState"
 import { cn } from "@/lib/utils"
 
 export type TableVariant = "default" | "compact"
@@ -133,9 +137,17 @@ function EmptyTableRow({
     <TableRow>
       <TableCell
         colSpan={colSpan}
-        className={cn("py-8 text-muted-foreground text-center", className)}
+        className={cn(
+          tableEmptyStateContainerVariants({
+            placement: "tableCell",
+            textSize: "sm",
+          }),
+          className
+        )}
       >
-        <span className="text-sm max-w-md inline-block px-4">{message}</span>
+        <span className={tableEmptyStateMessageVariants({ maxWidth: "readable" })}>
+          {message}
+        </span>
       </TableCell>
     </TableRow>
   );

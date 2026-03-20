@@ -31,6 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  tableEmptyStateContainerVariants,
+  tableEmptyStateMessageVariants,
+} from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 import type { ProveedorTintometrico, SucursalTintometrica } from "@/services/tintometrico.service";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
@@ -274,8 +278,22 @@ export default function PedidoTintometricoPageClient({
                 <TableBody>
                   {itemsFiltrados.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-muted-foreground text-sm py-10 text-center">
-                        Sin Ítems. Presioná “+” Para Agregar.
+                      <TableCell
+                        colSpan={5}
+                        className={cn(
+                          tableEmptyStateContainerVariants({
+                            placement: "tableCellTall",
+                            textSize: "sm",
+                          })
+                        )}
+                      >
+                        <span
+                          className={tableEmptyStateMessageVariants({
+                            maxWidth: "full",
+                          })}
+                        >
+                          Sin Ítems. Presioná “+” Para Agregar.
+                        </span>
                       </TableCell>
                     </TableRow>
                   ) : (

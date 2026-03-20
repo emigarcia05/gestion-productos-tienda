@@ -15,6 +15,12 @@ import { Input } from "@/components/ui/input";
 import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
 import { registrarExportacionExcelStock } from "@/actions/stock";
 import PrintStock from "./PrintStock";
+import {
+  TableEmptyState,
+  tableEmptyStateContainerVariants,
+  tableEmptyStateMessageVariants,
+} from "@/components/shared/TableEmptyState";
+import { cn } from "@/lib/utils";
 
 function exportarStockExcel(
   items: ItemStock[],
@@ -207,9 +213,12 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     <>
       <div className="contenedor-tabla-gestion no-scroll-x">
         {!sucursalSeleccionada ? (
-          <div className="flex h-full min-h-[200px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
-            Seleccioná una sucursal para ver el stock.
-          </div>
+          <TableEmptyState
+            placement="blockedPanel"
+            textSize="sm"
+            maxWidth="full"
+            message="Seleccioná una sucursal para ver el stock."
+          />
         ) : (
           <Table variant="compact">
             <TableHeader>
@@ -231,9 +240,20 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="text-center text-xs text-muted-foreground py-10"
+                    className={cn(
+                      tableEmptyStateContainerVariants({
+                        placement: "tableCellTall",
+                        textSize: "xs",
+                      })
+                    )}
                   >
-                    Sin resultados
+                    <span
+                      className={tableEmptyStateMessageVariants({
+                        maxWidth: "full",
+                      })}
+                    >
+                      Sin resultados
+                    </span>
                   </TableCell>
                 </TableRow>
               )}

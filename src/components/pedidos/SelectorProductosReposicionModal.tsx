@@ -8,6 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  tableEmptyStateContainerVariants,
+  tableEmptyStateMessageVariants,
+} from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,15 +146,39 @@ export default function SelectorProductosReposicionModal({
                   <TableBody>
                     {loading && (
                       <TableRow>
-                        <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                          Cargando...
+                        <TableCell
+                          colSpan={2}
+                          className={tableEmptyStateContainerVariants({
+                            placement: "tableCell",
+                            textSize: "sm",
+                          })}
+                        >
+                          <span
+                            className={tableEmptyStateMessageVariants({
+                              maxWidth: "full",
+                            })}
+                          >
+                            Cargando...
+                          </span>
                         </TableCell>
                       </TableRow>
                     )}
                     {!loading && items.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                          Sin resultados
+                        <TableCell
+                          colSpan={2}
+                          className={tableEmptyStateContainerVariants({
+                            placement: "tableCell",
+                            textSize: "sm",
+                          })}
+                        >
+                          <span
+                            className={tableEmptyStateMessageVariants({
+                              maxWidth: "full",
+                            })}
+                          >
+                            Sin resultados
+                          </span>
                         </TableCell>
                       </TableRow>
                     )}

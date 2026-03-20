@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/table";
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import { fmtPrecio, fmtNumero } from "@/lib/format";
+import {
+  tableEmptyStateContainerVariants,
+  tableEmptyStateMessageVariants,
+} from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
@@ -364,14 +368,26 @@ export default function ListaPreciosTablaConFiltros({
             {(!hasFilterActive || loading || filteredFilas.length === 0) && (
               <TableRow>
                 <TableCell
-                  className="celda-datos py-8 text-muted-foreground text-center"
+                  className={cn(
+                    "celda-datos",
+                    tableEmptyStateContainerVariants({
+                      placement: "tableCell",
+                      textSize: "sm",
+                    })
+                  )}
                   colSpan={11}
                 >
-                  {!hasFilterActive
-                    ? MENSAJE_SIN_FILTRO
-                    : loading
-                      ? "Cargando…"
-                      : "Ningún producto coincide con los filtros."}
+                  <span
+                    className={tableEmptyStateMessageVariants({
+                      maxWidth: "full",
+                    })}
+                  >
+                    {!hasFilterActive
+                      ? MENSAJE_SIN_FILTRO
+                      : loading
+                        ? "Cargando…"
+                        : "Ningún producto coincide con los filtros."}
+                  </span>
                 </TableCell>
               </TableRow>
             )}

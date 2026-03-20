@@ -31,6 +31,7 @@ import { updatePresentacionAction, buscarProductosParaAsignarAction } from "@/ac
 import { getProveedores } from "@/actions/vinculos";
 import { fmtPrecio } from "@/lib/format";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
+import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
 type ProveedorOption = { id: string; nombre: string; prefijo: string };
@@ -221,13 +222,19 @@ export default function EditarCostoObjetivoModal({
                 </div>
                 <div className="border rounded-md overflow-hidden max-h-48 overflow-y-auto">
                   {loadingLista ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      Cargando…
-                    </div>
+                    <TableEmptyState
+                      message="Cargando…"
+                      placement="tableCell"
+                      textSize="sm"
+                      maxWidth="full"
+                    />
                   ) : rows.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      Aplicá filtros para ver productos.
-                    </div>
+                    <TableEmptyState
+                      message="Aplicá filtros para ver productos."
+                      placement="tableCell"
+                      textSize="sm"
+                      maxWidth="full"
+                    />
                   ) : (
                     <Table variant="compact">
                       <TableHeader>

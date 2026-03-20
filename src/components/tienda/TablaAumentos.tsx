@@ -22,6 +22,7 @@ import FilterBar, {
 import type { ControlAumentosData, ItemAumento } from "@/actions/tienda";
 import { fmtPctEntero } from "@/lib/format";
 import { matchByMultiTerm } from "@/lib/busqueda";
+import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
 function exportarXLS(items: ItemAumento[]) {
@@ -97,7 +98,13 @@ function ColumnaGrupo({
       </div>
       <div className="flex-1 overflow-y-auto">
         {grupos.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-6">Sin datos</p>
+          <TableEmptyState
+            as="p"
+            message="Sin datos"
+            placement="compact"
+            textSize="xs"
+            maxWidth="full"
+          />
         )}
         {grupos.map((g, idx) => {
           const pct = promedio(g.items);
@@ -142,7 +149,13 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
   return (
     <div className="flex-1 overflow-y-auto rounded-b-lg border border-t-0 border-border bg-card">
       {filtrados.length === 0 && (
-        <p className="text-xs text-muted-foreground text-center py-6">Sin resultados</p>
+        <TableEmptyState
+          as="p"
+          message="Sin resultados"
+          placement="compact"
+          textSize="xs"
+          maxWidth="full"
+        />
       )}
       {filtrados.map((item, idx) => (
         <div

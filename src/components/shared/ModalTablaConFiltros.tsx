@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import {
+  TableEmptyState,
+  modalListLoadingVariants,
+} from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
 const modalTablaContentVariants = cva(
@@ -229,13 +233,16 @@ export default function ModalTablaConFiltros<T>({
 
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
               {loading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin" /> Cargando...
+                <div
+                  className={modalListLoadingVariants({ padding: "panel" })}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                  Cargando...
                 </div>
               ) : rows.length === 0 ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  {emptyMessage}
-                </div>
+                <TableEmptyState message={emptyMessage} placement="panel" />
               ) : (
                 <>
                   <div className="shrink-0 overflow-hidden">

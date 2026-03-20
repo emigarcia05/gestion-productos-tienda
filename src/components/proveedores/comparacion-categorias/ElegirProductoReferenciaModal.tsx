@@ -25,6 +25,7 @@ import { buscarProductosParaAsignarAction } from "@/actions/comparacionCategoria
 import { getProveedores } from "@/actions/vinculos";
 import { fmtPrecio } from "@/lib/format";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
+import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
 type ProveedorOption = { id: string; nombre: string; prefijo: string };
@@ -136,13 +137,12 @@ export default function ElegirProductoReferenciaModal({
             </div>
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
               {loading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  Cargando…
-                </div>
+                <TableEmptyState message="Cargando…" placement="panel" />
               ) : rows.length === 0 ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  Aplicá filtros para ver productos.
-                </div>
+                <TableEmptyState
+                  message="Aplicá filtros para ver productos."
+                  placement="panel"
+                />
               ) : (
                 <>
                   <div className="shrink-0 overflow-hidden">

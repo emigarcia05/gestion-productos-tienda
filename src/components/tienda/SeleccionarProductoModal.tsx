@@ -30,6 +30,10 @@ import { Loader2 } from "lucide-react";
 import { LimpiarFiltrosButton } from "@/components/FilterBar";
 import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
+import {
+  TableEmptyState,
+  modalListLoadingVariants,
+} from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
 /** Forma que espera VincularModal al seleccionar (id + datos para lista y toast). */
@@ -180,17 +184,21 @@ export default function SeleccionarProductoModal({
             {/* Encabezado (fijo, fuera del scroll) + Tabla (solo cuerpo con scroll). Mismo ancho de columnas con table-fixed. */}
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3">
               {!hayFiltros ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  {MENSAJE_SIN_FILTRO}
-                </div>
+                <TableEmptyState message={MENSAJE_SIN_FILTRO} placement="panel" />
               ) : loading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin" /> Cargando...
+                <div
+                  className={cn(modalListLoadingVariants({ padding: "panel" }))}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                  Cargando...
                 </div>
               ) : rows.length === 0 ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  No hay productos o no coinciden los filtros.
-                </div>
+                <TableEmptyState
+                  message="No hay productos o no coinciden los filtros."
+                  placement="panel"
+                />
               ) : (
                 <>
                   {/* Encabezado fijo: fuera del contenedor con scroll */}

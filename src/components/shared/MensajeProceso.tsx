@@ -1,6 +1,19 @@
 "use client";
 
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+
+const mensajeProcesoVariants = cva("mensaje-proceso", {
+  variants: {
+    variant: {
+      default: "",
+      sidebar: "mensaje-proceso--sidebar",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 /**
  * Detalle de progreso: texto "X de Y" con números formateados (locale es-AR).
@@ -28,7 +41,7 @@ export interface MensajeProcesoProps {
    * - "sidebar": .mensaje-proceso.mensaje-proceso--sidebar — compacto para barra lateral.
    * @default "default"
    */
-  variant?: "default" | "sidebar";
+  variant?: VariantProps<typeof mensajeProcesoVariants>["variant"];
   /** Clases CSS adicionales para el contenedor. */
   className?: string;
 }
@@ -69,11 +82,7 @@ export default function MensajeProceso({
     <div
       role="status"
       aria-live="polite"
-      className={cn(
-        "mensaje-proceso",
-        isSidebar && "mensaje-proceso--sidebar",
-        className
-      )}
+      className={cn(mensajeProcesoVariants({ variant }), className)}
     >
       {isSidebar ? (
         <>

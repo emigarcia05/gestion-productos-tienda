@@ -2,18 +2,25 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
 import { convertirEnProveedor } from "@/actions/tienda";
-import { calcPxCompraFinal } from "@/lib/calculos";
-import { fmtPrecio } from "@/lib/format";
+import { calcPxCompraFinal, calcMargenSinIvaPct } from "@/lib/calculos";
+import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
-import ProveedorAlternativoRow from "./ProveedorAlternativoRow";
 
 type ProductoConProveedor = {
   id: string;
@@ -29,13 +36,15 @@ type ProductoConProveedor = {
   proveedor: { nombre: string; prefijo: string };
 };
 
-
 interface Props {
   itemTiendaId: string;
   itemDescripcion: string;
   codigoExterno: string | null;
   cantidadVinculos: number;
   costoTienda: number;
+  /** Precio lista tienda (px. venta) para margen s/ IVA — mismo criterio que `TablaTienda`. */
+  precioListaTienda: number;
+  porcIva: number;
   marca?: string | null;
   rubro?: string | null;
   subRubro?: string | null;
@@ -46,7 +55,18 @@ interface Props {
   onOpenChange?: (v: boolean) => void;
 }
 
-const UMBRAL_PCT = 1; // diferencia mínima para mostrar como significativa
+const UMBRAL_PCT = 1;
+
+function pxCompraDeProducto(p: ProductoConProveedor): number {
+  return p.pxCompraFinal != null
+    ? p.pxCompraFinal
+    : calcPxCompraFinal(
+        p.precioLista,
+        p.descuentoRubro,
+        p.descuentoCantidad,
+        p.cxTransporte
+      );
+}
 
 function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompraFinal: number }) {
   if (costoTienda <= 0 || pxCompraFinal <= 0) return <span className="variacion-costo--neutra">—</span>;
@@ -56,14 +76,14 @@ function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompr
   const absFmt = abs.toFixed(1);
   if (dif > 0) {
     return (
-      <span className="variacion-costo--positiva flex items-center gap-1" title={`Px. Compra Final es ${absFmt}% más caro que Cx. Actual`}>
+      <span className="variacion-costo--positiva flex items-center justify-center gap-1" title={`Px. Compra Final es ${absFmt}% más caro que Cx. Actual`}>
         <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
         +{absFmt}%
       </span>
     );
   }
   return (
-    <span className="variacion-costo--negativa flex items-center gap-1" title={`Px. Compra Final es ${absFmt}% más económico que Cx. Actual`}>
+    <span className="variacion-costo--negativa flex items-center justify-center gap-1" title={`Px. Compra Final es ${absFmt}% más económico que Cx. Actual`}>
       <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
       -{absFmt}%
     </span>
@@ -71,21 +91,28 @@ function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompr
 }
 
 export default function VincularModal({
-  itemTiendaId, itemDescripcion, codigoExterno, cantidadVinculos: cantidadInicial, costoTienda,
-  marca, rubro, subRubro, prefijoProveedor,
-  open: openProp, onOpenChange,
+  itemTiendaId,
+  itemDescripcion,
+  cantidadVinculos: cantidadInicial,
+  costoTienda,
+  precioListaTienda,
+  porcIva,
+  marca,
+  rubro,
+  prefijoProveedor,
+  open: openProp,
+  onOpenChange,
 }: Props) {
   const router = useRouter();
   const [openInterno, setOpenInterno] = useState(false);
-  const open    = openProp    !== undefined ? openProp    : openInterno;
+  const open = openProp !== undefined ? openProp : openInterno;
   const setOpen = onOpenChange !== undefined ? onOpenChange : setOpenInterno;
   const [abrirSelector, setAbrirSelector] = useState(false);
-  const [vinculados, setVinculados]       = useState<ProductoConProveedor[]>([]);
-  const [cargando, setCargando]           = useState(false);
-  const [cantidad, setCantidad]           = useState(cantidadInicial);
-  const [isPending, startTransition]      = useTransition();
+  const [vinculados, setVinculados] = useState<ProductoConProveedor[]>([]);
+  const [cargando, setCargando] = useState(false);
+  const [cantidad, setCantidad] = useState(cantidadInicial);
+  const [isPending, startTransition] = useTransition();
 
-  // Cargar vínculos al abrir (ServiceResult: success + data | error)
   useEffect(() => {
     if (!open) return;
     queueMicrotask(() => setCargando(true));
@@ -98,23 +125,27 @@ export default function VincularModal({
 
   const prefijoPrincipal = (prefijoProveedor ?? "").trim().toLowerCase();
 
-  const { principal, alternativos } = useMemo(() => {
+  const filasOrdenadas = useMemo(() => {
+    const conPx = vinculados.map((p) => ({ producto: p, px: pxCompraDeProducto(p) }));
     const principalItem =
       prefijoPrincipal === ""
         ? null
         : vinculados.find((p) => p.proveedor.prefijo.trim().toLowerCase() === prefijoPrincipal) ?? null;
-    const alts = principalItem ? vinculados.filter((p) => p.id !== principalItem.id) : [...vinculados];
-    return { principal: principalItem, alternativos: alts };
+
+    if (principalItem) {
+      const principalRow = conPx.find((r) => r.producto.id === principalItem.id);
+      const rest = conPx
+        .filter((r) => r.producto.id !== principalItem.id)
+        .sort((a, b) => a.px - b.px);
+      return principalRow ? [principalRow, ...rest] : rest;
+    }
+    return [...conPx].sort((a, b) => a.px - b.px);
   }, [vinculados, prefijoPrincipal]);
 
-  const minCxAlternativos = useMemo(() => {
-    if (alternativos.length === 0) return 0;
-    return Math.min(
-      ...alternativos.map((p) =>
-        p.pxCompraFinal != null ? p.pxCompraFinal : calcPxCompraFinal(p.precioLista, p.descuentoRubro, p.descuentoCantidad, p.cxTransporte)
-      )
-    );
-  }, [alternativos]);
+  function esOficial(p: ProductoConProveedor): boolean {
+    if (prefijoPrincipal === "") return false;
+    return p.proveedor.prefijo.trim().toLowerCase() === prefijoPrincipal;
+  }
 
   function handleDesvincular(producto: ProductoConProveedor) {
     startTransition(async () => {
@@ -143,8 +174,14 @@ export default function VincularModal({
     });
   }
 
-  // Llamado desde SeleccionarProductoModal al hacer doble clic
-  async function handleSeleccionar(producto: { id: string; codigoExterno: string; codProdProv: string; descripcion: string; precioLista: number; proveedor: { nombre: string; prefijo: string } }) {
+  async function handleSeleccionar(producto: {
+    id: string;
+    codigoExterno: string;
+    codProdProv: string;
+    descripcion: string;
+    precioLista: number;
+    proveedor: { nombre: string; prefijo: string };
+  }) {
     if (vinculados.some((p) => p.proveedor.prefijo === producto.proveedor.prefijo)) {
       toast.error("Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor.");
       return;
@@ -158,13 +195,16 @@ export default function VincularModal({
           setVinculados(refreshed.data);
           setCantidad(refreshed.data.length);
         } else {
-          setVinculados((prev) => [...prev, {
-            ...producto,
-            precioVentaSugerido: 0,
-            descuentoRubro: 0,
-            descuentoCantidad: 0,
-            cxTransporte: 0,
-          }]);
+          setVinculados((prev) => [
+            ...prev,
+            {
+              ...producto,
+              precioVentaSugerido: 0,
+              descuentoRubro: 0,
+              descuentoCantidad: 0,
+              cxTransporte: 0,
+            },
+          ]);
           setCantidad((c) => c + 1);
         }
         toast.success(`Vinculado: ${producto.codigoExterno}`);
@@ -195,7 +235,10 @@ export default function VincularModal({
 
         <AppModal
           title="Vínculos con Proveedores"
-          className="sm:max-w-xl"
+          size="xl"
+          className="sm:max-w-5xl"
+          scrollBody={false}
+          bodyClassName="flex flex-col min-h-0 overflow-hidden p-4 sm:p-6"
           actions={
             <>
               <Button
@@ -213,8 +256,7 @@ export default function VincularModal({
             </>
           }
         >
-          {/* Contexto compacto: producto + marca/rubro (centrado) */}
-          <div className="pb-3 text-center">
+          <div className="pb-3 text-center shrink-0">
             <p className="text-sm text-foreground font-semibold truncate text-center" title={itemDescripcion}>
               {itemDescripcion}
             </p>
@@ -225,103 +267,95 @@ export default function VincularModal({
             )}
           </div>
 
-          {/* Sección: Proveedor Principal + Proveedores Alternativos */}
-          <div className="mt-4 flex flex-col min-h-0 flex-1">
-            <div className="modal-panel-scroll rounded-lg border-2 border-border bg-card overflow-hidden">
+          <div className="mt-2 flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card overflow-hidden">
             {cargando ? (
-              <div className="modal-mensaje-carga p-4">
-                <Loader2 className="h-4 w-4 animate-spin" /> Cargando...
+              <div className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                Cargando...
               </div>
             ) : vinculados.length === 0 ? (
-              <p className="modal-mensaje-vacio p-4">Sin vínculos aún.</p>
+              <p className="p-6 text-center text-sm text-muted-foreground">Sin vínculos aún.</p>
             ) : (
-              <div className="modal-vinculos-listado-contenedor">
-                {principal && (
-                  <>
-                    <p className="modal-vinculos-seccion-titulo text-center">Proveedor Principal</p>
-                    <div
-                      key={principal.id}
-                      className="modal-vinculos-fila modal-vinculos-fila--zebra-impar modal-vinculos-fila--principal"
-                    >
-                      <div className="modal-vinculos-celda modal-vinculos-celda--vacia" aria-hidden />
-                      <div className="modal-vinculos-celda modal-vinculos-celda--columna-izquierda">
-                        <div className="modal-vinculos-fila-principal-contenido">
-                          <Badge variant="secondary" className="modal-vinculos-prefijo">
-                            {principal.proveedor.prefijo}
-                          </Badge>
-                          <span className="modal-vinculos-celda--principal-numero">
-                            ${fmtPrecio(
-                              principal.pxCompraFinal != null
-                                ? principal.pxCompraFinal
-                                : calcPxCompraFinal(
-                                    principal.precioLista,
-                                    principal.descuentoRubro,
-                                    principal.descuentoCantidad,
-                                    principal.cxTransporte
-                                  )
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="modal-vinculos-celda modal-vinculos-celda--acciones">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDesvincular(principal)}
-                          disabled={isPending}
-                          className="btn-desvincular-icono"
-                          title="Desvincular"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                )}
-                {alternativos.length > 0 && (
-                  <>
-                    <p className="modal-vinculos-seccion-titulo text-center">Proveedores Alternativos</p>
-                    {alternativos.map((prod, idx) => {
-                      const pxCompra =
-                        prod.pxCompraFinal != null
-                          ? prod.pxCompraFinal
-                          : calcPxCompraFinal(
-                              prod.precioLista,
-                              prod.descuentoRubro,
-                              prod.descuentoCantidad,
-                              prod.cxTransporte
-                            );
-                      const esMenorCostoAlternativo =
-                        alternativos.length > 1 && pxCompra <= minCxAlternativos;
-                      const zebra =
-                        idx % 2 === 1
-                          ? "modal-vinculos-fila--zebra-par"
-                          : "modal-vinculos-fila--zebra-impar";
+              <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem]">
+                <Table variant="compact" scrollX={false}>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[14%]">OFICIAL</TableHead>
+                      <TableHead className="w-[12%]">PREFIJO</TableHead>
+                      <TableHead className="w-[18%]">PX. FINAL COMPRA</TableHead>
+                      <TableHead className="w-[20%]">VARIAC.</TableHead>
+                      <TableHead className="w-[16%]">MARGEN S/ IVA</TableHead>
+                      <TableHead className="w-[10%]">
+                        <span className="sr-only">DESVINC.</span>
+                        <Trash2 className="h-4 w-4 mx-auto text-primary-foreground" aria-hidden />
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filasOrdenadas.map(({ producto: p, px }) => {
+                      const oficial = esOficial(p);
+                      const margenPct = calcMargenSinIvaPct(precioListaTienda, px, porcIva);
                       return (
-                        <ProveedorAlternativoRow
-                          key={prod.id}
-                          id={prod.id}
-                          prefijo={prod.proveedor.prefijo}
-                          precioFinalLabel={`$${fmtPrecio(pxCompra)}`}
-                          variacionNode={<DifCosto costoTienda={costoTienda} pxCompraFinal={pxCompra} />}
-                          zebraClass={zebra}
-                          esMenorCostoAlternativo={esMenorCostoAlternativo}
-                          disabled={isPending}
-                          onCambiarPrincipal={() => handleConvertir(prod)}
-                          onEliminar={() => handleDesvincular(prod)}
-                        />
+                        <TableRow key={p.id}>
+                          <TableCell className="celda-datos">
+                            {oficial ? (
+                              <span className="sr-only">Proveedor oficial actual</span>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 px-2 text-xs font-semibold"
+                                disabled={isPending}
+                                title="Marcar Como Proveedor Oficial Del Ítem"
+                                onClick={() => handleConvertir(p)}
+                              >
+                                <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                Oficial
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell className="celda-datos">
+                            <Badge variant="secondary" className="text-xs font-medium">
+                              {p.proveedor.prefijo}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="celda-datos celda-numero celda-destacado">
+                            ${fmtPrecio(px)}
+                          </TableCell>
+                          <TableCell className="celda-datos">
+                            <DifCosto costoTienda={costoTienda} pxCompraFinal={px} />
+                          </TableCell>
+                          <TableCell className="celda-datos celda-numero">
+                            {margenPct != null ? fmtPctEntero(margenPct) : ""}
+                          </TableCell>
+                          <TableCell className="celda-datos">
+                            <div className="flex justify-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={() => handleDesvincular(p)}
+                                disabled={isPending}
+                                className="text-foreground hover:text-destructive"
+                                title="Desvincular"
+                                aria-label={`Desvincular ${p.proveedor.prefijo}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </>
-                )}
+                  </TableBody>
+                </Table>
               </div>
             )}
-            </div>
           </div>
         </AppModal>
       </Dialog>
 
-      {/* Modal selector — se abre encima del modal principal */}
       <SeleccionarProductoModal
         open={abrirSelector}
         onClose={() => setAbrirSelector(false)}
