@@ -154,7 +154,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="h-px w-[80%] bg-sidebar-foreground/70" />
         </div>
       </div>
-      <nav className="flex flex-col gap-0.5 px-4 pt-1 pb-4 overflow-y-auto" aria-label="Navegación principal">
+      <nav className="flex flex-col gap-0.5 px-4 pt-0.5 pb-4 overflow-y-auto" aria-label="Navegación principal">
         {MODULES.filter((module) =>
           module.submodules.some((sub) => {
             const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
@@ -213,14 +213,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                             )}
                           >
                             {sub.icon}
-                            <span
-                              className={cn(
-                                "min-w-0 truncate",
-                                active ? "underline underline-offset-4 decoration-[1px]" : "group-hover:underline group-hover:underline-offset-4 group-hover:decoration-[1px]"
-                              )}
-                            >
-                              {sub.label}
-                            </span>
+                            <span className="min-w-0 truncate">{sub.label}</span>
                           </Link>
 
                           {sub.children && sub.children.length > 0 && (
@@ -243,16 +236,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                                       )}
                                     >
                                       {c.icon}
-                                      <span
-                                        className={cn(
-                                          "min-w-0 truncate",
-                                          childActive
-                                            ? "underline underline-offset-4 decoration-[1px]"
-                                            : "group-hover:underline group-hover:underline-offset-4 group-hover:decoration-[1px]"
-                                        )}
-                                      >
-                                        {c.label}
-                                      </span>
+                                      <span className="min-w-0 truncate">{c.label}</span>
                                     </Link>
                                   );
                                 })}
