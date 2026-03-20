@@ -154,6 +154,8 @@ export default function PedidoHistoriaDetalleModal({
   const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
   const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
+  /** Valor ISO `YYYY-MM-DD` para `<input type="date">`; persistencia backend pendiente si se define campo. */
+  const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const locked = estado === "RECIBIDO";
@@ -191,6 +193,7 @@ export default function PedidoHistoriaDetalleModal({
       setTotalPedidoDraft("");
       setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
+      setFechaRecepcion("");
     });
 
     void (async () => {
@@ -400,13 +403,36 @@ export default function PedidoHistoriaDetalleModal({
           }
         >
         <div className="flex flex-col gap-4 min-h-0 flex-1">
-          <div className="flex flex-col gap-1">
-            <div className="text-sm font-medium text-foreground text-center w-full">
-              {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
+          {/* Mismas proporciones que la tabla (COD. / DESC. / CANT. PED. / CANT. REC. / ACCIONES) para alinear FECHA RECEPCIÓN con la columna ACCIONES */}
+          <div className="grid min-w-0 w-full grid-cols-1 items-start gap-3 sm:grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] sm:gap-0">
+            <div className="flex min-w-0 flex-col gap-1 text-center sm:col-span-4">
+              <div className="text-sm font-medium text-foreground text-center w-full">
+                {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
+              </div>
+              <div className="text-xs text-muted-foreground text-center w-full">
+                {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground text-center w-full">
-              {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
-            </div>
+            <label
+              className={cn(
+                "flex min-w-0 w-full flex-col gap-1 px-[var(--tabla-body-cell-padding-x)] sm:shadow-[inset_1px_0_0_#0072bb]",
+                locked || loading ? "cursor-default" : "cursor-pointer"
+              )}
+            >
+              <span className="text-xs text-foreground text-center w-full">FECHA RECEPCIÓN</span>
+              <Input
+                type="date"
+                value={fechaRecepcion}
+                onChange={(e) => setFechaRecepcion(e.target.value)}
+                disabled={locked || loading}
+                aria-label="Fecha recepción"
+                className={cn(
+                  "h-10 w-full min-w-0 tabular-nums text-center",
+                  inputBorderClassName,
+                  locked || loading ? "cursor-not-allowed" : "cursor-pointer"
+                )}
+              />
+            </label>
           </div>
 
           <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
