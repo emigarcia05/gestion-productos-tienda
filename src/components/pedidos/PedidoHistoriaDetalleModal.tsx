@@ -52,11 +52,11 @@ function toDate(value: string | Date | null | undefined): Date | null {
 
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
-/** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). */
+/** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
-  if (norm === "") return "$0,00";
+  if (norm === "") return "";
   const n = Number(norm);
-  if (!Number.isFinite(n) || n < 0) return "$0,00";
+  if (!Number.isFinite(n) || n < 0) return "";
   const [ent, frac] = n.toFixed(2).split(".");
   const entFmt = Number(ent).toLocaleString("es-AR", {
     useGrouping: true,
@@ -107,7 +107,7 @@ export default function PedidoHistoriaDetalleModal({
   const [cantRecibidaNueva, setCantRecibidaNueva] = useState<string>("");
   /** Valor normalizado para lógica futura: "" | "123" | "123.45" (punto decimal). */
   const [totalPedido, setTotalPedido] = useState<string>("");
-  const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("$0,00");
+  const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
   const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
 
@@ -144,7 +144,7 @@ export default function PedidoHistoriaDetalleModal({
       setProductoSeleccionado(null);
       setCantRecibidaNueva("");
       setTotalPedido("");
-      setTotalPedidoDraft("$0,00");
+      setTotalPedidoDraft("");
       setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
     });
@@ -604,7 +604,7 @@ export default function PedidoHistoriaDetalleModal({
                 </TableBody>
                 <TableFooter
                   className={cn(
-                    "border-t border-border/70 bg-transparent p-0",
+                    "sticky bottom-0 z-30 border-t border-border/70 bg-card p-0",
                     "[&>tr]:border-b-0"
                   )}
                 >
@@ -631,7 +631,11 @@ export default function PedidoHistoriaDetalleModal({
                             : normalizedMontoToDisplayAr(totalPedido)
                         }
                         onFocus={() => {
-                          setTotalPedidoDraft(normalizedMontoToDisplayAr(totalPedido));
+                          setTotalPedidoDraft(
+                            totalPedido === ""
+                              ? ""
+                              : normalizedMontoToDisplayAr(totalPedido)
+                          );
                           setTotalPedidoFocused(true);
                         }}
                         onChange={(e) => {
@@ -643,7 +647,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "h-6 min-h-6 max-h-6 w-full tabular-nums text-right pr-2",
+                          "h-6 min-h-6 max-h-6 w-full tabular-nums text-center px-2",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
