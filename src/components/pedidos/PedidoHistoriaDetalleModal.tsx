@@ -60,9 +60,6 @@ const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
-/** Padding horizontal alineado a celdas; sin borde ni sombra (contenedores de grilla transparentes). */
-const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
-
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
   "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-2 sm:gap-y-0 sm:items-center";
@@ -468,15 +465,14 @@ export default function PedidoHistoriaDetalleModal({
                 </div>
                 <label
                   className={cn(
-                    "flex min-w-0 w-full flex-col justify-center gap-1 text-center sm:text-left",
-                    COLUMNA_ACCIONES_EXTERNA_CLASS,
+                    "flex min-w-0 w-full flex-col justify-center gap-1 px-0 text-right",
                     locked || loading ? "cursor-default" : "cursor-pointer"
                   )}
                 >
                   <span
                     className={cn(
                       MODAL_MICRO_LABEL_CLASS,
-                      "w-full leading-tight"
+                      "w-full text-right leading-tight"
                     )}
                   >
                     FECHA FACTURA
