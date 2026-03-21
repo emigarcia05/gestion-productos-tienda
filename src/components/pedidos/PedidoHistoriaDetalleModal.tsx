@@ -57,7 +57,9 @@ const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
   "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[85fr_15fr] sm:gap-0";
 
-const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
+/** Columna proveedor (resumen modal): padding derecho al token de tabla; sin padding izquierdo. */
+const CELDA_RESUMEN_PROVEEDOR_PADDING_X =
+  "pr-[var(--tabla-body-cell-padding-x)] pl-0";
 
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
@@ -452,7 +454,7 @@ export default function PedidoHistoriaDetalleModal({
                 <div
                   className={cn(
                     "flex min-w-0 flex-col gap-0 text-center sm:text-left",
-                    CELDA_TABLA_PADDING_X
+                    CELDA_RESUMEN_PROVEEDOR_PADDING_X
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">

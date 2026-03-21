@@ -329,7 +329,7 @@ Modal reutilizable de **título + filtros + tabla** con modos:
 Modal del módulo **Historial Pedidos** para operar la recepción de ítems del pedido (tabla, cantidades recibidas, alta de productos, etc.). Usa **`AppModal`**.
 
 - **Título (`AppModal`, prop `title`):** **Recepcion Del Pedido** (title case).
-- **Resumen superior (columna proveedor):** sin micro-etiqueta “Nombre proveedor”; el nombre del proveedor es el primer nodo visible (`<p>` `text-sm font-semibold`). Contenedor **`flex-col gap-0`**; la línea secundaria (**sucursal - dd/mm hh:mm**, `text-xs` `text-muted-foreground`) lleva **`mt-0.5`** para un aire mínimo respecto al nombre (sin estado PEDIDO/RECIBIDO en esa línea).
+- **Resumen superior (columna proveedor):** sin micro-etiqueta “Nombre proveedor”; el nombre del proveedor es el primer nodo visible (`<p>` `text-sm font-semibold`). Contenedor **`flex-col gap-0`** **`text-center sm:text-left`**; padding horizontal vía **`CELDA_RESUMEN_PROVEEDOR_PADDING_X`** = `pr-[var(--tabla-body-cell-padding-x)] pl-0`. La línea secundaria (**sucursal - dd/mm hh:mm**, `text-xs` `text-muted-foreground`) lleva **`mt-0.5`** (sin estado PEDIDO/RECIBIDO en esa línea).
 - **Tabla ítems + totales:** pie **TOTAL PEDIDO** fuera del `<table>` (**`<footer>`** + grid alineado a columnas); ver punto 7.
 
 Layout, grillas y reglas de tabla: sección **Guía para IA**, punto 7 (`PedidoHistoriaDetalleModal`).
