@@ -53,11 +53,11 @@ function toDate(value: string | Date | null | undefined): Date | null {
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera (proveedor + fecha) y fila de herramientas: 66% (8+50+8) | 8% CANT.R | 26% ACCIONES.
- * Alineado con tabla: COD. 8% + DESC. 50% + CANT. P. 8% + CANT. R. 8% + ACCIONES 26%.
+ * Cabecera (proveedor + fecha) y fila de herramientas: 68% (8+50+10) | 10% CANT.R | 22% ACCIONES.
+ * Alineado con tabla: COD. 8% + DESC. 50% + CANT. P. 10% + CANT. R. 10% + ACCIONES 22%.
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[66fr_8fr_26fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[68fr_10fr_22fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
@@ -586,10 +586,10 @@ export default function PedidoHistoriaDetalleModal({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[8%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[50%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
-                    <TableHead className="w-[8%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[8%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[26%] tabla-bloque-secundario-head-divider">
+                    <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
+                    <TableHead className="w-[10%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[22%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
                   </TableRow>
@@ -634,10 +634,10 @@ export default function PedidoHistoriaDetalleModal({
                           >
                             {item.descripcionTienda}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[8%]">
+                          <TableCell className="celda-datos tabular-nums w-[10%]">
                             {cantPedidaVisible}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[8%]">
+                          <TableCell className="celda-datos tabular-nums w-[10%]">
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
@@ -697,7 +697,7 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos w-[26%] tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos w-[22%] tabla-bloque-secundario-cell-divider">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
@@ -757,7 +757,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </TableCell>
-                    <TableCell className="celda-datos w-[26%] border-b-0 tabla-bloque-secundario-cell-divider">
+                    <TableCell className="celda-datos w-[22%] border-b-0 tabla-bloque-secundario-cell-divider">
                       <Input
                         type="text"
                         inputMode="decimal"
