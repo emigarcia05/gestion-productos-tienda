@@ -53,10 +53,10 @@ function toDate(value: string | Date | null | undefined): Date | null {
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera alineada a tabla con CHECK: hueco CHECK (5) | (DESC+CANT.P.) (65) | CANT.R. (15) | fecha (15).
+ * Cabecera resumen: proveedor + metadatos | fecha factura (`sm`: dos columnas ~65% / ~15%).
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[5fr_65fr_15fr_15fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[65fr_15fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
@@ -445,10 +445,6 @@ export default function PedidoHistoriaDetalleModal({
             <div className={cn(MODAL_RESUMEN_PANEL_CLASS, "p-3 sm:p-4")}>
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-end")}>
                 <div
-                  className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-                  aria-hidden
-                />
-                <div
                   className={cn(
                     "flex min-w-0 flex-col gap-2 text-center sm:text-left",
                     CELDA_TABLA_PADDING_X
@@ -465,10 +461,6 @@ export default function PedidoHistoriaDetalleModal({
                     </span>
                   </p>
                 </div>
-                <div
-                  className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-                  aria-hidden
-                />
                 <label
                   className={cn(
                     "flex min-w-0 w-full flex-col gap-1.5 text-center sm:text-left",
@@ -499,13 +491,16 @@ export default function PedidoHistoriaDetalleModal({
           <div className="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-0 overflow-hidden">
             <section
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
-              className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-2 sm:p-3")}
+              className={cn(
+                MODAL_SECTION_CARD_CLASS,
+                "shrink-0 px-2 pb-2 pt-0 sm:px-3 sm:pb-3 sm:pt-0"
+              )}
             >
               <span
                 id="pedido-historia-agregar-recepcion-titulo"
                 className={cn(
                   MODAL_MICRO_LABEL_CLASS,
-                  "mb-2 block w-full font-bold"
+                  "m-0 block w-full p-0 font-bold mb-2"
                 )}
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
