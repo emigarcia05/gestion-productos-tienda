@@ -178,7 +178,7 @@ export default function PedidoHistoriaDetalleModal({
   const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
   const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
-  /** Valor ISO `YYYY-MM-DD` — UI: fecha de emisión factura; persistencia backend pendiente. */
+  /** Valor ISO `YYYY-MM-DD` — UI: campo FECHA FACTURA; persistencia backend pendiente. */
   const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
   /** Check list por ítem: borrador y confirmación (solo UI; persistencia / reglas pendientes). */
   const [checkListDraftByItem, setCheckListDraftByItem] = useState<Record<string, string>>({});
@@ -474,14 +474,14 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 >
                   <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full")}>
-                    Fecha de emisión factura
+                    FECHA FACTURA
                   </span>
                   <Input
                     type="date"
                     value={fechaRecepcion}
                     onChange={(e) => setFechaRecepcion(e.target.value)}
                     disabled={locked || loading}
-                    aria-label="Fecha de emisión factura"
+                    aria-label="FECHA FACTURA"
                     className={cn(
                       "h-9 w-full min-w-0 tabular-nums sm:text-left",
                       inputBorderClassName,
@@ -498,20 +498,20 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "shrink-0 px-2 pb-2 pt-1 sm:px-3 sm:pb-3 sm:pt-1"
+                "flex shrink-0 flex-col gap-2 px-2 pb-2 pt-0 sm:px-3 sm:pb-3 sm:pt-0"
               )}
             >
               <span
                 id="pedido-historia-agregar-recepcion-titulo"
                 className={cn(
                   MODAL_MICRO_LABEL_CLASS,
-                  "m-0 block w-full p-0 font-bold mb-2"
+                  "m-0 block w-full box-border p-0 font-bold"
                 )}
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-2 pr-2 pl-0">
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
