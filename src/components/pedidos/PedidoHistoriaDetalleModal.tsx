@@ -445,20 +445,20 @@ export default function PedidoHistoriaDetalleModal({
             <div
               className={cn(
                 MODAL_RESUMEN_PANEL_CLASS,
-                "px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0"
+                "pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0"
               )}
             >
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-end")}>
                 <div
                   className={cn(
-                    "flex min-w-0 flex-col gap-2 text-center sm:text-left",
+                    "flex min-w-0 flex-col gap-0 text-center sm:text-left",
                     CELDA_TABLA_PADDING_X
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">
                     {detalle ? detalle.proveedorNombre : "—"}
                   </p>
-                  <p className="text-xs leading-snug text-muted-foreground">
+                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
                     <span className="tabular-nums">
                       {detalle ? detalle.sucursalNombre : "—"}
                       {" - "}
@@ -498,7 +498,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 p-0"
+                "flex shrink-0 flex-col gap-0 py-1.5 px-2 sm:py-2 sm:px-3"
               )}
             >
               <span
