@@ -503,12 +503,9 @@ export default function PedidoHistoriaDetalleModal({
 
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
             <section
-              aria-labelledby="pedido-historia-alta-title"
+              aria-label="Agregar producto al pedido"
               className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-2 sm:p-3")}
             >
-              <h2 id="pedido-historia-alta-title" className="sr-only">
-                Agregar producto al pedido
-              </h2>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
                 <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
                   {productoSeleccionado ? (
