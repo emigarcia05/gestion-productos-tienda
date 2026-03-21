@@ -498,20 +498,20 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-2 px-2 pb-2 pt-0 sm:px-3 sm:pb-3 sm:pt-0"
+                "flex shrink-0 flex-col gap-0 p-0"
               )}
             >
               <span
                 id="pedido-historia-agregar-recepcion-titulo"
                 className={cn(
                   MODAL_MICRO_LABEL_CLASS,
-                  "m-0 block w-full box-border p-0 font-bold"
+                  "m-0 mb-1 block w-full box-border p-0 font-bold"
                 )}
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-2 pr-2 pl-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0 pr-2 pl-0">
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
@@ -566,7 +566,7 @@ export default function PedidoHistoriaDetalleModal({
                     />
                   )}
                 </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-2 py-0">
                   <Input
                     type="number"
                     min={0}
@@ -586,7 +586,7 @@ export default function PedidoHistoriaDetalleModal({
                     )}
                   />
                 </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-2 py-0">
                   <Button
                     type="button"
                     variant="default"
