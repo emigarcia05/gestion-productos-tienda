@@ -54,20 +54,20 @@ function toDate(value: string | Date | null | undefined): Date | null {
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera: datos pedido (COD+DESC+CANT.P.) | hueco CANT.R. | fecha factura (ACCIONES).
- * 79fr = 8+61+10; ACCIONES tabla 11% (mitad de 22%) → modal más angosto.
+ * Cabecera alineada a tabla sin COD.: (DESC+CANT.P.) | CANT.R. | fecha factura (ACCIONES).
+ * 70fr = 60+10; 10fr; 20fr.
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[79fr_10fr_11fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[70fr_10fr_20fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
 /** Padding horizontal alineado a celdas; sin borde ni sombra (contenedores de grilla transparentes). */
 const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
-/** Misma proporción que la tabla (COD.|DESC.|CANT.P.|CANT.R.|ACCIONES). Fila herramientas: celdas 11–13 = span 3, 14, 15. */
-const GRID_TABLA_PEDIDO_HISTORIA_5COL =
-  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[8fr_61fr_10fr_10fr_11fr] sm:gap-0 sm:items-end";
+/** Misma proporción que la tabla (DESC.|CANT.P.|CANT.R.|ACCIONES). */
+const GRID_TABLA_PEDIDO_HISTORIA_4COL =
+  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[60fr_10fr_10fr_20fr] sm:gap-0 sm:items-end";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -500,8 +500,8 @@ export default function PedidoHistoriaDetalleModal({
               <h2 id="pedido-historia-alta-title" className="sr-only">
                 Agregar producto al pedido
               </h2>
-              <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
-                <div className="flex min-w-0 flex-col justify-end gap-1.5 sm:col-span-3">
+              <div className={GRID_TABLA_PEDIDO_HISTORIA_4COL}>
+                <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <span className={MODAL_MICRO_LABEL_CLASS}>Agregar un producto</span>
                   {productoSeleccionado ? (
                     <Input
@@ -557,6 +557,10 @@ export default function PedidoHistoriaDetalleModal({
                     />
                   )}
                 </div>
+                <div
+                  className={cn("hidden min-h-[2.5rem] min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+                  aria-hidden
+                />
                 <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <span className={MODAL_MICRO_LABEL_CLASS}>Cant.</span>
                   <Input
@@ -623,22 +627,21 @@ export default function PedidoHistoriaDetalleModal({
                   <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[8%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[61%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[60%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
                     <TableHead className="w-[10%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[11%] tabla-bloque-secundario-head-divider">
+                    <TableHead className="w-[20%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <EmptyTableRow colSpan={5} message="Cargando…" />
+                    <EmptyTableRow colSpan={4} message="Cargando…" />
                   ) : errorMsg ? (
-                    <EmptyTableRow colSpan={5} message={errorMsg} />
+                    <EmptyTableRow colSpan={4} message={errorMsg} />
                   ) : items.length === 0 ? (
-                    <EmptyTableRow colSpan={5} message="Sin ítems." />
+                    <EmptyTableRow colSpan={4} message="Sin ítems." />
                   ) : (
                     items.map((item) => {
                       const isEditing = editingItemId === item.id;
@@ -663,12 +666,13 @@ export default function PedidoHistoriaDetalleModal({
                             isControlado && "bg-primary/10 hover:bg-primary/10"
                           )}
                         >
-                          <TableCell className="celda-datos min-w-0 truncate w-[8%]" title={item.codTienda}>
-                            {item.codTienda}
-                          </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate w-[61%]"
-                            title={item.descripcionTienda}
+                            className="celda-datos min-w-0 truncate w-[60%]"
+                            title={
+                              item.codTienda
+                                ? `${item.codTienda} — ${item.descripcionTienda}`
+                                : item.descripcionTienda
+                            }
                           >
                             {item.descripcionTienda}
                           </TableCell>
@@ -735,7 +739,7 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos w-[11%] tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos w-[20%] tabla-bloque-secundario-cell-divider">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
@@ -786,7 +790,7 @@ export default function PedidoHistoriaDetalleModal({
                 >
                   <TableRow className="hover:bg-transparent border-b-0 bg-card">
                     <TableCell
-                      colSpan={3}
+                      colSpan={2}
                       className="celda-datos border-b-0"
                       aria-hidden
                     />
@@ -795,7 +799,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </TableCell>
-                    <TableCell className="celda-datos w-[11%] border-b-0 tabla-bloque-secundario-cell-divider">
+                    <TableCell className="celda-datos w-[20%] border-b-0 tabla-bloque-secundario-cell-divider">
                       <Input
                         type="text"
                         inputMode="decimal"
