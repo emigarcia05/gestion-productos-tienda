@@ -465,16 +465,11 @@ export default function PedidoHistoriaDetalleModal({
           </div>
 
           <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            {/* Fila de herramientas: 66% búsqueda | 8% CANT. | 26% ACCIONES (misma grilla que cabecera) */}
+            {/* Fila 1×3 encima de tabla: 68% | 10% | 22% (padding pequeño en cada columna) */}
             <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "sm:items-end")}>
-              <div
-                className={cn(
-                  "flex min-w-0 flex-col justify-end gap-0.5",
-                  CELDA_TABLA_PADDING_X
-                )}
-              >
+              <div className="flex min-w-0 flex-col justify-end gap-0.5 p-1.5">
                 <span className="text-xs leading-tight text-foreground">
-                  SELECCIONAR PRODUCTO
+                  DESCRIPCIÓN
                 </span>
                 {productoSeleccionado ? (
                   <Input
@@ -482,7 +477,7 @@ export default function PedidoHistoriaDetalleModal({
                     readOnly
                     disabled={locked || loading}
                     data-desc-input="detalle"
-                    aria-label="Seleccionar producto"
+                    aria-label="Descripción"
                     role="button"
                     tabIndex={0}
                     onClick={() => {
@@ -506,9 +501,9 @@ export default function PedidoHistoriaDetalleModal({
                   <Input
                     readOnly
                     disabled={locked || loading}
-                    placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+                    placeholder="BUSCAR POR DESCRIPCIÓN"
                     data-desc-input="detalle"
-                    aria-label="Seleccionar producto"
+                    aria-label="Buscar por descripción"
                     role="button"
                     tabIndex={0}
                     onClick={() => {
@@ -530,18 +525,16 @@ export default function PedidoHistoriaDetalleModal({
                   />
                 )}
               </div>
-              <div
-                className={cn(
-                  "flex min-w-0 flex-col justify-end gap-0.5",
-                  CELDA_TABLA_PADDING_X
-                )}
-              >
-                <span className="text-xs leading-tight text-foreground">CANT.</span>
+              <div className="flex min-w-0 flex-col justify-end gap-0.5 p-1.5">
+                <span className="text-xs leading-tight text-foreground">
+                  CANT RECIBIDA
+                </span>
                 <Input
                   type="number"
                   min={0}
                   step={1}
                   inputMode="numeric"
+                  placeholder="CANT"
                   value={cantRecibidaNueva}
                   onChange={(e) =>
                     setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -549,17 +542,12 @@ export default function PedidoHistoriaDetalleModal({
                   data-cant-input="detalle"
                   disabled={locked || loading}
                   className={cn(
-                    "h-9 w-full min-w-0 tabular-nums text-center",
+                    "h-9 w-full min-w-0 tabular-nums text-center placeholder:text-muted-foreground",
                     inputBorderClassName
                   )}
                 />
               </div>
-              <div
-                className={cn(
-                  "flex min-w-0 w-full flex-col justify-end gap-0.5",
-                  COLUMNA_ACCIONES_EXTERNA_CLASS
-                )}
-              >
+              <div className="flex min-w-0 w-full flex-col justify-end gap-0.5 p-1.5">
                 <Button
                   type="button"
                   onClick={agregarNuevaFila}
@@ -572,7 +560,7 @@ export default function PedidoHistoriaDetalleModal({
                   }
                   className="h-9 w-full min-w-0 shrink-0 px-3"
                 >
-                  Agregar
+                  Cantidad
                 </Button>
               </div>
             </div>
