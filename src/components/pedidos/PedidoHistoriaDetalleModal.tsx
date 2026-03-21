@@ -450,17 +450,17 @@ export default function PedidoHistoriaDetalleModal({
                 "pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0"
               )}
             >
-              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-center")}>
+              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-center")}>
                 <div
                   className={cn(
-                    "flex min-w-0 flex-col gap-0 text-center sm:text-left",
+                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center sm:text-left",
                     CELDA_RESUMEN_PROVEEDOR_PADDING_X
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">
                     {detalle ? detalle.proveedorNombre : "—"}
                   </p>
-                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                  <p className="text-xs leading-snug text-muted-foreground">
                     <span className="tabular-nums">
                       {detalle ? detalle.sucursalNombre : "—"}
                       {" - "}
@@ -470,14 +470,14 @@ export default function PedidoHistoriaDetalleModal({
                 </div>
                 <label
                   className={cn(
-                    "flex min-w-0 w-full flex-col justify-center gap-1 px-0 text-right",
+                    "flex min-h-0 min-w-0 w-full flex-col justify-center gap-0.5 py-0 px-0 text-left",
                     locked || loading ? "cursor-default" : "cursor-pointer"
                   )}
                 >
                   <span
                     className={cn(
                       MODAL_MICRO_LABEL_CLASS,
-                      "w-full text-right leading-tight"
+                      "w-full text-left leading-tight"
                     )}
                   >
                     FECHA FACTURA
@@ -900,7 +900,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "h-6 min-h-6 max-h-6 w-full tabular-nums text-center px-2 font-semibold",
+                          "h-9 w-full min-w-0 px-3 py-1 tabular-nums text-center font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
