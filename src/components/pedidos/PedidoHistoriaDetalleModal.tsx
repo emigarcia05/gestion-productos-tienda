@@ -27,7 +27,6 @@ import {
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 function parseIntSafe(value: string): number {
@@ -512,9 +511,6 @@ export default function PedidoHistoriaDetalleModal({
               </h2>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
                 <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
-                  <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full text-left")}>
-                    Agregar un producto
-                  </span>
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
@@ -570,13 +566,13 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 </div>
                 <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
-                  <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full text-center")}>Cant.</span>
                   <Input
                     type="number"
                     min={0}
                     step={1}
                     inputMode="numeric"
                     placeholder="0"
+                    aria-label="Cant. recibida (nuevo ítem)"
                     value={cantRecibidaNueva}
                     onChange={(e) =>
                       setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -610,18 +606,9 @@ export default function PedidoHistoriaDetalleModal({
             </section>
 
             <section
-              aria-labelledby="pedido-historia-items-title"
+              aria-label="Ítems del pedido"
               className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden"
             >
-              <div className="flex items-center justify-between gap-2 px-0.5">
-                <h2
-                  id="pedido-historia-items-title"
-                  className={cn(MODAL_MICRO_LABEL_CLASS, "mb-0")}
-                >
-                  Ítems del pedido
-                </h2>
-                <Separator className="hidden max-w-[40%] flex-1 sm:block" />
-              </div>
               <div
                 className={cn(
                   MODAL_SECTION_CARD_CLASS,
