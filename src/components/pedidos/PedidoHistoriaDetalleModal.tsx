@@ -511,7 +511,7 @@ export default function PedidoHistoriaDetalleModal({
                 id="pedido-historia-agregar-recepcion-titulo"
                 className={cn(
                   MODAL_MICRO_LABEL_CLASS,
-                  "m-0 mb-1 block w-full box-border p-0 font-bold"
+                  "m-0 mb-1 block w-full box-border p-0 text-center font-bold"
                 )}
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
@@ -578,7 +578,7 @@ export default function PedidoHistoriaDetalleModal({
                     min={0}
                     step={1}
                     inputMode="numeric"
-                    placeholder="0"
+                    placeholder="CANT."
                     aria-label="Cant. recibida (nuevo ítem)"
                     value={cantRecibidaNueva}
                     onChange={(e) =>
@@ -855,7 +855,7 @@ export default function PedidoHistoriaDetalleModal({
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "shrink-0 border-t border-border bg-muted/50 pt-1.5 pl-0 sm:pt-2 sm:pl-0"
+                      "shrink-0 border-t border-border py-1.5 pl-0 sm:py-2 sm:pl-0"
                     )}
                   >
                     <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
@@ -863,7 +863,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </div>
-                    <div className="celda-datos col-start-5 flex min-w-0 items-center justify-center border-b-0 !pl-0">
+                    <div className="celda-datos col-start-5 flex min-w-0 items-center justify-start border-b-0 !pl-0">
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -891,7 +891,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "h-9 w-full min-w-0 px-3 py-1 tabular-nums text-center font-semibold",
+                          "ml-0 h-9 w-full min-w-0 !pl-0 pr-3 py-1 tabular-nums text-left font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
