@@ -65,7 +65,7 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-3 sm:gap-y-0 sm:items-center";
+  "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-0 sm:gap-y-0 sm:items-center";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -448,7 +448,7 @@ export default function PedidoHistoriaDetalleModal({
                 "pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0"
               )}
             >
-              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-end")}>
+              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-center")}>
                 <div
                   className={cn(
                     "flex min-w-0 flex-col gap-0 text-center sm:text-left",
@@ -468,12 +468,17 @@ export default function PedidoHistoriaDetalleModal({
                 </div>
                 <label
                   className={cn(
-                    "flex min-w-0 w-full flex-col gap-1.5 text-center sm:text-left",
+                    "flex min-w-0 w-full flex-col justify-center gap-1 text-center sm:text-left",
                     COLUMNA_ACCIONES_EXTERNA_CLASS,
                     locked || loading ? "cursor-default" : "cursor-pointer"
                   )}
                 >
-                  <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full")}>
+                  <span
+                    className={cn(
+                      MODAL_MICRO_LABEL_CLASS,
+                      "w-full leading-tight"
+                    )}
+                  >
                     FECHA FACTURA
                   </span>
                   <Input
@@ -511,7 +516,7 @@ export default function PedidoHistoriaDetalleModal({
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0 pr-2 pl-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-0 py-0">
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
@@ -566,7 +571,7 @@ export default function PedidoHistoriaDetalleModal({
                     />
                   )}
                 </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-2 py-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-0 py-0">
                   <Input
                     type="number"
                     min={0}
@@ -586,7 +591,7 @@ export default function PedidoHistoriaDetalleModal({
                     )}
                   />
                 </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-2 py-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-0 py-0">
                   <Button
                     type="button"
                     variant="default"
