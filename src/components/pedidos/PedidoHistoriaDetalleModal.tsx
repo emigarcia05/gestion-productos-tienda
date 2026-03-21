@@ -9,7 +9,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -63,6 +62,10 @@ const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
   "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-2 sm:gap-y-0 sm:items-center";
+
+/** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
+const GRID_PEDIDO_HISTORIA_TABLA_COLS =
+  "grid w-full grid-cols-[5fr_55fr_10fr_15fr_15fr]";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -499,7 +502,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 py-1.5 px-0 sm:py-2 sm:px-0"
+                "flex shrink-0 flex-col gap-0 py-1.5 pr-3 pl-0 sm:py-2 sm:pr-4 sm:pl-0"
               )}
             >
               <span
@@ -618,10 +621,11 @@ export default function PedidoHistoriaDetalleModal({
                 )}
               >
                 <div
-                  className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0"
+                  className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 overflow-y-hidden"
                   style={{ height: "auto" }}
                 >
-                  <Table variant="compact" scrollX={false}>
+                  <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+                    <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[5%] text-center">
@@ -843,24 +847,30 @@ export default function PedidoHistoriaDetalleModal({
                     })
                   )}
                 </TableBody>
-                <TableFooter
-                  className={cn(
-                    "sticky bottom-0 z-30 border-t border-border/70 bg-card p-0",
-                    "[&>tr]:border-b-0"
-                  )}
-                >
-                  <TableRow className="hover:bg-transparent border-b-0 bg-card">
-                    <TableCell
-                      colSpan={3}
-                      className="celda-datos border-b-0"
-                      aria-hidden
-                    />
-                    <TableCell className="celda-datos border-b-0 text-right align-middle">
-                      <span className="text-xs font-semibold text-foreground whitespace-nowrap">
+                    </Table>
+                  </div>
+                  <footer
+                    role="region"
+                    aria-label="Totales del pedido"
+                    className={cn(
+                      GRID_PEDIDO_HISTORIA_TABLA_COLS,
+                      "shrink-0 border-t border-border bg-muted/50"
+                    )}
+                  >
+                    <div className="celda-datos border-b-0" aria-hidden />
+                    <div className="celda-datos border-b-0" aria-hidden />
+                    <div className="celda-datos border-b-0" aria-hidden />
+                    <div className="celda-datos flex items-center justify-end border-b-0 text-right">
+                      <span className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
                         TOTAL PEDIDO
                       </span>
-                    </TableCell>
-                    <TableCell className="celda-datos w-[15%] border-b-0 tabla-bloque-secundario-cell-divider">
+                    </div>
+                    <div
+                      className={cn(
+                        "celda-datos flex min-w-0 items-center justify-center border-b-0",
+                        "tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -893,10 +903,8 @@ export default function PedidoHistoriaDetalleModal({
                         )}
                         aria-label="Total Pedido"
                       />
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
+                    </div>
+                  </footer>
                 </div>
               </div>
             </section>
