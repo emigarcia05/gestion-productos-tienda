@@ -27,7 +27,6 @@ import {
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -55,11 +54,11 @@ function toDate(value: string | Date | null | undefined): Date | null {
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera (proveedor + fecha) y fila de herramientas: 68% (8+50+10) | 10% CANT.R | 22% ACCIONES.
- * Alineado con tabla: COD. 8% + DESC. 50% + CANT. P. 10% + CANT. R. 10% + ACCIONES 22%.
+ * Cabecera: datos pedido (COD+DESC+CANT.P.) | hueco CANT.R. | fecha factura (ACCIONES).
+ * 79fr = 8+61+10; ACCIONES tabla 11% (mitad de 22%) → modal más angosto.
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[68fr_10fr_22fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[79fr_10fr_11fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
@@ -70,7 +69,7 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
 
 /** Misma proporción que la tabla (COD.|DESC.|CANT.P.|CANT.R.|ACCIONES). Fila herramientas: celdas 11–13 = span 3, 14, 15. */
 const GRID_TABLA_PEDIDO_HISTORIA_5COL =
-  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[8fr_50fr_10fr_10fr_22fr] sm:gap-0 sm:items-end";
+  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[8fr_61fr_10fr_10fr_11fr] sm:gap-0 sm:items-end";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -184,7 +183,7 @@ export default function PedidoHistoriaDetalleModal({
   const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
   const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
-  /** Valor ISO `YYYY-MM-DD` para `<input type="date">`; persistencia backend pendiente si se define campo. */
+  /** Valor ISO `YYYY-MM-DD` — UI: fecha de emisión factura; persistencia backend pendiente. */
   const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
@@ -388,7 +387,7 @@ export default function PedidoHistoriaDetalleModal({
           title="Detalle Del Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[72rem] max-h-[95vh]"
+          className="sm:max-w-[48rem] max-h-[95vh]"
           bodyShellClassName="p-0"
           padding="sm"
           headerClassName="pt-3 pb-3"
@@ -449,23 +448,21 @@ export default function PedidoHistoriaDetalleModal({
                     CELDA_TABLA_PADDING_X
                   )}
                 >
-                  <span className={MODAL_MICRO_LABEL_CLASS}>Datos del pedido</span>
+                  <span className={MODAL_MICRO_LABEL_CLASS}>Nombre proveedor</span>
                   <p className="text-sm font-semibold leading-snug text-foreground">
                     {detalle ? detalle.proveedorNombre : "—"}
-                    <span className="text-muted-foreground font-normal"> · </span>
-                    {detalle ? detalle.sucursalNombre : "—"}
                   </p>
-                  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                    <span className="text-xs tabular-nums text-muted-foreground">
+                  <p className="text-xs leading-snug text-muted-foreground">
+                    <span className="tabular-nums">
+                      {detalle ? detalle.sucursalNombre : "—"}
+                      {" — "}
                       {generadoAtStr || "—"}
                     </span>
-                    <Badge
-                      variant={estado === "RECIBIDO" ? "secondary" : "outline"}
-                      className="text-[0.65rem] font-normal uppercase tracking-wide"
-                    >
-                      {estado === "RECIBIDO" ? "Recibido" : "Pedido"}
-                    </Badge>
-                  </div>
+                    <span className="text-foreground/80">
+                      {" · "}
+                      {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
+                    </span>
+                  </p>
                 </div>
                 <div
                   className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
@@ -479,14 +476,14 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 >
                   <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full")}>
-                    Fecha recepción
+                    Fecha de emisión factura
                   </span>
                   <Input
                     type="date"
                     value={fechaRecepcion}
                     onChange={(e) => setFechaRecepcion(e.target.value)}
                     disabled={locked || loading}
-                    aria-label="Fecha recepción"
+                    aria-label="Fecha de emisión factura"
                     className={cn(
                       "h-9 w-full min-w-0 tabular-nums sm:text-left",
                       inputBorderClassName,
@@ -503,15 +500,12 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-alta-title"
               className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-3 sm:p-4")}
             >
-              <h2
-                id="pedido-historia-alta-title"
-                className={cn(MODAL_MICRO_LABEL_CLASS, "mb-3 block")}
-              >
-                Agregar ítem a la recepción
+              <h2 id="pedido-historia-alta-title" className="sr-only">
+                Agregar producto al pedido
               </h2>
               <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
                 <div className="flex min-w-0 flex-col justify-end gap-1.5 sm:col-span-3">
-                  <span className={MODAL_MICRO_LABEL_CLASS}>Desc.</span>
+                  <span className={MODAL_MICRO_LABEL_CLASS}>Agregar un producto</span>
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
@@ -567,7 +561,7 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 </div>
                 <div className="flex min-w-0 flex-col justify-end gap-1.5">
-                  <span className={MODAL_MICRO_LABEL_CLASS}>Cant. recibida</span>
+                  <span className={MODAL_MICRO_LABEL_CLASS}>Cant.</span>
                   <Input
                     type="number"
                     min={0}
@@ -633,10 +627,10 @@ export default function PedidoHistoriaDetalleModal({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[8%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[61%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
                     <TableHead className="w-[10%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[22%] tabla-bloque-secundario-head-divider">
+                    <TableHead className="w-[11%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
                   </TableRow>
@@ -676,7 +670,7 @@ export default function PedidoHistoriaDetalleModal({
                             {item.codTienda}
                           </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate w-[50%]"
+                            className="celda-datos min-w-0 truncate w-[61%]"
                             title={item.descripcionTienda}
                           >
                             {item.descripcionTienda}
@@ -744,7 +738,7 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos w-[22%] tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos w-[11%] tabla-bloque-secundario-cell-divider">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
@@ -804,7 +798,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </TableCell>
-                    <TableCell className="celda-datos w-[22%] border-b-0 tabla-bloque-secundario-cell-divider">
+                    <TableCell className="celda-datos w-[11%] border-b-0 tabla-bloque-secundario-cell-divider">
                       <Input
                         type="text"
                         inputMode="decimal"
