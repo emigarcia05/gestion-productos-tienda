@@ -63,6 +63,10 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
   "sm:shadow-[inset_1px_0_0_#0072bb]"
 );
 
+/** Fila de alta producto: ancho col1 = COD.+DESC.+CANT.PED. (9+62.5+10.5 fr); col2 = CANT.REC.; col3 = ACCIONES. */
+const GRID_FILA_ALTA_PEDIDO_HISTORIA =
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[82fr_10.5fr_15fr] sm:gap-0 sm:items-end";
+
 /** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
   if (norm === "") return "";
@@ -459,13 +463,7 @@ export default function PedidoHistoriaDetalleModal({
           </div>
 
           <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            <div
-              className={cn(GRID_ALINEACION_TABLA_PEDIDO_HISTORIA, "sm:items-end")}
-            >
-              <div
-                className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-                aria-hidden
-              />
+            <div className={GRID_FILA_ALTA_PEDIDO_HISTORIA}>
               <div
                 className={cn(
                   "flex min-w-0 flex-col justify-end gap-0.5",
@@ -473,7 +471,7 @@ export default function PedidoHistoriaDetalleModal({
                 )}
               >
                 <span className="text-xs leading-tight text-foreground">
-                  DESCRIPCIÓN
+                  SELECCIONE PRODUCTO
                 </span>
                 {productoSeleccionado ? (
                   <Input
@@ -481,7 +479,7 @@ export default function PedidoHistoriaDetalleModal({
                     readOnly
                     disabled={locked || loading}
                     data-desc-input="detalle"
-                    aria-label="Seleccionar Producto"
+                    aria-label="Seleccione producto"
                     role="button"
                     tabIndex={0}
                     onClick={() => {
@@ -513,10 +511,6 @@ export default function PedidoHistoriaDetalleModal({
                   </Button>
                 )}
               </div>
-              <div
-                className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-                aria-hidden
-              />
               <div
                 className={cn(
                   "flex min-w-0 flex-col justify-end gap-0.5",
