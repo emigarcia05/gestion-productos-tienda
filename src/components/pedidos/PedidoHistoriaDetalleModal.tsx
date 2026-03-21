@@ -504,7 +504,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 py-1.5 pr-3 pl-0 sm:py-2 sm:pr-4 sm:pl-0"
+                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pr-3 pl-0 sm:pt-0 sm:pb-2 sm:pr-4 sm:pl-0"
               )}
             >
               <span
@@ -856,20 +856,17 @@ export default function PedidoHistoriaDetalleModal({
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "shrink-0 border-t border-border bg-muted/50"
+                      "shrink-0 border-t border-border bg-muted/50 pl-0 sm:pl-0"
                     )}
                   >
-                    <div className="celda-datos border-b-0" aria-hidden />
-                    <div className="celda-datos border-b-0" aria-hidden />
-                    <div className="celda-datos border-b-0" aria-hidden />
-                    <div className="celda-datos flex items-center justify-end border-b-0 text-right">
+                    <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
                       <span className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
                         TOTAL PEDIDO
                       </span>
                     </div>
                     <div
                       className={cn(
-                        "celda-datos flex min-w-0 items-center justify-center border-b-0",
+                        "celda-datos col-start-5 flex min-w-0 items-center justify-center border-b-0",
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
