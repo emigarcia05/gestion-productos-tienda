@@ -64,9 +64,9 @@ const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 /** Padding horizontal alineado a celdas; sin borde ni sombra (contenedores de grilla transparentes). */
 const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
-/** Misma proporción que la tabla (CHECK|DESC.|CANT.P.|CANT.R.|ACCIONES). */
-const GRID_TABLA_PEDIDO_HISTORIA_5COL =
-  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[5fr_55fr_10fr_15fr_15fr] sm:gap-0 sm:items-end";
+/** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
+const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
+  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-0 sm:items-end";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -505,16 +505,12 @@ export default function PedidoHistoriaDetalleModal({
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
             <section
               aria-labelledby="pedido-historia-alta-title"
-              className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-3 sm:p-4")}
+              className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-2 sm:p-3")}
             >
               <h2 id="pedido-historia-alta-title" className="sr-only">
                 Agregar producto al pedido
               </h2>
-              <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
-                <div
-                  className={cn("hidden min-h-[2.5rem] min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-                  aria-hidden
-                />
+              <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
                 <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <span className={MODAL_MICRO_LABEL_CLASS}>Agregar un producto</span>
                   {productoSeleccionado ? (
@@ -571,10 +567,6 @@ export default function PedidoHistoriaDetalleModal({
                     />
                   )}
                 </div>
-                <div
-                  className={cn("hidden min-h-[2.5rem] min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-                  aria-hidden
-                />
                 <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <span className={MODAL_MICRO_LABEL_CLASS}>Cant.</span>
                   <Input
