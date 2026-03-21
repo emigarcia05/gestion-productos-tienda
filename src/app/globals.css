@@ -553,8 +553,8 @@
  * Usar <Table> de @/components/ui/table (siempre aplica esta clase). No usar otra clase de tabla.
  *
  * ENCABEZADO FIJO (obligatorio): el encabezado de la tabla debe estar fijo y NO moverse con el scroll.
- * La tabla debe ir dentro de .contenedor-tabla-gestion (que tiene overflow-y: auto). Así el <thead>
- * con position: sticky permanece visible mientras el cuerpo de la tabla hace scroll. */
+ * La tabla debe ir dentro de .contenedor-tabla-gestion (que tiene overflow-y: auto). El encabezado
+ * queda fijo con sticky en <thead> (TableHeader) y en cada <th> (TableHead + reglas aquí abajo). */
 .tabla-gestion-compacta {
   width: 100%;
   font-size: 0.75rem;
@@ -576,7 +576,7 @@
   background-color: var(--primary) !important;
 }
 .tabla-gestion-compacta thead th {
-  /* Encabezado fijo (robusto): sticky por celda <th> (no usar sticky en <thead>). */
+  /* Encabezado fijo: sticky por celda (refuerzo junto a TableHead sticky top-0); z-index por encima del tbody. */
   position: sticky;
   top: 0;
   z-index: 20;

@@ -685,7 +685,7 @@ export default function PedidoHistoriaDetalleModal({
                             ) : locked ? (
                               <span className="text-muted-foreground">—</span>
                             ) : (
-                              <div className="flex min-w-0 flex-col items-stretch justify-center gap-1 py-0.5">
+                              <div className="flex min-w-0 w-full flex-col items-center justify-center py-0.5">
                                 <Input
                                   value={checkListDraft}
                                   onChange={(e) =>
@@ -712,24 +712,6 @@ export default function PedidoHistoriaDetalleModal({
                                     inputBorderClassName
                                   )}
                                 />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon-xs"
-                                  className="mx-auto shrink-0"
-                                  onClick={() => {
-                                    if (busy) return;
-                                    setCheckListConfirmedByItem((prev) => ({
-                                      ...prev,
-                                      [item.id]: true,
-                                    }));
-                                  }}
-                                  disabled={busy}
-                                  aria-label="Confirmar lista de verificación"
-                                  title="OK"
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                </Button>
                               </div>
                             )}
                           </TableCell>
