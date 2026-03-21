@@ -27,6 +27,8 @@ import {
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 function parseIntSafe(value: string): number {
@@ -68,7 +70,17 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
 
 /** Misma proporción que la tabla (COD.|DESC.|CANT.P.|CANT.R.|ACCIONES). Fila herramientas: celdas 11–13 = span 3, 14, 15. */
 const GRID_TABLA_PEDIDO_HISTORIA_5COL =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[8fr_50fr_10fr_10fr_22fr] sm:gap-0 sm:items-end";
+  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[8fr_50fr_10fr_10fr_22fr] sm:gap-0 sm:items-end";
+
+/** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
+const MODAL_MICRO_LABEL_CLASS =
+  "text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground";
+
+const MODAL_SECTION_CARD_CLASS =
+  "rounded-lg border border-border bg-card shadow-sm";
+
+const MODAL_RESUMEN_PANEL_CLASS =
+  "rounded-lg border border-border bg-muted/25 shadow-sm";
 
 /** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
@@ -424,157 +436,200 @@ export default function PedidoHistoriaDetalleModal({
             </>
           }
         >
-        <div className="flex min-h-0 flex-1 flex-col gap-2">
-          <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start")}>
-            <div
-              className={cn(
-                "flex min-w-0 flex-col gap-0.5 text-center",
-                CELDA_TABLA_PADDING_X
-              )}
-            >
-              <div className="w-full text-center text-sm font-medium leading-snug text-foreground">
-                {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
-              </div>
-              <div className="w-full text-center text-xs leading-tight text-muted-foreground">
-                {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
-              </div>
-            </div>
-            <div
-              className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
-              aria-hidden
-            />
-            <label
-              className={cn(
-                "flex min-w-0 w-full flex-col gap-0.5",
-                COLUMNA_ACCIONES_EXTERNA_CLASS,
-                locked || loading ? "cursor-default" : "cursor-pointer"
-              )}
-            >
-              <span className="text-center text-xs text-foreground leading-tight w-full">
-                FECHA RECEPCIÓN
-              </span>
-              <Input
-                type="date"
-                value={fechaRecepcion}
-                onChange={(e) => setFechaRecepcion(e.target.value)}
-                disabled={locked || loading}
-                aria-label="Fecha recepción"
-                className={cn(
-                  "h-9 w-full min-w-0 tabular-nums text-center",
-                  inputBorderClassName,
-                  locked || loading ? "cursor-not-allowed" : "cursor-pointer"
-                )}
-              />
-            </label>
-          </div>
-
-          <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            {/* Fila herramientas: |11+12+13 buscar desc.|14 CANT.REC.|15 Agregar| alineada a cabecera tabla */}
-            <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
-              <div className="flex min-w-0 flex-col justify-end gap-0.5 p-1.5 sm:col-span-3">
-                <span className="text-xs leading-tight text-foreground">
-                  DESCRIPCIÓN
-                </span>
-                {productoSeleccionado ? (
-                  <Input
-                    value={productoSeleccionado.descripcionTienda}
-                    readOnly
-                    disabled={locked || loading}
-                    data-desc-input="detalle"
-                    aria-label="Descripción"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      if (locked || loading) return;
-                      setAgregarProductosOpen(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if (locked || loading) return;
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setAgregarProductosOpen(true);
-                      }
-                    }}
-                    className={cn(
-                      "h-9 min-w-0 w-full cursor-pointer",
-                      inputBorderClassName,
-                      locked || loading ? "cursor-not-allowed" : ""
-                    )}
-                  />
-                ) : (
-                  <Input
-                    readOnly
-                    disabled={locked || loading}
-                    placeholder="BUSCAR POR DESCRIPCIÓN"
-                    data-desc-input="detalle"
-                    aria-label="Buscar por descripción"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      if (locked || loading) return;
-                      setAgregarProductosOpen(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if (locked || loading) return;
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setAgregarProductosOpen(true);
-                      }
-                    }}
-                    className={cn(
-                      "h-9 min-w-0 w-full cursor-pointer placeholder:text-muted-foreground",
-                      inputBorderClassName,
-                      locked || loading ? "cursor-not-allowed" : ""
-                    )}
-                  />
-                )}
-              </div>
-              <div className="flex min-w-0 flex-col justify-end gap-0.5 p-1.5">
-                <span className="text-xs leading-tight text-foreground">
-                  CANT RECIBIDA
-                </span>
-                <Input
-                  type="number"
-                  min={0}
-                  step={1}
-                  inputMode="numeric"
-                  placeholder="CANT"
-                  value={cantRecibidaNueva}
-                  onChange={(e) =>
-                    setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  data-cant-input="detalle"
-                  disabled={locked || loading}
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <section aria-labelledby="pedido-historia-resumen-title" className="shrink-0">
+            <h2 id="pedido-historia-resumen-title" className="sr-only">
+              Resumen del pedido
+            </h2>
+            <div className={cn(MODAL_RESUMEN_PANEL_CLASS, "p-3 sm:p-4")}>
+              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-end")}>
+                <div
                   className={cn(
-                    "h-9 w-full min-w-0 tabular-nums text-center placeholder:text-muted-foreground",
-                    inputBorderClassName
+                    "flex min-w-0 flex-col gap-2 text-center sm:text-left",
+                    CELDA_TABLA_PADDING_X
                   )}
-                />
-              </div>
-              <div className="flex min-w-0 w-full flex-col justify-end gap-0.5 p-1.5">
-                <Button
-                  type="button"
-                  onClick={agregarNuevaFila}
-                  disabled={
-                    locked ||
-                    loading ||
-                    guardando != null ||
-                    !productoSeleccionado ||
-                    parseIntSafe(cantRecibidaNueva) <= 0
-                  }
-                  className="h-9 w-full min-w-0 shrink-0 px-3"
                 >
-                  Agregar
-                </Button>
+                  <span className={MODAL_MICRO_LABEL_CLASS}>Datos del pedido</span>
+                  <p className="text-sm font-semibold leading-snug text-foreground">
+                    {detalle ? detalle.proveedorNombre : "—"}
+                    <span className="text-muted-foreground font-normal"> · </span>
+                    {detalle ? detalle.sucursalNombre : "—"}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      {generadoAtStr || "—"}
+                    </span>
+                    <Badge
+                      variant={estado === "RECIBIDO" ? "secondary" : "outline"}
+                      className="text-[0.65rem] font-normal uppercase tracking-wide"
+                    >
+                      {estado === "RECIBIDO" ? "Recibido" : "Pedido"}
+                    </Badge>
+                  </div>
+                </div>
+                <div
+                  className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+                  aria-hidden
+                />
+                <label
+                  className={cn(
+                    "flex min-w-0 w-full flex-col gap-1.5 text-center sm:text-left",
+                    COLUMNA_ACCIONES_EXTERNA_CLASS,
+                    locked || loading ? "cursor-default" : "cursor-pointer"
+                  )}
+                >
+                  <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full")}>
+                    Fecha recepción
+                  </span>
+                  <Input
+                    type="date"
+                    value={fechaRecepcion}
+                    onChange={(e) => setFechaRecepcion(e.target.value)}
+                    disabled={locked || loading}
+                    aria-label="Fecha recepción"
+                    className={cn(
+                      "h-9 w-full min-w-0 tabular-nums sm:text-left",
+                      inputBorderClassName,
+                      locked || loading ? "cursor-not-allowed" : "cursor-pointer"
+                    )}
+                  />
+                </label>
               </div>
             </div>
+          </section>
 
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div
-                className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0"
-                style={{ height: "auto" }}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+            <section
+              aria-labelledby="pedido-historia-alta-title"
+              className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-3 sm:p-4")}
+            >
+              <h2
+                id="pedido-historia-alta-title"
+                className={cn(MODAL_MICRO_LABEL_CLASS, "mb-3 block")}
               >
-              <Table variant="compact" scrollX={false}>
+                Agregar ítem a la recepción
+              </h2>
+              <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
+                <div className="flex min-w-0 flex-col justify-end gap-1.5 sm:col-span-3">
+                  <span className={MODAL_MICRO_LABEL_CLASS}>Desc.</span>
+                  {productoSeleccionado ? (
+                    <Input
+                      value={productoSeleccionado.descripcionTienda}
+                      readOnly
+                      disabled={locked || loading}
+                      data-desc-input="detalle"
+                      aria-label="Descripción del producto"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        if (locked || loading) return;
+                        setAgregarProductosOpen(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (locked || loading) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setAgregarProductosOpen(true);
+                        }
+                      }}
+                      className={cn(
+                        "h-9 min-w-0 w-full cursor-pointer",
+                        inputBorderClassName,
+                        locked || loading ? "cursor-not-allowed" : ""
+                      )}
+                    />
+                  ) : (
+                    <Input
+                      readOnly
+                      disabled={locked || loading}
+                      placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+                      data-desc-input="detalle"
+                      aria-label="Buscar por descripción o código"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        if (locked || loading) return;
+                        setAgregarProductosOpen(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (locked || loading) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setAgregarProductosOpen(true);
+                        }
+                      }}
+                      className={cn(
+                        "h-9 min-w-0 w-full cursor-pointer placeholder:text-muted-foreground",
+                        inputBorderClassName,
+                        locked || loading ? "cursor-not-allowed" : ""
+                      )}
+                    />
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-col justify-end gap-1.5">
+                  <span className={MODAL_MICRO_LABEL_CLASS}>Cant. recibida</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={cantRecibidaNueva}
+                    onChange={(e) =>
+                      setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    data-cant-input="detalle"
+                    disabled={locked || loading}
+                    className={cn(
+                      "h-9 w-full min-w-0 tabular-nums text-center placeholder:text-muted-foreground",
+                      inputBorderClassName
+                    )}
+                  />
+                </div>
+                <div className="flex min-w-0 w-full flex-col justify-end gap-1.5">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={agregarNuevaFila}
+                    disabled={
+                      locked ||
+                      loading ||
+                      guardando != null ||
+                      !productoSeleccionado ||
+                      parseIntSafe(cantRecibidaNueva) <= 0
+                    }
+                    className="h-9 w-full min-w-0 shrink-0 px-3"
+                  >
+                    Agregar
+                  </Button>
+                </div>
+              </div>
+            </section>
+
+            <section
+              aria-labelledby="pedido-historia-items-title"
+              className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden"
+            >
+              <div className="flex items-center justify-between gap-2 px-0.5">
+                <h2
+                  id="pedido-historia-items-title"
+                  className={cn(MODAL_MICRO_LABEL_CLASS, "mb-0")}
+                >
+                  Ítems del pedido
+                </h2>
+                <Separator className="hidden max-w-[40%] flex-1 sm:block" />
+              </div>
+              <div
+                className={cn(
+                  MODAL_SECTION_CARD_CLASS,
+                  "flex min-h-0 flex-1 flex-col overflow-hidden"
+                )}
+              >
+                <div
+                  className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0"
+                  style={{ height: "auto" }}
+                >
+                  <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[8%]">COD. TIENDA</TableHead>
@@ -786,8 +841,9 @@ export default function PedidoHistoriaDetalleModal({
                   </TableRow>
                 </TableFooter>
               </Table>
+                </div>
               </div>
-            </div>
+            </section>
           </div>
         </div>
         </AppModal>

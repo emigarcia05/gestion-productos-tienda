@@ -94,8 +94,8 @@ export default function HistorialPedidosPageClient({
         total={total}
       />
     }>
-      <div className="flex flex-col h-full min-h-0 gap-0.5">
-        <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+      <div className="flex flex-col h-full min-h-0 gap-2">
+        <Card className="min-h-0 flex flex-col gap-0 overflow-hidden rounded-xl border border-border/80 bg-card py-0 shadow-sm">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="flex flex-col flex-1 min-h-0">
               <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
