@@ -66,6 +66,10 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
   "sm:shadow-[inset_1px_0_0_#0072bb]"
 );
 
+/** Misma proporción que la tabla (COD.|DESC.|CANT.P.|CANT.R.|ACCIONES). Fila herramientas: celdas 11–13 = span 3, 14, 15. */
+const GRID_TABLA_PEDIDO_HISTORIA_5COL =
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[8fr_50fr_10fr_10fr_22fr] sm:gap-0 sm:items-end";
+
 /** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
   if (norm === "") return "";
@@ -465,9 +469,9 @@ export default function PedidoHistoriaDetalleModal({
           </div>
 
           <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            {/* Fila 1×3 encima de tabla: 68% | 10% | 22% (padding pequeño en cada columna) */}
-            <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "sm:items-end")}>
-              <div className="flex min-w-0 flex-col justify-end gap-0.5 p-1.5">
+            {/* Fila herramientas: |11+12+13 buscar desc.|14 CANT.REC.|15 Agregar| alineada a cabecera tabla */}
+            <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
+              <div className="flex min-w-0 flex-col justify-end gap-0.5 p-1.5 sm:col-span-3">
                 <span className="text-xs leading-tight text-foreground">
                   DESCRIPCIÓN
                 </span>
@@ -560,7 +564,7 @@ export default function PedidoHistoriaDetalleModal({
                   }
                   className="h-9 w-full min-w-0 shrink-0 px-3"
                 >
-                  Cantidad
+                  Agregar
                 </Button>
               </div>
             </div>
