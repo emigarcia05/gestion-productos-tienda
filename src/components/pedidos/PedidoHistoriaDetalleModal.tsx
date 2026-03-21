@@ -52,9 +52,12 @@ function toDate(value: string | Date | null | undefined): Date | null {
 
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
-/** Igual que anchos de tabla (COD. / DESC. / CANT. PED. / CANT. REC. / ACCIONES): fecha, fila de alta y columna ACCIONES comparten columna 5. */
-const GRID_ALINEACION_TABLA_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[9fr_62.5fr_10.5fr_10.5fr_15fr] sm:gap-0";
+/**
+ * Cabecera (proveedor + fecha) y fila de herramientas: 66% (8+50+8) | 8% CANT.R | 26% ACCIONES.
+ * Alineado con tabla: COD. 8% + DESC. 50% + CANT. P. 8% + CANT. R. 8% + ACCIONES 26%.
+ */
+const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[66fr_8fr_26fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
@@ -62,10 +65,6 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
   CELDA_TABLA_PADDING_X,
   "sm:shadow-[inset_1px_0_0_#0072bb]"
 );
-
-/** Fila de alta producto: ancho col1 = COD.+DESC.+CANT.PED. (9+62.5+10.5 fr); col2 = CANT.REC.; col3 = ACCIONES. */
-const GRID_FILA_ALTA_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[82fr_10.5fr_15fr] sm:gap-0 sm:items-end";
 
 /** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
@@ -422,21 +421,24 @@ export default function PedidoHistoriaDetalleModal({
           }
         >
         <div className="flex min-h-0 flex-1 flex-col gap-2">
-          {/* Mismas proporciones que la tabla (COD. / DESC. / CANT. PED. / CANT. REC. / ACCIONES) para alinear FECHA RECEPCIÓN con la columna ACCIONES */}
-          <div
-            className={cn(
-              GRID_ALINEACION_TABLA_PEDIDO_HISTORIA,
-              "items-start"
-            )}
-          >
-            <div className="flex min-w-0 flex-col gap-0.5 text-center sm:col-span-4">
-              <div className="text-center text-sm font-medium leading-snug text-foreground w-full">
+          <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start")}>
+            <div
+              className={cn(
+                "flex min-w-0 flex-col gap-0.5 text-center",
+                CELDA_TABLA_PADDING_X
+              )}
+            >
+              <div className="w-full text-center text-sm font-medium leading-snug text-foreground">
                 {detalle ? detalle.proveedorNombre : "—"} - {detalle ? detalle.sucursalNombre : "—"}
               </div>
-              <div className="text-center text-xs leading-tight text-muted-foreground w-full">
+              <div className="w-full text-center text-xs leading-tight text-muted-foreground">
                 {generadoAtStr || "—"} · {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
               </div>
             </div>
+            <div
+              className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+              aria-hidden
+            />
             <label
               className={cn(
                 "flex min-w-0 w-full flex-col gap-0.5",
@@ -463,7 +465,8 @@ export default function PedidoHistoriaDetalleModal({
           </div>
 
           <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            <div className={GRID_FILA_ALTA_PEDIDO_HISTORIA}>
+            {/* Fila de herramientas: 66% búsqueda | 8% CANT. | 26% ACCIONES (misma grilla que cabecera) */}
+            <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "sm:items-end")}>
               <div
                 className={cn(
                   "flex min-w-0 flex-col justify-end gap-0.5",
@@ -471,7 +474,7 @@ export default function PedidoHistoriaDetalleModal({
                 )}
               >
                 <span className="text-xs leading-tight text-foreground">
-                  SELECCIONE PRODUCTO
+                  SELECCIONAR PRODUCTO
                 </span>
                 {productoSeleccionado ? (
                   <Input
@@ -479,7 +482,7 @@ export default function PedidoHistoriaDetalleModal({
                     readOnly
                     disabled={locked || loading}
                     data-desc-input="detalle"
-                    aria-label="Seleccione producto"
+                    aria-label="Seleccionar producto"
                     role="button"
                     tabIndex={0}
                     onClick={() => {
@@ -500,15 +503,31 @@ export default function PedidoHistoriaDetalleModal({
                     )}
                   />
                 ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 w-full min-w-0 justify-start px-3"
-                    onClick={() => setAgregarProductosOpen(true)}
+                  <Input
+                    readOnly
                     disabled={locked || loading}
-                  >
-                    Seleccionar Producto
-                  </Button>
+                    placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+                    data-desc-input="detalle"
+                    aria-label="Seleccionar producto"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (locked || loading) return;
+                      setAgregarProductosOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (locked || loading) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setAgregarProductosOpen(true);
+                      }
+                    }}
+                    className={cn(
+                      "h-9 min-w-0 w-full cursor-pointer placeholder:text-muted-foreground",
+                      inputBorderClassName,
+                      locked || loading ? "cursor-not-allowed" : ""
+                    )}
+                  />
                 )}
               </div>
               <div
@@ -551,9 +570,9 @@ export default function PedidoHistoriaDetalleModal({
                     !productoSeleccionado ||
                     parseIntSafe(cantRecibidaNueva) <= 0
                   }
-                  className="h-9 w-full min-w-0 shrink-0 px-2"
+                  className="h-9 w-full min-w-0 shrink-0 px-3"
                 >
-                  + AGREGAR
+                  Agregar
                 </Button>
               </div>
             </div>
@@ -566,11 +585,11 @@ export default function PedidoHistoriaDetalleModal({
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[9%]">COD. TIENDA</TableHead>
-                    <TableHead className="w-[62.5%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
-                    <TableHead className="w-[10.5%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[10.5%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[15%] tabla-bloque-secundario-head-divider">
+                    <TableHead className="w-[8%]">COD. TIENDA</TableHead>
+                    <TableHead className="w-[50%]">DESCRIPCIÓN (descripcion_tienda)</TableHead>
+                    <TableHead className="w-[8%]">CANT. PEDIDA</TableHead>
+                    <TableHead className="w-[8%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[26%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
                   </TableRow>
@@ -606,19 +625,19 @@ export default function PedidoHistoriaDetalleModal({
                             isControlado && "bg-primary/10 hover:bg-primary/10"
                           )}
                         >
-                          <TableCell className="celda-datos min-w-0 truncate w-[9%]" title={item.codTienda}>
+                          <TableCell className="celda-datos min-w-0 truncate w-[8%]" title={item.codTienda}>
                             {item.codTienda}
                           </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate w-[62.5%]"
+                            className="celda-datos min-w-0 truncate w-[50%]"
                             title={item.descripcionTienda}
                           >
                             {item.descripcionTienda}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[10.5%]">
+                          <TableCell className="celda-datos tabular-nums w-[8%]">
                             {cantPedidaVisible}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[10.5%]">
+                          <TableCell className="celda-datos tabular-nums w-[8%]">
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
@@ -678,7 +697,7 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos w-[26%] tabla-bloque-secundario-cell-divider">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
@@ -738,7 +757,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </TableCell>
-                    <TableCell className="celda-datos w-[15%] border-b-0 tabla-bloque-secundario-cell-divider">
+                    <TableCell className="celda-datos w-[26%] border-b-0 tabla-bloque-secundario-cell-divider">
                       <Input
                         type="text"
                         inputMode="decimal"
