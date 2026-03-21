@@ -65,7 +65,7 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-0 sm:gap-y-0 sm:items-center";
+  "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-2 sm:gap-y-0 sm:items-center";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -503,7 +503,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 py-1.5 px-2 sm:py-2 sm:px-3"
+                "flex shrink-0 flex-col gap-0 py-1.5 px-0 sm:py-2 sm:px-0"
               )}
             >
               <span
@@ -516,7 +516,7 @@ export default function PedidoHistoriaDetalleModal({
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-0 py-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
@@ -571,7 +571,7 @@ export default function PedidoHistoriaDetalleModal({
                     />
                   )}
                 </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-0 py-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
                   <Input
                     type="number"
                     min={0}
@@ -591,7 +591,7 @@ export default function PedidoHistoriaDetalleModal({
                     )}
                   />
                 </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 px-0 py-0">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
                   <Button
                     type="button"
                     variant="default"
