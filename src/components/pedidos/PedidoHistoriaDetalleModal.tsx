@@ -855,7 +855,7 @@ export default function PedidoHistoriaDetalleModal({
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "shrink-0 border-t border-border bg-muted/50 pl-0 sm:pl-0"
+                      "shrink-0 border-t border-border bg-muted/50 pt-1.5 pl-0 sm:pt-2 sm:pl-0"
                     )}
                   >
                     <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
@@ -863,12 +863,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </div>
-                    <div
-                      className={cn(
-                        "celda-datos col-start-5 flex min-w-0 items-center justify-center border-b-0",
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
+                    <div className="celda-datos col-start-5 flex min-w-0 items-center justify-center border-b-0 !pl-0">
                       <Input
                         type="text"
                         inputMode="decimal"
