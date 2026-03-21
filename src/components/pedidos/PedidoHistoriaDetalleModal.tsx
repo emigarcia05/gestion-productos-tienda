@@ -53,10 +53,10 @@ function toDate(value: string | Date | null | undefined): Date | null {
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera resumen: proveedor + metadatos | fecha factura (`sm`: dos columnas ~65% / ~15%).
+ * Cabecera resumen: proveedor + metadatos | fecha factura (`sm`: dos columnas ~85% / ~15%).
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[65fr_15fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[85fr_15fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
@@ -437,12 +437,17 @@ export default function PedidoHistoriaDetalleModal({
             </>
           }
         >
-        <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-0">
           <section aria-labelledby="pedido-historia-resumen-title" className="shrink-0">
             <h2 id="pedido-historia-resumen-title" className="sr-only">
               Resumen del pedido
             </h2>
-            <div className={cn(MODAL_RESUMEN_PANEL_CLASS, "p-3 sm:p-4")}>
+            <div
+              className={cn(
+                MODAL_RESUMEN_PANEL_CLASS,
+                "px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0"
+              )}
+            >
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-end")}>
                 <div
                   className={cn(
@@ -493,7 +498,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "shrink-0 px-2 pb-2 pt-0 sm:px-3 sm:pb-3 sm:pt-0"
+                "shrink-0 px-2 pb-2 pt-1 sm:px-3 sm:pb-3 sm:pt-1"
               )}
             >
               <span
