@@ -65,7 +65,7 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-0 sm:items-center";
+  "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-3 sm:gap-y-0 sm:items-center";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -501,7 +501,7 @@ export default function PedidoHistoriaDetalleModal({
             </div>
           </section>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+          <div className="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-0 overflow-hidden">
             <section
               aria-label="Agregar producto al pedido"
               className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-2 sm:p-3")}
