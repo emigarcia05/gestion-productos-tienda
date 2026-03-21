@@ -17,13 +17,16 @@ interface TableProps extends React.ComponentProps<"table"> {
 }
 
 /** Diseño único de tablas (referencia: Comp. Proveedores). Aplica .tabla-gestion-compacta (globals.css).
- * Encabezado fijo: `TableHeader` (`sticky top-0 z-10` + `bg-primary`) y `TableHead` (`sticky top-0`); refuerzo en globals.css. */
+ * Encabezado fijo: `TableHeader` (`sticky top-0 z-20` + `bg-primary`) y `TableHead` (`sticky top-0 z-20`); refuerzo en globals.css. */
 function Table({ className, variant, scrollX = true, ...props }: TableProps) {
   const tableClass = cn("tabla-gestion-compacta", className)
   return (
     <div
       data-slot="table-container"
-      className={cn("relative w-full", scrollX ? "overflow-x-auto" : "overflow-x-hidden")}
+      className={cn(
+        "relative min-h-0 w-full overflow-y-auto",
+        scrollX ? "overflow-x-auto" : "overflow-x-hidden"
+      )}
     >
       <table
         data-slot="table"
@@ -39,7 +42,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
     <thead
       data-slot="table-header"
       className={cn(
-        "sticky top-0 z-10 bg-primary [&_tr]:border-0 [&_tr]:bg-transparent [&_tr:hover]:bg-transparent",
+        "sticky top-0 z-20 bg-primary [&_tr]:border-0 [&_tr]:bg-transparent [&_tr:hover]:bg-transparent",
         className
       )}
       {...props}
@@ -90,7 +93,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "sticky top-0 text-primary-foreground font-normal text-center align-middle whitespace-nowrap uppercase",
+        "sticky top-0 z-20 text-primary-foreground font-normal text-center align-middle whitespace-nowrap uppercase",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}

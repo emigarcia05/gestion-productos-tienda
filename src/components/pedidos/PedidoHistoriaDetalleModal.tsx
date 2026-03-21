@@ -626,13 +626,13 @@ export default function PedidoHistoriaDetalleModal({
                   className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 overflow-y-hidden"
                   style={{ height: "auto" }}
                 >
-                  <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+                  <div className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
                     <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[5%] text-center">
                       <span className="sr-only">LISTA DE VERIFICACIÓN</span>
-                      <Check className="mx-auto h-4 w-4 text-foreground" aria-hidden />
+                      <Check className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
                     </TableHead>
                     <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
@@ -837,7 +837,7 @@ export default function PedidoHistoriaDetalleModal({
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "shrink-0 border-t border-border py-1.5 pl-0 sm:py-2 sm:pl-0"
+                      "min-w-0 shrink-0 border-t border-border bg-transparent pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0 items-center"
                     )}
                   >
                     <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
