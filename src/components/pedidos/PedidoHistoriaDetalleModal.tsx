@@ -54,20 +54,19 @@ function toDate(value: string | Date | null | undefined): Date | null {
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera alineada a tabla sin COD.: (DESC+CANT.P.) | CANT.R. | fecha factura (ACCIONES).
- * 70fr = 60+10; 10fr; 20fr.
+ * Cabecera alineada a tabla con CHECK: hueco CHECK (5) | (DESC+CANT.P.) (65) | CANT.R. (15) | fecha (15).
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[70fr_10fr_20fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[5fr_65fr_15fr_15fr] sm:gap-0";
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
 /** Padding horizontal alineado a celdas; sin borde ni sombra (contenedores de grilla transparentes). */
 const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
-/** Misma proporción que la tabla (DESC.|CANT.P.|CANT.R.|ACCIONES). */
-const GRID_TABLA_PEDIDO_HISTORIA_4COL =
-  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[60fr_10fr_10fr_20fr] sm:gap-0 sm:items-end";
+/** Misma proporción que la tabla (CHECK|DESC.|CANT.P.|CANT.R.|ACCIONES). */
+const GRID_TABLA_PEDIDO_HISTORIA_5COL =
+  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[5fr_55fr_10fr_15fr_15fr] sm:gap-0 sm:items-end";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -182,6 +181,11 @@ export default function PedidoHistoriaDetalleModal({
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
   /** Valor ISO `YYYY-MM-DD` — UI: fecha de emisión factura; persistencia backend pendiente. */
   const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
+  /** Check list por ítem: borrador y confirmación (solo UI; persistencia / reglas pendientes). */
+  const [checkListDraftByItem, setCheckListDraftByItem] = useState<Record<string, string>>({});
+  const [checkListConfirmedByItem, setCheckListConfirmedByItem] = useState<Record<string, boolean>>(
+    {}
+  );
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const locked = estado === "RECIBIDO";
@@ -220,6 +224,8 @@ export default function PedidoHistoriaDetalleModal({
       setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
       setFechaRecepcion("");
+      setCheckListDraftByItem({});
+      setCheckListConfirmedByItem({});
     });
 
     void (async () => {
@@ -440,6 +446,10 @@ export default function PedidoHistoriaDetalleModal({
             <div className={cn(MODAL_RESUMEN_PANEL_CLASS, "p-3 sm:p-4")}>
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-start sm:items-end")}>
                 <div
+                  className={cn("hidden min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+                  aria-hidden
+                />
+                <div
                   className={cn(
                     "flex min-w-0 flex-col gap-2 text-center sm:text-left",
                     CELDA_TABLA_PADDING_X
@@ -500,7 +510,11 @@ export default function PedidoHistoriaDetalleModal({
               <h2 id="pedido-historia-alta-title" className="sr-only">
                 Agregar producto al pedido
               </h2>
-              <div className={GRID_TABLA_PEDIDO_HISTORIA_4COL}>
+              <div className={GRID_TABLA_PEDIDO_HISTORIA_5COL}>
+                <div
+                  className={cn("hidden min-h-[2.5rem] min-w-0 sm:block", CELDA_TABLA_PADDING_X)}
+                  aria-hidden
+                />
                 <div className="flex min-w-0 flex-col justify-end gap-1.5">
                   <span className={MODAL_MICRO_LABEL_CLASS}>Agregar un producto</span>
                   {productoSeleccionado ? (
@@ -627,21 +641,25 @@ export default function PedidoHistoriaDetalleModal({
                   <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[60%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[5%] text-center">
+                      <span className="sr-only">LISTA DE VERIFICACIÓN</span>
+                      <Check className="mx-auto h-4 w-4 text-foreground" aria-hidden />
+                    </TableHead>
+                    <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[10%]">CANT. RECIBIDA</TableHead>
-                    <TableHead className="w-[20%] tabla-bloque-secundario-head-divider">
+                    <TableHead className="w-[15%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[15%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <EmptyTableRow colSpan={4} message="Cargando…" />
+                    <EmptyTableRow colSpan={5} message="Cargando…" />
                   ) : errorMsg ? (
-                    <EmptyTableRow colSpan={4} message={errorMsg} />
+                    <EmptyTableRow colSpan={5} message={errorMsg} />
                   ) : items.length === 0 ? (
-                    <EmptyTableRow colSpan={4} message="Sin ítems." />
+                    <EmptyTableRow colSpan={5} message="Sin ítems." />
                   ) : (
                     items.map((item) => {
                       const isEditing = editingItemId === item.id;
@@ -658,6 +676,9 @@ export default function PedidoHistoriaDetalleModal({
                             ? item.cantRecibida.toLocaleString("es-AR")
                             : "";
 
+                      const checkListConfirmed = checkListConfirmedByItem[item.id] === true;
+                      const checkListDraft = checkListDraftByItem[item.id] ?? "";
+
                       return (
                         <TableRow
                           key={item.id}
@@ -666,8 +687,65 @@ export default function PedidoHistoriaDetalleModal({
                             isControlado && "bg-primary/10 hover:bg-primary/10"
                           )}
                         >
+                          <TableCell className="celda-datos w-[5%] text-center align-middle">
+                            {checkListConfirmed ? (
+                              <Check
+                                className="mx-auto h-4 w-4 shrink-0 text-primary"
+                                aria-label="Ítem verificado"
+                              />
+                            ) : locked ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : (
+                              <div className="flex min-w-0 flex-col items-stretch justify-center gap-1 py-0.5">
+                                <Input
+                                  value={checkListDraft}
+                                  onChange={(e) =>
+                                    setCheckListDraftByItem((prev) => ({
+                                      ...prev,
+                                      [item.id]: e.target.value.slice(0, 32),
+                                    }))
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      if (!busy) {
+                                        setCheckListConfirmedByItem((prev) => ({
+                                          ...prev,
+                                          [item.id]: true,
+                                        }));
+                                      }
+                                    }
+                                  }}
+                                  disabled={busy}
+                                  aria-label="Lista de verificación"
+                                  className={cn(
+                                    "h-7 min-h-7 w-full min-w-0 px-1 text-center text-xs tabular-nums",
+                                    inputBorderClassName
+                                  )}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon-xs"
+                                  className="mx-auto shrink-0"
+                                  onClick={() => {
+                                    if (busy) return;
+                                    setCheckListConfirmedByItem((prev) => ({
+                                      ...prev,
+                                      [item.id]: true,
+                                    }));
+                                  }}
+                                  disabled={busy}
+                                  aria-label="Confirmar lista de verificación"
+                                  title="OK"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate w-[60%]"
+                            className="celda-datos min-w-0 truncate w-[55%]"
                             title={
                               item.codTienda
                                 ? `${item.codTienda} — ${item.descripcionTienda}`
@@ -679,7 +757,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell className="celda-datos tabular-nums w-[10%]">
                             {cantPedidaVisible}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[10%]">
+                          <TableCell className="celda-datos tabular-nums w-[15%]">
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
@@ -739,7 +817,7 @@ export default function PedidoHistoriaDetalleModal({
                               cantRecibidaVisible
                             )}
                           </TableCell>
-                          <TableCell className="celda-datos w-[20%] tabla-bloque-secundario-cell-divider">
+                          <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
                             <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
@@ -790,7 +868,7 @@ export default function PedidoHistoriaDetalleModal({
                 >
                   <TableRow className="hover:bg-transparent border-b-0 bg-card">
                     <TableCell
-                      colSpan={2}
+                      colSpan={3}
                       className="celda-datos border-b-0"
                       aria-hidden
                     />
@@ -799,7 +877,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </TableCell>
-                    <TableCell className="celda-datos w-[20%] border-b-0 tabla-bloque-secundario-cell-divider">
+                    <TableCell className="celda-datos w-[15%] border-b-0 tabla-bloque-secundario-cell-divider">
                       <Input
                         type="text"
                         inputMode="decimal"
