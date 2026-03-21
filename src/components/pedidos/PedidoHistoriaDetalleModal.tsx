@@ -851,8 +851,7 @@ export default function PedidoHistoriaDetalleModal({
                 </TableBody>
                     </Table>
                   </div>
-                  <footer
-                    role="region"
+                  <section
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
@@ -903,7 +902,7 @@ export default function PedidoHistoriaDetalleModal({
                         aria-label="Total Pedido"
                       />
                     </div>
-                  </footer>
+                  </section>
                 </div>
               </div>
             </section>
