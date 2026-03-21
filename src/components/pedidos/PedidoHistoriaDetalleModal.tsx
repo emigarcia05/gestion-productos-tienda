@@ -66,7 +66,7 @@ const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
 /** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
 const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-0 sm:items-end";
+  "grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-0 sm:items-center";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -511,8 +511,10 @@ export default function PedidoHistoriaDetalleModal({
                 Agregar producto al pedido
               </h2>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
-                <div className="flex min-w-0 flex-col justify-end gap-1.5">
-                  <span className={MODAL_MICRO_LABEL_CLASS}>Agregar un producto</span>
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
+                  <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full text-left")}>
+                    Agregar un producto
+                  </span>
                   {productoSeleccionado ? (
                     <Input
                       value={productoSeleccionado.descripcionTienda}
@@ -534,7 +536,7 @@ export default function PedidoHistoriaDetalleModal({
                         }
                       }}
                       className={cn(
-                        "h-9 min-w-0 w-full cursor-pointer",
+                        "h-9 min-w-0 w-full cursor-pointer text-left",
                         inputBorderClassName,
                         locked || loading ? "cursor-not-allowed" : ""
                       )}
@@ -560,15 +562,15 @@ export default function PedidoHistoriaDetalleModal({
                         }
                       }}
                       className={cn(
-                        "h-9 min-w-0 w-full cursor-pointer placeholder:text-muted-foreground",
+                        "h-9 min-w-0 w-full cursor-pointer text-left placeholder:text-muted-foreground",
                         inputBorderClassName,
                         locked || loading ? "cursor-not-allowed" : ""
                       )}
                     />
                   )}
                 </div>
-                <div className="flex min-w-0 flex-col justify-end gap-1.5">
-                  <span className={MODAL_MICRO_LABEL_CLASS}>Cant.</span>
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
+                  <span className={cn(MODAL_MICRO_LABEL_CLASS, "w-full text-center")}>Cant.</span>
                   <Input
                     type="number"
                     min={0}
@@ -587,7 +589,7 @@ export default function PedidoHistoriaDetalleModal({
                     )}
                   />
                 </div>
-                <div className="flex min-w-0 w-full flex-col justify-end gap-1.5">
+                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
                   <Button
                     type="button"
                     variant="default"
