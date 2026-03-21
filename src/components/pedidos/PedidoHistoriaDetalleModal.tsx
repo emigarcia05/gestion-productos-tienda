@@ -386,7 +386,7 @@ export default function PedidoHistoriaDetalleModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <AppModal
-          title="Detalle Del Pedido"
+          title="Recepcion Del Pedido"
           scrollBody={false}
           size="xl"
           className="sm:max-w-[62.4rem] max-h-[95vh]"
@@ -454,19 +454,14 @@ export default function PedidoHistoriaDetalleModal({
                     CELDA_TABLA_PADDING_X
                   )}
                 >
-                  <span className={MODAL_MICRO_LABEL_CLASS}>Nombre proveedor</span>
                   <p className="text-sm font-semibold leading-snug text-foreground">
                     {detalle ? detalle.proveedorNombre : "—"}
                   </p>
                   <p className="text-xs leading-snug text-muted-foreground">
                     <span className="tabular-nums">
                       {detalle ? detalle.sucursalNombre : "—"}
-                      {" — "}
+                      {" - "}
                       {generadoAtStr || "—"}
-                    </span>
-                    <span className="text-foreground/80">
-                      {" · "}
-                      {estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
                     </span>
                   </p>
                 </div>
@@ -503,9 +498,18 @@ export default function PedidoHistoriaDetalleModal({
 
           <div className="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-0 overflow-hidden">
             <section
-              aria-label="Agregar producto al pedido"
+              aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(MODAL_SECTION_CARD_CLASS, "shrink-0 p-2 sm:p-3")}
             >
+              <span
+                id="pedido-historia-agregar-recepcion-titulo"
+                className={cn(
+                  MODAL_MICRO_LABEL_CLASS,
+                  "mb-2 block w-full font-bold"
+                )}
+              >
+                AGREGAR PRODUCTO A LA RECEPCIÓN
+              </span>
               <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
                 <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 p-2">
                   {productoSeleccionado ? (
