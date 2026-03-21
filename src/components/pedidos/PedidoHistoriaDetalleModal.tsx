@@ -62,10 +62,8 @@ const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
 
 const CELDA_TABLA_PADDING_X = "px-[var(--tabla-body-cell-padding-x)]";
 
-const COLUMNA_ACCIONES_EXTERNA_CLASS = cn(
-  CELDA_TABLA_PADDING_X,
-  "sm:shadow-[inset_1px_0_0_#0072bb]"
-);
+/** Padding horizontal alineado a celdas; sin borde ni sombra (contenedores de grilla transparentes). */
+const COLUMNA_ACCIONES_EXTERNA_CLASS = CELDA_TABLA_PADDING_X;
 
 /** Misma proporción que la tabla (COD.|DESC.|CANT.P.|CANT.R.|ACCIONES). Fila herramientas: celdas 11–13 = span 3, 14, 15. */
 const GRID_TABLA_PEDIDO_HISTORIA_5COL =
@@ -75,11 +73,10 @@ const GRID_TABLA_PEDIDO_HISTORIA_5COL =
 const MODAL_MICRO_LABEL_CLASS =
   "text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground";
 
-const MODAL_SECTION_CARD_CLASS =
-  "rounded-lg border border-border bg-card shadow-sm";
+/** Contenedor de grilla: sin borde ni fondo (transparente). */
+const MODAL_SECTION_CARD_CLASS = "min-w-0 bg-transparent";
 
-const MODAL_RESUMEN_PANEL_CLASS =
-  "rounded-lg border border-border bg-muted/25 shadow-sm";
+const MODAL_RESUMEN_PANEL_CLASS = "min-w-0 bg-transparent";
 
 /** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
 function normalizedMontoToDisplayAr(norm: string): string {
@@ -387,7 +384,7 @@ export default function PedidoHistoriaDetalleModal({
           title="Detalle Del Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[48rem] max-h-[95vh]"
+          className="sm:max-w-[62.4rem] max-h-[95vh]"
           bodyShellClassName="p-0"
           padding="sm"
           headerClassName="pt-3 pb-3"
