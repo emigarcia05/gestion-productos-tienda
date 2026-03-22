@@ -98,7 +98,7 @@ export default function PedidoHistoriaLecturaModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         title="Ver Pedido"
-        size="lg"
+        size="xl"
         scrollBody={false}
         padding="default"
         actions={
@@ -111,16 +111,18 @@ export default function PedidoHistoriaLecturaModal({
           <p className="text-sm text-destructive">{errorMsg}</p>
         ) : detalle ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="flex min-w-0 shrink-0 flex-col gap-3 pb-4">
-              <Badge
-                className="w-fit"
-                variant={esRecibido ? "secondary" : "default"}
-              >
-                {esRecibido ? "Recepcionado" : "Pedido"}
-              </Badge>
-              <p className="min-w-0 text-base font-semibold leading-snug text-foreground">
-                {detalle.proveedorNombre || "—"}
-              </p>
+            <div className="flex min-w-0 shrink-0 flex-col gap-1 pb-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Badge
+                  className="w-fit shrink-0"
+                  variant={esRecibido ? "secondary" : "default"}
+                >
+                  {esRecibido ? "Recepcionado" : "Pedido"}
+                </Badge>
+                <p className="min-w-0 flex-1 text-base font-semibold leading-snug break-words text-foreground">
+                  {detalle.proveedorNombre || "—"}
+                </p>
+              </div>
               <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm font-medium text-foreground">
                 <span className="min-w-0 break-words">
                   {detalle.sucursalNombre || "—"}
@@ -138,10 +140,10 @@ export default function PedidoHistoriaLecturaModal({
               <Table variant="compact" scrollX={false} className="min-w-full">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[55%] text-left">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[15%]">CANT. PEDIDA</TableHead>
+                    <TableHead className="w-[62%] text-left">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[19%]">CANT. PEDIDA</TableHead>
                     {esRecibido ? (
-                      <TableHead className="w-[15%]">CANT. RECIBIDA</TableHead>
+                      <TableHead className="w-[19%]">CANT. RECIBIDA</TableHead>
                     ) : null}
                   </TableRow>
                 </TableHeader>
