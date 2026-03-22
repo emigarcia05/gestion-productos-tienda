@@ -32,7 +32,8 @@ export interface PedidoHistoriaItemDetalle {
   codTienda: string;
   descripcionTienda: string;
   cantPedida: number;
-  cantRecibida: number;
+  /** `null` hasta que en recepción se guarde una cantidad recibida. */
+  cantRecibida: number | null;
 }
 
 export interface PedidoHistoriaDetalle {
@@ -109,8 +110,6 @@ export async function crearPedidoHistoriaSnapshot(params: {
       const itemsToCreate = [...cantPorCodTienda.entries()].map(([codTienda, cantPedida]) => ({
         codTienda,
         cantPedida,
-        // Asumimos que "llegó igual": el recibido inicia igual al pedido.
-        cantRecibida: cantPedida,
       }));
 
       if (itemsToCreate.length > 0) {
@@ -119,7 +118,7 @@ export async function crearPedidoHistoriaSnapshot(params: {
             pedidoHistoriaId: pedidoHistoria.id,
             codTienda: it.codTienda,
             cantPedida: it.cantPedida,
-            cantRecibida: it.cantRecibida,
+            cantRecibida: null,
           })),
         });
       }

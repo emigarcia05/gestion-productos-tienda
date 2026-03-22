@@ -176,12 +176,12 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
   - `registrado_at`: fecha/hora cuando se cambia a `RECIBIDO` (nullable).
   - Relaciones: `proveedor_id -> proveedores.id` y `sucursal_id -> sucursales.id`.
 
-- Items: `pedido_historia_items` (Prisma: `PedidoHistoriaItem`)
+- Items: tabla física `pedidos_mercaderia_historial` (Prisma: `PedidoHistoriaItem`)
   - `pedido_historia_id -> pedidos_historia.id` (FK, `onDelete: CASCADE`).
   - `cod_tienda`: identificador del producto en la tabla `precios_tienda` (se guarda como texto).
   - Cantidades:
     - `cant_pedida`: snapshot inicial (cargado al generar).
-    - `cant_recibida`: editable por UI (OK/Editar/Cesto). El “cesto” implica `cant_recibida = 0`.
+    - `cant_recibida`: nullable; al generar el snapshot queda **sin valor** (`NULL`) hasta la recepción. En UI se edita con OK/Editar/Cesto; el “cesto” persiste `cant_recibida = 0`.
 
 Constraint:
 - `UNIQUE (pedido_historia_id, cod_tienda)` para evitar duplicados de producto dentro de un mismo pedido.
@@ -221,7 +221,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
    - Crea `PedidoHistoria` con `estado = "PEDIDO"`.
    - Lee `ItemPedidoEnvio` filtrando por `idProveedor`, `sucursalId`, `tipoPedido IN tipos` y `cant_pedir > 0`.
    - Inserta `PedidoHistoriaItem` consolidando por `cod_tienda` (para respetar UNIQUE por `cod_tienda`).
-   - Inicializa `cant_recibida = cant_pedida` para representar la suposición “llegó igual”.
+   - Inserta cada ítem con `cant_recibida = NULL` hasta que en recepción se guarde la cantidad recibida.
 
 3. `getPedidoHistoriaDetalle({ pedidoHistoriaId })`
    - Devuelve cabecera + lista de items ordenados por `codTienda`.
@@ -316,7 +316,7 @@ Antes de entregar código nuevo o modificado, verificar:
 - Acción de sincronización DUX protegida por rol.
 - Estandarizar respuestas de error: no `throw`, sí `ActionResult` con `error`.
 - Documentar uso de `getRol()` + `puede()` para permisos granulares.
-- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden. Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`. El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`.
+- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden; las filas van **ordenadas alfabéticamente** por el texto de **DESCRIPCION** (`localeCompare` `es`, `sensitivity: "base"`). Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`. El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`.
 - Al ejecutar el botón de **Generar Pedido** (server action `generarPdfEnviarPedidoAction`), limpiar de `pedidos_mercaderia` (ítems `tipo_de_pedido` `URGENTE` y/o `TINTOMETRICO`) para la `sucursal` enviada, y revalidar las rutas afectadas (`/pedidos/enviar`, `/pedidos/urgente`, `/pedidos/tintometrico`).
 
 ### 5.4 Cambios aplicados en esta auditoría

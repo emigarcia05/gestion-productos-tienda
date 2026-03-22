@@ -69,6 +69,10 @@ export function generarPdfPedido(
     return new Uint8Array(buf instanceof ArrayBuffer ? buf : (buf as unknown as ArrayBuffer));
   }
 
+  const itemsOrdenados = [...items].sort((a, b) =>
+    (a.descripcion ?? "").localeCompare(b.descripcion ?? "", "es", { sensitivity: "base" })
+  );
+
   // Tabla: CANT. - COD. - DESCRIPCION
   const wCant = 18;
   const wCod = 26;
@@ -117,8 +121,8 @@ export function generarPdfPedido(
   drawHeaderRow(y);
   y += ROW_HEIGHT;
 
-  for (let idx = 0; idx < items.length; idx++) {
-    const row = items[idx];
+  for (let idx = 0; idx < itemsOrdenados.length; idx++) {
+    const row = itemsOrdenados[idx];
     if (y + ROW_HEIGHT > pageHeight - MARGIN) {
       doc.addPage();
       y = MARGIN;

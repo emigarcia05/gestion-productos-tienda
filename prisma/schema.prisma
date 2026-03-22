@@ -242,7 +242,7 @@ model PedidoHistoriaItem {
   pedidoHistoriaId String @map("pedido_historia_id")
   codTienda        String @map("cod_tienda")
   cantPedida       Int    @map("cant_pedida") @default(0)
-  cantRecibida     Int    @map("cant_recibida") @default(0)
+  cantRecibida     Int?   @map("cant_recibida")
 
   pedidoHistoria PedidoHistoria @relation(fields: [pedidoHistoriaId], references: [id], onDelete: Cascade)
   createdAt       DateTime       @default(now()) @map("created_at")
@@ -250,7 +250,7 @@ model PedidoHistoriaItem {
 
   @@unique([pedidoHistoriaId, codTienda])
   @@index([pedidoHistoriaId])
-  @@map("pedidos_historia_items")
+  @@map("pedidos_mercaderia_historial")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────

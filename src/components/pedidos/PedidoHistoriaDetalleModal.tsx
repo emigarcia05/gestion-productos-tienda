@@ -317,10 +317,15 @@ export default function PedidoHistoriaDetalleModal({
     return async () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
-      const cant =
-        editingItemId === item.id
-          ? parseIntSafe(editingValue)
-          : item.cantRecibida;
+      let cant: number;
+      if (editingItemId === item.id) {
+        cant = parseIntSafe(editingValue);
+      } else if (item.cantRecibida != null) {
+        cant = item.cantRecibida;
+      } else {
+        toast.error("Indicá la cantidad recibida con Editar antes de confirmar.");
+        return;
+      }
       await actualizarItemCantRecibida(item.id, cant, {
         confirmChecklistAfter: true,
       });
@@ -348,7 +353,9 @@ export default function PedidoHistoriaDetalleModal({
         return next;
       });
       setEditingItemId(item.id);
-      setEditingValue(String(item.cantRecibida));
+      setEditingValue(
+        item.cantRecibida != null ? String(item.cantRecibida) : ""
+      );
     };
   }
 
@@ -731,17 +738,21 @@ export default function PedidoHistoriaDetalleModal({
                   ) : (
                     items.map((item) => {
                       const isEditing = editingItemId === item.id;
-                      const cantRecibidaVisible = item.cantRecibida > 0 ? String(item.cantRecibida) : "";
+                      const cantRecNum = item.cantRecibida ?? 0;
+                      const cantRecibidaVisible =
+                        cantRecNum > 0 ? String(item.cantRecibida) : "";
                       const isControlado =
-                        item.cantPedida > 0 && item.cantRecibida === item.cantPedida;
+                        item.cantPedida > 0 &&
+                        item.cantRecibida != null &&
+                        item.cantRecibida === item.cantPedida;
                       // Si por cualquier motivo el backend registra `cantPedida` en 0 pero el usuario
                       // ya cargó `cantRecibida` al agregar el producto, mostramos `cantRecibida` para
                       // que ambas columnas queden consistentes.
                       const cantPedidaVisible =
                         item.cantPedida > 0
                           ? item.cantPedida.toLocaleString("es-AR")
-                          : item.cantRecibida > 0
-                            ? item.cantRecibida.toLocaleString("es-AR")
+                          : cantRecNum > 0
+                            ? cantRecNum.toLocaleString("es-AR")
                             : "";
 
                       const checkListConfirmed = checkListConfirmedByItem[item.id] === true;
@@ -845,8 +856,19 @@ export default function PedidoHistoriaDetalleModal({
                                   onChange={(e) => setEditingValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                   data-edit-input={item.id}
                                   onBlur={() => {
+                                    if (
+                                      editingValue.trim() === "" &&
+                                      item.cantRecibida == null
+                                    ) {
+                                      setEditingItemId(null);
+                                      setEditingValue("");
+                                      return;
+                                    }
                                     const v = parseIntSafe(editingValue);
-                                    if (v === item.cantRecibida) {
+                                    if (
+                                      item.cantRecibida != null &&
+                                      v === item.cantRecibida
+                                    ) {
                                       setEditingItemId(null);
                                       setEditingValue("");
                                       return;

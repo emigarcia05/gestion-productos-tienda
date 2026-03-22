@@ -18,7 +18,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DropdownMenu } from "radix-ui";
-import { Check, ChevronDown, Loader2, Send } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
@@ -393,23 +400,60 @@ export default function GenerarPedidoToolbarButton({
             </div>
 
             <div
-              className="flex min-h-[4.5rem] flex-col justify-center rounded-md border border-border bg-muted/40 px-3 py-2"
+              className="flex min-h-[5rem] flex-col items-center justify-center gap-2 rounded-md border border-border bg-muted/40 px-4 py-3 text-center"
               role="status"
               aria-live="polite"
             >
               {mensajeFaltantes ? (
-                <p className="text-sm text-muted-foreground">{mensajeFaltantes}</p>
+                <div className="flex max-w-full flex-col items-center justify-center gap-2">
+                  <AlertCircle
+                    className="h-5 w-5 shrink-0 text-destructive"
+                    aria-hidden
+                  />
+                  <p className="text-sm leading-snug text-foreground">
+                    {mensajeFaltantes}
+                  </p>
+                </div>
               ) : errorVerificacion ? (
-                <p className="text-sm text-destructive">{errorVerificacion}</p>
+                <div className="flex max-w-full flex-col items-center justify-center gap-2">
+                  <AlertCircle
+                    className="h-5 w-5 shrink-0 text-destructive"
+                    aria-hidden
+                  />
+                  <p className="text-sm leading-snug text-destructive">
+                    {errorVerificacion}
+                  </p>
+                </div>
               ) : verificandoItems ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                  <span>Comprobando ítems…</span>
+                <div className="flex max-w-full flex-col items-center justify-center gap-2">
+                  <Loader2
+                    className="h-5 w-5 shrink-0 animate-spin text-muted-foreground"
+                    aria-hidden
+                  />
+                  <p className="text-sm leading-snug text-muted-foreground">
+                    Comprobando ítems…
+                  </p>
                 </div>
               ) : filtrosCompletos && hayItems === false ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay ítems para esta combinación de filtros.
-                </p>
+                <div className="flex max-w-full flex-col items-center justify-center gap-2">
+                  <AlertCircle
+                    className="h-5 w-5 shrink-0 text-destructive"
+                    aria-hidden
+                  />
+                  <p className="text-sm leading-snug text-muted-foreground">
+                    No hay ítems para esta combinación de filtros.
+                  </p>
+                </div>
+              ) : filtrosCompletos && hayItems === true ? (
+                <div className="flex max-w-full flex-col items-center justify-center gap-2">
+                  <CheckCircle2
+                    className="h-5 w-5 shrink-0 text-primary"
+                    aria-hidden
+                  />
+                  <p className="text-sm font-medium leading-snug text-foreground">
+                    Listo para generar el pedido.
+                  </p>
+                </div>
               ) : null}
             </div>
           </div>

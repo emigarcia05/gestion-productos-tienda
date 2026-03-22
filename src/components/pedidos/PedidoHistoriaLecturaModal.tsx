@@ -22,14 +22,15 @@ import type {
 import { cn } from "@/lib/utils";
 
 function deltaCantidades(it: PedidoHistoriaItemDetalle): number {
-  return it.cantRecibida - it.cantPedida;
+  return (it.cantRecibida ?? 0) - it.cantPedida;
 }
 
 function tituloCeldaCantRecibida(it: PedidoHistoriaItemDetalle): string {
   const d = deltaCantidades(it);
   if (d === 0) return "";
   const sign = d > 0 ? "+" : "";
-  return `Pedido ${it.cantPedida.toLocaleString("es-AR")}, recibido ${it.cantRecibida.toLocaleString("es-AR")}. Diferencia: ${sign}${d.toLocaleString("es-AR")}.`;
+  const rec = (it.cantRecibida ?? 0).toLocaleString("es-AR");
+  return `Pedido ${it.cantPedida.toLocaleString("es-AR")}, recibido ${rec}. Diferencia: ${sign}${d.toLocaleString("es-AR")}.`;
 }
 
 function formatDdMmHHmm(d: Date): string {
@@ -220,7 +221,9 @@ export default function PedidoHistoriaLecturaModal({
                               )}
                               title={tituloCeldaCantRecibida(it)}
                             >
-                              {it.cantRecibida.toLocaleString("es-AR")}
+                              {it.cantRecibida != null
+                                ? it.cantRecibida.toLocaleString("es-AR")
+                                : "—"}
                             </TableCell>
                           ) : null}
                         </TableRow>
