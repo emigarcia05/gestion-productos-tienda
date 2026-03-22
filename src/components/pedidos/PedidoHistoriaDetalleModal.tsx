@@ -632,7 +632,10 @@ export default function PedidoHistoriaDetalleModal({
                   <TableRow>
                     <TableHead className="w-[5%] text-center">
                       <span className="sr-only">LISTA DE VERIFICACIÓN</span>
-                      <Check className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
+                      <Check
+                        className="mx-auto my-0 block h-4 w-4 shrink-0 leading-none text-primary-foreground"
+                        aria-hidden
+                      />
                     </TableHead>
                     <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
@@ -845,7 +848,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </div>
-                    <div className="celda-datos col-start-5 flex min-w-0 items-center justify-start border-b-0 !pl-0">
+                    <div className="celda-datos col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0 !pl-0">
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -873,7 +876,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "ml-0 h-9 w-full min-w-0 pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
+                          "ml-0 h-9 w-full min-w-0 !pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"

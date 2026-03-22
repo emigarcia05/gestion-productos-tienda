@@ -189,7 +189,8 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
-  --tabla-thead-height: 3.5rem;
+  /* Encabezado compacto: ~py-1 + text-xs + leading tight (ver .tabla-gestion-compacta thead th). */
+  --tabla-thead-height: 2.25rem;
   --tabla-body-row-min-height: 2.25rem;
   --tabla-body-cell-padding-y: 0.375rem;
   --tabla-body-cell-padding-x: 0.625rem;
@@ -581,7 +582,8 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
+  /* ~py-1 vertical + padding horizontal token; altura unificada vía --tabla-thead-height. */
+  padding: 0.25rem var(--tabla-body-cell-padding-x) !important;
   height: var(--tabla-thead-height) !important;
   min-height: var(--tabla-thead-height) !important;
   max-height: var(--tabla-thead-height) !important;
@@ -591,11 +593,9 @@
   vertical-align: middle;
   color: var(--primary-foreground);
   text-transform: uppercase;
-  line-height: 1.25;
+  line-height: 1 !important;
   box-sizing: border-box;
-  white-space: normal !important;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  white-space: nowrap !important;
 }
 .tabla-gestion-compacta tbody tr {
   border-bottom: 1px solid var(--primary-foreground) !important;
@@ -698,10 +698,13 @@
   table-layout: fixed;
 }
 .tabla-gestion-compacta.tabla-vinculos-modal thead th {
-  padding-top: var(--tabla-body-cell-padding-y) !important;
-  padding-bottom: var(--tabla-body-cell-padding-y) !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
   padding-left: 0.1875rem !important;
   padding-right: 0.1875rem !important;
+  height: auto !important;
+  min-height: var(--tabla-thead-height) !important;
+  max-height: none !important;
   white-space: normal !important;
   overflow-wrap: break-word;
   word-break: break-word;
