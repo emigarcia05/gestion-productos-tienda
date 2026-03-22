@@ -80,7 +80,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-border transition-colors duration-150",
+        "border-b border-border transition-[background-color] duration-150",
         "odd:bg-card even:bg-blue-50/50",
         "hover:bg-primary/10 data-[state=selected]:bg-muted",
         className
@@ -109,7 +109,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "text-foreground text-sm font-normal text-center align-middle whitespace-nowrap",
+        "text-foreground text-xs font-normal leading-tight text-center align-middle whitespace-nowrap",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}

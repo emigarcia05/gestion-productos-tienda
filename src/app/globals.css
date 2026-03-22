@@ -191,8 +191,9 @@
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
   /* Encabezado compacto: ~py-1 + text-xs + leading tight (ver .tabla-gestion-compacta thead th). */
   --tabla-thead-height: 2.25rem;
-  --tabla-body-row-min-height: 2.25rem;
-  --tabla-body-cell-padding-y: 0.375rem;
+  /* Fila cuerpo compacta: ~py-0.5 + texto 0.75rem leading-tight + inputs/botones ~1.75rem (h-7). */
+  --tabla-body-row-min-height: 2rem;
+  --tabla-body-cell-padding-y: 0.125rem;
   --tabla-body-cell-padding-x: 0.625rem;
 }
 
@@ -312,6 +313,7 @@
   .celda-datos {
     padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
     font-size: 0.75rem;
+    line-height: 1.25;
     text-align: center;
     vertical-align: middle;
     height: var(--tabla-body-row-min-height) !important;
@@ -599,18 +601,19 @@
 }
 .tabla-gestion-compacta tbody tr {
   border-bottom: 1px solid var(--primary-foreground) !important;
-  transition: background-color 0.2s ease;
+  /* Solo fondo en hover: sin cambiar tipografía ni layout (evita “saltos”). */
+  transition: background-color 0.15s ease;
   height: var(--tabla-body-row-min-height) !important;
   max-height: var(--tabla-body-row-min-height) !important;
 }
 .tabla-gestion-compacta tbody tr td {
   padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
   font-size: 0.75rem !important;
+  line-height: 1.25 !important;
   height: var(--tabla-body-row-min-height) !important;
   max-height: var(--tabla-body-row-min-height) !important;
   box-sizing: border-box;
   vertical-align: middle;
-  transition: font-size 0.2s ease;
   overflow: hidden;
 }
 /* Contenido interno de celdas: no puede alterar la altura de la fila. */
@@ -618,10 +621,10 @@
   max-height: 100% !important;
   min-height: 0;
 }
-/* Controles dentro de celdas: se adaptan al alto de fila (2.25rem − padding = 1.5rem). */
+/* Controles dentro de celdas: alto ~h-7 para alinear con fila 2rem y padding-y token. */
 .tabla-gestion-compacta tbody td input:not([type="checkbox"]) {
-  max-height: 1.5rem !important;
-  height: 1.5rem !important;
+  max-height: 1.75rem !important;
+  height: 1.75rem !important;
 }
 /* Inputs dentro de tabla: fondo transparente y recuadro suave #0072bb (diseño global para toda la app). */
 .tabla-gestion-compacta tbody td input:not([type="checkbox"]) {
@@ -639,8 +642,8 @@
   border: 1px solid #0072bb !important;
   border-radius: calc(var(--radius) - 2px);
   max-height: var(--tabla-body-row-min-height) !important;
-  height: 1.5rem !important;
-  min-height: 1.5rem !important;
+  height: 1.75rem !important;
+  min-height: 1.75rem !important;
   padding-top: 0.125rem !important;
   padding-bottom: 0.125rem !important;
   font-size: 0.75rem !important;
@@ -670,8 +673,8 @@
   -moz-appearance: textfield;
 }
 .tabla-gestion-compacta tbody td button {
-  max-height: 1.5rem !important;
-  height: 1.5rem !important;
+  max-height: 1.75rem !important;
+  height: 1.75rem !important;
   min-width: 1.5rem;
   padding: 0;
   display: inline-flex;
@@ -721,10 +724,6 @@
   padding-bottom: var(--tabla-body-cell-padding-y) !important;
   padding-left: 0.1875rem !important;
   padding-right: 0.1875rem !important;
-}
-
-.tabla-gestion-compacta tbody tr:hover td {
-  font-size: var(--text-sm) !important;
 }
 
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───

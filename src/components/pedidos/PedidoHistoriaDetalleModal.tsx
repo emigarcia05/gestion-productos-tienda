@@ -688,7 +688,7 @@ export default function PedidoHistoriaDetalleModal({
                             ) : locked ? (
                               <span className="text-muted-foreground">—</span>
                             ) : (
-                              <div className="flex min-w-0 w-full flex-col items-center justify-center py-0.5">
+                              <div className="flex min-w-0 w-full flex-col items-center justify-center py-0">
                                 <Input
                                   value={checkListDraft}
                                   onChange={(e) =>
@@ -792,7 +792,7 @@ export default function PedidoHistoriaDetalleModal({
                             )}
                           </TableCell>
                           <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-1">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -876,7 +876,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "ml-0 h-9 w-full min-w-0 !pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
+                          "!ml-0 h-9 w-full min-w-0 !pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
