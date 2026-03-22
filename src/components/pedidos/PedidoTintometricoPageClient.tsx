@@ -241,18 +241,19 @@ export default function PedidoTintometricoPageClient({
             variant="default"
             size="lg"
             onClick={() => setModalOpenInUrl(true)}
-            aria-label="+ Agregar Tintométrico"
-            title="+ Agregar Tintométrico"
+            aria-label="Agregar Tintométrico"
+            title="Agregar Tintométrico"
             className="h-10 min-h-10 px-6 shrink-0"
           >
             <Plus className="h-4 w-4" />
-            <span>+ Agregar Tintométrico</span>
+            <span>Agregar Tintométrico</span>
           </Button>
           {itemsFiltrados.length > 0 ? (
             <EnviarPedidoButton
               proveedorId={filtroProveedor}
               sucursal={filtroSucursal}
               tipos={["TINTOMETRICO"]}
+              label="Generar Pedido Tintométrico"
             />
           ) : null}
         </div>

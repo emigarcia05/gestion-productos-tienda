@@ -72,7 +72,12 @@ export default function PedidoUrgentePageClient({
           <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
         ) : null}
         {mostrarGenerar ? (
-          <EnviarPedidoButton proveedorId={proveedor} sucursal={sucursalValida} tipos={["URGENTE"]} />
+          <EnviarPedidoButton
+            proveedorId={proveedor}
+            sucursal={sucursalValida}
+            tipos={["URGENTE"]}
+            label="Generar Pedido Urgente"
+          />
         ) : null}
       </div>
     ) : undefined;

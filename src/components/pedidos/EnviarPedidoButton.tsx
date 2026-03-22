@@ -10,6 +10,8 @@ interface Props {
   proveedorId: string;
   sucursal: string;
   tipos: string[];
+  /** Texto visible y `aria-label` (por defecto «Generar Pedido»). */
+  label?: string;
 }
 
 function descargarPdf(base64: string, filename: string) {
@@ -27,8 +29,11 @@ export default function EnviarPedidoButton({
   proveedorId,
   sucursal,
   tipos,
+  label,
 }: Props) {
   const [loading, setLoading] = useState(false);
+
+  const buttonLabel = label ?? "Generar Pedido";
 
   const puedeEnviar = proveedorId && sucursal && tipos.length > 0;
 
@@ -70,13 +75,14 @@ export default function EnviarPedidoButton({
       onClick={handleClick}
       disabled={loading}
       className="gap-2"
+      aria-label={buttonLabel}
     >
       {loading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <Send className="h-4 w-4" />
       )}
-      Generar Pedido
+      {buttonLabel}
     </Button>
   );
 }

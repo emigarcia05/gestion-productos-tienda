@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { PedidoHistoriaResumen } from "@/services/pedidosHistoria.service";
 import PedidoHistoriaDetalleModal from "@/components/pedidos/PedidoHistoriaDetalleModal";
-import GenerarPedidoButton from "@/components/pedidos/GenerarPedidoButton";
 import FiltrosHistorialPedidos, {
   type EstadoFiltroPedido,
 } from "@/components/pedidos/FiltrosHistorialPedidos";
@@ -73,19 +72,13 @@ export default function HistorialPedidosPageClient({
   const title = "Pedido Mercadería";
   const subtitle = "Historial Pedidos";
 
-  const actions = (
-    <div className="flex items-center gap-2">
-      <GenerarPedidoButton />
-    </div>
-  );
-
   async function openDetalle(item: PedidoHistoriaResumenClient) {
     setPedidoHistoriaId(item.id);
     setModalOpen(true);
   }
 
   return (
-    <ClassicFilteredTableLayout title={title} subtitle={subtitle} actions={actions} filters={
+    <ClassicFilteredTableLayout title={title} subtitle={subtitle} filters={
       <FiltrosHistorialPedidos
         proveedores={proveedores}
         proveedorId={proveedorId}

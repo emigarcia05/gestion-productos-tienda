@@ -7,7 +7,6 @@ import TablaReposicion from "@/components/pedidos/TablaReposicion";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import type { ReposicionData, SucursalReposicion } from "@/actions/reposicion";
 import { PAGE_SIZE } from "@/lib/pagination";
-import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
 
 interface Props {
   data: ReposicionData;
@@ -54,17 +53,6 @@ export default function ReposicionPageClient({
     <ClassicFilteredTableLayout
       title="Pedido Mercadería"
       subtitle="Pedido Reposición"
-      actions={
-        tieneSucursal && proveedorActual
-          ? data.items.some((i) => i.idProveedor === proveedorActual) ? (
-              <EnviarPedidoButton
-                proveedorId={proveedorActual}
-                sucursal={sucursalValida ?? ""}
-                tipos={["REPOSICION"]}
-              />
-            ) : null
-          : null
-      }
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">
