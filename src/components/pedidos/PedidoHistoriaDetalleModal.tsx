@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,13 @@ function parseMontoArInputToNormalized(display: string): string {
 /**
  * Con foco: siempre incluye $; miles con "." en vivo; decimales tras una coma (máx. 2).
  */
+/** Total normalizado (`totalPedido`) distinto de vacío y mayor que 0. */
+function totalPedidoMontoPositivo(norm: string): boolean {
+  if (norm === "") return false;
+  const n = Number(norm);
+  return Number.isFinite(n) && n > 0;
+}
+
 function formatLiveTotalPedidoInput(raw: string): string {
   const s = raw.replace(/\$/g, "").replace(/\s/g, "");
   if (s === "") return "$";
@@ -188,6 +195,8 @@ export default function PedidoHistoriaDetalleModal({
     {}
   );
 
+  const fechaInputRef = useRef<HTMLInputElement>(null);
+
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const locked = estado === "RECIBIDO";
   const busy = guardando != null || loading;
@@ -242,6 +251,13 @@ export default function PedidoHistoriaDetalleModal({
   }, [open, pedidoHistoriaId]);
 
   useEffect(() => {
+    if (!open || locked || loading) return;
+    queueMicrotask(() => {
+      fechaInputRef.current?.focus();
+    });
+  }, [open, pedidoHistoriaId, locked, loading]);
+
+  useEffect(() => {
     if (!editingItemId) return;
     queueMicrotask(() => {
       const el = document.querySelector<HTMLInputElement>(
@@ -251,9 +267,13 @@ export default function PedidoHistoriaDetalleModal({
     });
   }, [editingItemId]);
 
-  async function actualizarItemCantRecibida(pedidoHistoriaItemId: string, cantRecibida: number) {
-    if (locked) return;
-    if (guardando) return;
+  async function actualizarItemCantRecibida(
+    pedidoHistoriaItemId: string,
+    cantRecibida: number
+  ): Promise<boolean> {
+    if (locked) return false;
+    if (guardando) return false;
+    if (fechaRecepcion.trim() === "") return false;
 
     setGuardando(pedidoHistoriaItemId);
     try {
@@ -263,7 +283,7 @@ export default function PedidoHistoriaDetalleModal({
       });
       if (!res.ok) {
         toast.error(res.error ?? "Error al guardar.");
-        return;
+        return false;
       }
       setDetalle((prev) => {
         if (!prev) return prev;
@@ -276,6 +296,12 @@ export default function PedidoHistoriaDetalleModal({
       });
       setEditingItemId(null);
       setEditingValue("");
+      setCheckListConfirmedByItem((prev) => {
+        const next = { ...prev };
+        delete next[pedidoHistoriaItemId];
+        return next;
+      });
+      return true;
     } finally {
       setGuardando(null);
     }
@@ -283,7 +309,12 @@ export default function PedidoHistoriaDetalleModal({
 
   function onClickOk(item: PedidoHistoriaDetalle["items"][number]) {
     return async () => {
-      await actualizarItemCantRecibida(item.id, item.cantPedida);
+      if (locked || busy) return;
+      if (fechaRecepcion.trim() === "") return;
+      const ok = await actualizarItemCantRecibida(item.id, item.cantPedida);
+      if (ok) {
+        setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
+      }
     };
   }
 
@@ -296,6 +327,13 @@ export default function PedidoHistoriaDetalleModal({
   function onClickEditar(item: PedidoHistoriaDetalle["items"][number]) {
     return () => {
       if (locked) return;
+      if (fechaRecepcion.trim() === "") return;
+      setCheckListConfirmedByItem((prev) => {
+        if (!prev[item.id]) return prev;
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
       setEditingItemId(item.id);
       setEditingValue(String(item.cantRecibida));
     };
@@ -303,6 +341,7 @@ export default function PedidoHistoriaDetalleModal({
 
   async function agregarNuevaFila() {
     if (locked) return;
+    if (fechaRecepcion.trim() === "") return;
     if (!pedidoHistoriaId) return;
 
     if (!productoSeleccionado) {
@@ -365,6 +404,7 @@ export default function PedidoHistoriaDetalleModal({
     setProductoSeleccionado(row);
     setCantRecibidaNueva("");
     setAgregarProductosOpen(false);
+    if (fechaRecepcion.trim() === "") return;
     queueMicrotask(() => {
       const el = document.querySelector<HTMLInputElement>('input[data-cant-input="detalle"]');
       el?.focus();
@@ -374,6 +414,7 @@ export default function PedidoHistoriaDetalleModal({
 
   function ajustarEditingValue(delta: number) {
     if (locked || busy) return;
+    if (fechaRecepcion.trim() === "") return;
     const current = parseIntSafe(editingValue);
     const next = Math.max(0, current + delta);
     setEditingValue(next === 0 ? "" : String(next));
@@ -383,6 +424,22 @@ export default function PedidoHistoriaDetalleModal({
   const itemsControlled =
     items.length > 0 &&
     items.every((it) => it.cantPedida > 0 && it.cantRecibida === it.cantPedida);
+
+  const fechaFacturaOk = fechaRecepcion.trim() !== "";
+  const checklistCompleto =
+    items.length > 0 && items.every((it) => checkListConfirmedByItem[it.id] === true);
+  const tablaYAltaHabilitados = !locked && !loading && fechaFacturaOk;
+  const totalPedidoInputHabilitado = tablaYAltaHabilitados && checklistCompleto;
+  const puedeRegistrarEnDux =
+    Boolean(pedidoHistoriaId) &&
+    !locked &&
+    !busy &&
+    itemsControlled &&
+    fechaFacturaOk &&
+    checklistCompleto &&
+    totalPedidoMontoPositivo(totalPedido);
+
+  const clsBotonTabla = "disabled:cursor-not-allowed";
 
   return (
     <>
@@ -408,9 +465,10 @@ export default function PedidoHistoriaDetalleModal({
               </Button>
               <Button
                 type="button"
+                className="disabled:cursor-not-allowed"
                 onClick={async () => {
                   if (!pedidoHistoriaId) return;
-                  if (!itemsControlled) return;
+                  if (!puedeRegistrarEnDux) return;
                   if (locked) return;
                   if (guardando) return;
 
@@ -420,21 +478,21 @@ export default function PedidoHistoriaDetalleModal({
                       pedidoHistoriaId,
                     });
                     if (!res.ok) {
-                      toast.error(res.error ?? "Error al sincronizar con DUX.");
+                      toast.error(res.error ?? "Error al registrar en DUX.");
                       return;
                     }
 
                     setLoading(true);
                     await cargarDetalle(pedidoHistoriaId);
-                    toast.success("Pedido sincronizado con DUX.");
+                    toast.success("Pedido registrado en DUX.");
                   } finally {
                     setLoading(false);
                     setGuardando(null);
                   }
                 }}
-                disabled={!itemsControlled || locked || busy || !pedidoHistoriaId}
+                disabled={!puedeRegistrarEnDux}
               >
-                Sincronizar Con DUX
+                Registrar En Dux
               </Button>
             </>
           }
@@ -483,6 +541,7 @@ export default function PedidoHistoriaDetalleModal({
                     FECHA FACTURA
                   </span>
                   <Input
+                    ref={fechaInputRef}
                     type="date"
                     value={fechaRecepcion}
                     onChange={(e) => setFechaRecepcion(e.target.value)}
@@ -504,7 +563,10 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pr-3 pl-0 sm:pt-0 sm:pb-2 sm:pr-4 sm:pl-0"
+                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pr-3 pl-0 sm:pt-0 sm:pb-2 sm:pr-4 sm:pl-0",
+                !tablaYAltaHabilitados &&
+                  !locked &&
+                  "pointer-events-none cursor-not-allowed opacity-50"
               )}
             >
               <span
@@ -522,17 +584,17 @@ export default function PedidoHistoriaDetalleModal({
                     <Input
                       value={productoSeleccionado.descripcionTienda}
                       readOnly
-                      disabled={locked || loading}
+                      disabled={locked || loading || !fechaFacturaOk}
                       data-desc-input="detalle"
                       aria-label="Descripción del producto"
                       role="button"
                       tabIndex={0}
                       onClick={() => {
-                        if (locked || loading) return;
+                        if (locked || loading || !fechaFacturaOk) return;
                         setAgregarProductosOpen(true);
                       }}
                       onKeyDown={(e) => {
-                        if (locked || loading) return;
+                        if (locked || loading || !fechaFacturaOk) return;
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           setAgregarProductosOpen(true);
@@ -541,24 +603,24 @@ export default function PedidoHistoriaDetalleModal({
                       className={cn(
                         "h-9 min-w-0 w-full cursor-pointer text-left",
                         inputBorderClassName,
-                        locked || loading ? "cursor-not-allowed" : ""
+                        locked || loading || !fechaFacturaOk ? "cursor-not-allowed" : ""
                       )}
                     />
                   ) : (
                     <Input
                       readOnly
-                      disabled={locked || loading}
+                      disabled={locked || loading || !fechaFacturaOk}
                       placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
                       data-desc-input="detalle"
                       aria-label="Buscar por descripción o código"
                       role="button"
                       tabIndex={0}
                       onClick={() => {
-                        if (locked || loading) return;
+                        if (locked || loading || !fechaFacturaOk) return;
                         setAgregarProductosOpen(true);
                       }}
                       onKeyDown={(e) => {
-                        if (locked || loading) return;
+                        if (locked || loading || !fechaFacturaOk) return;
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           setAgregarProductosOpen(true);
@@ -567,7 +629,7 @@ export default function PedidoHistoriaDetalleModal({
                       className={cn(
                         "h-9 min-w-0 w-full cursor-pointer text-left placeholder:text-muted-foreground",
                         inputBorderClassName,
-                        locked || loading ? "cursor-not-allowed" : ""
+                        locked || loading || !fechaFacturaOk ? "cursor-not-allowed" : ""
                       )}
                     />
                   )}
@@ -585,7 +647,7 @@ export default function PedidoHistoriaDetalleModal({
                       setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
                     }
                     data-cant-input="detalle"
-                    disabled={locked || loading}
+                    disabled={locked || loading || !fechaFacturaOk}
                     className={cn(
                       "h-9 w-full min-w-0 tabular-nums text-center placeholder:text-muted-foreground",
                       inputBorderClassName
@@ -600,11 +662,12 @@ export default function PedidoHistoriaDetalleModal({
                     disabled={
                       locked ||
                       loading ||
+                      !fechaFacturaOk ||
                       guardando != null ||
                       !productoSeleccionado ||
                       parseIntSafe(cantRecibidaNueva) <= 0
                     }
-                    className="h-9 w-full min-w-0 shrink-0 px-3"
+                    className="h-9 w-full min-w-0 shrink-0 px-3 disabled:cursor-not-allowed"
                   >
                     Agregar
                   </Button>
@@ -627,6 +690,13 @@ export default function PedidoHistoriaDetalleModal({
                   style={{ height: "auto" }}
                 >
                   <div className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+                    <div
+                      className={cn(
+                        !tablaYAltaHabilitados &&
+                          !locked &&
+                          "pointer-events-none cursor-not-allowed opacity-50"
+                      )}
+                    >
                     <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
@@ -675,11 +745,22 @@ export default function PedidoHistoriaDetalleModal({
                         <TableRow
                           key={item.id}
                           className={cn(
-                            "hover:bg-transparent",
-                            isControlado && "bg-primary/10 hover:bg-primary/10"
+                            !checkListConfirmed &&
+                              !isControlado &&
+                              "hover:bg-transparent",
+                            checkListConfirmed &&
+                              "cursor-not-allowed bg-muted/50 odd:bg-muted/50 even:bg-muted/50 hover:bg-muted/50",
+                            isControlado &&
+                              !checkListConfirmed &&
+                              "bg-primary/10 hover:bg-primary/10"
                           )}
                         >
-                          <TableCell className="celda-datos w-[5%] text-center align-middle">
+                          <TableCell
+                            className={cn(
+                              "celda-datos w-[5%] text-center align-middle",
+                              checkListConfirmed && "opacity-60"
+                            )}
+                          >
                             {checkListConfirmed ? (
                               <Check
                                 className="mx-auto h-4 w-4 shrink-0 text-primary"
@@ -700,7 +781,7 @@ export default function PedidoHistoriaDetalleModal({
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       e.preventDefault();
-                                      if (!busy) {
+                                      if (!busy && fechaFacturaOk && !locked) {
                                         setCheckListConfirmedByItem((prev) => ({
                                           ...prev,
                                           [item.id]: true,
@@ -708,7 +789,9 @@ export default function PedidoHistoriaDetalleModal({
                                       }
                                     }
                                   }}
-                                  disabled={busy}
+                                  disabled={
+                                    busy || checkListConfirmed || !fechaFacturaOk || locked
+                                  }
                                   aria-label="Lista de verificación"
                                   className={cn(
                                     "h-7 min-h-7 w-full min-w-0 px-1 text-center text-xs tabular-nums",
@@ -719,7 +802,10 @@ export default function PedidoHistoriaDetalleModal({
                             )}
                           </TableCell>
                           <TableCell
-                            className="celda-datos min-w-0 truncate w-[55%]"
+                            className={cn(
+                              "celda-datos min-w-0 truncate w-[55%]",
+                              checkListConfirmed && "opacity-60"
+                            )}
                             title={
                               item.codTienda
                                 ? `${item.codTienda} — ${item.descripcionTienda}`
@@ -728,10 +814,20 @@ export default function PedidoHistoriaDetalleModal({
                           >
                             {item.descripcionTienda}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[10%]">
+                          <TableCell
+                            className={cn(
+                              "celda-datos tabular-nums w-[10%]",
+                              checkListConfirmed && "opacity-60"
+                            )}
+                          >
                             {cantPedidaVisible}
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums w-[15%]">
+                          <TableCell
+                            className={cn(
+                              "celda-datos tabular-nums w-[15%]",
+                              checkListConfirmed && !isEditing && "opacity-60"
+                            )}
+                          >
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
@@ -742,7 +838,8 @@ export default function PedidoHistoriaDetalleModal({
                                   size="icon-xs"
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => ajustarEditingValue(-1)}
-                                  disabled={locked || busy}
+                                  disabled={locked || busy || !fechaFacturaOk}
+                                  className={clsBotonTabla}
                                   aria-label="Disminuir"
                                   title="Disminuir"
                                 >
@@ -768,7 +865,7 @@ export default function PedidoHistoriaDetalleModal({
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                                   }}
-                                  disabled={locked || busy}
+                                  disabled={locked || busy || !fechaFacturaOk}
                                   className={cn(
                                     "h-8 w-[3.5rem] min-w-[3.5rem] text-center",
                                     inputBorderClassName
@@ -780,7 +877,8 @@ export default function PedidoHistoriaDetalleModal({
                                   size="icon-xs"
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => ajustarEditingValue(1)}
-                                  disabled={locked || busy}
+                                  disabled={locked || busy || !fechaFacturaOk}
+                                  className={clsBotonTabla}
                                   aria-label="Aumentar"
                                   title="Aumentar"
                                 >
@@ -792,13 +890,21 @@ export default function PedidoHistoriaDetalleModal({
                             )}
                           </TableCell>
                           <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
-                            <div className="flex items-center justify-center gap-1">
+                            <div
+                              className={cn(
+                                "flex items-center justify-center gap-1",
+                                checkListConfirmed && "cursor-auto"
+                              )}
+                            >
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={onClickOk(item)}
-                                disabled={locked || busy}
+                                disabled={
+                                  locked || busy || checkListConfirmed || !fechaFacturaOk
+                                }
+                                className={clsBotonTabla}
                                 aria-label="OK"
                                 title="OK"
                                 data-ok-button={item.id}
@@ -810,7 +916,8 @@ export default function PedidoHistoriaDetalleModal({
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={onClickEditar(item)}
-                                disabled={locked || busy}
+                                disabled={locked || busy || !fechaFacturaOk}
+                                className={clsBotonTabla}
                                 aria-label="Editar"
                                 title="Editar"
                               >
@@ -821,7 +928,8 @@ export default function PedidoHistoriaDetalleModal({
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={onClickCesto(item)}
-                                disabled={locked || busy}
+                                disabled={locked || busy || !fechaFacturaOk}
+                                className={clsBotonTabla}
                                 aria-label="Cesto De Basura"
                                 title="Cesto De Basura"
                               >
@@ -835,12 +943,15 @@ export default function PedidoHistoriaDetalleModal({
                   )}
                 </TableBody>
                     </Table>
-                  </div>
+                    </div>
                   <section
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "min-w-0 shrink-0 border-t border-border bg-transparent py-1 pr-3 pl-0 sm:py-1.5 sm:pr-4 sm:pl-0 items-center"
+                      "min-w-0 shrink-0 border-t border-border bg-transparent py-1 pr-3 pl-0 sm:py-1.5 sm:pr-4 sm:pl-0 items-center",
+                      !totalPedidoInputHabilitado &&
+                        !locked &&
+                        "pointer-events-none cursor-not-allowed opacity-50"
                     )}
                   >
                     <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
@@ -848,12 +959,12 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </div>
-                    <div className="celda-datos col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0 !pl-0">
+                    <div className="celda-datos celda-datos--flush-left col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0">
                       <Input
                         type="text"
                         inputMode="decimal"
                         autoComplete="off"
-                        disabled={locked || loading}
+                        disabled={locked || loading || !totalPedidoInputHabilitado}
                         value={
                           totalPedidoFocused
                             ? totalPedidoDraft
@@ -876,7 +987,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "!ml-0 h-9 w-full min-w-0 !pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
+                          "ml-0 h-9 w-full min-w-0 pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
@@ -884,6 +995,7 @@ export default function PedidoHistoriaDetalleModal({
                     </div>
                   </section>
                 </div>
+              </div>
               </div>
             </section>
           </div>

@@ -320,6 +320,10 @@
     max-height: var(--tabla-body-row-min-height) !important;
     box-sizing: border-box;
   }
+  /* Mayor especificidad que `.celda-datos` solo: anula padding izquierdo (p. ej. input al ras en pie de totales). */
+  .celda-datos.celda-datos--flush-left {
+    padding-left: 0 !important;
+  }
   .celda-datos.celda-mono {
     font-family: var(--font-mono);
   }
