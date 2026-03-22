@@ -511,7 +511,7 @@ export default function PedidoHistoriaDetalleModal({
                 id="pedido-historia-agregar-recepcion-titulo"
                 className={cn(
                   MODAL_MICRO_LABEL_CLASS,
-                  "m-0 mb-1 block w-full box-border p-0 text-center font-bold"
+                  "m-0 mb-1 block w-full box-border p-0 text-center font-bold text-foreground"
                 )}
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
@@ -837,7 +837,7 @@ export default function PedidoHistoriaDetalleModal({
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "min-w-0 shrink-0 border-t border-border bg-transparent pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0 items-center"
+                      "min-w-0 shrink-0 border-t border-border bg-transparent py-1 pr-3 pl-0 sm:py-1.5 sm:pr-4 sm:pl-0 items-center"
                     )}
                   >
                     <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
@@ -873,7 +873,7 @@ export default function PedidoHistoriaDetalleModal({
                           setTotalPedidoFocused(false);
                         }}
                         className={cn(
-                          "ml-0 h-9 w-full min-w-0 !pl-0 pr-3 py-1 tabular-nums text-left font-semibold",
+                          "ml-0 h-9 w-full min-w-0 pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"
