@@ -335,6 +335,10 @@ Modal del módulo **Historial Pedidos** para operar la recepción de ítems del 
 
 Layout, grillas y reglas de tabla: sección **Guía para IA**, punto 7 (`PedidoHistoriaDetalleModal`).
 
+### `HistorialPedidosPageClient` (`src/components/pedidos/HistorialPedidosPageClient.tsx`)
+
+Listado **Historial Pedidos** (`/pedidos/historial`). Última columna **ACCIONES** (`tabla-bloque-secundario-*` alineado al patrón de tabla gestión), celdas con **`flex items-center justify-center gap-2`**. Tres botones **`size="icon-xs"`** con **`Tooltip`**: **Recepción De Mercadería** (`PackageCheck`) → **`PedidoHistoriaDetalleModal`**; **Ver Detalles** (`Eye`) → **`PedidoHistoriaLecturaModal`** (solo lectura, cabecera = nombre proveedor, badge **Pedido** / **Recepcionado** + fecha `dd/mm hh:mm`, tabla sin inputs); **Borrar** (`Trash2`, hover **destructive**) → **`PedidoHistoriaBorrarConfirmModal`** (texto de confirmación, **Cancelar** outline / **Sí, Borrar** destructive). Tras cerrar recepción o borrar, **`router.refresh()`** mantiene el listado al día.
+
 ### `FiltroBusquedaInput` (`src/components/shared/FiltroBusquedaInput.tsx`)
 
 Input unificado para búsqueda en filtros (ícono Search + limpiar + loader). Usar junto a `useFiltrosConBusqueda`.

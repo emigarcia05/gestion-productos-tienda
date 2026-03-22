@@ -203,7 +203,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 3. `getPedidoHistoriaDetalle({ pedidoHistoriaId })`
    - Devuelve cabecera + lista de items ordenados por `codTienda`.
-   - Incluye `cant_pedida`, `cant_recibida` y `descripcionTienda` (resuelta desde `precios_tienda`) para renderizar la columna DESCRIPCIÓN en UI.
+   - Incluye `generado_at`, `registrado_at`, `cant_pedida`, `cant_recibida` y `descripcionTienda` (resuelta desde `precios_tienda`) para renderizar la columna DESCRIPCIÓN en UI.
 
 4. `agregarPedidoHistoriaItem({ pedidoHistoriaId, codTienda, cantRecibida })`
    - Reglas:
@@ -218,6 +218,9 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`
    - Transición: setea `estado = "RECIBIDO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
+
+7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
+   - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
 
 ---
 
