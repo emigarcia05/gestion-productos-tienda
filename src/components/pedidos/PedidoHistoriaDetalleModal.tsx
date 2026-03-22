@@ -686,7 +686,7 @@ export default function PedidoHistoriaDetalleModal({
                 )}
               >
                 <div
-                  className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0 overflow-y-hidden"
+                  className="contenedor-tabla-gestion no-scroll-x flex min-h-0 flex-1 flex-col overflow-hidden"
                   style={{ height: "auto" }}
                 >
                   <div className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
@@ -944,11 +944,12 @@ export default function PedidoHistoriaDetalleModal({
                 </TableBody>
                     </Table>
                     </div>
+                  </div>
                   <section
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "min-w-0 shrink-0 border-t border-border bg-transparent py-1 pr-3 pl-0 sm:py-1.5 sm:pr-4 sm:pl-0 items-center",
+                      "min-w-0 shrink-0 border-t border-border bg-background py-2 pr-3 pl-0 sm:pr-4 sm:pl-0 items-center",
                       !totalPedidoInputHabilitado &&
                         !locked &&
                         "pointer-events-none cursor-not-allowed opacity-50"
@@ -994,7 +995,6 @@ export default function PedidoHistoriaDetalleModal({
                       />
                     </div>
                   </section>
-                </div>
               </div>
               </div>
             </section>
