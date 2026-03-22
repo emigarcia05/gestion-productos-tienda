@@ -17,9 +17,6 @@ import {
 import { getPedidoHistoriaDetalleAction } from "@/actions/pedidosHistoria";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
 
-const MODAL_MICRO_LABEL_CLASS =
-  "text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground";
-
 function formatDdMmHHmm(d: Date): string {
   const pad2 = (n: number) => String(n).padStart(2, "0");
   const dd = pad2(d.getDate());
@@ -102,8 +99,7 @@ export default function PedidoHistoriaLecturaModal({
       <AppModal
         title="Ver Pedido"
         size="lg"
-        scrollBody
-        hideBodyScrollbars
+        scrollBody={false}
         padding="default"
         actions={
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -114,43 +110,31 @@ export default function PedidoHistoriaLecturaModal({
         {errorMsg ? (
           <p className="text-sm text-destructive">{errorMsg}</p>
         ) : detalle ? (
-          <div className="flex min-h-0 flex-col gap-4">
-            <div className="flex min-w-0 flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <span className={MODAL_MICRO_LABEL_CLASS}>Estado</span>
-                <Badge
-                  className="w-fit"
-                  variant={esRecibido ? "secondary" : "default"}
-                >
-                  {esRecibido ? "Recepcionado" : "Pedido"}
-                </Badge>
-              </div>
-              <div className="flex min-w-0 flex-col gap-1">
-                <span className={MODAL_MICRO_LABEL_CLASS}>Proveedor</span>
-                <p className="text-base font-semibold leading-snug text-foreground">
-                  {detalle.proveedorNombre || "—"}
-                </p>
-              </div>
-              <div className="flex min-w-0 flex-col gap-1">
-                <span className={MODAL_MICRO_LABEL_CLASS}>Sucursal</span>
-                <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm font-medium text-foreground">
-                  <span className="min-w-0 break-words">
-                    {detalle.sucursalNombre || "—"}
-                  </span>
-                  <span
-                    className="shrink-0 text-muted-foreground"
-                    aria-hidden
-                  >
-                    —
-                  </span>
-                  <span className="text-sm font-normal tabular-nums text-muted-foreground">
-                    {fechaSubcabecera}
-                  </span>
-                </p>
-              </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-w-0 shrink-0 flex-col gap-3 pb-4">
+              <Badge
+                className="w-fit"
+                variant={esRecibido ? "secondary" : "default"}
+              >
+                {esRecibido ? "Recepcionado" : "Pedido"}
+              </Badge>
+              <p className="min-w-0 text-base font-semibold leading-snug text-foreground">
+                {detalle.proveedorNombre || "—"}
+              </p>
+              <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm font-medium text-foreground">
+                <span className="min-w-0 break-words">
+                  {detalle.sucursalNombre || "—"}
+                </span>
+                <span className="shrink-0 text-muted-foreground" aria-hidden>
+                  —
+                </span>
+                <span className="text-sm font-normal tabular-nums text-muted-foreground">
+                  {fechaSubcabecera}
+                </span>
+              </p>
             </div>
 
-            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar min-h-0 max-h-[min(60vh,28rem)] flex-1 overflow-y-auto">
+            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar relative min-h-0 min-w-0 flex-1">
               <Table variant="compact" scrollX={false} className="min-w-full">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
