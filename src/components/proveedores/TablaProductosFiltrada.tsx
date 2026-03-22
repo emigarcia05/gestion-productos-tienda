@@ -175,7 +175,7 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
   ].filter(Boolean).length || 1;
 
   return (
-    <div className="h-full rounded-lg border border-border/50 bg-card">
+    <div className="h-full min-h-0 overflow-auto rounded-lg border border-border/50 bg-card">
       <Table variant="compact">
         <TableHeader>
           <TableRow className="hover:bg-transparent">

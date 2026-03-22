@@ -12,21 +12,23 @@ export type TableVariant = "default" | "compact"
 
 interface TableProps extends React.ComponentProps<"table"> {
   variant?: TableVariant
-  /** Si false, desactiva el scroll horizontal del contenedor (solo scroll vertical si aplica). Default true. */
+  /**
+   * Compatibilidad / flex: `false` añade `min-w-0 max-w-full` para tablas dentro de layouts estrechos.
+   * El scroll vertical u horizontal **no** va en este wrapper: debe estar en el padre (p. ej. `.contenedor-tabla-gestion`
+   * o un `div` con `overflow-y-auto`); si no, `position: sticky` del encabezado queda anclado a un scrollport
+   * intermedio y el `<thead>` se va con el scroll.
+   */
   scrollX?: boolean
 }
 
 /** Diseño único de tablas (referencia: Comp. Proveedores). Aplica .tabla-gestion-compacta (globals.css).
- * Encabezado fijo: `TableHeader` (`sticky top-0 z-20` + `bg-primary`) y `TableHead` (`sticky top-0 z-20`); refuerzo en globals.css. */
+ * Encabezado fijo: `TableHeader` / `TableHead` + `globals.css`; el scroll lo define el ancestro, no `data-slot="table-container"`. */
 function Table({ className, variant, scrollX = true, ...props }: TableProps) {
   const tableClass = cn("tabla-gestion-compacta", className)
   return (
     <div
       data-slot="table-container"
-      className={cn(
-        "relative min-h-0 w-full overflow-y-auto",
-        scrollX ? "overflow-x-auto" : "overflow-x-hidden"
-      )}
+      className={cn("relative min-h-0 w-full", scrollX === false && "min-w-0 max-w-full")}
     >
       <table
         data-slot="table"
