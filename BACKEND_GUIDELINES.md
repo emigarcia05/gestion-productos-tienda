@@ -43,6 +43,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Normalizar**: `q?.trim()` y tratar vacío como `undefined`.
   - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
+- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). Zod en `listarPedidosHistoriaAction`: `q` con `.max(200).optional()`.
 
 ### 1.8 Fuente de costo final (`px_compra_final`)
 
@@ -190,8 +191,9 @@ Constraint:
 
 Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consistencia e integridad:
 
-1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo? })`
+1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo?, q? })`
    - Uso: obtener página de cabeceras para el módulo de historial (`/pedidos/historial`).
+   - Con `q` no vacío: solo pedidos que tengan al menos un ítem cuyo `cod_tienda` figure en `precios_tienda` con descripción que contenga todas las palabras de `q` (insensible a mayúsculas).
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
 2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`

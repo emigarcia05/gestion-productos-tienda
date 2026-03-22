@@ -6,6 +6,16 @@ import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/paginatio
 
 const COD_TIENDA_FALLBACK = "1503";
 
+/** Límite de texto y de palabras para `q` en listado historial (evita consultas abusivas). */
+const HISTORIAL_Q_MAX_LEN = 200;
+const HISTORIAL_Q_MAX_TOKENS = 10;
+
+function normalizarTokensBusquedaHistorial(q: string | undefined): string[] {
+  const raw = (q ?? "").trim().slice(0, HISTORIAL_Q_MAX_LEN);
+  if (!raw) return [];
+  return raw.split(/\s+/).filter(Boolean).slice(0, HISTORIAL_Q_MAX_TOKENS);
+}
+
 export type PedidoHistoriaEstado = "PEDIDO" | "RECIBIDO";
 
 export interface PedidoHistoriaResumen {
@@ -196,6 +206,8 @@ export async function listarPedidosHistoria(params: {
   estado?: PedidoHistoriaEstado | "ALL";
   proveedorId?: string;
   sucursalCodigo?: SucursalPedidoEnvio;
+  /** Palabras (separadas por espacio) que deben aparecer en `descripcion_tienda` de `precios_tienda`; el pedido califica si algún ítem tiene `cod_tienda` coincidente. */
+  q?: string;
 }): Promise<
   ServiceResult<{
     items: PedidoHistoriaResumen[];
@@ -224,6 +236,31 @@ export async function listarPedidosHistoria(params: {
     if (params.estado && params.estado !== "ALL") where.estado = params.estado;
     if (params.proveedorId?.trim()) where.proveedorId = params.proveedorId.trim();
     if (sucursalId) where.sucursalId = sucursalId;
+
+    const tokens = normalizarTokensBusquedaHistorial(params.q);
+    if (tokens.length > 0) {
+      const grouped = await prisma.listaPrecioTienda.groupBy({
+        by: ["codTienda"],
+        where: {
+          AND: tokens.map((t) => ({
+            descripcionTienda: { contains: t, mode: "insensitive" },
+          })),
+        },
+      });
+      const codTiendas = grouped.map((g) => g.codTienda);
+      if (codTiendas.length === 0) {
+        return {
+          success: true,
+          data: {
+            items: [],
+            total: 0,
+            totalPaginas: 1,
+            paginaActual,
+          },
+        };
+      }
+      where.items = { some: { codTienda: { in: codTiendas } } };
+    }
 
     const [total, rows] = await Promise.all([
       prisma.pedidoHistoria.count({ where }),

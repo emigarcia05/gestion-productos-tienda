@@ -15,7 +15,22 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { getPedidoHistoriaDetalleAction } from "@/actions/pedidosHistoria";
-import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
+import type {
+  PedidoHistoriaDetalle,
+  PedidoHistoriaItemDetalle,
+} from "@/services/pedidosHistoria.service";
+import { cn } from "@/lib/utils";
+
+function deltaCantidades(it: PedidoHistoriaItemDetalle): number {
+  return it.cantRecibida - it.cantPedida;
+}
+
+function tituloCeldaCantRecibida(it: PedidoHistoriaItemDetalle): string {
+  const d = deltaCantidades(it);
+  if (d === 0) return "";
+  const sign = d > 0 ? "+" : "";
+  return `Pedido ${it.cantPedida.toLocaleString("es-AR")}, recibido ${it.cantRecibida.toLocaleString("es-AR")}. Diferencia: ${sign}${d.toLocaleString("es-AR")}.`;
+}
 
 function formatDdMmHHmm(d: Date): string {
   const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -94,6 +109,11 @@ export default function PedidoHistoriaLecturaModal({
     return d ? formatDdMmHHmm(d) : "";
   }, [detalle, esRecibido]);
 
+  const cantItemsConDiferencia = useMemo(() => {
+    if (!detalle || !esRecibido) return 0;
+    return detalle.items.filter((it) => deltaCantidades(it) !== 0).length;
+  }, [detalle, esRecibido]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -134,6 +154,13 @@ export default function PedidoHistoriaLecturaModal({
                   {fechaSubcabecera}
                 </span>
               </p>
+              {esRecibido && cantItemsConDiferencia > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {cantItemsConDiferencia === 1
+                    ? "1 ítem con diferencia entre cant. pedida y cant. recibida."
+                    : `${cantItemsConDiferencia} ítems con diferencia entre cant. pedida y cant. recibida.`}
+                </p>
+              ) : null}
             </div>
 
             <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar relative min-h-0 min-w-0 flex-1">
@@ -154,28 +181,51 @@ export default function PedidoHistoriaLecturaModal({
                       message="Sin ítems."
                     />
                   ) : (
-                    detalle.items.map((it) => (
-                      <TableRow key={it.id}>
-                        <TableCell
-                          className="celda-datos min-w-0 whitespace-normal text-left align-top"
-                          title={
-                            it.codTienda
-                              ? `${it.codTienda} — ${it.descripcionTienda}`
-                              : it.descripcionTienda
+                    detalle.items.map((it) => {
+                      const delta = esRecibido ? deltaCantidades(it) : 0;
+                      const hayDiferencia = esRecibido && delta !== 0;
+                      return (
+                        <TableRow
+                          key={it.id}
+                          className={cn(
+                            hayDiferencia &&
+                              "bg-muted/40 odd:bg-muted/40 even:bg-muted/40 hover:bg-muted/55"
+                          )}
+                          aria-label={
+                            hayDiferencia
+                              ? "Ítem con diferencia entre cantidad pedida y recibida"
+                              : undefined
                           }
                         >
-                          {it.descripcionTienda || "—"}
-                        </TableCell>
-                        <TableCell className="celda-datos tabular-nums">
-                          {it.cantPedida.toLocaleString("es-AR")}
-                        </TableCell>
-                        {esRecibido ? (
-                          <TableCell className="celda-datos tabular-nums">
-                            {it.cantRecibida.toLocaleString("es-AR")}
+                          <TableCell
+                            className="celda-datos min-w-0 whitespace-normal text-left align-top"
+                            title={
+                              it.codTienda
+                                ? `${it.codTienda} — ${it.descripcionTienda}`
+                                : it.descripcionTienda
+                            }
+                          >
+                            {it.descripcionTienda || "—"}
                           </TableCell>
-                        ) : null}
-                      </TableRow>
-                    ))
+                          <TableCell className="celda-datos tabular-nums">
+                            {it.cantPedida.toLocaleString("es-AR")}
+                          </TableCell>
+                          {esRecibido ? (
+                            <TableCell
+                              className={cn(
+                                "celda-datos tabular-nums",
+                                hayDiferencia && "font-semibold",
+                                delta < 0 && "text-destructive",
+                                delta > 0 && "text-foreground"
+                              )}
+                              title={tituloCeldaCantRecibida(it)}
+                            >
+                              {it.cantRecibida.toLocaleString("es-AR")}
+                            </TableCell>
+                          ) : null}
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

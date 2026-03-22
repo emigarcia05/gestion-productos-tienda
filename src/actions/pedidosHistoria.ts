@@ -35,6 +35,7 @@ const listarPedidosHistoriaSchema = z.object({
   estado: z.enum(["PEDIDO", "RECIBIDO"]).optional(),
   proveedorId: z.string().optional(),
   sucursalCodigo: z.enum(["guaymallen", "maipu"]).optional(),
+  q: z.string().max(200).optional(),
 });
 
 export async function getPedidoHistoriaDetalleAction(
@@ -79,6 +80,7 @@ export async function listarPedidosHistoriaAction(
     estado: parsed.data.estado,
     proveedorId: parsed.data.proveedorId,
     sucursalCodigo: parsed.data.sucursalCodigo,
+    q: parsed.data.q?.trim() || undefined,
   });
 
   if (!res.success) return { ok: false, error: res.error };

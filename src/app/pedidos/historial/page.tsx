@@ -15,6 +15,7 @@ interface Props {
     proveedor?: string;
     sucursal?: string;
     estado?: string;
+    q?: string;
   }>;
 }
 
@@ -22,8 +23,10 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
 
-  const { pagina = "1", proveedor = "", sucursal = "", estado = "" } = await searchParams;
+  const { pagina = "1", proveedor = "", sucursal = "", estado = "", q = "" } =
+    await searchParams;
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const qTrim = q.trim();
 
   const proveedorId = proveedor.trim();
   const sucursalCodigo: SucursalPedidoEnvio | "" =
@@ -42,6 +45,7 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
     proveedorId: proveedorId || undefined,
     sucursalCodigo: sucursalCodigo || undefined,
     estado: estadoNormalizado || undefined,
+    q: qTrim || undefined,
   });
 
   if (!res.success) {
@@ -56,6 +60,7 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
           proveedorId={proveedorId}
           sucursalCodigo={sucursalCodigo}
           estado={estadoNormalizado}
+          q={qTrim}
         />
       </div>
     );
@@ -77,6 +82,7 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
       proveedorId={proveedorId}
       sucursalCodigo={sucursalCodigo}
       estado={estadoNormalizado}
+      q={qTrim}
     />
   );
 }

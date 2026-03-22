@@ -41,6 +41,7 @@ interface Props {
   proveedorId: string;
   sucursalCodigo: string;
   estado: PedidoHistoriaResumen["estado"] | "";
+  q: string;
 }
 
 function formatFechaNotaPedido(d: Date): string {
@@ -67,6 +68,7 @@ export default function HistorialPedidosPageClient({
   proveedorId,
   sucursalCodigo,
   estado,
+  q,
 }: Props) {
   const router = useRouter();
   const [recepcionOpen, setRecepcionOpen] = useState(false);
@@ -103,6 +105,7 @@ export default function HistorialPedidosPageClient({
         proveedorId={proveedorId}
         sucursalCodigo={sucursalCodigo}
         estado={(estado as EstadoFiltroPedido) || ""}
+        q={q}
         total={total}
       />
     }>
@@ -234,6 +237,7 @@ export default function HistorialPedidosPageClient({
                       proveedor: proveedorId,
                       sucursal: sucursalCodigo,
                       estado: estado as string,
+                      q,
                     }}
                     paginaActual={paginaNum}
                     totalPaginas={totalPaginas}
