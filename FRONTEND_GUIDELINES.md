@@ -106,8 +106,10 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - **Hook:** `useFiltrosConBusqueda` en `@/lib/hooks/useFiltrosConBusqueda.ts`: estado `q`, debounce, restauración de foco (opcional con `focusStorageKey`) y `isDebouncing`. Llamar `prepareNavigate()` antes de `window.location.href` cuando se use `focusStorageKey`.
    - **Componente:** `FiltroBusquedaInput` en `@/components/shared/FiltroBusquedaInput.tsx`: icono Search, input con estilo unificado, botón X y Loader. Usar junto al hook para nueva pantallas con filtro de búsqueda (ej. FiltrosProductos, FiltrosTienda, FiltrosStock).
    - **Nota**: Si la página ya usa filtros por URL (Server Component) y necesitás una segunda fila con búsqueda (ej. “Generar Pedido”), agregá `q` en `searchParams`, pasalo al componente de filtros, y debounceá la navegación con `useFiltrosConBusqueda` (placeholder en MAYÚSCULAS).
-   - **Generar pedido (PDF / WhatsApp)**: usar `GenerarPedidoToolbarButton` (`src/components/pedidos/GenerarPedidoToolbarButton.tsx`). Abre un **`AppModal`** con tres controles **en columna**: `SUCURSAL`, `PROVEEDOR`, **TIPO DE PEDIDO** (multi con checkboxes, etiqueta tipo `FiltrosEnviarPedido`). Al abrir, los valores vienen de la página (`defaultSucursal`, `defaultProveedor`, `defaultTipos`) y según **`modulo`**: `urgente` → asegura **URGENTE** tildado; `tintometrico` → **TINTOMÉTRICO**; `reposicion` → **REPOSICIÓN**; `enviar` → solo los tipos que vengan de la URL. El botón del footer **Generar Pedido** queda **deshabilitado** hasta que sucursal, proveedor y al menos un tipo estén definidos. Rutas: **Generar Pedido** (`/pedidos/enviar`), **Pedido Urgente**, **Pedido Tintométrico** (misma fila que **Agregar Tintométrico**), **Pedido Reposición** (acción en header).
-- En `Generar Pedido`, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `TIPO DE PEDIDO`.
+   - **Pedido Urgente** (`PedidoUrgentePageClient`): **solo SUCURSAL** es obligatoria para listar productos; **PROVEEDOR**, filtro **PEDIDO** y búsqueda acotan. Mensaje sin sucursal: *«Seleccioná una sucursal para ver los productos.»* En cabecera solo el botón **Generar Pedido** (`GenerarPedidoToolbarButton`); **no** hay **Guardar Cambios**. Cantidades: modal de cantidad o cesto (`upsertPedidoUrgenteMercaderiaItemAction`).
+   - **Generar pedido (PDF / WhatsApp)**: usar `GenerarPedidoToolbarButton`. Texto del botón de cabecera por defecto: **Generar Pedido** (también en **Urgente** y **Tintométrico**). Abre un **`AppModal`** con `SUCURSAL`, `PROVEEDOR`, **TIPO DE PEDIDO** (multi). El botón del footer del modal solo se habilita con los **tres** completos y **`hayItems === true`**. Rutas: `/pedidos/enviar`, **Pedido Urgente**, **Pedido Tintométrico**, **Pedido Reposición**.
+   - **Página `/pedidos/enviar` (tabla previa)**: sin filtros en URL muestra **todos** los ítems con `cant_pedir > 0` (`getItemsTablaEnviarPedido`); cada filtro activo (**SUCURSAL**, **PROVEEDOR**, **TIPO**, `q`) **reduce** la grilla. Vacío sin filtros: *«No hay ítems con cantidad a pedir.»*; vacío con algún filtro: *«No hay ítems para generar el pedido con los filtros seleccionados.»*
+- En la barra de filtros de **Generar Pedido**, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `TIPO DE PEDIDO`.
 - En `Pedido Reposición`, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `MARCA` → `RUBRO` → `CONFIGURADO` (sin `SUB-RUBRO`).
 
 4. **Modal con tabla y filtros**
@@ -335,6 +337,8 @@ Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`).
 
 - **Props**: `proveedores`, `defaultSucursal`, `defaultProveedor`, `defaultTipos`, `modulo` (`"enviar" | "urgente" | "tintometrico" | "reposicion"`), `triggerLabel?`, `triggerClassName?`, `triggerSize?`.
 - **Título del modal**: **Generar Pedido** (title case). Footer: **Cancelar** (outline) + **Generar Pedido** (primary).
+- **Tipo de pedido**: `DropdownMenu` de **`radix-ui`** (`modal={false}` dentro del `Dialog`) con **`Portal`** + **`CheckboxItem`** (tres opciones: URGENTE, TINTOMÉTRICO, REPOSICIÓN); no usar panel `absolute` bajo el trigger — el **`AppModal`**/`DialogContent` llevan `overflow-hidden` y recortaban el menú.
+- **Bajo los tres desplegables**: recuadro reservado (`min-h`, borde `border-border`, `bg-muted/40`) con mensaje: si faltan filtros → **«Falta seleccionar: SUCURSAL, …»**; mientras corre **`comprobarItemsParaGenerarPedidoAction`** → **«Comprobando ítems…»**; si los tres están ok y no hay filas → **«No hay ítems para esta combinación de filtros.»**; error de red/permiso → `text-destructive`. El botón **Generar Pedido** del footer solo se habilita con **los tres filtros** y **`hayItems === true`** (tras comprobación en servidor).
 
 ### `PedidoHistoriaDetalleModal` (`src/components/pedidos/PedidoHistoriaDetalleModal.tsx`)
 
@@ -514,7 +518,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: `GenerarPedidoToolbarButton` + modal **Generar Pedido** (sucursal / proveedor / tipos múltiples) en **Generar Pedido**, **Urgente**, **Tintométrico** y **Reposición**; retirado `EnviarPedidoButton`.*
+*Última actualización: `/pedidos/enviar` tabla sin exigir 3 filtros (`getItemsTablaEnviarPedido`); Pedido Urgente solo exige **SUCURSAL** para listar.*
 
 ---
 

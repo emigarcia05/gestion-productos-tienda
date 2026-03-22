@@ -192,6 +192,21 @@ Constraint:
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
 - Tras éxito, **`revalidatePath`** incluye también **`/pedidos/reposicion`**.
 
+#### `comprobarItemsParaGenerarPedidoAction`
+
+- **Uso**: modal **Generar Pedido** (debounce en cliente ~320 ms) para saber si hay ítems antes de habilitar el botón.
+- **Entrada** (Zod): `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
+- **Salida**: `ActionResult<{ hayItems: boolean }>` — reutiliza **`getEnviarPedidoTablaData`** con los tres datos completos (misma selección que vería la tabla de `/pedidos/enviar` si esos filtros estuvieran en la URL).
+
+#### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
+
+- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems `pedidos_mercaderia` con **`cant_pedir > 0`**. Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
+- **`getEnviarPedidoTablaData`**: delega en **`getItemsTablaEnviarPedido`** pasando lo que venga de la URL (vacío = sin acotar).
+
+#### Pedido Urgente — listado
+
+- **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar.
+
 ### 2.6 Servicio `pedidosHistoria.service.ts`
 
 Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consistencia e integridad:
@@ -363,4 +378,4 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: `generarPdfEnviarPedidoAction` rechaza generación sin ítems; `revalidatePath` de reposición tras generar pedido.*
+*Última actualización: `getItemsTablaEnviarPedido` + tabla `/pedidos/enviar` sin exigir 3 filtros; Pedido Urgente lista solo con sucursal; `comprobarItemsParaGenerarPedidoAction`; `generarPdfEnviarPedidoAction` sin ítems vacíos.*

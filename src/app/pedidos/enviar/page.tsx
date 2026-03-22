@@ -24,9 +24,9 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const MENSAJE_SIN_FILTROS =
-  "Cargá los 3 filtros (Sucursal, Proveedor y Tipo de pedido) para ver la tabla.";
-const MENSAJE_SIN_ITEMS = "No hay ítems para generar el pedido con los filtros seleccionados.";
+const MENSAJE_SIN_ITEMS_GLOBAL = "No hay ítems con cantidad a pedir.";
+const MENSAJE_SIN_ITEMS_FILTRADO =
+  "No hay ítems para generar el pedido con los filtros seleccionados.";
 
 interface Props {
   searchParams: Promise<{
@@ -47,19 +47,17 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
   const tiposValidos: TipoPedido[] = parseTiposParam(tipo);
   const qNorm = q.trim();
 
-  const tienenLosTresFiltros =
-    !!sucursalValida && !!proveedor && tiposValidos.length > 0;
+  const hayFiltroActivo =
+    !!sucursalValida || !!proveedor.trim() || tiposValidos.length > 0 || !!qNorm;
 
   const [datosIniciales, tablaData] = await Promise.all([
     getEnviarPedidoData(),
-    tienenLosTresFiltros
-      ? getEnviarPedidoTablaData({
-          sucursal: sucursalValida,
-          proveedor,
-          tipos: tiposValidos,
-          q: qNorm,
-        })
-      : Promise.resolve({ items: [] }),
+    getEnviarPedidoTablaData({
+      sucursal: sucursalValida,
+      proveedor,
+      tipos: tiposValidos,
+      q: qNorm,
+    }),
   ]);
 
   const { proveedores } = datosIniciales;
@@ -82,7 +80,6 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
       defaultProveedor={proveedor}
       defaultTipos={tiposValidos}
       modulo="enviar"
-      triggerLabel="Generar Pedido"
     />
   );
 
@@ -105,10 +102,13 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {!tienenLosTresFiltros ? (
-                    <EmptyTableRow colSpan={2} message={MENSAJE_SIN_FILTROS} />
-                  ) : itemsTabla.length === 0 ? (
-                    <EmptyTableRow colSpan={2} message={MENSAJE_SIN_ITEMS} />
+                  {itemsTabla.length === 0 ? (
+                    <EmptyTableRow
+                      colSpan={2}
+                      message={
+                        hayFiltroActivo ? MENSAJE_SIN_ITEMS_FILTRADO : MENSAJE_SIN_ITEMS_GLOBAL
+                      }
+                    />
                   ) : (
                     itemsTabla.map((item, idx) => (
                       <TableRow

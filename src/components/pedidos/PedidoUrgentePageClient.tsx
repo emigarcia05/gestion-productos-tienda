@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import GuardarCambiosPedidoButton from "@/components/pedidos/GuardarCambiosPedidoButton";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
@@ -20,7 +19,7 @@ interface Props {
   productos: ProductoPedidoUrgente[];
   proveedores: { id: string; nombre: string; prefijo: string }[];
   sucursalValida: "" | "guaymallen" | "maipu";
-  /** True cuando faltan uno o más de los 3 filtros obligatorios (Sucursal, Proveedor, Pedido). */
+  /** True cuando no hay sucursal seleccionada (único filtro obligatorio para listar). */
   sinFiltros: boolean;
   pedidoValida: "si" | "no" | "";
   total: number;
@@ -31,7 +30,7 @@ interface Props {
 }
 
 const MENSAJE_SIN_FILTROS =
-  "Configurá Sucursal y al menos un filtro más (Proveedor, Pedido o Descripción) para ver los productos.";
+  "Seleccioná una sucursal para ver los productos.";
 
 export default function PedidoUrgentePageClient({
   filters,
@@ -64,22 +63,14 @@ export default function PedidoUrgentePageClient({
     });
   }, [productos]);
 
-  const mostrarGuardar = !!(sucursalValida && !sinFiltros);
-
   const actions = (
-    <div className="flex items-center gap-2">
-      {mostrarGuardar ? (
-        <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
-      ) : null}
-      <GenerarPedidoToolbarButton
-        proveedores={proveedores}
-        defaultSucursal={sucursalValida}
-        defaultProveedor={proveedor}
-        defaultTipos={[]}
-        modulo="urgente"
-        triggerLabel="Generar Pedido Urgente"
-      />
-    </div>
+    <GenerarPedidoToolbarButton
+      proveedores={proveedores}
+      defaultSucursal={sucursalValida}
+      defaultProveedor={proveedor}
+      defaultTipos={[]}
+      modulo="urgente"
+    />
   );
 
   function abrirModalCantidad(prod: ProductoPedidoUrgente) {

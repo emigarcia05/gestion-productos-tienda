@@ -3,6 +3,7 @@
  * El servidor construye las filas a partir de ids de ListaPrecioProveedor + cantidades (opción B).
  */
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const TIPO_URGENTE = "URGENTE";
@@ -427,6 +428,78 @@ export interface ProveedorParaEnvio {
   nombre: string;
   prefijo: string;
   whatsapp: string | null;
+}
+
+/** Fila de la tabla Generar Pedido (cantidad y descripción). */
+export interface ItemTablaEnviarPedido {
+  cantPedir: number;
+  descripcion: string;
+}
+
+/**
+ * Ítems con cant_pedir > 0 para la tabla **Generar Pedido**.
+ * Sin filtros: todas las sucursales, proveedores y tipos. Cada filtro opcional reduce el resultado.
+ */
+export async function getItemsTablaEnviarPedido(params: {
+  sucursalCodigo?: string;
+  proveedorId?: string;
+  tipos?: string[];
+  q?: string;
+}): Promise<{ items: ItemTablaEnviarPedido[] }> {
+  const { sucursalCodigo, proveedorId, tipos, q } = params;
+  const qNorm = q?.trim() ? q.trim() : "";
+
+  const parts: Prisma.ItemPedidoEnvioWhereInput[] = [{ cantPedir: { gt: 0 } }];
+
+  if (sucursalCodigo?.trim()) {
+    const sucursalRow = await prisma.sucursal.findUnique({
+      where: { codigo: sucursalCodigo.trim() },
+      select: { id: true },
+    });
+    if (!sucursalRow) return { items: [] };
+    parts.push({ sucursalId: sucursalRow.id });
+  }
+
+  if (proveedorId?.trim()) {
+    parts.push({ idProveedor: proveedorId.trim() });
+  }
+
+  if (tipos && tipos.length > 0) {
+    parts.push({ tipoPedido: { in: tipos } });
+  }
+
+  if (qNorm) {
+    parts.push({
+      OR: [
+        { descripcionTienda: { contains: qNorm, mode: "insensitive" } },
+        { descripcionProveedor: { contains: qNorm, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const where: Prisma.ItemPedidoEnvioWhereInput =
+    parts.length === 1 ? parts[0]! : { AND: parts };
+
+  const rows = await prisma.itemPedidoEnvio.findMany({
+    where,
+    orderBy: [{ sucursalId: "asc" }, { idProveedor: "asc" }, { codExt: "asc" }],
+    select: {
+      descripcionProveedor: true,
+      tintometricoDescripcion: true,
+      descripcionTienda: true,
+      cantPedir: true,
+    },
+  });
+
+  const items: ItemTablaEnviarPedido[] = rows.map((i) => ({
+    cantPedir: Math.max(0, Number(i.cantPedir) || 0),
+    descripcion:
+      (i.descripcionProveedor ?? "").trim() ||
+      (i.tintometricoDescripcion ?? "").trim() ||
+      (i.descripcionTienda ?? "").trim(),
+  }));
+
+  return { items };
 }
 
 /**

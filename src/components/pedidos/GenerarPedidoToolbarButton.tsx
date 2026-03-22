@@ -17,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Loader2, Send } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
+import { Check, ChevronDown, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
@@ -26,7 +27,10 @@ import {
   type SucursalPedido,
   type TipoPedido,
 } from "@/lib/pedidos";
-import { generarPdfEnviarPedidoAction } from "@/actions/pedidos";
+import {
+  comprobarItemsParaGenerarPedidoAction,
+  generarPdfEnviarPedidoAction,
+} from "@/actions/pedidos";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -101,7 +105,10 @@ export default function GenerarPedidoToolbarButton({
   const [tipos, setTipos] = useState<TipoPedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [multiTipoOpen, setMultiTipoOpen] = useState(false);
-  const multiRef = useRef<HTMLDivElement>(null);
+  const [hayItems, setHayItems] = useState<boolean | null>(null);
+  const [verificandoItems, setVerificandoItems] = useState(false);
+  const [errorVerificacion, setErrorVerificacion] = useState<string | null>(null);
+  const verificarSeqRef = useRef(0);
 
   const aplicarDefaults = useCallback(() => {
     setSucursal(defaultSucursal);
@@ -114,19 +121,65 @@ export default function GenerarPedidoToolbarButton({
   }, [open, aplicarDefaults]);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (multiRef.current && !multiRef.current.contains(e.target as Node)) {
-        setMultiTipoOpen(false);
-      }
+    if (!open) {
+      setMultiTipoOpen(false);
+      setHayItems(null);
+      setVerificandoItems(false);
+      setErrorVerificacion(null);
     }
-    if (multiTipoOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const filtrosCompletos =
+    !!sucursal && !!proveedor.trim() && tipos.length > 0;
+
+  useEffect(() => {
+    if (!open || !filtrosCompletos || !sucursal) {
+      setHayItems(null);
+      setVerificandoItems(false);
+      setErrorVerificacion(null);
+      return;
     }
-  }, [multiTipoOpen]);
+
+    setVerificandoItems(true);
+    setHayItems(null);
+    setErrorVerificacion(null);
+    const seq = ++verificarSeqRef.current;
+    const proveedorId = proveedor.trim();
+    const tiposSnapshot = [...tipos];
+
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        const res = await comprobarItemsParaGenerarPedidoAction({
+          proveedorId,
+          sucursal,
+          tipos: tiposSnapshot,
+        });
+        if (seq !== verificarSeqRef.current) return;
+        setVerificandoItems(false);
+        if (!res.ok) {
+          setErrorVerificacion(res.error);
+          setHayItems(null);
+          return;
+        }
+        setHayItems(res.data.hayItems);
+      })();
+    }, 320);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [open, filtrosCompletos, sucursal, proveedor, tipos]);
+
+  const faltantes: string[] = [];
+  if (!sucursal) faltantes.push("SUCURSAL");
+  if (!proveedor.trim()) faltantes.push("PROVEEDOR");
+  if (tipos.length === 0) faltantes.push("TIPO DE PEDIDO");
+
+  const mensajeFaltantes =
+    faltantes.length > 0
+      ? `Falta seleccionar: ${faltantes.join(", ")}.`
+      : null;
 
   const puedeGenerar =
-    !!sucursal && !!proveedor.trim() && tipos.length > 0;
+    filtrosCompletos && hayItems === true && !verificandoItems && !errorVerificacion;
 
   const labelTipo =
     tipos.length === 0
@@ -137,15 +190,11 @@ export default function GenerarPedidoToolbarButton({
             .map((t) => OPCIONES_TIPO.find((o) => o.value === t)?.label ?? t)
             .join(", ");
 
-  function toggleTipo(t: TipoPedido) {
-    setTipos((prev) =>
-      prev.includes(t) ? prev.filter((k) => k !== t) : [...prev, t]
-    );
-  }
-
   async function handleGenerar() {
-    if (!puedeGenerar || !sucursal) {
-      toast.error("Completá sucursal, proveedor y al menos un tipo de pedido.");
+    if (!puedeGenerar || !sucursal || hayItems !== true) {
+      toast.error(
+        "Completá los filtros y asegurate de que haya ítems para generar el pedido."
+      );
       return;
     }
     setLoading(true);
@@ -209,7 +258,7 @@ export default function GenerarPedidoToolbarButton({
                 type="button"
                 variant="default"
                 onClick={handleGenerar}
-                disabled={!puedeGenerar || loading}
+                disabled={!puedeGenerar || loading || verificandoItems}
                 className="gap-2"
                 aria-label="Generar Pedido"
               >
@@ -274,43 +323,94 @@ export default function GenerarPedidoToolbarButton({
               </Select>
             </div>
 
-            <div className="relative w-full min-w-0" ref={multiRef}>
-              <button
-                type="button"
-                onClick={() => setMultiTipoOpen((o) => !o)}
-                className={cn(
-                  SELECT_TRIGGER_FILTER_CLASS,
-                  "flex w-full items-center justify-between gap-2 text-left font-semibold"
-                )}
-                aria-expanded={multiTipoOpen}
-                aria-haspopup="listbox"
-                aria-label="Tipo de pedido (selección múltiple)"
+            <div className="w-full min-w-0">
+              <DropdownMenu.Root
+                modal={false}
+                open={multiTipoOpen}
+                onOpenChange={setMultiTipoOpen}
               >
-                <span className="truncate">{labelTipo}</span>
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-              </button>
-              {multiTipoOpen && (
-                <div
-                  className="absolute top-full left-0 z-50 mt-1 min-w-full rounded-md border border-border bg-popover p-1 shadow-md"
-                  role="listbox"
-                  aria-multiselectable="true"
-                >
-                  {OPCIONES_TIPO.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
-                    >
-                      <input
-                        type="checkbox"
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      SELECT_TRIGGER_FILTER_CLASS,
+                      "flex h-auto min-h-9 w-full items-center justify-between gap-2 py-2 text-left font-semibold whitespace-normal"
+                    )}
+                    aria-expanded={multiTipoOpen}
+                    aria-haspopup="menu"
+                    aria-label="Tipo de pedido (selección múltiple)"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-left">
+                      {labelTipo}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 opacity-50 transition-transform",
+                        multiTipoOpen && "rotate-180"
+                      )}
+                    />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    className={cn(
+                      "select-content-filtro z-[200] max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+                      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+                    )}
+                    side="bottom"
+                    align="start"
+                    sideOffset={4}
+                    collisionPadding={8}
+                  >
+                    {OPCIONES_TIPO.map((opt) => (
+                      <DropdownMenu.CheckboxItem
+                        key={opt.value}
+                        className={cn(
+                          "relative flex cursor-pointer items-center gap-2 rounded-sm py-2 pr-8 pl-2 text-sm font-medium outline-none select-none",
+                          "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-muted"
+                        )}
                         checked={tipos.includes(opt.value)}
-                        onChange={() => toggleTipo(opt.value)}
-                        className="h-4 w-4 rounded border-border"
-                      />
-                      {opt.label}
-                    </label>
-                  ))}
+                        onCheckedChange={(checked) => {
+                          if (checked === true) {
+                            setTipos((prev) =>
+                              prev.includes(opt.value) ? prev : [...prev, opt.value]
+                            );
+                          } else {
+                            setTipos((prev) => prev.filter((k) => k !== opt.value));
+                          }
+                        }}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <DropdownMenu.ItemIndicator className="absolute right-2 flex size-4 items-center justify-center text-primary">
+                          <Check className="size-4" aria-hidden />
+                        </DropdownMenu.ItemIndicator>
+                        {opt.label}
+                      </DropdownMenu.CheckboxItem>
+                    ))}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
+
+            <div
+              className="flex min-h-[4.5rem] flex-col justify-center rounded-md border border-border bg-muted/40 px-3 py-2"
+              role="status"
+              aria-live="polite"
+            >
+              {mensajeFaltantes ? (
+                <p className="text-sm text-muted-foreground">{mensajeFaltantes}</p>
+              ) : errorVerificacion ? (
+                <p className="text-sm text-destructive">{errorVerificacion}</p>
+              ) : verificandoItems ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  <span>Comprobando ítems…</span>
                 </div>
-              )}
+              ) : filtrosCompletos && hayItems === false ? (
+                <p className="text-sm text-muted-foreground">
+                  No hay ítems para esta combinación de filtros.
+                </p>
+              ) : null}
             </div>
           </div>
         </AppModal>

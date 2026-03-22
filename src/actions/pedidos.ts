@@ -8,6 +8,7 @@ import {
 } from "@/services/listaPrecios.service";
 import {
   syncPedidoUrgenteEnvio,
+  getItemsTablaEnviarPedido,
   getItemsYProveedorParaEnviar,
   type SucursalPedidoEnvio,
   type ItemPedidoUrgentePayload,
@@ -42,18 +43,16 @@ export async function getPedidoUrgenteData(params: {
     };
   }
 
-  const { sucursal = "", q = "", pagina = "1", proveedor = "", pedido = "" } = params;
+  const { sucursal = "", q = "", pagina = "1", proveedor = "" } = params;
   const sucursalValida = sucursal.trim();
   const proveedorValido = proveedor.trim();
-  const pedidoValido = pedido === "si";
   const qValida = q.trim().length >= 3;
-  const tienenFiltrosNecesarios =
-    !!sucursalValida && (!!proveedorValido || pedidoValido || qValida);
+  const tieneSucursal = !!sucursalValida;
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
-    tienenFiltrosNecesarios
+    tieneSucursal
       ? getListaPreciosParaPedidoUrgente(
           sucursalValida,
           proveedorValido || undefined,
@@ -89,8 +88,8 @@ export type EnviarPedidoTablaItem = {
 };
 
 /**
- * Datos de la tabla Generar Pedido. Solo devuelve ítems cuando están cargados los 3 filtros:
- * sucursal, proveedor y al menos un tipo de pedido.
+ * Datos de la tabla Generar Pedido. Sin filtros en URL: todos los ítems con cant_pedir > 0.
+ * Cada filtro activo (sucursal, proveedor, tipo(s), búsqueda) acota el listado.
  */
 export async function getEnviarPedidoTablaData(params: {
   sucursal: string;
@@ -103,18 +102,56 @@ export async function getEnviarPedidoTablaData(params: {
     return { items: [] };
   }
   const { sucursal, proveedor, tipos, q } = params;
-  const sucursalValida =
+  const sucursalFiltro =
     sucursal?.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
-      ? (sucursal as SucursalPedidoEnvio)
-      : null;
-  if (!sucursalValida || !proveedor?.trim() || !Array.isArray(tipos) || tipos.length === 0) {
-    return { items: [] };
+      ? sucursal.trim()
+      : undefined;
+  const tiposFiltro =
+    Array.isArray(tipos) && tipos.length > 0 ? tipos : undefined;
+  const { items } = await getItemsTablaEnviarPedido({
+    sucursalCodigo: sucursalFiltro,
+    proveedorId: proveedor?.trim() || undefined,
+    tipos: tiposFiltro,
+    q,
+  });
+  return { items };
+}
+
+const comprobarItemsGenerarPedidoSchema = z.object({
+  proveedorId: z.string().min(1, "Proveedor requerido."),
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  tipos: z
+    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
+    .min(1, "Al menos un tipo de pedido."),
+});
+
+/**
+ * Indica si existen ítems con cantidad a pedir > 0 para generar el PDF (misma lógica que la tabla Generar Pedido).
+ */
+export async function comprobarItemsParaGenerarPedidoAction(
+  raw: unknown
+): Promise<ActionResult<{ hayItems: boolean }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const qNorm = q?.trim() ? q.trim() : undefined;
-  const { items } = await getItemsYProveedorParaEnviar(proveedor.trim(), sucursalValida, tipos, qNorm);
-  return {
-    items: items.map((i) => ({ cantPedir: i.cantPedir, descripcion: i.descripcion })),
-  };
+  const parsed = comprobarItemsGenerarPedidoSchema.safeParse(raw);
+  if (!parsed.success) {
+    const f = parsed.error.flatten().fieldErrors;
+    const msg =
+      f.proveedorId?.[0] ??
+      f.sucursal?.[0] ??
+      f.tipos?.[0] ??
+      "Datos inválidos para comprobar ítems.";
+    return { ok: false, error: msg };
+  }
+  const { proveedorId, sucursal, tipos } = parsed.data;
+  const { items } = await getEnviarPedidoTablaData({
+    sucursal,
+    proveedor: proveedorId,
+    tipos,
+  });
+  return { ok: true, data: { hayItems: items.length > 0 } };
 }
 
 const SUCURSALES_VALIDAS: SucursalPedidoEnvio[] = ["guaymallen", "maipu"];

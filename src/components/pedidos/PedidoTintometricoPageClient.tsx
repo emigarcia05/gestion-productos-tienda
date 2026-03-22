@@ -264,7 +264,6 @@ export default function PedidoTintometricoPageClient({
             defaultProveedor={filtroProveedor}
             defaultTipos={[]}
             modulo="tintometrico"
-            triggerLabel="Generar Pedido Tintométrico"
             triggerSize="lg"
             triggerClassName="h-10 min-h-10 px-6 shrink-0"
           />
