@@ -4,7 +4,7 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosEnviarPedido from "@/components/pedidos/FiltrosEnviarPedido";
-import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
+import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import {
   parseTiposParam,
   type SucursalPedido,
@@ -75,11 +75,16 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
     />
   );
 
-  const accionesPuedeGenerar = tienenLosTresFiltros && itemsTabla.length > 0;
-
-  const actions = accionesPuedeGenerar ? (
-    <EnviarPedidoButton proveedorId={proveedor} sucursal={sucursalValida} tipos={tiposValidos} />
-  ) : undefined;
+  const actions = (
+    <GenerarPedidoToolbarButton
+      proveedores={proveedores}
+      defaultSucursal={sucursalValida}
+      defaultProveedor={proveedor}
+      defaultTipos={tiposValidos}
+      modulo="enviar"
+      triggerLabel="Generar Pedido"
+    />
+  );
 
   return (
     <ClassicFilteredTableLayout

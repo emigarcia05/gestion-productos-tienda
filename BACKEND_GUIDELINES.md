@@ -187,6 +187,11 @@ Constraint:
 - `UNIQUE (pedido_historia_id, cod_tienda)` para evitar duplicados de producto dentro de un mismo pedido.
 - Índices: además de `(sucursal_id, generado_at)` y `(proveedor_id, generado_at)`, se agrega índice sobre `generado_at` para listar por fecha con buen rendimiento.
 
+#### `generarPdfEnviarPedidoAction` — ítems vacíos
+
+- Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
+- Tras éxito, **`revalidatePath`** incluye también **`/pedidos/reposicion`**.
+
 ### 2.6 Servicio `pedidosHistoria.service.ts`
 
 Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consistencia e integridad:
@@ -358,4 +363,4 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: tipado fuerte de persistencia DUX con modelo Prisma `SyncDuxStatus` y protección por rol editor en `/api/sync-lista-precios-tienda`.*
+*Última actualización: `generarPdfEnviarPedidoAction` rechaza generación sin ítems; `revalidatePath` de reposición tras generar pedido.*

@@ -322,6 +322,12 @@ export async function generarPdfEnviarPedidoAction(params: {
     if (!proveedor) {
       return { ok: false, error: "Proveedor no encontrado." };
     }
+    if (items.length === 0) {
+      return {
+        ok: false,
+        error: "No hay ítems para generar el pedido con la selección indicada.",
+      };
+    }
 
     const historiaRes = await crearPedidoHistoriaSnapshot({
       proveedorId: proveedorId.trim(),
@@ -379,6 +385,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     revalidatePath("/pedidos/enviar");
     revalidatePath("/pedidos/urgente");
     revalidatePath("/pedidos/tintometrico");
+    revalidatePath("/pedidos/reposicion");
     revalidatePath("/pedidos/historial");
 
     return {

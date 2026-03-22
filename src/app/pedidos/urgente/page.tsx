@@ -55,6 +55,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
     <PedidoUrgentePageClient
       filters={filters}
       productos={productos}
+      proveedores={proveedores}
       sucursalValida={sucursalValida}
       sinFiltros={!tienenFiltrosNecesarios}
       pedidoValida={pedidoValida}

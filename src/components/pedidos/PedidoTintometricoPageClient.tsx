@@ -15,7 +15,8 @@ import FilterBar, {
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
+import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
+import type { SucursalPedido } from "@/lib/pedidos";
 import {
   Table,
   TableBody,
@@ -87,6 +88,11 @@ export default function PedidoTintometricoPageClient({
   const searchRef = useRef<HTMLInputElement>(null);
 
   const modalOpen = searchParams.get("modal") === MODAL_PARAM;
+
+  const sucursalParaGenerar: SucursalPedido | "" =
+    filtroSucursal === "guaymallen" || filtroSucursal === "maipu"
+      ? filtroSucursal
+      : "";
 
   function setModalOpenInUrl(open: boolean) {
     const params = new URLSearchParams(searchParams.toString());
@@ -248,14 +254,20 @@ export default function PedidoTintometricoPageClient({
             <Plus className="h-4 w-4" />
             <span>Agregar Tintométrico</span>
           </Button>
-          {itemsFiltrados.length > 0 ? (
-            <EnviarPedidoButton
-              proveedorId={filtroProveedor}
-              sucursal={filtroSucursal}
-              tipos={["TINTOMETRICO"]}
-              label="Generar Pedido Tintométrico"
-            />
-          ) : null}
+          <GenerarPedidoToolbarButton
+            proveedores={proveedores.map((p) => ({
+              id: p.id,
+              nombre: p.nombre,
+              prefijo: p.prefijo,
+            }))}
+            defaultSucursal={sucursalParaGenerar}
+            defaultProveedor={filtroProveedor}
+            defaultTipos={[]}
+            modulo="tintometrico"
+            triggerLabel="Generar Pedido Tintométrico"
+            triggerSize="lg"
+            triggerClassName="h-10 min-h-10 px-6 shrink-0"
+          />
         </div>
       }
       filters={filters}

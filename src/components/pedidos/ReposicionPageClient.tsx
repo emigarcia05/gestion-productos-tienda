@@ -5,11 +5,13 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import FiltrosReposicion from "@/components/pedidos/FiltrosReposicion";
 import TablaReposicion from "@/components/pedidos/TablaReposicion";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import type { ReposicionData, SucursalReposicion } from "@/actions/reposicion";
 import { PAGE_SIZE } from "@/lib/pagination";
 
 interface Props {
   data: ReposicionData;
+  proveedores: { id: string; nombre: string; prefijo: string }[];
   sucursalValida: SucursalReposicion | null;
   proveedor: string;
   q: string;
@@ -22,6 +24,7 @@ interface Props {
 
 export default function ReposicionPageClient({
   data,
+  proveedores,
   sucursalValida,
   proveedor,
   q,
@@ -53,6 +56,16 @@ export default function ReposicionPageClient({
     <ClassicFilteredTableLayout
       title="Pedido Mercadería"
       subtitle="Pedido Reposición"
+      actions={
+        <GenerarPedidoToolbarButton
+          proveedores={proveedores}
+          defaultSucursal={sucursalValida ?? ""}
+          defaultProveedor={proveedorActual}
+          defaultTipos={[]}
+          modulo="reposicion"
+          triggerLabel="Generar Pedido"
+        />
+      }
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GuardarCambiosPedidoButton from "@/components/pedidos/GuardarCambiosPedidoButton";
-import EnviarPedidoButton from "@/components/pedidos/EnviarPedidoButton";
+import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { upsertPedidoUrgenteMercaderiaItemAction } from "@/actions/pedidos";
 interface Props {
   filters: React.ReactNode;
   productos: ProductoPedidoUrgente[];
+  proveedores: { id: string; nombre: string; prefijo: string }[];
   sucursalValida: "" | "guaymallen" | "maipu";
   /** True cuando faltan uno o más de los 3 filtros obligatorios (Sucursal, Proveedor, Pedido). */
   sinFiltros: boolean;
@@ -35,6 +36,7 @@ const MENSAJE_SIN_FILTROS =
 export default function PedidoUrgentePageClient({
   filters,
   productos,
+  proveedores,
   sucursalValida,
   sinFiltros,
   pedidoValida,
@@ -63,24 +65,22 @@ export default function PedidoUrgentePageClient({
   }, [productos]);
 
   const mostrarGuardar = !!(sucursalValida && !sinFiltros);
-  const mostrarGenerar = !!(sucursalValida && proveedor.trim() && productos.length > 0);
 
-  const actions =
-    mostrarGuardar || mostrarGenerar ? (
-      <div className="flex items-center gap-2">
-        {mostrarGuardar ? (
-          <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
-        ) : null}
-        {mostrarGenerar ? (
-          <EnviarPedidoButton
-            proveedorId={proveedor}
-            sucursal={sucursalValida}
-            tipos={["URGENTE"]}
-            label="Generar Pedido Urgente"
-          />
-        ) : null}
-      </div>
-    ) : undefined;
+  const actions = (
+    <div className="flex items-center gap-2">
+      {mostrarGuardar ? (
+        <GuardarCambiosPedidoButton sucursal={sucursalValida} cantPorId={cantPorId} />
+      ) : null}
+      <GenerarPedidoToolbarButton
+        proveedores={proveedores}
+        defaultSucursal={sucursalValida}
+        defaultProveedor={proveedor}
+        defaultTipos={[]}
+        modulo="urgente"
+        triggerLabel="Generar Pedido Urgente"
+      />
+    </div>
+  );
 
   function abrirModalCantidad(prod: ProductoPedidoUrgente) {
     setProductoSeleccionado({

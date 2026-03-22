@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getReposicionData, type SucursalReposicion } from "@/actions/reposicion";
+import { getEnviarPedidoData } from "@/actions/pedidos";
 import ReposicionPageClient from "@/components/pedidos/ReposicionPageClient";
 
 export const dynamic = "force-dynamic";
@@ -37,22 +38,25 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
-  const data = sucursalValida
-    ? await getReposicionData(sucursalValida, {
-        q,
-        marca,
-        rubro,
-        configurado: configurado === "si" ? "si" : "",
-        pagina: paginaNum,
-      })
-    : {
-        items: [],
-        total: 0,
-        totalPaginas: 1,
-        marcas: [],
-        rubros: [],
-        subRubros: [],
-      };
+  const [data, { proveedores }] = await Promise.all([
+    sucursalValida
+      ? getReposicionData(sucursalValida, {
+          q,
+          marca,
+          rubro,
+          configurado: configurado === "si" ? "si" : "",
+          pagina: paginaNum,
+        })
+      : Promise.resolve({
+          items: [],
+          total: 0,
+          totalPaginas: 1,
+          marcas: [],
+          rubros: [],
+          subRubros: [],
+        }),
+    getEnviarPedidoData(),
+  ]);
 
   const paramsPagina: Record<string, string> = {
     sucursal: sucursalValida ?? "",
@@ -66,6 +70,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
   return (
     <ReposicionPageClient
       data={data}
+      proveedores={proveedores}
       sucursalValida={sucursalValida}
       q={q}
       marca={marca}

@@ -189,8 +189,7 @@ export default function PedidoHistoriaDetalleModal({
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
   /** Valor ISO `YYYY-MM-DD` — UI: campo FECHA FACTURA; persistencia backend pendiente. */
   const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
-  /** Check list por ítem: borrador y confirmación (solo UI; persistencia / reglas pendientes). */
-  const [checkListDraftByItem, setCheckListDraftByItem] = useState<Record<string, string>>({});
+  /** Check list por ítem: solo se marca vía botón OK (confirma cant. recibida) o cesto (0 + verificar). */
   const [checkListConfirmedByItem, setCheckListConfirmedByItem] = useState<Record<string, boolean>>(
     {}
   );
@@ -234,7 +233,6 @@ export default function PedidoHistoriaDetalleModal({
       setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
       setFechaRecepcion("");
-      setCheckListDraftByItem({});
       setCheckListConfirmedByItem({});
     });
 
@@ -269,7 +267,8 @@ export default function PedidoHistoriaDetalleModal({
 
   async function actualizarItemCantRecibida(
     pedidoHistoriaItemId: string,
-    cantRecibida: number
+    cantRecibida: number,
+    options?: { confirmChecklistAfter?: boolean }
   ): Promise<boolean> {
     if (locked) return false;
     if (guardando) return false;
@@ -296,11 +295,18 @@ export default function PedidoHistoriaDetalleModal({
       });
       setEditingItemId(null);
       setEditingValue("");
-      setCheckListConfirmedByItem((prev) => {
-        const next = { ...prev };
-        delete next[pedidoHistoriaItemId];
-        return next;
-      });
+      if (options?.confirmChecklistAfter) {
+        setCheckListConfirmedByItem((prev) => ({
+          ...prev,
+          [pedidoHistoriaItemId]: true,
+        }));
+      } else {
+        setCheckListConfirmedByItem((prev) => {
+          const next = { ...prev };
+          delete next[pedidoHistoriaItemId];
+          return next;
+        });
+      }
       return true;
     } finally {
       setGuardando(null);
@@ -311,16 +317,23 @@ export default function PedidoHistoriaDetalleModal({
     return async () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
-      const ok = await actualizarItemCantRecibida(item.id, item.cantPedida);
-      if (ok) {
-        setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
-      }
+      const cant =
+        editingItemId === item.id
+          ? parseIntSafe(editingValue)
+          : item.cantRecibida;
+      await actualizarItemCantRecibida(item.id, cant, {
+        confirmChecklistAfter: true,
+      });
     };
   }
 
   function onClickCesto(item: PedidoHistoriaDetalle["items"][number]) {
     return async () => {
-      await actualizarItemCantRecibida(item.id, 0);
+      if (locked || busy) return;
+      if (fechaRecepcion.trim() === "") return;
+      await actualizarItemCantRecibida(item.id, 0, {
+        confirmChecklistAfter: true,
+      });
     };
   }
 
@@ -421,9 +434,6 @@ export default function PedidoHistoriaDetalleModal({
   }
 
   const items = detalle?.items ?? [];
-  const itemsControlled =
-    items.length > 0 &&
-    items.every((it) => it.cantPedida > 0 && it.cantRecibida === it.cantPedida);
 
   const fechaFacturaOk = fechaRecepcion.trim() !== "";
   const checklistCompleto =
@@ -434,7 +444,6 @@ export default function PedidoHistoriaDetalleModal({
     Boolean(pedidoHistoriaId) &&
     !locked &&
     !busy &&
-    itemsControlled &&
     fechaFacturaOk &&
     checklistCompleto &&
     totalPedidoMontoPositivo(totalPedido);
@@ -481,12 +490,9 @@ export default function PedidoHistoriaDetalleModal({
                       toast.error(res.error ?? "Error al registrar en DUX.");
                       return;
                     }
-
-                    setLoading(true);
-                    await cargarDetalle(pedidoHistoriaId);
                     toast.success("Pedido registrado en DUX.");
+                    onOpenChange(false);
                   } finally {
-                    setLoading(false);
                     setGuardando(null);
                   }
                 }}
@@ -739,7 +745,6 @@ export default function PedidoHistoriaDetalleModal({
                             : "";
 
                       const checkListConfirmed = checkListConfirmedByItem[item.id] === true;
-                      const checkListDraft = checkListDraftByItem[item.id] ?? "";
 
                       return (
                         <TableRow
@@ -771,30 +776,16 @@ export default function PedidoHistoriaDetalleModal({
                             ) : (
                               <div className="flex min-w-0 w-full flex-col items-center justify-center py-0">
                                 <Input
-                                  value={checkListDraft}
-                                  onChange={(e) =>
-                                    setCheckListDraftByItem((prev) => ({
-                                      ...prev,
-                                      [item.id]: e.target.value.slice(0, 32),
-                                    }))
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      if (!busy && fechaFacturaOk && !locked) {
-                                        setCheckListConfirmedByItem((prev) => ({
-                                          ...prev,
-                                          [item.id]: true,
-                                        }));
-                                      }
-                                    }
-                                  }}
+                                  readOnly
+                                  tabIndex={-1}
+                                  value=""
+                                  aria-label="Lista de verificación"
+                                  title="Verificá con el botón OK (confirma cant. recibida) o con el cesto (registra 0 y verifica)."
                                   disabled={
                                     busy || checkListConfirmed || !fechaFacturaOk || locked
                                   }
-                                  aria-label="Lista de verificación"
                                   className={cn(
-                                    "h-7 min-h-7 w-full min-w-0 px-1 text-center text-xs tabular-nums",
+                                    "pointer-events-none h-7 min-h-7 w-full min-w-0 px-1 text-center text-xs tabular-nums",
                                     inputBorderClassName
                                   )}
                                 />
