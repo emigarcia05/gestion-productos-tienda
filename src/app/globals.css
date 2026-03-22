@@ -296,6 +296,17 @@
     display: none;
   }
 
+  /* AppModal: ocultar barra en área gris con scroll y/o card (scroll con rueda/táctil). */
+  .app-modal__scroll-area.no-scrollbar,
+  .app-modal__body.no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .app-modal__scroll-area.no-scrollbar::-webkit-scrollbar,
+  .app-modal__body.no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /** Contenedor de tabla paginada: diseño global */
   .contenedor-tabla-paginada {
     flex: 1 1 0%;

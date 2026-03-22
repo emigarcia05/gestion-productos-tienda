@@ -38,6 +38,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
      - `size`: `"sm" | "md" | "lg" | "xl"` (default `"md"` = `sm:max-w-lg`).
      - `padding`: `"sm" | "default" | "lg"` (default `"default"`).
      - `scrollBody`: `boolean` (default `true`) controla el overflow del cuerpo sin reescribir clases.
+     - `hideBodyScrollbars`: `boolean` (default `false`) — con `scrollBody`, oculta barras del área gris (`.app-modal__scroll-area`) y de la card (`.app-modal__body`); ver `globals.css`.
      - `bodyShellClassName`: `string?` — se combina con el `div` gris que envuelve la card (`p-4` por defecto). Ej. `p-1.5 sm:p-2` en modales compactos (`VincularModal`).
    - Cuando el modal tiene una **tabla + bloque inferior fijo** (ej. resúmenes como `TOTAL PEDIDO`), el contenedor de tabla debe consumir el espacio con `flex-1 min-h-0` y **no** debe forzarse con `h-0` u otros height absolutos. Además, como `.contenedor-tabla-gestion` tiene `height: 100%` en `globals.css`, si la cascada lo impide, sobrescribir de forma garantizada con `style={{ height: "auto" }}` (y aplicar `min-h-0 overflow-hidden` en el wrapper inmediato) evita solapes/recortes y deja el scroll exclusivamente en la tabla.
    - Si necesitás alinear un bloque inferior con las mismas columnas de la tabla, **no** usar `grid-cols` con porcentajes que superen 100%. Usar `fr` proporcionales que sumen el mismo total que la tabla, o preferir **`TableFooter` (`<tfoot>`) dentro del mismo `<Table>`** con `colSpan` en las columnas previas. **`PedidoHistoriaDetalleModal`:** totales **TOTAL PEDIDO** en **`<section aria-label="Totales del pedido">`** + **grid** **`5fr_55fr_10fr_15fr_15fr`** **fuera** del **`data-slot="table-container"`** (ver punto 7).
@@ -234,6 +235,8 @@ import SectionHeader from "@/components/SectionHeader";
 | `.celda-datos.celda-datos--flush-left` | Anula **`padding-left`** con **`!important`** (especificidad doble clase) cuando **`!pl-0`** de Tailwind no gana al atajo **`padding`** de **`.celda-datos`**; usar con **`Input`** **`pl-0` `pr-3`** (base **`Input`**: **`pl-3 pr-3`**, no **`px-3`**, para que **`tailwind-merge`** anule bien el lado izquierdo). |
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
+| `.contenedor-tabla-gestion.no-scrollbar` | Oculta la barra vertical del contenedor de tabla (`scrollbar-width: none` / webkit); mantiene `overflow-y: auto`. Casos puntuales (ej. **Ver Pedido**). |
+| `.app-modal__scroll-area.no-scrollbar`, `.app-modal__body.no-scrollbar` | Misma idea para los scrollports del cuerpo de **`AppModal`** cuando se usa **`hideBodyScrollbars`**. |
 | *(retiradas)* `.modal-vinculos-*`, `.btn-convertir-proveedor-principal*`, `.btn-desvincular-icono`, `.modal-vinculos-footer` | El modal **Vínculos con Proveedores** pasó a `<Table>` estándar; no reintroducir estas clases. |
 | `PAGE_SIZE` (`@/lib/pagination`) | Tamaño de página estándar para tablas: 100 ítems. |
 | `PaginacionTabla` (`@/components/shared/PaginacionTabla.tsx`) | Paginación por URL: `basePath`, `params`, `paginaActual`, `totalPaginas`, `total`, `pageSize`. |
@@ -279,6 +282,7 @@ Modal estándar (header corporativo + cuerpo en capas `bg-gris → bg-card` + fo
   - **`size`**: `"sm" | "md" | "lg" | "xl"` (default `"md"`).
   - **`padding`**: `"sm" | "default" | "lg"` (default `"default"`).
   - **`scrollBody`**: `boolean` (default `true`).
+  - **`hideBodyScrollbars`**: `boolean` (default `false`). Si `true` y `scrollBody`, oculta la barra de scroll del **área gris** (`.app-modal__scroll-area`) y de la **card** (`.app-modal__body`); el scroll con rueda/táctil se mantiene. Estilos en `globals.css` (combinación con `.no-scrollbar`).
   - **`showCloseButton`**: `boolean` (default `true`).
   - **`className`** / **`bodyClassName`**: overrides puntuales (evitar duplicar estilos base).
   - **`bodyShellClassName`**: opcional; se aplica al `div` gris que rodea la card del cuerpo (junto con `p-4` por defecto). Útil para reducir padding en modales densos (ej. `VincularModal`: `p-1.5 sm:p-2`).
@@ -337,7 +341,7 @@ Layout, grillas y reglas de tabla: sección **Guía para IA**, punto 7 (`PedidoH
 
 ### `HistorialPedidosPageClient` (`src/components/pedidos/HistorialPedidosPageClient.tsx`)
 
-Listado **Historial Pedidos** (`/pedidos/historial`). Última columna **ACCIONES** (`tabla-bloque-secundario-*` alineado al patrón de tabla gestión), celdas con **`flex items-center justify-center gap-2`**. Tres botones **`size="icon-xs"`** con **`Tooltip`**: **Recepción De Mercadería** (`PackageCheck`) → **`PedidoHistoriaDetalleModal`**; **Ver Detalles** (`Eye`) → **`PedidoHistoriaLecturaModal`** (solo lectura, cabecera = nombre proveedor, badge **Pedido** / **Recepcionado** + fecha `dd/mm hh:mm`, tabla sin inputs); **Borrar** (`Trash2`, hover **destructive**) → **`PedidoHistoriaBorrarConfirmModal`** (texto de confirmación, **Cancelar** outline / **Sí, Borrar** destructive). Tras cerrar recepción o borrar, **`router.refresh()`** mantiene el listado al día.
+Listado **Historial Pedidos** (`/pedidos/historial`). Última columna **ACCIONES** (`tabla-bloque-secundario-*` alineado al patrón de tabla gestión), celdas con **`flex items-center justify-center gap-2`**. Tres botones **`size="icon-xs"`** con **`Tooltip`**: **Recepción De Mercadería** (`PackageCheck`) → **`PedidoHistoriaDetalleModal`**; **Ver Detalles** (`Eye`) → **`PedidoHistoriaLecturaModal`** (solo lectura, título **Ver Pedido**; **`AppModal`** con **`hideBodyScrollbars`**; cabecera: micro-etiquetas **Estado** / **Proveedor** / **Sucursal** (`MODAL_MICRO_LABEL_CLASS` como en recepción), badge **Pedido** / **Recepcionado**, nombre proveedor `text-base font-semibold text-foreground`, fila sucursal `text-sm font-medium text-foreground` + separador + fecha `dd/mm hh:mm` en `text-muted-foreground`; **`.contenedor-tabla-gestion`** con **`no-scrollbar`**; tabla sin inputs); **Borrar** (`Trash2`, hover **destructive**) → **`PedidoHistoriaBorrarConfirmModal`** (texto de confirmación, **Cancelar** outline / **Sí, Borrar** destructive). Tras cerrar recepción o borrar, **`router.refresh()`** mantiene el listado al día.
 
 ### `FiltroBusquedaInput` (`src/components/shared/FiltroBusquedaInput.tsx`)
 

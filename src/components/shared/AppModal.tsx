@@ -85,6 +85,11 @@ export interface AppModalProps
   showCloseButton?: boolean;
   /** Si false, el cuerpo no hace scroll y el contenido debe caber (overflow-hidden). Por defecto true. */
   scrollBody?: boolean;
+  /**
+   * Si true y `scrollBody`, oculta la barra de scroll del área gris y de la card del cuerpo
+   * (el desplazamiento con rueda/táctil se mantiene). Ver `globals.css` (`.app-modal__scroll-area` / `.app-modal__body` + `.no-scrollbar`).
+   */
+  hideBodyScrollbars?: boolean;
 }
 
 /**
@@ -110,6 +115,7 @@ export default function AppModal({
   footerClassName,
   showCloseButton = true,
   scrollBody = true,
+  hideBodyScrollbars = false,
 }: AppModalProps) {
   return (
     <DialogContent
@@ -150,7 +156,8 @@ export default function AppModal({
                 padding,
                 scroll: scrollBody ? "auto" : "hidden",
               }),
-              bodyClassName
+              bodyClassName,
+              scrollBody && hideBodyScrollbars && "no-scrollbar"
             )}
           >
             {children}
