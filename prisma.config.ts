@@ -19,15 +19,20 @@ function loadEnv(): void {
 try {
   const dotenv = createRequire(import.meta.url)("dotenv");
   dotenv.config({ path: envPath });
-  if (!process.env.DATABASE_URL) loadEnv();
+  if (!process.env.DATABASE_URL || !process.env.DIRECT_URL) loadEnv();
 } catch {
   loadEnv();
 }
+
+/** Migraciones (`migrate deploy` / `migrate dev`): Neon recomienda conexión directa (sin pooler). La app sigue usando `DATABASE_URL` en `src/lib/prisma.ts`. */
+const datasourceUrl =
+  (process.env.DIRECT_URL ?? "").trim() ||
+  (process.env.DATABASE_URL ?? "").trim();
 
 export default {
   schema: "prisma/schema.prisma",
   migrations: { path: "prisma/migrations" },
   datasource: {
-    url: process.env.DATABASE_URL ?? "",
+    url: datasourceUrl,
   },
 };

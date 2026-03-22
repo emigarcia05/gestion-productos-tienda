@@ -30,6 +30,11 @@ function fmtFechaNotaPedido(d: Date): string {
   return `${weekday} ${day} de ${month} de ${year}`;
 }
 
+export type GenerarPdfPedidoOptions = {
+  /** Si se informa (p. ej. historial), la fecha del encabezado coincide con la del pedido guardado. */
+  fechaDocumento?: Date;
+};
+
 /**
  * Genera el PDF del pedido y devuelve el buffer (para convertir a base64).
  */
@@ -37,7 +42,8 @@ export function generarPdfPedido(
   items: ItemPedidoParaPdf[],
   proveedorNombre: string,
   sucursal: string,
-  tiposLabel: string
+  tiposLabel: string,
+  options?: GenerarPdfPedidoOptions
 ): Uint8Array {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = 210; // A4 portrait mm
@@ -58,7 +64,8 @@ export function generarPdfPedido(
   // Fecha (más chico)
   doc.setFontSize(DATE_FONT_SIZE);
   doc.setFont("helvetica", "normal");
-  doc.text(fmtFechaNotaPedido(new Date()), centerX, headerTopY + 6, { align: "center" });
+  const fechaDoc = options?.fechaDocumento ?? new Date();
+  doc.text(fmtFechaNotaPedido(fechaDoc), centerX, headerTopY + 6, { align: "center" });
 
   // (Sin línea divisoria: el encabezado de tabla ya separa visualmente)
   y = headerTopY + 17;

@@ -25,6 +25,7 @@ import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
@@ -219,11 +220,6 @@ export async function upsertPedidoUrgenteMercaderiaItemAction(raw: z.infer<typeo
   return { ok: true, data: undefined };
 }
 
-const SUCURSAL_LABEL: Record<string, string> = {
-  guaymallen: "Guaymallén",
-  maipu: "Maipú",
-};
-
 const TIPO_LABEL: Record<string, string> = {
   URGENTE: "Urgente",
   TINTOMETRICO: "Tintométrico",
@@ -376,7 +372,8 @@ export async function generarPdfEnviarPedidoAction(params: {
     }
 
     const tiposLabel = tipos.map((t) => TIPO_LABEL[t] ?? t).join(", ");
-    const sucursalLabel = SUCURSAL_LABEL[sucursalValida] ?? sucursalValida;
+    const sucursalLabel =
+      SUCURSAL_LABEL_PEDIDO[sucursalValida as SucursalPedido] ?? sucursalValida;
     const pdfBuffer = generarPdfPedido(
       items,
       proveedor.nombre,

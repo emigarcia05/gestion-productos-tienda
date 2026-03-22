@@ -31,6 +31,9 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Servicios** (`src/services/`): Encapsulan acceso a datos (Prisma, SQL raw) y lógica de negocio. Las Actions los invocan; no al revés.
 - **Actions**: Orquestan: sesión → validación → servicio → revalidatePath → respuesta.
 
+- **Prisma / Neon**: `DATABASE_URL` en `.env` debe usar el **pooler** de Neon para el runtime (`src/lib/prisma.ts`). Para migraciones, definir además **`DIRECT_URL`** (host **sin** `-pooler`): `prisma.config.ts` usa `DIRECT_URL` si existe; si no, cae a `DATABASE_URL`. Plantilla: `.env.example`.
+- **Migraciones ítems historial pedidos**: `20260322120000_*` y `20260322140000_*` son **idempotentes** (`to_regclass`) respecto de `pedidos_historia_items` / `pedidos_mercaderia_historial`. `20260322200000_*` renombra `pedidos_mercaderia_historial` → `pedidos_historial_mercaderia` si aún existe el nombre intermedio.
+
 ### 1.6 Listados de solo lectura (catálogos)
 
 - Para catálogos de solo lectura (ej. `precios_tienda`), exponer búsquedas mediante:
@@ -176,7 +179,7 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
   - `registrado_at`: fecha/hora cuando se cambia a `RECIBIDO` (nullable).
   - Relaciones: `proveedor_id -> proveedores.id` y `sucursal_id -> sucursales.id`.
 
-- Items: tabla física `pedidos_mercaderia_historial` (Prisma: `PedidoHistoriaItem`)
+- Items: tabla física `pedidos_historial_mercaderia` (Prisma: `PedidoHistoriaItem`)
   - `pedido_historia_id -> pedidos_historia.id` (FK, `onDelete: CASCADE`).
   - `cod_tienda`: identificador del producto en la tabla `precios_tienda` (se guarda como texto).
   - Cantidades:
@@ -226,6 +229,9 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 3. `getPedidoHistoriaDetalle({ pedidoHistoriaId })`
    - Devuelve cabecera + lista de items ordenados por `codTienda`.
    - Incluye `generado_at`, `registrado_at`, `cant_pedida`, `cant_recibida` y `descripcionTienda` (resuelta desde `precios_tienda`) para renderizar la columna DESCRIPCIÓN en UI.
+
+3b. `getPedidoHistoriaPdfPayload({ pedidoHistoriaId })`
+   - Arma `ItemPedidoParaPdf[]` para **`generarPdfPedido`**: cantidades y `cod_tienda` desde ítems del snapshot; `cod_prod_proveedor` y descripción desde **`precios_proveedores`** (mismo proveedor) con fila de **`precios_tienda`** cuyo `cod_tienda` coincide (primer `cod_ext` estable). Action **`descargarPdfPedidoHistoriaAction`** devuelve `pdfBase64` + `filename` (prefijo proveedor y fecha/hora de `generado_at`).
 
 4. `agregarPedidoHistoriaItem({ pedidoHistoriaId, codTienda, cantRecibida })`
    - Reglas:
@@ -316,7 +322,7 @@ Antes de entregar código nuevo o modificado, verificar:
 - Acción de sincronización DUX protegida por rol.
 - Estandarizar respuestas de error: no `throw`, sí `ActionResult` con `error`.
 - Documentar uso de `getRol()` + `puede()` para permisos granulares.
-- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden; las filas van **ordenadas alfabéticamente** por el texto de **DESCRIPCION** (`localeCompare` `es`, `sensitivity: "base"`). Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`. El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`.
+- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden; las filas van **ordenadas alfabéticamente** por el texto de **DESCRIPCION** (`localeCompare` `es`, `sensitivity: "base"`). Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`. El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`. Opción **`fechaDocumento`** en `generarPdfPedido`: al **volver a descargar** desde historial (`descargarPdfPedidoHistoriaAction`) usar `generado_at` del snapshot para encabezado y nombre de archivo, no la fecha actual.
 - Al ejecutar el botón de **Generar Pedido** (server action `generarPdfEnviarPedidoAction`), limpiar de `pedidos_mercaderia` (ítems `tipo_de_pedido` `URGENTE` y/o `TINTOMETRICO`) para la `sucursal` enviada, y revalidar las rutas afectadas (`/pedidos/enviar`, `/pedidos/urgente`, `/pedidos/tintometrico`).
 
 ### 5.4 Cambios aplicados en esta auditoría

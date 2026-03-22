@@ -25,7 +25,10 @@ import PedidoHistoriaBorrarConfirmModal from "@/components/pedidos/PedidoHistori
 import FiltrosHistorialPedidos, {
   type EstadoFiltroPedido,
 } from "@/components/pedidos/FiltrosHistorialPedidos";
-import { Eye, PackageCheck, Trash2 } from "lucide-react";
+import { Download, Eye, Loader2, PackageCheck, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
+import { descargarPdfPedidoHistoriaAction } from "@/actions/pedidosHistoria";
 
 type PedidoHistoriaResumenClient = Omit<PedidoHistoriaResumen, "generadoAt" | "registradoAt"> & {
   generadoAt: string;
@@ -77,6 +80,7 @@ export default function HistorialPedidosPageClient({
   const [lecturaId, setLecturaId] = useState<string | null>(null);
   const [borrarOpen, setBorrarOpen] = useState(false);
   const [borrarId, setBorrarId] = useState<string | null>(null);
+  const [descargandoPdfId, setDescargandoPdfId] = useState<string | null>(null);
 
   const showingEmpty = items.length === 0;
 
@@ -192,6 +196,52 @@ export default function HistorialPedidosPageClient({
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Ver Detalles</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void (async () => {
+                                          setDescargandoPdfId(it.id);
+                                          try {
+                                            const res =
+                                              await descargarPdfPedidoHistoriaAction({
+                                                pedidoHistoriaId: it.id,
+                                              });
+                                            if (!res.ok) {
+                                              toast.error(
+                                                res.error ?? "Error al generar el PDF."
+                                              );
+                                              return;
+                                            }
+                                            descargarPdfBase64(
+                                              res.data.pdfBase64,
+                                              res.data.filename
+                                            );
+                                            toast.success("PDF descargado.");
+                                          } finally {
+                                            setDescargandoPdfId(null);
+                                          }
+                                        })();
+                                      }}
+                                      disabled={descargandoPdfId !== null}
+                                      aria-label="Descargar PDF del pedido"
+                                      className="disabled:cursor-not-allowed"
+                                    >
+                                      {descargandoPdfId === it.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Download className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    Descargar PDF del pedido
+                                  </TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>

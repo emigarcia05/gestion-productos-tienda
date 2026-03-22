@@ -1,7 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
-import type { SucursalPedidoEnvio } from "@/services/pedidosEnvio.service";
+import type {
+  ItemPedidoParaPdf,
+  SucursalPedidoEnvio,
+} from "@/services/pedidosEnvio.service";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 
 const COD_TIENDA_FALLBACK = "1503";
@@ -394,6 +397,104 @@ export async function marcarPedidoHistoriaRegistrado(params: {
     return { success: true, data: undefined };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error al marcar el pedido como registrado.";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Arma los datos para regenerar la nota de pedido PDF desde el snapshot (`pedidos_historia` + ítems)
+ * y el catálogo vigente (`precios_proveedores` + `precios_tienda` por `cod_tienda`).
+ */
+export async function getPedidoHistoriaPdfPayload(params: {
+  pedidoHistoriaId: string;
+}): Promise<
+  ServiceResult<{
+    items: ItemPedidoParaPdf[];
+    proveedorNombre: string;
+    proveedorPrefijo: string;
+    sucursalCodigo: string;
+    generadoAt: Date;
+  }>
+> {
+  const id = params.pedidoHistoriaId.trim();
+  if (!id) return { success: false, error: "ID inválido." };
+
+  try {
+    const pedido = await prisma.pedidoHistoria.findUnique({
+      where: { id },
+      select: {
+        generadoAt: true,
+        proveedorId: true,
+        proveedor: { select: { nombre: true, prefijo: true } },
+        sucursal: { select: { codigo: true } },
+        items: { select: { codTienda: true, cantPedida: true } },
+      },
+    });
+    if (!pedido) return { success: false, error: "Pedido no encontrado." };
+    if (pedido.items.length === 0) {
+      return { success: false, error: "El pedido no tiene ítems para el PDF." };
+    }
+
+    const cods = Array.from(
+      new Set(pedido.items.map((it) => normalizeCodTienda(it.codTienda)))
+    );
+
+    const provRows = await prisma.listaPrecioProveedor.findMany({
+      where: {
+        idProveedor: pedido.proveedorId,
+        listaPrecioTienda: { codTienda: { in: cods } },
+      },
+      select: {
+        codExt: true,
+        codProdProveedor: true,
+        descripcionProveedor: true,
+        listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
+      },
+      orderBy: { codExt: "asc" },
+    });
+
+    const byCodTienda = new Map<string, (typeof provRows)[number]>();
+    for (const row of provRows) {
+      const ct = row.listaPrecioTienda?.codTienda;
+      if (ct == null) continue;
+      const key = normalizeCodTienda(ct);
+      if (!byCodTienda.has(key)) byCodTienda.set(key, row);
+    }
+
+    const items: ItemPedidoParaPdf[] = pedido.items
+      .map((it) => {
+        const key = normalizeCodTienda(it.codTienda);
+        const match = byCodTienda.get(key);
+        const descProv = (match?.descripcionProveedor ?? "").trim();
+        const descTienda = (match?.listaPrecioTienda?.descripcionTienda ?? "").trim();
+        return {
+          codExt: (match?.codExt ?? "").trim(),
+          codProveedor: (match?.codProdProveedor ?? "").trim(),
+          descripcion: descProv || descTienda || `Producto ${key}`,
+          cantPedir: Math.max(0, Number(it.cantPedida) || 0),
+        };
+      })
+      .filter((row) => row.cantPedir > 0);
+
+    if (items.length === 0) {
+      return {
+        success: false,
+        error: "No hay líneas con cantidad pedida para el PDF.",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        items,
+        proveedorNombre: pedido.proveedor.nombre,
+        proveedorPrefijo: (pedido.proveedor.prefijo ?? "").trim(),
+        sucursalCodigo: pedido.sucursal.codigo,
+        generadoAt: pedido.generadoAt,
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al armar el PDF del pedido.";
     return { success: false, error: msg };
   }
 }

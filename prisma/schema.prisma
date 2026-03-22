@@ -250,7 +250,7 @@ model PedidoHistoriaItem {
 
   @@unique([pedidoHistoriaId, codTienda])
   @@index([pedidoHistoriaId])
-  @@map("pedidos_mercaderia_historial")
+  @@map("pedidos_historial_mercaderia")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────

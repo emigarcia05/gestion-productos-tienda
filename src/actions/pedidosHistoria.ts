@@ -5,6 +5,8 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
+import { generarPdfPedido } from "@/lib/generarPdfPedido";
+import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
 
 const getPedidoHistoriaDetalleSchema = z.object({
@@ -27,6 +29,10 @@ const marcarRegistradoSchema = z.object({
 });
 
 const eliminarPedidoHistoriaSchema = z.object({
+  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+});
+
+const descargarPdfPedidoHistoriaSchema = z.object({
   pedidoHistoriaId: z.string().min(1, "ID inválido."),
 });
 
@@ -85,6 +91,57 @@ export async function listarPedidosHistoriaAction(
 
   if (!res.success) return { ok: false, error: res.error };
   return { ok: true, data: res.data };
+}
+
+/** Regenera la nota de pedido PDF desde el snapshot del historial (mismo layout que al generar). */
+export async function descargarPdfPedidoHistoriaAction(
+  params: z.infer<typeof descargarPdfPedidoHistoriaSchema>
+): Promise<ActionResult<{ pdfBase64: string; filename: string }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = descargarPdfPedidoHistoriaSchema.safeParse(params);
+  if (!parsed.success) return { ok: false, error: "ID inválido." };
+
+  const res = await pedidosHistoriaService.getPedidoHistoriaPdfPayload({
+    pedidoHistoriaId: parsed.data.pedidoHistoriaId,
+  });
+  if (!res.success) return { ok: false, error: res.error };
+
+  const { items, proveedorNombre, proveedorPrefijo, sucursalCodigo, generadoAt } =
+    res.data;
+
+  function pad2(n: number): string {
+    return String(n).padStart(2, "0");
+  }
+  function fmtDdMmHHmm(d: Date): string {
+    const dd = pad2(d.getDate());
+    const mm = pad2(d.getMonth() + 1);
+    const hh = pad2(d.getHours());
+    const min = pad2(d.getMinutes());
+    return `${dd}/${mm} ${hh}:${min}`;
+  }
+  function sanitizeFilenamePart(s: string): string {
+    return s.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_").trim();
+  }
+
+  const sucursalLabel =
+    SUCURSAL_LABEL_PEDIDO[sucursalCodigo as SucursalPedido] ?? sucursalCodigo;
+  const pdfBuffer = generarPdfPedido(
+    items,
+    proveedorNombre,
+    sucursalLabel,
+    "",
+    { fechaDocumento: generadoAt }
+  );
+  const prefijoProveedor = sanitizeFilenamePart(proveedorPrefijo || "");
+  const fechaStr = fmtDdMmHHmm(generadoAt);
+  const filename = `Nota Pedido - ${prefijoProveedor} - ${fechaStr}.pdf`;
+  const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
+
+  return { ok: true, data: { pdfBase64, filename } };
 }
 
 export async function actualizarPedidoHistoriaItemCantRecibidaAction(
