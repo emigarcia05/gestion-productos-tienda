@@ -28,6 +28,7 @@ export interface PedidoHistoriaItemDetalle {
 export interface PedidoHistoriaDetalle {
   id: string;
   generadoAt: Date;
+  registradoAt: Date | null;
   estado: PedidoHistoriaEstado;
   proveedorId: string;
   proveedorNombre: string;
@@ -169,6 +170,7 @@ export async function getPedidoHistoriaDetalle(params: {
       data: {
         id: pedido.id,
         generadoAt: pedido.generadoAt,
+        registradoAt: pedido.registradoAt,
         estado: pedido.estado as PedidoHistoriaEstado,
         proveedorId: pedido.proveedorId,
         proveedorNombre: pedido.proveedor.nombre,
@@ -356,6 +358,21 @@ export async function marcarPedidoHistoriaRegistrado(params: {
     return { success: true, data: undefined };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error al marcar el pedido como registrado.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function eliminarPedidoHistoria(params: {
+  pedidoHistoriaId: string;
+}): Promise<ServiceResult<void>> {
+  const id = params.pedidoHistoriaId.trim();
+  if (!id) return { success: false, error: "ID inválido." };
+
+  try {
+    await prisma.pedidoHistoria.delete({ where: { id } });
+    return { success: true, data: undefined };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al borrar el pedido.";
     return { success: false, error: msg };
   }
 }

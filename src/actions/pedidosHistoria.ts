@@ -26,6 +26,10 @@ const marcarRegistradoSchema = z.object({
   pedidoHistoriaId: z.string().min(1, "ID inválido."),
 });
 
+const eliminarPedidoHistoriaSchema = z.object({
+  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+});
+
 const listarPedidosHistoriaSchema = z.object({
   pagina: z.coerce.number().int().min(1).optional().default(1),
   estado: z.enum(["PEDIDO", "RECIBIDO"]).optional(),
@@ -138,6 +142,26 @@ export async function marcarPedidoHistoriaRegistradoAction(
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
   const res = await pedidosHistoriaService.marcarPedidoHistoriaRegistrado({
+    pedidoHistoriaId: parsed.data.pedidoHistoriaId,
+  });
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidatePath("/pedidos/historial");
+  return { ok: true, data: undefined };
+}
+
+export async function eliminarPedidoHistoriaAction(
+  params: z.infer<typeof eliminarPedidoHistoriaSchema>
+): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = eliminarPedidoHistoriaSchema.safeParse(params);
+  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
+
+  const res = await pedidosHistoriaService.eliminarPedidoHistoria({
     pedidoHistoriaId: parsed.data.pedidoHistoriaId,
   });
   if (!res.success) return { ok: false, error: res.error };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import {
@@ -14,14 +15,17 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { PedidoHistoriaResumen } from "@/services/pedidosHistoria.service";
 import PedidoHistoriaDetalleModal from "@/components/pedidos/PedidoHistoriaDetalleModal";
+import PedidoHistoriaLecturaModal from "@/components/pedidos/PedidoHistoriaLecturaModal";
+import PedidoHistoriaBorrarConfirmModal from "@/components/pedidos/PedidoHistoriaBorrarConfirmModal";
 import FiltrosHistorialPedidos, {
   type EstadoFiltroPedido,
 } from "@/components/pedidos/FiltrosHistorialPedidos";
-import { Eye } from "lucide-react";
+import { Eye, PackageCheck, Trash2 } from "lucide-react";
 
 type PedidoHistoriaResumenClient = Omit<PedidoHistoriaResumen, "generadoAt" | "registradoAt"> & {
   generadoAt: string;
@@ -64,17 +68,32 @@ export default function HistorialPedidosPageClient({
   sucursalCodigo,
   estado,
 }: Props) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [pedidoHistoriaId, setPedidoHistoriaId] = useState<string | null>(null);
+  const router = useRouter();
+  const [recepcionOpen, setRecepcionOpen] = useState(false);
+  const [recepcionId, setRecepcionId] = useState<string | null>(null);
+  const [lecturaOpen, setLecturaOpen] = useState(false);
+  const [lecturaId, setLecturaId] = useState<string | null>(null);
+  const [borrarOpen, setBorrarOpen] = useState(false);
+  const [borrarId, setBorrarId] = useState<string | null>(null);
 
   const showingEmpty = items.length === 0;
 
   const title = "Pedido Mercadería";
   const subtitle = "Historial Pedidos";
 
-  async function openDetalle(item: PedidoHistoriaResumenClient) {
-    setPedidoHistoriaId(item.id);
-    setModalOpen(true);
+  function openRecepcion(id: string) {
+    setRecepcionId(id);
+    setRecepcionOpen(true);
+  }
+
+  function openLectura(id: string) {
+    setLecturaId(id);
+    setLecturaOpen(true);
+  }
+
+  function openBorrar(id: string) {
+    setBorrarId(id);
+    setBorrarOpen(true);
   }
 
   return (
@@ -95,11 +114,13 @@ export default function HistorialPedidosPageClient({
                 <Table variant="compact" scrollX={false} className="min-w-full">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[20%]">FECHA</TableHead>
-                      <TableHead className="w-[30%]">PROVEEDOR</TableHead>
-                      <TableHead className="w-[20%]">SUCURSAL</TableHead>
-                      <TableHead className="w-[15%]">ESTADO</TableHead>
-                      <TableHead className="w-[15%]">VER</TableHead>
+                      <TableHead className="w-[18%]">FECHA</TableHead>
+                      <TableHead className="w-[28%]">PROVEEDOR</TableHead>
+                      <TableHead className="w-[18%]">SUCURSAL</TableHead>
+                      <TableHead className="w-[14%]">ESTADO</TableHead>
+                      <TableHead className="w-[22%] tabla-bloque-secundario-head-divider">
+                        ACCIONES
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -129,20 +150,68 @@ export default function HistorialPedidosPageClient({
                             <TableCell className="celda-datos">
                               {it.estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
                             </TableCell>
-                            <TableCell className="celda-datos">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon-xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void openDetalle(it);
-                                }}
-                                aria-label="Ver detalle"
-                                title="Ver"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                            <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
+                              <div className="flex items-center justify-center gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openRecepcion(it.id);
+                                      }}
+                                      aria-label="Recepción De Mercadería"
+                                      className="disabled:cursor-not-allowed"
+                                    >
+                                      <PackageCheck className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    Recepción De Mercadería
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openLectura(it.id);
+                                      }}
+                                      aria-label="Ver Detalles"
+                                      className="disabled:cursor-not-allowed"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Ver Detalles</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openBorrar(it.id);
+                                      }}
+                                      aria-label="Borrar Pedido"
+                                      className={cn(
+                                        "disabled:cursor-not-allowed",
+                                        "hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
+                                      )}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Borrar Pedido</TooltipContent>
+                                </Tooltip>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
@@ -177,15 +246,33 @@ export default function HistorialPedidosPageClient({
           </CardContent>
         </Card>
         <PedidoHistoriaDetalleModal
-          open={modalOpen}
+          open={recepcionOpen}
           onOpenChange={(v) => {
-            setModalOpen(v);
-            if (!v) setPedidoHistoriaId(null);
+            setRecepcionOpen(v);
+            if (!v) {
+              setRecepcionId(null);
+              router.refresh();
+            }
           }}
-          pedidoHistoriaId={pedidoHistoriaId}
+          pedidoHistoriaId={recepcionId}
+        />
+        <PedidoHistoriaLecturaModal
+          open={lecturaOpen}
+          onOpenChange={(v) => {
+            setLecturaOpen(v);
+            if (!v) setLecturaId(null);
+          }}
+          pedidoHistoriaId={lecturaId}
+        />
+        <PedidoHistoriaBorrarConfirmModal
+          open={borrarOpen}
+          onOpenChange={(v) => {
+            setBorrarOpen(v);
+            if (!v) setBorrarId(null);
+          }}
+          pedidoHistoriaId={borrarId}
         />
       </div>
     </ClassicFilteredTableLayout>
   );
 }
-
