@@ -477,7 +477,7 @@ export default function PedidoHistoriaDetalleModal({
           padding="sm"
           headerClassName="pt-3 pb-3"
           footerClassName="py-3"
-          bodyClassName="px-3 py-2 sm:px-4 sm:py-2.5"
+          bodyClassName="py-2 sm:py-2.5"
           actions={
             <>
               <Button
@@ -583,7 +583,7 @@ export default function PedidoHistoriaDetalleModal({
             <div
               className={cn(
                 MODAL_RESUMEN_PANEL_CLASS,
-                "px-3 sm:px-4 py-0"
+                "py-0"
               )}
             >
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full items-center")}>
@@ -640,7 +640,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pr-3 pl-0 sm:pt-0 sm:pb-2 sm:pr-4 sm:pl-0 -ml-3 sm:-ml-4",
+                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 sm:pt-0 sm:pb-2",
                 !tablaYAltaHabilitados &&
                   !locked &&
                   "pointer-events-none cursor-not-allowed opacity-50"
@@ -676,7 +676,7 @@ export default function PedidoHistoriaDetalleModal({
                   variant="default"
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
-                  className="h-9 w-full min-w-0 shrink-0 px-3 disabled:cursor-not-allowed"
+                  className="h-9 w-full min-w-0 shrink-0 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <Plus className="h-4 w-4" />
                   Agregar Producto
@@ -974,7 +974,7 @@ export default function PedidoHistoriaDetalleModal({
                     aria-label="Totales del pedido"
                     className={cn(
                       GRID_PEDIDO_HISTORIA_TABLA_COLS,
-                      "min-w-0 shrink-0 border-t border-border bg-background py-2 pr-3 pl-0 sm:pr-4 sm:pl-0 items-center",
+                      "min-w-0 shrink-0 border-t border-border bg-background py-2 items-center",
                       !totalPedidoInputHabilitado &&
                         !locked &&
                         "pointer-events-none cursor-not-allowed opacity-50"
