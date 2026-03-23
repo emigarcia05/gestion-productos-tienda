@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LimpiarFiltrosButton } from "@/components/FilterBar";
 import {
   Table,
   TableBody,
@@ -190,6 +192,7 @@ export default function PedidoHistoriaDetalleModal({
   const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
   const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
+  const [busquedaAgregarProducto, setBusquedaAgregarProducto] = useState("");
   /** Valor ISO `YYYY-MM-DD` — UI: campo FECHA FACTURA; persistencia backend pendiente. */
   const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
   /** Check list por ítem: solo se marca vía botón OK (confirma cant. recibida) o cesto (0 + verificar). */
@@ -198,6 +201,7 @@ export default function PedidoHistoriaDetalleModal({
   );
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
+  const busquedaAgregarRef = useRef<HTMLInputElement>(null);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const locked = estado === "RECEPCIONADO";
@@ -246,6 +250,7 @@ export default function PedidoHistoriaDetalleModal({
       setTotalPedidoDraft("");
       setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
+      setBusquedaAgregarProducto("");
       setFechaRecepcion("");
       setCheckListConfirmedByItem({});
     });
@@ -625,14 +630,29 @@ export default function PedidoHistoriaDetalleModal({
             >
               <span
                 id="pedido-historia-agregar-recepcion-titulo"
-                className={cn(
-                  MODAL_MICRO_LABEL_CLASS,
-                  "m-0 mb-1 block w-full box-border p-0 text-center font-bold text-foreground"
-                )}
+                className="sr-only"
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
               <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
+                <div className="w-full">
+                  <div className="flex w-full items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <FiltroBusquedaInput
+                        id="pedido-historia-agregar-producto-filtro"
+                        placeholder="BUSCAR POR DESCRIPCIÓN..."
+                        value={busquedaAgregarProducto}
+                        onChange={setBusquedaAgregarProducto}
+                        isDebouncing={false}
+                        inputRef={busquedaAgregarRef}
+                      />
+                    </div>
+                    <LimpiarFiltrosButton
+                      visible={busquedaAgregarProducto.trim().length > 0}
+                      onClick={() => setBusquedaAgregarProducto("")}
+                    />
+                  </div>
+                </div>
                 <Button
                   type="button"
                   variant="default"
@@ -977,6 +997,7 @@ export default function PedidoHistoriaDetalleModal({
       <AgregarProductosModal
         open={agregarProductosOpen}
         onOpenChange={setAgregarProductosOpen}
+        initialBusqueda={busquedaAgregarProducto}
         onAgregar={async (row, cantRecibida) => {
           await agregarNuevaFila(row, cantRecibida);
         }}

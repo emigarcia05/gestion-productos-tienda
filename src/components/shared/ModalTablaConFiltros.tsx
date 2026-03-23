@@ -124,6 +124,8 @@ interface ModalTablaSingleConfirmSelect<T> extends ModalTablaConFiltrosBase<T> {
   onConfirmSingle: (row: T) => void | Promise<void>;
   confirmSingleLabel?: string;
   confirmPending?: boolean;
+  /** Deshabilita el botón de confirmar en modo singleConfirm por validaciones externas (ej. cantidad). */
+  confirmSingleDisabled?: boolean;
   footerRight?: never;
 }
 
@@ -155,6 +157,7 @@ export default function ModalTablaConFiltros<T>({
   confirmLabel = (n) => `Asignar ${n} producto(s)`,
   confirmSingleLabel = "AGREGAR",
   confirmPending = false,
+  confirmSingleDisabled = false,
   loading = false,
   emptyMessage = "Sin resultados",
   count,
@@ -253,7 +256,7 @@ export default function ModalTablaConFiltros<T>({
         type="button"
         size="sm"
         onClick={handleConfirmSingle}
-        disabled={confirmPending || selectedIds.size === 0}
+        disabled={confirmPending || confirmSingleDisabled || selectedIds.size === 0}
       >
         {confirmPending ? <Loader2 className="h-4 w-4 animate-spin" /> : confirmSingleLabel}
       </Button>

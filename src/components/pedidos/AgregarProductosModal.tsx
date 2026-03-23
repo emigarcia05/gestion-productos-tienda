@@ -16,10 +16,12 @@ export default function AgregarProductosModal({
   open,
   onOpenChange,
   onAgregar,
+  initialBusqueda = "",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAgregar: (row: ProductoTiendaRowBusqueda, cantRecibida: number) => Promise<void> | void;
+  initialBusqueda?: string;
 }) {
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
@@ -44,7 +46,7 @@ export default function AgregarProductosModal({
   );
 
   const { q, setQ, ref, handleQChange, isDebouncing } = useFiltrosConBusqueda({
-    qActual: "",
+    qActual: initialBusqueda,
     debounceMs: 300,
     onDebouncedSearch: (value) => {
       if (!open) return;
@@ -55,13 +57,13 @@ export default function AgregarProductosModal({
   useEffect(() => {
     if (!open) return;
     queueMicrotask(() => {
-      setQ("");
       setData(EMPTY);
       setErrorMsg(null);
       setCantRecibida("");
-      void fetch("");
+      setQ(initialBusqueda);
+      void fetch(initialBusqueda);
     });
-  }, [open, fetch, setQ]);
+  }, [open, fetch, initialBusqueda, setQ]);
 
   const columns: ColumnaModalTabla<ProductoTiendaRowBusqueda>[] = useMemo(
     () => [
@@ -75,10 +77,12 @@ export default function AgregarProductosModal({
     []
   );
 
+  const cantRecibidaValida = Math.max(0, Math.floor(Number(cantRecibida) || 0)) > 0;
+
   const filterContent = (
-    <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-[1fr_10rem]">
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex-1 min-w-0">
+    <div className="flex w-full flex-col gap-2">
+      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-[1fr_10rem_auto] sm:items-center">
+        <div className="min-w-0">
           <FiltroBusquedaInput
             id="agregar-productos-filtro"
             placeholder="BUSCAR POR DESCRIPCIÓN..."
@@ -88,6 +92,17 @@ export default function AgregarProductosModal({
             inputRef={ref}
           />
         </div>
+        <Input
+          type="number"
+          min={1}
+          step={1}
+          inputMode="numeric"
+          placeholder="CANT."
+          aria-label="Cant. Recibida (nuevo ítem)"
+          value={cantRecibida}
+          onChange={(e) => setCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          className="h-10 w-full min-w-0 text-center tabular-nums"
+        />
         <LimpiarFiltrosButton
           visible={!!q.trim() || !!errorMsg}
           onClick={() => {
@@ -95,19 +110,8 @@ export default function AgregarProductosModal({
             void fetch("");
           }}
         />
-        {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
       </div>
-      <Input
-        type="number"
-        min={1}
-        step={1}
-        inputMode="numeric"
-        placeholder="CANT."
-        aria-label="Cant. Recibida (nuevo ítem)"
-        value={cantRecibida}
-        onChange={(e) => setCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
-        className="h-10 w-full min-w-0 text-center tabular-nums"
-      />
+      {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
     </div>
   );
 
@@ -126,6 +130,7 @@ export default function AgregarProductosModal({
       count={data.total}
       selectionMode="singleConfirm"
       confirmSingleLabel="AGREGAR PRODUCTO"
+      confirmSingleDisabled={!cantRecibidaValida}
       onConfirmSingle={async (row) => {
         const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
         if (cant <= 0) {
