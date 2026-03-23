@@ -21,6 +21,7 @@ import type {
   PedidoHistoriaItemDetalle,
 } from "@/services/pedidosHistoria.service";
 import { AlertTriangle } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { ICON_WARNING_INTERACTIVE_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,8 @@ interface Props {
   /** Si el pedido está en estado SIN RECEPCION y hay callback + editor, se muestra junto a Cerrar. */
   esEditor?: boolean;
   onIrARecepcion?: () => void;
+  onDescargarPdf?: () => Promise<void> | void;
+  descargandoPdf?: boolean;
 }
 
 export default function PedidoHistoriaLecturaModal({
@@ -67,6 +70,8 @@ export default function PedidoHistoriaLecturaModal({
   pedidoHistoriaId,
   esEditor = false,
   onIrARecepcion,
+  onDescargarPdf,
+  descargandoPdf = false,
 }: Props) {
   const [detalle, setDetalle] = useState<PedidoHistoriaDetalle | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,14 +132,31 @@ export default function PedidoHistoriaLecturaModal({
         padding="default"
         actions={
           <div className={cn("flex flex-wrap items-center justify-end gap-2")}>
-            {detalle && !esRecibido && esEditor && onIrARecepcion ? (
-              <Button type="button" variant="default" onClick={() => onIrARecepcion()}>
-                Recepcion Pedida
-              </Button>
-            ) : null}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
+            {detalle && !esRecibido && esEditor && onIrARecepcion ? (
+              <Button type="button" variant="default" onClick={() => onIrARecepcion()}>
+                Recpcionar Pedido
+              </Button>
+            ) : null}
+            {detalle ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void onDescargarPdf?.();
+                }}
+                disabled={descargandoPdf}
+              >
+                {descargandoPdf ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Descargar PDF
+              </Button>
+            ) : null}
           </div>
         }
       >

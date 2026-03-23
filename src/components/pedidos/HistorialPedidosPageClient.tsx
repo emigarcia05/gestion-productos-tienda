@@ -25,7 +25,7 @@ import PedidoHistoriaBorrarConfirmModal from "@/components/pedidos/PedidoHistori
 import FiltrosHistorialPedidos, {
   type EstadoFiltroPedido,
 } from "@/components/pedidos/FiltrosHistorialPedidos";
-import { Download, Eye, Loader2, PackageCheck, Trash2 } from "lucide-react";
+import { Eye, PackageCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import { descargarPdfPedidoHistoriaAction } from "@/actions/pedidosHistoria";
@@ -112,6 +112,27 @@ export default function HistorialPedidosPageClient({
     setLecturaId(null);
     setRecepcionId(id);
     setRecepcionOpen(true);
+  }
+
+  async function descargarPdfDesdeLectura() {
+    if (!lecturaId) return;
+    setDescargandoPdfId(lecturaId);
+    try {
+      const res = await descargarPdfPedidoHistoriaAction({
+        pedidoHistoriaId: lecturaId,
+      });
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al generar el PDF.");
+        return;
+      }
+      descargarPdfBase64(
+        res.data.pdfBase64,
+        res.data.filename
+      );
+      toast.success("PDF descargado.");
+    } finally {
+      setDescargandoPdfId(null);
+    }
   }
 
   return (
@@ -213,52 +234,6 @@ export default function HistorialPedidosPageClient({
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Ver Detalles</TooltipContent>
                                 </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="icon-xs"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        void (async () => {
-                                          setDescargandoPdfId(it.id);
-                                          try {
-                                            const res =
-                                              await descargarPdfPedidoHistoriaAction({
-                                                pedidoHistoriaId: it.id,
-                                              });
-                                            if (!res.ok) {
-                                              toast.error(
-                                                res.error ?? "Error al generar el PDF."
-                                              );
-                                              return;
-                                            }
-                                            descargarPdfBase64(
-                                              res.data.pdfBase64,
-                                              res.data.filename
-                                            );
-                                            toast.success("PDF descargado.");
-                                          } finally {
-                                            setDescargandoPdfId(null);
-                                          }
-                                        })();
-                                      }}
-                                      disabled={descargandoPdfId !== null}
-                                      aria-label="Descargar PDF del pedido"
-                                      className="disabled:cursor-not-allowed"
-                                    >
-                                      {descargandoPdfId === it.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                      ) : (
-                                        <Download className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    Descargar PDF del pedido
-                                  </TooltipContent>
-                                </Tooltip>
                                 {esEditor ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -337,6 +312,8 @@ export default function HistorialPedidosPageClient({
           pedidoHistoriaId={lecturaId}
           esEditor={esEditor}
           onIrARecepcion={esEditor ? irARecepcionDesdeLectura : undefined}
+          onDescargarPdf={descargarPdfDesdeLectura}
+          descargandoPdf={descargandoPdfId !== null && descargandoPdfId === lecturaId}
         />
         <PedidoHistoriaBorrarConfirmModal
           open={borrarOpen}
