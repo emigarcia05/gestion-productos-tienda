@@ -583,13 +583,13 @@ export default function PedidoHistoriaDetalleModal({
             <div
               className={cn(
                 MODAL_RESUMEN_PANEL_CLASS,
-                "p-0 -mx-3 sm:-mx-4"
+                "px-3 sm:px-4 py-0"
               )}
             >
-              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full px-0 items-center")}>
+              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full items-center")}>
                 <div
                   className={cn(
-                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center sm:text-left pr-0 pl-0"
+                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center sm:text-left"
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">
@@ -605,7 +605,7 @@ export default function PedidoHistoriaDetalleModal({
                 </div>
                 <label
                   className={cn(
-                    "flex min-h-0 min-w-0 w-full flex-col justify-center gap-0.5 py-0 px-0 pr-0 text-left",
+                    "flex min-h-0 min-w-0 w-full flex-col justify-center gap-0.5 py-0 text-left",
                     locked || loading ? "cursor-default" : "cursor-pointer"
                   )}
                 >
@@ -625,7 +625,7 @@ export default function PedidoHistoriaDetalleModal({
                     disabled={locked || loading}
                     aria-label="FECHA FACTURA"
                     className={cn(
-                      "mr-0 h-9 w-full min-w-0 pr-0 tabular-nums sm:text-left",
+                      "h-9 w-full min-w-0 tabular-nums sm:text-left",
                       inputBorderClassName,
                       locked || loading ? "cursor-not-allowed" : "cursor-pointer"
                     )}
