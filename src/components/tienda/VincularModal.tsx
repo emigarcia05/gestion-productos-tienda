@@ -285,12 +285,12 @@ export default function VincularModal({
               <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] w-full min-w-0">
                 <Table variant="compact" scrollX={false} className="tabla-vinculos-modal">
                   <colgroup>
-                    <col style={{ width: "16%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "22%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "24%" }} />
-                    <col style={{ width: "10%" }} />
+                    <col className="w-[16%]" />
+                    <col className="w-[14%]" />
+                    <col className="w-[22%]" />
+                    <col className="w-[14%]" />
+                    <col className="w-[24%]" />
+                    <col className="w-[10%]" />
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">

@@ -43,8 +43,10 @@ interface Props {
   proveedores: Array<{ id: string; nombre: string; prefijo: string }>;
   proveedorId: string;
   sucursalCodigo: string;
-  estado: PedidoHistoriaResumen["estado"] | "";
+  estado: EstadoFiltroPedido;
   q: string;
+  /** Recepción, borrar y mutaciones del historial requieren modo editor (alineado a Server Actions). */
+  esEditor: boolean;
 }
 
 function formatFechaNotaPedido(d: Date): string {
@@ -72,6 +74,7 @@ export default function HistorialPedidosPageClient({
   sucursalCodigo,
   estado,
   q,
+  esEditor,
 }: Props) {
   const router = useRouter();
   const [recepcionOpen, setRecepcionOpen] = useState(false);
@@ -102,13 +105,22 @@ export default function HistorialPedidosPageClient({
     setBorrarOpen(true);
   }
 
+  function irARecepcionDesdeLectura() {
+    const id = lecturaId;
+    if (!id) return;
+    setLecturaOpen(false);
+    setLecturaId(null);
+    setRecepcionId(id);
+    setRecepcionOpen(true);
+  }
+
   return (
     <ClassicFilteredTableLayout title={title} subtitle={subtitle} filters={
       <FiltrosHistorialPedidos
         proveedores={proveedores}
         proveedorId={proveedorId}
         sucursalCodigo={sucursalCodigo}
-        estado={(estado as EstadoFiltroPedido) || ""}
+        estado={estado}
         q={q}
         total={total}
       />
@@ -159,6 +171,7 @@ export default function HistorialPedidosPageClient({
                             </TableCell>
                             <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                               <div className="flex items-center justify-center gap-2">
+                                {esEditor ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -179,6 +192,7 @@ export default function HistorialPedidosPageClient({
                                     Recepción De Mercadería
                                   </TooltipContent>
                                 </Tooltip>
+                                ) : null}
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -243,6 +257,7 @@ export default function HistorialPedidosPageClient({
                                     Descargar PDF del pedido
                                   </TooltipContent>
                                 </Tooltip>
+                                {esEditor ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -264,6 +279,7 @@ export default function HistorialPedidosPageClient({
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Borrar Pedido</TooltipContent>
                                 </Tooltip>
+                                ) : null}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -317,6 +333,8 @@ export default function HistorialPedidosPageClient({
             if (!v) setLecturaId(null);
           }}
           pedidoHistoriaId={lecturaId}
+          esEditor={esEditor}
+          onIrARecepcion={esEditor ? irARecepcionDesdeLectura : undefined}
         />
         <PedidoHistoriaBorrarConfirmModal
           open={borrarOpen}

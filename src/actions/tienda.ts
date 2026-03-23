@@ -1,13 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
+import { z } from "zod";
 import type { ActionResult } from "@/lib/types";
 import { filtroTexto } from "@/lib/busqueda";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 
 /** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
 async function getTiendaEmptyWithOpciones() {
@@ -31,6 +34,10 @@ async function getTiendaEmptyWithOpciones() {
 
 /** Última sincronización (max last_sync de lista_precios_tienda). */
 export async function getUltimoSync() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return null;
+  }
   const row = await prisma.listaPrecioTienda.findFirst({
     orderBy: { lastSync: "desc" },
     select: { lastSync: true },
@@ -83,6 +90,15 @@ export async function getTiendaPageData(params: {
   mejorPrecio?: string;
   pagina?: string;
 }) {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return getTiendaEmptyWithOpciones();
+  }
+
+  const parsedParams = getTiendaPageParamsSchema.safeParse(params);
+  if (!parsedParams.success) {
+    return getTiendaEmptyWithOpciones();
+  }
   const {
     q = "",
     rubro = "",
@@ -91,7 +107,7 @@ export async function getTiendaPageData(params: {
     proveedor = "",
     mejorPrecio = "",
     pagina = "1",
-  } = params;
+  } = parsedParams.data;
 
   const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
@@ -295,25 +311,42 @@ export interface ControlAumentosData {
 }
 
 export async function getControlAumentos(): Promise<ControlAumentosData> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.controlAumentos)) {
+    return { porMarca: [], porRubro: [], porSubRubro: [], individual: [] };
+  }
   const { getControlAumentosData } = await import("@/services/controlAumentos.service");
   return getControlAumentosData();
 }
 
 /** Marca un producto vinculado como proveedor principal: actualiza precios_tienda.cod_ext y precios_tienda.proveedor. */
+const prismaIdParamSchema = z.object({
+  itemTiendaId: z.string().min(1).max(128),
+  productoProveedorId: z.string().min(1).max(128),
+});
+
 export async function convertirEnProveedor(
   itemTiendaId: string,
   productoProveedorId: string
 ): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return { ok: false, error: "Sin acceso a tienda." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const parsed = prismaIdParamSchema.safeParse({ itemTiendaId, productoProveedorId });
+  if (!parsed.success) {
+    return { ok: false, error: "IDs inválidos." };
+  }
   const itemProveedor = await prisma.listaPrecioProveedor.findUnique({
-    where: { id: productoProveedorId },
+    where: { id: parsed.data.productoProveedorId },
     include: { proveedor: { select: { nombre: true, prefijo: true } } },
   });
-  if (!itemProveedor || itemProveedor.idListaPrecioTienda !== itemTiendaId) {
+  if (!itemProveedor || itemProveedor.idListaPrecioTienda !== parsed.data.itemTiendaId) {
     return { ok: false, error: "Producto no encontrado o no está vinculado a este ítem." };
   }
   await prisma.listaPrecioTienda.update({
-    where: { id: itemTiendaId },
+    where: { id: parsed.data.itemTiendaId },
     data: {
       codExt: itemProveedor.codExt,
       proveedor: itemProveedor.proveedor.nombre ?? itemProveedor.proveedor.prefijo,

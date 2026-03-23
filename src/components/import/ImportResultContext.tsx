@@ -4,6 +4,8 @@ import React, { createContext, useCallback, useContext, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import AppModal from "@/components/shared/AppModal";
+import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
+import { cn } from "@/lib/utils";
 
 export interface ImportProgressResult {
   creados: number;
@@ -80,7 +82,7 @@ export function ImportResultProvider({ children }: { children: React.ReactNode }
               </ul>
               {state.data.errores.length > 0 && (
                 <div>
-                  <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">
+                  <p className={cn("mb-1 font-medium", TEXT_WARNING_CLASS)}>
                     Advertencias ({state.data.errores.length}):
                   </p>
                   <ul className="max-h-40 overflow-auto list-disc list-inside text-muted-foreground space-y-0.5">

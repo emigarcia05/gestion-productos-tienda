@@ -23,6 +23,11 @@ import {
 import { importarProductos, type ImportResult, type MapeoColumnas } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { cn } from "@/lib/utils";
+import {
+  BADGE_SUCCESS_TINT_CLASS,
+  IMPORT_STAT_BADGE_CLASSES,
+  TEXT_SUCCESS_CLASS,
+} from "@/lib/ui-classes";
 
 interface Proveedor {
   id: string;
@@ -308,7 +313,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                 const asignado = Object.values(mapeo).includes(c.value);
                 return (
                   <Badge key={c.value} className={asignado
-                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                    ? BADGE_SUCCESS_TINT_CLASS
                     : "bg-destructive/10 text-destructive border-destructive/20"
                   }>
                     {asignado ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
@@ -340,9 +345,9 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
         {step === "result" && (
           <div className="space-y-5 pt-2">
             <div className="grid grid-cols-3 gap-3">
-              <ResultStat label="Creados"      value={result?.creados ?? 0}      color="emerald" />
-              <ResultStat label="Actualizados" value={result?.actualizados ?? 0} color="blue" />
-              <ResultStat label="Eliminados"   value={result?.eliminados ?? 0}   color="amber" />
+              <ResultStat label="Creados"      value={result?.creados ?? 0}      variant="created" />
+              <ResultStat label="Actualizados" value={result?.actualizados ?? 0} variant="updated" />
+              <ResultStat label="Eliminados"   value={result?.eliminados ?? 0}   variant="removed" />
             </div>
 
             {result && result.errores.length > 0 && (
@@ -360,7 +365,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
             )}
 
             {result?.errores.length === 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-500">
+              <div className={cn("flex items-center gap-2 text-sm", TEXT_SUCCESS_CLASS)}>
                 <CheckCircle2 className="h-4 w-4" />
                 Importación completada sin errores.
               </div>
@@ -377,16 +382,19 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
   );
 }
 
-function ResultStat({ label, value, color }: { label: string; value: number; color: "emerald" | "blue" | "amber" }) {
-  const colorMap = {
-    emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    blue:    "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    amber:   "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  };
+function ResultStat({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: number;
+  variant: keyof typeof IMPORT_STAT_BADGE_CLASSES;
+}) {
   return (
     <div className="rounded-lg border border-border/50 bg-card/50 p-4 text-center space-y-1">
       <p className="text-2xl font-bold">{value}</p>
-      <Badge className={cn("text-xs", colorMap[color])}>{label}</Badge>
+      <Badge className={cn("text-xs", IMPORT_STAT_BADGE_CLASSES[variant])}>{label}</Badge>
     </div>
   );
 }

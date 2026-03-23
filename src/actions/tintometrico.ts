@@ -7,7 +7,7 @@ import { z } from "zod";
 import { buscarBasesTintometricas } from "@/services/tintometrico.service";
 
 const buscarBasesSchema = z.object({
-  q: z.string().optional().default(""),
+  q: z.string().max(200).optional().default(""),
 });
 
 export async function buscarBasesTintometricasAction(

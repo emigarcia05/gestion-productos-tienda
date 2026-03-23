@@ -22,6 +22,7 @@ interface Props {
 export default async function HistorialPedidosPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
+  const esEditor = rol === "editor";
 
   const { pagina = "1", proveedor = "", sucursal = "", estado = "", q = "" } =
     await searchParams;
@@ -32,8 +33,12 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
   const sucursalCodigo: SucursalPedidoEnvio | "" =
     sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
 
-  const estadoNormalizado: PedidoHistoriaEstado | "" =
-    estado === "RECIBIDO" ? "RECIBIDO" : estado === "PEDIDO" ? "PEDIDO" : "";
+  const estadoParam = estado.trim().toUpperCase();
+  /** Sin `estado` en la URL (entrada al módulo): por defecto solo pedidos pendientes de recepción. */
+  const estadoFiltro: PedidoHistoriaEstado | "ALL" =
+    estadoParam === "RECIBIDO" ? "RECIBIDO" : estadoParam === "ALL" ? "ALL" : "PEDIDO";
+
+  const estadoUi: "PEDIDO" | "RECIBIDO" | "ALL" = estadoFiltro;
 
   const proveedores = await prisma.proveedor.findMany({
     select: { id: true, nombre: true, prefijo: true },
@@ -44,7 +49,7 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
     pagina: paginaNum,
     proveedorId: proveedorId || undefined,
     sucursalCodigo: sucursalCodigo || undefined,
-    estado: estadoNormalizado || undefined,
+    estado: estadoFiltro,
     q: qTrim || undefined,
   });
 
@@ -59,8 +64,9 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
           proveedores={proveedores}
           proveedorId={proveedorId}
           sucursalCodigo={sucursalCodigo}
-          estado={estadoNormalizado}
+          estado={estadoUi}
           q={qTrim}
+          esEditor={esEditor}
         />
       </div>
     );
@@ -81,8 +87,9 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
       proveedores={proveedores}
       proveedorId={proveedorId}
       sucursalCodigo={sucursalCodigo}
-      estado={estadoNormalizado}
+      estado={estadoUi}
       q={qTrim}
+      esEditor={esEditor}
     />
   );
 }

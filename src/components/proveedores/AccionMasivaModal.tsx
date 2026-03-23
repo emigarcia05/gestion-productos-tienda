@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { aplicarCampoMasivo, type CampoMasivo } from "@/actions/productos";
+import { cn } from "@/lib/utils";
+import { TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 
 interface Proveedor {
   id: string;
@@ -107,7 +109,7 @@ export default function AccionMasivaModal({
 
         {afectados !== null ? (
           <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 text-sm text-emerald-500">
+            <div className={cn("flex items-center gap-2 text-sm", TEXT_SUCCESS_CLASS)}>
               <CheckCircle2 className="h-4 w-4" />
               Se actualizaron {afectados} productos correctamente.
             </div>

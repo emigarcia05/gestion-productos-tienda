@@ -25,6 +25,7 @@ import {
 import { type MapeoColumnasListaPrecios } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { cn } from "@/lib/utils";
+import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
 
 interface Proveedor {
   id: string;
@@ -398,7 +399,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                         key={c.value}
                         className={
                           asignado
-                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            ? BADGE_SUCCESS_TINT_CLASS
                             : "bg-destructive/10 text-destructive border-destructive/20"
                         }
                       >

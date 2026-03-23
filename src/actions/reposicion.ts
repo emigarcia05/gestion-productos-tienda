@@ -10,6 +10,12 @@ import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { revalidatePath } from "next/cache";
 import { upsertPedidoMercaderiaReposicionConfig } from "@/services/pedidosEnvio.service";
+import {
+  getReposicionParamsSchema,
+  productosReposicionSelectorSchema,
+  sucursalReposicionSchema,
+} from "@/lib/validations/reposicion";
+import { prismaCuidSchema } from "@/lib/validations/common";
 
 export type SucursalReposicion = "guaymallen" | "maipu";
 
@@ -87,9 +93,23 @@ export async function getReposicionData(
   if (!sucursal) {
     return emptyReposicionData;
   }
+  if (!sucursalReposicionSchema.safeParse(sucursal).success) {
+    return emptyReposicionData;
+  }
 
-  const { configurado = "", pagina = 1 } = params;
-  const paginaNum = Math.max(1, pagina);
+  const parsedParams = getReposicionParamsSchema.safeParse(params);
+  if (!parsedParams.success) {
+    return emptyReposicionData;
+  }
+  const { configurado, pagina: paginaNum, q, marca, rubro, subRubro } = parsedParams.data;
+  const paramsNorm: GetReposicionParams = {
+    q,
+    marca,
+    rubro,
+    subRubro,
+    configurado: configurado as "" | "si",
+    pagina: paginaNum,
+  };
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
   // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan configuración REPOSICION en pedidos_mercaderia para esta sucursal.
@@ -103,7 +123,7 @@ export async function getReposicionData(
       : null;
   const codExtList = codExtConfigurados?.map((r) => r.codExt) ?? [];
 
-  const baseParts = baseWhere(sucursal, params);
+  const baseParts = baseWhere(sucursal, paramsNorm);
   const whereItems: Prisma.ListaPrecioTiendaWhereInput = (() => {
     const parts = [...baseParts];
     if (configurado === "si") {
@@ -116,7 +136,7 @@ export async function getReposicionData(
   const toWhereWithNotNull = (
     exclude: "marca" | "rubro" | "subRubro"
   ): Prisma.ListaPrecioTiendaWhereInput => {
-    const parts = baseWhere(sucursal, params, exclude);
+    const parts = baseWhere(sucursal, paramsNorm, exclude);
     const key = exclude;
     const notNull = {
       [key]: { not: null },
@@ -278,8 +298,11 @@ export async function getProductosReposicionSelector(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) return [];
   if (!sucursal) return [];
+  if (!sucursalReposicionSchema.safeParse(sucursal).success) return [];
+  const parsedQ = productosReposicionSelectorSchema.safeParse({ q });
+  const qNorm = parsedQ.success ? parsedQ.data.q : "";
 
-  const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
+  const textFilter = filtroTexto(qNorm, ["descripcionTienda", "codTienda"]);
   const where: Prisma.ListaPrecioTiendaWhereInput =
     textFilter.AND?.length ? textFilter : {};
 
@@ -307,7 +330,7 @@ export async function getProductosReposicionSelector(
 }
 
 const upsertReglaSchema = z.object({
-  idProveedor: z.string().min(1, "Proveedor requerido"),
+  idProveedor: prismaCuidSchema,
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   codExt: z.string().min(1, "Código requerido"),
   formaPedir: z.enum(["CANT_MAXIMA", "CANT_FIJA"]),

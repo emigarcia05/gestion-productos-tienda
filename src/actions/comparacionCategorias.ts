@@ -36,6 +36,12 @@ import {
   comparacionIdSchema,
   actualizarDtoExtraComparacionSchema,
 } from "@/lib/validations/comparacionCategorias";
+import { z } from "zod";
+
+const buscarProductosAsignarSchema = z.object({
+  proveedorId: z.string().max(128).optional(),
+  q: z.string().max(500).optional(),
+});
 
 const PATH = "/proveedores/comparacion-categorias";
 
@@ -106,7 +112,12 @@ export async function buscarProductosParaAsignarAction(
   if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
     return { ok: false, error: "Sin permisos." };
   }
-  const data = await listarProductosProveedoresParaVincular(proveedorId, q ?? "");
+  const parsed = buscarProductosAsignarSchema.safeParse({ proveedorId, q });
+  if (!parsed.success) return { ok: false, error: "Parámetros de búsqueda inválidos." };
+  const data = await listarProductosProveedoresParaVincular(
+    parsed.data.proveedorId,
+    parsed.data.q ?? ""
+  );
   return { ok: true, data };
 }
 

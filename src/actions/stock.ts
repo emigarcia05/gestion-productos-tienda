@@ -8,6 +8,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { getControlStockParamsSchema } from "@/lib/validations/stock";
 
 export type Sucursal = "guaymallen" | "maipu";
 
@@ -64,17 +65,22 @@ export async function getControlStock(
   if (!sucursal) {
     return emptyControlStock;
   }
+  if (!z.enum(["guaymallen", "maipu"]).safeParse(sucursal).success) {
+    return emptyControlStock;
+  }
 
+  const parsedParams = getControlStockParamsSchema.safeParse(params);
+  if (!parsedParams.success) {
+    return emptyControlStock;
+  }
   const {
     q = "",
     marca = "",
     rubro = "",
     soloNegativo = false,
     orden = "",
-    pagina = 1,
-  } = params;
-
-  const paginaNum = Math.max(1, pagina);
+    pagina: paginaNum = 1,
+  } = parsedParams.data;
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);

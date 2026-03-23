@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getRol } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
@@ -38,8 +38,11 @@ const descargarPdfPedidoHistoriaSchema = z.object({
 
 const listarPedidosHistoriaSchema = z.object({
   pagina: z.coerce.number().int().min(1).optional().default(1),
-  estado: z.enum(["PEDIDO", "RECIBIDO"]).optional(),
-  proveedorId: z.string().optional(),
+  estado: z.enum(["PEDIDO", "RECIBIDO", "ALL"]).optional(),
+  proveedorId: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().min(1).max(128).optional()
+  ),
   sucursalCodigo: z.enum(["guaymallen", "maipu"]).optional(),
   q: z.string().max(200).optional(),
 });
@@ -151,6 +154,9 @@ export async function actualizarPedidoHistoriaItemCantRecibidaAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede modificar la recepción." };
+  }
 
   const parsed = actualizarCantRecibidaSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -172,6 +178,9 @@ export async function agregarPedidoHistoriaItemAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede agregar ítems al pedido." };
   }
 
   const parsed = agregarItemSchema.safeParse(params);
@@ -196,6 +205,9 @@ export async function marcarPedidoHistoriaRegistradoAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede registrar en DUX." };
+  }
 
   const parsed = marcarRegistradoSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -215,6 +227,9 @@ export async function eliminarPedidoHistoriaAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede borrar pedidos del historial." };
   }
 
   const parsed = eliminarPedidoHistoriaSchema.safeParse(params);

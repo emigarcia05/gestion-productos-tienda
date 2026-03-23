@@ -5,6 +5,7 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -19,6 +20,8 @@ import type {
   PedidoHistoriaDetalle,
   PedidoHistoriaItemDetalle,
 } from "@/services/pedidosHistoria.service";
+import { AlertTriangle } from "lucide-react";
+import { ICON_WARNING_INTERACTIVE_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
 function deltaCantidades(it: PedidoHistoriaItemDetalle): number {
@@ -53,12 +56,17 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pedidoHistoriaId: string | null;
+  /** Si el pedido está en estado PEDIDO y hay callback + editor, se muestra junto a Cerrar. */
+  esEditor?: boolean;
+  onIrARecepcion?: () => void;
 }
 
 export default function PedidoHistoriaLecturaModal({
   open,
   onOpenChange,
   pedidoHistoriaId,
+  esEditor = false,
+  onIrARecepcion,
 }: Props) {
   const [detalle, setDetalle] = useState<PedidoHistoriaDetalle | null>(null);
   const [loading, setLoading] = useState(false);
@@ -110,11 +118,6 @@ export default function PedidoHistoriaLecturaModal({
     return d ? formatDdMmHHmm(d) : "";
   }, [detalle, esRecibido]);
 
-  const cantItemsConDiferencia = useMemo(() => {
-    if (!detalle || !esRecibido) return 0;
-    return detalle.items.filter((it) => deltaCantidades(it) !== 0).length;
-  }, [detalle, esRecibido]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -123,9 +126,16 @@ export default function PedidoHistoriaLecturaModal({
         scrollBody={false}
         padding="default"
         actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
+          <div className={cn("flex flex-wrap items-center justify-end gap-2")}>
+            {detalle && !esRecibido && esEditor && onIrARecepcion ? (
+              <Button type="button" variant="default" onClick={() => onIrARecepcion()}>
+                Recepcion Pedida
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          </div>
         }
       >
         {errorMsg ? (
@@ -141,34 +151,36 @@ export default function PedidoHistoriaLecturaModal({
                   {esRecibido ? "Recepcionado" : "Pedido"}
                 </Badge>
                 <p className="min-w-0 flex-1 text-base font-semibold leading-snug break-words text-foreground">
-                  {detalle.proveedorNombre || "—"}
+                  {detalle.proveedorNombre?.trim() ?? ""}
                 </p>
               </div>
               <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm font-medium text-foreground">
-                <span className="min-w-0 break-words">
-                  {detalle.sucursalNombre || "—"}
-                </span>
-                <span className="shrink-0 text-muted-foreground" aria-hidden>
-                  —
-                </span>
-                <span className="text-sm font-normal tabular-nums text-muted-foreground">
-                  {fechaSubcabecera}
-                </span>
+                {detalle.sucursalNombre?.trim() ? (
+                  <span className="min-w-0 break-words">{detalle.sucursalNombre}</span>
+                ) : null}
+                {detalle.sucursalNombre?.trim() && fechaSubcabecera ? (
+                  <span className="shrink-0 text-muted-foreground" aria-hidden>
+                    —
+                  </span>
+                ) : null}
+                {fechaSubcabecera ? (
+                  <span className="text-sm font-normal tabular-nums text-muted-foreground">
+                    {fechaSubcabecera}
+                  </span>
+                ) : null}
               </p>
-              {esRecibido && cantItemsConDiferencia > 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {cantItemsConDiferencia === 1
-                    ? "1 ítem con diferencia entre cant. pedida y cant. recibida."
-                    : `${cantItemsConDiferencia} ítems con diferencia entre cant. pedida y cant. recibida.`}
-                </p>
-              ) : null}
             </div>
 
             <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar relative min-h-0 min-w-0 flex-1">
               <Table variant="compact" scrollX={false} className="min-w-full">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[62%] text-left">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[52%] text-left">DESCRIPCIÓN</TableHead>
+                    {esRecibido ? (
+                      <TableHead className="w-[10%] px-1 text-center">
+                        <span className="sr-only">Diferencia cantidades</span>
+                      </TableHead>
+                    ) : null}
                     <TableHead className="w-[19%]">CANT. PEDIDA</TableHead>
                     {esRecibido ? (
                       <TableHead className="w-[19%]">CANT. RECIBIDA</TableHead>
@@ -178,26 +190,16 @@ export default function PedidoHistoriaLecturaModal({
                 <TableBody>
                   {detalle.items.length === 0 ? (
                     <EmptyTableRow
-                      colSpan={esRecibido ? 3 : 2}
+                      colSpan={esRecibido ? 4 : 2}
                       message="Sin ítems."
                     />
                   ) : (
                     detalle.items.map((it) => {
                       const delta = esRecibido ? deltaCantidades(it) : 0;
                       const hayDiferencia = esRecibido && delta !== 0;
+                      const tituloDiff = tituloCeldaCantRecibida(it);
                       return (
-                        <TableRow
-                          key={it.id}
-                          className={cn(
-                            hayDiferencia &&
-                              "bg-muted/40 odd:bg-muted/40 even:bg-muted/40 hover:bg-muted/55"
-                          )}
-                          aria-label={
-                            hayDiferencia
-                              ? "Ítem con diferencia entre cantidad pedida y recibida"
-                              : undefined
-                          }
-                        >
+                        <TableRow key={it.id}>
                           <TableCell
                             className="celda-datos min-w-0 whitespace-normal text-left align-top"
                             title={
@@ -206,24 +208,44 @@ export default function PedidoHistoriaLecturaModal({
                                 : it.descripcionTienda
                             }
                           >
-                            {it.descripcionTienda || "—"}
+                            {it.descripcionTienda?.trim() ?? ""}
                           </TableCell>
+                          {esRecibido ? (
+                            <TableCell className="celda-datos w-[10%] px-1 text-center align-middle">
+                              {hayDiferencia ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className={ICON_WARNING_INTERACTIVE_CLASS}
+                                      aria-label={tituloDiff}
+                                    >
+                                      <AlertTriangle
+                                        className="h-4 w-4 shrink-0"
+                                        aria-hidden
+                                      />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-xs">
+                                    {tituloDiff}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <span className="inline-block w-4" aria-hidden />
+                              )}
+                            </TableCell>
+                          ) : null}
                           <TableCell className="celda-datos tabular-nums">
                             {it.cantPedida.toLocaleString("es-AR")}
                           </TableCell>
                           {esRecibido ? (
                             <TableCell
-                              className={cn(
-                                "celda-datos tabular-nums",
-                                hayDiferencia && "font-semibold",
-                                delta < 0 && "text-destructive",
-                                delta > 0 && "text-foreground"
-                              )}
-                              title={tituloCeldaCantRecibida(it)}
+                              className="celda-datos tabular-nums text-foreground"
+                              title={tituloDiff || undefined}
                             >
                               {it.cantRecibida != null
                                 ? it.cantRecibida.toLocaleString("es-AR")
-                                : "—"}
+                                : ""}
                             </TableCell>
                           ) : null}
                         </TableRow>

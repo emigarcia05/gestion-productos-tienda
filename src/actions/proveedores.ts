@@ -1,10 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
+import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
+import { prismaCuidSchema } from "@/lib/validations/common";
 import { createProveedorSchema, updateProveedorSchema } from "@/lib/validations/proveedor";
+import { proveedoresPageParamsSchema } from "@/lib/validations/proveedores";
 import * as proveedorService from "@/services/proveedor.service";
+
+function puedeConsultarCatalogoProveedores(rol: Rol): boolean {
+  return (
+    puede(rol, PERMISOS.proveedores.sugeridos) ||
+    puede(rol, PERMISOS.proveedores.lista) ||
+    puede(rol, PERMISOS.listaPrecios.acciones.importarLista)
+  );
+}
 
 // ─── MOCK: productos de prueba (lista de proveedores viene del servicio) ─────
 
@@ -26,6 +37,8 @@ const MOCK_PRODUCTOS = [
 ];
 
 export async function getProveedores() {
+  const rol = await getRol();
+  if (!puedeConsultarCatalogoProveedores(rol)) return [];
   return proveedorService.getProveedores();
 }
 
@@ -35,8 +48,13 @@ export async function getProveedoresPageData(params: {
   proveedor?: string;
   pagina?: string;
 }) {
-  const { q = "", proveedor = "" } = params;
-  const proveedores = await getProveedores();
+  const rol = await getRol();
+  if (!puedeConsultarCatalogoProveedores(rol)) {
+    return { proveedores: [], productos: [], total: 0, totalPaginas: 0 };
+  }
+  const parsedParams = proveedoresPageParamsSchema.safeParse(params);
+  const { q = "", proveedor = "" } = parsedParams.success ? parsedParams.data : {};
+  const proveedores = await proveedorService.getProveedores();
   const sinFiltros = !q && !proveedor;
   if (sinFiltros) {
     return { proveedores, productos: [], total: 0, totalPaginas: 0 };
@@ -91,6 +109,8 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
 
 export async function editarProveedor(id: string, formData: FormData): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const idParsed = prismaCuidSchema.safeParse(id);
+  if (!idParsed.success) return { ok: false, error: "ID de proveedor inválido." };
 
   const raw = {
     nombre: (formData.get("nombre") as string) ?? "",
@@ -109,7 +129,7 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
 
   try {
     await proveedorService.updateProveedor({
-      id,
+      id: idParsed.data,
       ...parsed.data,
       idProveedorDux,
     });
@@ -133,6 +153,10 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
 
 export async function eliminarProveedor(id: string): Promise<ActionResult> {
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const idParsed = prismaCuidSchema.safeParse(id);
+  if (!idParsed.success) return { ok: false, error: "ID de proveedor inválido." };
+  const del = await proveedorService.deleteProveedor(idParsed.data);
+  if (!del.success) return { ok: false, error: del.error };
   revalidatePath("/proveedores");
   revalidatePath("/proveedores/lista");
   revalidatePath("/proveedores/gestion");

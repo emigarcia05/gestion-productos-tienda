@@ -1,6 +1,7 @@
 "use server";
 
-import { esEditor } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 import { syncListaPrecioTiendaFromDux } from "@/services/syncListaPrecioTienda.service";
 
 export type SyncListaPrecioTiendaResult = Awaited<
@@ -13,14 +14,15 @@ export type SyncListaPrecioTiendaResult = Awaited<
  * Los logs de progreso se escriben en la consola del servidor.
  */
 export async function sincronizarListaPrecioTiendaDux(): Promise<SyncListaPrecioTiendaResult> {
-  if (!(await esEditor())) {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
     return {
       creados: 0,
       actualizados: 0,
       totalProcesados: 0,
       totalApi: 0,
       duracionMs: 0,
-      errores: ["Sin permisos de editor."],
+      errores: ["Sin permisos para sincronizar la lista de precios tienda."],
     };
   }
   return syncListaPrecioTiendaFromDux();

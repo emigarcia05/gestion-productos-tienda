@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
 
 type UploadStatus = "idle" | "dragging" | "uploading" | "success" | "error";
 
@@ -163,7 +164,7 @@ export default function UploadZone() {
                     </Badge>
                   )}
                   {file.status === "success" && (
-                    <Badge className="gap-1 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                    <Badge className={cn("gap-1", BADGE_SUCCESS_TINT_CLASS)}>
                       <CheckCircle2 className="h-3 w-3" />
                       Listo
                     </Badge>

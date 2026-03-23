@@ -14,7 +14,11 @@ import {
 import type { ActionResult } from "@/lib/types";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { idsUuidSchema, actualizacionMasivaListaPreciosSchema } from "@/lib/validations/listaPrecios";
+import {
+  idsUuidSchema,
+  actualizacionMasivaListaPreciosSchema,
+  listaPreciosFiltrosLecturaSchema,
+} from "@/lib/validations/listaPrecios";
 
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
@@ -22,13 +26,27 @@ export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from
  * Devuelve lista de precios filtrada por proveedor, marca, rubro y/o búsqueda (≥3 caracteres).
  * Para carga bajo demanda: el cliente solo llama cuando hay filtro activo.
  */
+const listaPreciosLecturaVacia: FilaListaPrecioParaCliente[] = [];
+
 export async function getListaPreciosFiltradaAction(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined
 ): Promise<FilaListaPrecioParaCliente[]> {
-  const { filas } = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, rubroNombre, busqueda, undefined);
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
+    return listaPreciosLecturaVacia;
+  }
+  const parsed = listaPreciosFiltrosLecturaSchema.safeParse({
+    proveedorId,
+    marcaNombre,
+    rubroNombre,
+    busqueda,
+  });
+  if (!parsed.success) return listaPreciosLecturaVacia;
+  const { proveedorId: prov, marcaNombre: marca, rubroNombre: rubro, busqueda: q } = parsed.data;
+  const { filas } = await getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, undefined);
   return filas;
 }
 
@@ -48,6 +66,15 @@ export interface ListaPreciosConOpcionesResult {
  * Tabla: filtrada por Proveedor + Marca + Rubro + búsqueda.
  * opciones.soloPxSugerido: solo ítems con px_vta_sugerido no nulo (p. ej. página Px Vta. Sugeridos).
  */
+const listaPreciosConOpcionesVacio: ListaPreciosConOpcionesResult = {
+  filas: [],
+  total: 0,
+  totalPaginas: 0,
+  proveedoresDisponibles: [],
+  marcasDisponibles: [],
+  rubrosDisponibles: [],
+};
+
 export async function getListaPreciosConOpcionesAction(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
@@ -57,15 +84,38 @@ export async function getListaPreciosConOpcionesAction(
   opciones?: ListaPreciosFiltradoOpciones,
   pagina?: number
 ): Promise<ListaPreciosConOpcionesResult> {
-  const prov = proveedorId?.trim() || undefined;
-  const marca = marcaNombre?.trim() || undefined;
-  const rubro = rubroNombre?.trim() || undefined;
-  const q = busqueda?.trim() || undefined;
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
+    return listaPreciosConOpcionesVacio;
+  }
+  const parsed = listaPreciosFiltrosLecturaSchema.safeParse({
+    proveedorId,
+    marcaNombre,
+    rubroNombre,
+    busqueda,
+    habilitado,
+    opciones,
+    pagina,
+  });
+  if (!parsed.success) return listaPreciosConOpcionesVacio;
+  const {
+    proveedorId: prov,
+    marcaNombre: marca,
+    rubroNombre: rubro,
+    busqueda: q,
+    habilitado: hab,
+    opciones: opt,
+    pagina: pag,
+  } = parsed.data;
+  const provTrim = prov?.trim() || undefined;
+  const marcaTrim = marca?.trim() || undefined;
+  const rubroTrim = rubro?.trim() || undefined;
+  const qTrim = q?.trim() || undefined;
   const [tableResult, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles] = await Promise.all([
-    getListaPreciosConTiendaFiltrada(prov, marca, rubro, q, habilitado, opciones, pagina),
-    getProveedoresDisponiblesListaPrecios(marca, rubro, q, habilitado, opciones),
-    getMarcasDisponiblesListaPrecios(prov, rubro, q, habilitado, opciones),
-    getRubrosDisponiblesListaPrecios(prov, marca, q, habilitado, opciones),
+    getListaPreciosConTiendaFiltrada(provTrim, marcaTrim, rubroTrim, qTrim, hab, opt, pag),
+    getProveedoresDisponiblesListaPrecios(marcaTrim, rubroTrim, qTrim, hab, opt),
+    getMarcasDisponiblesListaPrecios(provTrim, rubroTrim, qTrim, hab, opt),
+    getRubrosDisponiblesListaPrecios(provTrim, marcaTrim, qTrim, hab, opt),
   ]);
   return {
     filas: tableResult.filas,

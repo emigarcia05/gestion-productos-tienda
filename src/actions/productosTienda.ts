@@ -7,8 +7,8 @@ import { z } from "zod";
 import * as productosTiendaService from "@/services/productosTienda.service";
 
 const buscarProductosTiendaPorDescripcionSchema = z.object({
-  q: z.string().optional().default(""),
-  take: z.coerce.number().int().optional().default(100),
+  q: z.string().max(200).optional().default(""),
+  take: z.coerce.number().int().min(1).max(500).optional().default(100),
 });
 
 export async function buscarProductosTiendaPorDescripcionAction(

@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import type { ServiceResult } from "@/types";
 import type { ProductoCompleto } from "@/types";
@@ -9,9 +10,21 @@ import { getProductosVinculadosPorItemTienda } from "@/services/producto.service
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { getProveedores as getProveedoresFromProveedores } from "@/actions/proveedores";
 import { uuidSchema } from "@/lib/validations/common";
+import { z } from "zod";
+
+const listarParaVincularFiltrosSchema = z.object({
+  proveedorId: z.string().max(128).optional(),
+  q: z.string().max(500).optional(),
+});
 
 export async function getVinculos(itemTiendaId: string): Promise<ServiceResult<ProductoCompleto[]>> {
-  return getProductosVinculadosPorItemTienda(itemTiendaId);
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return { success: false, error: "Sin acceso a tienda." };
+  }
+  const parsedId = uuidSchema.safeParse(itemTiendaId);
+  if (!parsedId.success) return { success: false, error: "ID de ítem inválido." };
+  return getProductosVinculadosPorItemTienda(parsedId.data);
 }
 
 /** Proveedores reales desde BD (para modal de vinculación y otros). */
@@ -24,8 +37,19 @@ export async function listarProductosParaVincular(
   proveedorId?: string,
   q?: string
 ): Promise<ServiceResult<ProductoProveedorParaVincular[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return { success: false, error: "Sin acceso a tienda." };
+  }
+  const parsed = listarParaVincularFiltrosSchema.safeParse({ proveedorId, q });
+  if (!parsed.success) {
+    return { success: false, error: "Parámetros de búsqueda inválidos." };
+  }
   try {
-    const data = await listarProductosProveedoresParaVincular(proveedorId, q);
+    const data = await listarProductosProveedoresParaVincular(
+      parsed.data.proveedorId,
+      parsed.data.q
+    );
     return { success: true, data };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

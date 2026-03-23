@@ -27,7 +27,7 @@ const SUCURSALES = [
   { value: "maipu", label: "MAIPÚ" },
 ] as const;
 
-export type EstadoFiltroPedido = "PEDIDO" | "RECIBIDO" | "";
+export type EstadoFiltroPedido = "PEDIDO" | "RECIBIDO" | "ALL";
 
 interface Proveedor {
   id: string;
@@ -74,7 +74,7 @@ export default function FiltrosHistorialPedidos({
     search.set("pagina", "1");
     if (nextProveedor.trim()) search.set("proveedor", nextProveedor.trim());
     if (nextSucursal) search.set("sucursal", nextSucursal);
-    if (nextEstado) search.set("estado", nextEstado);
+    search.set("estado", nextEstado);
     if (nextQ.trim()) search.set("q", nextQ.trim());
     window.location.href = `${pathname}?${search.toString()}`;
   }
@@ -99,14 +99,18 @@ export default function FiltrosHistorialPedidos({
   qLocalRef.current = qLocal;
 
   const hayFiltros =
-    !!proveedorId.trim() || !!sucursalCodigo || !!estado || !!qLocal.trim();
+    !!proveedorId.trim() ||
+    !!sucursalCodigo ||
+    estado === "RECIBIDO" ||
+    estado === "ALL" ||
+    !!qLocal.trim();
 
   function limpiarFiltros() {
     setQLocal("");
     applyNavigate({
       proveedorId: "",
       sucursalCodigo: "",
-      estado: "",
+      estado: "PEDIDO",
       q: "",
     });
   }
@@ -169,12 +173,8 @@ export default function FiltrosHistorialPedidos({
 
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={estado || "none"}
-              onValueChange={(v) =>
-                applyNavigate({
-                  estado: v === "none" ? "" : (v as "PEDIDO" | "RECIBIDO"),
-                })
-              }
+              value={estado}
+              onValueChange={(v) => applyNavigate({ estado: v as EstadoFiltroPedido })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="ESTADO" />
@@ -185,9 +185,9 @@ export default function FiltrosHistorialPedidos({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">ESTADO</SelectItem>
                 <SelectItem value="PEDIDO">PEDIDO</SelectItem>
                 <SelectItem value="RECIBIDO">RECIBIDO</SelectItem>
+                <SelectItem value="ALL">TODOS</SelectItem>
               </SelectContent>
             </Select>
           </div>

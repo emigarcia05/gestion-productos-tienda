@@ -26,6 +26,10 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
+import {
+  getPedidoUrgenteDataParamsSchema,
+  getEnviarPedidoTablaParamsSchema,
+} from "@/lib/validations/pedidosLectura";
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
@@ -44,7 +48,16 @@ export async function getPedidoUrgenteData(params: {
     };
   }
 
-  const { sucursal = "", q = "", pagina = "1", proveedor = "" } = params;
+  const parsedParams = getPedidoUrgenteDataParamsSchema.safeParse(params);
+  if (!parsedParams.success) {
+    return {
+      proveedores: [],
+      productos: [],
+      total: 0,
+      totalPaginas: 0,
+    };
+  }
+  const { sucursal = "", q = "", pagina = "1", proveedor = "" } = parsedParams.data;
   const sucursalValida = sucursal.trim();
   const proveedorValido = proveedor.trim();
   const qValida = q.trim().length >= 3;
@@ -102,16 +115,19 @@ export async function getEnviarPedidoTablaData(params: {
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { items: [] };
   }
-  const { sucursal, proveedor, tipos, q } = params;
+  const parsed = getEnviarPedidoTablaParamsSchema.safeParse(params);
+  if (!parsed.success) {
+    return { items: [] };
+  }
+  const { sucursal, proveedor, tipos, q } = parsed.data;
   const sucursalFiltro =
-    sucursal?.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
+    sucursal.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
       ? sucursal.trim()
       : undefined;
-  const tiposFiltro =
-    Array.isArray(tipos) && tipos.length > 0 ? tipos : undefined;
+  const tiposFiltro = tipos.length > 0 ? tipos : undefined;
   const { items } = await getItemsTablaEnviarPedido({
     sucursalCodigo: sucursalFiltro,
-    proveedorId: proveedor?.trim() || undefined,
+    proveedorId: proveedor.trim() || undefined,
     tipos: tiposFiltro,
     q,
   });
@@ -157,6 +173,26 @@ export async function comprobarItemsParaGenerarPedidoAction(
 
 const SUCURSALES_VALIDAS: SucursalPedidoEnvio[] = ["guaymallen", "maipu"];
 
+const syncPedidoUrgenteEnvioSchema = z.object({
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(128),
+        cant: z.number().int().min(0),
+      })
+    )
+    .max(100_000),
+});
+
+const generarPdfEnviarPedidoSchema = z.object({
+  proveedorId: z.string().min(1).max(128),
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  tipos: z
+    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
+    .min(1, "Al menos un tipo de pedido."),
+});
+
 /**
  * Sincroniza el pedido urgente a la tabla pedidos_envio.
  * Recibe sucursal + ítems (id lista precio, cantidad); solo se guardan cant > 0.
@@ -170,18 +206,14 @@ export async function syncPedidoUrgenteEnvioAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const sucursalValida = SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
-    ? (sucursal as SucursalPedidoEnvio)
-    : null;
-  if (!sucursalValida) {
-    return { ok: false, error: "Seleccioná una sucursal válida (Guaymallén o Maipú)." };
+  const rawParsed = syncPedidoUrgenteEnvioSchema.safeParse({ sucursal, items });
+  if (!rawParsed.success) {
+    return { ok: false, error: "Datos inválidos para sincronizar el pedido urgente." };
   }
-  if (!Array.isArray(items)) {
-    return { ok: false, error: "Ítems inválidos." };
-  }
-  const payload: ItemPedidoUrgentePayload[] = items
-    .filter((i) => i && typeof i.id === "string" && typeof i.cant === "number" && i.cant > 0)
-    .map((i) => ({ id: String(i.id).trim(), cant: Math.floor(Number(i.cant)) }))
+  const sucursalValida = rawParsed.data.sucursal;
+  const payload: ItemPedidoUrgentePayload[] = rawParsed.data.items
+    .filter((i) => i.cant > 0)
+    .map((i) => ({ id: i.id.trim(), cant: i.cant }))
     .filter((i) => i.id.length > 0);
   try {
     const { creados } = await syncPedidoUrgenteEnvio(sucursalValida, payload);
@@ -315,16 +347,15 @@ export async function generarPdfEnviarPedidoAction(params: {
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const { proveedorId, sucursal, tipos } = params;
-  if (!proveedorId?.trim() || !sucursal?.trim() || !Array.isArray(tipos) || tipos.length === 0) {
-    return { ok: false, error: "Seleccioná proveedor, sucursal y al menos un tipo de pedido." };
+  const parsedParams = generarPdfEnviarPedidoSchema.safeParse(params);
+  if (!parsedParams.success) {
+    const flat = parsedParams.error.flatten();
+    const msg =
+      [...Object.values(flat.fieldErrors).flat(), ...flat.formErrors][0] ??
+      "Seleccioná proveedor, sucursal y al menos un tipo de pedido.";
+    return { ok: false, error: msg };
   }
-  const sucursalValida = SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
-    ? sucursal
-    : null;
-  if (!sucursalValida) {
-    return { ok: false, error: "Sucursal inválida." };
-  }
+  const { proveedorId, sucursal: sucursalValida, tipos } = parsedParams.data;
 
   function pad2(n: number): string {
     return String(n).padStart(2, "0");
@@ -345,7 +376,7 @@ export async function generarPdfEnviarPedidoAction(params: {
 
   try {
     const [result, sucursalRow] = await Promise.all([
-      getItemsYProveedorParaEnviar(proveedorId.trim(), sucursalValida, tipos),
+      getItemsYProveedorParaEnviar(proveedorId.trim(), sucursalValida as SucursalPedidoEnvio, tipos),
       prisma.sucursal.findUnique({
         where: { codigo: sucursalValida },
         select: { id: true, phoneNumberId: true },

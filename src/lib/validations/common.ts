@@ -3,6 +3,9 @@ import { z } from "zod";
 /** Un solo UUID (Prisma/crypto id). */
 export const uuidSchema = z.string().uuid("ID inválido.");
 
+/** ID `cuid()` típico de modelos como `Proveedor`. */
+export const prismaCuidSchema = z.string().cuid("ID inválido.");
+
 /** Lista de UUIDs (mínimo uno). */
 export const uuidsSchema = z.array(uuidSchema).min(1, "Al menos un ID es requerido.");
 

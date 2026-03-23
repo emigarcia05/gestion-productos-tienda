@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 import {
   type MapeoColumnas,
   type MapeoColumnasListaPrecios,
@@ -9,6 +10,10 @@ import {
 } from "@/lib/parsearImport";
 import * as listaPreciosService from "@/services/listaPrecios.service";
 import { getProveedorById } from "@/services/proveedor.service";
+import {
+  importarListaPreciosProveedorSchema,
+  importarProductosSchema,
+} from "@/lib/validations/importar";
 
 export type { FilaProducto, MapeoColumnas, MapeoColumnasListaPrecios } from "@/lib/parsearImport";
 
@@ -31,9 +36,24 @@ export async function importarProductos(
   filasCrudas: string[][],
   mapeo: MapeoColumnas
 ): Promise<ImportActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.importar.acceso)) {
+    return { ok: false, error: "Sin permisos para importar." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  if (!proveedorId?.trim()) return { ok: false, error: "Debe seleccionar un proveedor." };
-  if (!Array.isArray(filasCrudas) || filasCrudas.length === 0) return { ok: false, error: "No hay filas para importar." };
+
+  const parsed = importarProductosSchema.safeParse({
+    proveedorId,
+    filasCrudas,
+    mapeo: mapeo as Record<string, MapeoColumnas[keyof MapeoColumnas]>,
+  });
+  if (!parsed.success) {
+    const flat = parsed.error.flatten();
+    const msg =
+      [...Object.values(flat.fieldErrors).flat(), ...flat.formErrors][0] ??
+      "Datos de importación inválidos.";
+    return { ok: false, error: msg };
+  }
 
   revalidatePath("/proveedores");
   revalidatePath("/proveedores/lista");
@@ -50,24 +70,42 @@ export async function importarListaPreciosProveedor(
   precioEnDolares: boolean = false,
   habilitado: boolean = true
 ): Promise<ImportActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.importar.acceso)) {
+    return { ok: false, error: "Sin permisos para importar." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  if (!proveedorId?.trim()) return { ok: false, error: "Debe seleccionar un proveedor." };
-  if (!Array.isArray(filasCrudas) || filasCrudas.length === 0) return { ok: false, error: "No hay filas para importar." };
 
-  const proveedor = await getProveedorById(proveedorId);
+  const parsed = importarListaPreciosProveedorSchema.safeParse({
+    proveedorId,
+    filasCrudas,
+    mapeo: mapeo as Record<string, MapeoColumnasListaPrecios[keyof MapeoColumnasListaPrecios]>,
+    precioEnDolares,
+    habilitado,
+  });
+  if (!parsed.success) {
+    const msg =
+      Object.values(parsed.error.flatten().fieldErrors).flat()[0] ?? "Datos de importación inválidos.";
+    return { ok: false, error: msg };
+  }
+
+  const { proveedorId: pid, filasCrudas: filas, mapeo: mapLp, precioEnDolares: enUsd, habilitado: hab } =
+    parsed.data;
+
+  const proveedor = await getProveedorById(pid);
   if (!proveedor) return { ok: false, error: "Proveedor no encontrado." };
   const prefijo = proveedor.prefijo;
 
-  const filas = aplicarMapeoListaPrecios(filasCrudas, mapeo);
-  if (filas.length === 0) return { ok: false, error: "No hay filas válidas para importar." };
+  const filasMapeadas = aplicarMapeoListaPrecios(filas, mapLp);
+  if (filasMapeadas.length === 0) return { ok: false, error: "No hay filas válidas para importar." };
 
   try {
     const { creados, actualizados, errores } = await listaPreciosService.upsertListaPrecios(
-      proveedorId,
+      pid,
       prefijo,
-      filas,
-      precioEnDolares,
-      habilitado
+      filasMapeadas,
+      enUsd,
+      hab
     );
 
     revalidatePath("/proveedores");

@@ -17,8 +17,22 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 
 - **Sesión**: Se usa **iron-session** vía `@/lib/sesion`: `getSesion()`, `getRol()`, `esEditor()`.
 - **Regla de oro**: Toda Action que **modifique datos** (crear, actualizar, eliminar) o exponga datos sensibles **debe** comprobar sesión/rol **al inicio**, antes de cualquier lógica.
-- **Lecturas**: Las Actions de solo lectura pueden no comprobar rol si la página ya restringe acceso; para consistencia y futuras APIs, se recomienda comprobar acceso con `getRol()` + `puede(rol, PERMISOS.*)` cuando exista permiso definido en `@/lib/permisos`.
+- **Lecturas (Server Actions)**: Aunque la ruta esté protegida en layout, **toda** Action invocable desde el cliente debe validar acceso con `getRol()` + `puede(rol, PERMISOS.*)` cuando exista permiso en `@/lib/permisos`, para evitar invocación directa sin pasar por la UI.
+- **Escrituras con dos niveles**: Si el módulo da **acceso de lectura** a `simple` y `editor` (`PERMISOS.*.acceso` con ambos `true`) pero la operación es **crítica** (borrado, recepción, registro en sistemas externos), exigir además **`esEditor()`** tras el chequeo de `puede(rol, PERMISOS.*)` — patrón aplicado en **historial de pedidos** (mutaciones en `pedidosHistoria.ts`).
+- **Importar** (`PERMISOS.importar.acceso`, solo editor en la matriz actual): comprobar **`puede(rol, PERMISOS.importar.acceso)`** y **`esEditor()`**, más validación Zod del payload (`@/lib/validations/importar.ts`).
 - **Helpers**: `esEditor()` para “solo editor”; para permisos granulares usar `getRol()` y `puede(rol, PERMISOS.modulo.accion)` desde `@/lib/permisos`.
+- **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ListaPrecioTienda`, `ListaPrecioProveedor`, `ItemPedidoEnvio`). Validar con `prismaCuidSchema` (`@/lib/validations/common`), `uuidSchema` o `z.string().min(1).max(128)` según el modelo; **no** mezclar `.uuid()` en IDs que sean `cuid`.
+- **Lecturas con datos sensibles** (precios, vínculos, catálogos):
+  - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`).
+  - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`.
+  - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)`; IDs de ítem tienda con `uuidSchema`; filtros de búsqueda acotados con Zod en la Action.
+  - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` (misma regla que la UI; no basarse solo en `esEditor()` salvo que coincida con la matriz).
+- **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos).
+- **Lecturas de listados con filtros** (pedidos urgente/enviar, reposición, stock, tienda): además del permiso de módulo, validar el objeto de parámetros con esquemas dedicados (`@/lib/validations/pedidosLectura`, `reposicion`, `stock`, `tienda`) para acotar `q`, `pagina`, sucursales y arrays (`tipos`).
+
+### 1.2.1 Activación de modo editor (`sesion.ts`)
+
+- Entrada **`clave`**: validar con Zod (`z.string().min(1).max(500)`) antes de comparar con `EDITOR_PASSWORD`. Evita payloads anómalos y documenta el contrato.
 
 ### 1.3 Integridad de datos
 
@@ -46,7 +60,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Normalizar**: `q?.trim()` y tratar vacío como `undefined`.
   - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
-- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). Zod en `listarPedidosHistoriaAction`: `q` con `.max(200).optional()`.
+- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `PEDIDO` \| `RECIBIDO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`PEDIDO`** (solo pendientes de recepción). Zod en `listarPedidosHistoriaAction`: `estado` incluye `ALL`; `q` con `.max(200).optional()`.
 
 ### 1.8 Fuente de costo final (`px_compra_final`)
 
@@ -128,7 +142,7 @@ export async function actualizarListaPreciosMasivoAction(
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para edición masiva." };
   }
-  const parsedIds = z.array(z.string().uuid()).safeParse(ids);
+  const parsedIds = idsUuidSchema.safeParse(ids);
   if (!parsedIds.success) return { ok: false, error: "IDs inválidos." };
   const parsedData = actualizacionMasivaListaPreciosSchema.safeParse(data);
   if (!parsedData.success) return { ok: false, error: "Datos de actualización inválidos." };
@@ -137,6 +151,24 @@ export async function actualizarListaPreciosMasivoAction(
   if (result.error) return { ok: false, error: result.error };
   revalidatePath("/proveedores/lista-precios");
   return { ok: true, data: { actualizados: result.actualizados } };
+}
+```
+
+### 2.2.1 Action de solo lectura con datos sensibles (permiso + Zod)
+
+```ts
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
+import { listaPreciosFiltrosLecturaSchema } from "@/lib/validations/listaPrecios";
+
+export async function getListaPreciosConOpcionesAction(/* ... */) {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
+    return { filas: [], total: 0, totalPaginas: 0, proveedoresDisponibles: [], marcasDisponibles: [], rubrosDisponibles: [] };
+  }
+  const parsed = listaPreciosFiltrosLecturaSchema.safeParse({ proveedorId, marcaNombre, rubroNombre, busqueda, habilitado, opciones, pagina });
+  if (!parsed.success) return /* mismo vacío */;
+  // delegar al servicio con parsed.data normalizado
 }
 ```
 
@@ -190,6 +222,11 @@ Constraint:
 - `UNIQUE (pedido_historia_id, cod_tienda)` para evitar duplicados de producto dentro de un mismo pedido.
 - Índices: además de `(sucursal_id, generado_at)` y `(proveedor_id, generado_at)`, se agrega índice sobre `generado_at` para listar por fecha con buen rendimiento.
 
+**Retención automática (sin triggers ni cron)**  
+- Regla: se eliminan filas de `pedidos_historia` cuyo `generado_at` es **anterior a 1 mes** (mes calendario vía `Date.setMonth` en el servidor, constante `MESES_RETENCION_PEDIDOS_HISTORIA` en `pedidosHistoria.service.ts`).  
+- Las filas de `pedidos_historial_mercaderia` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.  
+- La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
+
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
@@ -216,6 +253,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo?, q? })`
    - Uso: obtener página de cabeceras para el módulo de historial (`/pedidos/historial`).
+   - `estado`: `PEDIDO`, `RECIBIDO` o `ALL`. La UI por defecto envía/equivale a `PEDIDO` si no hay parámetro en la URL.
    - Con `q` no vacío: solo pedidos que tengan al menos un ítem cuyo `cod_tienda` figure en `precios_tienda` con descripción que contenga todas las palabras de `q` (insensible a mayúsculas).
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
@@ -250,6 +288,8 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
 
+8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras con `generado_at` &lt; 1 mes; ítems en cascada. Ver bloque “Retención automática” en §2.5.
+
 ---
 
 ### 2.7 Servicio `productosTienda.service.ts`
@@ -277,6 +317,13 @@ Función:
 | `@/types/components.types` | Props de modales, drawers, confirmaciones |
 | `@/lib/permisos` | `Rol`, `PERMISOS`, función `puede(rol, permiso)` |
 | `@/lib/sesion` | `SesionData`, `getSesion()`, `getRol()`, `esEditor()` |
+| `@/lib/validations/importar.ts` | `importarProductosSchema`, `importarListaPreciosProveedorSchema`, mapeos de columnas CSV (índices numéricos como string, límites de filas/celdas). |
+| `@/lib/validations/common.ts` | `uuidSchema`, `uuidsSchema`, `prismaCuidSchema`, `paramsPaginaSchema`. |
+| `@/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema` (query de página proveedores). |
+| `@/lib/validations/pedidosLectura.ts` | `getPedidoUrgenteDataParamsSchema`, `getEnviarPedidoTablaParamsSchema`. |
+| `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
+| `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
+| `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 
 Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a validación, usar `z.infer<typeof schema>` en `src/lib/validations/*.ts`.
 
@@ -286,8 +333,9 @@ Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a va
 
 Antes de entregar código nuevo o modificado, verificar:
 
-- [ ] **Sesión/rol**: ¿Toda Action que modifica datos comprueba `esEditor()` o `getRol()` + `puede()` al inicio?
-- [ ] **Zod**: ¿Todo payload de entrada (IDs, FormData, objetos) se valida con un esquema Zod antes de usarse en BD o servicios?
+- [ ] **Sesión/rol**: ¿Toda Action que modifica datos comprueba `esEditor()` o `getRol()` + `puede()` al inicio? ¿Las lecturas expuestas como Action comprueban `puede()` (incl. listas con precios, vínculos, proveedores)? ¿Las mutaciones sensibles en módulos con acceso compartido simple/editor exigen `esEditor()` además de `puede()`?
+- [ ] **Zod**: ¿Todo payload de entrada (IDs, FormData, objetos, **y parámetros de lectura** con `q`/paginación/filtros) se valida con un esquema Zod antes de usarse en BD o servicios?
+- [ ] **IDs**: ¿Los UUID y los `cuid` se validan con el esquema correcto (`uuidSchema` vs `prismaCuidSchema`) según el modelo Prisma?
 - [ ] **Sin `any`**: ¿El código evita `any` y usa tipos explícitos o inferidos?
 - [ ] **ActionResult**: ¿Las Actions que pueden fallar devuelven `ActionResult<T>` con `{ ok, data? }` o `{ ok: false, error }`?
 - [ ] **No throw al cliente**: ¿Los errores se capturan y se devuelven como `{ ok: false, error: string }` en lugar de lanzar?
@@ -302,19 +350,18 @@ Antes de entregar código nuevo o modificado, verificar:
 ### 5.1 Cumplen bien
 
 - **proveedores.ts**: `esEditor()`, Zod para crear/editar, `ActionResult`, servicios.
-- **listaPrecios.ts**: `getRol()` + `puede()` para edición masiva; falta validación Zod del payload en la Action.
-- **comparacionCategorias.ts**: `getRol()` + `puede()` en todas las Actions; falta Zod en parámetros (ids, nombres, etc.) y unificación de formato de respuesta (`ok`/`data`/`error`).
+- **listaPrecios.ts**: `getRol()` + `puede()` para edición masiva y para **lecturas** (`importarLista`); Zod en payload masivo y en filtros de lectura.
+- **comparacionCategorias.ts**: `getRol()` + `puede()` en todas las Actions; Zod unificado vía `@/lib/validations/comparacionCategorias` y búsqueda de productos a asignar.
 
-### 5.2 A mejorar
+### 5.2 Estado tras auditoría de seguridad (2026-03)
 
-- **pedidos.ts**: Sin comprobación de sesión; datos mock. Cuando haya datos reales, añadir al menos verificación de acceso y, si hay escritura, validación Zod.
-- **tienda.ts**: `getTiendaPageData` y `getControlAumentos` sin verificación de sesión (aceptable si la ruta ya está protegida); `convertirEnProveedor` correcto con `esEditor()`. Lógica de tienda muy cargada en la Action; considerar mover a servicio.
-- **stock.ts**: Sin comprobación de sesión en `getControlStock` ni en `registrarImpresion`; `registrarImpresion` sin validación de `ids`.
-- **syncListaPrecioTienda.ts**: La Action no comprueba rol; la sincronización con DUX debe restringirse a editores (`esEditor()` o `PERMISOS.tienda.acciones.sincronizar`).
-- **importar.ts**: Usa `throw new Error` en lugar de `return { ok: false, error }`; no devuelve `ActionResult`. Falta validación Zod de `proveedorId`, `filasCrudas`, `mapeo`.
-- **vinculos.ts**: `vincularProducto` / `desvincularProducto` correctos en sesión; falta validación Zod de IDs (UUIDs). Lógica de vinculación podría moverse a servicio.
-- **productos.ts**: `esEditor()` correcto; sin Zod para `id`, `campos`, `campo`, `valor`; respuestas ya en formato `ActionResult`.
-- **sesion.ts**: `activarModoEditor` recibe `clave` sin validación Zod (string no vacío); aceptable por contexto; respuesta ya coherente.
+- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` valida IDs con Zod antes de Prisma.
+- **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
+- **`pedidosHistoria.ts`**: Lecturas con `puede(pedidos.acceso)`; **mutaciones** (cantidades, agregar ítem, registrar en DUX, borrar) exigen **`esEditor()`** además del permiso de pedidos.
+- **`pedidos.ts`**: `generarPdfEnviarPedidoAction` y `syncPedidoUrgenteEnvioAction` usan esquemas Zod dedicados; permisos de pedidos al inicio.
+- **`sesion.ts`**: `activarModoEditor` valida la clave con Zod.
+- **`tintometrico.ts` / `productosTienda.ts`**: Límites en `q` y `take` para reducir abuso.
+- **Pendientes de evolución** (no bloqueantes): mover lógica pesada de `tienda.ts` a servicios; revisar periódicamente nuevas Actions sin duplicar patrones anteriores (ver §5.8 y §1.2).
 
 ### 5.3 Reglas añadidas en esta guía
 
@@ -384,4 +431,43 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: `getItemsTablaEnviarPedido` + tabla `/pedidos/enviar` sin exigir 3 filtros; Pedido Urgente lista solo con sucursal; `comprobarItemsParaGenerarPedidoAction`; `generarPdfEnviarPedidoAction` sin ítems vacíos.*
+*Última actualización: auditoría Server Actions 2026-03-23 — permisos en lecturas lista precios / proveedores / vínculos; Zod en listados (pedidos, reposición, stock, tienda); sync DUX alineado a `PERMISOS.tienda.acciones.sincronizar`; eliminación real de proveedor con manejo FK; `prismaCuidSchema` para proveedor.*
+
+---
+
+### 5.7 Auditoría de seguridad — tabla de cambios (2026-03)
+
+| Área | Cambio |
+|------|--------|
+| `src/actions/tienda.ts` | `getTiendaPageData`, `getUltimoSync`, `getControlAumentos`: `getRol` + `puede`. `convertirEnProveedor`: Zod `prismaIdParamSchema`. |
+| `src/actions/importar.ts` | `puede(importar)` + `esEditor` + `importarProductosSchema` / `importarListaPreciosProveedorSchema`. |
+| `src/lib/validations/importar.ts` | Esquemas de mapeo y límites de filas/celdas. |
+| `src/actions/pedidosHistoria.ts` | Mutaciones con `esEditor()`; listado: `proveedorId` normalizado con Zod. |
+| `src/actions/pedidos.ts` | `generarPdfEnviarPedidoSchema`, `syncPedidoUrgenteEnvioSchema`. |
+| `src/actions/sesion.ts` | `activarModoEditorSchema` (Zod). |
+| `src/actions/tintometrico.ts`, `productosTienda.ts` | Límites `q` / `take`. |
+| `HistorialPedidosPageClient` + `historial/page.tsx` | Prop `esEditor` para ocultar acciones no permitidas al rol simple. |
+
+### 5.8 Auditoría de seguridad — cierre 2026-03-23 (Server Actions + API sync)
+
+| Área | Cambio |
+|------|--------|
+| `src/actions/listaPrecios.ts` | Lecturas: `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)` + `listaPreciosFiltrosLecturaSchema` / opciones estrictas. |
+| `src/lib/validations/listaPrecios.ts` | `listaPreciosOpcionesFiltroSchema`, `listaPreciosFiltrosLecturaSchema`. |
+| `src/actions/proveedores.ts` | `getProveedores` / `getProveedoresPageData`: permiso compuesto (sugeridos \| lista \| importar lista); `editarProveedor` / `eliminarProveedor`: `prismaCuidSchema`; eliminación vía servicio. |
+| `src/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema`. |
+| `src/services/proveedor.service.ts` | `deleteProveedor` con `ServiceResult` y errores FK. |
+| `src/lib/validations/common.ts` | `prismaCuidSchema`. |
+| `src/actions/vinculos.ts` | `getVinculos` / `listarProductosParaVincular`: `PERMISOS.tienda.acceso` + Zod. |
+| `src/actions/syncListaPrecioTienda.ts` | `PERMISOS.tienda.acciones.sincronizar` en lugar de solo `esEditor()`. |
+| `src/app/api/sync-lista-precios-tienda/route.ts` | Misma comprobación que la Action. |
+| `src/actions/tienda.ts` | `getTiendaPageData`: `getTiendaPageParamsSchema`; `convertirEnProveedor`: también `puede(tienda.acceso)`. |
+| `src/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
+| `src/actions/reposicion.ts` | Zod sucursal/params selector; `upsertReglaReposicion`: `idProveedor` con `prismaCuidSchema`. |
+| `src/lib/validations/reposicion.ts` | Esquemas de lectura reposición. |
+| `src/actions/pedidos.ts` | `getPedidoUrgenteData` / `getEnviarPedidoTablaData`: `pedidosLectura` Zod. |
+| `src/lib/validations/pedidosLectura.ts` | Nuevo. |
+| `src/actions/stock.ts` | `getControlStock`: Zod params + validación sucursal. |
+| `src/lib/validations/stock.ts` | Nuevo. |
+| `src/actions/comparacionCategorias.ts` | `buscarProductosParaAsignarAction`: Zod en `proveedorId` / `q`. |
+| `src/lib/validations/productos.ts` | `aplicarCampoMasivoSchema.proveedorId` → `cuid`; `editarProductoSchema.id` → string acotado (mock). |

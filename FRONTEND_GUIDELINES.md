@@ -13,6 +13,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 2. **Estilos**  
    - **Nunca** uses `bg-white`, `text-slate-*`, `bg-slate-*`, `border-slate-*`. Usa **siempre** tokens: `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-muted`, `border-border`, `bg-primary`, etc.  
+   - **No** uses utilidades de paleta genérica (`emerald-*`, `amber-*`, `blue-*`, etc.) para éxito, advertencia o resaltados: usá **`@/lib/ui-classes`** (`BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `IMPORT_STAT_BADGE_CLASSES`) o tokens **`primary`**, **`accent`**, **`accent2`** (amarillo de marca) en combinación con `cn()`.  
    - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
    - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
 
@@ -67,6 +68,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 | `text-slate-400`, `text-slate-500`, `text-slate-600` | `text-muted-foreground` |
 | `bg-slate-100`, fondos grises | `bg-muted` |
 | `border-slate-200` | `border-border` |
+| `emerald-*`, `amber-*`, `blue-*` (éxito / aviso / “info”) | `@/lib/ui-classes` o `text-primary`, `bg-accent`, `text-accent2`, etc. |
 | `` className={`${a} ${b}`} `` | `className={cn(a, b)}` |
 
 ---
@@ -240,6 +242,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.contenedor-tabla-gestion.no-scrollbar` | Oculta la barra vertical del contenedor de tabla (`scrollbar-width: none` / webkit); mantiene `overflow-y: auto`. Casos puntuales (ej. **Ver Pedido**). |
 | `.app-modal__scroll-area.no-scrollbar`, `.app-modal__body.no-scrollbar` | Misma idea para los scrollports del cuerpo de **`AppModal`** cuando se usa **`hideBodyScrollbars`**. |
 | *(retiradas)* `.modal-vinculos-*`, `.btn-convertir-proveedor-principal*`, `.btn-desvincular-icono`, `.modal-vinculos-footer` | El modal **Vínculos con Proveedores** pasó a `<Table>` estándar; no reintroducir estas clases. |
+| `@/lib/ui-classes` | Constantes reutilizables: `BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `IMPORT_STAT_BADGE_CLASSES` (badges de importación / estados positivos y avisos con tokens `primary`, `accent`, `accent2`). |
 | `PAGE_SIZE` (`@/lib/pagination`) | Tamaño de página estándar para tablas: 100 ítems. |
 | `PaginacionTabla` (`@/components/shared/PaginacionTabla.tsx`) | Paginación por URL: `basePath`, `params`, `paginaActual`, `totalPaginas`, `total`, `pageSize`. |
 | `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
@@ -351,9 +354,13 @@ Modal del módulo **Historial Pedidos** para operar la recepción de ítems del 
 
 Layout, grillas y reglas de tabla: sección **Guía para IA**, punto 7 (`PedidoHistoriaDetalleModal`).
 
+### `PedidoHistoriaLecturaModal` — **Ver Pedido** (`src/components/pedidos/PedidoHistoriaLecturaModal.tsx`)
+
+- Solo lectura. Con pedido **Recepcionado**: tabla **DESCRIPCIÓN** (`w-[52%]`) | columna estrecha (`w-[10%]`, cabecera con **`sr-only`** "Diferencia cantidades") con **`AlertTriangle`** + **`Tooltip`** solo si cant. recibida ≠ cant. pedida — color vía token de marca **`accent2`** (`ICON_WARNING_INTERACTIVE_CLASS` en `@/lib/ui-classes`), no clases `amber-*` sueltas. Sin texto de resumen bajo la subcabecera sobre cantidad de ítems con diferencia; **CANT. RECIBIDA** sin **negrita** ni color condicional por diferencia (el detalle va en tooltip del ícono). Celdas vacías: string vacío (sin `—`). Con estado **Pedido** (no recepcionado): **DESCRIPCIÓN** + **CANT. PEDIDA** únicamente; footer **`AppModal`**: botón primario **Recepcion Pedida** (solo si **`esEditor`** y **`onIrARecepcion`**) a la izquierda de **Cerrar** — cierra **Ver Pedido** y el padre abre **`PedidoHistoriaDetalleModal`** (mismo `pedidoHistoriaId`).
+
 ### `HistorialPedidosPageClient` (`src/components/pedidos/HistorialPedidosPageClient.tsx`)
 
-Listado **Historial Pedidos** (`/pedidos/historial`). **`FiltrosHistorialPedidos`**: parámetro URL **`q`** con **`useFiltrosConBusqueda`** (400 ms) + **`FiltroBusquedaInput`** en **`FilterRowSearch`**, **`focusStorageKey`** **`filtros-historial-pedidos-focus`**; al buscar se listan solo pedidos con algún ítem cuya descripción en catálogo coincida (backend: **`listarPedidosHistoria`**). **`PaginacionTabla`** incluye **`q`** en **`params`**. Última columna **ACCIONES** (`tabla-bloque-secundario-*` alineado al patrón de tabla gestión), celdas con **`flex items-center justify-center gap-2`**. Cuatro botones **`size="icon-xs"`** con **`Tooltip`**: **Recepción De Mercadería** (`PackageCheck`) → **`PedidoHistoriaDetalleModal`**; **Ver Detalles** (`Eye`) → **`PedidoHistoriaLecturaModal`** (solo lectura, título **Ver Pedido**; **`AppModal`** **`size="xl"`** (`sm:max-w-3xl`), **`scrollBody={false}`** para que la card sea **`flex flex-col` `overflow-hidden`** y el **único scroll vertical** sea **`.contenedor-tabla-gestion`** bajo la cabecera fija — patrón equivalente a *header / `flex-1 overflow-y-auto` con tabla + `thead` sticky / footer*; cabecera del cuerpo: **badge** **Pedido** / **Recepcionado** y nombre proveedor en **una fila** (`flex items-center gap-2`), sucursal + fecha debajo; **`.contenedor-tabla-gestion`** **`no-scrollbar`** **`no-scroll-x`**; tabla **DESCRIPCIÓN** **`w-[62%]`**, cantidades **`w-[19%]`**; sin inputs); **Descargar PDF** (`Download`, **`descargarPdfPedidoHistoriaAction`** + **`descargarPdfBase64`** desde `@/lib/descargarPdfBase64`, loader **`Loader2`** en la fila mientras corre); **Borrar** (`Trash2`, hover **destructive**) → **`PedidoHistoriaBorrarConfirmModal`** (texto de confirmación, **Cancelar** outline / **Sí, Borrar** destructive). Tras cerrar recepción o borrar, **`router.refresh()`** mantiene el listado al día.
+Listado **Historial Pedidos** (`/pedidos/historial`). La página pasa **`esEditor`** (`rol === "editor"`): en modo **simple** solo se muestran **Ver Detalles** y **Descargar PDF**; **Recepción** y **Borrar** solo con editor (alineado a mutaciones en **`pedidosHistoria`**). **`FiltrosHistorialPedidos`**: **`estado`** en URL — sin `estado` o vacío, la página lista solo **`PEDIDO`** (pendientes de recepción); opciones **PEDIDO**, **RECIBIDO**, **TODOS** (`estado=ALL`); **Limpiar filtros** restablece **`PEDIDO`**. Parámetro URL **`q`** con **`useFiltrosConBusqueda`** (400 ms) + **`FiltroBusquedaInput`** en **`FilterRowSearch`**, **`focusStorageKey`** **`filtros-historial-pedidos-focus`**; al buscar se listan solo pedidos con algún ítem cuya descripción en catálogo coincida (backend: **`listarPedidosHistoria`**). **`PaginacionTabla`** incluye **`q`** en **`params`**. Última columna **ACCIONES** (`tabla-bloque-secundario-*` alineado al patrón de tabla gestión), celdas con **`flex items-center justify-center gap-2`**. Botones **`size="icon-xs"`** con **`Tooltip`**: **Recepción De Mercadería** (`PackageCheck`) → **`PedidoHistoriaDetalleModal`**; **Ver Detalles** (`Eye`) → **`PedidoHistoriaLecturaModal`** (solo lectura, título **Ver Pedido**; **`AppModal`** **`size="xl"`** (`sm:max-w-3xl`), **`scrollBody={false}`** para que la card sea **`flex flex-col` `overflow-hidden`** y el **único scroll vertical** sea **`.contenedor-tabla-gestion`** bajo la cabecera fija — patrón equivalente a *header / `flex-1 overflow-y-auto` con tabla + `thead` sticky / footer*; cabecera del cuerpo: **badge** **Pedido** / **Recepcionado** y nombre proveedor en **una fila** (`flex items-center gap-2`), sucursal + fecha debajo; **`.contenedor-tabla-gestion`** **`no-scrollbar`** **`no-scroll-x`**; en **Ver Pedido** ver **`PedidoHistoriaLecturaModal`**; sin inputs); **Descargar PDF** (`Download`, **`descargarPdfPedidoHistoriaAction`** + **`descargarPdfBase64`** desde `@/lib/descargarPdfBase64`, loader **`Loader2`** en la fila mientras corre); **Borrar** (`Trash2`, hover **destructive**) → **`PedidoHistoriaBorrarConfirmModal`** (texto de confirmación, **Cancelar** outline / **Sí, Borrar** destructive). Tras cerrar recepción o borrar, **`router.refresh()`** mantiene el listado al día.
 
 ### `FiltroBusquedaInput` (`src/components/shared/FiltroBusquedaInput.tsx`)
 
@@ -480,7 +487,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 
 Antes de dar por terminada una tarea de frontend:
 
-- [ ] No hay estilos inline ni clases hardcodeadas (`bg-white`, `text-slate-400`, etc.); se usan tokens (`bg-card`, `text-muted-foreground`).
+- [ ] No hay estilos inline ni clases hardcodeadas (`bg-white`, `text-slate-400`, `emerald-*`, `amber-*`, etc.); se usan tokens (`bg-card`, `text-muted-foreground`, `primary`/`accent2`) o `@/lib/ui-classes`. Excepción aceptable: anchos dinámicos (p. ej. barra de progreso `%`) o el patrón documentado `style={{ height: "auto" }}` en modales con tabla.
 - [ ] Las clases condicionales o combinadas usan `cn(...)`.
 - [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique; encabezado fijo (al hacer scroll los encabezados no desaparecen).
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
@@ -497,6 +504,7 @@ Antes de dar por terminada una tarea de frontend:
 
 ### Correcciones ya aplicadas
 
+- **Tokens de éxito/advertencia (2026-03)**: creado `@/lib/ui-classes` con clases basadas en `primary`, `accent`, `accent2`. Sustituidos `emerald-*`, `amber-*`, `blue-*` en `ImportarModal`, `ImportarListaPreciosModal`, `ImportResultContext`, `UploadZone`, `app/importar/page.tsx`, `AccionMasivaModal`. **`PedidoHistoriaLecturaModal`**: ícono de diferencia con `ICON_WARNING_INTERACTIVE_CLASS`, celdas vacías sin `—`. **`VincularModal`**: `<col>` con `className="w-[x%]"` en lugar de `style`.
 - **SectionHeader**: eliminado `bg-white`; clase `.section-header` (fondo `var(--card)`). `cn()` en header. Subtítulo `<h3>`.
 - **Toolbars (Proveedores, Tienda, Pedidos)**: tokens `text-muted-foreground`, `hover:bg-muted`, `hover:text-foreground`.
 - **Filtros**: FiltrosProductos, FiltrosTienda, FiltrosStock, FiltrosPedidoUrgente, BuscadorSimple con **useFiltrosConBusqueda** + **FiltroBusquedaInput**. `cn(FILTER_COUNT_CLASS, "ml-auto")` en TablaAumentos, FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros. **Pedido Urgente**: contador en fila debajo a la derecha. **Tablas**: encabezado fijo, 100 ítems por página, paginación con `PaginacionTabla` (URL) o `PaginacionClient` (estado cliente); ver sección 1 punto 8. Pedido Urgente, Pedido Reposición y Control Stock usan el contenedor estándar `.contenedor-tabla-gestion` para que el encabezado permanezca siempre visible al hacer scroll interno de filas. **Control Stock**: se elimina el filtro `SUB-RUBRO` y se agrega el desplegable `ORDEN` con opción única `TIEMPO SIN CONTROL` para ordenar por `ÚLT. EXPORT. EXCEL`.
@@ -514,11 +522,11 @@ Antes de dar por terminada una tarea de frontend:
 
 ### Auditoría cerrada
 
-No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` en `src/`. No quedan `className={\`...\`}` en componentes. Nuevas pantallas o filtros deben seguir esta guía y el checklist de PR.
+No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` en `src/`. No quedan `className={\`...\`}` en componentes. Estados de éxito/advertencia no deben usar paletas genéricas (`emerald-*`, `amber-*`, `blue-*`): usar `@/lib/ui-classes` y tokens de tema. Anchos de `<col>` en tablas fijas: preferir `className="w-[x%]"` en lugar de `style` salvo casos dinámicos. Nuevas pantallas o filtros deben seguir esta guía y el checklist de PR.
 
 ---
 
-*Última actualización: `/pedidos/enviar` tabla sin exigir 3 filtros (`getItemsTablaEnviarPedido`); Pedido Urgente solo exige **SUCURSAL** para listar.*
+*Última actualización: auditoría de tokens — `@/lib/ui-classes`, sustitución de `emerald-*`/`amber-*`/`blue-*` en importación y lectura de historial; `<col>` en Vínculos sin `style` inline; `PedidoHistoriaLecturaModal` con celdas vacías sin `—`.*
 
 ---
 

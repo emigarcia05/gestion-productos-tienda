@@ -9,6 +9,28 @@ import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/paginatio
 
 const COD_TIENDA_FALLBACK = "1503";
 
+/** Meses de retención de snapshots; filas con `generado_at` anteriores se eliminan en cada escritura al historial. */
+const MESES_RETENCION_PEDIDOS_HISTORIA = 1;
+
+function fechaLimiteRetencionPedidosHistoria(): Date {
+  const d = new Date();
+  d.setMonth(d.getMonth() - MESES_RETENCION_PEDIDOS_HISTORIA);
+  return d;
+}
+
+/**
+ * Elimina cabeceras de `pedidos_historia` con antigüedad mayor a {@link MESES_RETENCION_PEDIDOS_HISTORIA} mes(es).
+ * Los ítems en `pedidos_historial_mercaderia` se borran en cascada (FK).
+ * Sin cron ni triggers: se invoca al inicio de cada mutación del historial en este servicio.
+ */
+async function purgarPedidosHistoriaExpirados(
+  db: Pick<typeof prisma, "pedidoHistoria">
+): Promise<void> {
+  await db.pedidoHistoria.deleteMany({
+    where: { generadoAt: { lt: fechaLimiteRetencionPedidosHistoria() } },
+  });
+}
+
 /** Límite de texto y de palabras para `q` en listado historial (evita consultas abusivas). */
 const HISTORIAL_Q_MAX_LEN = 200;
 const HISTORIAL_Q_MAX_TOKENS = 10;
@@ -74,6 +96,8 @@ export async function crearPedidoHistoriaSnapshot(params: {
   }
 
   try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
     const sucursal = await prisma.sucursal.findUnique({
       where: { codigo: sucursalCodigo },
       select: { id: true },
@@ -316,6 +340,8 @@ export async function agregarPedidoHistoriaItem(params: {
   if (!pedidoHistoriaId.trim()) return { success: false, error: "ID inválido." };
 
   try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
     const header = await prisma.pedidoHistoria.findUnique({
       where: { id: pedidoHistoriaId.trim() },
       select: { id: true, estado: true },
@@ -357,6 +383,8 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
   if (!id) return { success: false, error: "ID inválido." };
 
   try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
     const item = await prisma.pedidoHistoriaItem.findUnique({
       where: { id },
       select: {
@@ -390,6 +418,8 @@ export async function marcarPedidoHistoriaRegistrado(params: {
   if (!id) return { success: false, error: "ID inválido." };
 
   try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
     await prisma.pedidoHistoria.update({
       where: { id },
       data: { estado: "RECIBIDO", registradoAt: new Date() },
@@ -506,6 +536,8 @@ export async function eliminarPedidoHistoria(params: {
   if (!id) return { success: false, error: "ID inválido." };
 
   try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
     await prisma.pedidoHistoria.delete({ where: { id } });
     return { success: true, data: undefined };
   } catch (e) {

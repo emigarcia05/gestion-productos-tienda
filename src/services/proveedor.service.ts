@@ -2,6 +2,7 @@
  * Servicio de Proveedores – Conexión a Neon/PostgreSQL vía Prisma.
  */
 import { prisma } from "@/lib/prisma";
+import type { ServiceResult } from "@/types";
 
 export interface CreateProveedorInput {
   nombre: string;
@@ -115,6 +116,27 @@ export async function updateProveedor(
       whatsapp: normalizarWhatsapp(input.whatsapp),
     },
   });
+}
+
+/**
+ * Elimina un proveedor. Falla si existen referencias con `onDelete: Restrict` (p. ej. historial de pedidos).
+ */
+export async function deleteProveedor(id: string): Promise<ServiceResult<void>> {
+  try {
+    await prisma.proveedor.delete({ where: { id } });
+    return { success: true, data: undefined };
+  } catch (e: unknown) {
+    const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "";
+    if (code === "P2003" || code === "P2014") {
+      return {
+        success: false,
+        error:
+          "No se puede eliminar: el proveedor tiene pedidos u otros datos vinculados. Quitá esas referencias primero.",
+      };
+    }
+    const message = e instanceof Error ? e.message : "Error al eliminar el proveedor.";
+    return { success: false, error: message };
+  }
 }
 
 /** Normaliza número WhatsApp: solo dígitos, null si queda vacío. */

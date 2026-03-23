@@ -14,6 +14,8 @@ import {
 import { FileSpreadsheet, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
+import { cn } from "@/lib/utils";
+import { BADGE_SUCCESS_TINT_CLASS, TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 
 const importHistory = [
   { id: "1", filename: "productos_enero.csv", status: "success", rows: 245, imported: 243, errors: 2, date: "22 Feb 2026" },
@@ -25,7 +27,7 @@ function getStatusBadge(status: string) {
   switch (status) {
     case "success":
       return (
-        <Badge className="gap-1 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+        <Badge className={cn("gap-1", BADGE_SUCCESS_TINT_CLASS)}>
           <CheckCircle2 className="h-3 w-3" />
           Completado
         </Badge>
@@ -150,7 +152,7 @@ export default async function ImportarPage() {
                         </span>
                       </TableCell>
                       <TableCell>{item.rows}</TableCell>
-                      <TableCell className="text-emerald-600 font-semibold">{item.imported}</TableCell>
+                      <TableCell className={cn(TEXT_SUCCESS_CLASS, "font-semibold")}>{item.imported}</TableCell>
                       <TableCell className="text-destructive font-semibold">{item.errors}</TableCell>
                       <TableCell className="text-muted-foreground text-xs">{item.date}</TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
