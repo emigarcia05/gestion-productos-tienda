@@ -587,7 +587,7 @@ export default function PedidoHistoriaDetalleModal({
             <div
               className={cn(
                 MODAL_RESUMEN_PANEL_CLASS,
-                "pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0"
+                "pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0 -ml-3 sm:-ml-4"
               )}
             >
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-center")}>
@@ -645,7 +645,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pr-3 pl-0 sm:pt-0 sm:pb-2 sm:pr-4 sm:pl-0",
+                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pr-3 pl-0 sm:pt-0 sm:pb-2 sm:pr-4 sm:pl-0 -ml-3 sm:-ml-4",
                 !tablaYAltaHabilitados &&
                   !locked &&
                   "pointer-events-none cursor-not-allowed opacity-50"
@@ -741,7 +741,7 @@ export default function PedidoHistoriaDetalleModal({
                       const isEditing = editingItemId === item.id;
                       const cantRecNum = item.cantRecibida ?? 0;
                       const cantRecibidaVisible =
-                        cantRecNum > 0 ? String(item.cantRecibida) : "";
+                        item.cantRecibida != null ? String(item.cantRecibida) : "";
                       const isControlado =
                         item.cantPedida > 0 &&
                         item.cantRecibida != null &&
