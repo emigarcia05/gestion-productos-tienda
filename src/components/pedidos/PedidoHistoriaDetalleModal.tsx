@@ -68,10 +68,6 @@ const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
   "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[85fr_15fr] sm:gap-0";
 
-/** Columna proveedor (resumen modal): padding derecho al token de tabla; sin padding izquierdo. */
-const CELDA_RESUMEN_PROVEEDOR_PADDING_X =
-  "pr-[var(--tabla-body-cell-padding-x)] pl-0";
-
 /** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
 const GRID_PEDIDO_HISTORIA_TABLA_COLS =
   "grid w-full grid-cols-[5fr_50fr_10fr_20fr_15fr]";
@@ -587,14 +583,13 @@ export default function PedidoHistoriaDetalleModal({
             <div
               className={cn(
                 MODAL_RESUMEN_PANEL_CLASS,
-                "pr-3 pl-0 pt-0 pb-0 sm:pr-4 sm:pl-0 sm:pt-0 sm:pb-0 -ml-3 sm:-ml-4"
+                "p-0 -mx-3 sm:-mx-4"
               )}
             >
-              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "items-center")}>
+              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full px-0 items-center")}>
                 <div
                   className={cn(
-                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center sm:text-left",
-                    CELDA_RESUMEN_PROVEEDOR_PADDING_X
+                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center sm:text-left pr-0 pl-0"
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">
@@ -610,7 +605,7 @@ export default function PedidoHistoriaDetalleModal({
                 </div>
                 <label
                   className={cn(
-                    "flex min-h-0 min-w-0 w-full flex-col justify-center gap-0.5 py-0 px-0 text-left",
+                    "flex min-h-0 min-w-0 w-full flex-col justify-center gap-0.5 py-0 px-0 pr-0 text-left",
                     locked || loading ? "cursor-default" : "cursor-pointer"
                   )}
                 >
@@ -630,7 +625,7 @@ export default function PedidoHistoriaDetalleModal({
                     disabled={locked || loading}
                     aria-label="FECHA FACTURA"
                     className={cn(
-                      "h-9 w-full min-w-0 tabular-nums sm:text-left",
+                      "mr-0 h-9 w-full min-w-0 pr-0 tabular-nums sm:text-left",
                       inputBorderClassName,
                       locked || loading ? "cursor-not-allowed" : "cursor-pointer"
                     )}
