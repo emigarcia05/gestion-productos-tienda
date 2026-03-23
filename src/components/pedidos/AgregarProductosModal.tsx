@@ -5,23 +5,26 @@ import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/share
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { LimpiarFiltrosButton } from "@/components/FilterBar";
+import { Input } from "@/components/ui/input";
 import { buscarProductosTiendaPorDescripcionAction } from "@/actions/productosTienda";
 import type { ProductoTiendaRowBusqueda } from "@/services/productosTienda.service";
+import { toast } from "sonner";
 
 const EMPTY: { items: ProductoTiendaRowBusqueda[]; total: number } = { items: [], total: 0 };
 
 export default function AgregarProductosModal({
   open,
   onOpenChange,
-  onSeleccionar,
+  onAgregar,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSeleccionar: (row: ProductoTiendaRowBusqueda) => void;
+  onAgregar: (row: ProductoTiendaRowBusqueda, cantRecibida: number) => Promise<void> | void;
 }) {
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cantRecibida, setCantRecibida] = useState<string>("");
 
   const fetch = useCallback(
     async (q: string) => {
@@ -55,6 +58,7 @@ export default function AgregarProductosModal({
       setQ("");
       setData(EMPTY);
       setErrorMsg(null);
+      setCantRecibida("");
       void fetch("");
     });
   }, [open, fetch, setQ]);
@@ -72,25 +76,38 @@ export default function AgregarProductosModal({
   );
 
   const filterContent = (
-    <div className="flex items-center gap-3 w-full">
-      <div className="flex-1 min-w-0">
-        <FiltroBusquedaInput
-          id="agregar-productos-filtro"
-          placeholder="BUSCAR POR DESCRIPCIÓN..."
-          value={q}
-          onChange={handleQChange}
-          isDebouncing={isDebouncing || loading}
-          inputRef={ref}
+    <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-[1fr_10rem]">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <FiltroBusquedaInput
+            id="agregar-productos-filtro"
+            placeholder="BUSCAR POR DESCRIPCIÓN..."
+            value={q}
+            onChange={handleQChange}
+            isDebouncing={isDebouncing || loading}
+            inputRef={ref}
+          />
+        </div>
+        <LimpiarFiltrosButton
+          visible={!!q.trim() || !!errorMsg}
+          onClick={() => {
+            setQ("");
+            void fetch("");
+          }}
         />
+        {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
       </div>
-      <LimpiarFiltrosButton
-        visible={!!q.trim() || !!errorMsg}
-        onClick={() => {
-          setQ("");
-          void fetch("");
-        }}
+      <Input
+        type="number"
+        min={1}
+        step={1}
+        inputMode="numeric"
+        placeholder="CANT."
+        aria-label="Cant. Recibida (nuevo ítem)"
+        value={cantRecibida}
+        onChange={(e) => setCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        className="h-10 w-full min-w-0 text-center tabular-nums"
       />
-      {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
     </div>
   );
 
@@ -108,14 +125,16 @@ export default function AgregarProductosModal({
       emptyMessage="Sin resultados"
       count={data.total}
       selectionMode="singleConfirm"
-      confirmSingleLabel="AGREGAR"
-      onConfirmSingle={(row) => {
-        onSeleccionar(row);
+      confirmSingleLabel="AGREGAR PRODUCTO"
+      onConfirmSingle={async (row) => {
+        const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
+        if (cant <= 0) {
+          toast.error("Ingresá una Cant. Recibida mayor a 0.");
+          throw new Error("Cantidad inválida");
+        }
+        await onAgregar(row, cant);
       }}
-      onRowDoubleClick={(row) => {
-        onSeleccionar(row);
-        onOpenChange(false);
-      }}
+      onRowDoubleClick={undefined}
     />
   );
 }

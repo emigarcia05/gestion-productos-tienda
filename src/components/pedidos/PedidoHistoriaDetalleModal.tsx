@@ -14,7 +14,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
@@ -69,10 +69,6 @@ const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
 /** Columna proveedor (resumen modal): padding derecho al token de tabla; sin padding izquierdo. */
 const CELDA_RESUMEN_PROVEEDOR_PADDING_X =
   "pr-[var(--tabla-body-cell-padding-x)] pl-0";
-
-/** Fila “Agregar producto”: tres columnas independientes de la tabla (70% | 15% | 15%). */
-const GRID_FILA_AGREGAR_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-x-0 gap-y-3 sm:grid-cols-[70fr_15fr_15fr] sm:gap-x-2 sm:gap-y-0 sm:items-center";
 
 /** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
 const GRID_PEDIDO_HISTORIA_TABLA_COLS =
@@ -189,8 +185,6 @@ export default function PedidoHistoriaDetalleModal({
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
 
-  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoTiendaRowBusqueda | null>(null);
-  const [cantRecibidaNueva, setCantRecibidaNueva] = useState<string>("");
   /** Valor normalizado para lógica futura: "" | "123" | "123.45" (punto decimal). */
   const [totalPedido, setTotalPedido] = useState<string>("");
   const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
@@ -221,7 +215,14 @@ export default function PedidoHistoriaDetalleModal({
       setErrorMsg(res.error ?? "Error al cargar detalle.");
       return null;
     }
-    setDetalle(res.data);
+    const detalleNormalizado =
+      res.data.estado === "RECEPCIONADO"
+        ? res.data
+        : {
+            ...res.data,
+            items: res.data.items.map((it) => ({ ...it, cantRecibida: null })),
+          };
+    setDetalle(detalleNormalizado);
     // Para permitir "Descargar Recepcion" en modo RECEPCIONADO, alimentamos el campo con una fecha razonable.
     // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
     if (res.data.estado === "RECEPCIONADO") {
@@ -229,7 +230,7 @@ export default function PedidoHistoriaDetalleModal({
       if (d) setFechaRecepcion(dateToIsoYmd(d));
     }
     setErrorMsg(null);
-    return res.data;
+    return detalleNormalizado;
   }
 
   useEffect(() => {
@@ -241,8 +242,6 @@ export default function PedidoHistoriaDetalleModal({
       setLoading(true);
       setEditingItemId(null);
       setEditingValue("");
-      setProductoSeleccionado(null);
-      setCantRecibidaNueva("");
       setTotalPedido("");
       setTotalPedidoDraft("");
       setTotalPedidoFocused(false);
@@ -332,15 +331,7 @@ export default function PedidoHistoriaDetalleModal({
     return async () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
-      let cant: number;
-      if (editingItemId === item.id) {
-        cant = parseIntSafe(editingValue);
-      } else if (item.cantRecibida != null) {
-        cant = item.cantRecibida;
-      } else {
-        toast.error("Indicá la cantidad recibida con Editar antes de confirmar.");
-        return;
-      }
+      const cant = Math.max(0, item.cantPedida);
       await actualizarItemCantRecibida(item.id, cant, {
         confirmChecklistAfter: true,
       });
@@ -358,35 +349,28 @@ export default function PedidoHistoriaDetalleModal({
   }
 
   function onClickEditar(item: PedidoHistoriaDetalle["items"][number]) {
-    return () => {
+    return async () => {
       if (locked) return;
+      if (busy) return;
       if (fechaRecepcion.trim() === "") return;
-      setCheckListConfirmedByItem((prev) => {
-        if (!prev[item.id]) return prev;
-        const next = { ...prev };
-        delete next[item.id];
-        return next;
-      });
+      const cantInicial = Math.max(0, item.cantPedida);
+      const ok = await actualizarItemCantRecibida(item.id, cantInicial);
+      if (!ok) return;
       setEditingItemId(item.id);
-      setEditingValue(
-        item.cantRecibida != null ? String(item.cantRecibida) : ""
-      );
+      setEditingValue(String(cantInicial));
     };
   }
 
-  async function agregarNuevaFila() {
+  async function agregarNuevaFila(
+    producto: ProductoTiendaRowBusqueda,
+    cantRecibida: number
+  ) {
     if (locked) return;
     if (fechaRecepcion.trim() === "") return;
     if (!pedidoHistoriaId) return;
-
-    if (!productoSeleccionado) {
-      toast.error("Seleccioná un producto y agregá una Cant. Recibida mayor a 0.");
-      return;
-    }
-
-    const codTiendaAdded = productoSeleccionado.codTienda;
+    const codTiendaAdded = producto.codTienda;
     let nextOkItemId: string | null = null;
-    const cant = parseIntSafe(cantRecibidaNueva);
+    const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
     if (cant <= 0) {
       toast.error("Ingresá una Cant. Recibida mayor a 0.");
       return;
@@ -396,7 +380,7 @@ export default function PedidoHistoriaDetalleModal({
     try {
       const res = await agregarPedidoHistoriaItemAction({
         pedidoHistoriaId,
-        codTienda: productoSeleccionado.codTienda,
+        codTienda: producto.codTienda,
         cantRecibida: cant,
       });
       if (!res.ok) {
@@ -408,9 +392,6 @@ export default function PedidoHistoriaDetalleModal({
       setLoading(true);
       const detalleNuevo = await cargarDetalle(pedidoHistoriaId);
       toast.success("Ítem agregado.");
-      // Limpieza UX: volver a estado "Seleccionar Producto".
-      setProductoSeleccionado(null);
-      setCantRecibidaNueva("");
       setAgregarProductosOpen(false);
 
       // Enfocar la fila recién agregada en la columna editable "CANT. RECIBIDA".
@@ -433,18 +414,6 @@ export default function PedidoHistoriaDetalleModal({
         setEditingValue("");
       });
     }
-  }
-
-  function onSeleccionarProducto(row: ProductoTiendaRowBusqueda) {
-    setProductoSeleccionado(row);
-    setCantRecibidaNueva("");
-    setAgregarProductosOpen(false);
-    if (fechaRecepcion.trim() === "") return;
-    queueMicrotask(() => {
-      const el = document.querySelector<HTMLInputElement>('input[data-cant-input="detalle"]');
-      el?.focus();
-      el?.select?.();
-    });
   }
 
   function ajustarEditingValue(delta: number) {
@@ -663,100 +632,17 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className={GRID_FILA_AGREGAR_PEDIDO_HISTORIA}>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
-                  {productoSeleccionado ? (
-                    <Input
-                      value={productoSeleccionado.descripcionTienda}
-                      readOnly
-                      disabled={locked || loading || !fechaFacturaOk}
-                      data-desc-input="detalle"
-                      aria-label="Descripción del producto"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        if (locked || loading || !fechaFacturaOk) return;
-                        setAgregarProductosOpen(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (locked || loading || !fechaFacturaOk) return;
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setAgregarProductosOpen(true);
-                        }
-                      }}
-                      className={cn(
-                        "h-9 min-w-0 w-full cursor-pointer text-left",
-                        inputBorderClassName,
-                        locked || loading || !fechaFacturaOk ? "cursor-not-allowed" : ""
-                      )}
-                    />
-                  ) : (
-                    <Input
-                      readOnly
-                      disabled={locked || loading || !fechaFacturaOk}
-                      placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-                      data-desc-input="detalle"
-                      aria-label="Buscar por descripción o código"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        if (locked || loading || !fechaFacturaOk) return;
-                        setAgregarProductosOpen(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (locked || loading || !fechaFacturaOk) return;
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setAgregarProductosOpen(true);
-                        }
-                      }}
-                      className={cn(
-                        "h-9 min-w-0 w-full cursor-pointer text-left placeholder:text-muted-foreground",
-                        inputBorderClassName,
-                        locked || loading || !fechaFacturaOk ? "cursor-not-allowed" : ""
-                      )}
-                    />
-                  )}
-                </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    inputMode="numeric"
-                    placeholder="CANT."
-                    aria-label="Cant. recibida (nuevo ítem)"
-                    value={cantRecibidaNueva}
-                    onChange={(e) =>
-                      setCantRecibidaNueva(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    data-cant-input="detalle"
-                    disabled={locked || loading || !fechaFacturaOk}
-                    className={cn(
-                      "h-9 w-full min-w-0 tabular-nums text-center placeholder:text-muted-foreground",
-                      inputBorderClassName
-                    )}
-                  />
-                </div>
-                <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
-                  <Button
-                    type="button"
-                    variant="default"
-                    onClick={agregarNuevaFila}
-                    disabled={
-                      locked ||
-                      loading ||
-                      !fechaFacturaOk ||
-                      guardando != null ||
-                      !productoSeleccionado ||
-                      parseIntSafe(cantRecibidaNueva) <= 0
-                    }
-                    className="h-9 w-full min-w-0 shrink-0 px-3 disabled:cursor-not-allowed"
-                  >
-                    Agregar
-                  </Button>
-                </div>
+              <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={() => setAgregarProductosOpen(true)}
+                  disabled={locked || loading || !fechaFacturaOk || guardando != null}
+                  className="h-9 w-full min-w-0 shrink-0 px-3 disabled:cursor-not-allowed"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar Producto
+                </Button>
               </div>
             </section>
 
@@ -863,7 +749,7 @@ export default function PedidoHistoriaDetalleModal({
                                   tabIndex={-1}
                                   value=""
                                   aria-label="Lista de verificación"
-                                  title="Verificá con el botón OK (confirma cant. recibida) o con el cesto (registra 0 y verifica)."
+                                  title="OK copia CANT. PEDIDA en CANT. RECIBIDA y verifica; Editar copia CANT. PEDIDA y habilita edición; Cesto guarda 0 y verifica."
                                   disabled={
                                     busy || checkListConfirmed || !fechaFacturaOk || locked
                                   }
@@ -1091,8 +977,8 @@ export default function PedidoHistoriaDetalleModal({
       <AgregarProductosModal
         open={agregarProductosOpen}
         onOpenChange={setAgregarProductosOpen}
-        onSeleccionar={(row) => {
-          onSeleccionarProducto(row);
+        onAgregar={async (row, cantRecibida) => {
+          await agregarNuevaFila(row, cantRecibida);
         }}
       />
     </>

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { cva, type VariantProps } from "class-variance-authority";
 import ClassicPageHeader from "./ClassicPageHeader";
 
 export interface ClassicFilteredTableLayoutProps {
@@ -16,11 +17,47 @@ export interface ClassicFilteredTableLayoutProps {
   className?: string;
   /** Clases del área de contenido (filtros + tabla). */
   contentClassName?: string;
+  /** Variante visual del fondo raíz. */
+  tone?: VariantProps<typeof rootVariants>["tone"];
+  /** Ancho máximo del contenedor principal. */
+  contentWidth?: VariantProps<typeof contentVariants>["contentWidth"];
+  /** Densidad vertical de la sección de contenido. */
+  density?: VariantProps<typeof contentVariants>["density"];
+  /** Etiqueta accesible del bloque de filtros. */
+  filtersAriaLabel?: string;
 }
 
-const LAYOUT_PADDING = "px-4 sm:px-6 lg:px-8";
-/** Sin gap entre bloque de filtros y tabla: el espacio lo da el margin-bottom del recuadro de filtros (--espacio-filtros-vertical) para mantener simetría con el padding-top del contenido. */
-const CONTENT_GAP = "gap-0";
+const rootVariants = cva("h-full min-h-0 flex flex-col overflow-hidden", {
+  variants: {
+    tone: {
+      gray: "bg-gris",
+      card: "bg-card",
+    },
+  },
+  defaultVariants: {
+    tone: "gray",
+  },
+});
+
+const contentVariants = cva(
+  "flex-1 min-h-0 flex flex-col overflow-hidden w-full contenedor-pagina-con-filtros",
+  {
+    variants: {
+      contentWidth: {
+        default: "max-w-7xl mx-auto",
+        full: "max-w-none",
+      },
+      density: {
+        default: "px-4 sm:px-6 lg:px-8 gap-0",
+        compact: "px-3 sm:px-4 lg:px-6 gap-0",
+      },
+    },
+    defaultVariants: {
+      contentWidth: "default",
+      density: "default",
+    },
+  }
+);
 
 /**
  * Template de página reutilizable: Header (título + subtítulo + acciones) + Filtros + Tabla.
@@ -35,27 +72,23 @@ export default function ClassicFilteredTableLayout({
   children,
   className,
   contentClassName,
+  tone = "gray",
+  contentWidth = "default",
+  density = "default",
+  filtersAriaLabel = "Filtros",
 }: ClassicFilteredTableLayoutProps) {
   return (
-    <div
-      className={cn(
-        "h-full min-h-0 flex flex-col overflow-hidden bg-gris",
-        className
-      )}
-    >
+    <div className={cn(rootVariants({ tone }), className)}>
       <ClassicPageHeader title={title} subtitle={subtitle} actions={actions} />
 
       <div
         className={cn(
-          "flex-1 min-h-0 flex flex-col overflow-hidden max-w-7xl mx-auto w-full",
-          "contenedor-pagina-con-filtros",
-          LAYOUT_PADDING,
-          CONTENT_GAP,
+          contentVariants({ contentWidth, density }),
           contentClassName
         )}
       >
         {filters != null && (
-          <div className="shrink-0 w-full" role="search" aria-label="Filtros">
+          <div className="shrink-0 w-full" role="search" aria-label={filtersAriaLabel}>
             {filters}
           </div>
         )}
