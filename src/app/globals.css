@@ -335,6 +335,10 @@
   .celda-datos.celda-datos--flush-left {
     padding-left: 0 !important;
   }
+  /* Variante espejo: anula padding derecho para campos al ras del borde derecho. */
+  .celda-datos.celda-datos--flush-right {
+    padding-right: 0 !important;
+  }
   .celda-datos.celda-mono {
     font-family: var(--font-mono);
   }

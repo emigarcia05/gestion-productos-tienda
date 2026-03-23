@@ -985,7 +985,7 @@ export default function PedidoHistoriaDetalleModal({
                         TOTAL PEDIDO
                       </span>
                     </div>
-                    <div className="celda-datos celda-datos--flush-left col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0">
+                    <div className="celda-datos celda-datos--flush-left celda-datos--flush-right col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0">
                       <Input
                         type="text"
                         inputMode="decimal"

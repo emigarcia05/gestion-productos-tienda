@@ -237,6 +237,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `--tabla-thead-height`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | **`--tabla-thead-height`** = **2.25rem**; **`--tabla-body-row-min-height`** = **2rem**; padding vertical celdas ~**`py-0.5`** (**0.125rem**); inputs/botones en celdas ~**1.75rem**. Sin cambio de **`font-size`** en **`tbody tr:hover td`** (evita saltos). |
 | `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
 | `.celda-datos.celda-datos--flush-left` | Anula **`padding-left`** con **`!important`** (especificidad doble clase) cuando **`!pl-0`** de Tailwind no gana al atajo **`padding`** de **`.celda-datos`**; usar con **`Input`** **`pl-0` `pr-3`** (base **`Input`**: **`pl-3 pr-3`**, no **`px-3`**, para que **`tailwind-merge`** anule bien el lado izquierdo). |
+| `.celda-datos.celda-datos--flush-right` | Anula **`padding-right`** con **`!important`** para campos al ras del borde derecho dentro de celdas `celda-datos` (ej. input de **TOTAL PEDIDO**). |
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
 | `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
 | `.contenedor-tabla-gestion.no-scrollbar` | Oculta la barra vertical del contenedor de tabla (`scrollbar-width: none` / webkit); mantiene `overflow-y: auto`. Casos puntuales (ej. **Ver Pedido**). |
