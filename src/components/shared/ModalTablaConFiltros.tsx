@@ -101,6 +101,7 @@ interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
   onConfirm?: never;
   confirmLabel?: never;
   confirmPending?: never;
+  confirmSingleDisabled?: never;
   onConfirmSingle?: never;
   confirmSingleLabel?: never;
   /** Contenido a la derecha del footer (ej. botón Cancelar). En multi se ignora. */
@@ -112,6 +113,7 @@ interface ModalTablaMultiSelect<T> extends ModalTablaConFiltrosBase<T> {
   onConfirm: (ids: string[]) => void | Promise<void>;
   confirmLabel?: (count: number) => string;
   confirmPending?: boolean;
+  confirmSingleDisabled?: never;
   onConfirmSingle?: never;
   confirmSingleLabel?: never;
   footerRight?: never;
