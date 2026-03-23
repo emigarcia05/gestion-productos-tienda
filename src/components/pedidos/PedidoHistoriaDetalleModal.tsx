@@ -74,7 +74,7 @@ const CELDA_RESUMEN_PROVEEDOR_PADDING_X =
 
 /** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
 const GRID_PEDIDO_HISTORIA_TABLA_COLS =
-  "grid w-full grid-cols-[5fr_55fr_10fr_15fr_15fr]";
+  "grid w-full grid-cols-[5fr_50fr_10fr_20fr_15fr]";
 
 /** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
 const MODAL_MICRO_LABEL_CLASS =
@@ -429,11 +429,34 @@ export default function PedidoHistoriaDetalleModal({
     setEditingValue(next === 0 ? "" : String(next));
   }
 
-  const items = detalle?.items ?? [];
+  function onClickConfirmarEdicion(item: PedidoHistoriaDetalle["items"][number]) {
+    return async () => {
+      if (locked || busy) return;
+      if (fechaRecepcion.trim() === "") return;
+      if (editingItemId !== item.id) return;
+      const cant = parseIntSafe(editingValue);
+      await actualizarItemCantRecibida(item.id, cant, {
+        confirmChecklistAfter: true,
+      });
+    };
+  }
+
+  const itemsOrdenados = useMemo(() => {
+    const base = detalle?.items ?? [];
+    return [...base].sort((a, b) => {
+      const aChecked = checkListConfirmedByItem[a.id] === true;
+      const bChecked = checkListConfirmedByItem[b.id] === true;
+      if (aChecked !== bChecked) return aChecked ? 1 : -1;
+      return a.descripcionTienda.localeCompare(b.descripcionTienda, "es", {
+        sensitivity: "base",
+      });
+    });
+  }, [detalle?.items, checkListConfirmedByItem]);
 
   const fechaFacturaOk = fechaRecepcion.trim() !== "";
   const checklistCompleto =
-    items.length > 0 && items.every((it) => checkListConfirmedByItem[it.id] === true);
+    itemsOrdenados.length > 0 &&
+    itemsOrdenados.every((it) => checkListConfirmedByItem[it.id] === true);
   const tablaYAltaHabilitados = !locked && !loading && fechaFacturaOk;
   const totalPedidoInputHabilitado = tablaYAltaHabilitados && checklistCompleto;
   const puedeRegistrarEnDux =
@@ -453,7 +476,7 @@ export default function PedidoHistoriaDetalleModal({
           title="Recepcion Del Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[62.4rem] max-h-[95vh]"
+          className="sm:max-w-[66rem] max-h-[95vh]"
           bodyShellClassName="p-0"
           padding="sm"
           headerClassName="pt-3 pb-3"
@@ -698,9 +721,9 @@ export default function PedidoHistoriaDetalleModal({
                         aria-hidden
                       />
                     </TableHead>
-                    <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[15%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[20%]">CANT. RECIBIDA</TableHead>
                     <TableHead className="w-[15%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
@@ -711,10 +734,10 @@ export default function PedidoHistoriaDetalleModal({
                     <EmptyTableRow colSpan={5} message="Cargando…" />
                   ) : errorMsg ? (
                     <EmptyTableRow colSpan={5} message={errorMsg} />
-                  ) : items.length === 0 ? (
+                  ) : itemsOrdenados.length === 0 ? (
                     <EmptyTableRow colSpan={5} message="Sin ítems." />
                   ) : (
-                    items.map((item) => {
+                    itemsOrdenados.map((item) => {
                       const isEditing = editingItemId === item.id;
                       const cantRecNum = item.cantRecibida ?? 0;
                       const cantRecibidaVisible =
@@ -783,7 +806,7 @@ export default function PedidoHistoriaDetalleModal({
                           </TableCell>
                           <TableCell
                             className={cn(
-                              "celda-datos min-w-0 truncate w-[55%]",
+                              "celda-datos min-w-0 truncate w-[50%]",
                               checkListConfirmed && "opacity-60"
                             )}
                             title={
@@ -804,7 +827,7 @@ export default function PedidoHistoriaDetalleModal({
                           </TableCell>
                           <TableCell
                             className={cn(
-                              "celda-datos tabular-nums w-[15%]",
+                              "celda-datos tabular-nums w-[20%]",
                               checkListConfirmed && !isEditing && "opacity-60"
                             )}
                           >
@@ -874,6 +897,22 @@ export default function PedidoHistoriaDetalleModal({
                                   title="Aumentar"
                                 >
                                   <span className="text-sm leading-none">+</span>
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="icon-xs"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={onClickConfirmarEdicion(item)}
+                                  disabled={locked || busy || !fechaFacturaOk}
+                                  className={cn(
+                                    clsBotonTabla,
+                                    "text-primary-foreground [&_svg]:text-primary-foreground"
+                                  )}
+                                  aria-label="Confirmar Edición"
+                                  title="Confirmar Edición"
+                                >
+                                  <Check className="h-4 w-4" />
                                 </Button>
                               </div>
                             ) : (
