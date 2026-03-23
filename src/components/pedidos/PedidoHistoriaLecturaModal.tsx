@@ -137,13 +137,13 @@ export default function PedidoHistoriaLecturaModal({
             </Button>
             {detalle && !esRecibido && esEditor && onIrARecepcion ? (
               <Button type="button" variant="default" onClick={() => onIrARecepcion()}>
-                Recpcionar Pedido
+                Recepcion Pedido
               </Button>
             ) : null}
             {detalle ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 onClick={() => {
                   void onDescargarPdf?.();
                 }}

@@ -117,7 +117,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
         idEmpresa: idEmpresaParsed.data,
       });
 
-    const precio = totalImporte > 0 ? sumCantRecibida / totalImporte : 0;
+    const precio = sumCantRecibida > 0 ? totalImporte / sumCantRecibida : 0;
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => ({
       "TIPO DE COMPROBANTE": "Comprobante_Compra",

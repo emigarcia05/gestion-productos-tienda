@@ -351,7 +351,7 @@ Contrato (SSOT de integración + armado de filas):
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
      - Filtra ítems con `cant_recibida != null`.
      - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
-     - Calcula `PRECIO` con: `sum(cant_recibida) / totalImporte` (mismo valor para todas las filas).
+    - Calcula `PRECIO` con: `totalImporte / sum(cant_recibida)` (mismo valor para todas las filas).
    - Salida:
      - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.
 
