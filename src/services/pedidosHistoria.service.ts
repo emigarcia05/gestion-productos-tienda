@@ -41,7 +41,7 @@ function normalizarTokensBusquedaHistorial(q: string | undefined): string[] {
   return raw.split(/\s+/).filter(Boolean).slice(0, HISTORIAL_Q_MAX_TOKENS);
 }
 
-export type PedidoHistoriaEstado = "PEDIDO" | "RECIBIDO";
+export type PedidoHistoriaEstado = "SIN RECEPCION" | "RECEPCIONADO";
 
 export interface PedidoHistoriaResumen {
   id: string;
@@ -129,7 +129,7 @@ export async function crearPedidoHistoriaSnapshot(params: {
         data: {
           proveedorId: proveedorId.trim(),
           sucursalId: sucursal.id,
-          estado: "PEDIDO",
+          estado: "SIN RECEPCION",
         },
         select: { id: true },
       });
@@ -347,7 +347,8 @@ export async function agregarPedidoHistoriaItem(params: {
       select: { id: true, estado: true },
     });
     if (!header) return { success: false, error: "Pedido no encontrado." };
-    if (header.estado === "RECIBIDO") return { success: false, error: "Pedido ya recibido (registrado en DUX)." };
+    if (header.estado === "RECEPCIONADO")
+      return { success: false, error: "Pedido ya recepcionado (registrado en DUX)." };
 
     const existing = await prisma.pedidoHistoriaItem.findUnique({
       where: { pedidoHistoriaId_codTienda: { pedidoHistoriaId: header.id, codTienda: cod } },
@@ -394,8 +395,8 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
     });
     if (!item) return { success: false, error: "Ítem no encontrado." };
 
-    if (item.pedidoHistoria.estado === "RECIBIDO") {
-      return { success: false, error: "Pedido ya recibido (registrado en DUX)." };
+    if (item.pedidoHistoria.estado === "RECEPCIONADO") {
+      return { success: false, error: "Pedido ya recepcionado (registrado en DUX)." };
     }
 
     await prisma.pedidoHistoriaItem.update({
@@ -422,7 +423,7 @@ export async function marcarPedidoHistoriaRegistrado(params: {
 
     await prisma.pedidoHistoria.update({
       where: { id },
-      data: { estado: "RECIBIDO", registradoAt: new Date() },
+      data: { estado: "RECEPCIONADO", registradoAt: new Date() },
     });
     return { success: true, data: undefined };
   } catch (e) {

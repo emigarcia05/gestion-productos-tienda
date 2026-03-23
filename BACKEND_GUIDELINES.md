@@ -60,7 +60,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Normalizar**: `q?.trim()` y tratar vacío como `undefined`.
   - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
-- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `PEDIDO` \| `RECIBIDO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`PEDIDO`** (solo pendientes de recepción). Zod en `listarPedidosHistoriaAction`: `estado` incluye `ALL`; `q` con `.max(200).optional()`.
+- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `SIN RECEPCION` \| `RECEPCIONADO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`SIN RECEPCION`** (pendientes de recepción). Zod en `listarPedidosHistoriaAction`: `estado` incluye `ALL`; `q` con `.max(200).optional()`.
 
 ### 1.8 Fuente de costo final (`px_compra_final`)
 
@@ -205,10 +205,10 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
 
 - Cabecera: `pedido_historia` (Prisma: `PedidoHistoria`)
   - `generado_at`: fecha/hora del snapshot (momento en que se arma el pedido y se guarda el detalle).
-  - `estado`: `PEDIDO | RECIBIDO`.
-    - `PEDIDO`: snapshot creado.
-    - `RECIBIDO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
-  - `registrado_at`: fecha/hora cuando se cambia a `RECIBIDO` (nullable).
+  - `estado`: `SIN RECEPCION | RECEPCIONADO`.
+    - `SIN RECEPCION`: snapshot creado (pendiente de recepción).
+    - `RECEPCIONADO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
+  - `registrado_at`: fecha/hora cuando se cambia a `RECEPCIONADO` (nullable).
   - Relaciones: `proveedor_id -> proveedores.id` y `sucursal_id -> sucursales.id`.
 
 - Items: tabla física `pedidos_historial_mercaderia` (Prisma: `PedidoHistoriaItem`)
@@ -253,13 +253,13 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo?, q? })`
    - Uso: obtener página de cabeceras para el módulo de historial (`/pedidos/historial`).
-   - `estado`: `PEDIDO`, `RECIBIDO` o `ALL`. La UI por defecto envía/equivale a `PEDIDO` si no hay parámetro en la URL.
+  - `estado`: `SIN RECEPCION`, `RECEPCIONADO` o `ALL`. La UI por defecto envía/equivale a `SIN RECEPCION` si no hay parámetro en la URL.
    - Con `q` no vacío: solo pedidos que tengan al menos un ítem cuyo `cod_tienda` figure en `precios_tienda` con descripción que contenga todas las palabras de `q` (insensible a mayúsculas).
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
 2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`
    - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar `pedidos_mercaderia` (cuando corresponda).
-   - Crea `PedidoHistoria` con `estado = "PEDIDO"`.
+   - Crea `PedidoHistoria` con `estado = "SIN RECEPCION"`.
    - Lee `ItemPedidoEnvio` filtrando por `idProveedor`, `sucursalId`, `tipoPedido IN tipos` y `cant_pedir > 0`.
    - Inserta `PedidoHistoriaItem` consolidando por `cod_tienda` (para respetar UNIQUE por `cod_tienda`).
    - Inserta cada ítem con `cant_recibida = NULL` hasta que en recepción se guarde la cantidad recibida.
@@ -273,17 +273,17 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 4. `agregarPedidoHistoriaItem({ pedidoHistoriaId, codTienda, cantRecibida })`
    - Reglas:
-     - Solo permitido si el pedido está en estado `"PEDIDO"`.
+     - Solo permitido si el pedido está en estado `"SIN RECEPCION"`.
      - Respeta UNIQUE(`pedido_historia_id`, `cod_tienda`): si el item ya existe devuelve error.
    - Inicializa `cant_pedida = cant_recibida = cantRecibida` (asumiendo igualdad para filas agregadas).
 
 5. `actualizarPedidoHistoriaItemCantRecibida({ pedidoHistoriaItemId, cantRecibida })`
    - Reglas:
-     - Solo permitido si el pedido asociado está en estado `"PEDIDO"`.
+     - Solo permitido si el pedido asociado está en estado `"SIN RECEPCION"`.
      - Actualiza únicamente `cant_recibida` (sin tocar `cant_pedida`).
 
 6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`
-   - Transición: setea `estado = "RECIBIDO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
+  - Transición: setea `estado = "RECEPCIONADO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
 
 7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).

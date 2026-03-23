@@ -56,7 +56,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pedidoHistoriaId: string | null;
-  /** Si el pedido está en estado PEDIDO y hay callback + editor, se muestra junto a Cerrar. */
+  /** Si el pedido está en estado SIN RECEPCION y hay callback + editor, se muestra junto a Cerrar. */
   esEditor?: boolean;
   onIrARecepcion?: () => void;
 }
@@ -106,7 +106,7 @@ export default function PedidoHistoriaLecturaModal({
     }
   }, [open]);
 
-  const esRecibido = detalle?.estado === "RECIBIDO";
+  const esRecibido = detalle?.estado === "RECEPCIONADO";
 
   const fechaSubcabecera = useMemo(() => {
     if (!detalle) return "";
@@ -148,7 +148,7 @@ export default function PedidoHistoriaLecturaModal({
                   className="w-fit shrink-0"
                   variant={esRecibido ? "secondary" : "default"}
                 >
-                  {esRecibido ? "Recepcionado" : "Pedido"}
+                  {esRecibido ? "Recepcionado" : "Sin Recepción"}
                 </Badge>
                 <p className="min-w-0 flex-1 text-base font-semibold leading-snug break-words text-foreground">
                   {detalle.proveedorNombre?.trim() ?? ""}

@@ -167,7 +167,9 @@ export default function HistorialPedidosPageClient({
                               {it.sucursalNombre}
                             </TableCell>
                             <TableCell className="celda-datos">
-                              {it.estado === "RECIBIDO" ? "RECIBIDO" : "PEDIDO"}
+                              {it.estado === "RECEPCIONADO"
+                                ? "RECEPCIONADO"
+                                : "SIN RECEPCION"}
                             </TableCell>
                             <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                               <div className="flex items-center justify-center gap-2">

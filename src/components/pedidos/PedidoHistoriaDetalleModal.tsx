@@ -206,7 +206,7 @@ export default function PedidoHistoriaDetalleModal({
   const fechaInputRef = useRef<HTMLInputElement>(null);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
-  const locked = estado === "RECIBIDO";
+  const locked = estado === "RECEPCIONADO";
   const busy = guardando != null || loading;
 
   const generadoAtStr = useMemo(() => {
@@ -222,9 +222,9 @@ export default function PedidoHistoriaDetalleModal({
       return null;
     }
     setDetalle(res.data);
-    // Para permitir "Descargar Recepcion" en modo RECIBIDO, alimentamos el campo con una fecha razonable.
+    // Para permitir "Descargar Recepcion" en modo RECEPCIONADO, alimentamos el campo con una fecha razonable.
     // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
-    if (res.data.estado === "RECIBIDO") {
+    if (res.data.estado === "RECEPCIONADO") {
       const d = toDate(res.data.generadoAt);
       if (d) setFechaRecepcion(dateToIsoYmd(d));
     }

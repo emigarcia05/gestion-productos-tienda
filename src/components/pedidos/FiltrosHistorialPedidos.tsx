@@ -27,7 +27,7 @@ const SUCURSALES = [
   { value: "maipu", label: "MAIPÚ" },
 ] as const;
 
-export type EstadoFiltroPedido = "PEDIDO" | "RECIBIDO" | "ALL";
+export type EstadoFiltroPedido = "SIN RECEPCION" | "RECEPCIONADO" | "ALL";
 
 interface Proveedor {
   id: string;
@@ -101,7 +101,7 @@ export default function FiltrosHistorialPedidos({
   const hayFiltros =
     !!proveedorId.trim() ||
     !!sucursalCodigo ||
-    estado === "RECIBIDO" ||
+    estado === "RECEPCIONADO" ||
     estado === "ALL" ||
     !!qLocal.trim();
 
@@ -110,7 +110,7 @@ export default function FiltrosHistorialPedidos({
     applyNavigate({
       proveedorId: "",
       sucursalCodigo: "",
-      estado: "PEDIDO",
+      estado: "SIN RECEPCION",
       q: "",
     });
   }
@@ -185,8 +185,8 @@ export default function FiltrosHistorialPedidos({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="PEDIDO">PEDIDO</SelectItem>
-                <SelectItem value="RECIBIDO">RECIBIDO</SelectItem>
+                <SelectItem value="SIN RECEPCION">SIN RECEPCION</SelectItem>
+                <SelectItem value="RECEPCIONADO">RECEPCIONADO</SelectItem>
                 <SelectItem value="ALL">TODOS</SelectItem>
               </SelectContent>
             </Select>

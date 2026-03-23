@@ -36,9 +36,13 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
   const estadoParam = estado.trim().toUpperCase();
   /** Sin `estado` en la URL (entrada al módulo): por defecto solo pedidos pendientes de recepción. */
   const estadoFiltro: PedidoHistoriaEstado | "ALL" =
-    estadoParam === "RECIBIDO" ? "RECIBIDO" : estadoParam === "ALL" ? "ALL" : "PEDIDO";
+    estadoParam === "RECEPCIONADO"
+      ? "RECEPCIONADO"
+      : estadoParam === "ALL"
+        ? "ALL"
+        : "SIN RECEPCION";
 
-  const estadoUi: "PEDIDO" | "RECIBIDO" | "ALL" = estadoFiltro;
+  const estadoUi: "SIN RECEPCION" | "RECEPCIONADO" | "ALL" = estadoFiltro;
 
   const proveedores = await prisma.proveedor.findMany({
     select: { id: true, nombre: true, prefijo: true },

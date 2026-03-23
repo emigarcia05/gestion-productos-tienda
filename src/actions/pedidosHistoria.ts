@@ -38,7 +38,7 @@ const descargarPdfPedidoHistoriaSchema = z.object({
 
 const listarPedidosHistoriaSchema = z.object({
   pagina: z.coerce.number().int().min(1).optional().default(1),
-  estado: z.enum(["PEDIDO", "RECIBIDO", "ALL"]).optional(),
+  estado: z.enum(["SIN RECEPCION", "RECEPCIONADO", "ALL"]).optional(),
   proveedorId: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
     z.string().min(1).max(128).optional()
