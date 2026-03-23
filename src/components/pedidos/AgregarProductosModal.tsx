@@ -129,6 +129,7 @@ export default function AgregarProductosModal({
       emptyMessage="Sin resultados"
       count={data.total}
       selectionMode="singleConfirm"
+      showSingleConfirmCheckbox
       confirmSingleLabel="AGREGAR PRODUCTO"
       confirmSingleDisabled={!cantRecibidaValida}
       onConfirmSingle={async (row) => {

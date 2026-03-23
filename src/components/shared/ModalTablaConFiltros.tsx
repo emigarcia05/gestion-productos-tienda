@@ -102,6 +102,7 @@ interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
   confirmLabel?: never;
   confirmPending?: never;
   confirmSingleDisabled?: never;
+  showSingleConfirmCheckbox?: never;
   onConfirmSingle?: never;
   confirmSingleLabel?: never;
   /** Contenido a la derecha del footer (ej. botón Cancelar). En multi se ignora. */
@@ -114,6 +115,7 @@ interface ModalTablaMultiSelect<T> extends ModalTablaConFiltrosBase<T> {
   confirmLabel?: (count: number) => string;
   confirmPending?: boolean;
   confirmSingleDisabled?: never;
+  showSingleConfirmCheckbox?: never;
   onConfirmSingle?: never;
   confirmSingleLabel?: never;
   footerRight?: never;
@@ -128,6 +130,8 @@ interface ModalTablaSingleConfirmSelect<T> extends ModalTablaConFiltrosBase<T> {
   confirmPending?: boolean;
   /** Deshabilita el botón de confirmar en modo singleConfirm por validaciones externas (ej. cantidad). */
   confirmSingleDisabled?: boolean;
+  /** Muestra columna de checkbox para selección singleConfirm (1 fila a la vez). */
+  showSingleConfirmCheckbox?: boolean;
   footerRight?: never;
 }
 
@@ -160,6 +164,7 @@ export default function ModalTablaConFiltros<T>({
   confirmSingleLabel = "AGREGAR",
   confirmPending = false,
   confirmSingleDisabled = false,
+  showSingleConfirmCheckbox = false,
   loading = false,
   emptyMessage = "Sin resultados",
   count,
@@ -174,6 +179,7 @@ export default function ModalTablaConFiltros<T>({
 
   const isMulti = selectionMode === "multi";
   const isSingleConfirm = selectionMode === "singleConfirm";
+  const showSelectColumn = isMulti || (isSingleConfirm && showSingleConfirmCheckbox);
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -304,17 +310,21 @@ export default function ModalTablaConFiltros<T>({
                     <Table variant="compact" className="table-fixed w-full">
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          {isMulti && (
+                          {showSelectColumn && (
                             <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
-                              <label className="flex items-center justify-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={rows.length > 0 && selectedIds.size === rows.length}
-                                  onChange={toggleSelectAll}
-                                  className="rounded border-input"
-                                  aria-label="Seleccionar Todos"
-                                />
-                              </label>
+                              {isMulti ? (
+                                <label className="flex items-center justify-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={rows.length > 0 && selectedIds.size === rows.length}
+                                    onChange={toggleSelectAll}
+                                    className="rounded border-input"
+                                    aria-label="Seleccionar Todos"
+                                  />
+                                </label>
+                              ) : (
+                                <span className="sr-only">Seleccionar</span>
+                              )}
                             </TableHead>
                           )}
                           {columns.map((col) => (
@@ -353,17 +363,21 @@ export default function ModalTablaConFiltros<T>({
                     <Table variant="compact" className="table-fixed w-full">
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          {isMulti && (
+                          {showSelectColumn && (
                             <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
-                              <label className="flex items-center justify-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={rows.length > 0 && selectedIds.size === rows.length}
-                                  onChange={toggleSelectAll}
-                                  className="rounded border-input"
-                                  aria-label="Seleccionar Todos"
-                                />
-                              </label>
+                              {isMulti ? (
+                                <label className="flex items-center justify-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={rows.length > 0 && selectedIds.size === rows.length}
+                                    onChange={toggleSelectAll}
+                                    className="rounded border-input"
+                                    aria-label="Seleccionar Todos"
+                                  />
+                                </label>
+                              ) : (
+                                <span className="sr-only">Seleccionar</span>
+                              )}
                             </TableHead>
                           )}
                           {columns.map((col) => (
@@ -394,17 +408,21 @@ export default function ModalTablaConFiltros<T>({
                     <Table variant="compact" className="table-fixed w-full">
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          {isMulti && (
+                          {showSelectColumn && (
                             <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
-                              <label className="flex items-center justify-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={rows.length > 0 && selectedIds.size === rows.length}
-                                  onChange={toggleSelectAll}
-                                  className="rounded border-input"
-                                  aria-label="Seleccionar Todos"
-                                />
-                              </label>
+                              {isMulti ? (
+                                <label className="flex items-center justify-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={rows.length > 0 && selectedIds.size === rows.length}
+                                    onChange={toggleSelectAll}
+                                    className="rounded border-input"
+                                    aria-label="Seleccionar Todos"
+                                  />
+                                </label>
+                              ) : (
+                                <span className="sr-only">Seleccionar</span>
+                              )}
                             </TableHead>
                           )}
                           {columns.map((col) => (
@@ -443,17 +461,29 @@ export default function ModalTablaConFiltros<T>({
                                 onRowDoubleClick ? "Doble Clic Para Seleccionar" : undefined
                               }
                             >
-                              {isMulti && (
+                              {showSelectColumn && (
                                 <TableCell className={modalTablaBodyCellVariants({ kind: "select" })}>
-                                  <label className="flex items-center justify-center cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedIds.has(id)}
-                                      onChange={() => toggleSelect(id)}
-                                      className="rounded border-input"
-                                      aria-label="Seleccionar"
-                                    />
-                                  </label>
+                                  {isMulti ? (
+                                    <label className="flex items-center justify-center cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedIds.has(id)}
+                                        onChange={() => toggleSelect(id)}
+                                        className="rounded border-input"
+                                        aria-label="Seleccionar"
+                                      />
+                                    </label>
+                                  ) : (
+                                    <label className="flex items-center justify-center cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedIds.has(id)}
+                                        onChange={() => selectSingle(id)}
+                                        className="rounded border-input"
+                                        aria-label="Seleccionar"
+                                      />
+                                    </label>
+                                  )}
                                 </TableCell>
                               )}
                               {columns.map((col) => (
