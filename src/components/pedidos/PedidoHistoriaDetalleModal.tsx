@@ -481,7 +481,7 @@ export default function PedidoHistoriaDetalleModal({
           title="Recepcion Del Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[66rem] max-h-[95vh]"
+          className="sm:max-w-[66rem] h-[95vh] max-h-[95vh]"
           bodyShellClassName="p-0"
           padding="sm"
           headerClassName="pt-3 pb-3"
@@ -661,7 +661,7 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-0">
+              <div className="grid w-full min-w-0 grid-cols-[85fr_15fr] items-center gap-x-4 pt-1 pb-0">
                 <div className="flex min-w-0 items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <FiltroBusquedaInput
@@ -684,7 +684,7 @@ export default function PedidoHistoriaDetalleModal({
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
                   className={cn(
-                    "h-9 min-w-[11rem] shrink-0 cursor-pointer justify-start gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
+                    "h-9 w-full min-w-0 shrink-0 cursor-pointer justify-start gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
                     "disabled:cursor-not-allowed"
                   )}
                 >
