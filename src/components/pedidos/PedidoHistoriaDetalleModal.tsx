@@ -652,31 +652,32 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className="flex min-w-0 w-full flex-col items-center justify-center gap-1.5 py-0">
-                <div className="w-full">
-                  <div className="flex w-full items-center gap-2">
-                    <div className="min-w-0 flex-1">
-                      <FiltroBusquedaInput
-                        id="pedido-historia-agregar-producto-filtro"
-                        placeholder="BUSCAR POR DESCRIPCIÓN..."
-                        value={busquedaAgregarProducto}
-                        onChange={setBusquedaAgregarProducto}
-                        isDebouncing={false}
-                        inputRef={busquedaAgregarRef}
-                      />
-                    </div>
-                    <LimpiarFiltrosButton
-                      visible={busquedaAgregarProducto.trim().length > 0}
-                      onClick={() => setBusquedaAgregarProducto("")}
-                    />
-                  </div>
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 py-0">
+                <div className="min-w-0">
+                  <FiltroBusquedaInput
+                    id="pedido-historia-agregar-producto-filtro"
+                    placeholder="BUSCAR POR DESCRIPCIÓN..."
+                    value={busquedaAgregarProducto}
+                    onChange={setBusquedaAgregarProducto}
+                    isDebouncing={false}
+                    inputRef={busquedaAgregarRef}
+                  />
                 </div>
+                <LimpiarFiltrosButton
+                  visible={busquedaAgregarProducto.trim().length > 0}
+                  onClick={() => setBusquedaAgregarProducto("")}
+                />
                 <Button
                   type="button"
-                  variant="default"
+                  variant="outline"
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
-                  className="h-9 w-full min-w-0 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                  className={cn(
+                    "h-9 min-w-[11rem] shrink-0 cursor-pointer justify-start gap-2 rounded-md border bg-transparent px-3 py-1 text-sm font-normal",
+                    inputBorderClassName,
+                    "focus-visible:ring-[#0072bb]",
+                    "disabled:cursor-not-allowed"
+                  )}
                 >
                   <Plus className="h-4 w-4" />
                   Agregar Producto
