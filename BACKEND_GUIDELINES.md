@@ -307,6 +307,60 @@ Función:
 
 ---
 
+### 2.8 Servicio `duxCompras.service.ts` (DUX compras / comprobante)
+
+Objetivo: resolver el “próximo comprobante” para la integración con DUX vía la API REST `WSERP/.../compras`.
+
+Contrato (SSOT de lógica de negocio + integración externa):
+
+1. `getSiguienteComprobanteDuxCompra({ fechaDesde, fechaHasta, idEmpresa })`
+   - Entrada (validada con Zod):
+     - `fechaDesde`: `string` formato `DD/MM/YYYY`
+     - `fechaHasta`: `string` formato `DD/MM/YYYY`
+     - `idEmpresa`: `number` entero positivo
+   - Proceso:
+     - Llama a `GET https://erp.duxsoftware.com.ar/WSERP/rest/services/compras` con:
+       - `fechaDesde`, `fechaHasta`, `idEmpresa` y `limit=1`
+     - Toma `results[0].comprobante` del JSON (string numérico).
+     - Calcula `siguienteComprobante = comprobante + 1` usando `BigInt` para evitar problemas con `safe integer`.
+   - Salida:
+     - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
+   - Errores:
+     - Si DUX no devuelve resultados o el comprobante no es numérico, lanza error en la service y la Action lo transforma a `ActionResult`.
+
+Acceso desde UI/cliente:
+- La `server action` `src/actions/duxCompras.ts#getSiguienteComprobanteDuxCompraAction` exige `esEditor()` y valida parámetros con el mismo esquema Zod.
+
+---
+
+### 2.9 Servicio `exportRecepcionPedidoExcel.service.ts` (Excel recepción 97-2003)
+
+Objetivo: construir el payload (filas + filename) del Excel 97-2003 con formato DUX para una recepción de pedido.
+
+Contrato (SSOT de integración + armado de filas):
+
+1. `getExportRecepcionPedidoExcelPayload({ pedidoHistoriaId, fechaFacturaIso, idEmpresaCompras? })`
+   - Entrada:
+     - `pedidoHistoriaId`: `cuid()` del snapshot en `pedidos_historia`
+     - `fechaFacturaIso`: `YYYY-MM-DD` (FECHA DE FACTURA desde el modal)
+     - `idEmpresaCompras`: opcional; si no se pasa, se toma de `process.env.DUX_ID_EMPRESA_COMPRAS` o fallback `2482`.
+   - Proceso:
+     - Lee desde DB:
+       - `pedidos_historia.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
+       - `pedidos_historia.sucursal.deposito` => columna `DEPÓSITO`
+       - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
+     - Filtra ítems con `cant_recibida != null`.
+     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
+     - Calcula `PRECIO` con: `sum(cant_recibida) / totalImporte` (mismo valor para todas las filas).
+   - Salida:
+     - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.
+
+Notas:
+- Este servicio prepara el payload; la generación binaria del `.xls` vive en la Action `src/actions/exportRecepcionPedidoExcel.ts` (usa `xlsx` con `bookType: "xls"`).
+- Requiere la columna `sucursales.deposito` (TEXT), agregada en la migración `20260323090000_add_sucursales_deposito_column`.
+
+---
+
 ## 3. Diccionario de tipos
 
 | Origen | Uso |

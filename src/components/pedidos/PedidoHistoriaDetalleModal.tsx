@@ -25,8 +25,10 @@ import {
   getPedidoHistoriaDetalleAction,
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
+import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import { cn } from "@/lib/utils";
+import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
 
 function parseIntSafe(value: string): number {
   const n = Math.max(0, Math.floor(Number(value) || 0));
@@ -490,6 +492,18 @@ export default function PedidoHistoriaDetalleModal({
 
                   setGuardando("sync");
                   try {
+                    // Secuencia requerida: primero generamos y descargamos el Excel (97-2003),
+                    // y luego registramos el pedido como "recibido" en DUX.
+                    const excelRes = await exportarExcelRecepcionPedidoAction({
+                      pedidoHistoriaId,
+                      fechaFacturaIso: fechaRecepcion,
+                    });
+                    if (!excelRes.ok) {
+                      toast.error(excelRes.error ?? "Error al generar el Excel.");
+                      return;
+                    }
+                    descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
+
                     const res = await marcarPedidoHistoriaRegistradoAction({
                       pedidoHistoriaId,
                     });

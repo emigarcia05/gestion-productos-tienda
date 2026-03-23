@@ -30,6 +30,7 @@ model Sucursal {
   id             String   @id @default(cuid())
   codigo         String   @unique // guaymallen | maipu (estable en URLs y FKs)
   nombre         String
+  deposito       String?  // DEPÓSITO para exportaciones (texto para preservar formato)
   whatsapp       String?  @map("whatsapp")
   phoneNumberId  String?  @map("phone_number_id") // Meta WhatsApp Cloud API: envío sin abrir pestaña
   idDux          String?  @map("id_dux")
