@@ -51,6 +51,13 @@ function toDate(value: string | Date | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function dateToIsoYmd(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
@@ -215,6 +222,12 @@ export default function PedidoHistoriaDetalleModal({
       return null;
     }
     setDetalle(res.data);
+    // Para permitir "Descargar Recepcion" en modo RECIBIDO, alimentamos el campo con una fecha razonable.
+    // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
+    if (res.data.estado === "RECIBIDO") {
+      const d = toDate(res.data.generadoAt);
+      if (d) setFechaRecepcion(dateToIsoYmd(d));
+    }
     setErrorMsg(null);
     return res.data;
   }
@@ -481,46 +494,91 @@ export default function PedidoHistoriaDetalleModal({
               >
                 Cerrar
               </Button>
-              <Button
-                type="button"
-                className="disabled:cursor-not-allowed"
-                onClick={async () => {
-                  if (!pedidoHistoriaId) return;
-                  if (!puedeRegistrarEnDux) return;
-                  if (locked) return;
-                  if (guardando) return;
+              {!locked ? (
+                <Button
+                  type="button"
+                  className="disabled:cursor-not-allowed"
+                  onClick={async () => {
+                    if (!pedidoHistoriaId) return;
+                    if (!puedeRegistrarEnDux) return;
+                    if (locked) return;
+                    if (guardando) return;
 
-                  setGuardando("sync");
-                  try {
-                    // Secuencia requerida: primero generamos y descargamos el Excel (97-2003),
-                    // y luego registramos el pedido como "recibido" en DUX.
-                    const excelRes = await exportarExcelRecepcionPedidoAction({
-                      pedidoHistoriaId,
-                      fechaFacturaIso: fechaRecepcion,
-                    });
-                    if (!excelRes.ok) {
-                      toast.error(excelRes.error ?? "Error al generar el Excel.");
+                    setGuardando("sync");
+                    try {
+                      // Secuencia requerida: primero generamos y descargamos el Excel (97-2003),
+                      // y luego registramos el pedido como "recibido" en DUX.
+                      const excelRes = await exportarExcelRecepcionPedidoAction({
+                        pedidoHistoriaId,
+                        fechaFacturaIso: fechaRecepcion,
+                      });
+                      if (!excelRes.ok) {
+                        toast.error(excelRes.error ?? "Error al generar el Excel.");
+                        return;
+                      }
+                      descargarExcelBase64(
+                        excelRes.data.excelBase64,
+                        excelRes.data.filename
+                      );
+
+                      const res = await marcarPedidoHistoriaRegistradoAction({
+                        pedidoHistoriaId,
+                      });
+                      if (!res.ok) {
+                        toast.error(res.error ?? "Error al registrar en DUX.");
+                        return;
+                      }
+                      toast.success("Pedido registrado en DUX.");
+                      onOpenChange(false);
+                    } finally {
+                      setGuardando(null);
+                    }
+                  }}
+                  disabled={!puedeRegistrarEnDux}
+                >
+                  Registrar En Dux
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  className="disabled:cursor-not-allowed"
+                  disabled={locked && (guardando != null || loading || !pedidoHistoriaId)}
+                  onClick={async () => {
+                    if (!pedidoHistoriaId) return;
+                    const isoFecha =
+                      fechaRecepcion.trim() !== ""
+                        ? fechaRecepcion
+                        : (() => {
+                            const d = toDate(detalle?.generadoAt ?? null);
+                            return d ? dateToIsoYmd(d) : "";
+                          })();
+                    if (!isoFecha) {
+                      toast.error("No hay fecha para descargar la recepcion.");
                       return;
                     }
-                    descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
 
-                    const res = await marcarPedidoHistoriaRegistradoAction({
-                      pedidoHistoriaId,
-                    });
-                    if (!res.ok) {
-                      toast.error(res.error ?? "Error al registrar en DUX.");
-                      return;
+                    setGuardando("export");
+                    try {
+                      const excelRes = await exportarExcelRecepcionPedidoAction({
+                        pedidoHistoriaId,
+                        fechaFacturaIso: isoFecha,
+                      });
+                      if (!excelRes.ok) {
+                        toast.error(excelRes.error ?? "Error al generar el Excel.");
+                        return;
+                      }
+                      descargarExcelBase64(
+                        excelRes.data.excelBase64,
+                        excelRes.data.filename
+                      );
+                    } finally {
+                      setGuardando(null);
                     }
-                    toast.success("Pedido registrado en DUX.");
-                    onOpenChange(false);
-                  } finally {
-                    setGuardando(null);
-                  }
-                }}
-                disabled={!puedeRegistrarEnDux}
-              >
-                Registrar En Dux
-              </Button>
+                  }}
+                >
+                  Descargar Recepcion
+                </Button>
+              )}
             </>
           }
         >
