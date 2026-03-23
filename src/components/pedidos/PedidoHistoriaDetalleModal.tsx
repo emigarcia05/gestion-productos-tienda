@@ -315,6 +315,7 @@ export default function PedidoHistoriaDetalleModal({
           ...prev,
           [pedidoHistoriaItemId]: true,
         }));
+        setBusquedaAgregarProducto("");
       } else {
         setCheckListConfirmedByItem((prev) => {
           const next = { ...prev };
@@ -448,6 +449,14 @@ export default function PedidoHistoriaDetalleModal({
       });
     });
   }, [detalle?.items, checkListConfirmedByItem]);
+
+  const itemsFiltrados = useMemo(() => {
+    const q = busquedaAgregarProducto.trim().toLocaleLowerCase("es");
+    if (!q) return itemsOrdenados;
+    return itemsOrdenados.filter((it) =>
+      it.descripcionTienda.toLocaleLowerCase("es").includes(q)
+    );
+  }, [itemsOrdenados, busquedaAgregarProducto]);
 
   const fechaFacturaOk = fechaRecepcion.trim() !== "";
   const checklistCompleto =
@@ -583,7 +592,7 @@ export default function PedidoHistoriaDetalleModal({
             <div
               className={cn(
                 MODAL_RESUMEN_PANEL_CLASS,
-                "py-0"
+                "pt-0 pb-1.5"
               )}
             >
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full items-center")}>
@@ -652,30 +661,30 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 py-0">
-                <div className="min-w-0">
-                  <FiltroBusquedaInput
-                    id="pedido-historia-agregar-producto-filtro"
-                    placeholder="BUSCAR POR DESCRIPCIÓN..."
-                    value={busquedaAgregarProducto}
-                    onChange={setBusquedaAgregarProducto}
-                    isDebouncing={false}
-                    inputRef={busquedaAgregarRef}
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <FiltroBusquedaInput
+                      id="pedido-historia-agregar-producto-filtro"
+                      placeholder="BUSCAR POR DESCRIPCIÓN..."
+                      value={busquedaAgregarProducto}
+                      onChange={setBusquedaAgregarProducto}
+                      isDebouncing={false}
+                      inputRef={busquedaAgregarRef}
+                    />
+                  </div>
+                  <LimpiarFiltrosButton
+                    visible={busquedaAgregarProducto.trim().length > 0}
+                    onClick={() => setBusquedaAgregarProducto("")}
                   />
                 </div>
-                <LimpiarFiltrosButton
-                  visible={busquedaAgregarProducto.trim().length > 0}
-                  onClick={() => setBusquedaAgregarProducto("")}
-                />
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
                   className={cn(
-                    "h-9 min-w-[11rem] shrink-0 cursor-pointer justify-start gap-2 rounded-md border bg-transparent px-3 py-1 text-sm font-normal",
-                    inputBorderClassName,
-                    "focus-visible:ring-[#0072bb]",
+                    "h-9 min-w-[11rem] shrink-0 cursor-pointer justify-start gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
                     "disabled:cursor-not-allowed"
                   )}
                 >
@@ -730,10 +739,17 @@ export default function PedidoHistoriaDetalleModal({
                     <EmptyTableRow colSpan={5} message="Cargando…" />
                   ) : errorMsg ? (
                     <EmptyTableRow colSpan={5} message={errorMsg} />
-                  ) : itemsOrdenados.length === 0 ? (
-                    <EmptyTableRow colSpan={5} message="Sin ítems." />
+                  ) : itemsFiltrados.length === 0 ? (
+                    <EmptyTableRow
+                      colSpan={5}
+                      message={
+                        busquedaAgregarProducto.trim()
+                          ? "Sin ítems para la descripción buscada."
+                          : "Sin ítems."
+                      }
+                    />
                   ) : (
-                    itemsOrdenados.map((item) => {
+                    itemsFiltrados.map((item) => {
                       const isEditing = editingItemId === item.id;
                       const cantRecNum = item.cantRecibida ?? 0;
                       const cantRecibidaVisible =
