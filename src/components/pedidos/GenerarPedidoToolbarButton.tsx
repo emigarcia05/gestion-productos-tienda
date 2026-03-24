@@ -7,6 +7,7 @@ import {
   useState,
   type ComponentProps,
 } from "react";
+import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,7 @@ export default function GenerarPedidoToolbarButton({
   triggerClassName,
   triggerSize = "sm",
 }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [sucursal, setSucursal] = useState<SucursalPedido | "">("");
   const [proveedor, setProveedor] = useState("");
@@ -209,11 +211,13 @@ export default function GenerarPedidoToolbarButton({
       if (sentViaWhatsApp) {
         toast.success("Pedido generado y enviado al proveedor.");
         setOpen(false);
+        router.refresh();
         return;
       }
       descargarPdfBase64(pdfBase64, filename);
       toast.success(`PDF generado: ${filename}`);
       setOpen(false);
+      router.refresh();
     } finally {
       setLoading(false);
     }

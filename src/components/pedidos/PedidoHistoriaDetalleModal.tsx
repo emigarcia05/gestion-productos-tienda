@@ -713,7 +713,7 @@ export default function PedidoHistoriaDetalleModal({
                   className="contenedor-tabla-gestion no-scroll-x flex min-h-0 flex-1 flex-col overflow-hidden"
                   style={{ height: "auto" }}
                 >
-                  <div className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto max-h-[50vh] no-scrollbar">
+                  <div className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto no-scrollbar">
                     <div
                       className={cn(
                         !tablaYAltaHabilitados &&

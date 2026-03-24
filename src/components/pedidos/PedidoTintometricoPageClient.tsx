@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -81,6 +81,15 @@ export default function PedidoTintometricoPageClient({
       key: `${i.proveedorId}:TINTOMETRICO:${i.sucursalCodigo}:${i.codExt}`,
     }))
   );
+
+  useEffect(() => {
+    setItems(
+      initialItems.map((i) => ({
+        ...i,
+        key: `${i.proveedorId}:TINTOMETRICO:${i.sucursalCodigo}:${i.codExt}`,
+      }))
+    );
+  }, [initialItems]);
   const [filtroSucursal, setFiltroSucursal] = useState<string>("");
   const [filtroProveedor, setFiltroProveedor] = useState<string>("");
   const [q, setQ] = useState("");

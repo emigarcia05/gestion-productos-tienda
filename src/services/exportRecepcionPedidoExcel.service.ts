@@ -86,7 +86,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     const pedido = await prisma.pedidoHistoria.findUnique({
       where: { id: pedidoHistoriaId },
       select: {
-        proveedor: { select: { idProveedorDux: true } },
+        proveedor: { select: { idProveedorDux: true, prefijo: true } },
         sucursal: { select: { deposito: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
       },
@@ -122,7 +122,8 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       totalPedidoIngreso != null && Number.isFinite(totalPedidoIngreso) && totalPedidoIngreso > 0
         ? totalPedidoIngreso
         : totalImporte;
-    const precio = sumCantRecibida > 0 ? totalParaPrecio / sumCantRecibida : 0;
+    const precioBruto = sumCantRecibida > 0 ? totalParaPrecio / sumCantRecibida : 0;
+    const precio = Number(precioBruto.toFixed(2));
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => ({
       "TIPO DE COMPROBANTE": "Comprobante_Compra",
@@ -138,11 +139,13 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       "PRECIO INCLUYE IVA": "NO",
     }));
 
-    const d = fechaD;
-    const dd = pad2(d.getDate());
-    const mm = pad2(d.getMonth() + 1);
-    const yyyy = d.getFullYear();
-    const filename = `Recepcion Del Pedido - ${dd}-${mm}-${yyyy}.xls`;
+    const ahora = new Date();
+    const dd = pad2(ahora.getDate());
+    const mm = pad2(ahora.getMonth() + 1);
+    const hh = pad2(ahora.getHours());
+    const min = pad2(ahora.getMinutes());
+    const prefijoProveedor = (pedido.proveedor.prefijo ?? "").trim() || "SIN_PREFIJO";
+    const filename = `Recepcion Pedido - ${prefijoProveedor} - ${dd}_${mm} ${hh}_${min}.xls`;
 
     return {
       success: true,
