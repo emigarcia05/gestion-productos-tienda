@@ -24,6 +24,7 @@ export type FormaPedirReposicionOption = "CANT_MAXIMA" | "CANT_FIJA" | "";
 export interface ItemReposicion {
   idListaTienda: string;
   codExt: string;
+  codTienda: string;
   descripcionTienda: string | null;
   stock: number;
   idProveedor: string | null;
@@ -252,6 +253,7 @@ export async function getReposicionData(
     return {
       idListaTienda: r.id,
       codExt: r.codExt,
+      codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,
       stock,
       idProveedor,
@@ -281,6 +283,7 @@ export async function getReposicionData(
 export interface ItemSelectorReposicion {
   idListaTienda: string;
   codExt: string;
+  codTienda: string;
   descripcionTienda: string | null;
   idProveedor: string;
 }
@@ -324,6 +327,7 @@ export async function getProductosReposicionSelector(
     .map((r) => ({
       idListaTienda: r.id,
       codExt: r.codExt,
+      codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,
       idProveedor: r.listaPreciosProveedores[0].idProveedor,
     }));
@@ -332,7 +336,7 @@ export async function getProductosReposicionSelector(
 const upsertReglaSchema = z.object({
   idProveedor: prismaCuidSchema,
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
-  codExt: z.string().min(1, "Código requerido"),
+  codTienda: z.string().min(1, "Código tienda requerido"),
   formaPedir: z.enum(["CANT_MAXIMA", "CANT_FIJA"]),
   puntoReposicion: z.number().int().min(1, "Punto reposición requerido"),
   cant: z.number().int().min(1, "Cant. reposición requerida"),
@@ -353,13 +357,14 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
     const first = Object.values(msg).flat().find(Boolean);
     return { ok: false, error: (first as string) ?? "Datos inválidos." };
   }
-  const { idProveedor, sucursalCodigo, codExt, formaPedir, puntoReposicion, cant } = parsed.data;
+  const { idProveedor, sucursalCodigo, codTienda, formaPedir, puntoReposicion, cant } =
+    parsed.data;
 
   try {
     const result = await upsertPedidoMercaderiaReposicionConfig({
       sucursal: sucursalCodigo,
       idProveedor,
-      codExt,
+      codTienda,
       formaPedir,
       puntoReposicion,
       cantConf: cant,

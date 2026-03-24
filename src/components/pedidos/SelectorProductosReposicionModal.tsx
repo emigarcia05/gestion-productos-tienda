@@ -65,7 +65,7 @@ export default function SelectorProductosReposicionModal({
   }, [open, load]);
 
   const toggle = (item: ItemSelectorReposicion) => {
-    const key = `${item.idListaTienda}:${item.codExt}`;
+    const key = item.idListaTienda;
     if (excludeIds.includes(item.idListaTienda)) return;
     setSelected((prev) => {
       const next = new Set(prev);
@@ -76,7 +76,7 @@ export default function SelectorProductosReposicionModal({
   };
 
   const handleConfirmar = () => {
-    const list = items.filter((it) => selected.has(`${it.idListaTienda}:${it.codExt}`));
+    const list = items.filter((it) => selected.has(it.idListaTienda));
     onConfirmar(list);
     setSelected(new Set());
     setQ("");
@@ -184,7 +184,7 @@ export default function SelectorProductosReposicionModal({
                     )}
                     {!loading &&
                       items.map((item) => {
-                        const key = `${item.idListaTienda}:${item.codExt}`;
+                        const key = item.idListaTienda;
                         const isSelected = selected.has(key);
                         const disabled = excludeIds.includes(item.idListaTienda);
                         return (

@@ -49,41 +49,49 @@ async function getSucursalIdByCodigo(codigo: SucursalPedidoEnvio): Promise<strin
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
   sucursal: SucursalPedidoEnvio;
   idProveedor: string;
-  codExt: string;
+  codTienda: string;
   formaPedir: "CANT_MAXIMA" | "CANT_FIJA";
   puntoReposicion: number;
   cantConf: number;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { sucursal, idProveedor, codExt, formaPedir, puntoReposicion, cantConf } = params;
+  const { sucursal, idProveedor, codTienda, formaPedir, puntoReposicion, cantConf } = params;
 
   const punto = Math.max(0, Math.floor(Number(puntoReposicion) || 0));
   const cant = Math.max(0, Math.floor(Number(cantConf) || 0));
   if (!idProveedor.trim()) return { ok: false, error: "Proveedor requerido." };
-  if (!codExt.trim()) return { ok: false, error: "Código requerido." };
+  if (!codTienda.trim()) return { ok: false, error: "Código tienda requerido." };
   if (!formaPedir) return { ok: false, error: "Seleccioná Forma Pedir." };
   if (punto <= 0) return { ok: false, error: "Punto reposición inválido." };
   if (cant <= 0) return { ok: false, error: "Cant. reposición inválida." };
 
   try {
     const sucursalId = await getSucursalIdByCodigo(sucursal);
-    const provRow = await prisma.listaPrecioProveedor.findFirst({
-      where: { idProveedor: idProveedor.trim(), codExt: codExt.trim() },
+    const tienda = await prisma.listaPrecioTienda.findFirst({
+      where: { codTienda: codTienda.trim() },
       select: {
-        codProdProveedor: true,
-        descripcionProveedor: true,
-      },
-    });
-    if (!provRow) return { ok: false, error: "No se encontró el ítem en precios_proveedores." };
-
-    const tienda = await prisma.listaPrecioTienda.findUnique({
-      where: { codExt: codExt.trim() },
-      select: {
+        codExt: true,
         codTienda: true,
         descripcionTienda: true,
         stockMaipu: true,
         stockGuaymallen: true,
       },
     });
+    if (!tienda) {
+      return { ok: false, error: "No se encontró el producto en precios_tienda." };
+    }
+    const codExtResuelto = (tienda.codExt ?? "").trim();
+    if (!codExtResuelto) {
+      return { ok: false, error: "El producto no tiene cod_ext en precios_tienda." };
+    }
+
+    const provRow = await prisma.listaPrecioProveedor.findFirst({
+      where: { idProveedor: idProveedor.trim(), codExt: codExtResuelto },
+      select: {
+        codProdProveedor: true,
+        descripcionProveedor: true,
+      },
+    });
+    if (!provRow) return { ok: false, error: "No se encontró el ítem en precios_proveedores." };
 
     const stock =
       sucursal === "maipu"
@@ -96,7 +104,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         idProveedor: idProveedor.trim(),
         tipoPedido: TIPO_REPOSICION,
         sucursalId,
-        codExt: codExt.trim(),
+        codExt: codExtResuelto,
       },
       select: { id: true },
     });
@@ -124,7 +132,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
           idProveedor: idProveedor.trim(),
           tipoPedido: TIPO_REPOSICION,
           sucursalId,
-          codExt: codExt.trim(),
+          codExt: codExtResuelto,
           ...dataBase,
         },
       });

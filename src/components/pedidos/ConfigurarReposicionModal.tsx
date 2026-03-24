@@ -63,7 +63,14 @@ export default function ConfigurarReposicionModal({
       setCant(item.cant);
       setProductosAdicionales([]);
     }
-  }, [open, item.idListaTienda, item.codExt, item.formaPedir, item.puntoReposicion, item.cant]);
+  }, [
+    open,
+    item.idListaTienda,
+    item.codTienda,
+    item.formaPedir,
+    item.puntoReposicion,
+    item.cant,
+  ]);
 
   const nombreProducto = item.descripcionTienda ?? "—";
   const tituloCant =
@@ -79,8 +86,8 @@ export default function ConfigurarReposicionModal({
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
-      const keys = new Set(prev.map((p) => `${p.idListaTienda}:${p.codExt}`));
-      const nuevos = seleccionados.filter((p) => !keys.has(`${p.idListaTienda}:${p.codExt}`));
+      const keys = new Set(prev.map((p) => p.idListaTienda));
+      const nuevos = seleccionados.filter((p) => !keys.has(p.idListaTienda));
       return [...prev, ...nuevos];
     });
   };
@@ -91,7 +98,7 @@ export default function ConfigurarReposicionModal({
         (p) =>
           !(
             p.idListaTienda === producto.idListaTienda &&
-            p.codExt === producto.codExt
+            p.codTienda === producto.codTienda
           )
       )
     );
@@ -119,15 +126,18 @@ export default function ConfigurarReposicionModal({
 
     setGuardando(true);
     try {
-      const todos: { idProveedor: string; codExt: string }[] = [
-        { idProveedor: item.idProveedor, codExt: item.codExt },
-        ...productosAdicionales.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+      const todos: { idProveedor: string; codTienda: string }[] = [
+        { idProveedor: item.idProveedor, codTienda: item.codTienda },
+        ...productosAdicionales.map((p) => ({
+          idProveedor: p.idProveedor,
+          codTienda: p.codTienda,
+        })),
       ];
       for (const t of todos) {
         const res = await upsertReglaReposicion({
           idProveedor: t.idProveedor,
           sucursalCodigo: sucursal,
-          codExt: t.codExt,
+          codTienda: t.codTienda,
           formaPedir: formaPedir as "CANT_MAXIMA" | "CANT_FIJA",
           puntoReposicion: punto,
           cant: cantNum,
@@ -278,7 +288,7 @@ export default function ConfigurarReposicionModal({
                     </TableHeader>
                     <TableBody>
                       {productosAdicionales.map((p) => (
-                        <TableRow key={`${p.idListaTienda}:${p.codExt}`}>
+                        <TableRow key={p.idListaTienda}>
                           <TableCell className="text-xs py-2 text-left">
                             {p.descripcionTienda ?? "—"}
                           </TableCell>

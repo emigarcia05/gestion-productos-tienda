@@ -527,7 +527,8 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/app/api/sync-lista-precios-tienda/route.ts` | Misma comprobación que la Action. |
 | `src/actions/tienda.ts` | `getTiendaPageData`: `getTiendaPageParamsSchema`; `convertirEnProveedor`: también `puede(tienda.acceso)`. |
 | `src/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
-| `src/actions/reposicion.ts` | Zod sucursal/params selector; `upsertReglaReposicion`: `idProveedor` con `prismaCuidSchema`. |
+| `src/actions/reposicion.ts` | Zod sucursal/params selector; `upsertReglaReposicion`: `idProveedor` con `prismaCuidSchema` y `codTienda` como clave de entrada. |
+| `src/services/pedidosEnvio.service.ts` | Reposición: `upsertPedidoMercaderiaReposicionConfig` recibe `codTienda`, resuelve `codExt` desde `precios_tienda` y recién allí vincula con `precios_proveedores` por (`idProveedor`, `codExt`). |
 | `src/lib/validations/reposicion.ts` | Esquemas de lectura reposición. |
 | `src/actions/pedidos.ts` | `getPedidoUrgenteData` / `getEnviarPedidoTablaData`: `pedidosLectura` Zod. |
 | `src/lib/validations/pedidosLectura.ts` | Nuevo. |

@@ -49,7 +49,7 @@ export default function TablaReposicion({
   const handleDelete = useCallback(
     async (item: ItemReposicion) => {
       if (!item.idReposicion) return;
-      setSavingId(`${item.idListaTienda}:${item.codExt}`);
+      setSavingId(item.idListaTienda);
       const res = await deleteReglaReposicion({ id: item.idReposicion });
       setSavingId(null);
       if (res.ok) {
@@ -132,7 +132,7 @@ export default function TablaReposicion({
               </TableRow>
             )}
             {items.map((item) => {
-              const key = `${item.idListaTienda}:${item.codExt}`;
+              const key = item.idListaTienda;
               const isSaving = savingId === key;
               const tieneRegla = item.idReposicion != null;
               const puntoVal = tieneRegla ? item.puntoReposicion : "";
