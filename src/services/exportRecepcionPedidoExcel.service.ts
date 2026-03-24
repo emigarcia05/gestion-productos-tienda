@@ -18,7 +18,7 @@ export interface RecepcionPedidoExcelRow {
   "COMPROBANTE": string;
   "ID PROVEEDOR": string;
   "FECHA": string;
-  "FECHA IMPUTACIÓN CONTABLE": string;
+  "FECHA IMPUTACION CONTABLE": string;
   "REALIZA RECEPCION": "SI";
   "DEPOSITO": string;
   "CÓDIGO PRODUCTO": string;
@@ -134,7 +134,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       "COMPROBANTE": siguienteComprobante,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
       "FECHA": fechaFacturaDux,
-      "FECHA IMPUTACIÓN CONTABLE": fechaFacturaDux,
+      "FECHA IMPUTACION CONTABLE": fechaFacturaDux,
       "REALIZA RECEPCION": "SI",
       "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
       "CÓDIGO PRODUCTO": it.codTienda,
