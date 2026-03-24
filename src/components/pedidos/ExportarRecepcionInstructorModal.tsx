@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import AppModal from "@/components/shared/AppModal";
 import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const PASOS = [
-  { titulo: "Paso 1", texto: "Abrir el módulo \"Importar Datos\"", img: "/Importar Stock - Paso1.png" },
-  { titulo: "Paso 2", texto: "Iniciar \"Nueva Importación\"", img: "/Importar Stock - Paso2.png" },
-  { titulo: "Paso 3", texto: "Seleccionar \"Stock\"", img: "/Importar Stock - Paso3.png" },
-  { titulo: "Paso 4", texto: "Cargar el archivo Excel descargado", img: "/Importar Stock - Paso4.png" },
-  { titulo: "Paso 5", texto: "Seleccionar todos los item", img: "/Importar Stock - Paso5.png" },
+  { titulo: "Paso 1", texto: "Abrir el módulo \"Importar Datos\".", img: "/Importar Compra - Paso1.png" },
+  { titulo: "Paso 2", texto: "Iniciar \"Nueva Importacion\".", img: "/Importar Compra - Paso2.png" },
+  { titulo: "Paso 3", texto: "Seleccionar \"Compra\".", img: "/Importar Compra - Paso3.png" },
+  { titulo: "Paso 4", texto: "Cargar el archivo descargado.", img: "/Importar Compra - Paso4.png" },
+  { titulo: "Paso 5", texto: "Seleccionar todos los ítems y guardar.", img: "/Importar Compra - Paso5.png" },
 ] as const;
 
 interface Props {
@@ -21,7 +21,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function ExportarStockInstructorModal({ open, onOpenChange }: Props) {
+export default function ExportarRecepcionInstructorModal({ open, onOpenChange }: Props) {
   const [pasoActual, setPasoActual] = useState(0);
   const paso = PASOS[pasoActual];
 
@@ -40,18 +40,22 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
         bodyClassName="max-w-full flex flex-col min-h-0"
         scrollBody={false}
         actions={
-          <Button type="button" onClick={() => onOpenChange(false)} className="bg-primary text-primary-foreground">
+          <Button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="bg-primary text-primary-foreground"
+          >
             Cerrar
           </Button>
         }
       >
-        <div className="flex flex-col gap-4 min-h-0 flex-1 flex">
-          <div className="flex items-stretch justify-center gap-2 sm:gap-4 flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-2 overflow-hidden sm:gap-4">
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
+              className="relative z-10 h-10 w-10 shrink-0 self-center rounded-full"
               onClick={irAtras}
               disabled={pasoActual === 0}
               aria-label="Paso Anterior"
@@ -59,10 +63,12 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
               <ChevronLeft className="h-5 w-5" />
             </Button>
 
-            <div className="flex flex-col items-center text-center flex-1 min-w-0 min-h-0 overflow-hidden">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1 shrink-0">{paso.titulo}</p>
-              <p className="text-sm text-foreground mb-2 shrink-0">{paso.texto}</p>
-              <div className="w-full flex-1 min-h-0 aspect-video max-w-full flex justify-center items-center bg-muted/30 rounded-lg overflow-hidden relative z-0">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center overflow-hidden text-center">
+              <p className="mb-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-primary">
+                {paso.titulo}
+              </p>
+              <p className="mb-2 shrink-0 text-sm text-foreground">{paso.texto}</p>
+              <div className="relative z-0 flex min-h-0 w-full max-w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted/30 aspect-video">
                 <Image
                   src={paso.img}
                   alt={paso.texto}
@@ -77,7 +83,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
               type="button"
               variant="outline"
               size="icon"
-              className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
+              className="relative z-10 h-10 w-10 shrink-0 self-center rounded-full"
               onClick={irAdelante}
               disabled={pasoActual === PASOS.length - 1}
               aria-label="Paso Siguiente"
@@ -86,7 +92,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
             </Button>
           </div>
 
-          <div className="flex items-center justify-center gap-2 flex-wrap shrink-0 relative z-10">
+          <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-center gap-2">
             {PASOS.map((_, i) => (
               <button
                 key={i}
@@ -95,7 +101,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
                 aria-label={`Ir al paso ${i + 1}`}
                 aria-current={pasoActual === i ? "step" : undefined}
                 className={cn(
-                  "flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-colors",
+                  "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors",
                   pasoActual === i
                     ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"

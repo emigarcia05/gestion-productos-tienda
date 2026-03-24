@@ -55,7 +55,7 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
               className="shrink-0 h-10 w-10 rounded-full self-center relative z-10"
               onClick={irAtras}
               disabled={pasoActual === 0}
-              aria-label="Paso anterior"
+              aria-label="Paso Anterior"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>

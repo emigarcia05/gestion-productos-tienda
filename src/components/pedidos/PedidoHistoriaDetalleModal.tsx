@@ -29,8 +29,11 @@ import {
 } from "@/actions/pedidosHistoria";
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
+import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
 import { cn } from "@/lib/utils";
 import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
+
+const INSTRUCTOR_DELAY_MS = 1500;
 
 function parseIntSafe(value: string): number {
   const n = Math.max(0, Math.floor(Number(value) || 0));
@@ -197,6 +200,7 @@ export default function PedidoHistoriaDetalleModal({
   );
   /** Modo de corrección en pedidos RECEPCIONADO (edición local de UI). */
   const [modoCorreccionRecepcionado, setModoCorreccionRecepcionado] = useState(false);
+  const [showExportInstructor, setShowExportInstructor] = useState(false);
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
@@ -258,6 +262,7 @@ export default function PedidoHistoriaDetalleModal({
       setFechaRecepcion("");
       setCheckListConfirmedByItem({});
       setModoCorreccionRecepcionado(false);
+      setShowExportInstructor(false);
     });
 
     void (async () => {
@@ -560,6 +565,10 @@ export default function PedidoHistoriaDetalleModal({
                         excelRes.data.excelBase64,
                         excelRes.data.filename
                       );
+                      setTimeout(
+                        () => setShowExportInstructor(true),
+                        INSTRUCTOR_DELAY_MS
+                      );
 
                       const res = await marcarPedidoHistoriaRegistradoAction({
                         pedidoHistoriaId,
@@ -640,6 +649,10 @@ export default function PedidoHistoriaDetalleModal({
                         descargarExcelBase64(
                           excelRes.data.excelBase64,
                           excelRes.data.filename
+                        );
+                        setTimeout(
+                          () => setShowExportInstructor(true),
+                          INSTRUCTOR_DELAY_MS
                         );
                       } finally {
                         setGuardando(null);
@@ -1110,6 +1123,10 @@ export default function PedidoHistoriaDetalleModal({
         onAgregar={async (row, cantRecibida) => {
           await agregarNuevaFila(row, cantRecibida);
         }}
+      />
+      <ExportarRecepcionInstructorModal
+        open={showExportInstructor}
+        onOpenChange={setShowExportInstructor}
       />
     </>
   );
