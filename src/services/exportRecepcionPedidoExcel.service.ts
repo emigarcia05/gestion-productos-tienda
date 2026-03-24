@@ -14,13 +14,13 @@ export const duxIdEmpresaComprasSchema = z
   .max(99999999);
 
 export interface RecepcionPedidoExcelRow {
-  "TIPO DE COMPROBANTE": "Comprobante_Compra";
+  "TIPO COMPROBANTE": "Comprobante_Compra";
   "COMPROBANTE": string;
   "ID PROVEEDOR": string;
   "FECHA": string;
   "FECHA IMPUTACIÓN CONTABLE": string;
-  "REALIZA RECEPCIÓN": "SI";
-  "DEPÓSITO": string;
+  "REALIZA RECEPCION": "SI";
+  "DEPOSITO": string;
   "CÓDIGO PRODUCTO": string;
   "CANTIDAD": number;
   "PRECIO": number;
@@ -130,13 +130,13 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     const precio = Number(precioBruto.toFixed(2));
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => ({
-      "TIPO DE COMPROBANTE": "Comprobante_Compra",
+      "TIPO COMPROBANTE": "Comprobante_Compra",
       "COMPROBANTE": siguienteComprobante,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
       "FECHA": fechaFacturaDux,
       "FECHA IMPUTACIÓN CONTABLE": fechaFacturaDux,
-      "REALIZA RECEPCIÓN": "SI",
-      "DEPÓSITO": (pedido.sucursal.deposito ?? "").trim(),
+      "REALIZA RECEPCION": "SI",
+      "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
       "CÓDIGO PRODUCTO": it.codTienda,
       "CANTIDAD": it.cantRecibida,
       "PRECIO": precio,

@@ -353,7 +353,7 @@ Contrato (SSOT de integración + armado de filas):
    - Proceso:
      - Lee desde DB:
        - `pedidos_historia.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
-       - `pedidos_historia.sucursal.deposito` => columna `DEPÓSITO`
+      - `pedidos_historia.sucursal.deposito` => columna `DEPOSITO`
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
      - Filtra ítems con `cant_recibida != null`.
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
