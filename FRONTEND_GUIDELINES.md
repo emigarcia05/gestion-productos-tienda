@@ -102,6 +102,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - Input y SelectTrigger: `INPUT_FILTER_CLASS` / `SELECT_TRIGGER_FILTER_CLASS` = `"input-filtro-unificado"`.
    - Wrapper de cada Select: `FILTER_SELECT_WRAPPER_CLASS` = `"min-w-0 flex-1"`.
    - Contador: `FILTER_COUNT_CLASS`.
+   - `LimpiarFiltrosButton` (ícono cesto): **siempre visible** por regla global de UX, incluso sin filtros activos. Su acción sigue limpiando el estado de filtros actual.
    - SelectContent: `position="popper" side="bottom" align="start" className="select-content-filtro"`.
 
 3. **Input de búsqueda en filtros (reutilización)**

@@ -88,12 +88,12 @@ export const FILTER_COUNT_CLASS =
  */
 export function LimpiarFiltrosButton({
   onClick,
-  visible,
+  visible: _visible,
 }: {
   onClick: () => void;
-  visible: boolean;
+  /** DEPRECADO: el botón ahora se muestra siempre por regla global de UX. */
+  visible?: boolean;
 }) {
-  if (!visible) return null;
   return (
     <Button
       type="button"
@@ -101,6 +101,8 @@ export function LimpiarFiltrosButton({
       size="icon-lg"
       onClick={onClick}
       className="h-10 min-h-10 shrink-0"
+      aria-label="Limpiar filtros"
+      title="Limpiar filtros"
     >
       <Trash2 className="h-4 w-4" />
     </Button>
