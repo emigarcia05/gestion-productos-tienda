@@ -86,6 +86,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     const pedido = await prisma.pedidoHistoria.findUnique({
       where: { id: pedidoHistoriaId },
       select: {
+        total: true,
         proveedor: { select: { idProveedorDux: true, prefijo: true } },
         sucursal: { select: { deposito: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
@@ -118,10 +119,13 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
         idEmpresa: idEmpresaParsed.data,
       });
 
+    const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
       totalPedidoIngreso != null && Number.isFinite(totalPedidoIngreso) && totalPedidoIngreso > 0
         ? totalPedidoIngreso
-        : totalImporte;
+        : totalPersistido != null && Number.isFinite(totalPersistido) && totalPersistido > 0
+          ? totalPersistido
+          : totalImporte;
     const precioBruto = sumCantRecibida > 0 ? totalParaPrecio / sumCantRecibida : 0;
     const precio = Number(precioBruto.toFixed(2));
 

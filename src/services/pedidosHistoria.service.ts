@@ -65,6 +65,7 @@ export interface PedidoHistoriaDetalle {
   id: string;
   generadoAt: Date;
   registradoAt: Date | null;
+  total: number | null;
   estado: PedidoHistoriaEstado;
   proveedorId: string;
   proveedorNombre: string;
@@ -172,6 +173,7 @@ export async function getPedidoHistoriaDetalle(params: {
         generadoAt: true,
         estado: true,
         registradoAt: true,
+        total: true,
         proveedorId: true,
         sucursalId: true,
         proveedor: { select: { nombre: true } },
@@ -207,6 +209,7 @@ export async function getPedidoHistoriaDetalle(params: {
         id: pedido.id,
         generadoAt: pedido.generadoAt,
         registradoAt: pedido.registradoAt,
+        total: pedido.total == null ? null : Number(pedido.total),
         estado: pedido.estado as PedidoHistoriaEstado,
         proveedorId: pedido.proveedorId,
         proveedorNombre: pedido.proveedor.nombre,
@@ -413,6 +416,35 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
 
 export async function marcarPedidoHistoriaRegistrado(params: {
   pedidoHistoriaId: string;
+  totalPedido: number;
+}): Promise<ServiceResult<void>> {
+  const { pedidoHistoriaId, totalPedido } = params;
+  const id = pedidoHistoriaId.trim();
+  if (!id) return { success: false, error: "ID inválido." };
+  if (!Number.isFinite(totalPedido) || totalPedido <= 0) {
+    return { success: false, error: "Total inválido." };
+  }
+
+  try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
+    await prisma.pedidoHistoria.update({
+      where: { id },
+      data: {
+        estado: "RECEPCIONADO",
+        registradoAt: new Date(),
+        total: new Prisma.Decimal(totalPedido.toFixed(2)),
+      },
+    });
+    return { success: true, data: undefined };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al marcar el pedido como registrado.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function reabrirPedidoHistoriaRecepcion(params: {
+  pedidoHistoriaId: string;
 }): Promise<ServiceResult<void>> {
   const { pedidoHistoriaId } = params;
   const id = pedidoHistoriaId.trim();
@@ -421,13 +453,24 @@ export async function marcarPedidoHistoriaRegistrado(params: {
   try {
     await purgarPedidosHistoriaExpirados(prisma);
 
+    const actual = await prisma.pedidoHistoria.findUnique({
+      where: { id },
+      select: { estado: true },
+    });
+    if (!actual) return { success: false, error: "Pedido no encontrado." };
+
+    if (actual.estado === "SIN RECEPCION") {
+      // Idempotente: ya está abierto para edición.
+      return { success: true, data: undefined };
+    }
+
     await prisma.pedidoHistoria.update({
       where: { id },
-      data: { estado: "RECEPCIONADO", registradoAt: new Date() },
+      data: { estado: "SIN RECEPCION", registradoAt: null },
     });
     return { success: true, data: undefined };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Error al marcar el pedido como registrado.";
+    const msg = e instanceof Error ? e.message : "Error al reabrir la recepción del pedido.";
     return { success: false, error: msg };
   }
 }

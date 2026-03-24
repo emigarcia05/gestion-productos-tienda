@@ -189,18 +189,21 @@ export default function PedidoHistoriaDetalleModal({
   const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
   const [busquedaAgregarProducto, setBusquedaAgregarProducto] = useState("");
-  /** Valor ISO `YYYY-MM-DD` — UI: campo FECHA FACTURA; persistencia backend pendiente. */
+  /** Valor ISO `YYYY-MM-DD` — UI: campo FECHA FACTURA. */
   const [fechaRecepcion, setFechaRecepcion] = useState<string>("");
   /** Check list por ítem: solo se marca vía botón OK (confirma cant. recibida) o cesto (0 + verificar). */
   const [checkListConfirmedByItem, setCheckListConfirmedByItem] = useState<Record<string, boolean>>(
     {}
   );
+  /** Modo de corrección en pedidos RECEPCIONADO (edición local de UI). */
+  const [modoCorreccionRecepcionado, setModoCorreccionRecepcionado] = useState(false);
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
-  const locked = estado === "RECEPCIONADO";
+  const bloqueadoPorEstado = estado === "RECEPCIONADO";
+  const locked = bloqueadoPorEstado && !modoCorreccionRecepcionado;
   const busy = guardando != null || loading;
 
   const generadoAtStr = useMemo(() => {
@@ -223,6 +226,11 @@ export default function PedidoHistoriaDetalleModal({
             items: res.data.items.map((it) => ({ ...it, cantRecibida: null })),
           };
     setDetalle(detalleNormalizado);
+    if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total > 0) {
+      const totalNorm = String(res.data.total);
+      setTotalPedido(totalNorm);
+      setTotalPedidoDraft(totalNorm);
+    }
     // Para permitir "Descargar Recepcion" en modo RECEPCIONADO, alimentamos el campo con una fecha razonable.
     // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
     if (res.data.estado === "RECEPCIONADO") {
@@ -249,6 +257,7 @@ export default function PedidoHistoriaDetalleModal({
       setBusquedaAgregarProducto("");
       setFechaRecepcion("");
       setCheckListConfirmedByItem({});
+      setModoCorreccionRecepcionado(false);
     });
 
     void (async () => {
@@ -288,6 +297,34 @@ export default function PedidoHistoriaDetalleModal({
     if (locked) return false;
     if (guardando) return false;
     if (fechaRecepcion.trim() === "") return false;
+
+    if (bloqueadoPorEstado && modoCorreccionRecepcionado) {
+      setDetalle((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((it) =>
+            it.id === pedidoHistoriaItemId ? { ...it, cantRecibida } : it
+          ),
+        };
+      });
+      setEditingItemId(null);
+      setEditingValue("");
+      if (options?.confirmChecklistAfter) {
+        setCheckListConfirmedByItem((prev) => ({
+          ...prev,
+          [pedidoHistoriaItemId]: true,
+        }));
+        setBusquedaAgregarProducto("");
+      } else {
+        setCheckListConfirmedByItem((prev) => {
+          const next = { ...prev };
+          delete next[pedidoHistoriaItemId];
+          return next;
+        });
+      }
+      return true;
+    }
 
     setGuardando(pedidoHistoriaItemId);
     try {
@@ -526,6 +563,7 @@ export default function PedidoHistoriaDetalleModal({
 
                       const res = await marcarPedidoHistoriaRegistradoAction({
                         pedidoHistoriaId,
+                        totalPedido: Number(totalPedido),
                       });
                       if (!res.ok) {
                         toast.error(res.error ?? "Error al registrar en DUX.");
@@ -542,49 +580,75 @@ export default function PedidoHistoriaDetalleModal({
                   Registrar En Dux
                 </Button>
               ) : (
-                <Button
-                  type="button"
-                  className="disabled:cursor-not-allowed"
-                  disabled={locked && (guardando != null || loading || !pedidoHistoriaId)}
-                  onClick={async () => {
-                    if (!pedidoHistoriaId) return;
-                    const isoFecha =
-                      fechaRecepcion.trim() !== ""
-                        ? fechaRecepcion
-                        : (() => {
-                            const d = toDate(detalle?.generadoAt ?? null);
-                            return d ? dateToIsoYmd(d) : "";
-                          })();
-                    if (!isoFecha) {
-                      toast.error("No hay fecha para descargar la recepcion.");
-                      return;
-                    }
-
-                    setGuardando("export");
-                    try {
-                      const excelRes = await exportarExcelRecepcionPedidoAction({
-                        pedidoHistoriaId,
-                        fechaFacturaIso: isoFecha,
-                        totalPedidoIngreso:
-                          totalPedidoMontoPositivo(totalPedido)
-                            ? Number(totalPedido)
-                            : undefined,
-                      });
-                      if (!excelRes.ok) {
-                        toast.error(excelRes.error ?? "Error al generar el Excel.");
+                <>
+                  {!modoCorreccionRecepcionado ? (
+                    <Button
+                      type="button"
+                      className="disabled:cursor-not-allowed"
+                      disabled={guardando != null || loading}
+                      onClick={() => {
+                        setModoCorreccionRecepcionado(true);
+                      }}
+                    >
+                      Corregir Recepcion
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      className="disabled:cursor-not-allowed"
+                      disabled={guardando != null || loading}
+                      onClick={() => {
+                        setModoCorreccionRecepcionado(false);
+                        toast.success("Correccion de recepcion guardada.");
+                      }}
+                    >
+                      Guardar Correccion
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    className="disabled:cursor-not-allowed"
+                    disabled={guardando != null || loading || !pedidoHistoriaId}
+                    onClick={async () => {
+                      if (!pedidoHistoriaId) return;
+                      const isoFecha =
+                        fechaRecepcion.trim() !== ""
+                          ? fechaRecepcion
+                          : (() => {
+                              const d = toDate(detalle?.generadoAt ?? null);
+                              return d ? dateToIsoYmd(d) : "";
+                            })();
+                      if (!isoFecha) {
+                        toast.error("No hay fecha para descargar la recepcion.");
                         return;
                       }
-                      descargarExcelBase64(
-                        excelRes.data.excelBase64,
-                        excelRes.data.filename
-                      );
-                    } finally {
-                      setGuardando(null);
-                    }
-                  }}
-                >
-                  Descargar Recepcion
-                </Button>
+
+                      setGuardando("export");
+                      try {
+                        const excelRes = await exportarExcelRecepcionPedidoAction({
+                          pedidoHistoriaId,
+                          fechaFacturaIso: isoFecha,
+                          totalPedidoIngreso:
+                            totalPedidoMontoPositivo(totalPedido)
+                              ? Number(totalPedido)
+                              : undefined,
+                        });
+                        if (!excelRes.ok) {
+                          toast.error(excelRes.error ?? "Error al generar el Excel.");
+                          return;
+                        }
+                        descargarExcelBase64(
+                          excelRes.data.excelBase64,
+                          excelRes.data.filename
+                        );
+                      } finally {
+                        setGuardando(null);
+                      }
+                    }}
+                  >
+                    Descargar Recepcion
+                  </Button>
+                </>
               )}
             </>
           }

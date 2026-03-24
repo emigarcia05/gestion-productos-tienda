@@ -209,6 +209,7 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
     - `SIN RECEPCION`: snapshot creado (pendiente de recepción).
     - `RECEPCIONADO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
   - `registrado_at`: fecha/hora cuando se cambia a `RECEPCIONADO` (nullable).
+  - `total`: `NUMERIC(14,2)` nullable. Se persiste al registrar recepción para reimpresión y para recalcular el `PRECIO` unitario del Excel sin depender del input en UI.
   - Relaciones: `proveedor_id -> proveedores.id` y `sucursal_id -> sucursales.id`.
 
 - Items: tabla física `pedidos_historial_mercaderia` (Prisma: `PedidoHistoriaItem`)
@@ -225,7 +226,7 @@ Constraint:
 **Retención automática (sin triggers ni cron)**  
 - Regla: se eliminan filas de `pedidos_historia` cuyo `generado_at` es **anterior a 1 mes** (mes calendario vía `Date.setMonth` en el servidor, constante `MESES_RETENCION_PEDIDOS_HISTORIA` en `pedidosHistoria.service.ts`).  
 - Las filas de `pedidos_historial_mercaderia` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.  
-- La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
+- La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
@@ -284,6 +285,11 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`
   - Transición: setea `estado = "RECEPCIONADO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
+
+6b. `reabrirPedidoHistoriaRecepcion({ pedidoHistoriaId })`
+   - Uso: habilitar corrección de recepción desde UI cuando el pedido ya está `RECEPCIONADO`.
+   - Transición: setea `estado = "SIN RECEPCION"` y limpia `registrado_at = NULL`.
+   - Idempotente: si ya está en `SIN RECEPCION`, responde éxito sin cambios.
 
 7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
@@ -352,7 +358,9 @@ Contrato (SSOT de integración + armado de filas):
      - Filtra ítems con `cant_recibida != null`.
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
-    - Si no se recibe `totalPedidoIngreso` (p. ej. re-descarga sin total en UI), usa fallback `totalImporte / sum(cant_recibida)`.
+    - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:
+      1) `pedidos_historia.total` persistido al registrar recepción;
+      2) `totalImporte` devuelto por DUX `/compras`.
    - Salida:
      - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.
 
