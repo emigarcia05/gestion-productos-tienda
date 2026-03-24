@@ -513,6 +513,7 @@ export default function PedidoHistoriaDetalleModal({
                       const excelRes = await exportarExcelRecepcionPedidoAction({
                         pedidoHistoriaId,
                         fechaFacturaIso: fechaRecepcion,
+                        totalPedidoIngreso: Number(totalPedido),
                       });
                       if (!excelRes.ok) {
                         toast.error(excelRes.error ?? "Error al generar el Excel.");
@@ -564,6 +565,10 @@ export default function PedidoHistoriaDetalleModal({
                       const excelRes = await exportarExcelRecepcionPedidoAction({
                         pedidoHistoriaId,
                         fechaFacturaIso: isoFecha,
+                        totalPedidoIngreso:
+                          totalPedidoMontoPositivo(totalPedido)
+                            ? Number(totalPedido)
+                            : undefined,
                       });
                       if (!excelRes.ok) {
                         toast.error(excelRes.error ?? "Error al generar el Excel.");

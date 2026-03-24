@@ -11,6 +11,7 @@ import type { ExportRecepcionPedidoExcelPayload } from "@/services/exportRecepci
 const exportRecepcionPedidoExcelSchema = z.object({
   pedidoHistoriaId: z.string().cuid("ID inválido."),
   fechaFacturaIso: fechaFacturaIsoSchema,
+  totalPedidoIngreso: z.coerce.number().positive().optional(),
 });
 
 export async function exportarExcelRecepcionPedidoAction(
@@ -27,6 +28,7 @@ export async function exportarExcelRecepcionPedidoAction(
   const payloadRes = await getExportRecepcionPedidoExcelPayload({
     pedidoHistoriaId: parsed.data.pedidoHistoriaId,
     fechaFacturaIso: parsed.data.fechaFacturaIso,
+    totalPedidoIngreso: parsed.data.totalPedidoIngreso,
   });
 
   if (!payloadRes.success) return { ok: false, error: payloadRes.error };

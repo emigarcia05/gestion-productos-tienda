@@ -350,8 +350,9 @@ Contrato (SSOT de integración + armado de filas):
        - `pedidos_historia.sucursal.deposito` => columna `DEPÓSITO`
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
      - Filtra ítems con `cant_recibida != null`.
-     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
-    - Calcula `PRECIO` con: `totalImporte / sum(cant_recibida)` (mismo valor para todas las filas).
+    - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
+    - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
+    - Si no se recibe `totalPedidoIngreso` (p. ej. re-descarga sin total en UI), usa fallback `totalImporte / sum(cant_recibida)`.
    - Salida:
      - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.
 

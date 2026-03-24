@@ -62,8 +62,9 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
   pedidoHistoriaId: string;
   fechaFacturaIso: string; // YYYY-MM-DD
   idEmpresaCompras?: number;
+  totalPedidoIngreso?: number;
 }): Promise<ServiceResult<ExportRecepcionPedidoExcelPayload>> {
-  const { pedidoHistoriaId, fechaFacturaIso } = params;
+  const { pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso } = params;
 
   const fechaParsed = fechaFacturaIsoSchema.safeParse(fechaFacturaIso);
   if (!fechaParsed.success) {
@@ -117,7 +118,11 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
         idEmpresa: idEmpresaParsed.data,
       });
 
-    const precio = sumCantRecibida > 0 ? totalImporte / sumCantRecibida : 0;
+    const totalParaPrecio =
+      totalPedidoIngreso != null && Number.isFinite(totalPedidoIngreso) && totalPedidoIngreso > 0
+        ? totalPedidoIngreso
+        : totalImporte;
+    const precio = sumCantRecibida > 0 ? totalParaPrecio / sumCantRecibida : 0;
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => ({
       "TIPO DE COMPROBANTE": "Comprobante_Compra",
