@@ -57,8 +57,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pedidoHistoriaId: string | null;
-  /** Si el pedido está en estado SIN RECEPCION y hay callback + editor, se muestra junto a Cerrar. */
-  esEditor?: boolean;
+  /** Si el pedido está en estado SIN RECEPCION y hay callback, se muestra junto a Cerrar. */
   onIrARecepcion?: () => void;
   onDescargarPdf?: () => Promise<void> | void;
   descargandoPdf?: boolean;
@@ -68,7 +67,6 @@ export default function PedidoHistoriaLecturaModal({
   open,
   onOpenChange,
   pedidoHistoriaId,
-  esEditor = false,
   onIrARecepcion,
   onDescargarPdf,
   descargandoPdf = false,
@@ -135,7 +133,7 @@ export default function PedidoHistoriaLecturaModal({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
-            {detalle && !esRecibido && esEditor && onIrARecepcion ? (
+            {detalle && !esRecibido && onIrARecepcion ? (
               <Button type="button" variant="default" onClick={() => onIrARecepcion()}>
                 Recepcion Pedido
               </Button>

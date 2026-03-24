@@ -45,8 +45,6 @@ interface Props {
   sucursalCodigo: string;
   estado: EstadoFiltroPedido;
   q: string;
-  /** Recepción, borrar y mutaciones del historial requieren modo editor (alineado a Server Actions). */
-  esEditor: boolean;
 }
 
 function formatFechaNotaPedido(d: Date): string {
@@ -74,7 +72,6 @@ export default function HistorialPedidosPageClient({
   sucursalCodigo,
   estado,
   q,
-  esEditor,
 }: Props) {
   const router = useRouter();
   const [recepcionOpen, setRecepcionOpen] = useState(false);
@@ -194,7 +191,6 @@ export default function HistorialPedidosPageClient({
                             </TableCell>
                             <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                               <div className="flex items-center justify-center gap-2">
-                                {esEditor ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -215,7 +211,6 @@ export default function HistorialPedidosPageClient({
                                     Recepción De Mercadería
                                   </TooltipContent>
                                 </Tooltip>
-                                ) : null}
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -234,7 +229,6 @@ export default function HistorialPedidosPageClient({
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Ver Detalles</TooltipContent>
                                 </Tooltip>
-                                {esEditor ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -256,7 +250,6 @@ export default function HistorialPedidosPageClient({
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Borrar Pedido</TooltipContent>
                                 </Tooltip>
-                                ) : null}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -310,8 +303,7 @@ export default function HistorialPedidosPageClient({
             if (!v) setLecturaId(null);
           }}
           pedidoHistoriaId={lecturaId}
-          esEditor={esEditor}
-          onIrARecepcion={esEditor ? irARecepcionDesdeLectura : undefined}
+          onIrARecepcion={irARecepcionDesdeLectura}
           onDescargarPdf={descargarPdfDesdeLectura}
           descargandoPdf={descargandoPdfId !== null && descargandoPdfId === lecturaId}
         />

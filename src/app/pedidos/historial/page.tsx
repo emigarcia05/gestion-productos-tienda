@@ -22,7 +22,6 @@ interface Props {
 export default async function HistorialPedidosPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
-  const esEditor = rol === "editor";
 
   const { pagina = "1", proveedor = "", sucursal = "", estado = "", q = "" } =
     await searchParams;
@@ -70,7 +69,6 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
           sucursalCodigo={sucursalCodigo}
           estado={estadoUi}
           q={qTrim}
-          esEditor={esEditor}
         />
       </div>
     );
@@ -93,7 +91,6 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
       sucursalCodigo={sucursalCodigo}
       estado={estadoUi}
       q={qTrim}
-      esEditor={esEditor}
     />
   );
 }

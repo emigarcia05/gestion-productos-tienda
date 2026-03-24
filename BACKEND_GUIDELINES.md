@@ -411,7 +411,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 - **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` valida IDs con Zod antes de Prisma.
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
-- **`pedidosHistoria.ts`**: Lecturas con `puede(pedidos.acceso)`; **mutaciones** (cantidades, agregar ítem, registrar en DUX, borrar) exigen **`esEditor()`** además del permiso de pedidos.
+- **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.
 - **`pedidos.ts`**: `generarPdfEnviarPedidoAction` y `syncPedidoUrgenteEnvioAction` usan esquemas Zod dedicados; permisos de pedidos al inicio.
 - **`sesion.ts`**: `activarModoEditor` valida la clave con Zod.
 - **`tintometrico.ts` / `productosTienda.ts`**: Límites en `q` y `take` para reducir abuso.
