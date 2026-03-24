@@ -49,6 +49,10 @@ function formatDuxDateDDMMYYYY(d: Date): string {
   return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
+function formatExcelDateDDMMYYYYWithDash(d: Date): string {
+  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+}
+
 function firstDayOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
@@ -110,7 +114,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     const fechaD = isoToDate(fechaFacturaIso);
     const fechaDesde = formatDuxDateDDMMYYYY(firstDayOfMonth(fechaD));
     const fechaHasta = formatDuxDateDDMMYYYY(lastDayOfMonth(fechaD));
-    const fechaFacturaDux = formatDuxDateDDMMYYYY(fechaD);
+    const fechaFacturaExcel = formatExcelDateDDMMYYYYWithDash(fechaD);
 
     const { siguienteComprobante, totalImporte } =
       await getSiguienteComprobanteDuxCompra({
@@ -133,8 +137,8 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       "TIPO COMPROBANTE": "Comprobante_Compra",
       "COMPROBANTE": siguienteComprobante,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
-      "FECHA": fechaFacturaDux,
-      "FECHA IMPUTACION CONTABLE": fechaFacturaDux,
+      "FECHA": fechaFacturaExcel,
+      "FECHA IMPUTACION CONTABLE": fechaFacturaExcel,
       "REALIZA RECEPCION": "SI",
       "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
       "CÓDIGO PRODUCTO": it.codTienda,

@@ -355,6 +355,7 @@ Contrato (SSOT de integración + armado de filas):
        - `pedidos_historia.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
       - `pedidos_historia.sucursal.deposito` => columna `DEPOSITO`
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
+      - En el Excel, columnas `FECHA` y `FECHA IMPUTACION CONTABLE` se exportan en formato `DD-MM-AAAA`.
      - Filtra ítems con `cant_recibida != null`.
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
