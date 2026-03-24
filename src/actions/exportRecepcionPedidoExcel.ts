@@ -3,7 +3,7 @@
 import { z } from "zod";
 import type { ActionResult } from "@/lib/types";
 import { puede, PERMISOS } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
 import { getExportRecepcionPedidoExcelPayload } from "@/services/exportRecepcionPedidoExcel.service";
 import { fechaFacturaIsoSchema } from "@/services/exportRecepcionPedidoExcel.service";
 import type { ExportRecepcionPedidoExcelPayload } from "@/services/exportRecepcionPedidoExcel.service";
@@ -19,9 +19,6 @@ export async function exportarExcelRecepcionPedidoAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede exportar." };
   }
 
   const parsed = exportRecepcionPedidoExcelSchema.safeParse(params);

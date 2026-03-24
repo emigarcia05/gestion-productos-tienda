@@ -684,7 +684,7 @@ export default function PedidoHistoriaDetalleModal({
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
                   className={cn(
-                    "h-9 w-full min-w-0 shrink-0 cursor-pointer justify-start gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
+                    "h-9 w-full min-w-0 shrink-0 cursor-pointer justify-center gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
                     "disabled:cursor-not-allowed"
                   )}
                 >
@@ -798,22 +798,11 @@ export default function PedidoHistoriaDetalleModal({
                             ) : locked ? (
                               <span className="text-muted-foreground">—</span>
                             ) : (
-                              <div className="flex min-w-0 w-full flex-col items-center justify-center py-0">
-                                <Input
-                                  readOnly
-                                  tabIndex={-1}
-                                  value=""
-                                  aria-label="Lista de verificación"
-                                  title="OK copia CANT. PEDIDA en CANT. RECIBIDA y verifica; Editar copia CANT. PEDIDA y habilita edición; Cesto guarda 0 y verifica."
-                                  disabled={
-                                    busy || checkListConfirmed || !fechaFacturaOk || locked
-                                  }
-                                  className={cn(
-                                    "pointer-events-none h-7 min-h-7 w-full min-w-0 px-1 text-center text-xs tabular-nums",
-                                    inputBorderClassName
-                                  )}
-                                />
-                              </div>
+                              <span
+                                aria-label="Lista de verificación"
+                                title="Verificá con OK, Editar o Cesto en la columna ACCIONES."
+                                className="inline-block h-7 w-full"
+                              />
                             )}
                           </TableCell>
                           <TableCell
