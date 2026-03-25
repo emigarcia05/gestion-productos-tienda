@@ -222,13 +222,7 @@ export default function PedidoHistoriaDetalleModal({
       setErrorMsg(res.error ?? "Error al cargar detalle.");
       return null;
     }
-    const detalleNormalizado =
-      res.data.estado === "RECEPCIONADO"
-        ? res.data
-        : {
-            ...res.data,
-            items: res.data.items.map((it) => ({ ...it, cantRecibida: null })),
-          };
+    const detalleNormalizado = res.data;
     setDetalle(detalleNormalizado);
     if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total > 0) {
       const totalNorm = String(res.data.total);
@@ -413,7 +407,6 @@ export default function PedidoHistoriaDetalleModal({
     if (fechaRecepcion.trim() === "") return;
     if (!pedidoHistoriaId) return;
     const codTiendaAdded = producto.codTienda;
-    let nextOkItemId: string | null = null;
     const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
     if (cant <= 0) {
       toast.error("Ingresá una Cant. Recibida mayor a 0.");
@@ -438,24 +431,21 @@ export default function PedidoHistoriaDetalleModal({
       toast.success("Ítem agregado.");
       setAgregarProductosOpen(false);
 
-      // Enfocar la fila recién agregada en la columna editable "CANT. RECIBIDA".
       const itemNuevo = detalleNuevo?.items.find((it) => it.codTienda === codTiendaAdded);
       if (itemNuevo) {
-        nextOkItemId = itemNuevo.id;
+        // La cant. recibida ya quedó confirmada en el alta (modal + persistencia en BD).
+        setCheckListConfirmedByItem((prev) => ({
+          ...prev,
+          [itemNuevo.id]: true,
+        }));
       }
     } finally {
       setLoading(false);
       setGuardando(null);
       queueMicrotask(() => {
-        // UX: luego de agregar el producto, enfocar el botón OK (check) de la fila.
-        if (nextOkItemId) {
-          const okBtn = document.querySelector<HTMLButtonElement>(
-            `button[data-ok-button="${nextOkItemId}"]`
-          );
-          okBtn?.focus();
-        }
         setEditingItemId(null);
         setEditingValue("");
+        busquedaAgregarRef.current?.focus();
       });
     }
   }
@@ -520,7 +510,7 @@ export default function PedidoHistoriaDetalleModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <AppModal
-          title="Recepcion Del Pedido"
+          title="Recepcion Pedido"
           scrollBody={false}
           size="xl"
           className="sm:max-w-[66rem] h-[95vh] max-h-[95vh]"
@@ -743,8 +733,8 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className="grid w-full min-w-0 grid-cols-[85fr_15fr] items-center gap-x-4 pt-1 pb-0">
-                <div className="flex min-w-0 items-center gap-2">
+              <div className="flex w-full min-w-0 flex-col gap-3 pt-1 pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-x-10">
+                <div className="flex min-w-0 w-full max-w-full items-center gap-2 sm:w-auto sm:max-w-[18rem]">
                   <div className="min-w-0 flex-1">
                     <FiltroBusquedaInput
                       id="pedido-historia-agregar-producto-filtro"
@@ -753,6 +743,7 @@ export default function PedidoHistoriaDetalleModal({
                       onChange={setBusquedaAgregarProducto}
                       isDebouncing={false}
                       inputRef={busquedaAgregarRef}
+                      className="h-10 min-h-10"
                     />
                   </div>
                   <LimpiarFiltrosButton
@@ -766,7 +757,8 @@ export default function PedidoHistoriaDetalleModal({
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
                   className={cn(
-                    "h-9 w-full min-w-0 shrink-0 cursor-pointer justify-center gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
+                    "h-10 min-h-10 w-full min-w-0 shrink-0 cursor-pointer justify-center gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
+                    "sm:w-auto sm:shrink-0",
                     "disabled:cursor-not-allowed"
                   )}
                 >
