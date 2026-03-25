@@ -56,30 +56,30 @@ export async function getSiguienteComprobanteDuxCompra(params: {
     .map((id) => Number(id));
 
   if (sucursalIdDux.length === 0) {
-    throw new Error("No se pudo resolver 'id_dux' en sucursales (sin idSucursalEmpresa válidos).");
+    throw new Error("No se pudo resolver 'id_dux' en sucursales (sin idSucursal válidos).");
   }
 
   const comprasPorSucursal = await Promise.all(
-    sucursalIdDux.map(async (idSucursalEmpresa) => {
+    sucursalIdDux.map(async (idSucursal) => {
       try {
         const compras: CompraDux[] = await fetchComprasPage({
           fechaDesde: parsed.data.fechaDesde,
           fechaHasta: parsed.data.fechaHasta,
           idEmpresa: parsed.data.idEmpresa,
-          idSucursalEmpresa,
+          idSucursal,
           limit: 1,
         });
-        return { idSucursalEmpresa, compras };
+        return { idSucursal, compras };
       } catch {
         // Si DUX no soporta el filtro por sucursal (o falla el query), no rompemos todo:
         // intentamos el fallback al final si no hay resultados globales.
-        return { idSucursalEmpresa, compras: [] };
+        return { idSucursal, compras: [] };
       }
     })
   );
 
   const comprasValidas = comprasPorSucursal
-    .flatMap((r) => r.compras.map((c) => ({ c, idSucursalEmpresa: r.idSucursalEmpresa })))
+    .flatMap((r) => r.compras.map((c) => ({ c, idSucursal: r.idSucursal })))
     .filter(({ c }) => c && c.comprobante && /^\d+$/.test(c.comprobante));
 
   if (comprasValidas.length === 0) {

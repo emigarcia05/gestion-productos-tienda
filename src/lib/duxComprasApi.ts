@@ -4,14 +4,14 @@ export interface CompraDux {
   comprobante: string;
   total?: string;
   montoAplicado?: string;
-  idSucursalEmpresa?: string;
+  idSucursal?: string;
 }
 
 interface CompraDuxRaw {
   comprobante?: unknown;
   total?: unknown;
   monto_aplicado?: unknown;
-  id_sucursal_empresa?: unknown;
+  id_sucursal?: unknown;
 }
 
 interface ComprasApiResponseRaw {
@@ -31,8 +31,7 @@ function mapCompra(raw: unknown): CompraDux {
     comprobante: String(raw.comprobante ?? ""),
     total: raw.total != null ? String(raw.total) : undefined,
     montoAplicado: raw.monto_aplicado != null ? String(raw.monto_aplicado) : undefined,
-    idSucursalEmpresa:
-      raw.id_sucursal_empresa != null ? String(raw.id_sucursal_empresa) : undefined,
+    idSucursal: raw.id_sucursal != null ? String(raw.id_sucursal) : undefined,
   };
 }
 
@@ -45,14 +44,14 @@ export async function fetchComprasPage(params: {
   fechaDesde: string;
   fechaHasta: string;
   idEmpresa: number;
-  /** Opcional: filtra por sucursal en DUX (extraído desde `sucursales.id_dux`). */
-  idSucursalEmpresa?: number;
+  /** Opcional: filtra por sucursal en DUX usando el parámetro `idSucursal` (extraído desde `sucursales.id_dux`). */
+  idSucursal?: number;
   limit?: number;
 }): Promise<CompraDux[]> {
   const token = process.env.DUX_API_TOKEN;
   if (!token) throw new Error("DUX_API_TOKEN no configurado.");
 
-  const { fechaDesde, fechaHasta, idEmpresa, idSucursalEmpresa, limit = 1 } = params;
+  const { fechaDesde, fechaHasta, idEmpresa, idSucursal, limit = 1 } = params;
 
   const headers: HeadersInit = {
     accept: "application/json",
@@ -65,8 +64,8 @@ export async function fetchComprasPage(params: {
     `?fechaDesde=${encodeURIComponent(parseFechaDuxToQuery(fechaDesde))}` +
     `&fechaHasta=${encodeURIComponent(parseFechaDuxToQuery(fechaHasta))}` +
     `&idEmpresa=${encodeURIComponent(String(idEmpresa))}` +
-    (idSucursalEmpresa != null
-      ? `&idSucursalEmpresa=${encodeURIComponent(String(idSucursalEmpresa))}`
+    (idSucursal != null
+      ? `&idSucursal=${encodeURIComponent(String(idSucursal))}`
       : "") +
     `&limit=${encodeURIComponent(String(limit))}`;
 
