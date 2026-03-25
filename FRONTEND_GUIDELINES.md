@@ -53,7 +53,10 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - **Páginas con datos en cliente** (Lista precios, Sugeridos): usar `PaginacionClient` de `@/components/shared/PaginacionClient.tsx` con `paginaActual`, `totalPaginas` y `onPaginaChange`.  
    - En el backend, las consultas que alimentan tablas deben usar `skip` y `take` (p. ej. `take: PAGE_SIZE`, `skip: (pagina - 1) * PAGE_SIZE`) y devolver `total` y `totalPaginas` para que la UI muestre la paginación correctamente.
 
-9. **Al terminar un cambio**  
+9. **Zona horaria (Argentina)**  
+   - Para mostrar **fecha/hora de negocio** (pedidos, historial, impresión stock, nombres de export) usar `@/lib/fechaArgentina` (misma regla que backend: `America/Argentina/Buenos_Aires`). No depender de la zona del navegador si el dato es un instante UTC (p. ej. `generadoAt` serializado como ISO).
+
+10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
      - **Ritmo vertical** (`Sidebar.tsx`): entre **usuario y la 1.ª línea** y entre **2.ª línea y logo**, mismo espacio **intermedio** (`gap-3` / `pt-3` ≈ 12px). Entre **1.ª línea y navegación** y entre **sync/import y 2.ª línea**, mismo espacio **reducido** (`pt-2` ≈ 8px).

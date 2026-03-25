@@ -40,6 +40,12 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Dónde validar**: En la Action (recomendado) o en el servicio si la misma validación se reutiliza en varios puntos.
 - **Método**: Usar `.safeParse()`. En caso de error, mapear a mensaje legible y devolver `{ ok: false, error: string }`.
 
+### 1.3.1 Zona horaria de negocio (Argentina, UTC−3)
+
+- **Módulo**: `@/lib/fechaArgentina` — `TIMEZONE_ARGENTINA = "America/Argentina/Buenos_Aires"` y helpers (`formatDdMmHhMmArgentina`, `formatFechaLargaNotaPedidoArgentina`, `formatFechaHoraCompletaArgentina`, `dateToIsoYmdArgentina`, sellos para nombres de archivo).
+- **Por qué**: En servidor (p. ej. UTC en Vercel), `Date#getHours()` o `toLocaleDateString` sin `timeZone` muestran hora incorrecta en PDFs y nombres de archivo. Todo documento o UI que deba reflejar **hora Argentina** debe usar esos helpers o `Intl` con `timeZone: TIMEZONE_ARGENTINA`.
+- **Solo fecha de calendario** (`YYYY-MM-DD` sin hora, p. ej. factura en Excel DUX): formatear **desde las partes del ISO** (ver `exportRecepcionPedidoExcel.service.ts`: `parseIsoYmdParts`) para no depender del TZ del runtime.
+
 ### 1.4 Arquitectura limpia
 
 - **Servicios** (`src/services/`): Encapsulan acceso a datos (Prisma, SQL raw) y lógica de negocio. Las Actions los invocan; no al revés.

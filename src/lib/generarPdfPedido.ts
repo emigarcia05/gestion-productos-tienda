@@ -46,7 +46,6 @@ export function generarPdfPedido(
   // Nota de Pedido
   const headerTopY = y;
   const contentWidth = pageWidth - 2 * MARGIN;
-  const lineY = headerTopY + 9;
   const centerX = MARGIN + contentWidth / 2;
 
   doc.setTextColor(17, 17, 17);
