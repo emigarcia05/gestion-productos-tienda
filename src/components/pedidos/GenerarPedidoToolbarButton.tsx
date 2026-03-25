@@ -38,8 +38,11 @@ import {
 import {
   comprobarItemsParaGenerarPedidoAction,
   generarPdfEnviarPedidoAction,
+  getSobreStockReposicionParaModalAction,
 } from "@/actions/pedidos";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
+import SobreStockReposicionAdvertenciaModal from "@/components/pedidos/SobreStockReposicionAdvertenciaModal";
+import type { SobreStockReposicionItem } from "@/services/sobreStock.service";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -103,6 +106,10 @@ export default function GenerarPedidoToolbarButton({
   const [proveedor, setProveedor] = useState("");
   const [tipos, setTipos] = useState<TipoPedido[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sobreStockOpen, setSobreStockOpen] = useState(false);
+  const [sobreStockItems, setSobreStockItems] = useState<
+    SobreStockReposicionItem[]
+  >([]);
   const [multiTipoOpen, setMultiTipoOpen] = useState(false);
   const [hayItems, setHayItems] = useState<boolean | null>(null);
   const [verificandoItems, setVerificandoItems] = useState(false);
@@ -125,6 +132,8 @@ export default function GenerarPedidoToolbarButton({
       setHayItems(null);
       setVerificandoItems(false);
       setErrorVerificacion(null);
+      setSobreStockOpen(false);
+      setSobreStockItems([]);
     }
   }, [open]);
 
@@ -189,6 +198,27 @@ export default function GenerarPedidoToolbarButton({
             .map((t) => OPCIONES_TIPO.find((o) => o.value === t)?.label ?? t)
             .join(", ");
 
+  async function abrirModalSobreStock() {
+    const proveedorId = proveedor.trim();
+    const tiposSnapshot = [...tipos];
+    if (!sucursal || !proveedorId || tiposSnapshot.length === 0) return false;
+
+    const res = await getSobreStockReposicionParaModalAction({
+      proveedorId,
+      sucursal,
+      tipos: tiposSnapshot,
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return false;
+    }
+    if (!res.data.tieneSobreStock) return false;
+
+    setSobreStockItems(res.data.items);
+    setSobreStockOpen(true);
+    return true;
+  }
+
   async function handleGenerar() {
     if (!puedeGenerar || !sucursal || hayItems !== true) {
       toast.error(
@@ -198,12 +228,23 @@ export default function GenerarPedidoToolbarButton({
     }
     setLoading(true);
     try {
+      // Validacion opcional: sobrestock en REPOSICION requiere confirmacion.
+      if (tipos.includes("REPOSICION")) {
+        const opened = await abrirModalSobreStock();
+        if (opened) return;
+      }
+
       const result = await generarPdfEnviarPedidoAction({
         proveedorId: proveedor.trim(),
         sucursal,
         tipos,
       });
       if (!result.ok) {
+        const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
+        if (result.error.startsWith(prefix)) {
+          const reopened = await abrirModalSobreStock();
+          if (reopened) return;
+        }
         toast.error(result.error);
         return;
       }
@@ -221,6 +262,52 @@ export default function GenerarPedidoToolbarButton({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handlePedirAlProveedorIgual() {
+    if (!sucursal) return;
+    setLoading(true);
+    try {
+      const result = await generarPdfEnviarPedidoAction({
+        proveedorId: proveedor.trim(),
+        sucursal,
+        tipos,
+        bloquearSiSobreStock: true,
+        confirmarSobreStock: true,
+      });
+      if (!result.ok) {
+        const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
+        if (result.error.startsWith(prefix)) {
+          const reopened = await abrirModalSobreStock();
+          if (reopened) return;
+        }
+        toast.error(result.error);
+        return;
+      }
+
+      const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
+      setSobreStockOpen(false);
+
+      if (sentViaWhatsApp) {
+        toast.success("Pedido generado y enviado al proveedor.");
+        setOpen(false);
+        router.refresh();
+        return;
+      }
+
+      descargarPdfBase64(pdfBase64, filename);
+      toast.success(`PDF generado: ${filename}`);
+      setOpen(false);
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handlePreferirTransferencia() {
+    setSobreStockOpen(false);
+    setOpen(false);
+    toast.warning("Transferencia no disponible aun. El pedido quedo cancelado.");
   }
 
   return (
@@ -250,7 +337,11 @@ export default function GenerarPedidoToolbarButton({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  setSobreStockOpen(false);
+                  setSobreStockItems([]);
+                }}
                 disabled={loading}
               >
                 Cancelar
@@ -453,6 +544,15 @@ export default function GenerarPedidoToolbarButton({
           </div>
         </AppModal>
       </Dialog>
+
+      <SobreStockReposicionAdvertenciaModal
+        open={sobreStockOpen}
+        onOpenChange={(v) => setSobreStockOpen(v)}
+        items={sobreStockItems}
+        pending={loading}
+        onPedirAlProveedorIgual={handlePedirAlProveedorIgual}
+        onPreferirTransferencia={handlePreferirTransferencia}
+      />
     </>
   );
 }

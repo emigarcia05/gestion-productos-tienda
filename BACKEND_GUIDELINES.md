@@ -245,6 +245,28 @@ Constraint:
 - **Entrada** (Zod): `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
 - **Salida**: `ActionResult<{ hayItems: boolean }>` — reutiliza **`getEnviarPedidoTablaData`** con los tres datos completos (misma selección que vería la tabla de `/pedidos/enviar` si esos filtros estuvieran en la URL).
 
+#### `getSobreStockReposicionParaModalAction` (modal sobrestock - reposición)
+
+- **Uso**: action server-side para alimentar un modal/alerta en el flujo de **Generar Pedido** cuando la UI incluye **REPOSICION**.
+- **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
+- **Salida**: `ActionResult<{ tieneSobreStock: boolean; items: SobreStockReposicionItem[] }>` donde cada ítem incluye:
+  - `codExt`
+  - `stockSucursal`
+  - `topeReposicion` (equivale a `pedidos_mercaderia.reposicion_cant_conf`)
+  - `sobreStock = max(0, stockSucursal - topeReposicion)`
+  - `cantPedir` (la cantidad con la que ese ítem se incluiría en el pedido; hoy se filtra por `cant_pedir > 0`).
+- **Regla**: si `tipos` NO incluye `REPOSICION`, devuelve `{ tieneSobreStock: false, items: [] }` para evitar trabajo innecesario.
+
+#### `generarPdfEnviarPedidoAction` (bloqueo opcional por sobrestock)
+
+- **Nuevos params opcionales**:
+  - `bloquearSiSobreStock?: boolean`
+  - `confirmarSobreStock?: boolean`
+- **Regla**:
+  - Si `bloquearSiSobreStock === true` y `tipos` incluye `REPOSICION`, y existe al menos un ítem con sobrestock, la Action responde:
+    - `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }` cuando `confirmarSobreStock` es false.
+  - Cuando `confirmarSobreStock === true`, continúa con el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO).
+
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 
 - **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems `pedidos_mercaderia` con **`cant_pedir > 0`**. Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.

@@ -28,6 +28,10 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import {
+  getSobreStockReposicionItems,
+  type SobreStockReposicionItem,
+} from "@/services/sobreStock.service";
+import {
   getPedidoUrgenteDataParamsSchema,
   getEnviarPedidoTablaParamsSchema,
 } from "@/lib/validations/pedidosLectura";
@@ -192,7 +196,62 @@ const generarPdfEnviarPedidoSchema = z.object({
   tipos: z
     .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
     .min(1, "Al menos un tipo de pedido."),
+  /**
+   * Si `bloquearSiSobreStock` es true y hay ítems de REPOSICION con sobrestock,
+   * no se genera el pedido hasta que `confirmarSobreStock` sea true.
+   *
+   * La UI debería manejar el modal y llamar nuevamente con confirmación.
+   */
+  bloquearSiSobreStock: z.boolean().optional().default(false),
+  confirmarSobreStock: z.boolean().optional().default(false),
 });
+
+const getSobreStockReposicionParaModalSchema = z.object({
+  proveedorId: z.string().min(1).max(128),
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  tipos: z
+    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
+    .min(1, "Al menos un tipo de pedido."),
+});
+
+export async function getSobreStockReposicionParaModalAction(
+  raw: unknown
+): Promise<
+  ActionResult<{
+    tieneSobreStock: boolean;
+    items: SobreStockReposicionItem[];
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = getSobreStockReposicionParaModalSchema.safeParse(raw);
+  if (!parsed.success) {
+    const f = parsed.error.flatten().fieldErrors;
+    const msg =
+      f.proveedorId?.[0] ??
+      f.sucursal?.[0] ??
+      f.tipos?.[0] ??
+      "Datos inválidos para obtener sobrestock.";
+    return { ok: false, error: msg };
+  }
+
+  const { proveedorId, sucursal, tipos } = parsed.data;
+
+  // Solo tiene sentido cuando se va a generar con REPOSICION.
+  if (!tipos.includes("REPOSICION")) {
+    return { ok: true, data: { tieneSobreStock: false, items: [] } };
+  }
+
+  const res = await getSobreStockReposicionItems({
+    proveedorId: proveedorId.trim(),
+    sucursal,
+  });
+
+  return { ok: true, data: res };
+}
 
 /**
  * Sincroniza el pedido urgente a la tabla pedidos_envio.
@@ -334,6 +393,8 @@ export async function generarPdfEnviarPedidoAction(params: {
   proveedorId: string;
   sucursal: string;
   tipos: string[];
+  bloquearSiSobreStock?: boolean;
+  confirmarSobreStock?: boolean;
 }): Promise<
   ActionResult<{
     pdfBase64: string;
@@ -356,7 +417,13 @@ export async function generarPdfEnviarPedidoAction(params: {
       "Seleccioná proveedor, sucursal y al menos un tipo de pedido.";
     return { ok: false, error: msg };
   }
-  const { proveedorId, sucursal: sucursalValida, tipos } = parsedParams.data;
+  const {
+    proveedorId,
+    sucursal: sucursalValida,
+    tipos,
+    bloquearSiSobreStock,
+    confirmarSobreStock,
+  } = parsedParams.data;
 
   function sanitizeFilenamePart(s: string): string {
     // Reemplaza caracteres no válidos para nombres de archivo (Windows y, por compatibilidad, también para WhatsApp).
@@ -380,6 +447,21 @@ export async function generarPdfEnviarPedidoAction(params: {
         ok: false,
         error: "No hay ítems para generar el pedido con la selección indicada.",
       };
+    }
+
+    // Validación opcional: bloqueo por sobrestock para REPOSICION.
+    if (bloquearSiSobreStock && tipos.includes("REPOSICION")) {
+      const sobreStockRes = await getSobreStockReposicionItems({
+        proveedorId: proveedorId.trim(),
+        sucursal: sucursalValida as SucursalPedidoEnvio,
+      });
+
+      if (sobreStockRes.items.length > 0 && !confirmarSobreStock) {
+        return {
+          ok: false,
+          error: `SOBRESTOCK_REQUIERE_CONFIRMACION:${sobreStockRes.items.length}`,
+        };
+      }
     }
 
     const historiaRes = await crearPedidoHistoriaSnapshot({
