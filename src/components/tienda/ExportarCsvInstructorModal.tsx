@@ -9,11 +9,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const PASOS = [
-  { titulo: "Paso 1", texto: 'Abrir el módulo "Importar Datos"', img: "/Importar Precios - Paso1.png" },
-  { titulo: "Paso 2", texto: 'Iniciar "Nueva Importacion"', img: "/Importar Precios - Paso2.png" },
-  { titulo: "Paso 3", texto: 'Seleccionar "Producto"', img: "/Importar Precios - Paso3.png" },
-  { titulo: "Paso 4", texto: "Cargar el archivo descargado", img: "/Importar Precios - Paso4.png" },
-  { titulo: "Paso 5", texto: "Seleccionar todos los ítems y guardar", img: "/Importar Precios - Paso5.png" },
+  { titulo: "Paso 1", texto: 'Abrir el módulo "Importar Datos"', img: "/importar_precios_1.png" },
+  { titulo: "Paso 2", texto: 'Iniciar "Nueva Importacion"', img: "/importar_precios_2.png" },
+  { titulo: "Paso 3", texto: 'Seleccionar "Producto"', img: "/importar_precios_3.png" },
+  { titulo: "Paso 4", texto: "Cargar el archivo descargado", img: "/importar_precios_4.png" },
+  { titulo: "Paso 5", texto: "Seleccionar todos los ítems y guardar", img: "/importar_precios_5.png" },
 ] as const;
 
 interface Props {

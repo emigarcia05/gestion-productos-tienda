@@ -9,11 +9,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const PASOS = [
-  { titulo: "Paso 1", texto: "Abrir el módulo \"Importar Datos\"", img: "/Importar Stock - Paso1.png" },
-  { titulo: "Paso 2", texto: "Iniciar \"Nueva Importación\"", img: "/Importar Stock - Paso2.png" },
-  { titulo: "Paso 3", texto: "Seleccionar \"Stock\"", img: "/Importar Stock - Paso3.png" },
-  { titulo: "Paso 4", texto: "Cargar el archivo Excel descargado", img: "/Importar Stock - Paso4.png" },
-  { titulo: "Paso 5", texto: "Seleccionar todos los item", img: "/Importar Stock - Paso5.png" },
+  { titulo: "Paso 1", texto: "Abrir el módulo \"Importar Datos\"", img: "/importar_stock_1.png" },
+  { titulo: "Paso 2", texto: "Iniciar \"Nueva Importación\"", img: "/importar_stock_2.png" },
+  { titulo: "Paso 3", texto: "Seleccionar \"Stock\"", img: "/importar_stock_3.png" },
+  { titulo: "Paso 4", texto: "Cargar el archivo Excel descargado", img: "/importar_stock_4.png" },
+  { titulo: "Paso 5", texto: "Seleccionar todos los item", img: "/importar_stock_5.png" },
 ] as const;
 
 interface Props {

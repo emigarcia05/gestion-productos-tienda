@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const PASOS = [
-  { titulo: "Paso 1", texto: "Abrir el módulo \"Importar Datos\".", img: "/Importar Compra - Paso1.png" },
-  { titulo: "Paso 2", texto: "Iniciar \"Nueva Importacion\".", img: "/Importar Compra - Paso2.png" },
-  { titulo: "Paso 3", texto: "Seleccionar \"Compra\".", img: "/Importar Compra - Paso3.png" },
-  { titulo: "Paso 4", texto: "Cargar el archivo descargado.", img: "/Importar Compra - Paso4.png" },
-  { titulo: "Paso 5", texto: "Seleccionar todos los ítems y guardar.", img: "/Importar Compra - Paso5.png" },
+  { titulo: "Paso 1", texto: "Abrir el módulo \"Importar Datos\".", img: "/importar_compra_1.png" },
+  { titulo: "Paso 2", texto: "Iniciar \"Nueva Importacion\".", img: "/importar_compra_2.png" },
+  { titulo: "Paso 3", texto: "Seleccionar \"Compra\".", img: "/importar_compra_3.png" },
+  { titulo: "Paso 4", texto: "Cargar el archivo descargado.", img: "/importar_compra_4.png" },
+  { titulo: "Paso 5", texto: "Seleccionar todos los ítems y guardar.", img: "/importar_compra_5.png" },
 ] as const;
 
 interface Props {
