@@ -331,10 +331,10 @@ Contrato (SSOT de lógica de negocio + integración externa):
      - `fechaHasta`: `string` formato `DD/MM/YYYY`
      - `idEmpresa`: `number` entero positivo
    - Proceso:
-     - Llama a `GET https://erp.duxsoftware.com.ar/WSERP/rest/services/compras` con:
-       - `fechaDesde`, `fechaHasta`, `idEmpresa` y `limit=1`
-     - Toma `results[0].comprobante` del JSON (string numérico).
-     - Calcula `siguienteComprobante = comprobante + 1` usando `BigInt` para evitar problemas con `safe integer`.
+     - Lee de DB las sucursales y resuelve `sucursales.id_dux` (columna `sucursales.idDux` en Prisma).
+     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` con:
+       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursalEmpresa=<id_dux>` y `limit=1`.
+     - Del set resultante toma el mayor `comprobante` numérico y calcula `siguienteComprobante = maxComprobante + 1` usando `BigInt`.
    - Salida:
      - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
    - Errores:
