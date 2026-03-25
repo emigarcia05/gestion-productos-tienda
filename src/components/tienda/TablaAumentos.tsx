@@ -24,6 +24,7 @@ import { fmtPctEntero } from "@/lib/format";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
+import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
 
 function exportarXLS(items: ItemAumento[]) {
   import("xlsx").then((XLSX) => {
@@ -47,13 +48,7 @@ function exportarXLS(items: ItemAumento[]) {
       { wch: 12 },
     ];
 
-    const ahora   = new Date();
-    const dd      = String(ahora.getDate()).padStart(2, "0");
-    const mm      = String(ahora.getMonth() + 1).padStart(2, "0");
-    const aa      = String(ahora.getFullYear()).slice(-2);
-    const hh      = String(ahora.getHours()).padStart(2, "0");
-    const min     = String(ahora.getMinutes()).padStart(2, "0");
-    const nombre  = `Act. Px. Compra ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
+    const nombre = `Act. Px. Compra ${formatDdMmYyHhMmNombreArchivoArgentina(new Date())}.xls`;
 
     XLSX.writeFile(libro, nombre, { bookType: "xls" });
   });

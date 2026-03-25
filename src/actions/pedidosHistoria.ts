@@ -6,6 +6,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
+import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
 
@@ -121,16 +122,6 @@ export async function descargarPdfPedidoHistoriaAction(
   const { items, proveedorNombre, proveedorPrefijo, sucursalCodigo, generadoAt } =
     res.data;
 
-  function pad2(n: number): string {
-    return String(n).padStart(2, "0");
-  }
-  function fmtDdMmHHmm(d: Date): string {
-    const dd = pad2(d.getDate());
-    const mm = pad2(d.getMonth() + 1);
-    const hh = pad2(d.getHours());
-    const min = pad2(d.getMinutes());
-    return `${dd}/${mm} ${hh}:${min}`;
-  }
   function sanitizeFilenamePart(s: string): string {
     return s.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_").trim();
   }
@@ -145,7 +136,7 @@ export async function descargarPdfPedidoHistoriaAction(
     { fechaDocumento: generadoAt }
   );
   const prefijoProveedor = sanitizeFilenamePart(proveedorPrefijo || "");
-  const fechaStr = fmtDdMmHHmm(generadoAt);
+  const fechaStr = formatDdMmHhMmArgentina(generadoAt);
   const filename = `Nota Pedido - ${prefijoProveedor} - ${fechaStr}.pdf`;
   const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 

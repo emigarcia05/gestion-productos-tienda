@@ -21,6 +21,10 @@ import {
   tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
+import {
+  formatDdMmHhMmArgentina,
+  formatDdMmYyHhMmNombreArchivoArgentina,
+} from "@/lib/fechaArgentina";
 
 function exportarStockExcel(
   items: ItemStock[],
@@ -42,25 +46,14 @@ function exportarStockExcel(
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Ajuste stock");
     hoja["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 22 }];
-    const ahora = new Date();
-    const dd = String(ahora.getDate()).padStart(2, "0");
-    const mm = String(ahora.getMonth() + 1).padStart(2, "0");
-    const aa = String(ahora.getFullYear()).slice(-2);
-    const hh = String(ahora.getHours()).padStart(2, "0");
-    const min = String(ahora.getMinutes()).padStart(2, "0");
-    const nombre = `Ajuste Stock ${dd}-${mm}-${aa} ${hh}:${min}.xls`;
+    const nombre = `Ajuste Stock ${formatDdMmYyHhMmNombreArchivoArgentina(new Date())}.xls`;
     XLSX.writeFile(libro, nombre, { bookType: "xls" });
   });
 }
 
 function fmtFecha(d: Date | null): string {
   if (!d) return "";
-  const dt = new Date(d);
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const hh = String(dt.getHours()).padStart(2, "0");
-  const min = String(dt.getMinutes()).padStart(2, "0");
-  return `${dd}/${mm} ${hh}:${min}`;
+  return formatDdMmHhMmArgentina(new Date(d));
 }
 
 export interface TablaStockHandle {

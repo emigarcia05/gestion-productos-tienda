@@ -4,6 +4,7 @@
  */
 import { jsPDF } from "jspdf";
 import type { ItemPedidoParaPdf } from "@/services/pedidosEnvio.service";
+import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
 
 const MARGIN = 14;
 const ROW_HEIGHT = 7;
@@ -20,14 +21,6 @@ const ROW_BORDER_RGB = { r: 224, g: 232, b: 240 }; // #e0e8f0
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
   return str.slice(0, max - 2) + "...";
-}
-
-function fmtFechaNotaPedido(d: Date): string {
-  const weekday = d.toLocaleDateString("es-ES", { weekday: "long" });
-  const month = d.toLocaleDateString("es-ES", { month: "long" });
-  const year = d.getFullYear();
-  const day = d.getDate();
-  return `${weekday} ${day} de ${month} de ${year}`;
 }
 
 export type GenerarPdfPedidoOptions = {
@@ -65,7 +58,7 @@ export function generarPdfPedido(
   doc.setFontSize(DATE_FONT_SIZE);
   doc.setFont("helvetica", "normal");
   const fechaDoc = options?.fechaDocumento ?? new Date();
-  doc.text(fmtFechaNotaPedido(fechaDoc), centerX, headerTopY + 6, { align: "center" });
+  doc.text(formatFechaLargaNotaPedidoArgentina(fechaDoc), centerX, headerTopY + 6, { align: "center" });
 
   // (Sin línea divisoria: el encabezado de tabla ya separa visualmente)
   y = headerTopY + 17;

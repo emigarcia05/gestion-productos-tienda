@@ -59,7 +59,8 @@ export const PERMISOS = {
     /** Control Aumentos (/tienda/aumentos). */
     controlAumentos: { simple: false, editor: true },
     acciones: {
-      sincronizar: { simple: false, editor: true },
+      /** Lista tienda DUX: sidebar y POST /api/sync-lista-precios-tienda; simple y editor pueden disparar. */
+      sincronizar: { simple: true, editor: true },
     },
     tabla: {
       codItem:      { simple: false, editor: true },

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { ItemStock } from "@/actions/stock";
+import { formatFechaHoraCompletaArgentina } from "@/lib/fechaArgentina";
 
 interface Props {
   items:    ItemStock[];
@@ -13,10 +14,7 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fecha = new Date().toLocaleDateString("es-AR", {
-      day: "2-digit", month: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
+    const fecha = formatFechaHoraCompletaArgentina(new Date());
 
     const filas = items.map((item) => {
       const stock = item.stock % 1 === 0 ? item.stock.toFixed(0) : item.stock.toFixed(2);

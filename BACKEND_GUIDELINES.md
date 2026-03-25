@@ -26,7 +26,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`).
   - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`.
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)`; IDs de ítem tienda con `uuidSchema`; filtros de búsqueda acotados con Zod en la Action.
-  - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` (misma regla que la UI; no basarse solo en `esEditor()` salvo que coincida con la matriz).
+  - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)`. En la matriz actual **`simple` y `editor`** tienen `sincronizar: true` (slidenav y cualquier cliente autenticado con sesión válida). El `GET` de estado (`/api/sync-lista-precios-tienda/status`) sigue sin chequeo de rol explícito en el route: cualquier sesión que pueda llamar la API ve el mismo progreso global.
 - **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos).
 - **Lecturas de listados con filtros** (pedidos urgente/enviar, reposición, stock, tienda): además del permiso de módulo, validar el objeto de parámetros con esquemas dedicados (`@/lib/validations/pedidosLectura`, `reposicion`, `stock`, `tienda`) para acotar `q`, `pagina`, sucursales y arrays (`tipos`).
 
@@ -476,7 +476,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `prisma/migrations/20260318000000_add_sync_dux_status/migration.sql` | Nueva tabla `sync_dux_status` para persistir estado de sincronización DUX en BD (`running`, `phase`, `processed`, `total`, `error`, `last_completed_at`, `updated_at`) y soportar polling estable en sidebar. |
 | `prisma/schema.prisma` | Nuevo modelo `SyncDuxStatus` (mapeo a `sync_dux_status`) para tipado fuerte y evitar SQL raw en lecturas/escrituras. |
 | `src/lib/syncDuxStatusDb.ts` | Helper tipado de persistencia de estado DUX (start/progress/success/error + lectura) usando Prisma. `last_completed_at` se actualiza **solo en sync OK**; en error se mantiene `processed/total` (no se resetean al hacer update por conflicto). |
-| `src/app/api/sync-lista-precios-tienda/route.ts` | `GET` y `POST` validan `esEditor()` antes de mutar; sigue evitando doble ejecución y persiste progreso/resultado vía helper. |
+| `src/app/api/sync-lista-precios-tienda/route.ts` | `GET` y `POST` validan `puede(rol, PERMISOS.tienda.acciones.sincronizar)` (simple y editor); evitan doble ejecución y persisten progreso/resultado vía helper. |
 | `src/app/api/sync-lista-precios-tienda/status/route.ts` | `GET` lee estado desde BD y expone `lastCompletedAt` para UI de sidebar. |
 
 ---
@@ -495,7 +495,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: auditoría Server Actions 2026-03-23 — permisos en lecturas lista precios / proveedores / vínculos; Zod en listados (pedidos, reposición, stock, tienda); sync DUX alineado a `PERMISOS.tienda.acciones.sincronizar`; eliminación real de proveedor con manejo FK; `prismaCuidSchema` para proveedor.*
+*Última actualización: 2026-03-25 — sync DUX (`PERMISOS.tienda.acciones.sincronizar`): habilitado también para rol `simple` (misma regla en Action y `POST`/`GET` sync). Histórico: auditoría Server Actions 2026-03-23 — permisos en lecturas lista precios / proveedores / vínculos; Zod en listados; eliminación real de proveedor con manejo FK; `prismaCuidSchema` para proveedor.*
 
 ---
 
@@ -523,7 +523,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/services/proveedor.service.ts` | `deleteProveedor` con `ServiceResult` y errores FK. |
 | `src/lib/validations/common.ts` | `prismaCuidSchema`. |
 | `src/actions/vinculos.ts` | `getVinculos` / `listarProductosParaVincular`: `PERMISOS.tienda.acceso` + Zod. |
-| `src/actions/syncListaPrecioTienda.ts` | `PERMISOS.tienda.acciones.sincronizar` en lugar de solo `esEditor()`. |
+| `src/actions/syncListaPrecioTienda.ts` | `PERMISOS.tienda.acciones.sincronizar` (simple + editor desde 2026-03-25). |
 | `src/app/api/sync-lista-precios-tienda/route.ts` | Misma comprobación que la Action. |
 | `src/actions/tienda.ts` | `getTiendaPageData`: `getTiendaPageParamsSchema`; `convertirEnProveedor`: también `puede(tienda.acceso)`. |
 | `src/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |

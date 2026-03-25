@@ -24,6 +24,7 @@ import { AlertTriangle } from "lucide-react";
 import { Download, Loader2 } from "lucide-react";
 import { ICON_WARNING_INTERACTIVE_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
+import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 
 function deltaCantidades(it: PedidoHistoriaItemDetalle): number {
   return (it.cantRecibida ?? 0) - it.cantPedida;
@@ -35,15 +36,6 @@ function tituloCeldaCantRecibida(it: PedidoHistoriaItemDetalle): string {
   const sign = d > 0 ? "+" : "";
   const rec = (it.cantRecibida ?? 0).toLocaleString("es-AR");
   return `Pedido ${it.cantPedida.toLocaleString("es-AR")}, recibido ${rec}. Diferencia: ${sign}${d.toLocaleString("es-AR")}.`;
-}
-
-function formatDdMmHHmm(d: Date): string {
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  const dd = pad2(d.getDate());
-  const mm = pad2(d.getMonth() + 1);
-  const hh = pad2(d.getHours());
-  const min = pad2(d.getMinutes());
-  return `${dd}/${mm} ${hh}:${min}`;
 }
 
 function toDate(value: string | Date | null | undefined): Date | null {
@@ -118,7 +110,7 @@ export default function PedidoHistoriaLecturaModal({
         ? detalle.registradoAt
         : detalle.generadoAt;
     const d = toDate(ref);
-    return d ? formatDdMmHHmm(d) : "";
+    return d ? formatDdMmHhMmArgentina(d) : "";
   }, [detalle, esRecibido]);
 
   return (

@@ -29,6 +29,7 @@ import { Eye, PackageCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import { descargarPdfPedidoHistoriaAction } from "@/actions/pedidosHistoria";
+import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 
 type PedidoHistoriaResumenClient = Omit<PedidoHistoriaResumen, "generadoAt" | "registradoAt"> & {
   generadoAt: string;
@@ -45,15 +46,6 @@ interface Props {
   sucursalCodigo: string;
   estado: EstadoFiltroPedido;
   q: string;
-}
-
-function formatFechaNotaPedido(d: Date): string {
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  const dd = pad2(d.getDate());
-  const mm = pad2(d.getMonth() + 1);
-  const hh = pad2(d.getHours());
-  const min = pad2(d.getMinutes());
-  return `${dd}/${mm} ${hh}:${min}`;
 }
 
 function parseDate(value: string | null | undefined): Date | null {
@@ -169,7 +161,7 @@ export default function HistorialPedidosPageClient({
                     ) : (
                       items.map((it, idx) => {
                         const fecha = parseDate(it.generadoAt);
-                        const fechaStr = fecha ? formatFechaNotaPedido(fecha) : "";
+                        const fechaStr = fecha ? formatDdMmHhMmArgentina(fecha) : "";
                         return (
                           <TableRow
                             key={it.id}

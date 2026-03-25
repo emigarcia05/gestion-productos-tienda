@@ -32,6 +32,10 @@ import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
 import { cn } from "@/lib/utils";
 import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
+import {
+  dateToIsoYmdArgentina,
+  formatDdMmHhMmArgentina,
+} from "@/lib/fechaArgentina";
 
 const INSTRUCTOR_DELAY_MS = 1500;
 
@@ -40,27 +44,11 @@ function parseIntSafe(value: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function formatDdMmHHmm(d: Date): string {
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  const dd = pad2(d.getDate());
-  const mm = pad2(d.getMonth() + 1);
-  const hh = pad2(d.getHours());
-  const min = pad2(d.getMinutes());
-  return `${dd}/${mm} ${hh}:${min}`;
-}
-
 function toDate(value: string | Date | null | undefined): Date | null {
   if (!value) return null;
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function dateToIsoYmd(d: Date): string {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
 }
 
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
@@ -212,7 +200,7 @@ export default function PedidoHistoriaDetalleModal({
 
   const generadoAtStr = useMemo(() => {
     const d = toDate(detalle?.generadoAt ?? null);
-    return d ? formatDdMmHHmm(d) : "";
+    return d ? formatDdMmHhMmArgentina(d) : "";
   }, [detalle?.generadoAt]);
 
   async function cargarDetalle(id: string): Promise<PedidoHistoriaDetalle | null> {
@@ -233,7 +221,7 @@ export default function PedidoHistoriaDetalleModal({
     // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
     if (res.data.estado === "RECEPCIONADO") {
       const d = toDate(res.data.generadoAt);
-      if (d) setFechaRecepcion(dateToIsoYmd(d));
+      if (d) setFechaRecepcion(dateToIsoYmdArgentina(d));
     }
     setErrorMsg(null);
     return detalleNormalizado;
@@ -615,7 +603,7 @@ export default function PedidoHistoriaDetalleModal({
                           ? fechaRecepcion
                           : (() => {
                               const d = toDate(detalle?.generadoAt ?? null);
-                              return d ? dateToIsoYmd(d) : "";
+                              return d ? dateToIsoYmdArgentina(d) : "";
                             })();
                       if (!isoFecha) {
                         toast.error("No hay fecha para descargar la recepcion.");
@@ -734,7 +722,7 @@ export default function PedidoHistoriaDetalleModal({
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
               <div className="flex w-full min-w-0 flex-col gap-3 pt-1 pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-x-10">
-                <div className="flex min-w-0 w-full max-w-full items-center gap-2 sm:w-auto sm:max-w-[18rem]">
+                <div className="flex min-w-0 w-full max-w-full items-center gap-2 sm:w-auto sm:max-w-[36rem]">
                   <div className="min-w-0 flex-1">
                     <FiltroBusquedaInput
                       id="pedido-historia-agregar-producto-filtro"

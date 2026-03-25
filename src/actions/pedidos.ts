@@ -19,6 +19,7 @@ import {
 } from "@/services/pedidosEnvio.service";
 import { crearPedidoHistoriaSnapshot } from "@/services/pedidosHistoria.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
+import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
@@ -357,18 +358,6 @@ export async function generarPdfEnviarPedidoAction(params: {
   }
   const { proveedorId, sucursal: sucursalValida, tipos } = parsedParams.data;
 
-  function pad2(n: number): string {
-    return String(n).padStart(2, "0");
-  }
-
-  function fmtDdMmHHmm(d: Date): string {
-    const dd = pad2(d.getDate());
-    const mm = pad2(d.getMonth() + 1);
-    const hh = pad2(d.getHours());
-    const min = pad2(d.getMinutes());
-    return `${dd}/${mm} ${hh}:${min}`;
-  }
-
   function sanitizeFilenamePart(s: string): string {
     // Reemplaza caracteres no válidos para nombres de archivo (Windows y, por compatibilidad, también para WhatsApp).
     return s.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_").trim();
@@ -412,7 +401,7 @@ export async function generarPdfEnviarPedidoAction(params: {
       tiposLabel
     );
     const prefijoProveedor = sanitizeFilenamePart(proveedor.prefijo || "");
-    const fechaStr = fmtDdMmHHmm(new Date());
+    const fechaStr = formatDdMmHhMmArgentina(new Date());
     const filename = `Nota Pedido - ${prefijoProveedor} - ${fechaStr}.pdf`;
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
