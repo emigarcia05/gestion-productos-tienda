@@ -332,8 +332,10 @@ Contrato (SSOT de lógica de negocio + integración externa):
      - `idEmpresa`: `number` entero positivo
    - Proceso:
      - Lee de DB las sucursales y resuelve `sucursales.id_dux` (columna `sucursales.idDux` en Prisma).
-     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` con:
+     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
        - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=1`.
+     - Entre cada petición a `/compras` y la siguiente espera **al menos 5 s** (DUX responde `429` si se supera la frecuencia). Intervalo configurable con `DUX_COMPRAS_MIN_INTERVAL_MS` (ms; por defecto `5000`; `0` desactiva la espera solo para entornos de prueba).
+     - Si tras recorrer sucursales no hay comprobantes válidos y se usa el fallback sin `idSucursal`, también espera ese intervalo **después** de la última consulta por sucursal.
      - Del set resultante toma el mayor `comprobante` numérico y calcula `siguienteComprobante = maxComprobante + 1` usando `BigInt`.
    - Salida:
      - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
@@ -501,7 +503,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-03-25 — sync DUX (`PERMISOS.tienda.acciones.sincronizar`): habilitado también para rol `simple` (misma regla en Action y `POST`/`GET` sync). Histórico: auditoría Server Actions 2026-03-23 — permisos en lecturas lista precios / proveedores / vínculos; Zod en listados; eliminación real de proveedor con manejo FK; `prismaCuidSchema` para proveedor.*
+*Última actualización: 2026-03-25 — DUX `/compras`: `getSiguienteComprobanteDuxCompra` serializa llamadas y espera ≥5 s entre peticiones (`DUX_COMPRAS_MIN_INTERVAL_MS`) para evitar 429. Histórico: sync DUX rol `simple`; auditoría Server Actions 2026-03-23.*
 
 ---
 

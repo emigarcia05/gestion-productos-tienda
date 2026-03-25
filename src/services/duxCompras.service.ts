@@ -3,6 +3,18 @@ import { fetchComprasPage } from "@/lib/duxComprasApi";
 import type { CompraDux } from "@/lib/duxComprasApi";
 import { prisma } from "@/lib/prisma";
 
+/** DUX devuelve 429 si las peticiones a `/compras` van demasiado seguidas; mínimo 5 s entre una y otra. */
+function duxComprasMinIntervalMs(): number {
+  const raw = process.env.DUX_COMPRAS_MIN_INTERVAL_MS;
+  if (raw == null || raw === "") return 5000;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 5000;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export const fechaDuxCompraSchema = z
   .string()
   .regex(/^\d{2}\/\d{2}\/\d{4}$/, "Fecha inválida. Formato esperado: DD/MM/YYYY");
@@ -59,24 +71,28 @@ export async function getSiguienteComprobanteDuxCompra(params: {
     throw new Error("No se pudo resolver 'id_dux' en sucursales (sin idSucursal válidos).");
   }
 
-  const comprasPorSucursal = await Promise.all(
-    sucursalIdDux.map(async (idSucursal) => {
-      try {
-        const compras: CompraDux[] = await fetchComprasPage({
-          fechaDesde: parsed.data.fechaDesde,
-          fechaHasta: parsed.data.fechaHasta,
-          idEmpresa: parsed.data.idEmpresa,
-          idSucursal,
-          limit: 1,
-        });
-        return { idSucursal, compras };
-      } catch {
-        // Si DUX no soporta el filtro por sucursal (o falla el query), no rompemos todo:
-        // intentamos el fallback al final si no hay resultados globales.
-        return { idSucursal, compras: [] };
-      }
-    })
-  );
+  const intervalMs = duxComprasMinIntervalMs();
+  const comprasPorSucursal: Array<{ idSucursal: number; compras: CompraDux[] }> = [];
+  for (let i = 0; i < sucursalIdDux.length; i++) {
+    const idSucursal = sucursalIdDux[i];
+    if (i > 0 && intervalMs > 0) {
+      await delay(intervalMs);
+    }
+    try {
+      const compras: CompraDux[] = await fetchComprasPage({
+        fechaDesde: parsed.data.fechaDesde,
+        fechaHasta: parsed.data.fechaHasta,
+        idEmpresa: parsed.data.idEmpresa,
+        idSucursal,
+        limit: 1,
+      });
+      comprasPorSucursal.push({ idSucursal, compras });
+    } catch {
+      // Si DUX no soporta el filtro por sucursal (o falla el query), no rompemos todo:
+      // intentamos el fallback al final si no hay resultados globales.
+      comprasPorSucursal.push({ idSucursal, compras: [] });
+    }
+  }
 
   const comprasValidas = comprasPorSucursal
     .flatMap((r) => r.compras.map((c) => ({ c, idSucursal: r.idSucursal })))
@@ -84,6 +100,9 @@ export async function getSiguienteComprobanteDuxCompra(params: {
 
   if (comprasValidas.length === 0) {
     // Fallback: comportamiento anterior (sin filtrar por sucursal).
+    if (sucursalIdDux.length > 0 && intervalMs > 0) {
+      await delay(intervalMs);
+    }
     const compras: CompraDux[] = await fetchComprasPage({
       fechaDesde: parsed.data.fechaDesde,
       fechaHasta: parsed.data.fechaHasta,
