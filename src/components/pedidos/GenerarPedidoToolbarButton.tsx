@@ -41,7 +41,7 @@ import {
   getSobreStockReposicionParaModalAction,
 } from "@/actions/pedidos";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
-import SobreStockReposicionAdvertenciaModal from "@/components/pedidos/SobreStockReposicionAdvertenciaModal";
+import SobreStockReposicionAdvertenciaModal from "@/components/shared/SobreStockReposicionAdvertenciaModal";
 import type { SobreStockReposicionItem } from "@/services/sobreStock.service";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
@@ -198,25 +198,28 @@ export default function GenerarPedidoToolbarButton({
             .map((t) => OPCIONES_TIPO.find((o) => o.value === t)?.label ?? t)
             .join(", ");
 
-  async function abrirModalSobreStock() {
+  /** Tras `SOBRESTOCK_REQUIERE_CONFIRMACION` del servidor, carga ítems y abre el modal. */
+  async function abrirModalSobrestockDesdeServidor(): Promise<void> {
     const proveedorId = proveedor.trim();
-    const tiposSnapshot = [...tipos];
-    if (!sucursal || !proveedorId || tiposSnapshot.length === 0) return false;
+    if (!sucursal || !proveedorId || tipos.length === 0) return;
 
     const res = await getSobreStockReposicionParaModalAction({
       proveedorId,
       sucursal,
-      tipos: tiposSnapshot,
+      tipos: [...tipos],
     });
     if (!res.ok) {
       toast.error(res.error);
-      return false;
+      return;
     }
-    if (!res.data.tieneSobreStock) return false;
-
+    if (!res.data.tieneSobreStock) {
+      toast.error(
+        "No se pudo mostrar el detalle de sobrestock. Volvé a intentar generar el pedido."
+      );
+      return;
+    }
     setSobreStockItems(res.data.items);
     setSobreStockOpen(true);
-    return true;
   }
 
   async function handleGenerar() {
@@ -228,12 +231,6 @@ export default function GenerarPedidoToolbarButton({
     }
     setLoading(true);
     try {
-      // Validacion opcional: sobrestock en REPOSICION requiere confirmacion.
-      if (tipos.includes("REPOSICION")) {
-        const opened = await abrirModalSobreStock();
-        if (opened) return;
-      }
-
       const result = await generarPdfEnviarPedidoAction({
         proveedorId: proveedor.trim(),
         sucursal,
@@ -242,8 +239,8 @@ export default function GenerarPedidoToolbarButton({
       if (!result.ok) {
         const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
         if (result.error.startsWith(prefix)) {
-          const reopened = await abrirModalSobreStock();
-          if (reopened) return;
+          await abrirModalSobrestockDesdeServidor();
+          return;
         }
         toast.error(result.error);
         return;
@@ -272,14 +269,13 @@ export default function GenerarPedidoToolbarButton({
         proveedorId: proveedor.trim(),
         sucursal,
         tipos,
-        bloquearSiSobreStock: true,
         confirmarSobreStock: true,
       });
       if (!result.ok) {
         const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
         if (result.error.startsWith(prefix)) {
-          const reopened = await abrirModalSobreStock();
-          if (reopened) return;
+          await abrirModalSobrestockDesdeServidor();
+          return;
         }
         toast.error(result.error);
         return;

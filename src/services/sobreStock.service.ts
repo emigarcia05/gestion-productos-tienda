@@ -8,7 +8,8 @@ export interface SobreStockReposicionItem {
   descripcionProveedor: string;
   descripcionTienda: string | null;
   stockSucursal: number;
-  topeReposicion: number;
+  /** Tope de reposición (`reposicion_cant_conf`); `null` si no hay configuración de REPOSICION para el ítem. */
+  topeReposicion: number | null;
   sobreStock: number;
   cantPedir: number;
 }
@@ -25,12 +26,13 @@ function getStockFieldBySucursal(sucursal: SucursalPedidoEnvio): "stockMaipu" | 
 /**
  * Calcula el "sobrestock" para ítems de REPOSICION antes de generar el pedido.
  *
- * Regla:
- * - topeReposicion = item.reposicion_cant_conf
- * - stockSucursal = precios_tienda.stock_{maipu|guaymallen} por cod_ext
- * - sobreStock = max(0, stockSucursal - topeReposicion)
+ * Reglas (por ítem, `stockSucursal` desde `precios_tienda` según sucursal):
+ * 1. Con configuración de reposición: `reposicion_cant_conf > 0` → sobrestock si
+ *    `stockSucursal > reposicion_cant_conf`, con `sobreStock = stockSucursal - reposicion_cant_conf`.
+ * 2. Sin configuración: `reposicion_cant_conf` nulo o ≤ 0 → sobrestock si `stockSucursal > 0`,
+ *    con `sobreStock = stockSucursal` y `topeReposicion = null` en la salida.
  *
- * Para alinear el flujo con el pedido real, solo se incluyen ítems con cant_pedir > 0.
+ * Solo se incluyen ítems con `cant_pedir > 0` (mismo criterio que el pedido a generar).
  */
 export async function getSobreStockReposicionItems(params: {
   proveedorId: string;
@@ -90,12 +92,24 @@ export async function getSobreStockReposicionItems(params: {
     if (!tienda) continue;
 
     const stockSucursal = Number(tienda[stockField] ?? 0);
-    const topeReposicion = Number(row.reposicionCantConf ?? 0);
-    if (!Number.isFinite(stockSucursal) || !Number.isFinite(topeReposicion)) continue;
-    if (topeReposicion <= 0) continue;
+    const topeRaw = row.reposicionCantConf;
+    const topeReposicion =
+      topeRaw != null && Number.isFinite(Number(topeRaw)) ? Number(topeRaw) : 0;
+    if (!Number.isFinite(stockSucursal)) continue;
 
-    const sobreStock = Math.max(0, stockSucursal - topeReposicion);
-    if (sobreStock <= 0) continue;
+    const tieneConfigReposicion = topeReposicion > 0;
+
+    let sobreStock = 0;
+    let topeEnSalida: number | null = null;
+
+    if (tieneConfigReposicion) {
+      topeEnSalida = topeReposicion;
+      if (stockSucursal <= topeReposicion) continue;
+      sobreStock = stockSucursal - topeReposicion;
+    } else {
+      if (stockSucursal <= 0) continue;
+      sobreStock = stockSucursal;
+    }
 
     items.push({
       idItemPedidoEnvio: row.id,
@@ -104,7 +118,7 @@ export async function getSobreStockReposicionItems(params: {
       descripcionProveedor: (row.descripcionProveedor ?? "").trim(),
       descripcionTienda: row.descripcionTienda ?? null,
       stockSucursal,
-      topeReposicion,
+      topeReposicion: topeEnSalida,
       sobreStock,
       cantPedir: Number(row.cantPedir ?? 0),
     });

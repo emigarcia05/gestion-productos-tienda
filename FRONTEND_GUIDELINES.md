@@ -347,7 +347,15 @@ Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`).
 - **Título del modal**: **Generar Pedido** (title case). Footer: **Cancelar** (outline) + **Generar Pedido** (primary).
 - **Tipo de pedido**: `DropdownMenu` de **`radix-ui`** (`modal={false}` dentro del `Dialog`) con **`Portal`** + **`CheckboxItem`** (tres opciones: URGENTE, TINTOMÉTRICO, REPOSICIÓN); no usar panel `absolute` bajo el trigger — el **`AppModal`**/`DialogContent` llevan `overflow-hidden` y recortaban el menú.
 - **Bajo los tres desplegables**: recuadro reservado (`min-h`, borde `border-border`, `bg-muted/40`), contenido **centrado** (`items-center`, `text-center`). Estados: aviso/error → ícono **`AlertCircle`** `text-destructive`; comprobación → **`Loader2`** `text-muted-foreground`; sin ítems → **`AlertCircle`** rojo + texto muted; listo → **`CheckCircle2`** `text-primary` (#0072BB vía token) + **«Listo para generar el pedido.»**. El footer **Generar Pedido** solo con los tres filtros y **`hayItems === true`**.
-- **Validacion de sobrestock en REPOSICION (alerta):** al hacer click en **Generar Pedido**, si los `tipos` incluyen **REPOSICION** se consulta `getSobreStockReposicionParaModalAction({ proveedorId, sucursal, tipos })`. Si `tieneSobreStock` es true se abre un modal de advertencia con los items afectados. Boton **Pedir Al Proveedor Igual** reintenta `generarPdfEnviarPedidoAction` con `bloquearSiSobreStock: true` y `confirmarSobreStock: true`. Boton **Prefiero Transferencia** cancela el flujo (no existe endpoint backend de transferencia).
+- **Validación de sobrestock en REPOSICIÓN:** al confirmar **Generar Pedido**, la primera llamada es `generarPdfEnviarPedidoAction` **sin** `confirmarSobreStock`. El servidor valida antes del snapshot; si hay sobrestock en ítems de reposición, responde `SOBRESTOCK_REQUIERE_CONFIRMACION:…` **sin persistir**. El cliente entonces llama `getSobreStockReposicionParaModalAction` y abre **`SobreStockReposicionAdvertenciaModal`** (tabla de ítems). **Pedir Al Proveedor Igual** reintenta con `confirmarSobreStock: true`. **Prefiero Transferencia** cierra y cancela (sin endpoint de transferencia aún).
+
+### `SobreStockReposicionAdvertenciaModal` (`src/components/shared/SobreStockReposicionAdvertenciaModal.tsx`)
+
+- **Rol:** advertencia accesible antes de generar el pedido cuando hay sobrestock en líneas de **REPOSICIÓN** (orquestado por `GenerarPedidoToolbarButton`).
+- **Props:** `open`, `onOpenChange`, `items` (`SobreStockReposicionItem[]`), `pending?`, `onPedirAlProveedorIgual`, `onPreferirTransferencia`, `layoutGap?` (`"default"` \| `"tight"` — CVA `layoutVariants`).
+- **CVA:** `sobreStockAdvertenciaLayoutVariants` (espaciado vertical del cuerpo), `sobreStockAdvertenciaTableShellVariants` (contenedor con borde de la tabla + scroll interno).
+- **Tabla:** cabeceras en MAYÚSCULAS; celda **TOPE REPOSICIÓN** vacía si `topeReposicion === null` (misma regla global: sin `—` en vacíos).
+- **Tokens:** `TEXT_WARNING_CLASS` para el ícono de aviso; `AppModal` + `Dialog` como en el resto de modales compuestos.
 
 ### `PedidoHistoriaDetalleModal` (`src/components/pedidos/PedidoHistoriaDetalleModal.tsx`)
 

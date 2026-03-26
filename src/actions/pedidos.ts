@@ -197,12 +197,9 @@ const generarPdfEnviarPedidoSchema = z.object({
     .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
     .min(1, "Al menos un tipo de pedido."),
   /**
-   * Si `bloquearSiSobreStock` es true y hay ítems de REPOSICION con sobrestock,
-   * no se genera el pedido hasta que `confirmarSobreStock` sea true.
-   *
-   * La UI debería manejar el modal y llamar nuevamente con confirmación.
+   * Si `tipos` incluye REPOSICION y hay ítems con sobrestock, no se persiste
+   * historial/PDF hasta que `confirmarSobreStock` sea true (segunda llamada tras el modal).
    */
-  bloquearSiSobreStock: z.boolean().optional().default(false),
   confirmarSobreStock: z.boolean().optional().default(false),
 });
 
@@ -393,7 +390,6 @@ export async function generarPdfEnviarPedidoAction(params: {
   proveedorId: string;
   sucursal: string;
   tipos: string[];
-  bloquearSiSobreStock?: boolean;
   confirmarSobreStock?: boolean;
 }): Promise<
   ActionResult<{
@@ -421,7 +417,6 @@ export async function generarPdfEnviarPedidoAction(params: {
     proveedorId,
     sucursal: sucursalValida,
     tipos,
-    bloquearSiSobreStock,
     confirmarSobreStock,
   } = parsedParams.data;
 
@@ -449,8 +444,8 @@ export async function generarPdfEnviarPedidoAction(params: {
       };
     }
 
-    // Validación opcional: bloqueo por sobrestock para REPOSICION.
-    if (bloquearSiSobreStock && tipos.includes("REPOSICION")) {
+    // Sobrestock en REPOSICION: no persistir snapshot hasta confirmación explícita.
+    if (tipos.includes("REPOSICION")) {
       const sobreStockRes = await getSobreStockReposicionItems({
         proveedorId: proveedorId.trim(),
         sucursal: sucursalValida as SucursalPedidoEnvio,

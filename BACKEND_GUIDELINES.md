@@ -251,21 +251,20 @@ Constraint:
 - **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
 - **Salida**: `ActionResult<{ tieneSobreStock: boolean; items: SobreStockReposicionItem[] }>` donde cada ítem incluye:
   - `codExt`
-  - `stockSucursal`
-  - `topeReposicion` (equivale a `pedidos_mercaderia.reposicion_cant_conf`)
-  - `sobreStock = max(0, stockSucursal - topeReposicion)`
-  - `cantPedir` (la cantidad con la que ese ítem se incluiría en el pedido; hoy se filtra por `cant_pedir > 0`).
+  - `stockSucursal` (desde `precios_tienda` según sucursal)
+  - `topeReposicion`: `item_pedido_envio.reposicion_cant_conf` si hay configuración (`reposicion_cant_conf > 0`); si no, `null` (sin tope en UI se muestra como "—")
+  - **Reglas de sobrestock** (`getSobreStockReposicionItems` en `sobreStock.service.ts`):
+    1. Con configuración: `reposicion_cant_conf > 0` → hay sobrestock si `stockSucursal > reposicion_cant_conf`; `sobreStock = stockSucursal - reposicion_cant_conf`.
+    2. Sin configuración: `reposicion_cant_conf` nulo o ≤ 0 → hay sobrestock si `stockSucursal > 0`; `sobreStock = stockSucursal`.
+  - `cantPedir` (cantidad del ítem en el pedido; solo filas con `cant_pedir > 0`).
 - **Regla**: si `tipos` NO incluye `REPOSICION`, devuelve `{ tieneSobreStock: false, items: [] }` para evitar trabajo innecesario.
 
-#### `generarPdfEnviarPedidoAction` (bloqueo opcional por sobrestock)
+#### `generarPdfEnviarPedidoAction` (sobrestock en reposición, obligatorio)
 
-- **Nuevos params opcionales**:
-  - `bloquearSiSobreStock?: boolean`
-  - `confirmarSobreStock?: boolean`
-- **Regla**:
-  - Si `bloquearSiSobreStock === true` y `tipos` incluye `REPOSICION`, y existe al menos un ítem con sobrestock, la Action responde:
-    - `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }` cuando `confirmarSobreStock` es false.
-  - Cuando `confirmarSobreStock === true`, continúa con el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO).
+- **Param opcional**: `confirmarSobreStock?: boolean` (default false).
+- **Regla** (antes de `crearPedidoHistoriaSnapshot` y de cualquier persistencia de historial):
+  - Si `tipos` incluye `REPOSICION` y `getSobreStockReposicionItems` devuelve al menos un ítem, y `confirmarSobreStock` es false, la Action responde `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }`.
+  - Con `confirmarSobreStock === true`, se omite ese bloqueo y continúa el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO). La UI debe mostrar el modal y reintentar solo con confirmación explícita del usuario.
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 
