@@ -82,6 +82,28 @@ export interface ItemTiendaParaTabla {
   difMejorPrecioPctEntero: number | null;
 }
 
+export interface ProveedorTintoLts {
+  nombre: string;
+  prefijo: string;
+  coeficienteTintometrico: number;
+}
+
+export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.tintoLts)) return [];
+
+  const proveedores = await prisma.proveedor.findMany({
+    select: { nombre: true, prefijo: true, coeficienteTintometrico: true },
+    orderBy: { nombre: "asc" },
+  });
+
+  return proveedores.map((p) => ({
+    nombre: p.nombre,
+    prefijo: p.prefijo,
+    coeficienteTintometrico: Number(p.coeficienteTintometrico),
+  }));
+}
+
 /**
  * Datos para la página /tienda desde lista_precios_tienda.
  * Mapeo: cod_tienda → codItem, descripcion_tienda → descripcion, costo_compra → costo,

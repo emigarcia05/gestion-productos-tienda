@@ -544,6 +544,13 @@ Antes de entregar código nuevo o modificado, verificar:
 |----------------|--------|
 | `src/services/listaPrecios.service.ts` | `upsertListaPrecios()`: optimiza el conteo `creados/actualizados` con un prefetch en chunks de `codProdProv`, evitando el `findUnique()` por fila (patrón N+1) sin cambiar la lógica final del `upsert`. |
 
+### 5.9 Tienda — módulo `Px. Tinto / Cal. Lts.` (lectura por rol)
+
+| Archivo / Área | Cambio |
+|----------------|--------|
+| `src/lib/permisos.ts` | Nuevo permiso `PERMISOS.tienda.tintoLts` (`simple: true`, `editor: true`) para habilitar el submódulo sin abrir acceso a `Comp. Proveedores`. |
+| `src/actions/tienda.ts` | Nueva action de lectura `getProveedoresTintoLts()` con `getRol()` + `puede(rol, PERMISOS.tienda.tintoLts)`; devuelve `nombre`, `prefijo`, `coeficienteTintometrico` para cálculo frontend sin persistencia. |
+
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
 - Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`.

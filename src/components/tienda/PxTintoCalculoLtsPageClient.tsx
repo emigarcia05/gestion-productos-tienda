@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import SectionHeader from "@/components/SectionHeader";
 import {
   Select,
@@ -10,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 
@@ -21,6 +23,7 @@ type ProveedorOption = {
 
 interface Props {
   proveedores: ProveedorOption[];
+  esEditor: boolean;
 }
 
 function parseMonto(value: string): number {
@@ -37,7 +40,10 @@ function formatMonto(value: number): string {
   });
 }
 
-export default function PxTintoCalculoLtsPageClient({ proveedores }: Props) {
+export default function PxTintoCalculoLtsPageClient({
+  proveedores,
+  esEditor,
+}: Props) {
   const [proveedor, setProveedor] = useState<string>("");
   const [pxCompra, setPxCompra] = useState<string>("");
 
@@ -53,65 +59,80 @@ export default function PxTintoCalculoLtsPageClient({ proveedores }: Props) {
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
       <SectionHeader
         titulo="Lista Tienda"
-        subtitulo="Px. Tinto. / Cálc. Lts."
+        subtitulo="Px. Tinto / Cal. Lts."
       />
 
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 contenedor-pagina-con-filtros">
         <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
           <section className="min-h-0 rounded-lg border border-border bg-card p-4">
-            <div className="grid grid-cols-[2fr_1fr_1fr] gap-3">
-              <span className="text-xs font-semibold uppercase text-muted-foreground text-center">
-                Proveedor
-              </span>
-              <span className="text-xs font-semibold uppercase text-muted-foreground text-center">
-                Px.Compra
-              </span>
-              <span className="text-xs font-semibold uppercase text-muted-foreground text-center">
-                Px Lista Tienda
-              </span>
+            <div className="flex h-full min-h-0 flex-col gap-3">
+              <h2 className="text-sm font-semibold text-foreground">
+                Cálculo de Px Tintométrico
+              </h2>
 
-              <div className="min-w-0">
-                <Select
-                  value={proveedor || "none"}
-                  onValueChange={(value) =>
-                    setProveedor(value === "none" ? "" : value)
-                  }
-                >
-                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>
-                    <SelectValue placeholder="SELECCIONAR" />
-                  </SelectTrigger>
-                  <SelectContent
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    className="select-content-filtro"
+              <div className="grid grid-cols-[11rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2">
+                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  Proveedor
+                </span>
+                <div className="min-w-0">
+                  <Select
+                    value={proveedor || "none"}
+                    onValueChange={(value) =>
+                      setProveedor(value === "none" ? "" : value)
+                    }
                   >
-                    <SelectItem value="none">SELECCIONAR</SelectItem>
-                    {proveedores.map((item) => (
-                      <SelectItem key={item.prefijo} value={item.prefijo}>
-                        [{item.prefijo}] {item.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectTrigger
+                      className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}
+                    >
+                      <SelectValue placeholder="SELECCIONAR" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">SELECCIONAR</SelectItem>
+                      {proveedores.map((item) => (
+                        <SelectItem key={item.prefijo} value={item.prefijo}>
+                          [{item.prefijo}] {item.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  Px. Compra
+                </span>
+                <Input
+                  value={pxCompra}
+                  onChange={(e) =>
+                    setPxCompra(e.target.value.replace(/[^0-9,.\s]/g, ""))
+                  }
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  className="h-10 text-center"
+                  aria-label="Px.Compra"
+                />
+
+                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  Px Lista Tienda
+                </span>
+                <div className="h-10 rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground flex items-center justify-center">
+                  {pxListaTienda || "0,00"}
+                </div>
               </div>
 
-              <Input
-                value={pxCompra}
-                onChange={(e) =>
-                  setPxCompra(
-                    e.target.value.replace(/[^0-9,.\s]/g, "")
-                  )
-                }
-                placeholder="0,00"
-                inputMode="decimal"
-                className="h-10 text-center"
-                aria-label="Px.Compra"
-              />
-
-              <div className="h-10 rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground flex items-center justify-center">
-                {pxListaTienda || "0,00"}
-              </div>
+              {esEditor ? (
+                <div className="pt-1">
+                  <Button type="button" variant="outline" asChild>
+                    <Link href="/proveedores/lista">
+                      Editar Coeficiente Proveedor
+                    </Link>
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </section>
 

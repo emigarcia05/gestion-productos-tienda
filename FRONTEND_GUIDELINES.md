@@ -543,13 +543,20 @@ En `Sidebar` (`src/components/layout/Sidebar.tsx`), el orden estándar de submó
 Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
 La sincronización se inicia solo desde los botones existentes (header y/o slidenav).
 
-### Tienda — `Px. Tinto. / Cálc. Lts.` (`/tienda/tinto-lts`)
+### Tienda — `Px. Tinto / Cal. Lts.` (`/tienda/tinto-lts`)
 
 - Módulo frontend sin persistencia (cálculo local en cliente).
-- Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto. / Cálc. Lts.**
+- Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto / Cal. Lts.**
 - No renderiza bloque de filtros (`FilterBar`).
 - Layout principal en dos columnas iguales (`grid` 1/1 en `lg`), cada una en card `bg-card` con borde `border-border`.
-- Primera columna: grilla de 3 columnas (**Proveedor**, **Px.Compra**, **Px Lista Tienda**); `Proveedor` con `Select` unificado (`SELECT_TRIGGER_FILTER_CLASS`), `Px.Compra` editable con `Input`, `Px Lista Tienda` de solo lectura (resultado de cálculo local).
+- Primera columna: bloque con título **Cálculo de Px Tintométrico** + grilla de pares etiqueta/campo:
+  - `Proveedor`: `Select` unificado (`SELECT_TRIGGER_FILTER_CLASS`),
+  - `Px. Compra`: `Input` editable,
+  - `Px Lista Tienda`: celda de solo lectura (resultado de cálculo local).
+- Botón **Editar Coeficiente Proveedor** visible solo para `editor` (enlace a gestión de proveedores).
+- Sidebar (`LISTA TIENDA`) por rol:  
+  - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Px. Tinto / Cal. Lts.`  
+  - **simple**: `Control Stock`, `Px. Tinto / Cal. Lts.`
 
 ## 4. Checklist de PR (Cursor / desarrollador)
 
