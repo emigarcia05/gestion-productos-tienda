@@ -91,16 +91,21 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 }
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+  const { children, ...rest } = props
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "sticky top-0 z-20 text-primary-foreground text-xs font-normal leading-none text-center align-middle whitespace-nowrap uppercase",
+        "sticky top-0 z-20 text-primary-foreground text-xs font-normal leading-none text-center align-middle uppercase",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
-      {...props}
-    />
+      {...rest}
+    >
+      <span className="table-head-inner">
+        <span className="table-head-label">{children}</span>
+      </span>
+    </th>
   )
 }
 
