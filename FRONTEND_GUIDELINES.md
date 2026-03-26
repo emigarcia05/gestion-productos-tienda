@@ -354,7 +354,11 @@ Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`).
 - **Rol:** advertencia accesible antes de generar el pedido cuando hay sobrestock en la **otra** sucursal (orquestado por `GenerarPedidoToolbarButton`).
 - **Props:** `open`, `onOpenChange`, `items` (`SobreStockReposicionItem[]`), `pending?`, `onPedirAlProveedorIgual`, `onPreferirTransferencia`, `layoutGap?` (`"default"` \| `"tight"` — CVA `sobreStockAdvertenciaLayoutVariants`).
 - **CVA:** `sobreStockAdvertenciaLayoutVariants`, `sobreStockAdvertenciaTableShellVariants`.
-- **Tabla:** `AppModal` **`size="lg"`**; columnas **DESCRIPCIÓN**, **SUCURSAL** (donde hay excedente: MAIPÚ / GUAYMALLÉN), **STOCK**, **TOPE REPOSICIÓN**, **SOBRESTOCK**, **CANT. PEDIR** (cantidad a pedir de la sucursal que genera el pedido). Cabeceras en MAYÚSCULAS; **TOPE REPOSICIÓN** vacía si `topeReposicion === null`. Clave de fila: `` `${idItemPedidoEnvio}-${origenDeteccion}-${sucursalCodigoSobrestock}` ``.
+- **Copy vigente:** título del modal **Advertencia SobreStock**; texto principal **Confirmar Cantidad Pedida al Proveedor** (sin párrafo descriptivo secundario).
+- **Tabla (patrón visual `Recepcion Pedido`):** columnas **CHECKLIST**, **SUCURSAL**, **DESCRIPCIÓN**, **SOBRESTOCK**, **CANT. PEDIR**, **ACCIONES**. Clave de fila: `` `${idItemPedidoEnvio}-${origenDeteccion}-${sucursalCodigoSobrestock}` ``.
+- **Edición de cantidad:** `CANT. PEDIR` usa el mismo patrón de `PedidoHistoriaDetalleModal` (botón `-`, `Input` numérico centrado, botón `+`; controles `size="icon-xs"`). Cualquier cambio en cantidad limpia la confirmación de esa fila.
+- **Acciones por fila:** **Check** confirma la fila con la cantidad actual del input. **Cesto** pone la cantidad en `0` y confirma en el mismo click.
+- **Confirmación global:** el botón **Pedir Al Proveedor Igual** permanece deshabilitado hasta que todas las filas estén confirmadas.
 - **Tipo `SobreStockReposicionItem`:** incluye `sucursalCodigoSobrestock`, `origenDeteccion` (en este flujo **`OTRA_SUCURSAL`**; el tipo conserva `LOCAL` por compatibilidad de contrato).
 - **Tokens:** `TEXT_WARNING_CLASS` para el ícono de aviso; `AppModal` + `Dialog` como en el resto de modales compuestos.
 
