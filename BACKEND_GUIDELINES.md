@@ -237,7 +237,7 @@ Constraint:
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
-- La misma llamada devuelve **`rows`** (filas crudas de `pedidos_mercaderia`) e **`items`** (forma PDF). El chequeo de sobrestock usa las filas **`REPOSICIÓN`** de `rows` pasadas a **`getSobreStockReposicionItems({ pedidoReposicionRows })`** para no desalinear una segunda consulta; `id_proveedor` en la query de envío va siempre **`.trim()`**.
+- La misma llamada devuelve **`rows`** (filas crudas de `pedidos_mercaderia`) e **`items`** (forma PDF). El chequeo de sobrestock en la **otra sucursal** usa **`rows` completas** (mismas que el PDF) en **`getSobreStockOtraSucursalParaPedidoEnviar`**: solo entran líneas con **`cod_tienda`**; `id_proveedor` en la query de envío va siempre **`.trim()`**.
 - Tras éxito, **`revalidatePath`** incluye también **`/pedidos/reposicion`**.
 
 #### `comprobarItemsParaGenerarPedidoAction`
@@ -246,23 +246,23 @@ Constraint:
 - **Entrada** (Zod): `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
 - **Salida**: `ActionResult<{ hayItems: boolean }>` — reutiliza **`getEnviarPedidoTablaData`** con los tres datos completos (misma selección que vería la tabla de `/pedidos/enviar` si esos filtros estuvieran en la URL).
 
-#### `getSobreStockReposicionParaModalAction` (modal sobrestock - reposición)
+#### `getSobreStockReposicionParaModalAction` (modal sobrestock — otra sucursal)
 
-- **Uso**: action server-side para alimentar un modal/alerta en el flujo de **Generar Pedido** cuando la UI incluye **REPOSICION**.
+- **Uso**: action server-side para alimentar el modal en **Generar Pedido** tras `SOBRESTOCK_REQUIERE_CONFIRMACION`.
 - **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
 - **Salida**: `ActionResult<{ tieneSobreStock: boolean; items: SobreStockReposicionItem[] }>` donde cada ítem incluye:
   - `codExt`, `cantPedir` (línea de la sucursal que **genera** el pedido; solo `cant_pedir > 0`).
-  - `stockSucursal` y `topeReposicion`: medidos en la sucursal indicada por `sucursalCodigoSobrestock` (desde `precios_tienda` + `reposicion_cant_conf` de la fila `ItemPedidoEnvio` **de esa sucursal** para el mismo proveedor y `cod_ext`).
-  - `origenDeteccion`: `LOCAL` (excedente en la sucursal que pide) u `OTRA_SUCURSAL` (excedente en la otra tienda → aviso de posible **transferencia interna**).
-  - **Reglas numéricas** (mismas para local y otra sucursal): ver `getSobreStockReposicionItems` en `sobreStock.service.ts` (`evaluarSobrestockEnValores`).
-  - **Otra sucursal**: se buscan filas `REPOSICION` por `cod_ext` en la otra tienda **sin** filtrar por `id_proveedor` (mismo producto puede tener otro proveedor en la otra sucursal); tope con prioridad mismo proveedor → fila con tope &gt; 0 → primera fila; si no hay filas en la otra sucursal pero el pedido tiene tope, se usa ese tope como referencia frente al stock de la otra tienda.
-- **Regla**: si `tipos` NO incluye `REPOSICION`, devuelve `{ tieneSobreStock: false, items: [] }` para evitar trabajo innecesario.
+  - `stockSucursal` y `topeReposicion`: medidos en la **otra** sucursal (`sucursalCodigoSobrestock`), desde `precios_tienda` por `cod_tienda` de la línea y tope resuelto con filas `REPOSICION` en esa otra tienda.
+  - `origenDeteccion`: en este flujo siempre **`OTRA_SUCURSAL`** (excedente en la otra tienda → aviso de posible **transferencia interna**).
+  - **Reglas numéricas**: ver `getSobreStockOtraSucursalParaPedidoEnviar` en `sobreStock.service.ts` (`evaluarSobrestockEnValores`).
+  - **Otra sucursal**: se buscan filas `REPOSICION` por `cod_ext` en la otra tienda **sin** filtrar por `id_proveedor`; tope con prioridad mismo proveedor → fila con tope &gt; 0 → primera fila; si no hay filas en la otra sucursal pero la línea del pedido tiene `reposicion_cant_conf > 0`, se usa ese tope como referencia frente al stock de la otra tienda.
+- **Datos**: reutiliza **`getItemsYProveedorParaEnviar`** con los mismos `proveedorId`, `sucursal` y `tipos` que el modal, luego **`getSobreStockOtraSucursalParaPedidoEnviar`** sobre esas `rows` (alineado al PDF).
 
-#### `generarPdfEnviarPedidoAction` (sobrestock en reposición, obligatorio)
+#### `generarPdfEnviarPedidoAction` (sobrestock otra sucursal, obligatorio)
 
 - **Param opcional**: `confirmarSobreStock?: boolean` (default false).
 - **Regla** (antes de `crearPedidoHistoriaSnapshot` y de cualquier persistencia de historial):
-  - Si `tipos` incluye `REPOSICION` y `getSobreStockReposicionItems` devuelve al menos un ítem, y `confirmarSobreStock` es false, la Action responde `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }`.
+  - Si `getSobreStockOtraSucursalParaPedidoEnviar` devuelve al menos un ítem y `confirmarSobreStock` es false, la Action responde `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }`.
   - Con `confirmarSobreStock === true`, se omite ese bloqueo y continúa el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO). La UI debe mostrar el modal y reintentar solo con confirmación explícita del usuario.
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`

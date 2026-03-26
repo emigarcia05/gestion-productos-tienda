@@ -70,8 +70,9 @@ function fmtNumero(n: number): string {
 }
 
 /**
- * Modal de advertencia antes de generar/enviar un pedido que incluye ítems de reposición con sobrestock.
- * Usar junto a `GenerarPedidoToolbarButton` y `getSobreStockReposicionParaModalAction` / validación en `generarPdfEnviarPedidoAction`.
+ * Modal de advertencia antes de generar/enviar un pedido cuando hay sobrestock en la **otra** sucursal
+ * (ítems con `cod_tienda`). Orquestado por `GenerarPedidoToolbarButton`, `getSobreStockReposicionParaModalAction`
+ * y `generarPdfEnviarPedidoAction`.
  */
 export default function SobreStockReposicionAdvertenciaModal({
   open,
@@ -82,10 +83,6 @@ export default function SobreStockReposicionAdvertenciaModal({
   onPreferirTransferencia,
   layoutGap = "default",
 }: Props) {
-  const haySobrestockOtraSucursal = items.some(
-    (it) => it.origenDeteccion === "OTRA_SUCURSAL"
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -127,17 +124,11 @@ export default function SobreStockReposicionAdvertenciaModal({
             />
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium text-foreground">
-                Se detectó sobrestock en algunos ítems de reposición.
+                Se detectó sobrestock en la otra sucursal para algunos ítems del pedido.
               </p>
               <p className="text-sm text-muted-foreground">
-                Si continuás, el pedido se generará con esas cantidades.
-                {haySobrestockOtraSucursal ? (
-                  <>
-                    {" "}
-                    Si el excedente está en otra sucursal, podés priorizar transferencia
-                    interna en lugar del pedido al proveedor.
-                  </>
-                ) : null}
+                La columna SUCURSAL indica dónde hay excedente. Si continuás, el pedido se generará con las
+                cantidades elegidas; podés priorizar transferencia interna en lugar del pedido al proveedor.
               </p>
             </div>
           </div>

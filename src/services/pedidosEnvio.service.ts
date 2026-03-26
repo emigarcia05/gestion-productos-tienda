@@ -529,7 +529,7 @@ export interface ItemPedidoEnvioRowParaEnviar {
 /**
  * Obtiene ítems de pedidos_envio para el proveedor, sucursal y tipos dados,
  * y los datos del proveedor (para PDF y WhatsApp).
- * Incluye `rows` para reutilizar en `getSobreStockReposicionItems` (mismas filas que el PDF).
+ * Incluye `rows` para reutilizar en `getSobreStockOtraSucursalParaPedidoEnviar` (mismas filas que el PDF).
  */
 export async function getItemsYProveedorParaEnviar(
   proveedorId: string,

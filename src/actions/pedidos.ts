@@ -28,7 +28,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import {
-  getSobreStockReposicionItems,
+  getSobreStockOtraSucursalParaPedidoEnviar,
   type SobreStockReposicionItem,
 } from "@/services/sobreStock.service";
 import {
@@ -197,7 +197,7 @@ const generarPdfEnviarPedidoSchema = z.object({
     .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
     .min(1, "Al menos un tipo de pedido."),
   /**
-   * Si `tipos` incluye REPOSICION y hay ítems con sobrestock, no se persiste
+   * Si algún ítem con `cod_tienda` tiene sobrestock en la otra sucursal, no se persiste
    * historial/PDF hasta que `confirmarSobreStock` sea true (segunda llamada tras el modal).
    */
   confirmarSobreStock: z.boolean().optional().default(false),
@@ -237,14 +237,15 @@ export async function getSobreStockReposicionParaModalAction(
 
   const { proveedorId, sucursal, tipos } = parsed.data;
 
-  // Solo tiene sentido cuando se va a generar con REPOSICION.
-  if (!tipos.includes("REPOSICION")) {
-    return { ok: true, data: { tieneSobreStock: false, items: [] } };
-  }
-
-  const res = await getSobreStockReposicionItems({
+  const { rows } = await getItemsYProveedorParaEnviar(
+    proveedorId.trim(),
+    sucursal,
+    tipos
+  );
+  const res = await getSobreStockOtraSucursalParaPedidoEnviar({
     proveedorId: proveedorId.trim(),
     sucursal,
+    filas: rows,
   });
 
   return { ok: true, data: res };
@@ -444,32 +445,18 @@ export async function generarPdfEnviarPedidoAction(params: {
       };
     }
 
-    // Sobrestock en REPOSICION: no persistir snapshot hasta confirmación explícita.
-    // Mismas filas REPOSICIÓN que el PDF (`getItemsYProveedorParaEnviar`), sin segunda query desalineada.
-    if (tipos.includes("REPOSICION")) {
-      const pedidoReposicionRows = envioRows
-        .filter((r) => r.tipoPedido === "REPOSICION")
-        .map((r) => ({
-          id: r.id,
-          codExt: r.codExt,
-          codTienda: r.codTienda,
-          descripcionProveedor: r.descripcionProveedor,
-          descripcionTienda: r.descripcionTienda,
-          reposicionCantConf: r.reposicionCantConf,
-          cantPedir: r.cantPedir,
-        }));
-      const sobreStockRes = await getSobreStockReposicionItems({
-        proveedorId: proveedorId.trim(),
-        sucursal: sucursalValida as SucursalPedidoEnvio,
-        pedidoReposicionRows,
-      });
+    // Sobrestock en la otra sucursal (ítems con cod_tienda): no persistir snapshot hasta confirmación.
+    const sobreStockRes = await getSobreStockOtraSucursalParaPedidoEnviar({
+      proveedorId: proveedorId.trim(),
+      sucursal: sucursalValida as SucursalPedidoEnvio,
+      filas: envioRows,
+    });
 
-      if (sobreStockRes.items.length > 0 && !confirmarSobreStock) {
-        return {
-          ok: false,
-          error: `SOBRESTOCK_REQUIERE_CONFIRMACION:${sobreStockRes.items.length}`,
-        };
-      }
+    if (sobreStockRes.items.length > 0 && !confirmarSobreStock) {
+      return {
+        ok: false,
+        error: `SOBRESTOCK_REQUIERE_CONFIRMACION:${sobreStockRes.items.length}`,
+      };
     }
 
     const historiaRes = await crearPedidoHistoriaSnapshot({
