@@ -261,9 +261,11 @@ Constraint:
 #### `generarPdfEnviarPedidoAction` (sobrestock otra sucursal, obligatorio)
 
 - **Param opcional**: `confirmarSobreStock?: boolean` (default false).
+- **Param opcional**: `ajustesSobreStock?: { idItemPedidoEnvio: string; cantPedir: number }[]`.
 - **Regla** (antes de `crearPedidoHistoriaSnapshot` y de cualquier persistencia de historial):
   - Si `getSobreStockOtraSucursalParaPedidoEnviar` devuelve al menos un ítem y `confirmarSobreStock` es false, la Action responde `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }`.
   - Con `confirmarSobreStock === true`, se omite ese bloqueo y continúa el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO). La UI debe mostrar el modal y reintentar solo con confirmación explícita del usuario.
+  - Si la UI envía `ajustesSobreStock`, los ajustes se aplican **antes** de releer ítems para snapshot/PDF. El PDF y `pedidos_historia` persisten la cantidad ya ajustada desde el modal.
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 
@@ -321,6 +323,26 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
 
 8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras con `generado_at` &lt; 1 mes; ítems en cascada. Ver bloque “Retención automática” en §2.5.
+
+---
+
+### 2.6b Servicio `pedidosEnvio.service.ts` (ajustes de sobrestock pre-generación)
+
+Contrato para aplicar ajustes de cantidades confirmadas en el modal de sobrestock antes de generar el pedido:
+
+1. `ajustarCantidadesParaGenerarPedido({ proveedorId, sucursalCodigo, tipos, ajustes })`
+   - Entrada:
+     - `proveedorId`: proveedor del pedido en generación.
+     - `sucursalCodigo`: `guaymallen | maipu`.
+     - `tipos`: tipos incluidos en el pedido (`URGENTE | TINTOMETRICO | REPOSICION`).
+     - `ajustes`: `{ idItemPedidoEnvio, cantPedir }[]` confirmados por el usuario.
+   - Reglas:
+     - Valida que **todos** los IDs pertenezcan al scope (`proveedorId + sucursal + tipos`).
+     - Si falta algún ID, devuelve error y no aplica cambios parciales.
+     - Persiste en transacción `cant_pedir` y el campo específico por tipo (`urgente_cant_pedir`, `tintometrio_cant_pedir`, `reposicion_cant_pedir`).
+   - Orquestación:
+     - Se invoca desde `generarPdfEnviarPedidoAction` cuando llega `confirmarSobreStock: true` con `ajustesSobreStock`.
+     - Debe ejecutarse antes de `getItemsYProveedorParaEnviar` y de `crearPedidoHistoriaSnapshot`.
 
 ---
 

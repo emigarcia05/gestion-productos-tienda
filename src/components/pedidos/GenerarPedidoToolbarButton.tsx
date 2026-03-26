@@ -261,7 +261,9 @@ export default function GenerarPedidoToolbarButton({
     }
   }
 
-  async function handlePedirAlProveedorIgual() {
+  async function handlePedirAlProveedorIgual(
+    ajustesSobreStock: Array<{ idItemPedidoEnvio: string; cantPedir: number }>
+  ) {
     if (!sucursal) return;
     setLoading(true);
     try {
@@ -270,6 +272,7 @@ export default function GenerarPedidoToolbarButton({
         sucursal,
         tipos,
         confirmarSobreStock: true,
+        ajustesSobreStock,
       });
       if (!result.ok) {
         const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
@@ -298,12 +301,6 @@ export default function GenerarPedidoToolbarButton({
     } finally {
       setLoading(false);
     }
-  }
-
-  function handlePreferirTransferencia() {
-    setSobreStockOpen(false);
-    setOpen(false);
-    toast.warning("Transferencia no disponible aun. El pedido quedo cancelado.");
   }
 
   return (
@@ -547,7 +544,6 @@ export default function GenerarPedidoToolbarButton({
         items={sobreStockItems}
         pending={loading}
         onPedirAlProveedorIgual={handlePedirAlProveedorIgual}
-        onPreferirTransferencia={handlePreferirTransferencia}
       />
     </>
   );

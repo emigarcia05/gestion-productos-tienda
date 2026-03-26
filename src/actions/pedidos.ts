@@ -10,6 +10,7 @@ import {
   syncPedidoUrgenteEnvio,
   getItemsTablaEnviarPedido,
   getItemsYProveedorParaEnviar,
+  ajustarCantidadesParaGenerarPedido,
   type SucursalPedidoEnvio,
   type ItemPedidoUrgentePayload,
   upsertPedidoMercaderiaUrgenteItem,
@@ -201,6 +202,15 @@ const generarPdfEnviarPedidoSchema = z.object({
    * historial/PDF hasta que `confirmarSobreStock` sea true (segunda llamada tras el modal).
    */
   confirmarSobreStock: z.boolean().optional().default(false),
+  ajustesSobreStock: z
+    .array(
+      z.object({
+        idItemPedidoEnvio: z.string().min(1).max(128),
+        cantPedir: z.number().int().min(0).max(1_000_000),
+      })
+    )
+    .max(5_000)
+    .optional(),
 });
 
 const getSobreStockReposicionParaModalSchema = z.object({
@@ -392,6 +402,10 @@ export async function generarPdfEnviarPedidoAction(params: {
   sucursal: string;
   tipos: string[];
   confirmarSobreStock?: boolean;
+  ajustesSobreStock?: Array<{
+    idItemPedidoEnvio: string;
+    cantPedir: number;
+  }>;
 }): Promise<
   ActionResult<{
     pdfBase64: string;
@@ -419,6 +433,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     sucursal: sucursalValida,
     tipos,
     confirmarSobreStock,
+    ajustesSobreStock,
   } = parsedParams.data;
 
   function sanitizeFilenamePart(s: string): string {
@@ -427,13 +442,31 @@ export async function generarPdfEnviarPedidoAction(params: {
   }
 
   try {
-    const [result, sucursalRow] = await Promise.all([
-      getItemsYProveedorParaEnviar(proveedorId.trim(), sucursalValida as SucursalPedidoEnvio, tipos),
-      prisma.sucursal.findUnique({
-        where: { codigo: sucursalValida },
-        select: { id: true, phoneNumberId: true },
-      }),
-    ]);
+    const sucursalRow = await prisma.sucursal.findUnique({
+      where: { codigo: sucursalValida },
+      select: { id: true, phoneNumberId: true },
+    });
+    if (!sucursalRow) {
+      return { ok: false, error: "Sucursal no encontrada." };
+    }
+
+    if (confirmarSobreStock && (ajustesSobreStock?.length ?? 0) > 0) {
+      const ajusteRes = await ajustarCantidadesParaGenerarPedido({
+        proveedorId: proveedorId.trim(),
+        sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
+        tipos,
+        ajustes: ajustesSobreStock ?? [],
+      });
+      if (!ajusteRes.success) {
+        return { ok: false, error: ajusteRes.error };
+      }
+    }
+
+    const result = await getItemsYProveedorParaEnviar(
+      proveedorId.trim(),
+      sucursalValida as SucursalPedidoEnvio,
+      tipos
+    );
     const { rows: envioRows, items, proveedor } = result;
     if (!proveedor) {
       return { ok: false, error: "Proveedor no encontrado." };

@@ -5,6 +5,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { ServiceResult } from "@/types";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -526,6 +527,11 @@ export interface ItemPedidoEnvioRowParaEnviar {
   reposicionCantConf: number | null;
 }
 
+export interface AjusteCantPedirSobreStockInput {
+  idItemPedidoEnvio: string;
+  cantPedir: number;
+}
+
 /**
  * Obtiene ítems de pedidos_envio para el proveedor, sucursal y tipos dados,
  * y los datos del proveedor (para PDF y WhatsApp).
@@ -623,4 +629,79 @@ export async function getItemsYProveedorParaEnviar(
     : null;
 
   return { rows, items: itemsPdf, proveedor: prov };
+}
+
+/**
+ * Ajusta `cant_pedir` para un subconjunto de ítems del pedido antes de generar snapshot/PDF.
+ * Solo permite actualizar filas que pertenezcan al mismo proveedor + sucursal + tipos solicitados.
+ */
+export async function ajustarCantidadesParaGenerarPedido(params: {
+  proveedorId: string;
+  sucursalCodigo: SucursalPedidoEnvio;
+  tipos: string[];
+  ajustes: AjusteCantPedirSobreStockInput[];
+}): Promise<ServiceResult<{ actualizados: number }>> {
+  const proveedorId = params.proveedorId.trim();
+  const tipos = Array.from(new Set(params.tipos.map((t) => t.trim()).filter(Boolean)));
+  const ajustes = params.ajustes
+    .map((a) => ({
+      idItemPedidoEnvio: a.idItemPedidoEnvio.trim(),
+      cantPedir: Math.max(0, Math.floor(Number(a.cantPedir) || 0)),
+    }))
+    .filter((a) => a.idItemPedidoEnvio.length > 0);
+
+  if (!proveedorId) return { success: false, error: "Proveedor inválido." };
+  if (!params.sucursalCodigo.trim()) return { success: false, error: "Sucursal inválida." };
+  if (tipos.length === 0) return { success: false, error: "Tipos inválidos." };
+  if (ajustes.length === 0) return { success: true, data: { actualizados: 0 } };
+
+  try {
+    const sucursalId = await getSucursalIdByCodigo(params.sucursalCodigo);
+    const ids = ajustes.map((a) => a.idItemPedidoEnvio);
+    const cantById = new Map(ajustes.map((a) => [a.idItemPedidoEnvio, a.cantPedir]));
+
+    const rows = await prisma.itemPedidoEnvio.findMany({
+      where: {
+        id: { in: ids },
+        idProveedor: proveedorId,
+        sucursalId,
+        tipoPedido: { in: tipos },
+      },
+      select: { id: true, tipoPedido: true },
+    });
+
+    if (rows.length !== ids.length) {
+      return {
+        success: false,
+        error:
+          "No se pudieron validar todos los ítems de sobrestock para aplicar ajustes.",
+      };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (const row of rows) {
+        const cant = cantById.get(row.id);
+        if (cant == null) continue;
+
+        await tx.itemPedidoEnvio.update({
+          where: { id: row.id },
+          data: {
+            cantPedir: cant,
+            ...(row.tipoPedido === TIPO_URGENTE ? { urgenteCantPedir: cant } : {}),
+            ...(row.tipoPedido === TIPO_TINTOMETRICO
+              ? { tintometrioCantPedir: cant }
+              : {}),
+            ...(row.tipoPedido === TIPO_REPOSICION
+              ? { reposicionCantPedir: cant }
+              : {}),
+          },
+        });
+      }
+    });
+
+    return { success: true, data: { actualizados: rows.length } };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al ajustar cantidades del pedido.";
+    return { success: false, error: msg };
+  }
 }

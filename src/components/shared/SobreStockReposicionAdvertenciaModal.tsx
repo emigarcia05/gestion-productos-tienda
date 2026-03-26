@@ -62,8 +62,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   items: SobreStockReposicionItem[];
   pending?: boolean;
-  onPedirAlProveedorIgual: () => void | Promise<void>;
-  onPreferirTransferencia: () => void | Promise<void>;
+  onPedirAlProveedorIgual: (
+    ajustes: Array<{ idItemPedidoEnvio: string; cantPedir: number }>
+  ) => void | Promise<void>;
   layoutGap?: SobreStockReposicionAdvertenciaModalLayoutProps["gap"];
 }
 
@@ -86,7 +87,6 @@ export default function SobreStockReposicionAdvertenciaModal({
   items,
   pending,
   onPedirAlProveedorIgual,
-  onPreferirTransferencia,
   layoutGap = "default",
 }: Props) {
   const [cantPedirDraftByItem, setCantPedirDraftByItem] = useState<Record<string, string>>(
@@ -151,6 +151,16 @@ export default function SobreStockReposicionAdvertenciaModal({
     }));
   }
 
+  function buildAjustesConfirmados(): Array<{
+    idItemPedidoEnvio: string;
+    cantPedir: number;
+  }> {
+    return items.map((it) => ({
+      idItemPedidoEnvio: it.idItemPedidoEnvio,
+      cantPedir: parseCant(cantPedirDraftByItem[it.idItemPedidoEnvio] ?? "0"),
+    }));
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -167,20 +177,14 @@ export default function SobreStockReposicionAdvertenciaModal({
               type="button"
               variant="default"
               disabled={pending || !todasConfirmadas}
-              onClick={onPedirAlProveedorIgual}
+              onClick={() => {
+                if (!todasConfirmadas) return;
+                void onPedirAlProveedorIgual(buildAjustesConfirmados());
+              }}
               className="gap-2 disabled:cursor-not-allowed"
-              aria-label="Pedir al proveedor igual"
+              aria-label="Confirmar Cant. Pedida"
             >
-              Pedir Al Proveedor Igual
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              onClick={onPreferirTransferencia}
-              aria-label="Prefiero transferencia"
-            >
-              Prefiero Transferencia
+              Confirmar Cant. Pedida
             </Button>
           </div>
         }
