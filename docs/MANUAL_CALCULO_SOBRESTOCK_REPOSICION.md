@@ -7,8 +7,9 @@ Documento orientado a **desarrollo frontend** (y revisión funcional). Describe 
 ## 1. Cuándo aplica
 
 - Solo en el flujo de **Generar pedido** cuando la selección de tipos incluye **`REPOSICION`**.
-- El cálculo considera **un proveedor** y **una sucursal** a la vez (`guaymallen` o `maipu`), igual que la tabla de envío.
-- Objetivo de producto: **advertir** al usuario si va a pedir mercadería teniendo ya stock “de más” según reglas de negocio, y opcionalmente **bloquear** hasta que confirme.
+- El pedido se arma para **un proveedor** y **la sucursal que ordena** (`guaymallen` o `maipu`).
+- El servicio también revisa la **otra sucursal** para el mismo producto y proveedor (transferencia interna vs pedido al proveedor).
+- Objetivo de producto: **advertir** si hay stock “de más” en la tienda que pide **o** en la otra, y **bloquear** hasta confirmación.
 
 ---
 
@@ -16,8 +17,8 @@ Documento orientado a **desarrollo frontend** (y revisión funcional). Describe 
 
 | Concepto | Origen | Notas para UI |
 |----------|--------|----------------|
-| Stock por sucursal | Tabla `precios_tienda` (`ListaPrecioTienda`) | Campos `stock_maipu` y `stock_guaymallen`. Se elige uno según la sucursal del pedido. |
-| Tope / configuración de reposición | Tabla `pedidos_mercaderia` (modelo `ItemPedidoEnvio`) | Campo `reposicion_cant_conf`. Si es **mayor que 0**, se considera que el ítem **tiene configuración de reposición**. Si es `null` o `≤ 0`, **no** tiene tope configurado para estas reglas. |
+| Stock por sucursal | Tabla `precios_tienda` (`ListaPrecioTienda`) | Campos `stock_maipu` y `stock_guaymallen`. Para cada detección se usa el stock de la sucursal donde se evalúa el excedente (pedido u otra). |
+| Tope / configuración de reposición | Tabla `pedidos_mercaderia` (`ItemPedidoEnvio`) | `reposicion_cant_conf` de la fila **de esa sucursal** (mismo proveedor, `tipo_de_pedido` REPOSICIÓN, mismo `cod_ext`). |
 | Cantidad a pedir | Misma fila de ítem | `cant_pedir`. |
 
 **Importante:** no existe una columna tipo `tiene_excedente` o `sobrestock` en base de datos. Lo que ve el usuario en el modal son campos **derivados** del cálculo.
@@ -73,6 +74,17 @@ Para cada ítem que pasó la sección 3, se obtiene:
 | 0 | 0 | No | — | — |
 | `null` | 12 | Sí | 12 | `null` |
 
+### Regla C — Otra sucursal (`origenDeteccion: OTRA_SUCURSAL`)
+
+Para cada ítem que entra por la sección 3 (pedido en sucursal **A** con `cant_pedir > 0`):
+
+1. Se busca en `pedidos_mercaderia` una fila **REPOSICIÓN** para la **otra** sucursal **B**, mismo `id_proveedor` y mismo `cod_ext`.  
+2. Si **no** existe esa fila, **no** se evalúa sobrestock en B (no hay configuración de reposición en esa tienda para ese producto).  
+3. Si existe, se aplican las **Reglas A y B** usando el **stock de B** en `precios_tienda` y el **`reposicion_cant_conf` de la fila de B**.  
+4. Si hay sobrestock, se agrega un ítem con `sucursalCodigoSobrestock = B`, `origenDeteccion = OTRA_SUCURSAL` y `cantPedir` igual al de la línea del pedido en **A**.
+
+**Ejemplo:** En Guaymallén el tope es 2 y el stock 4 → sobrestock 2. Maipú pide el mismo ítem al proveedor (`cant_pedir > 0` en Maipú). Aunque en Maipú no haya excedente, el modal lista una fila con **SUCURSAL** GUAYMALLÉN y el detalle de stock/tope/sobrestock allí.
+
 ---
 
 ## 5. Forma de la respuesta hacia el cliente (Server Action)
@@ -94,6 +106,8 @@ La action `getSobreStockReposicionParaModalAction` devuelve algo equivalente a:
       topeReposicion: number | null;  // null = sin tope (Regla B)
       sobreStock: number;
       cantPedir: number;
+      sucursalCodigoSobrestock: "guaymallen" | "maipu";
+      origenDeteccion: "LOCAL" | "OTRA_SUCURSAL";
     }>;
   };
 }
@@ -128,4 +142,4 @@ El bloqueo lo define siempre el backend; el cliente solo rellena el modal tras e
 
 ## 8. Resumen en una frase
 
-**Sobrestock** = resultado de comparar el **stock en tienda** (`precios_tienda`) con **`reposicion_cant_conf`** si hay tope (**>** 0), o con **cero** si no hay tope, solo para ítems **REPOSICION** con **`cant_pedir > 0`** y proveedor/sucursal acotados; **no se persiste** en una columna de “excedente”.
+**Sobrestock** = misma comparación stock vs tope que antes, aplicada a la sucursal que **pide** y, si hay fila de reposición en la **otra** tienda, también allí, para ítems **REPOSICIÓN** con **`cant_pedir > 0`** en el pedido; **no se persiste** el excedente en una columna dedicada.

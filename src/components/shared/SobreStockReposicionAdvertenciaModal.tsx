@@ -16,6 +16,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
 import type { SobreStockReposicionItem } from "@/services/sobreStock.service";
+import type { SucursalPedidoEnvio } from "@/services/pedidosEnvio.service";
+
+function etiquetaSucursalTabla(codigo: SucursalPedidoEnvio): string {
+  return codigo === "maipu" ? "MAIPÚ" : "GUAYMALLÉN";
+}
 
 /** Exportado para extensiones / documentación (mismo patrón que `TableEmptyState`). */
 export const sobreStockAdvertenciaLayoutVariants = cva("flex min-h-0 flex-col", {
@@ -77,11 +82,15 @@ export default function SobreStockReposicionAdvertenciaModal({
   onPreferirTransferencia,
   layoutGap = "default",
 }: Props) {
+  const haySobrestockOtraSucursal = items.some(
+    (it) => it.origenDeteccion === "OTRA_SUCURSAL"
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         title="Advertencia De Sobrestock"
-        size="md"
+        size="lg"
         padding="sm"
         scrollBody={false}
         headerClassName="pt-4 pb-3"
@@ -122,6 +131,13 @@ export default function SobreStockReposicionAdvertenciaModal({
               </p>
               <p className="text-sm text-muted-foreground">
                 Si continuás, el pedido se generará con esas cantidades.
+                {haySobrestockOtraSucursal ? (
+                  <>
+                    {" "}
+                    Si el excedente está en otra sucursal, podés priorizar transferencia
+                    interna en lugar del pedido al proveedor.
+                  </>
+                ) : null}
               </p>
             </div>
           </div>
@@ -131,38 +147,44 @@ export default function SobreStockReposicionAdvertenciaModal({
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[45%]">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[15%]">STOCK SUCURSAL</TableHead>
-                    <TableHead className="w-[15%]">TOPE REPOSICIÓN</TableHead>
-                    <TableHead className="w-[15%]">SOBRESTOCK</TableHead>
-                    <TableHead className="w-[10%]">CANT. PEDIR</TableHead>
+                    <TableHead className="min-w-0 w-[34%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[12%]">SUCURSAL</TableHead>
+                    <TableHead className="w-[12%]">STOCK</TableHead>
+                    <TableHead className="w-[12%]">TOPE REPOSICIÓN</TableHead>
+                    <TableHead className="w-[12%]">SOBRESTOCK</TableHead>
+                    <TableHead className="w-[12%]">CANT. PEDIR</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} />
+                      <TableCell colSpan={6} />
                     </TableRow>
                   ) : (
                     items.map((it) => (
-                      <TableRow key={it.idItemPedidoEnvio}>
-                        <TableCell className="w-[45%] text-left">
+                      <TableRow
+                        key={`${it.idItemPedidoEnvio}-${it.origenDeteccion}-${it.sucursalCodigoSobrestock}`}
+                      >
+                        <TableCell className="min-w-0 w-[34%] text-left">
                           {it.descripcionTienda ??
                             it.descripcionProveedor ??
                             it.codExt}
                         </TableCell>
-                        <TableCell className="w-[15%] tabular-nums">
+                        <TableCell className="w-[12%] whitespace-nowrap">
+                          {etiquetaSucursalTabla(it.sucursalCodigoSobrestock)}
+                        </TableCell>
+                        <TableCell className="w-[12%] tabular-nums">
                           {fmtNumero(it.stockSucursal)}
                         </TableCell>
-                        <TableCell className="w-[15%] tabular-nums">
+                        <TableCell className="w-[12%] tabular-nums">
                           {it.topeReposicion === null
                             ? ""
                             : fmtNumero(it.topeReposicion)}
                         </TableCell>
-                        <TableCell className="w-[15%] tabular-nums">
+                        <TableCell className="w-[12%] tabular-nums">
                           {fmtNumero(it.sobreStock)}
                         </TableCell>
-                        <TableCell className="w-[10%] tabular-nums">
+                        <TableCell className="w-[12%] tabular-nums">
                           {fmtNumero(it.cantPedir)}
                         </TableCell>
                       </TableRow>

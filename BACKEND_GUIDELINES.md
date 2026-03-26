@@ -250,13 +250,11 @@ Constraint:
 - **Uso**: action server-side para alimentar un modal/alerta en el flujo de **Generar Pedido** cuando la UI incluye **REPOSICION**.
 - **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
 - **Salida**: `ActionResult<{ tieneSobreStock: boolean; items: SobreStockReposicionItem[] }>` donde cada ítem incluye:
-  - `codExt`
-  - `stockSucursal` (desde `precios_tienda` según sucursal)
-  - `topeReposicion`: `item_pedido_envio.reposicion_cant_conf` si hay configuración (`reposicion_cant_conf > 0`); si no, `null` (sin tope en UI se muestra como "—")
-  - **Reglas de sobrestock** (`getSobreStockReposicionItems` en `sobreStock.service.ts`):
-    1. Con configuración: `reposicion_cant_conf > 0` → hay sobrestock si `stockSucursal > reposicion_cant_conf`; `sobreStock = stockSucursal - reposicion_cant_conf`.
-    2. Sin configuración: `reposicion_cant_conf` nulo o ≤ 0 → hay sobrestock si `stockSucursal > 0`; `sobreStock = stockSucursal`.
-  - `cantPedir` (cantidad del ítem en el pedido; solo filas con `cant_pedir > 0`).
+  - `codExt`, `cantPedir` (línea de la sucursal que **genera** el pedido; solo `cant_pedir > 0`).
+  - `stockSucursal` y `topeReposicion`: medidos en la sucursal indicada por `sucursalCodigoSobrestock` (desde `precios_tienda` + `reposicion_cant_conf` de la fila `ItemPedidoEnvio` **de esa sucursal** para el mismo proveedor y `cod_ext`).
+  - `origenDeteccion`: `LOCAL` (excedente en la sucursal que pide) u `OTRA_SUCURSAL` (excedente en la otra tienda → aviso de posible **transferencia interna**).
+  - **Reglas numéricas** (mismas para local y otra sucursal): ver `getSobreStockReposicionItems` en `sobreStock.service.ts` (`evaluarSobrestockEnValores`).
+  - **Otra sucursal**: solo se evalúa si existe fila `ItemPedidoEnvio` `REPOSICION` para esa sucursal + proveedor + `cod_ext`.
 - **Regla**: si `tipos` NO incluye `REPOSICION`, devuelve `{ tieneSobreStock: false, items: [] }` para evitar trabajo innecesario.
 
 #### `generarPdfEnviarPedidoAction` (sobrestock en reposición, obligatorio)
