@@ -433,7 +433,7 @@ export async function generarPdfEnviarPedidoAction(params: {
         select: { id: true, phoneNumberId: true },
       }),
     ]);
-    const { items, proveedor } = result;
+    const { rows: envioRows, items, proveedor } = result;
     if (!proveedor) {
       return { ok: false, error: "Proveedor no encontrado." };
     }
@@ -445,10 +445,23 @@ export async function generarPdfEnviarPedidoAction(params: {
     }
 
     // Sobrestock en REPOSICION: no persistir snapshot hasta confirmación explícita.
+    // Mismas filas REPOSICIÓN que el PDF (`getItemsYProveedorParaEnviar`), sin segunda query desalineada.
     if (tipos.includes("REPOSICION")) {
+      const pedidoReposicionRows = envioRows
+        .filter((r) => r.tipoPedido === "REPOSICION")
+        .map((r) => ({
+          id: r.id,
+          codExt: r.codExt,
+          codTienda: r.codTienda,
+          descripcionProveedor: r.descripcionProveedor,
+          descripcionTienda: r.descripcionTienda,
+          reposicionCantConf: r.reposicionCantConf,
+          cantPedir: r.cantPedir,
+        }));
       const sobreStockRes = await getSobreStockReposicionItems({
         proveedorId: proveedorId.trim(),
         sucursal: sucursalValida as SucursalPedidoEnvio,
+        pedidoReposicionRows,
       });
 
       if (sobreStockRes.items.length > 0 && !confirmarSobreStock) {

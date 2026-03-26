@@ -237,6 +237,7 @@ Constraint:
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
+- La misma llamada devuelve **`rows`** (filas crudas de `pedidos_mercaderia`) e **`items`** (forma PDF). El chequeo de sobrestock usa las filas **`REPOSICIÓN`** de `rows` pasadas a **`getSobreStockReposicionItems({ pedidoReposicionRows })`** para no desalinear una segunda consulta; `id_proveedor` en la query de envío va siempre **`.trim()`**.
 - Tras éxito, **`revalidatePath`** incluye también **`/pedidos/reposicion`**.
 
 #### `comprobarItemsParaGenerarPedidoAction`

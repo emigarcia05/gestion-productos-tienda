@@ -511,31 +511,53 @@ export async function getItemsTablaEnviarPedido(params: {
 }
 
 /**
+ * Fila cruda de `pedidos_mercaderia` para generar PDF y validar sobrestock (misma query, sin desalineación).
+ */
+export interface ItemPedidoEnvioRowParaEnviar {
+  id: string;
+  tipoPedido: string;
+  codExt: string;
+  codProveedor: string | null;
+  tintometricoDescripcion: string | null;
+  descripcionProveedor: string | null;
+  descripcionTienda: string | null;
+  cantPedir: number;
+  codTienda: string | null;
+  reposicionCantConf: number | null;
+}
+
+/**
  * Obtiene ítems de pedidos_envio para el proveedor, sucursal y tipos dados,
  * y los datos del proveedor (para PDF y WhatsApp).
+ * Incluye `rows` para reutilizar en `getSobreStockReposicionItems` (mismas filas que el PDF).
  */
 export async function getItemsYProveedorParaEnviar(
   proveedorId: string,
   sucursal: string,
   tipos: string[],
   q?: string
-): Promise<{ items: ItemPedidoParaPdf[]; proveedor: ProveedorParaEnvio | null }> {
-  if (!proveedorId.trim() || !sucursal.trim() || tipos.length === 0) {
-    return { items: [], proveedor: null };
+): Promise<{
+  rows: ItemPedidoEnvioRowParaEnviar[];
+  items: ItemPedidoParaPdf[];
+  proveedor: ProveedorParaEnvio | null;
+}> {
+  const pid = proveedorId.trim();
+  if (!pid || !sucursal.trim() || tipos.length === 0) {
+    return { rows: [], items: [], proveedor: null };
   }
 
   const sucursalRow = await prisma.sucursal.findUnique({
     where: { codigo: sucursal.trim() },
     select: { id: true },
   });
-  if (!sucursalRow) return { items: [], proveedor: null };
+  if (!sucursalRow) return { rows: [], items: [], proveedor: null };
 
   const qNorm = q?.trim() ? q.trim() : "";
 
-  const [items, proveedor] = await Promise.all([
+  const [rawRows, proveedor] = await Promise.all([
     prisma.itemPedidoEnvio.findMany({
       where: {
-        idProveedor: proveedorId,
+        idProveedor: pid,
         sucursalId: sucursalRow.id,
         tipoPedido: { in: tipos },
         cantPedir: { gt: 0 },
@@ -550,27 +572,40 @@ export async function getItemsYProveedorParaEnviar(
       },
       orderBy: [{ codExt: "asc" }],
       select: {
+        id: true,
+        tipoPedido: true,
         codExt: true,
         codProveedor: true,
-          tintometricoDescripcion: true,
+        tintometricoDescripcion: true,
         descripcionProveedor: true,
         descripcionTienda: true,
         cantPedir: true,
+        codTienda: true,
+        reposicionCantConf: true,
       },
     }),
     prisma.proveedor.findUnique({
-      where: { id: proveedorId },
+      where: { id: pid },
       select: { id: true, nombre: true, prefijo: true, whatsapp: true },
     }),
   ]);
 
-  const itemsPdf: ItemPedidoParaPdf[] = items.map((i) => ({
+  const rows: ItemPedidoEnvioRowParaEnviar[] = rawRows.map((i) => ({
+    id: i.id,
+    tipoPedido: i.tipoPedido,
+    codExt: (i.codExt ?? "").trim(),
+    codProveedor: i.codProveedor,
+    tintometricoDescripcion: i.tintometricoDescripcion,
+    descripcionProveedor: i.descripcionProveedor,
+    descripcionTienda: i.descripcionTienda,
+    cantPedir: i.cantPedir,
+    codTienda: i.codTienda?.trim() ?? null,
+    reposicionCantConf: i.reposicionCantConf,
+  }));
+
+  const itemsPdf: ItemPedidoParaPdf[] = rows.map((i) => ({
     codExt: i.codExt,
     codProveedor: (i.codProveedor ?? "").trim(),
-    // Para "Generar Pedido", el campo visible de descripción depende del tipo:
-    // - Preferimos `descripcion_proveedor` cuando exista
-    // - Si no está, usamos `tintometrico_descripcion`
-    // - Como fallback final, `descripcion_tienda`
     descripcion:
       (i.descripcionProveedor ?? "").trim() ||
       (i.tintometricoDescripcion ?? "").trim() ||
@@ -587,5 +622,5 @@ export async function getItemsYProveedorParaEnviar(
       }
     : null;
 
-  return { items: itemsPdf, proveedor: prov };
+  return { rows, items: itemsPdf, proveedor: prov };
 }
