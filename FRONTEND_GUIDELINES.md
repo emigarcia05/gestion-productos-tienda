@@ -543,6 +543,14 @@ En `Sidebar` (`src/components/layout/Sidebar.tsx`), el orden estándar de submó
 Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
 La sincronización se inicia solo desde los botones existentes (header y/o slidenav).
 
+### Tienda — `Px. Tinto. / Cálc. Lts.` (`/tienda/tinto-lts`)
+
+- Módulo frontend sin persistencia (cálculo local en cliente).
+- Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto. / Cálc. Lts.**
+- No renderiza bloque de filtros (`FilterBar`).
+- Layout principal en dos columnas iguales (`grid` 1/1 en `lg`), cada una en card `bg-card` con borde `border-border`.
+- Primera columna: grilla de 3 columnas (**Proveedor**, **Px.Compra**, **Px Lista Tienda**); `Proveedor` con `Select` unificado (`SELECT_TRIGGER_FILTER_CLASS`), `Px.Compra` editable con `Input`, `Px Lista Tienda` de solo lectura (resultado de cálculo local).
+
 ## 4. Checklist de PR (Cursor / desarrollador)
 
 Antes de dar por terminada una tarea de frontend:

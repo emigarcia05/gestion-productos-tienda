@@ -73,11 +73,18 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     nombre: (formData.get("nombre") as string) ?? "",
     prefijo: (formData.get("prefijo") as string) ?? "",
     whatsapp: (formData.get("whatsapp") as string) ?? "",
+    coeficienteTintometrico:
+      (formData.get("coeficienteTintometrico") as string) ?? "",
   };
   const parsed = createProveedorSchema.safeParse(raw);
   if (!parsed.success) {
     const first = parsed.error.flatten().fieldErrors;
-    const msg = first.nombre?.[0] ?? first.prefijo?.[0] ?? first.whatsapp?.[0] ?? "Datos inválidos.";
+    const msg =
+      first.nombre?.[0] ??
+      first.prefijo?.[0] ??
+      first.whatsapp?.[0] ??
+      first.coeficienteTintometrico?.[0] ??
+      "Datos inválidos.";
     return { ok: false, error: msg };
   }
 
@@ -116,11 +123,18 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     nombre: (formData.get("nombre") as string) ?? "",
     prefijo: (formData.get("prefijo") as string) ?? "",
     whatsapp: (formData.get("whatsapp") as string) ?? "",
+    coeficienteTintometrico:
+      (formData.get("coeficienteTintometrico") as string) ?? "",
   };
   const parsed = updateProveedorSchema.safeParse(raw);
   if (!parsed.success) {
     const first = parsed.error.flatten().fieldErrors;
-    const msg = first.nombre?.[0] ?? first.prefijo?.[0] ?? first.whatsapp?.[0] ?? "Datos inválidos.";
+    const msg =
+      first.nombre?.[0] ??
+      first.prefijo?.[0] ??
+      first.whatsapp?.[0] ??
+      first.coeficienteTintometrico?.[0] ??
+      "Datos inválidos.";
     return { ok: false, error: msg };
   }
 

@@ -246,16 +246,16 @@ export default function GenerarPedidoToolbarButton({
         return;
       }
       const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
+      // Refresca inmediatamente para ocultar filas ya limpiadas en backend.
+      router.refresh();
       if (sentViaWhatsApp) {
         toast.success("Pedido generado y enviado al proveedor.");
         setOpen(false);
-        router.refresh();
         return;
       }
       descargarPdfBase64(pdfBase64, filename);
       toast.success(`PDF generado: ${filename}`);
       setOpen(false);
-      router.refresh();
     } finally {
       setLoading(false);
     }
@@ -285,19 +285,19 @@ export default function GenerarPedidoToolbarButton({
       }
 
       const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
+      // Refresca inmediatamente para ocultar filas ya limpiadas en backend.
+      router.refresh();
       setSobreStockOpen(false);
 
       if (sentViaWhatsApp) {
         toast.success("Pedido generado y enviado al proveedor.");
         setOpen(false);
-        router.refresh();
         return;
       }
 
       descargarPdfBase64(pdfBase64, filename);
       toast.success(`PDF generado: ${filename}`);
       setOpen(false);
-      router.refresh();
     } finally {
       setLoading(false);
     }

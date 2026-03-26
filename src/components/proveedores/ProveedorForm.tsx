@@ -9,7 +9,14 @@ import { Label } from "@/components/ui/label";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
 interface Props {
-  proveedor?: { id: string; nombre: string; prefijo: string; idProveedorDux?: string; whatsapp?: string | null };
+  proveedor?: {
+    id: string;
+    nombre: string;
+    prefijo: string;
+    idProveedorDux?: string;
+    whatsapp?: string | null;
+    coeficienteTintometrico?: number;
+  };
   onSuccess?: () => void;
   /** Id del form para asociar botón externo con form="id". */
   id?: string;
@@ -131,6 +138,21 @@ export default function ProveedorForm({
         />
         <p className="text-xs text-muted-foreground">
           Número para envío de pedido por WhatsApp (internacional, 10 a 15 dígitos, sin +).
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="coeficienteTintometrico">COEF. TINTOMÉTRICO</Label>
+        <Input
+          id="coeficienteTintometrico"
+          name="coeficienteTintometrico"
+          placeholder="Ej: 1,250000"
+          defaultValue={String(proveedor?.coeficienteTintometrico ?? 1)}
+          disabled={pending}
+          inputMode="decimal"
+        />
+        <p className="text-xs text-muted-foreground">
+          Se usa para el cálculo: monto ingresado x coeficiente del proveedor.
         </p>
       </div>
 

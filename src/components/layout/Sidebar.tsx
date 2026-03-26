@@ -111,6 +111,7 @@ const MODULES: {
     submodules: [
       { href: "/tienda", label: "Comp. Proveedores", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
       { href: "/tienda/aumentos", label: "Control Aumentos", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
+      { href: "/tienda/tinto-lts", label: "Px. Tinto. / Cálc. Lts.", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
       { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
     ],
   },

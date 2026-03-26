@@ -8,6 +8,18 @@ const whatsappSchema = z
   .refine((v) => v.length === 0 || (v.length >= 10 && v.length <= 15), "WhatsApp: 10 a 15 dígitos (internacional sin +).")
   .transform((v) => (v === "" ? null : v));
 
+const coeficienteTintometricoSchema = z
+  .string()
+  .optional()
+  .default("1")
+  .transform((s) => (s ?? "").trim())
+  .transform((s) => (s === "" ? "1" : s))
+  .transform((s) => s.replace(/\s+/g, "").replace(",", "."))
+  .refine((s) => /^(\d+)(\.\d{1,6})?$/.test(s), "Coef. Tintométrico inválido (hasta 6 decimales).")
+  .transform((s) => Number(s))
+  .refine((n) => Number.isFinite(n) && n > 0, "Coef. Tintométrico debe ser mayor a 0.")
+  .refine((n) => n <= 1_000_000, "Coef. Tintométrico fuera de rango.");
+
 export const createProveedorSchema = z.object({
   nombre: z
     .string()
@@ -20,6 +32,7 @@ export const createProveedorSchema = z.object({
     .transform((s) => s.trim().toUpperCase())
     .refine((s) => /^[A-Z]{3}$/.test(s), "El prefijo debe tener exactamente 3 letras (A-Z)."),
   whatsapp: whatsappSchema,
+  coeficienteTintometrico: coeficienteTintometricoSchema,
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;

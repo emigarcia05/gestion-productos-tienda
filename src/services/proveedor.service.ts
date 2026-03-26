@@ -9,6 +9,7 @@ export interface CreateProveedorInput {
   prefijo: string;
   idProveedorDux?: string | null;
   whatsapp?: string | null;
+  coeficienteTintometrico: number;
 }
 
 export interface UpdateProveedorInput {
@@ -17,6 +18,7 @@ export interface UpdateProveedorInput {
   prefijo: string;
   idProveedorDux?: string | null;
   whatsapp?: string | null;
+  coeficienteTintometrico: number;
 }
 
 export interface ProveedorListItem {
@@ -28,6 +30,8 @@ export interface ProveedorListItem {
   idProveedorDux: string | null;
   /** Número WhatsApp para envío de pedido (internacional sin +). */
   whatsapp: string | null;
+  /** Coeficiente para cálculo tintométrico. */
+  coeficienteTintometrico: number;
   /** Cantidad de ítems en precios_proveedores. */
   cantProductos: number;
   /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
@@ -66,18 +70,33 @@ export async function getProveedores(): Promise<ProveedorListItem[]> {
     prefijo: p.prefijo,
     idProveedorDux: p.idProveedorDux ?? null,
     whatsapp: p.whatsapp ?? null,
+    coeficienteTintometrico: Number(p.coeficienteTintometrico),
     cantProductos: p._count.listaPrecios,
     cantProductosProvistos: provistosMap.get(p.id) ?? 0,
   }));
 }
 
 /** Obtiene un proveedor por id (para validaciones sin cargar toda la lista). */
-export async function getProveedorById(id: string): Promise<Pick<ProveedorListItem, "id" | "nombre" | "prefijo" | "whatsapp"> | null> {
+export async function getProveedorById(
+  id: string
+): Promise<
+  Pick<
+    ProveedorListItem,
+    "id" | "nombre" | "prefijo" | "whatsapp" | "coeficienteTintometrico"
+  > | null
+> {
   const p = await prisma.proveedor.findUnique({
     where: { id },
-    select: { id: true, nombre: true, prefijo: true, whatsapp: true },
+    select: {
+      id: true,
+      nombre: true,
+      prefijo: true,
+      whatsapp: true,
+      coeficienteTintometrico: true,
+    },
   });
-  return p;
+  if (!p) return null;
+  return { ...p, coeficienteTintometrico: Number(p.coeficienteTintometrico) };
 }
 
 /**
@@ -95,6 +114,7 @@ export async function createProveedor(
       codigoUnico: prefijoNorm,
       idProveedorDux: input.idProveedorDux?.trim() || null,
       whatsapp: normalizarWhatsapp(input.whatsapp),
+      coeficienteTintometrico: input.coeficienteTintometrico,
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
@@ -114,6 +134,7 @@ export async function updateProveedor(
       prefijo: prefijoNorm,
       idProveedorDux: input.idProveedorDux?.trim() || null,
       whatsapp: normalizarWhatsapp(input.whatsapp),
+      coeficienteTintometrico: input.coeficienteTintometrico,
     },
   });
 }

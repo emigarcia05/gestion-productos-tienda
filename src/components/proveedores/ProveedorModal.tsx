@@ -17,6 +17,7 @@ export interface ProveedorParaModal {
   prefijo: string;
   idProveedorDux?: string;
   whatsapp?: string | null;
+  coeficienteTintometrico?: number;
 }
 
 interface Props {

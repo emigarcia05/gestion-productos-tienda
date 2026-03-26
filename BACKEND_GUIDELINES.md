@@ -84,6 +84,13 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 
 - La columna **MARGEN S/ IVA** en la tabla usa `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
 
+### 1.11 Coeficiente Tintométrico por proveedor
+
+- Persistencia en `proveedores.coeficiente_tintometrico` (`NUMERIC(12,6)`, `NOT NULL`, default `1`).
+- Objetivo: centralizar la fórmula por proveedor para cálculos de tintométrico (p. ej. `montoIngresado * coeficienteTintometrico`).
+- Alta/edición de proveedor: validar entrada con Zod (`coeficienteTintometrico > 0`, hasta 6 decimales) y persistir en `createProveedor` / `updateProveedor`.
+- Lecturas de proveedores que alimentan cálculos (ej. `/tienda/tinto-lts`) deben incluir el coeficiente en el payload.
+
 ### 1.5 Manejo de errores y respuestas
 
 - **Formato estándar para el frontend**:  
