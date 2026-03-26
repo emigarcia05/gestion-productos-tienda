@@ -156,6 +156,7 @@ export default function SobreStockReposicionAdvertenciaModal({
       <AppModal
         title="Advertencia SobreStock"
         size="lg"
+        className="sm:max-w-[72rem]"
         padding="sm"
         scrollBody={false}
         headerClassName="pt-4 pb-3"
@@ -209,11 +210,11 @@ export default function SobreStockReposicionAdvertenciaModal({
                         aria-hidden
                       />
                     </TableHead>
-                    <TableHead className="w-[14%]">SUCURSAL</TableHead>
-                    <TableHead className="min-w-0 w-[40%]">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[12%]">SOBRESTOCK</TableHead>
-                    <TableHead className="w-[16%]">CANT. PEDIR</TableHead>
-                    <TableHead className="w-[12%] tabla-bloque-secundario-head-divider">
+                    <TableHead className="w-[9%]">SUCURSAL</TableHead>
+                    <TableHead className="min-w-0 w-[50%]">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[8%]">SOBRESTOCK</TableHead>
+                    <TableHead className="w-[20%]">CANT. PEDIR</TableHead>
+                    <TableHead className="w-[9%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>
                   </TableRow>
@@ -250,7 +251,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "celda-datos w-[14%] whitespace-nowrap",
+                            "celda-datos w-[9%] whitespace-nowrap",
                             confirmadoByItem[it.idItemPedidoEnvio] === true && "opacity-60"
                           )}
                         >
@@ -258,7 +259,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "celda-datos min-w-0 w-[40%] truncate text-left",
+                            "celda-datos min-w-0 w-[50%] truncate text-left",
                             confirmadoByItem[it.idItemPedidoEnvio] === true && "opacity-60"
                           )}
                           title={it.descripcionTienda ?? it.descripcionProveedor ?? it.codExt}
@@ -269,7 +270,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "celda-datos w-[12%] tabular-nums",
+                            "celda-datos w-[8%] tabular-nums",
                             confirmadoByItem[it.idItemPedidoEnvio] === true && "opacity-60"
                           )}
                         >
@@ -277,7 +278,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "celda-datos w-[16%]",
+                            "celda-datos w-[20%]",
                             confirmadoByItem[it.idItemPedidoEnvio] === true && "opacity-60"
                           )}
                         >
@@ -336,7 +337,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="celda-datos w-[12%] tabla-bloque-secundario-cell-divider">
+                        <TableCell className="celda-datos w-[9%] tabla-bloque-secundario-cell-divider">
                           <div className="flex items-center justify-center gap-1">
                             <Button
                               type="button"

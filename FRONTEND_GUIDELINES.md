@@ -356,6 +356,7 @@ Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`).
 - **CVA:** `sobreStockAdvertenciaLayoutVariants`, `sobreStockAdvertenciaTableShellVariants`.
 - **Copy vigente:** título del modal **Advertencia SobreStock**; texto principal **Confirmar Cantidad Pedida al Proveedor** (sin párrafo descriptivo secundario).
 - **Tabla (patrón visual `Recepcion Pedido`):** columnas **CHECKLIST**, **SUCURSAL**, **DESCRIPCIÓN**, **SOBRESTOCK**, **CANT. PEDIR**, **ACCIONES**. Clave de fila: `` `${idItemPedidoEnvio}-${origenDeteccion}-${sucursalCodigoSobrestock}` ``.
+- **Anchos actuales (proporción final normalizada):** `CHECKLIST 6%`, `SUCURSAL 9%`, `DESCRIPCIÓN 50%`, `SOBRESTOCK 8%`, `CANT. PEDIR 20%`, `ACCIONES 9%`. El modal usa `AppModal` `size="lg"` + `className="sm:max-w-[72rem]"` para acompañar el crecimiento de columnas.
 - **Edición de cantidad:** `CANT. PEDIR` usa el mismo patrón de `PedidoHistoriaDetalleModal` (botón `-`, `Input` numérico centrado, botón `+`; controles `size="icon-xs"`). Cualquier cambio en cantidad limpia la confirmación de esa fila.
 - **Acciones por fila:** **Check** confirma la fila con la cantidad actual del input. **Cesto** pone la cantidad en `0` y confirma en el mismo click.
 - **Confirmación global:** el botón **Pedir Al Proveedor Igual** permanece deshabilitado hasta que todas las filas estén confirmadas.
