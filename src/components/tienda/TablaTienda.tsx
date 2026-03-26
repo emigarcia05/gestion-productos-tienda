@@ -72,7 +72,7 @@ export default function TablaTienda({
             <TableHead>DESCRIPCIÓN</TableHead>
             <TableHead>PX. COMPRA FINAL</TableHead>
             <TableHead className="tabla-bloque-secundario-head-divider">
-              MARGEN S/ IVA
+              MARGEN
             </TableHead>
             <TableHead className="tabla-bloque-secundario-head-divider">
               MEJOR PROV.

@@ -296,9 +296,9 @@ export default function VincularModal({
                     <TableRow className="hover:bg-transparent">
                       <TableHead>OFICIAL</TableHead>
                       <TableHead>PREFIJO</TableHead>
-                      <TableHead>PX. FINAL COMPRA</TableHead>
+                      <TableHead>PX. FINAL</TableHead>
                       <TableHead>VARIAC.</TableHead>
-                      <TableHead>MARGEN S/ IVA</TableHead>
+                      <TableHead>MARGEN</TableHead>
                       <TableHead>
                         <span className="sr-only">DESVINC.</span>
                         <Trash2 className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />

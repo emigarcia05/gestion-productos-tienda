@@ -316,7 +316,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead className="w-20">MARCA</TableHead>
               <TableHead className="w-20">RUBRO</TableHead>
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
-              <TableHead className="w-28">PX. FINAL COMPRA</TableHead>
+              <TableHead className="w-28">PX. FINAL</TableHead>
               <TableHead className="w-16">DESC. PROV.</TableHead>
               <TableHead className="w-16">DESC. MARCA</TableHead>
               <TableHead className="w-16">DESC. RUBRO</TableHead>

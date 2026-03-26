@@ -789,8 +789,8 @@ export default function PedidoHistoriaDetalleModal({
                       />
                     </TableHead>
                     <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[10%]">CANT. PEDIDA</TableHead>
-                    <TableHead className="w-[20%]">CANT. RECIBIDA</TableHead>
+                    <TableHead className="w-[10%]">CANT. PED.</TableHead>
+                    <TableHead className="w-[20%]">CANT. REC.</TableHead>
                     <TableHead className="w-[15%] tabla-bloque-secundario-head-divider">
                       ACCIONES
                     </TableHead>

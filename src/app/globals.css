@@ -189,8 +189,14 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
-  /* Encabezado global de tablas: doble altura para permitir hasta 2 líneas con recorte. */
-  --tabla-thead-height: 4.5rem;
+  /* Encabezado global de tablas: altura calculada = (2 líneas de texto) + padding vertical corto. */
+  --tabla-thead-lines: 2;
+  --tabla-thead-line-height: 1.1;
+  --tabla-thead-padding-y: 0.2rem;
+  --tabla-thead-height: calc(
+    (0.75rem * var(--tabla-thead-line-height) * var(--tabla-thead-lines)) +
+      (var(--tabla-thead-padding-y) * 2)
+  );
   /* Fila cuerpo compacta: ~py-0.5 + texto 0.75rem leading-tight + inputs/botones ~1.75rem (h-7). */
   --tabla-body-row-min-height: 2rem;
   --tabla-body-cell-padding-y: 0.125rem;
@@ -603,8 +609,8 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  /* ~py-1 vertical + padding horizontal token; altura unificada vía --tabla-thead-height. */
-  padding: 0.25rem var(--tabla-body-cell-padding-x) !important;
+  /* Padding corto + altura calculada por 2 líneas de texto. */
+  padding: var(--tabla-thead-padding-y) var(--tabla-body-cell-padding-x) !important;
   height: var(--tabla-thead-height) !important;
   min-height: var(--tabla-thead-height) !important;
   max-height: var(--tabla-thead-height) !important;
@@ -614,7 +620,7 @@
   vertical-align: middle;
   color: var(--primary-foreground);
   text-transform: uppercase;
-  line-height: 1.1 !important;
+  line-height: var(--tabla-thead-line-height) !important;
   box-sizing: border-box;
   white-space: normal !important;
   overflow: hidden;
@@ -637,7 +643,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
-  line-height: 1.1;
+  line-height: var(--tabla-thead-line-height);
   max-width: 100%;
 }
 .tabla-gestion-compacta tbody tr {

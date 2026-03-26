@@ -271,7 +271,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               <Table variant="compact">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="py-2 px-3 text-xs w-1/3">COLUMNA DEL ARCHIVO</TableHead>
+                    <TableHead className="py-2 px-3 text-xs w-1/3">COL. ARCHIVO</TableHead>
                     <TableHead className="py-2 px-3 text-xs w-1/3">EJEMPLO</TableHead>
                     <TableHead className="py-2 px-3 text-xs w-1/3">ASIGNAR A</TableHead>
                   </TableRow>

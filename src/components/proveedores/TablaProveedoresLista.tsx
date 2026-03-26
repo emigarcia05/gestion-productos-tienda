@@ -49,7 +49,7 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
                 <TableHead className="min-w-0">PROVEEDOR</TableHead>
                 <TableHead className="w-24">PREFIJO</TableHead>
                 <TableHead className="w-28">CANT. PRODUCTOS</TableHead>
-                <TableHead className="w-36">CANT. PRODUCTOS PROVISTOS</TableHead>
+                <TableHead className="w-36">PROD. PROVISTOS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

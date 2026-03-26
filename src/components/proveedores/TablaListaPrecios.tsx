@@ -57,7 +57,7 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
           <TableRow className="hover:bg-transparent">
             <TableHead className="py-2 px-3 text-xs w-28">PROVEEDOR</TableHead>
             <TableHead className="py-2 px-3 text-xs">DESCRIPCIÓN</TableHead>
-            <TableHead className="py-2 px-3 text-xs w-32 text-primary">CANTIDAD URGENTE</TableHead>
+            <TableHead className="py-2 px-3 text-xs w-32 text-primary">CANT. URG.</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -84,7 +84,7 @@ export default function TablaPedidoUrgente({
             </TableHead>
             <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
             <TableHead className="text-center w-[8%]">
-              CANT. PEDIDA
+              CANT. PED.
             </TableHead>
             <TableHead className="text-center w-[8%]" aria-label="Eliminar">
               <div className="flex items-center justify-center w-full">

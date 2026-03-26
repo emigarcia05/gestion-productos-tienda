@@ -193,9 +193,9 @@ export default function PedidoHistoriaLecturaModal({
                         <span className="sr-only">Diferencia cantidades</span>
                       </TableHead>
                     ) : null}
-                    <TableHead className="w-[19%]">CANT. PEDIDA</TableHead>
+                    <TableHead className="w-[19%]">CANT. PED.</TableHead>
                     {esRecibido ? (
-                      <TableHead className="w-[19%]">CANT. RECIBIDA</TableHead>
+                      <TableHead className="w-[19%]">CANT. REC.</TableHead>
                     ) : null}
                   </TableRow>
                 </TableHeader>
