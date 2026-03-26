@@ -132,26 +132,61 @@ export async function getSobreStockReposicionItems(params: {
 
   const tiendaMap = new Map(tiendaRows.map((r) => [r.codExt, r]));
 
-  const otherRows =
+  /**
+   * Filas REPOSICIÓN en la otra sucursal para los mismos `cod_ext` (sin filtrar proveedor).
+   * El mismo `cod_ext` puede tener configuración con un proveedor distinto al del pedido actual;
+   * el stock en tienda es por producto, no por proveedor del pedido.
+   */
+  const otherRowsAll =
     otraSucursalRow != null
       ? await prisma.itemPedidoEnvio.findMany({
           where: {
-            idProveedor: proveedorId.trim(),
             sucursalId: otraSucursalRow.id,
             tipoPedido: "REPOSICION",
             codExt: { in: codExts },
           },
           select: {
             codExt: true,
+            idProveedor: true,
             reposicionCantConf: true,
           },
         })
       : [];
 
-  const otherByCodExt = new Map(otherRows.map((r) => [r.codExt, r]));
+  const otherListByCodExt = new Map<
+    string,
+    { idProveedor: string; reposicionCantConf: number | null }[]
+  >();
+  for (const r of otherRowsAll) {
+    const list = otherListByCodExt.get(r.codExt) ?? [];
+    list.push({
+      idProveedor: r.idProveedor.trim(),
+      reposicionCantConf: r.reposicionCantConf,
+    });
+    otherListByCodExt.set(r.codExt, list);
+  }
 
   const items: SobreStockReposicionItem[] = [];
   const cantPedirOrden = (row: (typeof rows)[0]) => Number(row.cantPedir ?? 0);
+  const proveedorPedido = proveedorId.trim();
+
+  /** Elige tope/config de la otra sucursal; si no hay fila útil, usa el tope de la línea del pedido (misma política de máximo). */
+  function resolverTopeOtraSucursal(
+    codExt: string,
+    reposicionCantPedido: number | null | undefined
+  ): number | null | undefined {
+    const list = otherListByCodExt.get(codExt);
+    if (list && list.length > 0) {
+      const mismoProv = list.find((x) => x.idProveedor === proveedorPedido);
+      if (mismoProv) return mismoProv.reposicionCantConf;
+      const conTope = list.find(
+        (x) => Number(x.reposicionCantConf ?? 0) > 0
+      );
+      if (conTope) return conTope.reposicionCantConf;
+      return list[0]!.reposicionCantConf;
+    }
+    return reposicionCantPedido;
+  }
 
   for (const row of rows) {
     const tienda = tiendaMap.get(row.codExt);
@@ -179,11 +214,19 @@ export async function getSobreStockReposicionItems(params: {
       });
     }
 
-    const otherMeta = otherByCodExt.get(row.codExt);
-    if (!otherMeta) continue;
+    const listOtra = otherListByCodExt.get(row.codExt);
+    const tieneAnclaTopeOtra =
+      (listOtra?.some((x) => Number(x.reposicionCantConf ?? 0) > 0) ??
+        false) || Number(row.reposicionCantConf ?? 0) > 0;
+
+    if (!tieneAnclaTopeOtra) continue;
 
     const stockOtra = Number(tienda[stockFieldOtra] ?? 0);
-    const ext = evaluarSobrestockEnValores(stockOtra, otherMeta.reposicionCantConf);
+    const topeParaOtra = resolverTopeOtraSucursal(
+      row.codExt,
+      row.reposicionCantConf
+    );
+    const ext = evaluarSobrestockEnValores(stockOtra, topeParaOtra);
     if (!ext) continue;
 
     items.push({

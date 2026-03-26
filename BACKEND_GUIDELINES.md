@@ -254,7 +254,7 @@ Constraint:
   - `stockSucursal` y `topeReposicion`: medidos en la sucursal indicada por `sucursalCodigoSobrestock` (desde `precios_tienda` + `reposicion_cant_conf` de la fila `ItemPedidoEnvio` **de esa sucursal** para el mismo proveedor y `cod_ext`).
   - `origenDeteccion`: `LOCAL` (excedente en la sucursal que pide) u `OTRA_SUCURSAL` (excedente en la otra tienda → aviso de posible **transferencia interna**).
   - **Reglas numéricas** (mismas para local y otra sucursal): ver `getSobreStockReposicionItems` en `sobreStock.service.ts` (`evaluarSobrestockEnValores`).
-  - **Otra sucursal**: solo se evalúa si existe fila `ItemPedidoEnvio` `REPOSICION` para esa sucursal + proveedor + `cod_ext`.
+  - **Otra sucursal**: se buscan filas `REPOSICION` por `cod_ext` en la otra tienda **sin** filtrar por `id_proveedor` (mismo producto puede tener otro proveedor en la otra sucursal); tope con prioridad mismo proveedor → fila con tope &gt; 0 → primera fila; si no hay filas en la otra sucursal pero el pedido tiene tope, se usa ese tope como referencia frente al stock de la otra tienda.
 - **Regla**: si `tipos` NO incluye `REPOSICION`, devuelve `{ tieneSobreStock: false, items: [] }` para evitar trabajo innecesario.
 
 #### `generarPdfEnviarPedidoAction` (sobrestock en reposición, obligatorio)

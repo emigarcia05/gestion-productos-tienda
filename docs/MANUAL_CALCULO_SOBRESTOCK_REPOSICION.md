@@ -78,12 +78,13 @@ Para cada ítem que pasó la sección 3, se obtiene:
 
 Para cada ítem que entra por la sección 3 (pedido en sucursal **A** con `cant_pedir > 0`):
 
-1. Se busca en `pedidos_mercaderia` una fila **REPOSICIÓN** para la **otra** sucursal **B**, mismo `id_proveedor` y mismo `cod_ext`.  
-2. Si **no** existe esa fila, **no** se evalúa sobrestock en B (no hay configuración de reposición en esa tienda para ese producto).  
-3. Si existe, se aplican las **Reglas A y B** usando el **stock de B** en `precios_tienda` y el **`reposicion_cant_conf` de la fila de B**.  
-4. Si hay sobrestock, se agrega un ítem con `sucursalCodigoSobrestock = B`, `origenDeteccion = OTRA_SUCURSAL` y `cantPedir` igual al de la línea del pedido en **A**.
+1. Se buscan en `pedidos_mercaderia` filas **REPOSICIÓN** en la **otra** sucursal **B** con el mismo `cod_ext` (**sin** exigir el mismo `id_proveedor` que el pedido: el mismo producto puede estar configurado con otro proveedor en B).  
+2. **Tope usado en B:** preferencia fila con el **mismo** `id_proveedor` que el pedido; si no hay, una fila con `reposicion_cant_conf > 0`; si no, la primera fila. Si **no hay ninguna fila** en B pero en A sí hay `reposicion_cant_conf > 0`, se usa el tope de **A** como referencia para comparar el stock de B (misma política de máximo).  
+3. Solo se evalúa si hay “ancla” de tope: alguna fila en B con tope &gt; 0 **o** tope &gt; 0 en la línea del pedido en A.  
+4. Se aplican las **Reglas A y B** con el **stock de B** en `precios_tienda` y el tope resuelto.  
+5. Si hay sobrestock, se agrega un ítem `OTRA_SUCURSAL` con `cantPedir` de la línea en **A**.
 
-**Ejemplo:** En Guaymallén el tope es 2 y el stock 4 → sobrestock 2. Maipú pide el mismo ítem al proveedor (`cant_pedir > 0` en Maipú). Aunque en Maipú no haya excedente, el modal lista una fila con **SUCURSAL** GUAYMALLÉN y el detalle de stock/tope/sobrestock allí.
+**Ejemplo:** En Guaymallén el tope es 2 y el stock 4 → sobrestock 2. Maipú pide el mismo `cod_ext` (`cant_pedir > 0`) aunque el proveedor elegido en el modal no coincida con el de la fila de Guaymallén: igual debe advertirse si el stock en Guaymallén supera el tope resuelto.
 
 ---
 
