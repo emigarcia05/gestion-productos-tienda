@@ -46,28 +46,33 @@ export default function PxTintoCalculoLtsPageClient({
 }: Props) {
   const [proveedor, setProveedor] = useState<string>("");
   const [pxCompra, setPxCompra] = useState<string>("");
+  const proveedoresConCoefMayorAUno = useMemo(
+    () => proveedores.filter((p) => p.coeficienteTintometrico > 1),
+    [proveedores]
+  );
 
   const pxListaTienda = useMemo(() => {
     const base = parseMonto(pxCompra);
     if (!proveedor) return formatMonto(base);
     const coef =
-      proveedores.find((p) => p.prefijo === proveedor)?.coeficienteTintometrico ?? 1;
+      proveedoresConCoefMayorAUno.find((p) => p.prefijo === proveedor)
+        ?.coeficienteTintometrico ?? 1;
     return formatMonto(base * coef);
-  }, [pxCompra, proveedor, proveedores]);
+  }, [pxCompra, proveedor, proveedoresConCoefMayorAUno]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
       <SectionHeader
         titulo="Lista Tienda"
-        subtitulo="Px. Tinto / Cal. Lts."
+        subtitulo="Px. Tinto. / Cal. Lts"
       />
 
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 contenedor-pagina-con-filtros">
         <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
           <section className="min-h-0 rounded-lg border border-border bg-card p-4">
             <div className="flex h-full min-h-0 flex-col gap-3">
-              <h2 className="text-sm font-semibold text-foreground">
-                Cálculo de Px Tintométrico
+              <h2 className="text-center text-sm font-semibold uppercase text-foreground">
+                CÁLCULO DE PX TINTOMÉTRICO
               </h2>
 
               <div className="grid grid-cols-[11rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2">
@@ -93,7 +98,7 @@ export default function PxTintoCalculoLtsPageClient({
                       className="select-content-filtro"
                     >
                       <SelectItem value="none">SELECCIONAR</SelectItem>
-                      {proveedores.map((item) => (
+                      {proveedoresConCoefMayorAUno.map((item) => (
                         <SelectItem key={item.prefijo} value={item.prefijo}>
                           [{item.prefijo}] {item.nombre}
                         </SelectItem>

@@ -3,6 +3,7 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getControlStock, type Sucursal } from "@/actions/stock";
 import StockPageWithActions from "@/components/stock/StockPageWithActions";
+import { getProveedores } from "@/actions/proveedores";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ interface Props {
 export default async function StockPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) redirect("/proveedores");
+  const esEditor = rol === "editor";
 
   const {
     sucursal,
@@ -51,10 +53,13 @@ export default async function StockPage({ searchParams }: Props) {
         pagina: paginaNum,
       })
     : { items: [], total: 0, totalPaginas: 0, marcas: [], rubros: [] };
+  const proveedores = esEditor ? await getProveedores() : [];
 
   return (
     <StockPageWithActions
       data={data}
+      esEditor={esEditor}
+      proveedores={proveedores}
       sucursalValida={sucursalValida}
       q={q}
       marca={marca}

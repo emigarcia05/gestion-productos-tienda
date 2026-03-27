@@ -8,6 +8,7 @@ import { prismaCuidSchema } from "@/lib/validations/common";
 import { createProveedorSchema, updateProveedorSchema } from "@/lib/validations/proveedor";
 import { proveedoresPageParamsSchema } from "@/lib/validations/proveedores";
 import * as proveedorService from "@/services/proveedor.service";
+import { z } from "zod";
 
 function puedeConsultarCatalogoProveedores(rol: Rol): boolean {
   return (
@@ -175,4 +176,40 @@ export async function eliminarProveedor(id: string): Promise<ActionResult> {
   revalidatePath("/proveedores/lista");
   revalidatePath("/proveedores/gestion");
   return { ok: true, data: undefined };
+}
+
+const coeficienteBulkItemSchema = z.object({
+  id: prismaCuidSchema,
+  coeficienteTintometrico: z
+    .number()
+    .finite()
+    .gt(0, "El coeficiente debe ser mayor a 0.")
+    .max(999999, "El coeficiente es demasiado grande."),
+});
+
+const coeficienteBulkSchema = z
+  .array(coeficienteBulkItemSchema)
+  .min(1, "No hay proveedores para actualizar.")
+  .max(1000, "Demasiados proveedores.");
+
+export async function actualizarCoeficientesTintometricosAction(
+  raw: unknown
+): Promise<ActionResult<{ actualizados: number }>> {
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = coeficienteBulkSchema.safeParse(raw);
+  if (!parsed.success) {
+    const first =
+      [...Object.values(parsed.error.flatten().fieldErrors).flat(), ...parsed.error.flatten().formErrors][0] ??
+      "Datos inválidos.";
+    return { ok: false, error: first };
+  }
+
+  await proveedorService.updateCoeficientesTintometricos(parsed.data);
+  revalidatePath("/stock");
+  revalidatePath("/proveedores");
+  revalidatePath("/proveedores/lista");
+  revalidatePath("/proveedores/gestion");
+  revalidatePath("/tienda/tinto-lts");
+  return { ok: true, data: { actualizados: parsed.data.length } };
 }

@@ -544,20 +544,31 @@ En `Sidebar` (`src/components/layout/Sidebar.tsx`), el orden estándar de submó
 Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
 La sincronización se inicia solo desde los botones existentes (header y/o slidenav).
 
-### Tienda — `Px. Tinto / Cal. Lts.` (`/tienda/tinto-lts`)
+### Stock — Botón `Editar Coeficientes` (Control Stock)
+
+- En `Control Stock`, la zona de acciones del encabezado usa layout con dos bloques: izquierda (`Editar Coeficientes`) y derecha (acciones de exportar/imprimir).
+- `Editar Coeficientes` abre modal `EditarCoeficientesModal` con tabla de dos columnas:
+  - `PROVEEDOR` (`proveedores.nombre`)
+  - `COEFICIENTE` (`proveedores.coeficiente_tintometrico`) editable con `Input`.
+- El botón es visible solo para `editor`.
+- Al guardar, persiste en DB y refresca la página para reflejar coeficientes actualizados en módulos dependientes (ej. `Px. Tinto. / Cal. Lts`).
+- En el modal, botón `Guardar` deshabilitado mientras no haya cambios en los coeficientes (o si está guardando).
+
+### Tienda — `Px. Tinto. / Cal. Lts` (`/tienda/tinto-lts`)
 
 - Módulo frontend sin persistencia (cálculo local en cliente).
-- Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto / Cal. Lts.**
+- Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto. / Cal. Lts**
 - No renderiza bloque de filtros (`FilterBar`).
 - Layout principal en dos columnas iguales (`grid` 1/1 en `lg`), cada una en card `bg-card` con borde `border-border`.
-- Primera columna: bloque con título **Cálculo de Px Tintométrico** + grilla de pares etiqueta/campo:
+- Primera columna: bloque con título centrado y en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + grilla de pares etiqueta/campo:
   - `Proveedor`: `Select` unificado (`SELECT_TRIGGER_FILTER_CLASS`),
   - `Px. Compra`: `Input` editable,
   - `Px Lista Tienda`: celda de solo lectura (resultado de cálculo local).
+- En `Proveedor`, el desplegable muestra solo proveedores con `coeficienteTintometrico > 1`.
 - Botón **Editar Coeficiente Proveedor** visible solo para `editor` (enlace a gestión de proveedores).
 - Sidebar (`LISTA TIENDA`) por rol:  
-  - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Px. Tinto / Cal. Lts.`  
-  - **simple**: `Control Stock`, `Px. Tinto / Cal. Lts.`
+  - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Px. Tinto. / Cal. Lts`
+  - **simple**: `Control Stock`, `Px. Tinto. / Cal. Lts`
 
 ## 4. Checklist de PR (Cursor / desarrollador)
 

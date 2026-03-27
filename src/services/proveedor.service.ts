@@ -21,6 +21,11 @@ export interface UpdateProveedorInput {
   coeficienteTintometrico: number;
 }
 
+export interface UpdateCoeficienteTintometricoInput {
+  id: string;
+  coeficienteTintometrico: number;
+}
+
 export interface ProveedorListItem {
   id: string;
   nombre: string;
@@ -137,6 +142,22 @@ export async function updateProveedor(
       coeficienteTintometrico: input.coeficienteTintometrico,
     },
   });
+}
+
+/**
+ * Actualiza coeficientes tintométricos de múltiples proveedores en una sola transacción.
+ */
+export async function updateCoeficientesTintometricos(
+  items: UpdateCoeficienteTintometricoInput[]
+): Promise<void> {
+  await prisma.$transaction(
+    items.map((item) =>
+      prisma.proveedor.update({
+        where: { id: item.id },
+        data: { coeficienteTintometrico: item.coeficienteTintometrico },
+      })
+    )
+  );
 }
 
 /**
