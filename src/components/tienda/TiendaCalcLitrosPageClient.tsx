@@ -204,6 +204,7 @@ export default function TiendaCalcLitrosPageClient({
             <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background">
               <div className="h-full min-h-0 overflow-y-auto no-scrollbar">
                 {formaCalculo === "POR_PAREDES" ? (
+                  <>
                   <Table variant="compact" scrollX={false}>
                     <TableHeader>
                       <TableRow>
@@ -321,6 +322,7 @@ export default function TiendaCalcLitrosPageClient({
                       +
                     </Button>
                   </div>
+                  </>
                 ) : formaCalculo === "POR_MODULO" ? (
                   <div className="flex h-full min-h-0 flex-col gap-2 p-2">
                     <Table variant="compact" scrollX={false}>
