@@ -567,6 +567,10 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
   - Etiquetas de campo (`Proveedor`, `Px. Compra`, `Px Lista Tienda`) con `text-foreground` para contraste alto.
 - En `Proveedor`, el desplegable muestra solo proveedores con `coeficienteTintometrico > 1`.
 - Segunda columna: encabezado visual con título centrado en mayúsculas **CALCULO DE LTS** + línea horizontal azul (`bg-primary`) centrada al `70%`.
+- Segunda columna incluye tabla compacta de dos campos:
+  - `TIPO DE PINTURA` (texto),
+  - `RENDIMIENTO` (entero).
+- Para `editor`, botón **Gestionar Tipos De Pintura** abre modal CRUD con alta/edición/baja de filas.
 - Botón **Editar Coeficientes** visible solo para `editor`; abre modal editable (no navegación), centrado horizontalmente y con estilo primario (fondo azul del sistema, `bg-primary`).
 - Modal de coeficientes: tabla `PROVEEDOR` + `COEFICIENTE` (input editable), botón `Guardar` con persistencia y refresh al finalizar.
 - Sidebar (`LISTA TIENDA`) por rol:  

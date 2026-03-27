@@ -97,6 +97,18 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - Servicio `updateCoeficientesTintometricos(items)` en `src/services/proveedor.service.ts` con `prisma.$transaction` para actualizar múltiple `proveedor`.
   - Revalidación de rutas dependientes de coeficiente: `/stock`, `/proveedores`, `/proveedores/lista`, `/proveedores/gestion`, `/tienda/tinto-lts`.
 
+### 1.12 Tipos de pintura y rendimientos (`/tienda/tinto-lts`)
+
+- Tabla de negocio: `tipos_pintura_rendimientos` (campos: `id`, `tipo_pintura`, `rendimiento`, timestamps).
+- Lectura: `getTiposPinturaRendimientosAction()` (requiere `PERMISOS.tienda.tintoLts`).
+- Escrituras (solo `editor`):
+  - `upsertTipoPinturaRendimientoAction(raw)`:
+    - crea o actualiza por `id` opcional,
+    - valida `tipoPintura` requerido y `rendimiento` entero >= 0.
+  - `deleteTipoPinturaRendimientoAction(id)`:
+    - elimina fila por ID válido (CUID o UUID).
+- Todas las mutaciones revalidan `/tienda/tinto-lts`.
+
 ### 1.5 Manejo de errores y respuestas
 
 - **Formato estándar para el frontend**:  

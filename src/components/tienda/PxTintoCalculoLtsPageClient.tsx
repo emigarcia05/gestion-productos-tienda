@@ -15,6 +15,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import EditarCoeficientesModal from "@/components/stock/EditarCoeficientesModal";
+import GestionTiposPinturaModal from "@/components/tienda/GestionTiposPinturaModal";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  EmptyTableRow,
+} from "@/components/ui/table";
+import type { TipoPinturaRendimiento } from "@/actions/tiposPinturaRendimientos";
 
 type ProveedorOption = {
   id: string;
@@ -25,6 +36,7 @@ type ProveedorOption = {
 
 interface Props {
   proveedores: ProveedorOption[];
+  tiposPintura: TipoPinturaRendimiento[];
   esEditor: boolean;
 }
 
@@ -49,12 +61,14 @@ function roundToNearestHundred(value: number): number {
 
 export default function PxTintoCalculoLtsPageClient({
   proveedores,
+  tiposPintura,
   esEditor,
 }: Props) {
   const router = useRouter();
   const [proveedor, setProveedor] = useState<string>("");
   const [pxCompra, setPxCompra] = useState<string>("");
   const [editarCoefOpen, setEditarCoefOpen] = useState(false);
+  const [gestionarTiposOpen, setGestionarTiposOpen] = useState(false);
   const proveedoresConCoefMayorAUno = useMemo(
     () => proveedores.filter((p) => p.coeficienteTintometrico > 1),
     [proveedores]
@@ -75,6 +89,12 @@ export default function PxTintoCalculoLtsPageClient({
         open={editarCoefOpen}
         onOpenChange={setEditarCoefOpen}
         proveedores={proveedores}
+        onSaved={() => router.refresh()}
+      />
+      <GestionTiposPinturaModal
+        open={gestionarTiposOpen}
+        onOpenChange={setGestionarTiposOpen}
+        rows={tiposPintura}
         onSaved={() => router.refresh()}
       />
       <SectionHeader
@@ -165,6 +185,41 @@ export default function PxTintoCalculoLtsPageClient({
                 </h2>
                 <span className="h-0.5 w-[70%] rounded-full bg-primary" aria-hidden />
               </div>
+              <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background">
+                <div className="h-full min-h-0 overflow-y-auto no-scrollbar">
+                  <Table variant="compact" scrollX={false}>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[65%]">TIPO DE PINTURA</TableHead>
+                        <TableHead className="w-[35%]">RENDIMIENTO</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tiposPintura.length === 0 ? (
+                        <EmptyTableRow colSpan={2} message="Sin registros." />
+                      ) : (
+                        tiposPintura.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="celda-datos text-left">
+                              {item.tipoPintura}
+                            </TableCell>
+                            <TableCell className="celda-datos text-center tabular-nums">
+                              {item.rendimiento.toLocaleString("es-AR")}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              {esEditor ? (
+                <div className="flex justify-center pt-1">
+                  <Button type="button" onClick={() => setGestionarTiposOpen(true)}>
+                    EDITAR RENDIMIENTOS
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </section>
         </div>
