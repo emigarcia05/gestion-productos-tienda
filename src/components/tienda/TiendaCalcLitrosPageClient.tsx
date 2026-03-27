@@ -27,6 +27,7 @@ import {
 import type { TipoPinturaRendimiento } from "@/actions/tiposPinturaRendimientos";
 import {
   crearFilaParedVacia,
+  crearFilasModuloIniciales,
   formatDecimal,
   parseDecimalInput,
   sanitizeDecimalUnDigito,
@@ -41,6 +42,8 @@ interface Props {
 
 type FormaCalculoLts = "POR_PAREDES" | "POR_MODULO" | "PILETA";
 
+const ETIQUETAS_FILA_MODULO = ["Pared 1", "Pared 2", "Pared 3", "Pared 4", "Techo"] as const;
+
 export default function TiendaCalcLitrosPageClient({
   tiposPintura,
   esEditor,
@@ -54,6 +57,7 @@ export default function TiendaCalcLitrosPageClient({
   const [moduloAncho, setModuloAncho] = useState<string>("");
   const [moduloAlto, setModuloAlto] = useState<string>("");
   const [moduloIncluyeTecho, setModuloIncluyeTecho] = useState<boolean>(false);
+  const [filasModulo, setFilasModulo] = useState<FilaParedLts[]>(crearFilasModuloIniciales);
 
   const rendimientoSeleccionado = useMemo(() => {
     if (!tipoPinturaId) return 0;
@@ -81,43 +85,25 @@ export default function TiendaCalcLitrosPageClient({
     );
   }, [filasPared, rendimientoSeleccionado]);
 
-  const resumenModulo = useMemo(() => {
-    const largo = parseDecimalInput(moduloLargo);
-    const ancho = parseDecimalInput(moduloAncho);
-    const alto = parseDecimalInput(moduloAlto);
+  const totalesModulo = useMemo(() => {
+    return filasModulo.reduce(
+      (acc, row) => {
+        const cant = parseDecimalInput(row.cantidad);
+        const largo = parseDecimalInput(row.largo);
+        const ancho = parseDecimalInput(row.ancho);
+        const mts2 = cant * largo * ancho;
+        const lts1Mano = rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
+        const lts2Manos = lts1Mano * 2;
 
-    const mts2ParedLargoAlto = largo * alto;
-    const mts2ParedAnchoAlto = ancho * alto;
-    const mts2Techo = moduloIncluyeTecho ? largo * ancho : 0;
-
-    function ltsDesdeMts2(mts2: number) {
-      const l1 = rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
-      return { lts1: l1, lts2: l1 * 2 };
-    }
-
-    const p12 = ltsDesdeMts2(mts2ParedLargoAlto);
-    const p34 = ltsDesdeMts2(mts2ParedAnchoAlto);
-    const techo = ltsDesdeMts2(mts2Techo);
-
-    const filas = [
-      { label: "PARED 1", mts2: mts2ParedLargoAlto, lts1: p12.lts1, lts2: p12.lts2 },
-      { label: "PARED 2", mts2: mts2ParedLargoAlto, lts1: p12.lts1, lts2: p12.lts2 },
-      { label: "PARED 3", mts2: mts2ParedAnchoAlto, lts1: p34.lts1, lts2: p34.lts2 },
-      { label: "PARED 4", mts2: mts2ParedAnchoAlto, lts1: p34.lts1, lts2: p34.lts2 },
-      { label: "TECHOS", mts2: mts2Techo, lts1: techo.lts1, lts2: techo.lts2 },
-    ];
-
-    const total = filas.reduce(
-      (acc, row) => ({
-        mts2: acc.mts2 + row.mts2,
-        lts1: acc.lts1 + row.lts1,
-        lts2: acc.lts2 + row.lts2,
-      }),
-      { mts2: 0, lts1: 0, lts2: 0 }
+        return {
+          mts2: acc.mts2 + mts2,
+          lts1Mano: acc.lts1Mano + lts1Mano,
+          lts2Manos: acc.lts2Manos + lts2Manos,
+        };
+      },
+      { mts2: 0, lts1Mano: 0, lts2Manos: 0 }
     );
-
-    return { filas, total };
-  }, [moduloLargo, moduloAncho, moduloAlto, moduloIncluyeTecho, rendimientoSeleccionado]);
+  }, [filasModulo, rendimientoSeleccionado]);
 
   function actualizarFilaPared(
     id: string,
@@ -137,6 +123,17 @@ export default function TiendaCalcLitrosPageClient({
   function eliminarFilaPared(id: string) {
     setFilasPared((prev) =>
       prev.length <= 1 ? [crearFilaParedVacia()] : prev.filter((row) => row.id !== id)
+    );
+  }
+
+  function actualizarFilaModulo(
+    id: string,
+    campo: "cantidad" | "largo" | "ancho",
+    value: string
+  ) {
+    const sanitized = sanitizeDecimalUnDigito(value);
+    setFilasModulo((prev) =>
+      prev.map((row) => (row.id === id ? { ...row, [campo]: sanitized } : row))
     );
   }
 
@@ -300,7 +297,8 @@ export default function TiendaCalcLitrosPageClient({
                     </TableBody>
                     <TableFooter className="border-t border-border/60 bg-background">
                       <TableRow className="hover:bg-background odd:bg-background even:bg-background">
-                        <TableCell className="celda-datos text-right font-semibold" colSpan={4}>
+                        <TableCell className="celda-datos" colSpan={3} aria-hidden />
+                        <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
                           TOTAL
                         </TableCell>
                         <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
@@ -391,42 +389,100 @@ export default function TiendaCalcLitrosPageClient({
                     <Table variant="compact" scrollX={false}>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[40%]">SECTOR</TableHead>
-                          <TableHead className="w-[20%]">MTS2</TableHead>
-                          <TableHead className="w-[20%]">1 MANO</TableHead>
-                          <TableHead className="w-[20%]">2 MANOS</TableHead>
+                          <TableHead className="w-[20%]">SUPERFICIE</TableHead>
+                          <TableHead className="w-[15%]">CANT.</TableHead>
+                          <TableHead className="w-[15%]">LARGO</TableHead>
+                          <TableHead className="w-[15%]">ANCHO</TableHead>
+                          <TableHead className="w-[10%]">MTS2</TableHead>
+                          <TableHead className="w-[10%]">1 MANO</TableHead>
+                          <TableHead className="w-[10%]">2 MANOS</TableHead>
+                          <TableHead className="w-[5%] tabla-bloque-secundario-head-divider">
+                            ACCIONES
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {resumenModulo.filas.map((row) => (
-                          <TableRow key={row.label}>
-                            <TableCell className="celda-datos text-left">{row.label}</TableCell>
-                            <TableCell className="celda-datos tabular-nums">
-                              {formatDecimal(row.mts2)} mts2
-                            </TableCell>
-                            <TableCell className="celda-datos tabular-nums">
-                              {formatDecimal(row.lts1)} lts
-                            </TableCell>
-                            <TableCell className="celda-datos tabular-nums">
-                              {formatDecimal(row.lts2)} lts
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {filasModulo.map((row, index) => {
+                          const cant = parseDecimalInput(row.cantidad);
+                          const largo = parseDecimalInput(row.largo);
+                          const ancho = parseDecimalInput(row.ancho);
+                          const mts2 = cant * largo * ancho;
+                          const lts1Mano =
+                            rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
+                          const lts2Manos = lts1Mano * 2;
+                          const etiqueta = ETIQUETAS_FILA_MODULO[index] ?? `Fila ${index + 1}`;
+
+                          return (
+                            <TableRow key={row.id}>
+                              <TableCell className="celda-datos text-left font-medium">
+                                {etiqueta}
+                              </TableCell>
+                              <TableCell className="celda-datos">
+                                <Input
+                                  value={row.cantidad}
+                                  onChange={(e) =>
+                                    actualizarFilaModulo(row.id, "cantidad", e.target.value)
+                                  }
+                                  className="h-8 text-center"
+                                  inputMode="decimal"
+                                  placeholder="0,0"
+                                  aria-label={`Cantidad ${etiqueta}`}
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos">
+                                <Input
+                                  value={row.largo}
+                                  onChange={(e) =>
+                                    actualizarFilaModulo(row.id, "largo", e.target.value)
+                                  }
+                                  className="h-8 text-center"
+                                  inputMode="decimal"
+                                  placeholder="0,0"
+                                  aria-label={`Largo ${etiqueta}`}
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos">
+                                <Input
+                                  value={row.ancho}
+                                  onChange={(e) =>
+                                    actualizarFilaModulo(row.id, "ancho", e.target.value)
+                                  }
+                                  className="h-8 text-center"
+                                  inputMode="decimal"
+                                  placeholder="0,0"
+                                  aria-label={`Ancho ${etiqueta}`}
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums">
+                                {formatDecimal(mts2, 1)} mts2
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums">
+                                {formatDecimal(lts1Mano, 1)} lts
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums">
+                                {formatDecimal(lts2Manos, 1)} lts
+                              </TableCell>
+                              <TableCell className="celda-datos tabla-bloque-secundario-cell-divider" />
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                       <TableFooter className="border-t border-border/60 bg-background">
                         <TableRow className="hover:bg-background odd:bg-background even:bg-background">
-                          <TableCell className="celda-datos text-right font-semibold">
+                          <TableCell className="celda-datos" colSpan={3} aria-hidden />
+                          <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
                             TOTAL
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums font-semibold">
-                            {formatDecimal(resumenModulo.total.mts2)} mts2
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                            {formatDecimal(totalesModulo.mts2, 1)} mts2
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums font-semibold">
-                            {formatDecimal(resumenModulo.total.lts1)} lts
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                            {formatDecimal(totalesModulo.lts1Mano, 1)} lts
                           </TableCell>
-                          <TableCell className="celda-datos tabular-nums font-semibold">
-                            {formatDecimal(resumenModulo.total.lts2)} lts
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                            {formatDecimal(totalesModulo.lts2Manos, 1)} lts
                           </TableCell>
+                          <TableCell className="celda-datos tabla-bloque-secundario-cell-divider" />
                         </TableRow>
                       </TableFooter>
                     </Table>
