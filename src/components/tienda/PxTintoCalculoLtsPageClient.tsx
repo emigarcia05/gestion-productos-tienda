@@ -37,9 +37,14 @@ function parseMonto(value: string): number {
 function formatMonto(value: number): string {
   if (!Number.isFinite(value)) return "";
   return value.toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   });
+}
+
+function roundToNearestHundred(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round(value / 100) * 100;
 }
 
 export default function PxTintoCalculoLtsPageClient({
@@ -56,12 +61,12 @@ export default function PxTintoCalculoLtsPageClient({
   );
 
   const pxListaTienda = useMemo(() => {
-    const base = parseMonto(pxCompra);
-    if (!proveedor) return formatMonto(base);
+    const base = Math.round(parseMonto(pxCompra));
+    if (!proveedor) return formatMonto(roundToNearestHundred(base));
     const coef =
       proveedoresConCoefMayorAUno.find((p) => p.prefijo === proveedor)
         ?.coeficienteTintometrico ?? 1;
-    return formatMonto(base * coef);
+    return formatMonto(roundToNearestHundred(base * coef));
   }, [pxCompra, proveedor, proveedoresConCoefMayorAUno]);
 
   return (
@@ -81,12 +86,15 @@ export default function PxTintoCalculoLtsPageClient({
         <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
           <section className="min-h-0 rounded-lg border border-border bg-card p-4">
             <div className="flex h-full min-h-0 flex-col gap-3">
-              <h2 className="text-center text-sm font-semibold uppercase text-foreground">
-                CÁLCULO DE PX TINTOMÉTRICO
-              </h2>
+              <div className="flex flex-col items-center gap-1">
+                <h2 className="text-center text-sm font-semibold uppercase text-foreground">
+                  CÁLCULO DE PX TINTOMÉTRICO
+                </h2>
+                <span className="h-0.5 w-[70%] rounded-full bg-primary" aria-hidden />
+              </div>
 
               <div className="grid grid-cols-[11rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2">
-                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                <span className="text-xs font-semibold uppercase text-foreground">
                   Proveedor
                 </span>
                 <div className="min-w-0">
@@ -117,21 +125,21 @@ export default function PxTintoCalculoLtsPageClient({
                   </Select>
                 </div>
 
-                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                <span className="text-xs font-semibold uppercase text-foreground">
                   Px. Compra
                 </span>
                 <Input
                   value={pxCompra}
                   onChange={(e) =>
-                    setPxCompra(e.target.value.replace(/[^0-9,.\s]/g, ""))
+                    setPxCompra(e.target.value.replace(/\D/g, ""))
                   }
                   placeholder="0,00"
-                  inputMode="decimal"
+                  inputMode="numeric"
                   className="h-10 text-center"
                   aria-label="Px.Compra"
                 />
 
-                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                <span className="text-xs font-semibold uppercase text-foreground">
                   Px Lista Tienda
                 </span>
                 <div className="h-10 rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground flex items-center justify-center">
@@ -140,8 +148,8 @@ export default function PxTintoCalculoLtsPageClient({
               </div>
 
               {esEditor ? (
-                <div className="pt-1">
-                  <Button type="button" variant="outline" onClick={() => setEditarCoefOpen(true)}>
+                <div className="flex justify-center pt-1">
+                  <Button type="button" onClick={() => setEditarCoefOpen(true)}>
                     Editar Coeficientes
                   </Button>
                 </div>
@@ -149,7 +157,16 @@ export default function PxTintoCalculoLtsPageClient({
             </div>
           </section>
 
-          <section className="min-h-0 rounded-lg border border-border bg-card p-4" />
+          <section className="min-h-0 rounded-lg border border-border bg-card p-4">
+            <div className="flex h-full min-h-0 flex-col gap-3">
+              <div className="flex flex-col items-center gap-1">
+                <h2 className="text-center text-sm font-semibold uppercase text-foreground">
+                  CALCULO DE LTS
+                </h2>
+                <span className="h-0.5 w-[70%] rounded-full bg-primary" aria-hidden />
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>

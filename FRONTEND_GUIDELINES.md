@@ -560,12 +560,14 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 - Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto. / Cal. Lts**
 - No renderiza bloque de filtros (`FilterBar`).
 - Layout principal en dos columnas iguales (`grid` 1/1 en `lg`), cada una en card `bg-card` con borde `border-border`.
-- Primera columna: bloque con título centrado y en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + grilla de pares etiqueta/campo:
+- Primera columna: bloque con título centrado y en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea horizontal azul (`bg-primary`) debajo del título, centrada, con ancho del `70%` del contenedor + grilla de pares etiqueta/campo:
   - `Proveedor`: `Select` unificado (`SELECT_TRIGGER_FILTER_CLASS`),
-  - `Px. Compra`: `Input` editable,
-  - `Px Lista Tienda`: celda de solo lectura (resultado de cálculo local).
+  - `Px. Compra`: `Input` editable numérico entero (sin decimales),
+  - `Px Lista Tienda`: celda de solo lectura (resultado de cálculo local), redondeado a entero múltiplo de 100.
+  - Etiquetas de campo (`Proveedor`, `Px. Compra`, `Px Lista Tienda`) con `text-foreground` para contraste alto.
 - En `Proveedor`, el desplegable muestra solo proveedores con `coeficienteTintometrico > 1`.
-- Botón **Editar Coeficientes** visible solo para `editor`; abre modal editable (no navegación).
+- Segunda columna: encabezado visual con título centrado en mayúsculas **CALCULO DE LTS** + línea horizontal azul (`bg-primary`) centrada al `70%`.
+- Botón **Editar Coeficientes** visible solo para `editor`; abre modal editable (no navegación), centrado horizontalmente y con estilo primario (fondo azul del sistema, `bg-primary`).
 - Modal de coeficientes: tabla `PROVEEDOR` + `COEFICIENTE` (input editable), botón `Guardar` con persistencia y refresh al finalizar.
 - Sidebar (`LISTA TIENDA`) por rol:  
   - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Px. Tinto. / Cal. Lts`
