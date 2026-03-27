@@ -83,6 +83,7 @@ export interface ItemTiendaParaTabla {
 }
 
 export interface ProveedorTintoLts {
+  id: string;
   nombre: string;
   prefijo: string;
   coeficienteTintometrico: number;
@@ -93,11 +94,12 @@ export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
   if (!puede(rol, PERMISOS.tienda.tintoLts)) return [];
 
   const proveedores = await prisma.proveedor.findMany({
-    select: { nombre: true, prefijo: true, coeficienteTintometrico: true },
+    select: { id: true, nombre: true, prefijo: true, coeficienteTintometrico: true },
     orderBy: { nombre: "asc" },
   });
 
   return proveedores.map((p) => ({
+    id: p.id,
     nombre: p.nombre,
     prefijo: p.prefijo,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/SectionHeader";
 import {
   Select,
@@ -14,8 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+import EditarCoeficientesModal from "@/components/stock/EditarCoeficientesModal";
 
 type ProveedorOption = {
+  id: string;
   nombre: string;
   prefijo: string;
   coeficienteTintometrico: number;
@@ -44,8 +46,10 @@ export default function PxTintoCalculoLtsPageClient({
   proveedores,
   esEditor,
 }: Props) {
+  const router = useRouter();
   const [proveedor, setProveedor] = useState<string>("");
   const [pxCompra, setPxCompra] = useState<string>("");
+  const [editarCoefOpen, setEditarCoefOpen] = useState(false);
   const proveedoresConCoefMayorAUno = useMemo(
     () => proveedores.filter((p) => p.coeficienteTintometrico > 1),
     [proveedores]
@@ -62,6 +66,12 @@ export default function PxTintoCalculoLtsPageClient({
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
+      <EditarCoeficientesModal
+        open={editarCoefOpen}
+        onOpenChange={setEditarCoefOpen}
+        proveedores={proveedores}
+        onSaved={() => router.refresh()}
+      />
       <SectionHeader
         titulo="Lista Tienda"
         subtitulo="Px. Tinto. / Cal. Lts"
@@ -131,10 +141,8 @@ export default function PxTintoCalculoLtsPageClient({
 
               {esEditor ? (
                 <div className="pt-1">
-                  <Button type="button" variant="outline" asChild>
-                    <Link href="/proveedores/lista">
-                      Editar Coeficiente Proveedor
-                    </Link>
+                  <Button type="button" variant="outline" onClick={() => setEditarCoefOpen(true)}>
+                    Editar Coeficientes
                   </Button>
                 </div>
               ) : null}

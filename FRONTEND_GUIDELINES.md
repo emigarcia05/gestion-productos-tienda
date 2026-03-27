@@ -565,7 +565,8 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
   - `Px. Compra`: `Input` editable,
   - `Px Lista Tienda`: celda de solo lectura (resultado de cálculo local).
 - En `Proveedor`, el desplegable muestra solo proveedores con `coeficienteTintometrico > 1`.
-- Botón **Editar Coeficiente Proveedor** visible solo para `editor` (enlace a gestión de proveedores).
+- Botón **Editar Coeficientes** visible solo para `editor`; abre modal editable (no navegación).
+- Modal de coeficientes: tabla `PROVEEDOR` + `COEFICIENTE` (input editable), botón `Guardar` con persistencia y refresh al finalizar.
 - Sidebar (`LISTA TIENDA`) por rol:  
   - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Px. Tinto. / Cal. Lts`
   - **simple**: `Control Stock`, `Px. Tinto. / Cal. Lts`
