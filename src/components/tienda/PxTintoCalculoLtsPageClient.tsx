@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import EditarCoeficientesModal from "@/components/stock/EditarCoeficientesModal";
@@ -530,11 +529,11 @@ export default function PxTintoCalculoLtsPageClient({
                             </TableCell>
                             <TableCell className="celda-datos">
                               <div className="flex items-center justify-center">
-                                <Checkbox
+                                <input
+                                  type="checkbox"
                                   checked={moduloIncluyeTecho}
-                                  onCheckedChange={(checked) =>
-                                    setModuloIncluyeTecho(checked === true)
-                                  }
+                                  onChange={(e) => setModuloIncluyeTecho(e.target.checked)}
+                                  className="h-4 w-4 rounded border-border accent-primary"
                                   aria-label="Incluye techo"
                                 />
                               </div>
