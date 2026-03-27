@@ -12,16 +12,13 @@ const FONT_SIZE = 10;
 const HEADER_FONT_SIZE = 9;
 const TITLE_FONT_SIZE = 12;
 const DATE_FONT_SIZE = 10;
-const MAX_DESC_LEN = 55;
+const CELL_LINE_HEIGHT = 4.4;
+const CELL_PADDING_Y = 1.6;
+const CELL_PADDING_X = 1.2;
 
 const PRIMARY_RGB = { r: 0, g: 114, b: 187 }; // #0072BB
 const EVEN_ROW_RGB = { r: 244, g: 248, b: 252 }; // #f4f8fc
 const ROW_BORDER_RGB = { r: 224, g: 232, b: 240 }; // #e0e8f0
-
-function truncate(str: string, max: number): string {
-  if (str.length <= max) return str;
-  return str.slice(0, max - 2) + "...";
-}
 
 export type GenerarPdfPedidoOptions = {
   /** Si se informa (p. ej. historial), la fecha del encabezado coincide con la del pedido guardado. */
@@ -96,25 +93,92 @@ export function generarPdfPedido(
     doc.text("DESCRIPCION", xDescCenter, textY, { align: "center" });
   }
 
-  function drawRow(rowY: number, idx: number, row: ItemPedidoParaPdf) {
+  type RowLayout = {
+    codLines: string[];
+    descLines: string[];
+    rowHeight: number;
+    maxLines: number;
+  };
+
+  function getRowLayout(row: ItemPedidoParaPdf): RowLayout {
+    doc.setFontSize(FONT_SIZE);
+    doc.setFont("helvetica", "normal");
+
+    const codLinesRaw = doc.splitTextToSize(
+      (row.codProveedor ?? "").trim(),
+      Math.max(1, wCod - CELL_PADDING_X * 2)
+    );
+    const descLinesRaw = doc.splitTextToSize(
+      (row.descripcion ?? "").trim(),
+      Math.max(1, wDesc - CELL_PADDING_X * 2)
+    );
+
+    const codLines = (Array.isArray(codLinesRaw) ? codLinesRaw : [String(codLinesRaw)]).filter(
+      (line) => line.trim().length > 0
+    );
+    const descLines = (
+      Array.isArray(descLinesRaw) ? descLinesRaw : [String(descLinesRaw)]
+    ).filter((line) => line.trim().length > 0);
+
+    const maxLines = Math.max(1, codLines.length, descLines.length);
+    const rowHeight = Math.max(
+      ROW_HEIGHT,
+      CELL_PADDING_Y * 2 + maxLines * CELL_LINE_HEIGHT
+    );
+
+    return {
+      codLines: codLines.length > 0 ? codLines : [""],
+      descLines: descLines.length > 0 ? descLines : [""],
+      rowHeight,
+      maxLines,
+    };
+  }
+
+  function drawRow(
+    rowY: number,
+    idx: number,
+    row: ItemPedidoParaPdf,
+    layout: RowLayout
+  ) {
     const isEven = idx % 2 === 1; // nth-child(even) en PrintStock -> idx impar
     if (isEven) {
       doc.setFillColor(EVEN_ROW_RGB.r, EVEN_ROW_RGB.g, EVEN_ROW_RGB.b);
-      doc.rect(MARGIN, rowY, contentWidth, ROW_HEIGHT, "F");
+      doc.rect(MARGIN, rowY, contentWidth, layout.rowHeight, "F");
     }
 
     doc.setDrawColor(ROW_BORDER_RGB.r, ROW_BORDER_RGB.g, ROW_BORDER_RGB.b);
     doc.setLineWidth(0.2);
-    doc.line(MARGIN, rowY + ROW_HEIGHT, MARGIN + contentWidth, rowY + ROW_HEIGHT);
+    doc.line(
+      MARGIN,
+      rowY + layout.rowHeight,
+      MARGIN + contentWidth,
+      rowY + layout.rowHeight
+    );
 
     doc.setTextColor(17, 17, 17);
     doc.setFontSize(FONT_SIZE);
     doc.setFont("helvetica", "normal");
 
-    const textY = rowY + 5;
-    doc.text(String(row.cantPedir), xCantCenter, textY, { align: "center" });
-    doc.text(truncate(row.codProveedor ?? "", 16), xCodCenter, textY, { align: "center" });
-    doc.text(truncate(row.descripcion, MAX_DESC_LEN), xDescCenter, textY, { align: "center" });
+    const textStartY =
+      rowY +
+      CELL_PADDING_Y +
+      (layout.rowHeight - CELL_PADDING_Y * 2 - layout.maxLines * CELL_LINE_HEIGHT) / 2 +
+      3.4;
+
+    // Cantidad siempre en una línea, centrada verticalmente en la fila.
+    const cantY = rowY + layout.rowHeight / 2 + 1.2;
+    doc.text(String(row.cantPedir), xCantCenter, cantY, { align: "center" });
+
+    for (let i = 0; i < layout.codLines.length; i++) {
+      doc.text(layout.codLines[i] ?? "", xCodCenter, textStartY + i * CELL_LINE_HEIGHT, {
+        align: "center",
+      });
+    }
+    for (let i = 0; i < layout.descLines.length; i++) {
+      doc.text(layout.descLines[i] ?? "", xDescCenter, textStartY + i * CELL_LINE_HEIGHT, {
+        align: "center",
+      });
+    }
   }
 
   drawHeaderRow(y);
@@ -122,14 +186,15 @@ export function generarPdfPedido(
 
   for (let idx = 0; idx < itemsOrdenados.length; idx++) {
     const row = itemsOrdenados[idx];
-    if (y + ROW_HEIGHT > pageHeight - MARGIN) {
+    const layout = getRowLayout(row);
+    if (y + layout.rowHeight > pageHeight - MARGIN) {
       doc.addPage();
       y = MARGIN;
       drawHeaderRow(y);
       y += ROW_HEIGHT;
     }
-    drawRow(y, idx, row);
-    y += ROW_HEIGHT;
+    drawRow(y, idx, row, layout);
+    y += layout.rowHeight;
   }
 
   const buf = doc.output("arraybuffer");

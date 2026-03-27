@@ -26,12 +26,14 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   const { q = "", pagina = "1", sucursal = "", proveedor = "", pedido = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" =
     sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
-  const pedidoValida: "urgente" | "reposicion" | "" =
-    pedido === "urgente"
-      ? "urgente"
-      : pedido === "reposicion"
-        ? "reposicion"
-        : "";
+  const pedidoValida: "cualquier" | "urgente" | "reposicion" | "" =
+    pedido === "cualquier"
+      ? "cualquier"
+      : pedido === "urgente"
+        ? "urgente"
+        : pedido === "reposicion"
+          ? "reposicion"
+          : "";
 
   const { proveedores, productos, total, totalPaginas } = await getPedidoUrgenteData({
     sucursal: sucursalValida,

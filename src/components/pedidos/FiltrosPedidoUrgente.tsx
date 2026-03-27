@@ -34,7 +34,7 @@ interface Proveedor {
   prefijo: string;
 }
 
-export type FiltroPedidoValor = "urgente" | "reposicion" | "";
+export type FiltroPedidoValor = "cualquier" | "urgente" | "reposicion" | "";
 
 interface Props {
   q: string;
@@ -172,6 +172,7 @@ export default function FiltrosPedidoUrgente({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">PEDIDO</SelectItem>
+                <SelectItem value="cualquier">CUALQUIER TIPO PEDIDO</SelectItem>
                 <SelectItem value="urgente">PEDIDO URGENTE</SelectItem>
                 <SelectItem value="reposicion">PEDIDO REPOSICION</SelectItem>
               </SelectContent>

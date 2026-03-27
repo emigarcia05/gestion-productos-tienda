@@ -70,12 +70,14 @@ export async function getPedidoUrgenteData(params: {
   const tieneSucursal = !!sucursalValida;
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const pedidoTipo: "urgente" | "reposicion" | undefined =
-    pedido === "urgente"
-      ? "urgente"
-      : pedido === "reposicion"
-        ? "reposicion"
-        : undefined;
+  const pedidoTipo: "cualquier" | "urgente" | "reposicion" | undefined =
+    pedido === "cualquier"
+      ? "cualquier"
+      : pedido === "urgente"
+        ? "urgente"
+        : pedido === "reposicion"
+          ? "reposicion"
+          : undefined;
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
     tieneSucursal

@@ -21,7 +21,7 @@ interface Props {
   sucursalValida: "" | "guaymallen" | "maipu";
   /** True cuando no hay sucursal seleccionada (único filtro obligatorio para listar). */
   sinFiltros: boolean;
-  pedidoValida: "urgente" | "reposicion" | "";
+  pedidoValida: "cualquier" | "urgente" | "reposicion" | "";
   total: number;
   totalPaginas: number;
   paginaNum: number;

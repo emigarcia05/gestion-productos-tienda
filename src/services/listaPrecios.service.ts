@@ -522,7 +522,7 @@ export interface PedidoUrgenteItem {
 export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
   proveedorId: string | undefined,
-  pedidoTipo: "urgente" | "reposicion" | undefined,
+  pedidoTipo: "cualquier" | "urgente" | "reposicion" | undefined,
   q: string | undefined,
   pagina: number | undefined,
   pageSize: number | undefined
@@ -542,18 +542,18 @@ export async function getListaPreciosParaPedidoUrgente(
   if (prov) andParts.push({ idProveedor: prov });
 
   if (pedidoTipo) {
-    const tipoPedidoFiltro = pedidoTipo === "urgente" ? "URGENTE" : "REPOSICION";
-    const whereTipoCantidad =
-      pedidoTipo === "urgente"
-        ? { urgenteCantPedir: { gt: 0 } }
-        : { reposicionCantPedir: { gt: 0 } };
+    const wherePedidoMercaderia: Prisma.ItemPedidoEnvioWhereInput =
+      pedidoTipo === "cualquier"
+        ? { cantPedir: { gt: 0 } }
+        : pedidoTipo === "urgente"
+          ? { tipoPedido: "URGENTE", urgenteCantPedir: { gt: 0 } }
+          : { tipoPedido: "REPOSICION", reposicionCantPedir: { gt: 0 } };
 
     const filasMercaderia = await prisma.itemPedidoEnvio.findMany({
       where: {
         sucursal: { codigo: sucursalTrim },
-        tipoPedido: tipoPedidoFiltro,
         ...(prov ? { idProveedor: prov } : {}),
-        ...whereTipoCantidad,
+        ...wherePedidoMercaderia,
       },
       select: {
         idProveedor: true,
