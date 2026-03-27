@@ -54,6 +54,9 @@ export default function TiendaCalcLitrosPageClient({
   const [moduloAncho, setModuloAncho] = useState<string>("");
   const [moduloAlto, setModuloAlto] = useState<string>("");
   const [moduloIncluyeTecho, setModuloIncluyeTecho] = useState<boolean>(false);
+  const [piletaLargo, setPiletaLargo] = useState<string>("");
+  const [piletaAncho, setPiletaAncho] = useState<string>("");
+  const [piletaProfundidad, setPiletaProfundidad] = useState<string>("");
 
   const rendimientoSeleccionado = useMemo(() => {
     if (!tipoPinturaId) return 0;
@@ -126,6 +129,46 @@ export default function TiendaCalcLitrosPageClient({
     moduloIncluyeTecho,
     rendimientoSeleccionado,
   ]);
+
+  /** PILETA: igual que POR MÓDULO pero Alto→Profundidad, Techo→Piso (siempre L×A). */
+  const calculoPileta = useMemo(() => {
+    const L = parseDecimalInput(piletaLargo);
+    const A = parseDecimalInput(piletaAncho);
+    const P = parseDecimalInput(piletaProfundidad);
+    const R = rendimientoSeleccionado;
+
+    const mtsLargoProf = L * P;
+    const mtsAnchoProf = A * P;
+    const mtsPiso = L * A;
+
+    function litrosDesdeMts(mts2: number) {
+      const l1 = R > 0 ? mts2 / R : 0;
+      return { lts1Mano: l1, lts2Manos: l1 * 2 };
+    }
+
+    const p12 = litrosDesdeMts(mtsLargoProf);
+    const p34 = litrosDesdeMts(mtsAnchoProf);
+    const piso = litrosDesdeMts(mtsPiso);
+
+    const filas = [
+      { id: "pileta-pared-1", label: "Pared 1", mts2: mtsLargoProf, ...p12 },
+      { id: "pileta-pared-2", label: "Pared 2", mts2: mtsLargoProf, ...p12 },
+      { id: "pileta-pared-3", label: "Pared 3", mts2: mtsAnchoProf, ...p34 },
+      { id: "pileta-pared-4", label: "Pared 4", mts2: mtsAnchoProf, ...p34 },
+      { id: "pileta-piso", label: "Piso", mts2: mtsPiso, ...piso },
+    ];
+
+    const total = filas.reduce(
+      (acc, row) => ({
+        mts2: acc.mts2 + row.mts2,
+        lts1Mano: acc.lts1Mano + row.lts1Mano,
+        lts2Manos: acc.lts2Manos + row.lts2Manos,
+      }),
+      { mts2: 0, lts1Mano: 0, lts2Manos: 0 }
+    );
+
+    return { filas, total };
+  }, [piletaLargo, piletaAncho, piletaProfundidad, rendimientoSeleccionado]);
 
   function actualizarFilaPared(
     id: string,
@@ -442,11 +485,112 @@ export default function TiendaCalcLitrosPageClient({
                       </TableFooter>
                     </Table>
                   </div>
-                ) : (
-                  <div className="flex h-full min-h-[12rem] items-center justify-center px-4 py-8 text-center text-sm text-muted-foreground">
-                    Esta forma de cálculo se implementará en el siguiente paso.
+                ) : formaCalculo === "PILETA" ? (
+                  <div className="flex h-full min-h-0 flex-col gap-2 p-2">
+                    <Table variant="compact" scrollX={false}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[22%]">LARGO</TableHead>
+                          <TableHead className="w-[22%]">ANCHO</TableHead>
+                          <TableHead className="w-[22%]">PROFUNDIDAD</TableHead>
+                          <TableHead className="w-[34%]">PISO</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="celda-datos">
+                            <Input
+                              value={piletaLargo}
+                              onChange={(e) =>
+                                setPiletaLargo(e.target.value.replace(/[^\d.,]/g, ""))
+                              }
+                              className="h-8 text-center"
+                              inputMode="decimal"
+                              placeholder="0,0"
+                              aria-label="Largo pileta"
+                            />
+                          </TableCell>
+                          <TableCell className="celda-datos">
+                            <Input
+                              value={piletaAncho}
+                              onChange={(e) =>
+                                setPiletaAncho(e.target.value.replace(/[^\d.,]/g, ""))
+                              }
+                              className="h-8 text-center"
+                              inputMode="decimal"
+                              placeholder="0,0"
+                              aria-label="Ancho pileta"
+                            />
+                          </TableCell>
+                          <TableCell className="celda-datos">
+                            <Input
+                              value={piletaProfundidad}
+                              onChange={(e) =>
+                                setPiletaProfundidad(e.target.value.replace(/[^\d.,]/g, ""))
+                              }
+                              className="h-8 text-center"
+                              inputMode="decimal"
+                              placeholder="0,0"
+                              aria-label="Profundidad pileta"
+                            />
+                          </TableCell>
+                          <TableCell className="celda-datos">
+                            <div className="flex items-center justify-center text-xs font-medium text-foreground">
+                              Siempre incluido
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+
+                    <div className="h-px w-full bg-border/60" />
+
+                    <Table variant="compact" scrollX={false}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[40%]">SUPERFICIE</TableHead>
+                          <TableHead className="w-[20%]">MTS2</TableHead>
+                          <TableHead className="w-[20%]">1 MANO</TableHead>
+                          <TableHead className="w-[20%]">2 MANOS</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {calculoPileta.filas.map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell className="celda-datos text-left font-medium">
+                              {row.label}
+                            </TableCell>
+                            <TableCell className="celda-datos text-center tabular-nums">
+                              {formatDecimal(row.mts2, 1)} mts2
+                            </TableCell>
+                            <TableCell className="celda-datos text-center tabular-nums">
+                              {formatDecimal(row.lts1Mano, 1)} lts
+                            </TableCell>
+                            <TableCell className="celda-datos text-center tabular-nums">
+                              {formatDecimal(row.lts2Manos, 1)} lts
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter className="border-t border-border/60 bg-background">
+                        <TableRow className="hover:bg-background odd:bg-background even:bg-background">
+                          <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
+                            TOTAL
+                          </TableCell>
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                            {formatDecimal(calculoPileta.total.mts2, 1)} mts2
+                          </TableCell>
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                            {formatDecimal(calculoPileta.total.lts1Mano, 1)} lts
+                          </TableCell>
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                            {formatDecimal(calculoPileta.total.lts2Manos, 1)} lts
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
             {esEditor ? (
