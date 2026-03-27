@@ -155,19 +155,13 @@ export default function GestionTiposPinturaModal({
         padding="sm"
         scrollBody={false}
         actions={
-          <div className="flex w-full items-center justify-between gap-2">
-            <Button type="button" variant="outline" onClick={addRow} disabled={saving}>
-              <Plus className="h-4 w-4" />
-              +
+          <div className="flex w-full items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
             </Button>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button type="button" onClick={handleGuardar} disabled={saving || !hasChanges}>
-                Guardar
-              </Button>
-            </div>
+            <Button type="button" onClick={handleGuardar} disabled={saving || !hasChanges}>
+              Guardar
+            </Button>
           </div>
         }
       >
@@ -225,6 +219,12 @@ export default function GestionTiposPinturaModal({
                 )}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex items-center justify-center border-t border-border px-3 py-2">
+            <Button type="button" variant="outline" onClick={addRow} disabled={saving}>
+              <Plus className="h-4 w-4" />
+              +
+            </Button>
           </div>
         </div>
       </AppModal>

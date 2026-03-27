@@ -23,9 +23,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  EmptyTableRow,
 } from "@/components/ui/table";
 import type { TipoPinturaRendimiento } from "@/actions/tiposPinturaRendimientos";
+import { Plus, Trash2 } from "lucide-react";
 
 type ProveedorOption = {
   id: string;
@@ -39,6 +39,15 @@ interface Props {
   tiposPintura: TipoPinturaRendimiento[];
   esEditor: boolean;
 }
+
+type FormaCalculoLts = "POR_PAREDES" | "POR_MODULO" | "PILETA";
+
+type FilaPared = {
+  id: string;
+  cantParedes: string;
+  largoPared: string;
+  anchoPared: string;
+};
 
 function parseMonto(value: string): number {
   const normalized = value.replace(/\./g, "").replace(",", ".").trim();
@@ -59,6 +68,29 @@ function roundToNearestHundred(value: number): number {
   return Math.round(value / 100) * 100;
 }
 
+function parseDecimalInput(value: string): number {
+  const normalized = value.replace(",", ".").trim();
+  const n = Number(normalized);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function formatDecimal(value: number, decimals = 2): string {
+  if (!Number.isFinite(value)) return "0";
+  return value.toLocaleString("es-AR", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+function crearFilaParedVacia(): FilaPared {
+  return {
+    id: `pared-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    cantParedes: "",
+    largoPared: "",
+    anchoPared: "",
+  };
+}
+
 export default function PxTintoCalculoLtsPageClient({
   proveedores,
   tiposPintura,
@@ -69,6 +101,9 @@ export default function PxTintoCalculoLtsPageClient({
   const [pxCompra, setPxCompra] = useState<string>("");
   const [editarCoefOpen, setEditarCoefOpen] = useState(false);
   const [gestionarTiposOpen, setGestionarTiposOpen] = useState(false);
+  const [formaCalculo, setFormaCalculo] = useState<FormaCalculoLts>("POR_PAREDES");
+  const [tipoPinturaId, setTipoPinturaId] = useState<string>("");
+  const [filasPared, setFilasPared] = useState<FilaPared[]>([crearFilaParedVacia()]);
   const proveedoresConCoefMayorAUno = useMemo(
     () => proveedores.filter((p) => p.coeficienteTintometrico > 1),
     [proveedores]
@@ -82,6 +117,33 @@ export default function PxTintoCalculoLtsPageClient({
         ?.coeficienteTintometrico ?? 1;
     return formatMonto(roundToNearestHundred(base * coef));
   }, [pxCompra, proveedor, proveedoresConCoefMayorAUno]);
+
+  const rendimientoSeleccionado = useMemo(() => {
+    if (!tipoPinturaId) return 0;
+    const row = tiposPintura.find((t) => t.id === tipoPinturaId);
+    return row ? Number(row.rendimiento) : 0;
+  }, [tipoPinturaId, tiposPintura]);
+
+  function actualizarFilaPared(
+    id: string,
+    campo: "cantParedes" | "largoPared" | "anchoPared",
+    value: string
+  ) {
+    const sanitized = value.replace(/[^\d.,]/g, "");
+    setFilasPared((prev) =>
+      prev.map((row) => (row.id === id ? { ...row, [campo]: sanitized } : row))
+    );
+  }
+
+  function agregarFilaPared() {
+    setFilasPared((prev) => [...prev, crearFilaParedVacia()]);
+  }
+
+  function eliminarFilaPared(id: string) {
+    setFilasPared((prev) =>
+      prev.length <= 1 ? [crearFilaParedVacia()] : prev.filter((row) => row.id !== id)
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
@@ -185,34 +247,172 @@ export default function PxTintoCalculoLtsPageClient({
                 </h2>
                 <span className="h-0.5 w-[70%] rounded-full bg-primary" aria-hidden />
               </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Select
+                  value={formaCalculo}
+                  onValueChange={(value) => setFormaCalculo(value as FormaCalculoLts)}
+                >
+                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>
+                    <SelectValue placeholder="FORMA DE CÁLCULO" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="POR_PAREDES">Por Paredes</SelectItem>
+                    <SelectItem value="POR_MODULO">Por Módulo</SelectItem>
+                    <SelectItem value="PILETA">Pileta</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={tipoPinturaId || "none"}
+                  onValueChange={(value) =>
+                    setTipoPinturaId(value === "none" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>
+                    <SelectValue placeholder="TIPO DE PINTURA" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="none">TIPO DE PINTURA</SelectItem>
+                    {tiposPintura.map((row) => (
+                      <SelectItem key={row.id} value={row.id}>
+                        {row.tipoPintura}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background">
                 <div className="h-full min-h-0 overflow-y-auto no-scrollbar">
-                  <Table variant="compact" scrollX={false}>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[65%]">TIPO DE PINTURA</TableHead>
-                        <TableHead className="w-[35%]">RENDIMIENTO</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tiposPintura.length === 0 ? (
-                        <EmptyTableRow colSpan={2} message="Sin registros." />
-                      ) : (
-                        tiposPintura.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="celda-datos text-left">
-                              {item.tipoPintura}
-                            </TableCell>
-                            <TableCell className="celda-datos text-center tabular-nums">
-                              {item.rendimiento.toLocaleString("es-AR")}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                  {formaCalculo === "POR_PAREDES" ? (
+                    <Table variant="compact" scrollX={false}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[10%]">CANT. PAREDES</TableHead>
+                          <TableHead className="w-[16%]">LARGO PARED</TableHead>
+                          <TableHead className="w-[16%]">ANCHO PARED</TableHead>
+                          <TableHead className="w-[16%]">MTS2</TableHead>
+                          <TableHead className="w-[16%]">LTS 1 MANO</TableHead>
+                          <TableHead className="w-[16%]">LTS 2 MANOS</TableHead>
+                          <TableHead className="w-[10%] tabla-bloque-secundario-head-divider">
+                            ACCIONES
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filasPared.map((row) => {
+                          const cantParedes = parseDecimalInput(row.cantParedes);
+                          const largo = parseDecimalInput(row.largoPared);
+                          const ancho = parseDecimalInput(row.anchoPared);
+                          const mts2 = cantParedes * largo * ancho;
+                          const lts1Mano =
+                            rendimientoSeleccionado > 0
+                              ? mts2 / rendimientoSeleccionado
+                              : 0;
+                          const lts2Manos = lts1Mano * 2;
+
+                          return (
+                            <TableRow key={row.id}>
+                              <TableCell className="celda-datos">
+                                <Input
+                                  value={row.cantParedes}
+                                  onChange={(e) =>
+                                    actualizarFilaPared(
+                                      row.id,
+                                      "cantParedes",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="h-8 text-center"
+                                  inputMode="decimal"
+                                  placeholder="0,0"
+                                  aria-label="Cantidad de paredes"
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos">
+                                <Input
+                                  value={row.largoPared}
+                                  onChange={(e) =>
+                                    actualizarFilaPared(
+                                      row.id,
+                                      "largoPared",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="h-8 text-center"
+                                  inputMode="decimal"
+                                  placeholder="0,0"
+                                  aria-label="Largo de pared"
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos">
+                                <Input
+                                  value={row.anchoPared}
+                                  onChange={(e) =>
+                                    actualizarFilaPared(
+                                      row.id,
+                                      "anchoPared",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="h-8 text-center"
+                                  inputMode="decimal"
+                                  placeholder="0,0"
+                                  aria-label="Ancho de pared"
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums">
+                                {formatDecimal(mts2)}
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums">
+                                {formatDecimal(lts1Mano)}
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums">
+                                {formatDecimal(lts2Manos)}
+                              </TableCell>
+                              <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
+                                <div className="flex items-center justify-center">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon-xs"
+                                    onClick={() => eliminarFilaPared(row.id)}
+                                    aria-label="Eliminar fila"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="flex h-full min-h-[12rem] items-center justify-center px-4 py-8 text-center text-sm text-muted-foreground">
+                      Esta forma de cálculo se implementará en el siguiente paso.
+                    </div>
+                  )}
                 </div>
               </div>
+              {formaCalculo === "POR_PAREDES" ? (
+                <div className="flex justify-center">
+                  <Button type="button" variant="outline" onClick={agregarFilaPared}>
+                    <Plus className="h-4 w-4" />
+                    +
+                  </Button>
+                </div>
+              ) : null}
               {esEditor ? (
                 <div className="flex justify-center pt-1">
                   <Button type="button" onClick={() => setGestionarTiposOpen(true)}>
