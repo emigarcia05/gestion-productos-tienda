@@ -109,6 +109,7 @@ export default function NuevoItemTintometricoModal({
           sucursalCodigo: sucursal,
           proveedorId,
           codTienda: b.codTienda,
+          codTintometrico: codigo,
           cantidad: cant,
           descripcion,
           base: b,
@@ -118,6 +119,7 @@ export default function NuevoItemTintometricoModal({
         sucursalCodigo: "guaymallen" | "maipu";
         proveedorId: string;
         codTienda: string;
+        codTintometrico: string;
         cantidad: number;
         descripcion: string;
         base: BaseTintometricaRow;
@@ -129,11 +131,19 @@ export default function NuevoItemTintometricoModal({
     try {
       const result = await upsertPedidoTintometricoItemsAction(
         payload.map(
-          ({ sucursalCodigo, proveedorId, codTienda, cantidad, descripcion }) =>
+          ({
+            sucursalCodigo,
+            proveedorId,
+            codTienda,
+            codTintometrico,
+            cantidad,
+            descripcion,
+          }) =>
             ({
               sucursalCodigo,
               proveedorId,
               codTienda,
+              codTintometrico,
               cantidad,
               descripcion,
             } as ItemPedidoTintometricoPayload)

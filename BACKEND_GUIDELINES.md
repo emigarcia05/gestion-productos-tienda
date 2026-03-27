@@ -266,6 +266,13 @@ Constraint:
 - La misma llamada devuelve **`rows`** (filas crudas de `pedidos_mercaderia`) e **`items`** (forma PDF). El chequeo de sobrestock en la **otra sucursal** usa **`rows` completas** (mismas que el PDF) en **`getSobreStockOtraSucursalParaPedidoEnviar`**: solo entran líneas con **`cod_tienda`**; `id_proveedor` en la query de envío va siempre **`.trim()`**.
 - Tras éxito, **`revalidatePath`** incluye también **`/pedidos/reposicion`**.
 
+#### `pedidos_mercaderia` — ítems `TINTOMETRICO` (`cod_ext`)
+
+- La clave única `@@unique([idProveedor, tipoPedido, sucursalId, codExt])` implica que **`cod_ext` debe distinguir cada línea lógica**.
+- No alcanza con `TINT-{cod_tienda}`: pueden coexistir varias líneas con el **mismo** `cod_tienda` (misma base) y **distinto** código de fórmula (COD.).
+- Upsert (`upsertPedidoTintometricoItems`): `cod_ext = buildCodExtTintometrico(codTienda, codTintometrico)` → `TINT-{codTienda}-{códigoNormalizado}` (`src/lib/pedidosTintometrico.ts`).
+- Borrado (`deletePedidoTintometricoItem`): filtrar por **`cod_ext` persistido** (no reconstruir solo desde `cod_tienda`).
+
 #### `comprobarItemsParaGenerarPedidoAction`
 
 - **Uso**: modal **Generar Pedido** (debounce en cliente ~320 ms) para saber si hay ítems antes de habilitar el botón.

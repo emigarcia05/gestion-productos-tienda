@@ -6,6 +6,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
+import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -23,6 +24,8 @@ export interface ItemPedidoTintometricoPayload {
   sucursalCodigo: SucursalPedidoEnvio;
   proveedorId: string;
   codTienda: string;
+  /** Código de fórmula (COD. …) — parte de `cod_ext` para no colisionar por misma base. */
+  codTintometrico: string;
   cantidad: number;
   descripcion: string;
 }
@@ -314,7 +317,7 @@ export async function upsertPedidoTintometricoItems(
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
         const codTiendaTrim = item.codTienda.trim();
-        const codExt = `TINT-${codTiendaTrim}`;
+        const codExt = buildCodExtTintometrico(codTiendaTrim, item.codTintometrico);
 
         const existing = await tx.itemPedidoEnvio.findFirst({
           where: {
@@ -403,9 +406,10 @@ export async function getPedidoTintometricoItems(): Promise<ItemPedidoTintometri
 export async function deletePedidoTintometricoItem(params: {
   sucursalCodigo: SucursalPedidoEnvio;
   proveedorId: string;
-  codTienda: string;
+  /** Valor persistido en `pedidos_mercaderia.cod_ext` (incluye base + código fórmula). */
+  codExt: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const codExt = `TINT-${params.codTienda.trim()}`;
+  const codExt = params.codExt.trim();
   try {
     const sucursalId = await getSucursalIdByCodigo(params.sucursalCodigo);
     await prisma.itemPedidoEnvio.deleteMany({

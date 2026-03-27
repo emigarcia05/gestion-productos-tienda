@@ -43,6 +43,7 @@ import NuevoItemTintometricoModal, {
   type NuevoItemTintometricoDraft,
 } from "@/components/pedidos/NuevoItemTintometricoModal";
 import { deletePedidoTintometricoItemAction } from "@/actions/pedidos";
+import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
 
 type ItemTintometrico = {
   key: string;
@@ -139,7 +140,7 @@ export default function PedidoTintometricoPageClient({
 
   function agregarItem(draft: NuevoItemTintometricoDraft) {
     const codTienda = draft.base.codTienda.trim();
-    const codExt = `TINT-${codTienda}`;
+    const codExt = buildCodExtTintometrico(codTienda, draft.codTintometrico);
     const descripcionBase = (draft.base.descripcionTienda ?? "").trim();
     const codigo = draft.codTintometrico.trim();
     const descripcion =
@@ -171,7 +172,7 @@ export default function PedidoTintometricoPageClient({
     const res = await deletePedidoTintometricoItemAction({
       sucursalCodigo: item.sucursalCodigo as "guaymallen" | "maipu",
       proveedorId: item.proveedorId,
-      codTienda: item.codTienda,
+      codExt: item.codExt,
     });
     setDeletingKey(null);
     if (!res.ok) {
