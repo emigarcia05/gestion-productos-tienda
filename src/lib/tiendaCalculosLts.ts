@@ -1,17 +1,30 @@
 export type FilaParedLts = {
   id: string;
-  cantParedes: string;
-  largoPared: string;
-  anchoPared: string;
+  cantidad: string;
+  largo: string;
+  ancho: string;
 };
 
 export function crearFilaParedVacia(): FilaParedLts {
   return {
     id: `pared-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    cantParedes: "",
-    largoPared: "",
-    anchoPared: "",
+    cantidad: "",
+    largo: "",
+    ancho: "",
   };
+}
+
+/** Input decimal con como máximo un dígito tras el separador decimal. */
+export function sanitizeDecimalUnDigito(value: string): string {
+  const s = value.replace(/[^\d.,]/g, "").replace(",", ".");
+  if (!s) return "";
+  const parts = s.split(".");
+  if (parts.length === 1) return parts[0]!;
+  const intPart = parts[0] ?? "";
+  const rest = parts.slice(1).join("");
+  const frac = rest.replace(/\D/g, "").slice(0, 1);
+  if (frac === "" && s.endsWith(".")) return `${intPart}.`;
+  return frac === "" ? intPart : `${intPart}.${frac}`;
 }
 
 export function parseMonto(value: string): number {

@@ -29,6 +29,7 @@ import {
   crearFilaParedVacia,
   formatDecimal,
   parseDecimalInput,
+  sanitizeDecimalUnDigito,
   type FilaParedLts,
 } from "@/lib/tiendaCalculosLts";
 import { Plus, Trash2 } from "lucide-react";
@@ -63,10 +64,10 @@ export default function TiendaCalcLitrosPageClient({
   const totalesPared = useMemo(() => {
     return filasPared.reduce(
       (acc, row) => {
-        const cantParedes = parseDecimalInput(row.cantParedes);
-        const largo = parseDecimalInput(row.largoPared);
-        const ancho = parseDecimalInput(row.anchoPared);
-        const mts2 = cantParedes * largo * ancho;
+        const cant = parseDecimalInput(row.cantidad);
+        const largo = parseDecimalInput(row.largo);
+        const ancho = parseDecimalInput(row.ancho);
+        const mts2 = cant * largo * ancho;
         const lts1Mano = rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
         const lts2Manos = lts1Mano * 2;
 
@@ -120,10 +121,10 @@ export default function TiendaCalcLitrosPageClient({
 
   function actualizarFilaPared(
     id: string,
-    campo: "cantParedes" | "largoPared" | "anchoPared",
+    campo: "cantidad" | "largo" | "ancho",
     value: string
   ) {
-    const sanitized = value.replace(/[^\d.,]/g, "");
+    const sanitized = sanitizeDecimalUnDigito(value);
     setFilasPared((prev) =>
       prev.map((row) => (row.id === id ? { ...row, [campo]: sanitized } : row))
     );
@@ -206,73 +207,77 @@ export default function TiendaCalcLitrosPageClient({
                   <Table variant="compact" scrollX={false}>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[10%]">CANT. PAREDES</TableHead>
-                        <TableHead className="w-[16%]">LARGO PARED</TableHead>
-                        <TableHead className="w-[16%]">ANCHO PARED</TableHead>
-                        <TableHead className="w-[16%]">MTS2</TableHead>
-                        <TableHead className="w-[16%]">LTS 1 MANO</TableHead>
-                        <TableHead className="w-[16%]">LTS 2 MANOS</TableHead>
-                        <TableHead className="w-[10%] tabla-bloque-secundario-head-divider">
+                        <TableHead className="w-[20%]">SUPERFICIE</TableHead>
+                        <TableHead className="w-[15%]">CANT.</TableHead>
+                        <TableHead className="w-[15%]">LARGO</TableHead>
+                        <TableHead className="w-[15%]">ANCHO</TableHead>
+                        <TableHead className="w-[10%]">MTS2</TableHead>
+                        <TableHead className="w-[10%]">1 MANO</TableHead>
+                        <TableHead className="w-[10%]">2 MANOS</TableHead>
+                        <TableHead className="w-[5%] tabla-bloque-secundario-head-divider">
                           ACCIONES
                         </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filasPared.map((row) => {
-                        const cantParedes = parseDecimalInput(row.cantParedes);
-                        const largo = parseDecimalInput(row.largoPared);
-                        const ancho = parseDecimalInput(row.anchoPared);
-                        const mts2 = cantParedes * largo * ancho;
+                      {filasPared.map((row, index) => {
+                        const cant = parseDecimalInput(row.cantidad);
+                        const largo = parseDecimalInput(row.largo);
+                        const ancho = parseDecimalInput(row.ancho);
+                        const mts2 = cant * largo * ancho;
                         const lts1Mano =
                           rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
                         const lts2Manos = lts1Mano * 2;
 
                         return (
                           <TableRow key={row.id}>
+                            <TableCell className="celda-datos text-left font-medium">
+                              Pared {index + 1}
+                            </TableCell>
                             <TableCell className="celda-datos">
                               <Input
-                                value={row.cantParedes}
+                                value={row.cantidad}
                                 onChange={(e) =>
-                                  actualizarFilaPared(row.id, "cantParedes", e.target.value)
+                                  actualizarFilaPared(row.id, "cantidad", e.target.value)
                                 }
                                 className="h-8 text-center"
                                 inputMode="decimal"
                                 placeholder="0,0"
-                                aria-label="Cantidad de paredes"
+                                aria-label="Cantidad"
                               />
                             </TableCell>
                             <TableCell className="celda-datos">
                               <Input
-                                value={row.largoPared}
+                                value={row.largo}
                                 onChange={(e) =>
-                                  actualizarFilaPared(row.id, "largoPared", e.target.value)
+                                  actualizarFilaPared(row.id, "largo", e.target.value)
                                 }
                                 className="h-8 text-center"
                                 inputMode="decimal"
                                 placeholder="0,0"
-                                aria-label="Largo de pared"
+                                aria-label="Largo"
                               />
                             </TableCell>
                             <TableCell className="celda-datos">
                               <Input
-                                value={row.anchoPared}
+                                value={row.ancho}
                                 onChange={(e) =>
-                                  actualizarFilaPared(row.id, "anchoPared", e.target.value)
+                                  actualizarFilaPared(row.id, "ancho", e.target.value)
                                 }
                                 className="h-8 text-center"
                                 inputMode="decimal"
                                 placeholder="0,0"
-                                aria-label="Ancho de pared"
+                                aria-label="Ancho"
                               />
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
-                              {formatDecimal(mts2)}
+                              {formatDecimal(mts2, 1)}
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
-                              {formatDecimal(lts1Mano)}
+                              {formatDecimal(lts1Mano, 1)}
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
-                              {formatDecimal(lts2Manos)}
+                              {formatDecimal(lts2Manos, 1)}
                             </TableCell>
                             <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                               <div className="flex items-center justify-center">
@@ -294,22 +299,28 @@ export default function TiendaCalcLitrosPageClient({
                     </TableBody>
                     <TableFooter className="border-t border-border/60 bg-background">
                       <TableRow className="hover:bg-background odd:bg-background even:bg-background">
-                        <TableCell className="celda-datos text-right font-semibold" colSpan={3}>
+                        <TableCell className="celda-datos text-right font-semibold" colSpan={4}>
                           TOTAL
                         </TableCell>
                         <TableCell className="celda-datos text-center tabular-nums font-semibold">
-                          {formatDecimal(totalesPared.mts2)}
+                          {formatDecimal(totalesPared.mts2, 1)}
                         </TableCell>
                         <TableCell className="celda-datos text-center tabular-nums font-semibold">
-                          {formatDecimal(totalesPared.lts1Mano)}
+                          {formatDecimal(totalesPared.lts1Mano, 1)}
                         </TableCell>
                         <TableCell className="celda-datos text-center tabular-nums font-semibold">
-                          {formatDecimal(totalesPared.lts2Manos)}
+                          {formatDecimal(totalesPared.lts2Manos, 1)}
                         </TableCell>
                         <TableCell className="celda-datos tabla-bloque-secundario-cell-divider" />
                       </TableRow>
                     </TableFooter>
                   </Table>
+                  <div className="flex justify-center border-t border-border/60 bg-background py-2">
+                    <Button type="button" variant="outline" onClick={agregarFilaPared}>
+                      <Plus className="h-4 w-4" />
+                      +
+                    </Button>
+                  </div>
                 ) : formaCalculo === "POR_MODULO" ? (
                   <div className="flex h-full min-h-0 flex-col gap-2 p-2">
                     <Table variant="compact" scrollX={false}>
@@ -426,14 +437,6 @@ export default function TiendaCalcLitrosPageClient({
                 )}
               </div>
             </div>
-            {formaCalculo === "POR_PAREDES" ? (
-              <div className="flex justify-center">
-                <Button type="button" variant="outline" onClick={agregarFilaPared}>
-                  <Plus className="h-4 w-4" />
-                  +
-                </Button>
-              </div>
-            ) : null}
             {esEditor ? (
               <div className="flex justify-center pt-1">
                 <Button type="button" onClick={() => setGestionarTiposOpen(true)}>
