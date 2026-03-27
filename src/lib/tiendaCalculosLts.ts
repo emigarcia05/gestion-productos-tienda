@@ -14,24 +14,6 @@ export function crearFilaParedVacia(): FilaParedLts {
   };
 }
 
-const IDS_FILAS_MODULO = [
-  "modulo-pared-1",
-  "modulo-pared-2",
-  "modulo-pared-3",
-  "modulo-pared-4",
-  "modulo-techo",
-] as const;
-
-/** Cinco filas fijas para POR MÓDULO (ids estables). */
-export function crearFilasModuloIniciales(): FilaParedLts[] {
-  return IDS_FILAS_MODULO.map((id) => ({
-    id,
-    cantidad: "",
-    largo: "",
-    ancho: "",
-  }));
-}
-
 /** Input decimal con como máximo un dígito tras el separador decimal. */
 export function sanitizeDecimalUnDigito(value: string): string {
   const s = value.replace(/[^\d.,]/g, "").replace(",", ".");
