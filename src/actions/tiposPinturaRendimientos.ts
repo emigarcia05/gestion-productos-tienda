@@ -97,7 +97,7 @@ export async function upsertTipoPinturaRendimientoAction(
       row = inserted[0]!;
     }
 
-    revalidatePath("/tienda/tinto-lts");
+    revalidatePath("/tienda/litros");
     return { ok: true, data: row };
   } catch (error: unknown) {
     return { ok: false, error: mapDbError(error, "No se pudo guardar el tipo de pintura.") };
@@ -114,7 +114,7 @@ export async function deleteTipoPinturaRendimientoAction(idRaw: string): Promise
       DELETE FROM tipos_pintura_rendimientos
       WHERE id = ${id.data}
     `;
-    revalidatePath("/tienda/tinto-lts");
+    revalidatePath("/tienda/litros");
     return { ok: true, data: undefined };
   } catch (error: unknown) {
     return { ok: false, error: mapDbError(error, "No se pudo eliminar el tipo de pintura.") };

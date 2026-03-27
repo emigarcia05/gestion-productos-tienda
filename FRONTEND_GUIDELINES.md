@@ -551,31 +551,19 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
   - `PROVEEDOR` (`proveedores.nombre`)
   - `COEFICIENTE` (`proveedores.coeficiente_tintometrico`) editable con `Input`.
 - El botón es visible solo para `editor`.
-- Al guardar, persiste en DB y refresca la página para reflejar coeficientes actualizados en módulos dependientes (ej. `Px. Tinto. / Cal. Lts`).
+- Al guardar, persiste en DB y refresca la página para reflejar coeficientes actualizados en módulos dependientes (ej. `Calc. Tintométrico`).
 - En el modal, botón `Guardar` deshabilitado mientras no haya cambios en los coeficientes (o si está guardando).
 
-### Tienda — `Px. Tinto. / Cal. Lts` (`/tienda/tinto-lts`)
+### Tienda — `Calc. Tintométrico` (`/tienda/tintometrico`) y `Calc. Litros` (`/tienda/litros`)
 
-- Módulo frontend sin persistencia (cálculo local en cliente).
-- Usa encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Px. Tinto. / Cal. Lts**
-- No renderiza bloque de filtros (`FilterBar`).
-- Layout principal en dos columnas iguales (`grid` 1/1 en `lg`), cada una en card `bg-card` con borde `border-border`.
-- Primera columna: bloque con título centrado y en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea horizontal azul (`bg-primary`) debajo del título, centrada, con ancho del `70%` del contenedor + grilla de pares etiqueta/campo:
-  - `Proveedor`: `Select` unificado (`SELECT_TRIGGER_FILTER_CLASS`),
-  - `Px. Compra`: `Input` editable numérico entero (sin decimales),
-  - `Px Lista Tienda`: celda de solo lectura (resultado de cálculo local), redondeado a entero múltiplo de 100.
-  - Etiquetas de campo (`Proveedor`, `Px. Compra`, `Px Lista Tienda`) con `text-foreground` para contraste alto.
-- En `Proveedor`, el desplegable muestra solo proveedores con `coeficienteTintometrico > 1`.
-- Segunda columna: encabezado visual con título centrado en mayúsculas **CALCULO DE LTS** + línea horizontal azul (`bg-primary`) centrada al `70%`.
-- Segunda columna incluye tabla compacta de dos campos:
-  - `TIPO DE PINTURA` (texto),
-  - `RENDIMIENTO` (entero).
-- Para `editor`, botón **Gestionar Tipos De Pintura** abre modal CRUD con alta/edición/baja de filas.
-- Botón **Editar Coeficientes** visible solo para `editor`; abre modal editable (no navegación), centrado horizontalmente y con estilo primario (fondo azul del sistema, `bg-primary`).
-- Modal de coeficientes: tabla `PROVEEDOR` + `COEFICIENTE` (input editable), botón `Guardar` con persistencia y refresh al finalizar.
+- Rutas separadas bajo **Lista Tienda**; la URL antigua `/tienda/tinto-lts` redirige (308) a `/tienda/tintometrico`.
+- Ambos usan encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Calc. Tintométrico** o **Calc. Litros** según la pantalla.
+- No renderizan bloque de filtros (`FilterBar`).
+- **Calc. Tintométrico**: cálculo local en cliente (sin persistencia de montos). Una card `bg-card` a ancho útil (`max-w-xl` centrada para el formulario) con título en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea `bg-primary` al `70%`; grilla etiqueta/campo: `Proveedor` (`Select` con `SELECT_TRIGGER_FILTER_CLASS`), `Px. Compra` (`Input` entero), `Px Lista Tienda` (solo lectura, múltiplo de 100). Solo proveedores con `coeficienteTintometrico > 1` en el desplegable. **Editar Coeficientes** solo `editor`; modal con tabla proveedor/coeficiente y persistencia.
+- **Calc. Litros**: cálculo local; card única a ancho completo del contenedor con título **CALCULO DE LTS** + línea `bg-primary` al `70%`; selectores **FORMA DE CÁLCULO** y **TIPO DE PINTURA**; tablas según forma (paredes, módulo, pileta placeholder). **EDITAR RENDIMIENTOS** solo `editor` (modal CRUD `tipos_pintura_rendimientos`).
 - Sidebar (`LISTA TIENDA`) por rol:  
-  - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Px. Tinto. / Cal. Lts`
-  - **simple**: `Control Stock`, `Px. Tinto. / Cal. Lts`
+  - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Calc. Tintométrico`, `Calc. Litros`
+  - **simple**: `Control Stock`, `Calc. Tintométrico`, `Calc. Litros`
 
 ## 4. Checklist de PR (Cursor / desarrollador)
 
@@ -614,7 +602,7 @@ Antes de dar por terminada una tarea de frontend:
 - **Encabezados de tabla abreviados (2026-03):** para convivir con el header global de 2 líneas y recorte, se acortan labels largos en columnas angostas (`PROD. PROVISTOS`, `COL. ARCHIVO`, `DESC. PROVEEDOR`, `PX. VTA. SUG.`, `CANT. URG.`, `PX. FINAL`, `MARGEN`, `CANT. PED.`, `CANT. REC.`).
 - **Eliminación de estilos inline estructurales**: anchos de columnas en `TablaPedidoUrgente`, `TablaReposicion` y `ComparacionCategoriasClient` migrados a utilidades Tailwind (`w-[x%]`) y clases globales; plantilla de impresión de stock (`PrintStock`) sin atributos `style`, usando solo clases CSS internas.
 - **Sidebar — Sincronización DUX (persistente y accionable)**: `SyncStatusIndicator` permanece siempre visible en la slidenav. En reposo muestra bloque centrado con "Sincronización DUX", "Última Consulta Disponible" y fecha en formato Argentina (`dd/mm hh:mm`) solo si existe última sync exitosa. El bloque completo funciona como botón para iniciar `POST /api/sync-lista-precios-tienda` sin modal de confirmación; durante ejecución mantiene el mensaje de progreso reutilizable.
-- **`/tienda/tinto-lts` — Cálculo de Lts (fase 1/2)**: bloque derecho con selector **FORMA DE CÁLCULO** (`POR PAREDES`, `POR MÓDULO`, `PILETA`) + selector **TIPO DE PINTURA** (fuente `tipos_pintura_rendimientos`).  
+- **`/tienda/litros` — Cálculo de Lts**: selector **FORMA DE CÁLCULO** (`POR PAREDES`, `POR MÓDULO`, `PILETA`) + selector **TIPO DE PINTURA** (fuente `tipos_pintura_rendimientos`).  
   - **POR PAREDES**: tabla compacta con `CANT. PAREDES`, `LARGO PARED`, `ANCHO PARED`, `MTS2`, `LTS 1 MANO`, `LTS 2 MANOS`, `ACCIONES`; inputs decimales en las tres primeras, cálculos en vivo (`MTS2 = cant * largo * ancho`, `LTS 1 MANO = MTS2 / rendimiento`, `LTS 2 MANOS = LTS 1 MANO * 2`), cesto por fila, botón `+` y fila de `TOTAL` al pie.  
   - **POR MÓDULO**: una fila de entrada (`LARGO`, `ANCHO`, `ALTO`, `INCLUYE TECHO`) y resumen inferior de 5 filas (`PARED 1..4`, `TECHOS`) con columnas `MTS2`, `1 MANO`, `2 MANOS`, más fila `TOTAL`. Superficies: `PARED 1` y `2` = largo × alto; `PARED 3` y `4` = ancho × alto; `TECHOS` (si incluye) = largo × ancho.
 

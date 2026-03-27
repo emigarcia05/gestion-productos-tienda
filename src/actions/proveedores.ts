@@ -210,6 +210,7 @@ export async function actualizarCoeficientesTintometricosAction(
   revalidatePath("/proveedores");
   revalidatePath("/proveedores/lista");
   revalidatePath("/proveedores/gestion");
-  revalidatePath("/tienda/tinto-lts");
+  revalidatePath("/tienda/tintometrico");
+  revalidatePath("/tienda/litros");
   return { ok: true, data: { actualizados: parsed.data.length } };
 }

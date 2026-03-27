@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      {
+        source: "/tienda/tinto-lts",
+        destination: "/tienda/tintometrico",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -89,16 +89,16 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - Persistencia en `proveedores.coeficiente_tintometrico` (`NUMERIC(12,6)`, `NOT NULL`, default `1`).
 - Objetivo: centralizar la fórmula por proveedor para cálculos de tintométrico (p. ej. `montoIngresado * coeficienteTintometrico`).
 - Alta/edición de proveedor: validar entrada con Zod (`coeficienteTintometrico > 0`, hasta 6 decimales) y persistir en `createProveedor` / `updateProveedor`.
-- Lecturas de proveedores que alimentan cálculos (ej. `/tienda/tinto-lts`) deben incluir el coeficiente en el payload.
+- Lecturas de proveedores que alimentan cálculos (ej. `/tienda/tintometrico`) deben incluir el coeficiente en el payload.
 - Tipos de pintura para rendimientos (`tipos_pintura_rendimientos.tipo_pintura`): normalizar y persistir en MAYÚSCULAS desde la Action de alta/edición para mantener consistencia de filtros y catálogos.
 - Edición masiva (modal en `Control Stock`):
   - Action `actualizarCoeficientesTintometricosAction(raw)` en `src/actions/proveedores.ts`.
   - Permisos: solo rol `editor`.
   - Validación: arreglo de `{ id, coeficienteTintometrico }` (`id` CUID válido + `coeficienteTintometrico` numérico finito `> 0`).
   - Servicio `updateCoeficientesTintometricos(items)` en `src/services/proveedor.service.ts` con `prisma.$transaction` para actualizar múltiple `proveedor`.
-  - Revalidación de rutas dependientes de coeficiente: `/stock`, `/proveedores`, `/proveedores/lista`, `/proveedores/gestion`, `/tienda/tinto-lts`.
+  - Revalidación de rutas dependientes de coeficiente: `/stock`, `/proveedores`, `/proveedores/lista`, `/proveedores/gestion`, `/tienda/tintometrico`, `/tienda/litros`.
 
-### 1.12 Tipos de pintura y rendimientos (`/tienda/tinto-lts`)
+### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
 
 - Tabla de negocio: `tipos_pintura_rendimientos` (campos: `id`, `tipo_pintura`, `rendimiento`, timestamps).
 - Lectura: `getTiposPinturaRendimientosAction()` (requiere `PERMISOS.tienda.tintoLts`).
@@ -108,7 +108,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
     - valida `tipoPintura` requerido y `rendimiento` entero >= 0.
   - `deleteTipoPinturaRendimientoAction(id)`:
     - elimina fila por ID válido (CUID o UUID).
-- Todas las mutaciones revalidan `/tienda/tinto-lts`.
+- Todas las mutaciones revalidan `/tienda/litros`.
 
 ### 1.5 Manejo de errores y respuestas
 

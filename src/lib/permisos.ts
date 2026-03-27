@@ -58,7 +58,7 @@ export const PERMISOS = {
     acceso: { simple: false, editor: true },
     /** Control Aumentos (/tienda/aumentos). */
     controlAumentos: { simple: false, editor: true },
-    /** Px. Tinto / Cal. Lts. (/tienda/tinto-lts). */
+    /** Calc. Tintométrico y Calc. Litros (/tienda/tintometrico, /tienda/litros). */
     tintoLts: { simple: true, editor: true },
     acciones: {
       /** Lista tienda DUX: sidebar y POST /api/sync-lista-precios-tienda; simple y editor pueden disparar. */

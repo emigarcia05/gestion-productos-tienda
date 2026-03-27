@@ -18,6 +18,7 @@ import {
   TrendingUp,
   RotateCw,
   Pipette,
+  Droplets,
   History,
   GitCompare,
 } from "lucide-react";
@@ -112,7 +113,8 @@ const MODULES: {
       { href: "/tienda", label: "Comp. Proveedores", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
       { href: "/tienda/aumentos", label: "Control Aumento", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
       { href: "/stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
-      { href: "/tienda/tinto-lts", label: "Px. Tinto. / Cal. Lts", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
+      { href: "/tienda/tintometrico", label: "Calc. Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
+      { href: "/tienda/litros", label: "Calc. Litros", icon: <Droplets className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
     ],
   },
 ];
