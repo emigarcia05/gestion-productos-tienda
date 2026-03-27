@@ -63,19 +63,26 @@ export async function getPedidoUrgenteData(params: {
       totalPaginas: 0,
     };
   }
-  const { sucursal = "", q = "", pagina = "1", proveedor = "" } = parsedParams.data;
+  const { sucursal = "", q = "", pagina = "1", proveedor = "", pedido = "" } = parsedParams.data;
   const sucursalValida = sucursal.trim();
   const proveedorValido = proveedor.trim();
   const qValida = q.trim().length >= 3;
   const tieneSucursal = !!sucursalValida;
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const pedidoTipo: "urgente" | "reposicion" | undefined =
+    pedido === "urgente"
+      ? "urgente"
+      : pedido === "reposicion"
+        ? "reposicion"
+        : undefined;
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
     tieneSucursal
       ? getListaPreciosParaPedidoUrgente(
           sucursalValida,
           proveedorValido || undefined,
+          pedidoTipo,
           qValida ? q : undefined,
           paginaNum,
           PAGE_SIZE
@@ -105,6 +112,7 @@ export async function getEnviarPedidoData() {
 export type EnviarPedidoTablaItem = {
   cantPedir: number;
   descripcion: string;
+  tipoPedido: string;
 };
 
 /**

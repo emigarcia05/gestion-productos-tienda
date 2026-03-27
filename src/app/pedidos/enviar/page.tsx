@@ -98,13 +98,14 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-28">CANT. PEDIR</TableHead>
+                    <TableHead className="w-40">TIPO PEDIDO</TableHead>
                     <TableHead className="min-w-0">DESCRIPCIÓN</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {itemsTabla.length === 0 ? (
                     <EmptyTableRow
-                      colSpan={2}
+                      colSpan={3}
                       message={
                         hayFiltroActivo ? MENSAJE_SIN_ITEMS_FILTRADO : MENSAJE_SIN_ITEMS_GLOBAL
                       }
@@ -117,6 +118,9 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                       >
                         <TableCell className="celda-datos celda-numero text-right w-28">
                           {item.cantPedir.toLocaleString("es-AR")}
+                        </TableCell>
+                        <TableCell className="celda-datos w-40 text-center">
+                          {item.tipoPedido || ""}
                         </TableCell>
                         <TableCell className="celda-datos min-w-0 text-foreground">
                           {item.descripcion || ""}

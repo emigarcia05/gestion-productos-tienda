@@ -21,7 +21,7 @@ interface Props {
   sucursalValida: "" | "guaymallen" | "maipu";
   /** True cuando no hay sucursal seleccionada (único filtro obligatorio para listar). */
   sinFiltros: boolean;
-  pedidoValida: "si" | "no" | "";
+  pedidoValida: "urgente" | "reposicion" | "";
   total: number;
   totalPaginas: number;
   paginaNum: number;
@@ -142,7 +142,6 @@ export default function PedidoUrgentePageClient({
                 sucursal={sucursalValida}
                 sinFiltros={sinFiltros}
                 mensajeSinSucursal={MENSAJE_SIN_FILTROS}
-                pedidoFilter={pedidoValida}
                 cantPorId={cantPorId}
                 setCantPorId={setCantPorId}
                 onRowDoubleClick={abrirModalCantidad}

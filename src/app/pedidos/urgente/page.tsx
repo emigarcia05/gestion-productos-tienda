@@ -26,7 +26,12 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   const { q = "", pagina = "1", sucursal = "", proveedor = "", pedido = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" =
     sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
-  const pedidoValida: "si" | "" = pedido === "si" ? "si" : "";
+  const pedidoValida: "urgente" | "reposicion" | "" =
+    pedido === "urgente"
+      ? "urgente"
+      : pedido === "reposicion"
+        ? "reposicion"
+        : "";
 
   const { proveedores, productos, total, totalPaginas } = await getPedidoUrgenteData({
     sucursal: sucursalValida,

@@ -522,6 +522,7 @@ export interface PedidoUrgenteItem {
 export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
   proveedorId: string | undefined,
+  pedidoTipo: "urgente" | "reposicion" | undefined,
   q: string | undefined,
   pagina: number | undefined,
   pageSize: number | undefined
@@ -539,6 +540,44 @@ export async function getListaPreciosParaPedidoUrgente(
   const busqueda = q?.trim() ?? "";
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
   if (prov) andParts.push({ idProveedor: prov });
+
+  if (pedidoTipo) {
+    const tipoPedidoFiltro = pedidoTipo === "urgente" ? "URGENTE" : "REPOSICION";
+    const whereTipoCantidad =
+      pedidoTipo === "urgente"
+        ? { urgenteCantPedir: { gt: 0 } }
+        : { reposicionCantPedir: { gt: 0 } };
+
+    const filasMercaderia = await prisma.itemPedidoEnvio.findMany({
+      where: {
+        sucursal: { codigo: sucursalTrim },
+        tipoPedido: tipoPedidoFiltro,
+        ...(prov ? { idProveedor: prov } : {}),
+        ...whereTipoCantidad,
+      },
+      select: {
+        idProveedor: true,
+        codExt: true,
+      },
+    });
+
+    const pairSet = new Set<string>();
+    const pairs: { idProveedor: string; codExt: string }[] = [];
+    for (const row of filasMercaderia) {
+      const key = `${row.idProveedor}:${row.codExt}`;
+      if (pairSet.has(key)) continue;
+      pairSet.add(key);
+      pairs.push({ idProveedor: row.idProveedor, codExt: row.codExt });
+    }
+
+    if (pairs.length === 0) {
+      return { items: [], total: 0, totalPaginas: 0 };
+    }
+    andParts.push({
+      OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+    });
+  }
+
   if (busqueda.length >= 3) {
     const tokens = busqueda.trim().split(/\s+/).filter(Boolean);
     if (tokens.length > 0) {
@@ -605,6 +644,7 @@ export async function getListaPreciosParaPedidoUrgente(
         codExt: true,
         tipoPedido: true,
         urgenteCantPedir: true,
+        reposicionCantPedir: true,
         reposicionCantConf: true,
       },
     });

@@ -281,7 +281,7 @@ Constraint:
 
 #### Pedido Urgente — listado
 
-- **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar.
+- **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar. El parámetro `pedido` soporta `urgente` y `reposicion`: filtra por pares (`id_proveedor`, `cod_ext`) presentes en `pedidos_mercaderia` para la sucursal y con umbrales `urgente_cant_pedir > 0` o `reposicion_cant_pedir > 0` respectivamente.
 
 ### 2.6 Servicio `pedidosHistoria.service.ts`
 

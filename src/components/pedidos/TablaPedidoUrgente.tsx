@@ -28,7 +28,7 @@ export interface ProductoPedidoUrgente {
   cantReposicion: number;
 }
 
-export type PedidoFilterValor = "si" | "no" | "";
+export type PedidoFilterValor = "urgente" | "reposicion" | "";
 
 const COLUMNS = 7;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
@@ -38,7 +38,6 @@ interface Props {
   sucursal?: "" | "guaymallen" | "maipu";
   sinFiltros?: boolean;
   mensajeSinSucursal?: string;
-  pedidoFilter?: PedidoFilterValor;
   /** Estado de cantidades controlado desde el padre (PedidoUrgentePageClient). */
   cantPorId?: Record<string, string>;
   setCantPorId?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
@@ -52,7 +51,6 @@ export default function TablaPedidoUrgente({
   sucursal = "",
   sinFiltros = false,
   mensajeSinSucursal = "Seleccioná una sucursal para ver los productos.",
-  pedidoFilter = "",
   cantPorId: cantPorIdProp,
   setCantPorId: setCantPorIdProp,
   onRowDoubleClick,
@@ -62,12 +60,7 @@ export default function TablaPedidoUrgente({
   const cantPorId = cantPorIdProp ?? cantPorIdInternal;
   const setCantPorId = setCantPorIdProp ?? setCantPorIdInternal;
 
-  const visibleProductos =
-    pedidoFilter === "si"
-      ? productos.filter((p) => Number(cantPorId[p.id] || 0) > 0)
-      : pedidoFilter === "no"
-        ? productos.filter((p) => Number(cantPorId[p.id] || 0) === 0)
-        : productos;
+  const visibleProductos = productos;
 
   const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 

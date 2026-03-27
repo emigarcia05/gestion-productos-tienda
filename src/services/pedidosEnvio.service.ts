@@ -443,6 +443,7 @@ export interface ProveedorParaEnvio {
 export interface ItemTablaEnviarPedido {
   cantPedir: number;
   descripcion: string;
+  tipoPedido: string;
 }
 
 /**
@@ -493,6 +494,7 @@ export async function getItemsTablaEnviarPedido(params: {
     where,
     orderBy: [{ sucursalId: "asc" }, { idProveedor: "asc" }, { codExt: "asc" }],
     select: {
+      tipoPedido: true,
       descripcionProveedor: true,
       tintometricoDescripcion: true,
       descripcionTienda: true,
@@ -502,6 +504,7 @@ export async function getItemsTablaEnviarPedido(params: {
 
   const items: ItemTablaEnviarPedido[] = rows.map((i) => ({
     cantPedir: Math.max(0, Number(i.cantPedir) || 0),
+    tipoPedido: i.tipoPedido,
     descripcion:
       (i.descripcionProveedor ?? "").trim() ||
       (i.tintometricoDescripcion ?? "").trim() ||
