@@ -90,6 +90,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - Objetivo: centralizar la fórmula por proveedor para cálculos de tintométrico (p. ej. `montoIngresado * coeficienteTintometrico`).
 - Alta/edición de proveedor: validar entrada con Zod (`coeficienteTintometrico > 0`, hasta 6 decimales) y persistir en `createProveedor` / `updateProveedor`.
 - Lecturas de proveedores que alimentan cálculos (ej. `/tienda/tinto-lts`) deben incluir el coeficiente en el payload.
+- Tipos de pintura para rendimientos (`tipos_pintura_rendimientos.tipo_pintura`): normalizar y persistir en MAYÚSCULAS desde la Action de alta/edición para mantener consistencia de filtros y catálogos.
 - Edición masiva (modal en `Control Stock`):
   - Action `actualizarCoeficientesTintometricosAction(raw)` en `src/actions/proveedores.ts`.
   - Permisos: solo rol `editor`.

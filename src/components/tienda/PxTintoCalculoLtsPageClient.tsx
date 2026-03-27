@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import EditarCoeficientesModal from "@/components/stock/EditarCoeficientesModal";
@@ -20,6 +21,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -104,6 +106,10 @@ export default function PxTintoCalculoLtsPageClient({
   const [formaCalculo, setFormaCalculo] = useState<FormaCalculoLts>("POR_PAREDES");
   const [tipoPinturaId, setTipoPinturaId] = useState<string>("");
   const [filasPared, setFilasPared] = useState<FilaPared[]>([crearFilaParedVacia()]);
+  const [moduloLargo, setModuloLargo] = useState<string>("");
+  const [moduloAncho, setModuloAncho] = useState<string>("");
+  const [moduloAlto, setModuloAlto] = useState<string>("");
+  const [moduloIncluyeTecho, setModuloIncluyeTecho] = useState<boolean>(false);
   const proveedoresConCoefMayorAUno = useMemo(
     () => proveedores.filter((p) => p.coeficienteTintometrico > 1),
     [proveedores]
@@ -123,6 +129,64 @@ export default function PxTintoCalculoLtsPageClient({
     const row = tiposPintura.find((t) => t.id === tipoPinturaId);
     return row ? Number(row.rendimiento) : 0;
   }, [tipoPinturaId, tiposPintura]);
+
+  const totalesPared = useMemo(() => {
+    return filasPared.reduce(
+      (acc, row) => {
+        const cantParedes = parseDecimalInput(row.cantParedes);
+        const largo = parseDecimalInput(row.largoPared);
+        const ancho = parseDecimalInput(row.anchoPared);
+        const mts2 = cantParedes * largo * ancho;
+        const lts1Mano = rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
+        const lts2Manos = lts1Mano * 2;
+
+        return {
+          mts2: acc.mts2 + mts2,
+          lts1Mano: acc.lts1Mano + lts1Mano,
+          lts2Manos: acc.lts2Manos + lts2Manos,
+        };
+      },
+      { mts2: 0, lts1Mano: 0, lts2Manos: 0 }
+    );
+  }, [filasPared, rendimientoSeleccionado]);
+
+  const resumenModulo = useMemo(() => {
+    const largo = parseDecimalInput(moduloLargo);
+    const ancho = parseDecimalInput(moduloAncho);
+    const alto = parseDecimalInput(moduloAlto);
+
+    const mts2ParedLargoAlto = largo * alto;
+    const mts2ParedAnchoAlto = ancho * alto;
+    const mts2Techo = moduloIncluyeTecho ? largo * ancho : 0;
+
+    function ltsDesdeMts2(mts2: number) {
+      const l1 = rendimientoSeleccionado > 0 ? mts2 / rendimientoSeleccionado : 0;
+      return { lts1: l1, lts2: l1 * 2 };
+    }
+
+    const p12 = ltsDesdeMts2(mts2ParedLargoAlto);
+    const p34 = ltsDesdeMts2(mts2ParedAnchoAlto);
+    const techo = ltsDesdeMts2(mts2Techo);
+
+    const filas = [
+      { label: "PARED 1", mts2: mts2ParedLargoAlto, lts1: p12.lts1, lts2: p12.lts2 },
+      { label: "PARED 2", mts2: mts2ParedLargoAlto, lts1: p12.lts1, lts2: p12.lts2 },
+      { label: "PARED 3", mts2: mts2ParedAnchoAlto, lts1: p34.lts1, lts2: p34.lts2 },
+      { label: "PARED 4", mts2: mts2ParedAnchoAlto, lts1: p34.lts1, lts2: p34.lts2 },
+      { label: "TECHOS", mts2: mts2Techo, lts1: techo.lts1, lts2: techo.lts2 },
+    ];
+
+    const total = filas.reduce(
+      (acc, row) => ({
+        mts2: acc.mts2 + row.mts2,
+        lts1: acc.lts1 + row.lts1,
+        lts2: acc.lts2 + row.lts2,
+      }),
+      { mts2: 0, lts1: 0, lts2: 0 }
+    );
+
+    return { filas, total };
+  }, [moduloLargo, moduloAncho, moduloAlto, moduloIncluyeTecho, rendimientoSeleccionado]);
 
   function actualizarFilaPared(
     id: string,
@@ -261,9 +325,9 @@ export default function PxTintoCalculoLtsPageClient({
                     align="start"
                     className="select-content-filtro"
                   >
-                    <SelectItem value="POR_PAREDES">Por Paredes</SelectItem>
-                    <SelectItem value="POR_MODULO">Por Módulo</SelectItem>
-                    <SelectItem value="PILETA">Pileta</SelectItem>
+                    <SelectItem value="POR_PAREDES">POR PAREDES</SelectItem>
+                    <SelectItem value="POR_MODULO">POR MÓDULO</SelectItem>
+                    <SelectItem value="PILETA">PILETA</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -397,7 +461,133 @@ export default function PxTintoCalculoLtsPageClient({
                           );
                         })}
                       </TableBody>
+                      <TableFooter className="border-t border-border/60 bg-background">
+                        <TableRow className="hover:bg-background odd:bg-background even:bg-background">
+                          <TableCell className="celda-datos text-right font-semibold" colSpan={3}>
+                            TOTAL
+                          </TableCell>
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold">
+                            {formatDecimal(totalesPared.mts2)}
+                          </TableCell>
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold">
+                            {formatDecimal(totalesPared.lts1Mano)}
+                          </TableCell>
+                          <TableCell className="celda-datos text-center tabular-nums font-semibold">
+                            {formatDecimal(totalesPared.lts2Manos)}
+                          </TableCell>
+                          <TableCell className="celda-datos tabla-bloque-secundario-cell-divider" />
+                        </TableRow>
+                      </TableFooter>
                     </Table>
+                  ) : formaCalculo === "POR_MODULO" ? (
+                    <div className="flex h-full min-h-0 flex-col gap-2 p-2">
+                      <Table variant="compact" scrollX={false}>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[22%]">LARGO</TableHead>
+                            <TableHead className="w-[22%]">ANCHO</TableHead>
+                            <TableHead className="w-[22%]">ALTO</TableHead>
+                            <TableHead className="w-[34%]">INCLUYE TECHO</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="celda-datos">
+                              <Input
+                                value={moduloLargo}
+                                onChange={(e) =>
+                                  setModuloLargo(e.target.value.replace(/[^\d.,]/g, ""))
+                                }
+                                className="h-8 text-center"
+                                inputMode="decimal"
+                                placeholder="0,0"
+                                aria-label="Largo módulo"
+                              />
+                            </TableCell>
+                            <TableCell className="celda-datos">
+                              <Input
+                                value={moduloAncho}
+                                onChange={(e) =>
+                                  setModuloAncho(e.target.value.replace(/[^\d.,]/g, ""))
+                                }
+                                className="h-8 text-center"
+                                inputMode="decimal"
+                                placeholder="0,0"
+                                aria-label="Ancho módulo"
+                              />
+                            </TableCell>
+                            <TableCell className="celda-datos">
+                              <Input
+                                value={moduloAlto}
+                                onChange={(e) =>
+                                  setModuloAlto(e.target.value.replace(/[^\d.,]/g, ""))
+                                }
+                                className="h-8 text-center"
+                                inputMode="decimal"
+                                placeholder="0,0"
+                                aria-label="Alto módulo"
+                              />
+                            </TableCell>
+                            <TableCell className="celda-datos">
+                              <div className="flex items-center justify-center">
+                                <Checkbox
+                                  checked={moduloIncluyeTecho}
+                                  onCheckedChange={(checked) =>
+                                    setModuloIncluyeTecho(checked === true)
+                                  }
+                                  aria-label="Incluye techo"
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+
+                      <div className="h-px w-full bg-border/60" />
+
+                      <Table variant="compact" scrollX={false}>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[40%]">SECTOR</TableHead>
+                            <TableHead className="w-[20%]">MTS2</TableHead>
+                            <TableHead className="w-[20%]">1 MANO</TableHead>
+                            <TableHead className="w-[20%]">2 MANOS</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {resumenModulo.filas.map((row) => (
+                            <TableRow key={row.label}>
+                              <TableCell className="celda-datos text-left">{row.label}</TableCell>
+                              <TableCell className="celda-datos tabular-nums">
+                                {formatDecimal(row.mts2)}
+                              </TableCell>
+                              <TableCell className="celda-datos tabular-nums">
+                                {formatDecimal(row.lts1)}
+                              </TableCell>
+                              <TableCell className="celda-datos tabular-nums">
+                                {formatDecimal(row.lts2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                        <TableFooter className="border-t border-border/60 bg-background">
+                          <TableRow className="hover:bg-background odd:bg-background even:bg-background">
+                            <TableCell className="celda-datos text-right font-semibold">
+                              TOTAL
+                            </TableCell>
+                            <TableCell className="celda-datos tabular-nums font-semibold">
+                              {formatDecimal(resumenModulo.total.mts2)}
+                            </TableCell>
+                            <TableCell className="celda-datos tabular-nums font-semibold">
+                              {formatDecimal(resumenModulo.total.lts1)}
+                            </TableCell>
+                            <TableCell className="celda-datos tabular-nums font-semibold">
+                              {formatDecimal(resumenModulo.total.lts2)}
+                            </TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      </Table>
+                    </div>
                   ) : (
                     <div className="flex h-full min-h-[12rem] items-center justify-center px-4 py-8 text-center text-sm text-muted-foreground">
                       Esta forma de cálculo se implementará en el siguiente paso.

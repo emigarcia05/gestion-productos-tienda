@@ -22,7 +22,8 @@ const upsertSchema = z.object({
     .string()
     .trim()
     .min(1, "El tipo de pintura es obligatorio.")
-    .max(120, "El tipo de pintura es demasiado largo."),
+    .max(120, "El tipo de pintura es demasiado largo.")
+    .transform((value) => value.toUpperCase()),
   rendimiento: z
     .number()
     .int("El rendimiento debe ser un número entero.")
