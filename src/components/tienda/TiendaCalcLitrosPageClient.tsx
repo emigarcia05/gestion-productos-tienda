@@ -32,7 +32,7 @@ import {
   sanitizeDecimalUnDigito,
   type FilaParedLts,
 } from "@/lib/tiendaCalculosLts";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 interface Props {
   tiposPintura: TipoPinturaRendimiento[];
@@ -272,13 +272,13 @@ export default function TiendaCalcLitrosPageClient({
                               />
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
-                              {formatDecimal(mts2, 1)}
+                              {formatDecimal(mts2, 1)} mts2
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
-                              {formatDecimal(lts1Mano, 1)}
+                              {formatDecimal(lts1Mano, 1)} lts
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
-                              {formatDecimal(lts2Manos, 1)}
+                              {formatDecimal(lts2Manos, 1)} lts
                             </TableCell>
                             <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                               <div className="flex items-center justify-center">
@@ -303,22 +303,21 @@ export default function TiendaCalcLitrosPageClient({
                         <TableCell className="celda-datos text-right font-semibold" colSpan={4}>
                           TOTAL
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums font-semibold">
-                          {formatDecimal(totalesPared.mts2, 1)}
+                        <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          {formatDecimal(totalesPared.mts2, 1)} mts2
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums font-semibold">
-                          {formatDecimal(totalesPared.lts1Mano, 1)}
+                        <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          {formatDecimal(totalesPared.lts1Mano, 1)} lts
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums font-semibold">
-                          {formatDecimal(totalesPared.lts2Manos, 1)}
+                        <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          {formatDecimal(totalesPared.lts2Manos, 1)} lts
                         </TableCell>
                         <TableCell className="celda-datos tabla-bloque-secundario-cell-divider" />
                       </TableRow>
                     </TableFooter>
                   </Table>
                   <div className="flex justify-center border-t border-border/60 bg-background py-2">
-                    <Button type="button" variant="outline" onClick={agregarFilaPared}>
-                      <Plus className="h-4 w-4" />
+                    <Button type="button" onClick={agregarFilaPared} aria-label="Agregar pared">
                       +
                     </Button>
                   </div>
@@ -403,13 +402,13 @@ export default function TiendaCalcLitrosPageClient({
                           <TableRow key={row.label}>
                             <TableCell className="celda-datos text-left">{row.label}</TableCell>
                             <TableCell className="celda-datos tabular-nums">
-                              {formatDecimal(row.mts2)}
+                              {formatDecimal(row.mts2)} mts2
                             </TableCell>
                             <TableCell className="celda-datos tabular-nums">
-                              {formatDecimal(row.lts1)}
+                              {formatDecimal(row.lts1)} lts
                             </TableCell>
                             <TableCell className="celda-datos tabular-nums">
-                              {formatDecimal(row.lts2)}
+                              {formatDecimal(row.lts2)} lts
                             </TableCell>
                           </TableRow>
                         ))}
@@ -420,13 +419,13 @@ export default function TiendaCalcLitrosPageClient({
                             TOTAL
                           </TableCell>
                           <TableCell className="celda-datos tabular-nums font-semibold">
-                            {formatDecimal(resumenModulo.total.mts2)}
+                            {formatDecimal(resumenModulo.total.mts2)} mts2
                           </TableCell>
                           <TableCell className="celda-datos tabular-nums font-semibold">
-                            {formatDecimal(resumenModulo.total.lts1)}
+                            {formatDecimal(resumenModulo.total.lts1)} lts
                           </TableCell>
                           <TableCell className="celda-datos tabular-nums font-semibold">
-                            {formatDecimal(resumenModulo.total.lts2)}
+                            {formatDecimal(resumenModulo.total.lts2)} lts
                           </TableCell>
                         </TableRow>
                       </TableFooter>
