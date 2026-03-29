@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,24 @@ const FORMA_PEDIR_OPTIONS: { value: FormaPedirReposicionOption; label: string }[
   { value: "CANT_FIJA", label: "CANT. FIJA" },
 ];
 
+/** Entero ≥ 0 si el usuario ingresó algo; vacío o inválido → null (no habilita cantidad). */
+function parsePuntoReposicionInput(raw: string): number | null {
+  const t = raw.trim();
+  if (t === "") return null;
+  const n = Number.parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
+/** Entero ≥ 1 para guardar; vacío, 0 o inválido → null. */
+function parseCantReposicionInput(raw: string): number | null {
+  const t = raw.trim();
+  if (t === "") return null;
+  const n = Number.parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return n;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,8 +69,8 @@ export default function ConfigurarReposicionModal({
 }: Props) {
   const router = useRouter();
   const [formaPedir, setFormaPedir] = useState<FormaPedirReposicionOption>(item.formaPedir || "");
-  const [puntoReposicion, setPuntoReposicion] = useState(item.puntoReposicion);
-  const [cant, setCant] = useState(item.cant);
+  const [puntoInput, setPuntoInput] = useState("");
+  const [cantInput, setCantInput] = useState("");
   const [productosAdicionales, setProductosAdicionales] = useState<ItemSelectorReposicion[]>([]);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -59,14 +78,21 @@ export default function ConfigurarReposicionModal({
   useEffect(() => {
     if (open) {
       setFormaPedir(item.formaPedir || "");
-      setPuntoReposicion(item.puntoReposicion);
-      setCant(item.cant);
+      const guardado = Boolean(item.idReposicion) || Boolean(item.formaPedir);
+      if (guardado) {
+        setPuntoInput(String(item.puntoReposicion));
+        setCantInput(String(item.cant));
+      } else {
+        setPuntoInput("");
+        setCantInput("");
+      }
       setProductosAdicionales([]);
     }
   }, [
     open,
     item.idListaTienda,
     item.codTienda,
+    item.idReposicion,
     item.formaPedir,
     item.puntoReposicion,
     item.cant,
@@ -78,9 +104,9 @@ export default function ConfigurarReposicionModal({
       ? FORMA_PEDIR_OPTIONS.find((o) => o.value === formaPedir)?.label ?? ""
       : "";
   const tieneConfigInicial = Boolean(item.idReposicion) || Boolean(item.formaPedir);
-  const puntoValido = Math.max(0, Math.floor(Number(puntoReposicion) || 0)) > 0;
+  const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
-  const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoValido);
+  const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
   const invisPunto = !mostrarPunto;
   const invisCant = !mostrarCant;
 
@@ -113,14 +139,14 @@ export default function ConfigurarReposicionModal({
       toast.error("Seleccioná Forma Pedir.");
       return;
     }
-    const punto = Math.max(0, Math.floor(Number(puntoReposicion)) || 0);
-    const cantNum = Math.max(0, Math.floor(Number(cant)) || 0);
-    if (punto <= 0) {
+    const punto = parsePuntoReposicionInput(puntoInput);
+    if (punto === null) {
       toast.error("Completá Punto Reposición.");
       return;
     }
-    if (cantNum <= 0) {
-      toast.error("Completá Cant. Reposición.");
+    const cantNum = parseCantReposicionInput(cantInput);
+    if (cantNum === null) {
+      toast.error("Completá Cant. Reposición (mín. 1).");
       return;
     }
 
@@ -193,8 +219,8 @@ export default function ConfigurarReposicionModal({
                     {
                       if (v === "none") {
                         setFormaPedir("");
-                        setPuntoReposicion(0);
-                        setCant(0);
+                        setPuntoInput("");
+                        setCantInput("");
                         return;
                       }
                       setFormaPedir(v as FormaPedirReposicionOption);
@@ -215,10 +241,10 @@ export default function ConfigurarReposicionModal({
               </div>
 
               <div
-                className={[
+                className={cn(
                   "flex flex-col items-center gap-1",
-                  invisPunto ? "invisible pointer-events-none select-none" : "",
-                ].join(" ")}
+                  invisPunto && "invisible pointer-events-none select-none"
+                )}
                 aria-hidden={invisPunto}
               >
                 <Label className="text-xs font-medium text-foreground text-center">
@@ -226,20 +252,21 @@ export default function ConfigurarReposicionModal({
                 </Label>
                 <Input
                   type="number"
-                  min={1}
+                  min={0}
                   step={1}
-                  value={puntoReposicion}
-                  onChange={(e) => setPuntoReposicion(parseInt(e.target.value, 10) || 0)}
+                  value={puntoInput}
+                  onChange={(e) => setPuntoInput(e.target.value)}
                   className="tabular-nums text-center"
+                  aria-label="Punto reposición"
                   tabIndex={invisPunto ? -1 : 0}
                 />
               </div>
 
               <div
-                className={[
+                className={cn(
                   "flex flex-col items-center gap-1",
-                  invisCant ? "invisible pointer-events-none select-none" : "",
-                ].join(" ")}
+                  invisCant && "invisible pointer-events-none select-none"
+                )}
                 aria-hidden={invisCant}
               >
                 <Label className="text-xs font-medium text-foreground text-center">
@@ -249,8 +276,8 @@ export default function ConfigurarReposicionModal({
                   type="number"
                   min={1}
                   step={1}
-                  value={cant}
-                  onChange={(e) => setCant(parseInt(e.target.value, 10) || 0)}
+                  value={cantInput}
+                  onChange={(e) => setCantInput(e.target.value)}
                   className="tabular-nums text-center"
                   aria-label="Cantidad reposición"
                   tabIndex={invisCant ? -1 : 0}
@@ -273,56 +300,64 @@ export default function ConfigurarReposicionModal({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            {productosAdicionales.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <div className="text-xs text-muted-foreground text-center">
-                  {productosAdicionales.length} producto(s) agregado(s) para aplicar la misma configuración.
-                </div>
-                <div className="border border-border rounded-lg overflow-auto max-h-64">
-                  <Table variant="compact" scrollX={false} className="w-full tabla-gestion-compacta">
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent bg-muted/50">
-                        <TableHead className="text-xs text-center">DESCRIPCIÓN</TableHead>
-                        <TableHead className="w-10 text-xs text-center" aria-label="Acciones" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {productosAdicionales.map((p) => (
-                        <TableRow key={p.idListaTienda}>
-                          <TableCell className="text-xs py-2 text-left">
-                            {p.descripcionTienda ?? "—"}
-                          </TableCell>
-                          <TableCell className="text-xs py-2 text-center">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              className="text-foreground hover:text-destructive"
-                              aria-label="Quitar producto de la configuración"
-                              onClick={() => handleEliminarProductoAdicional(p)}
-                            >
-                              <Plus className="hidden" aria-hidden="true" />
-                              {/* Reutilizamos el icono de basura para indicar eliminar */}
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                className="w-4 h-4"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  d="M9 3h6a1 1 0 0 1 .993.883L16 4v1h4a1 1 0 1 1 0 2h-1.07l-.845 11.037A2 2 0 0 1 16.093 20H7.907a2 2 0 0 1-1.992-1.963L5.07 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 .883-.993L9 3Zm6 4H9l-.8 10.4a0 0 0 0 0 0 0h7.6a0 0 0 0 0 0 0L15 7Zm-3 2a1 1 0 0 1 .993.883L13 10v6a1 1 0 0 1-1.993.117L11 16v-6a1 1 0 0 1 1-1Z"
-                                  fill="currentColor"
-                                />
-                              </svg>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="text-xs text-muted-foreground text-center">
+                {productosAdicionales.length === 0
+                  ? "La primera fila es el producto abierto desde la grilla. Sumá más con +."
+                  : `${1 + productosAdicionales.length} producto(s): el primero es el abierto; el resto se agrega con +.`}
               </div>
-            )}
+              <div className="border border-border rounded-lg overflow-auto max-h-64">
+                <Table variant="compact" scrollX={false} className="w-full tabla-gestion-compacta">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent bg-muted/50">
+                      <TableHead className="text-xs text-center">DESCRIPCIÓN</TableHead>
+                      <TableHead className="w-10 text-xs text-center" aria-label="Acciones" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow aria-label="Producto principal de la configuración">
+                      <TableCell className="text-xs py-2 text-left">
+                        {item.descripcionTienda ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs py-2 text-center text-muted-foreground">
+                        —
+                      </TableCell>
+                    </TableRow>
+                    {productosAdicionales.map((p) => (
+                      <TableRow key={p.idListaTienda}>
+                        <TableCell className="text-xs py-2 text-left">
+                          {p.descripcionTienda ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-xs py-2 text-center">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            className="text-foreground hover:text-destructive"
+                            aria-label="Quitar producto de la configuración"
+                            onClick={() => handleEliminarProductoAdicional(p)}
+                          >
+                            <Plus className="hidden" aria-hidden="true" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              className="w-4 h-4"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M9 3h6a1 1 0 0 1 .993.883L16 4v1h4a1 1 0 1 1 0 2h-1.07l-.845 11.037A2 2 0 0 1 16.093 20H7.907a2 2 0 0 1-1.992-1.963L5.07 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 .883-.993L9 3Zm6 4H9l-.8 10.4a0 0 0 0 0 0 0h7.6a0 0 0 0 0 0 0L15 7Zm-3 2a1 1 0 0 1 .993.883L13 10v6a1 1 0 0 1-1.993.117L11 16v-6a1 1 0 0 1 1-1Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </div>
         </AppModal>
       </Dialog>

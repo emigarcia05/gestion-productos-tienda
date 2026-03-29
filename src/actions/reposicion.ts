@@ -338,7 +338,7 @@ const upsertReglaSchema = z.object({
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   codTienda: z.string().min(1, "Código tienda requerido"),
   formaPedir: z.enum(["CANT_MAXIMA", "CANT_FIJA"]),
-  puntoReposicion: z.number().int().min(1, "Punto reposición requerido"),
+  puntoReposicion: z.number().int().min(0, "Punto reposición inválido"),
   cant: z.number().int().min(1, "Cant. reposición requerida"),
 });
 
