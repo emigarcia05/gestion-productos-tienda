@@ -59,3 +59,8 @@ export function formatDecimal(value: number, decimals = 2): string {
     maximumFractionDigits: decimals,
   });
 }
+
+/** Expresión tipo `2,0 x 4,0 mts` para tablas de Calc. Litros (módulo / pileta). */
+export function formatTamanoMts(a: number, b: number, decimals = 1): string {
+  return `${formatDecimal(a, decimals)} x ${formatDecimal(b, decimals)} mts`;
+}

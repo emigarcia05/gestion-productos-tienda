@@ -28,6 +28,7 @@ import type { TipoPinturaRendimiento } from "@/actions/tiposPinturaRendimientos"
 import {
   crearFilaParedVacia,
   formatDecimal,
+  formatTamanoMts,
   parseDecimalInput,
   sanitizeDecimalUnDigito,
   type FilaParedLts,
@@ -120,11 +121,17 @@ export default function TiendaCalcLitrosPageClient({
     const techo = litrosDesdeMts(mtsTecho);
 
     const filas = [
-      { id: "modulo-pared-1", label: "Pared 1", mts2: mtsLargoAlto, ...p12 },
-      { id: "modulo-pared-2", label: "Pared 2", mts2: mtsLargoAlto, ...p12 },
-      { id: "modulo-pared-3", label: "Pared 3", mts2: mtsAnchoAlto, ...p34 },
-      { id: "modulo-pared-4", label: "Pared 4", mts2: mtsAnchoAlto, ...p34 },
-      { id: "modulo-techo", label: "Techo", mts2: mtsTecho, ...techo },
+      { id: "modulo-pared-1", label: "Pared 1", tamano: formatTamanoMts(L, H), mts2: mtsLargoAlto, ...p12 },
+      { id: "modulo-pared-2", label: "Pared 2", tamano: formatTamanoMts(L, H), mts2: mtsLargoAlto, ...p12 },
+      { id: "modulo-pared-3", label: "Pared 3", tamano: formatTamanoMts(A, H), mts2: mtsAnchoAlto, ...p34 },
+      { id: "modulo-pared-4", label: "Pared 4", tamano: formatTamanoMts(A, H), mts2: mtsAnchoAlto, ...p34 },
+      {
+        id: "modulo-techo",
+        label: "Techo",
+        tamano: moduloIncluyeTecho ? formatTamanoMts(L, A) : "—",
+        mts2: mtsTecho,
+        ...techo,
+      },
     ];
 
     const total = filas.reduce(
@@ -166,11 +173,11 @@ export default function TiendaCalcLitrosPageClient({
     const piso = litrosDesdeMts(mtsPiso);
 
     const filas = [
-      { id: "pileta-pared-1", label: "Pared 1", mts2: mtsLargoProf, ...p12 },
-      { id: "pileta-pared-2", label: "Pared 2", mts2: mtsLargoProf, ...p12 },
-      { id: "pileta-pared-3", label: "Pared 3", mts2: mtsAnchoProf, ...p34 },
-      { id: "pileta-pared-4", label: "Pared 4", mts2: mtsAnchoProf, ...p34 },
-      { id: "pileta-piso", label: "Piso", mts2: mtsPiso, ...piso },
+      { id: "pileta-pared-1", label: "Pared 1", tamano: formatTamanoMts(L, P), mts2: mtsLargoProf, ...p12 },
+      { id: "pileta-pared-2", label: "Pared 2", tamano: formatTamanoMts(L, P), mts2: mtsLargoProf, ...p12 },
+      { id: "pileta-pared-3", label: "Pared 3", tamano: formatTamanoMts(A, P), mts2: mtsAnchoProf, ...p34 },
+      { id: "pileta-pared-4", label: "Pared 4", tamano: formatTamanoMts(A, P), mts2: mtsAnchoProf, ...p34 },
+      { id: "pileta-piso", label: "Piso", tamano: formatTamanoMts(L, A), mts2: mtsPiso, ...piso },
     ];
 
     const total = filas.reduce(
@@ -453,10 +460,11 @@ export default function TiendaCalcLitrosPageClient({
                     <Table variant="compact" scrollX={false}>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[40%]">SUPERFICIE</TableHead>
-                          <TableHead className="w-[20%]">MTS2</TableHead>
-                          <TableHead className="w-[20%]">1 MANO</TableHead>
-                          <TableHead className="w-[20%]">2 MANOS</TableHead>
+                          <TableHead className="w-[18%]">SUPERFICIE</TableHead>
+                          <TableHead className="w-[30%]">TAMAÑO</TableHead>
+                          <TableHead className="w-[17%]">MTS2</TableHead>
+                          <TableHead className="w-[17%]">1 MANO</TableHead>
+                          <TableHead className="w-[18%]">2 MANOS</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -464,6 +472,14 @@ export default function TiendaCalcLitrosPageClient({
                           <TableRow key={row.id}>
                             <TableCell className="celda-datos text-left font-medium">
                               {row.label}
+                            </TableCell>
+                            <TableCell
+                              className={cn(
+                                "celda-datos text-center text-xs whitespace-normal",
+                                row.tamano === "—" ? "text-muted-foreground" : "tabular-nums"
+                              )}
+                            >
+                              {row.tamano}
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
                               {formatDecimal(row.mts2, 1)} mts2
@@ -481,6 +497,9 @@ export default function TiendaCalcLitrosPageClient({
                         <TableRow className="hover:bg-background odd:bg-background even:bg-background">
                           <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
                             TOTAL
+                          </TableCell>
+                          <TableCell className="celda-datos text-center text-muted-foreground font-semibold">
+                            —
                           </TableCell>
                           <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
                             {formatDecimal(calculoModulo.total.mts2, 1)} mts2
@@ -555,10 +574,11 @@ export default function TiendaCalcLitrosPageClient({
                     <Table variant="compact" scrollX={false}>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[40%]">SUPERFICIE</TableHead>
-                          <TableHead className="w-[20%]">MTS2</TableHead>
-                          <TableHead className="w-[20%]">1 MANO</TableHead>
-                          <TableHead className="w-[20%]">2 MANOS</TableHead>
+                          <TableHead className="w-[18%]">SUPERFICIE</TableHead>
+                          <TableHead className="w-[30%]">TAMAÑO</TableHead>
+                          <TableHead className="w-[17%]">MTS2</TableHead>
+                          <TableHead className="w-[17%]">1 MANO</TableHead>
+                          <TableHead className="w-[18%]">2 MANOS</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -566,6 +586,9 @@ export default function TiendaCalcLitrosPageClient({
                           <TableRow key={row.id}>
                             <TableCell className="celda-datos text-left font-medium">
                               {row.label}
+                            </TableCell>
+                            <TableCell className="celda-datos text-center tabular-nums text-xs whitespace-normal">
+                              {row.tamano}
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
                               {formatDecimal(row.mts2, 1)} mts2
@@ -583,6 +606,9 @@ export default function TiendaCalcLitrosPageClient({
                         <TableRow className="hover:bg-background odd:bg-background even:bg-background">
                           <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
                             TOTAL
+                          </TableCell>
+                          <TableCell className="celda-datos text-center text-muted-foreground font-semibold">
+                            —
                           </TableCell>
                           <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
                             {formatDecimal(calculoPileta.total.mts2, 1)} mts2
