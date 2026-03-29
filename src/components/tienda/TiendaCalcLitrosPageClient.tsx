@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/SectionHeader";
 import {
@@ -33,6 +33,21 @@ import {
   type FilaParedLts,
 } from "@/lib/tiendaCalculosLts";
 import { Trash2 } from "lucide-react";
+
+/** Dimensión en metros: el usuario edita solo el número; el sufijo **Mts.** es solo visual (`aria-hidden`). */
+function InputDimensionMts({ className, ...props }: ComponentProps<typeof Input>) {
+  return (
+    <div className="relative w-full min-w-0">
+      <Input {...props} className={cn("h-8 pr-10 text-center", className)} />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none"
+      >
+        Mts.
+      </span>
+    </div>
+  );
+}
 
 interface Props {
   tiposPintura: TipoPinturaRendimiento[];
@@ -299,27 +314,25 @@ export default function TiendaCalcLitrosPageClient({
                               />
                             </TableCell>
                             <TableCell className="celda-datos">
-                              <Input
+                              <InputDimensionMts
                                 value={row.largo}
                                 onChange={(e) =>
                                   actualizarFilaPared(row.id, "largo", e.target.value)
                                 }
-                                className="h-8 text-center"
                                 inputMode="decimal"
                                 placeholder="0,0"
-                                aria-label="Largo"
+                                aria-label="Largo en metros"
                               />
                             </TableCell>
                             <TableCell className="celda-datos">
-                              <Input
+                              <InputDimensionMts
                                 value={row.ancho}
                                 onChange={(e) =>
                                   actualizarFilaPared(row.id, "ancho", e.target.value)
                                 }
-                                className="h-8 text-center"
                                 inputMode="decimal"
                                 placeholder="0,0"
-                                aria-label="Ancho"
+                                aria-label="Ancho en metros"
                               />
                             </TableCell>
                             <TableCell className="celda-datos text-center tabular-nums">
@@ -388,39 +401,36 @@ export default function TiendaCalcLitrosPageClient({
                       <TableBody>
                         <TableRow>
                           <TableCell className="celda-datos">
-                            <Input
+                            <InputDimensionMts
                               value={moduloLargo}
                               onChange={(e) =>
                                 setModuloLargo(e.target.value.replace(/[^\d.,]/g, ""))
                               }
-                              className="h-8 text-center"
                               inputMode="decimal"
                               placeholder="0,0"
-                              aria-label="Largo módulo"
+                              aria-label="Largo módulo en metros"
                             />
                           </TableCell>
                           <TableCell className="celda-datos">
-                            <Input
+                            <InputDimensionMts
                               value={moduloAncho}
                               onChange={(e) =>
                                 setModuloAncho(e.target.value.replace(/[^\d.,]/g, ""))
                               }
-                              className="h-8 text-center"
                               inputMode="decimal"
                               placeholder="0,0"
-                              aria-label="Ancho módulo"
+                              aria-label="Ancho módulo en metros"
                             />
                           </TableCell>
                           <TableCell className="celda-datos">
-                            <Input
+                            <InputDimensionMts
                               value={moduloAlto}
                               onChange={(e) =>
                                 setModuloAlto(e.target.value.replace(/[^\d.,]/g, ""))
                               }
-                              className="h-8 text-center"
                               inputMode="decimal"
                               placeholder="0,0"
-                              aria-label="Alto módulo"
+                              aria-label="Alto módulo en metros"
                             />
                           </TableCell>
                           <TableCell className="celda-datos">
@@ -499,39 +509,36 @@ export default function TiendaCalcLitrosPageClient({
                       <TableBody>
                         <TableRow>
                           <TableCell className="celda-datos">
-                            <Input
+                            <InputDimensionMts
                               value={piletaLargo}
                               onChange={(e) =>
                                 setPiletaLargo(e.target.value.replace(/[^\d.,]/g, ""))
                               }
-                              className="h-8 text-center"
                               inputMode="decimal"
                               placeholder="0,0"
-                              aria-label="Largo pileta"
+                              aria-label="Largo pileta en metros"
                             />
                           </TableCell>
                           <TableCell className="celda-datos">
-                            <Input
+                            <InputDimensionMts
                               value={piletaAncho}
                               onChange={(e) =>
                                 setPiletaAncho(e.target.value.replace(/[^\d.,]/g, ""))
                               }
-                              className="h-8 text-center"
                               inputMode="decimal"
                               placeholder="0,0"
-                              aria-label="Ancho pileta"
+                              aria-label="Ancho pileta en metros"
                             />
                           </TableCell>
                           <TableCell className="celda-datos">
-                            <Input
+                            <InputDimensionMts
                               value={piletaProfundidad}
                               onChange={(e) =>
                                 setPiletaProfundidad(e.target.value.replace(/[^\d.,]/g, ""))
                               }
-                              className="h-8 text-center"
                               inputMode="decimal"
                               placeholder="0,0"
-                              aria-label="Profundidad pileta"
+                              aria-label="Profundidad pileta en metros"
                             />
                           </TableCell>
                           <TableCell className="celda-datos">
