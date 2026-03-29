@@ -50,6 +50,14 @@ function InputDimensionMts({ className, ...props }: ComponentProps<typeof Input>
   );
 }
 
+const CALC_LITROS_FOOTER_CLASS = "border-t-2 border-primary bg-muted/50";
+const CALC_LITROS_FOOTER_ROW_CLASS =
+  "border-0 bg-muted/50 hover:bg-muted/60 odd:bg-muted/50 even:bg-muted/50";
+const CALC_LITROS_FOOTER_TOTAL_LABEL_CLASS =
+  "celda-datos !text-right font-semibold text-muted-foreground celda-datos--flush-right";
+const CALC_LITROS_FOOTER_VALUE_CLASS =
+  "celda-datos text-center tabular-nums font-bold text-foreground";
+
 interface Props {
   tiposPintura: TipoPinturaRendimiento[];
   esEditor: boolean;
@@ -369,22 +377,22 @@ export default function TiendaCalcLitrosPageClient({
                         );
                       })}
                     </TableBody>
-                    <TableFooter className="border-t border-border/60 bg-background">
-                      <TableRow className="hover:bg-background odd:bg-background even:bg-background">
-                        <TableCell className="celda-datos" colSpan={3} aria-hidden />
-                        <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
+                    <TableFooter className={CALC_LITROS_FOOTER_CLASS}>
+                      <TableRow className={CALC_LITROS_FOOTER_ROW_CLASS}>
+                        <TableCell className="celda-datos bg-muted/50" colSpan={3} aria-hidden />
+                        <TableCell className={cn(CALC_LITROS_FOOTER_TOTAL_LABEL_CLASS, "bg-muted/50")}>
                           TOTAL
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                        <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                           {formatDecimal(totalesPared.mts2, 1)} mts2
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                        <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                           {formatDecimal(totalesPared.lts1Mano, 1)} lts
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                        <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                           {formatDecimal(totalesPared.lts2Manos, 1)} lts
                         </TableCell>
-                        <TableCell className="celda-datos tabla-bloque-secundario-cell-divider" />
+                        <TableCell className="celda-datos tabla-bloque-secundario-cell-divider bg-muted/50" />
                       </TableRow>
                     </TableFooter>
                   </Table>
@@ -493,21 +501,21 @@ export default function TiendaCalcLitrosPageClient({
                           </TableRow>
                         ))}
                       </TableBody>
-                      <TableFooter className="border-t border-border/60 bg-background">
-                        <TableRow className="hover:bg-background odd:bg-background even:bg-background">
-                          <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
+                      <TableFooter className={CALC_LITROS_FOOTER_CLASS}>
+                        <TableRow className={CALC_LITROS_FOOTER_ROW_CLASS}>
+                          <TableCell
+                            colSpan={2}
+                            className={cn(CALC_LITROS_FOOTER_TOTAL_LABEL_CLASS, "bg-muted/50")}
+                          >
                             TOTAL
                           </TableCell>
-                          <TableCell className="celda-datos text-center text-muted-foreground font-semibold">
-                            —
-                          </TableCell>
-                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                             {formatDecimal(calculoModulo.total.mts2, 1)} mts2
                           </TableCell>
-                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                             {formatDecimal(calculoModulo.total.lts1Mano, 1)} lts
                           </TableCell>
-                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                             {formatDecimal(calculoModulo.total.lts2Manos, 1)} lts
                           </TableCell>
                         </TableRow>
@@ -602,21 +610,21 @@ export default function TiendaCalcLitrosPageClient({
                           </TableRow>
                         ))}
                       </TableBody>
-                      <TableFooter className="border-t border-border/60 bg-background">
-                        <TableRow className="hover:bg-background odd:bg-background even:bg-background">
-                          <TableCell className="celda-datos !text-right font-semibold celda-datos--flush-right">
+                      <TableFooter className={CALC_LITROS_FOOTER_CLASS}>
+                        <TableRow className={CALC_LITROS_FOOTER_ROW_CLASS}>
+                          <TableCell
+                            colSpan={2}
+                            className={cn(CALC_LITROS_FOOTER_TOTAL_LABEL_CLASS, "bg-muted/50")}
+                          >
                             TOTAL
                           </TableCell>
-                          <TableCell className="celda-datos text-center text-muted-foreground font-semibold">
-                            —
-                          </TableCell>
-                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                             {formatDecimal(calculoPileta.total.mts2, 1)} mts2
                           </TableCell>
-                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                             {formatDecimal(calculoPileta.total.lts1Mano, 1)} lts
                           </TableCell>
-                          <TableCell className="celda-datos text-center tabular-nums font-semibold border-t border-[#0072bb]">
+                          <TableCell className={cn(CALC_LITROS_FOOTER_VALUE_CLASS, "bg-muted/50")}>
                             {formatDecimal(calculoPileta.total.lts2Manos, 1)} lts
                           </TableCell>
                         </TableRow>
