@@ -106,14 +106,7 @@ export default function SidebarMainAppArea({
             )}
             aria-label="Elegir Área De La Aplicación"
           >
-            <Image
-              src="/logo_tiendacolor.png"
-              alt=""
-              width={200}
-              height={100}
-              className="w-full h-auto object-contain pointer-events-none"
-            />
-            {!showLabel ? (
+            {showLabel ? (
               <span
                 className={cn(
                   areaTitleVariants({ context: labelContext }),
@@ -123,10 +116,17 @@ export default function SidebarMainAppArea({
                 {current.label}
               </span>
             ) : null}
+            <Image
+              src="/logo_tiendacolor.png"
+              alt=""
+              width={200}
+              height={100}
+              className="w-full h-auto object-contain pointer-events-none"
+            />
           </button>
         ) : null}
 
-        {showLabel ? (
+        {showLabel && !showLogo ? (
           <div className="flex flex-col items-center justify-center text-center px-1 w-full" role="status" aria-live="polite">
             <span
               className={cn(areaTitleVariants({ context: labelContext }), "tracking-tight block")}
