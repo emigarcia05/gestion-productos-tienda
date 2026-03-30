@@ -497,14 +497,15 @@ export async function actualizarListaPreciosMasivo(
   }
 }
 
-// ─── Pedido Urgente: ítems con regDux y descripción unificada ─────────────────
+// ─── Pedido Urgente: ítems con descripción unificada ─────────────────
 
 export interface PedidoUrgenteItem {
   id: string;
   codExt: string;
   prefijo: string;
-  regDux: boolean;
   descripcion: string;
+  /** px_compra_final desde precios_proveedores para lógica de opción de compra. */
+  pxCompraFinal: number | null;
   /** Cantidad pedida (URGENTE) desde pedidos_mercaderia.cant_pedir_urgente. */
   cantPedidaUrgente: number;
   /** true si existe el cod_ext en pedidos_mercaderia con tipo_de_pedido = REPOSICION. */
@@ -516,8 +517,8 @@ export interface PedidoUrgenteItem {
 /**
  * Ítems de lista precios para la pantalla Pedido Urgente.
  * Solo devuelve datos si sucursal está informada.
- * regDux = existe en precios_tienda para cod_ext.
  * descripcion = descripcion_tienda si existe; si no, descripcion_proveedor.
+ * incluye pxCompraFinal para lógica de ranking en opción de compra.
  */
 export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
@@ -670,8 +671,8 @@ export async function getListaPreciosParaPedidoUrgente(
       id: f.id,
       codExt: f.codExt,
       prefijo: f.proveedor?.prefijo ?? "",
-      regDux: descripcionTiendaPorCodExt.has(f.codExt),
       descripcion: (descTienda?.trim() && descTienda) || f.descripcionProveedor,
+      pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
       cantPedidaUrgente: cantUrgente,
       confReposicion: mercaderiaRepoSet.has(key),
       cantReposicion: mercaderiaMapRepo.get(key) ?? 0,

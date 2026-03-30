@@ -10,7 +10,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { Check, Trash2 } from "lucide-react";
+import { Check, SquareCheckBig, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface ProductoPedidoUrgente {
@@ -18,8 +18,9 @@ export interface ProductoPedidoUrgente {
   /** Código externo lista-precios proveedor. */
   codExt: string;
   prefijo: string;
-  regDux: boolean;
   descripcion: string;
+  /** px_compra_final desde precios_proveedores (null si no está disponible). */
+  pxCompraFinal: number | null;
   /** Cantidad pedida (URGENTE) desde pedidos_mercaderia. */
   cantPedidaUrgente: number;
   /** true si existe el cod_ext en pedidos_mercaderia con tipo_de_pedido = REPOSICION. */
@@ -30,7 +31,7 @@ export interface ProductoPedidoUrgente {
 
 export type PedidoFilterValor = "urgente" | "reposicion" | "";
 
-const COLUMNS = 7;
+const COLUMNS = 8;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
 
 interface Props {
@@ -41,6 +42,9 @@ interface Props {
   /** Estado de cantidades controlado desde el padre (PedidoUrgentePageClient). */
   cantPorId?: Record<string, string>;
   setCantPorId?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  selectedForCompra?: Record<string, boolean>;
+  ordenCompraPorId?: Record<string, number>;
+  onToggleSelectCompra?: (producto: ProductoPedidoUrgente) => void;
   /** Callback al hacer doble click en una fila para abrir el modal de edición de cantidad. */
   onRowDoubleClick?: (producto: ProductoPedidoUrgente) => void;
   onRowDeleteClick?: (producto: ProductoPedidoUrgente) => void;
@@ -53,6 +57,9 @@ export default function TablaPedidoUrgente({
   mensajeSinSucursal = "Seleccioná una sucursal para ver los productos.",
   cantPorId: cantPorIdProp,
   setCantPorId: setCantPorIdProp,
+  selectedForCompra = {},
+  ordenCompraPorId = {},
+  onToggleSelectCompra,
   onRowDoubleClick,
   onRowDeleteClick,
 }: Props) {
@@ -69,28 +76,33 @@ export default function TablaPedidoUrgente({
       <Table variant="compact" scrollX={false} className="min-w-full">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            <TableHead className="text-center w-[5%]" aria-label="Seleccionar">
+              <div className="flex items-center justify-center w-full">
+                <Check className="h-4 w-4" aria-hidden="true" />
+              </div>
+            </TableHead>
+            <TableHead className="text-center w-[5%]">
+              OPC. COMPRA
+            </TableHead>
             <TableHead className="text-center w-[10%]">
               PROVEEDOR
             </TableHead>
-            <TableHead className="text-center w-[5%]">
-              REG. DUX
-            </TableHead>
-            <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
+            <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
             <TableHead className="text-center w-[8%]">
               CANT. PED.
             </TableHead>
-            <TableHead className="text-center w-[8%]" aria-label="Eliminar">
+            <TableHead className="text-center w-[6%]" aria-label="Eliminar">
               <div className="flex items-center justify-center w-full">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
             <TableHead
-              className="text-center tabla-bloque-secundario-head-divider"
+              className="text-center w-[8%] tabla-bloque-secundario-head-divider"
             >
               CONF. REPO.
             </TableHead>
             <TableHead
-              className="text-center tabla-bloque-secundario-head"
+              className="text-center w-[8%] tabla-bloque-secundario-head"
             >
               CANT. REPO.
             </TableHead>
@@ -106,18 +118,29 @@ export default function TablaPedidoUrgente({
                 className="cursor-pointer"
                 onDoubleClick={() => onRowDoubleClick?.(prod)}
               >
+                <TableCell className="celda-datos text-center">
+                  <div className="flex items-center justify-center w-full">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSelectCompra?.(prod);
+                      }}
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-primary bg-background text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      aria-label="Seleccionar para opción de compra"
+                      aria-pressed={!!selectedForCompra[prod.id]}
+                    >
+                      {selectedForCompra[prod.id] ? (
+                        <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
+                      ) : null}
+                    </button>
+                  </div>
+                </TableCell>
+                <TableCell className="celda-datos text-center tabular-nums font-semibold">
+                  {ordenCompraPorId[prod.id] ?? ""}
+                </TableCell>
                 <TableCell className="celda-datos celda-mono font-mono text-sm">
                   {prod.prefijo}
-                </TableCell>
-                <TableCell className="celda-datos text-center">
-                  {prod.regDux ? (
-                    <Check
-                      className="h-4 w-4 text-primary mx-auto"
-                      aria-label="Registrado en Dux"
-                    />
-                  ) : (
-                    ""
-                  )}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
                   {prod.descripcion}

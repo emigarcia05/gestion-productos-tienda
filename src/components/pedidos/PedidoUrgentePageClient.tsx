@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
@@ -46,6 +46,7 @@ export default function PedidoUrgentePageClient({
   q,
 }: Props) {
   const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
+  const [selectedForCompra, setSelectedForCompra] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<ProductoPedidoUrgenteModal | null>(null);
@@ -62,6 +63,36 @@ export default function PedidoUrgentePageClient({
       return next;
     });
   }, [productos]);
+
+  useEffect(() => {
+    const idsVigentes = new Set(productos.map((p) => p.id));
+    setSelectedForCompra((prev) => {
+      const next: Record<string, boolean> = {};
+      for (const [id, selected] of Object.entries(prev)) {
+        if (idsVigentes.has(id) && selected) {
+          next[id] = true;
+        }
+      }
+      return next;
+    });
+  }, [productos]);
+
+  const ordenCompraPorId = useMemo(() => {
+    const seleccionados = productos
+      .filter((p) => selectedForCompra[p.id])
+      .sort((a, b) => {
+        const pxA = a.pxCompraFinal ?? Number.POSITIVE_INFINITY;
+        const pxB = b.pxCompraFinal ?? Number.POSITIVE_INFINITY;
+        if (pxA !== pxB) return pxA - pxB;
+        return a.id.localeCompare(b.id, "es");
+      });
+
+    const orden: Record<string, number> = {};
+    seleccionados.forEach((p, index) => {
+      orden[p.id] = index + 1;
+    });
+    return orden;
+  }, [productos, selectedForCompra]);
 
   const actions = (
     <GenerarPedidoToolbarButton
@@ -126,6 +157,13 @@ export default function PedidoUrgentePageClient({
     toast.success("Ítem guardado.");
   }
 
+  function toggleSeleccionCompra(prod: ProductoPedidoUrgente) {
+    setSelectedForCompra((prev) => ({
+      ...prev,
+      [prod.id]: !prev[prod.id],
+    }));
+  }
+
   return (
     <ClassicFilteredTableLayout
       title="Pedido Mercadería"
@@ -144,6 +182,9 @@ export default function PedidoUrgentePageClient({
                 mensajeSinSucursal={MENSAJE_SIN_FILTROS}
                 cantPorId={cantPorId}
                 setCantPorId={setCantPorId}
+                selectedForCompra={selectedForCompra}
+                ordenCompraPorId={ordenCompraPorId}
+                onToggleSelectCompra={toggleSeleccionCompra}
                 onRowDoubleClick={abrirModalCantidad}
                 onRowDeleteClick={borrarCantidad}
               />

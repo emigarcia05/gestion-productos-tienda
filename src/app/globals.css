@@ -662,6 +662,17 @@
   box-sizing: border-box;
   vertical-align: middle;
   overflow: hidden;
+  position: relative;
+}
+/* Lectura completa en celdas truncadas:
+ * al hacer hover, el contenido puede sobresalir por encima de celdas vecinas. */
+.tabla-gestion-compacta tbody tr td:hover {
+  overflow: visible;
+  z-index: 35;
+}
+.tabla-gestion-compacta tbody tr td:hover > * {
+  position: relative;
+  z-index: 36;
 }
 /* Contenido interno de celdas: no puede alterar la altura de la fila. */
 .tabla-gestion-compacta tbody td > div {

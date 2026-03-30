@@ -1,6 +1,6 @@
 /**
  * Áreas principales de la aplicación (macro-secciones).
- * La mayoría de rutas actuales pertenecen a **Gestión De Productos**; las demás tienen prefijo dedicado.
+ * La mayoría de rutas actuales pertenecen a **Gestión Productos**; las demás tienen prefijo dedicado.
  */
 
 export type MainAppAreaId = "gestion-productos" | "finanzas" | "estadisticas-productos";
@@ -18,7 +18,7 @@ export interface MainAppAreaDefinition {
 export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
   {
     id: "gestion-productos",
-    label: "Gestión De Productos",
+    label: "Gestión Productos",
     statusLabel: "Terminada",
     href: "/gestion-productos/proveedores",
   },
