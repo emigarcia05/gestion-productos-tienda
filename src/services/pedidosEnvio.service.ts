@@ -7,6 +7,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
 import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
+import { SUCURSAL_LABEL_PEDIDO } from "@/lib/pedidos";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -448,6 +449,7 @@ export interface ItemTablaEnviarPedido {
   cantPedir: number;
   descripcion: string;
   tipoPedido: string;
+  sucursal: string;
 }
 
 /**
@@ -503,12 +505,19 @@ export async function getItemsTablaEnviarPedido(params: {
       tintometricoDescripcion: true,
       descripcionTienda: true,
       cantPedir: true,
+      sucursal: { select: { codigo: true, nombre: true } },
     },
   });
 
   const items: ItemTablaEnviarPedido[] = rows.map((i) => ({
     cantPedir: Math.max(0, Number(i.cantPedir) || 0),
     tipoPedido: i.tipoPedido,
+    sucursal:
+      (i.sucursal?.codigo &&
+      (SUCURSAL_LABEL_PEDIDO as Partial<Record<string, string>>)[i.sucursal.codigo]
+        ? (SUCURSAL_LABEL_PEDIDO as Partial<Record<string, string>>)[i.sucursal.codigo]
+        : i.sucursal?.nombre?.trim()) ||
+      "",
     descripcion:
       (i.descripcionProveedor ?? "").trim() ||
       (i.tintometricoDescripcion ?? "").trim() ||

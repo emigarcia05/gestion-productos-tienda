@@ -97,15 +97,16 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-28">CANT. PEDIR</TableHead>
-                    <TableHead className="w-40">TIPO PEDIDO</TableHead>
-                    <TableHead className="min-w-0">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[10%]">CANT. PEDIR</TableHead>
+                    <TableHead className="w-[15%]">TIPO PEDIDO</TableHead>
+                    <TableHead className="w-[15%]">SUCURSAL</TableHead>
+                    <TableHead className="w-[60%] min-w-0">DESCRIPCIÓN</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {itemsTabla.length === 0 ? (
                     <EmptyTableRow
-                      colSpan={3}
+                      colSpan={4}
                       message={
                         hayFiltroActivo ? MENSAJE_SIN_ITEMS_FILTRADO : MENSAJE_SIN_ITEMS_GLOBAL
                       }
@@ -116,13 +117,16 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                         key={idx}
                         className={cn("hover:bg-transparent", idx % 2 === 1 && "bg-muted/30")}
                       >
-                        <TableCell className="celda-datos celda-numero text-right w-28">
+                        <TableCell className="celda-datos celda-numero text-right w-[10%]">
                           {item.cantPedir.toLocaleString("es-AR")}
                         </TableCell>
-                        <TableCell className="celda-datos w-40 text-center">
+                        <TableCell className="celda-datos w-[15%] text-center">
                           {item.tipoPedido || ""}
                         </TableCell>
-                        <TableCell className="celda-datos min-w-0 text-foreground">
+                        <TableCell className="celda-datos w-[15%] text-center">
+                          {(item.sucursal || "").toUpperCase()}
+                        </TableCell>
+                        <TableCell className="celda-datos w-[60%] min-w-0 text-foreground">
                           {item.descripcion || ""}
                         </TableCell>
                       </TableRow>

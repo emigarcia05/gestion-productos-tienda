@@ -115,6 +115,7 @@ export type EnviarPedidoTablaItem = {
   cantPedir: number;
   descripcion: string;
   tipoPedido: string;
+  sucursal: string;
 };
 
 /**

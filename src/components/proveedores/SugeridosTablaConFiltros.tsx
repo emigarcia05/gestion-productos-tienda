@@ -114,8 +114,8 @@ export default function SugeridosTablaConFiltros({
       marcaNombre || undefined,
       undefined,
       busqueda.trim() || undefined,
+      true,
       undefined,
-      { soloPxSugerido: true },
       pagina
     )
       .then((res) => {
@@ -238,7 +238,7 @@ export default function SugeridosTablaConFiltros({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-28">COD. EXT.</TableHead>
-              <TableHead className="min-w-0">DESC. PROVEEDOR</TableHead>
+              <TableHead className="min-w-0">DESCRIPCIÓN</TableHead>
               <TableHead className="w-28">PX. VTA. SUG.</TableHead>
             </TableRow>
           </TableHeader>
@@ -254,7 +254,7 @@ export default function SugeridosTablaConFiltros({
                   </div>
                 </TableCell>
                 <TableCell className="celda-datos celda-numero celda-destacado">
-                  ${fmtPrecio(Number(fila.pxVtaSugerido ?? 0))}
+                  {fila.pxVtaSugerido != null ? `$${fmtPrecio(Number(fila.pxVtaSugerido))}` : ""}
                 </TableCell>
               </TableRow>
             ))}
