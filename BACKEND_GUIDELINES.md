@@ -27,7 +27,8 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`.
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)`; IDs de ítem tienda con `uuidSchema`; filtros de búsqueda acotados con Zod en la Action.
   - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)`. En la matriz actual **`simple` y `editor`** tienen `sincronizar: true` (slidenav y cualquier cliente autenticado con sesión válida). El `GET` de estado (`/api/sync-lista-precios-tienda/status`) sigue sin chequeo de rol explícito en el route: cualquier sesión que pueda llamar la API ve el mismo progreso global.
-- **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos).
+- **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos, comprobantes proveedor).
+- **`proveedores.id_proveedor_dux`**: índice **único** (`proveedores_id_proveedor_dux_key`). PostgreSQL permite varios `NULL`; cada valor no nulo debe ser único. Sirve como **FK referenciada** por `comprobantes_proveedor.id_proveedor` (mismo valor DUX; `onDelete: Restrict`): no se puede borrar un proveedor si tiene comprobantes vinculados.
 - **Lecturas de listados con filtros** (pedidos urgente/enviar, reposición, stock, tienda): además del permiso de módulo, validar el objeto de parámetros con esquemas dedicados (`@/lib/validations/pedidosLectura`, `reposicion`, `stock`, `tienda`) para acotar `q`, `pagina`, sucursales y arrays (`tipos`).
 
 ### 1.2.1 Activación de modo editor (`sesion.ts`)
@@ -261,6 +262,34 @@ Constraint:
 - Las filas de `pedidos_historial_mercaderia` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.  
 - La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
 
+### 2.5a Comprobantes de compra DUX (`comprobantes_proveedor`, Prisma: `ComprobanteProveedor`)
+
+Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasApi.ts` / `duxCompras.service.ts`). La columna `id_proveedor` guarda el **mismo valor** que `proveedores.id_proveedor_dux` (FK).
+
+| Columna (BD)           | Prisma               | API DUX (snake_case)   | Notas |
+|------------------------|----------------------|-------------------------|--------|
+| `id`                   | `id`                 | —                       | CUID, PK |
+| `id_sucursal_empresa`  | `idSucursalEmpresa`  | `id_sucursal_empresa` (fallback `id_sucursal`) | Obligatorio en sync |
+| `tipo_comp`            | `tipoComp`           | `tipo_comp` / `tipo_comprobante` | |
+| `comprobante`          | `comprobante`        | `comprobante` | |
+| `fecha_comp`           | `fechaComp`          | `fecha_comp` | `DATE`; string API `DD/MM/YYYY` |
+| `id_proveedor`         | `idProveedor`        | `id_proveedor` | FK → `proveedores.id_proveedor_dux` |
+| `total`                | `total`              | `total` | `NUMERIC(14,2)` |
+| `monto_aplicado`       | `montoAplicado`      | `monto_aplicado` / `monto_pagado` | `NUMERIC(14,2)` |
+| `created_at`           | `createdAt`          | — | |
+| `updated_at`           | `updatedAt`          | — | |
+
+- **Unicidad** (`comprobantes_proveedor_natural_ux`): `(id_sucursal_empresa, tipo_comp, comprobante, fecha_comp, id_proveedor)` — idempotencia del sync (`upsert`).
+- **Índices**: `fecha_comp`, `id_proveedor`.
+- **Sync** (`comprobantesProveedorDuxSync.service.ts`):
+  - **Una petición (o ráfaga paginada) por cada** `sucursales.id_dux` numérico; entre sucursales respeta `DUX_COMPRAS_MIN_INTERVAL_MS` (igual que `getSiguienteComprobanteDuxCompra`).
+  - **`fechaDesde`**: máximo `fecha_comp` ya guardado; si la tabla está vacía, **igual a `fechaHasta`** (solo día corriente en Argentina, vía `dateToIsoYmdArgentina`).
+  - **`fechaHasta`**: “hoy” calendario Argentina (`fechaHastaArgentinaComoDux`).
+  - **Paginación**: `fetchComprasPagesAcumulado` en `duxComprasApi.ts` — `DUX_COMPRAS_SYNC_LIMIT` (default 2000), `DUX_COMPRAS_SYNC_MAX_PAGES` (default 1). Si DUX admite `offset` y hay más filas, subir `DUX_COMPRAS_SYNC_MAX_PAGES`; si la API ignora `offset`, dejar `1` para no duplicar lecturas.
+  - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
+- **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
+- **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique).
+
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
@@ -420,6 +449,8 @@ Contrato (SSOT de lógica de negocio + integración externa):
 
 Acceso desde UI/cliente:
 - La `server action` `src/actions/duxCompras.ts#getSiguienteComprobanteDuxCompraAction` exige `esEditor()` y valida parámetros con el mismo esquema Zod.
+
+Persistencia de listados completos de `/compras` (campos extendidos en `duxComprasApi.mapCompra`): ver **§2.5a** y `sincronizarComprobantesProveedorDesdeDux` en `comprobantesProveedorDuxSync.service.ts`.
 
 ---
 
