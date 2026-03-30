@@ -469,7 +469,7 @@ Notas:
 | `@/lib/validations/common.ts` | `uuidSchema`, `uuidsSchema`, `prismaCuidSchema`, `paramsPaginaSchema`. |
 | `@/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema` (query de página proveedores). |
 | `@/lib/validations/pedidosLectura.ts` | `getPedidoUrgenteDataParamsSchema`, `getEnviarPedidoTablaParamsSchema`. |
-| `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
+| `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `reposicionFormaPedidoSchema` (`CANT_FIJA` \| `CANT_MAXIMA`), `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
 | `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 
@@ -556,7 +556,8 @@ Antes de entregar código nuevo o modificado, verificar:
 | `scripts/verify-pedidos-reposicion.ts` | Esquema esperado actualizado: `sucursal_id` y columnas actuales `reposicion_*`, `urgente_*`, `tintometrico_*`. |
 | `src/services/pedidosEnvio.service.ts` | Regla de fallback en vinculación por `cod_ext`: si no existe vínculo a tienda, `cod_tienda = "1503"`; si falta código proveedor, `cod_proveedor = ""` (vacío). |
 | `prisma/migrations/20260317223000_sync_cant_pedir_por_tipo_pedido/migration.sql` | Regla de negocio a nivel BD: `cant_pedir` se sincroniza automáticamente por `tipo_de_pedido` (`TINTOMETRICO -> tintometrio_cant_pedir`, `URGENTE -> urgente_cant_pedir`, `REPOSICION -> reposicion_cant_pedir`) con trigger `BEFORE INSERT OR UPDATE`. |
-| `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` se calcula por forma (`CANT_FIJA`/`CANT. FIJA` => `reposicion_cant_conf`; `CANT_MAXIMA`/`CANT. MAX.` => `reposicion_cant_conf - stock sucursal`) y luego `cant_pedir` toma ese valor para `REPOSICION`. |
+| `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` según forma y stock (versión inicial; ver migración canonical). |
+| `prisma/migrations/20260330120000_reposicion_forma_pedido_canonical/migration.sql` | `reposicion_forma_pedido` solo admite **`CANT_FIJA`** o **`CANT_MAXIMA`** (normaliza legados `CANT. FIJA` / `CANT. MAX.`). Trigger: `CANT_FIJA` => `reposicion_cant_pedir = reposicion_cant_conf`; `CANT_MAXIMA` => `GREATEST(0, reposicion_cant_conf - stock sucursal)`; luego `cant_pedir` para `REPOSICION`. |
 | `prisma/migrations/20260318000000_add_sync_dux_status/migration.sql` | Nueva tabla `sync_dux_status` para persistir estado de sincronización DUX en BD (`running`, `phase`, `processed`, `total`, `error`, `last_completed_at`, `updated_at`) y soportar polling estable en sidebar. |
 | `prisma/schema.prisma` | Nuevo modelo `SyncDuxStatus` (mapeo a `sync_dux_status`) para tipado fuerte y evitar SQL raw en lecturas/escrituras. |
 | `src/lib/syncDuxStatusDb.ts` | Helper tipado de persistencia de estado DUX (start/progress/success/error + lectura) usando Prisma. `last_completed_at` se actualiza **solo en sync OK**; en error se mantiene `processed/total` (no se resetean al hacer update por conflicto). |
@@ -586,7 +587,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-03-25 — DUX `/compras`: `getSiguienteComprobanteDuxCompra` serializa llamadas y espera ≥5 s entre peticiones (`DUX_COMPRAS_MIN_INTERVAL_MS`) para evitar 429. Histórico: sync DUX rol `simple`; auditoría Server Actions 2026-03-23.*
+*Última actualización: 2026-03-30 — `reposicion_forma_pedido` canónico (`CANT_FIJA` \| `CANT_MAXIMA`) + migración y trigger; `reposicionFormaPedidoSchema` en validaciones. Histórico: DUX compras throttle 2026-03-25.*
 
 ---
 
@@ -620,7 +621,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `src/actions/reposicion.ts` | Zod sucursal/params selector; `upsertReglaReposicion`: `idProveedor` con `prismaCuidSchema` y `codTienda` como clave de entrada; `puntoReposicion` entero **≥ 0**; `cant` entero **≥ 1**. |
 | `src/services/pedidosEnvio.service.ts` | Reposición: `upsertPedidoMercaderiaReposicionConfig` recibe `codTienda`, resuelve `codExt` desde `precios_tienda` y recién allí vincula con `precios_proveedores` por (`idProveedor`, `codExt`). |
-| `src/lib/validations/reposicion.ts` | Esquemas de lectura reposición. |
+| `src/lib/validations/reposicion.ts` | Esquemas de lectura reposición + forma canónica `reposicionFormaPedidoSchema`. |
 | `src/actions/pedidos.ts` | `getPedidoUrgenteData` / `getEnviarPedidoTablaData`: `pedidosLectura` Zod. |
 | `src/lib/validations/pedidosLectura.ts` | Nuevo. |
 | `src/actions/stock.ts` | `getControlStock`: Zod params + validación sucursal. |

@@ -200,7 +200,7 @@ model ItemPedidoEnvio {
   descripcionTienda      String?  @map("descripcion_tienda") // precios_tienda; vacío si no existe
   cantPedir              Int      @map("cant_pedir") @default(0)
   // Reposición (prefijo reposicion_*)
-  reposicionFormaPedido  String? @map("reposicion_forma_pedido") // CANT_MAXIMA | CANT_FIJA
+  reposicionFormaPedido  String? @map("reposicion_forma_pedido") // Solo: CANT_MAXIMA | CANT_FIJA (canónico en BD y trigger)
   reposicionPuntoPedido  Int?    @map("reposicion_punto_pedido")
   reposicionCantConf     Int?    @map("reposicion_cant_conf") @default(0)
   reposicionCantPedir    Int?    @map("reposicion_cant_pedir") @default(0)

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/** Valores persistidos en `pedidos_mercaderia.reposicion_forma_pedido` (única fuente canónica). */
+export const reposicionFormaPedidoSchema = z.enum(["CANT_MAXIMA", "CANT_FIJA"]);
+
+export type ReposicionFormaPedido = z.infer<typeof reposicionFormaPedidoSchema>;
+
 export const sucursalReposicionSchema = z.enum(["guaymallen", "maipu"]);
 
 export const getReposicionParamsSchema = z.object({

@@ -13,6 +13,7 @@ import { upsertPedidoMercaderiaReposicionConfig } from "@/services/pedidosEnvio.
 import {
   getReposicionParamsSchema,
   productosReposicionSelectorSchema,
+  reposicionFormaPedidoSchema,
   sucursalReposicionSchema,
 } from "@/lib/validations/reposicion";
 import { prismaCuidSchema } from "@/lib/validations/common";
@@ -337,7 +338,7 @@ const upsertReglaSchema = z.object({
   idProveedor: prismaCuidSchema,
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   codTienda: z.string().min(1, "Código tienda requerido"),
-  formaPedir: z.enum(["CANT_MAXIMA", "CANT_FIJA"]),
+  formaPedir: reposicionFormaPedidoSchema,
   puntoReposicion: z.number().int().min(0, "Punto reposición inválido"),
   cant: z.number().int().min(1, "Cant. reposición requerida"),
 });
