@@ -60,7 +60,7 @@ export default function FiltrosReposicion({
     isDebouncing,
   } = useFiltrosConBusqueda({
     qActual,
-    debounceMs: 400,
+    debounceMs: 700,
     onDebouncedSearch: (value) => navigate({ q: value }),
   });
 

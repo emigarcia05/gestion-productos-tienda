@@ -117,7 +117,7 @@ export default function FiltrosEnviarPedido({
 
   const { q, setQ, ref: inputRef, handleQChange, isDebouncing } = useFiltrosConBusqueda({
     qActual,
-    debounceMs: 400,
+    debounceMs: 700,
     onDebouncedSearch: (value) => {
       updateUrl({ q: value });
     },

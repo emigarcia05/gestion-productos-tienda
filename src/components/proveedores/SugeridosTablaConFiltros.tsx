@@ -249,8 +249,8 @@ export default function SugeridosTablaConFiltros({
                   {fila.codExt}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
-                  <div className="celda-destacado truncate text-xs font-bold">
-                    {fila.descripcionProveedor}
+                  <div className="celda-destacado truncate text-xs font-bold" title={fila.descripcion}>
+                    {fila.descripcion}
                   </div>
                 </TableCell>
                 <TableCell className="celda-datos celda-numero celda-destacado">

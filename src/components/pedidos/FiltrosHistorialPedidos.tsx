@@ -88,7 +88,7 @@ export default function FiltrosHistorialPedidos({
     prepareNavigate,
   } = useFiltrosConBusqueda({
     qActual: q,
-    debounceMs: 400,
+    debounceMs: 700,
     focusStorageKey: "filtros-historial-pedidos-focus",
     onDebouncedSearch: (value) => {
       prepareNavigate();

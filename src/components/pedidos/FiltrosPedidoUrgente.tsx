@@ -88,7 +88,7 @@ export default function FiltrosPedidoUrgente({
     prepareNavigate,
   } = useFiltrosConBusqueda({
     qActual: q,
-    debounceMs: 400,
+    debounceMs: 700,
     focusStorageKey: "filtros-pedido-urgente-focus",
     onDebouncedSearch: (value) => {
       prepareNavigate();

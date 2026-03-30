@@ -59,7 +59,7 @@ export default function FiltrosProductos({
     prepareNavigate,
   } = useFiltrosConBusqueda({
     qActual,
-    debounceMs: 600,
+    debounceMs: 700,
     focusStorageKey: FOCUS_KEY,
     onDebouncedSearch: (value) => {
       prepareNavigate();

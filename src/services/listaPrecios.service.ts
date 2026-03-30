@@ -16,6 +16,8 @@ import { PAGE_SIZE } from "@/lib/pagination";
 export interface FilaListaPrecioParaCliente {
   id: string;
   codExt: string;
+  /** Descripción efectiva para UI: primero tienda, fallback proveedor. */
+  descripcion: string;
   descripcionProveedor: string;
   descripcionTienda: string | null;
   marca: string | null;
@@ -62,6 +64,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
   return filas.map((f) => ({
     id: f.id,
     codExt: f.codExt,
+    descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     marca: f.marca ?? null,
@@ -167,6 +170,7 @@ export async function getListaPreciosConTiendaFiltrada(
   let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => ({
     id: f.id,
     codExt: f.codExt,
+    descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
     marca: f.marca ?? null,

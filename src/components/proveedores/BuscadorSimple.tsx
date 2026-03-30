@@ -34,7 +34,7 @@ export default function BuscadorSimple({
     prepareNavigate,
   } = useFiltrosConBusqueda({
     qActual,
-    debounceMs: 400,
+    debounceMs: 700,
     focusStorageKey: FOCUS_KEY,
     onDebouncedSearch: (value) => {
       prepareNavigate();
