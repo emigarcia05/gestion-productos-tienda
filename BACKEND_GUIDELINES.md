@@ -50,6 +50,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 
 - **Servicios** (`src/services/`): Encapsulan acceso a datos (Prisma, SQL raw) y lógica de negocio. Las Actions los invocan; no al revés.
 - **Actions**: Orquestan: sesión → validación → servicio → revalidatePath → respuesta.
+- **URLs canónicas área Gestión De Productos (2026-03):** la navegación pública usa prefijo `/gestion-productos/...` (área/módulo/submódulo). Si una mutación impacta vistas de esa área, revalidar al menos la ruta canónica correspondiente. Se permiten revalidaciones adicionales sobre rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) mientras existan redirects/rewrites de compatibilidad.
 
 - **Prisma / Neon**: `DATABASE_URL` en `.env` debe usar el **pooler** de Neon para el runtime (`src/lib/prisma.ts`). Para migraciones, definir además **`DIRECT_URL`** (host **sin** `-pooler`): `prisma.config.ts` usa `DIRECT_URL` si existe; si no, cae a `DATABASE_URL`. Plantilla: `.env.example`.
 - **Migraciones ítems historial pedidos**: `20260322120000_*` y `20260322140000_*` son **idempotentes** (`to_regclass`) respecto de `pedidos_historia_items` / `pedidos_mercaderia_historial`. `20260322200000_*` renombra `pedidos_mercaderia_historial` → `pedidos_historial_mercaderia` si aún existe el nombre intermedio.

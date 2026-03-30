@@ -21,7 +21,7 @@ interface Props {
 
 export default async function PedidoUrgentePage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
 
   const { q = "", pagina = "1", sucursal = "", proveedor = "", pedido = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" =

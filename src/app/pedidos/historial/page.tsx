@@ -21,7 +21,7 @@ interface Props {
 
 export default async function HistorialPedidosPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
 
   const { pagina = "1", proveedor = "", sucursal = "", estado = "", q = "" } =
     await searchParams;

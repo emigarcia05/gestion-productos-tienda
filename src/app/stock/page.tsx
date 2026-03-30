@@ -21,7 +21,7 @@ interface Props {
 
 export default async function StockPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.stock.acceso)) redirect("/proveedores");
+  if (!puede(rol, PERMISOS.stock.acceso)) redirect("/gestion-productos/proveedores");
   const esEditor = rol === "editor";
 
   const {

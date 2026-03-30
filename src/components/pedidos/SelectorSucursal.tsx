@@ -29,7 +29,7 @@ function buildHref(sucursal: SucursalPedido | "", params: Props["paramsActuales"
 export default function SelectorSucursal({
   sucursalActual,
   paramsActuales,
-  basePath = "/pedidos/urgente",
+  basePath = "/gestion-productos/pedidos/urgente",
 }: Props) {
   function handleChange(value: string) {
     const url = buildHref(value as SucursalPedido | "", paramsActuales, basePath);

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PedidoTintometricoPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
 
   const [proveedores, sucursales, items] = await Promise.all([
     getProveedoresTintometricos(),

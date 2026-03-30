@@ -20,7 +20,7 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     id: "gestion-productos",
     label: "Gestión De Productos",
     statusLabel: "Terminada",
-    href: "/proveedores",
+    href: "/gestion-productos/proveedores",
   },
   {
     id: "finanzas",
@@ -37,6 +37,9 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
 ];
 
 export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
+  if (pathname === "/gestion-productos" || pathname.startsWith("/gestion-productos/")) {
+    return "gestion-productos";
+  }
   if (pathname === "/finanzas" || pathname.startsWith("/finanzas/")) {
     return "finanzas";
   }

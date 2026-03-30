@@ -21,7 +21,7 @@ export default function ProveedoresSubmoduleToolbar({ activo }: { activo: Provee
         )}
         asChild
       >
-        <Link href="/proveedores" className="gap-2">
+        <Link href="/gestion-productos/proveedores" className="gap-2">
           <FileSearch className="h-4 w-4 shrink-0" />
           Lista Proveedores
         </Link>
@@ -37,7 +37,7 @@ export default function ProveedoresSubmoduleToolbar({ activo }: { activo: Provee
         )}
         asChild
       >
-        <Link href="/proveedores/lista" className="gap-2">
+        <Link href="/gestion-productos/proveedores/lista" className="gap-2">
           <List className="h-4 w-4 shrink-0" />
           Lista Proveedores
         </Link>

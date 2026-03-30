@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TiendaCalcLitrosPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.tintoLts)) redirect("/stock");
+  if (!puede(rol, PERMISOS.tienda.tintoLts)) redirect("/gestion-productos/tienda/control-stock");
 
   const tiposPintura = await getTiposPinturaRendimientosAction();
   const esEditor = rol === "editor";

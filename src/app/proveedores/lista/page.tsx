@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ListaProveedoresPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.proveedores.lista)) redirect("/proveedores/sugeridos");
+  if (!puede(rol, PERMISOS.proveedores.lista)) redirect("/gestion-productos/proveedores/sugeridos");
 
   const [proveedores] = await Promise.all([getProveedores()]);
   const p = PERMISOS.proveedores;

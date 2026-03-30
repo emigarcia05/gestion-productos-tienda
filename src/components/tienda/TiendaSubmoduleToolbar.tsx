@@ -21,7 +21,7 @@ export default function TiendaSubmoduleToolbar({ activo }: { activo: TiendaSubmo
         )}
         asChild
       >
-        <Link href="/tienda" className="gap-2">
+        <Link href="/gestion-productos/tienda/comp-proveedores" className="gap-2">
           <Link2 className="h-4 w-4 shrink-0" />
           Comp. Proveedores
         </Link>
@@ -37,7 +37,7 @@ export default function TiendaSubmoduleToolbar({ activo }: { activo: TiendaSubmo
         )}
         asChild
       >
-        <Link href="/tienda/aumentos" className="gap-2">
+        <Link href="/gestion-productos/tienda/control-aumento" className="gap-2">
           <TrendingUp className="h-4 w-4 shrink-0" />
           Control Aumentos
         </Link>

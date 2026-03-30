@@ -59,7 +59,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → separador (`pt-2`) → **logo** (`SidebarMainAppArea` con `showLabel={false}`) → **`SelectorRol` `compact`** → **nombre del área** (`SidebarMainAppArea` con `showLogo={false}`); `gap-3` entre bloques en `flex flex-col pt-3`.
+    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → separador (`pt-2`) → **nombre del área** (`SidebarMainAppArea` con `showLogo={false}`) → **logo** (`SidebarMainAppArea` con `showLabel={false}`) → **`SelectorRol` `compact`**; `gap-3` entre bloques en `flex flex-col pt-3`.
      - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa. `SyncStatusIndicator` en **reposo**: línea 1 muestra **`SINCRONIZACION DUX`** y línea 2 **`Últ. Act. dd/mm hh:mm`**. En hover se **cambia solo el texto** (fade): línea 1 pasa a **`SINCRONIZAR DUX`** y la segunda línea se oculta sin cambiar fondo ni elevar el bloque; misma altura compacta (~`min-h-[3.5rem]`, dos líneas centradas) para fundirse con la slidenav. En **sync en curso**: `<MensajeProceso mensaje="SINCRONIZANDO DUX" detalle={…} />`.
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
@@ -491,12 +491,18 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 
 - **`MAIN_APP_AREAS`**: cada ítem tiene `id`, `label` (title case), `statusLabel` (ej. **Terminada** / **A construir**), `href` (entrada al elegir el área).
 - **`getMainAppAreaIdFromPathname(pathname)`**: `/finanzas` y `/finanzas/*` → **Finanzas**; `/estadisticas-productos` y subrutas → **Estadísticas Productos**; cualquier otra ruta → **Gestión De Productos** (incluye `/`, `/proveedores`, `/tienda`, `/stock`, `/pedidos`, `/importar`, etc.).
+- **Navegación lateral por área activa** (`Sidebar.tsx`): los módulos de navegación (`PEDIDO DE MERCADERÍA`, `LISTA PROVEEDORES`, `LISTA TIENDA`) se muestran **solo** cuando el área activa es **Gestión De Productos**. En áreas sin módulos implementados (hoy: **Finanzas** y **Estadísticas Productos**) no deben mostrarse links de navegación y se renderiza estado vacío informativo.
 - **`SidebarMainAppArea`** (client): **logo** como `<button>` con `aria-label` **Elegir Área De La Aplicación**; `Image` con `alt=""` (el nombre va en el botón). Debajo, `role="status"` + `aria-live="polite"` con **solo nombre del área**. Click abre **`AppModal`** **Áreas De La Aplicación** con las tres opciones (navegación con `router.push` al `href` de cada área). Opción de la ruta actual resaltada (`border-sidebar-indicator`, `bg-sidebar-accent/40`). En el modal se muestra solo el nombre de cada área (sin subtítulo/estado ni texto descriptivo superior) y un ícono `lucide-react` por opción (Gestión De Productos: `Boxes`; Finanzas: `Landmark`; Estadísticas Productos: `BarChart3`). Variantes **CVA**: `areaOptionVariants` (opción actual vs resto), `areaTitleVariants` / `areaStatusVariants` (`context`: `sidebar` | `modal` para tokens de texto; `areaStatusVariants` queda para reutilización futura si se necesitara estado en otra vista).
 - Rutas placeholder: **`/finanzas`**, **`/estadisticas-productos`** (páginas “A construir” con `SectionHeader`).
+- **Jerarquía canónica de URLs (2026-03):** para el área **Gestión De Productos** usar siempre prefijo **`/gestion-productos`** con estructura **área/módulo/submódulo**:
+  - Proveedores: `/gestion-productos/proveedores`, `/gestion-productos/proveedores/lista-precios`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/proveedores/comparacion-categorias`, `/gestion-productos/proveedores/lista`.
+  - Tienda: `/gestion-productos/tienda/comp-proveedores`, `/gestion-productos/tienda/control-aumento`, `/gestion-productos/tienda/control-stock`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`.
+  - Pedidos: `/gestion-productos/pedidos`, `/gestion-productos/pedidos/generar-pedido`, `/gestion-productos/pedidos/urgente`, `/gestion-productos/pedidos/tintometrico`, `/gestion-productos/pedidos/reposicion`, `/gestion-productos/pedidos/historial`.
+  - Compatibilidad: mantener redirecciones de rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) hacia las rutas canónicas.
 
 ### Slidenav — Botón de usuario (perfil) (`src/components/SelectorRol.tsx`)
 
-En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**, montado en **`Sidebar`** entre el **logo** y el **nombre del área principal** (bloque inferior `mt-auto`, no en la cabecera).
+En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**, montado en **`Sidebar`** debajo del bloque **nombre del área + logo** (bloque inferior `mt-auto`, no en la cabecera).
 
 - **Formato**: ícono `User` (`aria-hidden`) + texto **`SIMPLE` / `EDITOR`** (según `rolActual`).
 - **Interacción**

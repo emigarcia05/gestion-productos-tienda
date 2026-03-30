@@ -19,7 +19,7 @@ export default function StockCard() {
       { duration: 3000 }
     );
     sessionStorage.setItem("stockSyncJustDone", "1");
-    router.push("/stock");
+    router.push("/gestion-productos/tienda/control-stock");
   });
 
   return (

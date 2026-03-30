@@ -20,7 +20,7 @@ function buildHref(
   pagina: number,
   q: string,
   proveedor: string,
-  basePath = "/proveedores",
+  basePath = "/gestion-productos/proveedores",
   extraParams: Record<string, string> = {}
 ) {
   const params = new URLSearchParams();

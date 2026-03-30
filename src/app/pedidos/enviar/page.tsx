@@ -39,7 +39,7 @@ interface Props {
 
 export default async function EnviarPedidoPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/proveedores");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
 
   const { sucursal = "", proveedor = "", tipo = "", q = "" } = await searchParams;
   const sucursalValida: SucursalPedido | "" =

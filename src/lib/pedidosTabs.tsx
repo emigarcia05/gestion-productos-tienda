@@ -9,22 +9,22 @@ const TAB_CONFIG: Record<
 > = {
   urgente: {
     label: "Pedido Urgente",
-    href: "/pedidos/urgente",
+    href: "/gestion-productos/pedidos/urgente",
     icon: <AlarmClock className="h-3.5 w-3.5 text-accent2" />,
   },
   tintometrico: {
     label: "Pedido Tintométrico",
-    href: "/pedidos/tintometrico",
+    href: "/gestion-productos/pedidos/tintometrico",
     icon: <Pipette className="h-3.5 w-3.5 text-accent2" />,
   },
   reposicion: {
     label: "Pedido Reposición",
-    href: "/pedidos/reposicion",
+    href: "/gestion-productos/pedidos/reposicion",
     icon: <RotateCw className="h-3.5 w-3.5 text-accent2" />,
   },
   historial: {
     label: "Historial Pedidos",
-    href: "/pedidos/historial",
+    href: "/gestion-productos/pedidos/historial",
     icon: <History className="h-3.5 w-3.5 text-accent2" />,
   },
 };

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ListaPreciosPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) redirect("/proveedores/sugeridos");
+  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) redirect("/gestion-productos/proveedores/sugeridos");
 
   const [proveedores, marcasRows, rubrosRows] = await Promise.all([
     getProveedores(),

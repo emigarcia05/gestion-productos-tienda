@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import type { PedidosTabKey } from "@/lib/pedidosTabs";
 
 const TABS: { key: PedidosTabKey; label: string; href: string; icon: React.ElementType; isUrgente?: boolean }[] = [
-  { key: "urgente", label: "Pedido Urgente", href: "/pedidos/urgente", icon: AlarmClock, isUrgente: true },
-  { key: "tintometrico", label: "Pedido Tintométrico", href: "/pedidos/tintometrico", icon: Pipette },
-  { key: "reposicion", label: "Pedido Reposición", href: "/pedidos/reposicion", icon: RotateCw },
-  { key: "historial", label: "Historial Pedidos", href: "/pedidos/historial", icon: History },
+  { key: "urgente", label: "Pedido Urgente", href: "/gestion-productos/pedidos/urgente", icon: AlarmClock, isUrgente: true },
+  { key: "tintometrico", label: "Pedido Tintométrico", href: "/gestion-productos/pedidos/tintometrico", icon: Pipette },
+  { key: "reposicion", label: "Pedido Reposición", href: "/gestion-productos/pedidos/reposicion", icon: RotateCw },
+  { key: "historial", label: "Historial Pedidos", href: "/gestion-productos/pedidos/historial", icon: History },
 ];
 
 export default function PedidosSectionActions({ activo }: { activo: PedidosTabKey }) {

@@ -20,7 +20,7 @@ interface Props {
 
 export default async function ProveedoresPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (rol === "simple") redirect("/proveedores/sugeridos");
+  if (rol === "simple") redirect("/gestion-productos/proveedores/sugeridos");
 
   const { q = "", proveedor = "" } = await searchParams;
   const p = PERMISOS.proveedores;

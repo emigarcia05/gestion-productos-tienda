@@ -79,7 +79,7 @@ export default function ReposicionPageClient({
         {tieneSucursal && data.totalPaginas > 1 && (
           <div className="flex justify-end pt-2 shrink-0">
             <PaginacionTabla
-              basePath="/pedidos/reposicion"
+              basePath="/gestion-productos/pedidos/reposicion"
               params={paramsPagina}
               paginaActual={paginaNum}
               totalPaginas={data.totalPaginas}

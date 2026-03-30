@@ -3,8 +3,8 @@ import { Package, Upload, Building2, ShoppingBag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const navLinks = [
-  { href: "/proveedores", label: "Lista Proveedores", icon: Building2 },
-  { href: "/tienda", label: "TiendaColor", icon: ShoppingBag },
+  { href: "/gestion-productos/proveedores", label: "Lista Proveedores", icon: Building2 },
+  { href: "/gestion-productos/tienda/comp-proveedores", label: "TiendaColor", icon: ShoppingBag },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/productos", label: "Productos", icon: Package },
 ];
@@ -14,7 +14,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center gap-6">
-          <Link href="/proveedores" className="flex items-center gap-2 font-semibold">
+          <Link href="/gestion-productos/proveedores" className="flex items-center gap-2 font-semibold">
             <Package className="h-5 w-5 text-primary" />
             <span className="text-sm font-bold tracking-tight">GestiónPro</span>
           </Link>

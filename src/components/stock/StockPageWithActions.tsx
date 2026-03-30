@@ -124,7 +124,7 @@ export default function StockPageWithActions({
           {tieneSucursal && data.totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
-                basePath="/stock"
+                basePath="/gestion-productos/tienda/control-stock"
                 params={paramsPagina}
                 paginaActual={paginaNum}
                 totalPaginas={data.totalPaginas}

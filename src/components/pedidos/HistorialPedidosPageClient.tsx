@@ -260,7 +260,7 @@ export default function HistorialPedidosPageClient({
                       : `Mostrando ${items.length.toLocaleString("es-AR")} de ${total.toLocaleString("es-AR")}`}
                   </span>
                   <PaginacionTabla
-                    basePath="/pedidos/historial"
+                    basePath="/gestion-productos/pedidos/historial"
                     params={{
                       proveedor: proveedorId,
                       sucursal: sucursalCodigo,

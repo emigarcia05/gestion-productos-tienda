@@ -24,7 +24,7 @@ interface Props {
 
 export default async function TiendaPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/stock");
+  if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/gestion-productos/tienda/control-stock");
 
   const {
     q = "",
@@ -82,7 +82,7 @@ export default async function TiendaPage({ searchParams }: Props) {
           {hasFiltros && totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
-                basePath="/tienda"
+                basePath="/gestion-productos/tienda/comp-proveedores"
                 params={{ q, rubro, subRubro, marca, proveedor, mejorPrecio }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}

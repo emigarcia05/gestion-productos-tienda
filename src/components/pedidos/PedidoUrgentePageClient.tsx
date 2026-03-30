@@ -157,7 +157,7 @@ export default function PedidoUrgentePageClient({
                 </span>
                 {totalPaginas > 1 && (
                   <PaginacionTabla
-                    basePath="/pedidos/urgente"
+                    basePath="/gestion-productos/pedidos/urgente"
                     params={{
                       sucursal: sucursalValida,
                       proveedor,
