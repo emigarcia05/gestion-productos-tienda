@@ -59,7 +59,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-     - **Ritmo vertical** (`Sidebar.tsx`): entre **usuario y la 1.ª línea** y entre **2.ª línea y logo**, mismo espacio **intermedio** (`gap-3` / `pt-3` ≈ 12px). Entre **1.ª línea y navegación** y entre **sync/import y 2.ª línea**, mismo espacio **reducido** (`pt-2` ≈ 8px).
+     - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → separador (`pt-2`) → **`SelectorRol` `compact`** → **logo + área principal** (`SidebarMainAppArea`): logo clicable + texto de área bajo el logo; entre rol y bloque logo **`gap-3`** (~12px). El bloque rol+logo va en `flex flex-col gap-3 pt-3` tras el separador.
      - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa. `SyncStatusIndicator` en **reposo**: línea 1 muestra **`SINCRONIZACION DUX`** y línea 2 **`Últ. Act. dd/mm hh:mm`**. En hover se **cambia solo el texto** (fade): línea 1 pasa a **`SINCRONIZAR DUX`** y la segunda línea se oculta sin cambiar fondo ni elevar el bloque; misma altura compacta (~`min-h-[3.5rem]`, dos líneas centradas) para fundirse con la slidenav. En **sync en curso**: `<MensajeProceso mensaje="SINCRONIZANDO DUX" detalle={…} />`.
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
@@ -485,11 +485,20 @@ Indicador de **proceso en curso** (modal, importación, barra lateral). Clases g
   - **`className`**: `string?`.
 - **Accesibilidad**: `role="status"`, `aria-live="polite"`.
 
+### Slidenav — Áreas principales (`src/lib/main-app-areas.ts`, `src/components/shared/SidebarMainAppArea.tsx`)
+
+La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pertenecen a **Gestión De Productos** (comportamiento por defecto).
+
+- **`MAIN_APP_AREAS`**: cada ítem tiene `id`, `label` (title case), `statusLabel` (ej. **Terminada** / **A construir**), `href` (entrada al elegir el área).
+- **`getMainAppAreaIdFromPathname(pathname)`**: `/finanzas` y `/finanzas/*` → **Finanzas**; `/estadisticas-productos` y subrutas → **Estadísticas Productos**; cualquier otra ruta → **Gestión De Productos** (incluye `/`, `/proveedores`, `/tienda`, `/stock`, `/pedidos`, `/importar`, etc.).
+- **`SidebarMainAppArea`** (client): **logo** como `<button>` con `aria-label` **Elegir Área De La Aplicación**; `Image` con `alt=""` (el nombre va en el botón). Debajo, `role="status"` + `aria-live="polite"` con **nombre del área** y **estado**. Click abre **`AppModal`** **Áreas De La Aplicación** con las tres opciones (navegación con `router.push` al `href` de cada área). Opción de la ruta actual resaltada (`border-sidebar-indicator`, `bg-sidebar-accent/40`). Variantes **CVA**: `areaOptionVariants` (opción actual vs resto), `areaTitleVariants` / `areaStatusVariants` (`context`: `sidebar` | `modal` para tokens de texto).
+- Rutas placeholder: **`/finanzas`**, **`/estadisticas-productos`** (páginas “A construir” con `SectionHeader`).
+
 ### Slidenav — Botón de usuario (perfil) (`src/components/SelectorRol.tsx`)
 
-En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**:
+En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**, montado en **`Sidebar`** **encima del bloque logo + área** (bloque inferior `mt-auto`, no en la cabecera).
 
-- **Formato**: ícono `User` + texto **`SIMPLE` / `EDITOR`** (según `rolActual`).
+- **Formato**: ícono `User` (`aria-hidden`) + texto **`SIMPLE` / `EDITOR`** (según `rolActual`).
 - **Interacción**
   - En **SIMPLE**: click abre modal de contraseña para pasar a **EDITOR**.
   - En **EDITOR**: click vuelve a **SIMPLE** sin modal.

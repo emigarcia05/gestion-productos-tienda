@@ -101,7 +101,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
               : "Volver A Modo Simple"
           }
         >
-          <User className="h-4 w-4 shrink-0" />
+          <User className="h-4 w-4 shrink-0" aria-hidden />
           <span className="relative flex items-center justify-center">
             <span className="invisible whitespace-nowrap text-sm font-semibold tracking-wide">
               CAMBIAR USUARIO
