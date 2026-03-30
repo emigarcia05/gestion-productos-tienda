@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, Boxes, Landmark, type LucideIcon } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -57,12 +58,26 @@ const areaStatusVariants = cva("text-xs leading-tight", {
 
 type AreaTitleContext = NonNullable<VariantProps<typeof areaTitleVariants>["context"]>;
 
+const areaIcons: Record<MainAppAreaId, LucideIcon> = {
+  "gestion-productos": Boxes,
+  finanzas: Landmark,
+  "estadisticas-productos": BarChart3,
+};
+
 export interface SidebarMainAppAreaProps {
   /** Dónde aplicar tokens de texto (sidebar vs modal). */
   labelContext?: AreaTitleContext;
+  /** Mostrar logo clickeable (abre modal de áreas). */
+  showLogo?: boolean;
+  /** Mostrar nombre del área actual. */
+  showLabel?: boolean;
 }
 
-export default function SidebarMainAppArea({ labelContext = "sidebar" }: SidebarMainAppAreaProps) {
+export default function SidebarMainAppArea({
+  labelContext = "sidebar",
+  showLogo = true,
+  showLabel = true,
+}: SidebarMainAppAreaProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -79,36 +94,37 @@ export default function SidebarMainAppArea({ labelContext = "sidebar" }: Sidebar
   return (
     <>
       <div className="flex flex-col items-center gap-2 w-full min-w-0">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className={cn(
-            "rounded-lg p-0 border-0 bg-transparent w-full max-w-[45%]",
-            "flex justify-center items-center",
-            "transition-opacity hover:opacity-90",
-            "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-          )}
-          aria-label="Elegir Área De La Aplicación"
-        >
-          <Image
-            src="/logo_tiendacolor.png"
-            alt=""
-            width={200}
-            height={100}
-            className="w-full h-auto object-contain pointer-events-none"
-          />
-        </button>
-
-        <div className="flex flex-col items-center text-center gap-0.5 px-1 w-full" role="status" aria-live="polite">
-          <span
-            className={cn(areaTitleVariants({ context: labelContext }), "tracking-tight")}
+        {showLogo ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className={cn(
+              "rounded-lg p-0 border-0 bg-transparent w-full max-w-[45%]",
+              "flex justify-center items-center",
+              "transition-opacity hover:opacity-90",
+              "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            )}
+            aria-label="Elegir Área De La Aplicación"
           >
-            {current.label}
-          </span>
-          <span className={areaStatusVariants({ context: labelContext })}>
-            {current.statusLabel}
-          </span>
-        </div>
+            <Image
+              src="/logo_tiendacolor.png"
+              alt=""
+              width={200}
+              height={100}
+              className="w-full h-auto object-contain pointer-events-none"
+            />
+          </button>
+        ) : null}
+
+        {showLabel ? (
+          <div className="flex flex-col items-center justify-center text-center px-1 w-full" role="status" aria-live="polite">
+            <span
+              className={cn(areaTitleVariants({ context: labelContext }), "tracking-tight block")}
+            >
+              {current.label}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -123,24 +139,24 @@ export default function SidebarMainAppArea({ labelContext = "sidebar" }: Sidebar
           }
         >
           <div className="flex flex-col gap-2 w-full min-w-0">
-            <p className="text-sm text-muted-foreground mb-1">
-              Elegí en qué área querés trabajar. Vas a la página principal de esa sección.
-            </p>
-            {MAIN_APP_AREAS.map((area) => (
-              <button
-                key={area.id}
-                type="button"
-                onClick={() => navigateToArea(area.id)}
-                className={cn(areaOptionVariants({ current: area.id === currentId }))}
-              >
-                <span className={cn(areaTitleVariants({ context: "modal" }), "block")}>
-                  {area.label}
-                </span>
-                <span className={cn(areaStatusVariants({ context: "modal" }), "block mt-0.5")}>
-                  {area.statusLabel}
-                </span>
-              </button>
-            ))}
+            {MAIN_APP_AREAS.map((area) => {
+              const Icon = areaIcons[area.id];
+              return (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => navigateToArea(area.id)}
+                  className={cn(areaOptionVariants({ current: area.id === currentId }))}
+                >
+                  <span className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className={cn(areaTitleVariants({ context: "modal" }), "block")}>
+                      {area.label}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </AppModal>
       </Dialog>

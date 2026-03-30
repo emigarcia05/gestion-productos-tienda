@@ -254,8 +254,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="h-px w-[80%] bg-sidebar-foreground/70" />
         </div>
         <div className="flex flex-col gap-3 pt-3 w-full min-w-0">
+          <SidebarMainAppArea showLabel={false} />
           <SelectorRol rolActual={rol} compact />
-          <SidebarMainAppArea />
+          <SidebarMainAppArea showLogo={false} />
         </div>
       </div>
     </aside>
