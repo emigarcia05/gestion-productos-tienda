@@ -126,12 +126,12 @@ export default function TablaPedidoUrgente({
                         e.stopPropagation();
                         onToggleSelectCompra?.(prod);
                       }}
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-[2px] border border-[#0072BB] bg-transparent text-[#0072BB] transition-colors hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      className="tabla-check-toggle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                       aria-label="Seleccionar para opción de compra"
                       aria-pressed={!!selectedForCompra[prod.id]}
                     >
                       {selectedForCompra[prod.id] ? (
-                        <SquareCheckBig className="h-3 w-3 text-[#0072BB]" aria-hidden="true" />
+                        <SquareCheckBig aria-hidden="true" />
                       ) : null}
                     </button>
                   </div>

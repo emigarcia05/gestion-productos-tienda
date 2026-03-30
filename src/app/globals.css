@@ -730,7 +730,7 @@
 .tabla-gestion-compacta tbody td input[type="number"] {
   -moz-appearance: textfield;
 }
-.tabla-gestion-compacta tbody td button {
+.tabla-gestion-compacta tbody td button:not(.tabla-check-toggle) {
   max-height: 1.75rem !important;
   height: 1.75rem !important;
   min-width: 1.5rem;
@@ -739,9 +739,32 @@
   align-items: center;
   justify-content: center;
 }
-.tabla-gestion-compacta tbody td button svg {
+.tabla-gestion-compacta tbody td button:not(.tabla-check-toggle) svg {
   width: 0.875rem;
   height: 0.875rem;
+}
+/* Toggle de tilde compacto en tablas (global y reutilizable). */
+.tabla-gestion-compacta tbody td .tabla-check-toggle {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  min-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  border: 1px solid #0072bb !important;
+  background-color: transparent !important;
+  color: #0072bb !important;
+  border-radius: 2px !important;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tabla-gestion-compacta tbody td .tabla-check-toggle:hover {
+  background-color: transparent !important;
+}
+.tabla-gestion-compacta tbody td .tabla-check-toggle svg {
+  width: 0.625rem !important;
+  height: 0.625rem !important;
+  color: #0072bb !important;
 }
 .tabla-gestion-compacta tbody tr:nth-child(odd) {
   background-color: var(--card);

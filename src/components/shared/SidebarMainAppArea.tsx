@@ -132,7 +132,7 @@ export default function SidebarMainAppArea({
             <span
               className={cn(
                 areaTitleVariants({ context: labelContext }),
-                "tracking-tight block",
+                "tracking-tight block w-full text-center pb-0.5",
                 labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
               )}
             >

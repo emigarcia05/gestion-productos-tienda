@@ -48,9 +48,15 @@ export function useFiltrosConBusqueda({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sincronizar q cuando cambia la URL (ej. router.push o props tras navegación).
+  // Si el usuario sigue escribiendo en el input, no pisar su texto con un valor
+  // "viejo" que llegue por una navegación previa en curso.
   useEffect(() => {
+    const isInputFocused = document.activeElement === inputRef.current;
+    const userTypingNewerValue = isInputFocused && q !== qActual;
+    if (userTypingNewerValue) return;
     setQ(qActual);
-  }, [qActual]);
+    setIsDebouncing(false);
+  }, [q, qActual]);
 
   // Restaurar foco en el input tras recarga cuando el usuario venía del buscador.
   useEffect(() => {
