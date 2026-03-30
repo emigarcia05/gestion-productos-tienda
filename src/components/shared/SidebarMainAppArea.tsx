@@ -110,7 +110,8 @@ export default function SidebarMainAppArea({
               <span
                 className={cn(
                   areaTitleVariants({ context: labelContext }),
-                  "tracking-tight block text-center px-1 w-full"
+                  "tracking-tight block text-center px-1 w-full",
+                  labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
                 )}
               >
                 {current.label}
@@ -129,7 +130,11 @@ export default function SidebarMainAppArea({
         {showLabel && !showLogo ? (
           <div className="flex flex-col items-center justify-center text-center px-1 w-full" role="status" aria-live="polite">
             <span
-              className={cn(areaTitleVariants({ context: labelContext }), "tracking-tight block")}
+              className={cn(
+                areaTitleVariants({ context: labelContext }),
+                "tracking-tight block",
+                labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
+              )}
             >
               {current.label}
             </span>

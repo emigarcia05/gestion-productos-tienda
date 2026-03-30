@@ -81,28 +81,28 @@ export default function TablaPedidoUrgente({
                 <Check className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
-            <TableHead className="text-center w-[5%]">
+            <TableHead className="text-center w-[7%]">
               OPC. COMPRA
             </TableHead>
             <TableHead className="text-center w-[10%]">
               PROVEEDOR
             </TableHead>
             <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
-            <TableHead className="text-center w-[8%]">
+            <TableHead className="text-center w-[7%]">
               CANT. PED.
             </TableHead>
-            <TableHead className="text-center w-[6%]" aria-label="Eliminar">
+            <TableHead className="text-center w-[7%]" aria-label="Eliminar">
               <div className="flex items-center justify-center w-full">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
             <TableHead
-              className="text-center w-[8%] tabla-bloque-secundario-head-divider"
+              className="text-center w-[7%] tabla-bloque-secundario-head-divider"
             >
               CONF. REPO.
             </TableHead>
             <TableHead
-              className="text-center w-[8%] tabla-bloque-secundario-head"
+              className="text-center w-[7%] tabla-bloque-secundario-head"
             >
               CANT. REPO.
             </TableHead>
@@ -126,12 +126,12 @@ export default function TablaPedidoUrgente({
                         e.stopPropagation();
                         onToggleSelectCompra?.(prod);
                       }}
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-primary bg-background text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-[2px] border border-[#0072BB] bg-transparent text-[#0072BB] transition-colors hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                       aria-label="Seleccionar para opción de compra"
                       aria-pressed={!!selectedForCompra[prod.id]}
                     >
                       {selectedForCompra[prod.id] ? (
-                        <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
+                        <SquareCheckBig className="h-3 w-3 text-[#0072BB]" aria-hidden="true" />
                       ) : null}
                     </button>
                   </div>
