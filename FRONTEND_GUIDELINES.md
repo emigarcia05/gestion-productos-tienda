@@ -490,6 +490,22 @@ Indicador de **proceso en curso** (modal, importación, barra lateral). Clases g
   - **`className`**: `string?`.
 - **Accesibilidad**: `role="status"`, `aria-live="polite"`.
 
+### `DuxSyncStyleButton` (`src/components/shared/DuxSyncStyleButton.tsx`)
+
+Botón de **dos líneas** con **swap al hover** en la primera (misma interacción que el sync de lista precios en slidenav). Implementado con **CVA** (`duxSyncStyleButtonVariants`, `duxSyncStyleSecondaryVariants`).
+
+- **Props**
+  - **`lineIdle`** / **`lineHover`**: `string` — texto línea 1 en reposo vs hover (ambos visibles con cross-fade; si `busy` o `disabled`, no se aplica hover).
+  - **`secondary`**: `ReactNode` — segunda línea (ej. `Últ. Act.: …`); en hover se colapsa (`max-h-0` + opacidad), igual que en slidenav.
+  - **`surface`**: `"sidebar"` (default, `bg-sidebar-accent` + `text-sidebar-foreground`) | `"card"` (`border` + `bg-card` + `text-foreground`, hover `bg-muted/60`) para uso fuera de la slidenav si hiciera falta.
+  - **`busy`**: `boolean` — cursor espera y opacidad atenuada; alinea línea 1 sin efecto hover.
+  - Resto: atributos estándar de `<button>` (`onClick`, `disabled`, `aria-label`, `className`, etc.).
+- **Uso**: `SyncStatusIndicator` (lista precios tienda); `SincronizarComprobantesProveedorDuxButton` (Finanzas, misma piel `surface="sidebar"`).
+
+### `formatLastCompletedAtElapsed` (`src/lib/formatElapsedSince.ts`)
+
+Helper compartido para textos **Últ. Act.: Hace …** (bloques de 15 min. bajo 1 h; luego horas/días). Usado por `SyncStatusIndicator` y por el botón de compras en Finanzas.
+
 ### Slidenav — Áreas principales (`src/lib/main-app-areas.ts`, `src/components/shared/SidebarMainAppArea.tsx`)
 
 La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pertenecen a **Gestión Productos** (comportamiento por defecto).
@@ -497,8 +513,8 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 - **`MAIN_APP_AREAS`**: cada ítem tiene `id`, `label` (title case), `statusLabel` (ej. **Terminada** / **A construir**), `href` (entrada al elegir el área).
 - **`getMainAppAreaIdFromPathname(pathname)`**: `/finanzas` y `/finanzas/*` → **Finanzas**; `/estadisticas-productos` y subrutas → **Estadísticas Productos**; cualquier otra ruta → **Gestión Productos** (incluye `/`, `/proveedores`, `/tienda`, `/stock`, `/pedidos`, `/importar`, etc.).
 - **Navegación lateral por área activa** (`Sidebar.tsx`): los módulos de navegación (`PEDIDO DE MERCADERÍA`, `LISTA PROVEEDORES`, `LISTA TIENDA`) se muestran **solo** cuando el área activa es **Gestión Productos**. En áreas sin módulos implementados (hoy: **Finanzas** y **Estadísticas Productos**) no deben mostrarse links de navegación y se renderiza estado vacío informativo.
-- **`SidebarMainAppArea`** (client): **logo** como `<button>` con `aria-label` **Elegir Área De La Aplicación**; `Image` con `alt=""` (el nombre va en el botón). Debajo, `role="status"` + `aria-live="polite"` con **solo nombre del área**. En sidebar, el label del área prioriza una sola línea (`whitespace-nowrap`) con ajuste tipográfico leve (`text-[13px]`, `leading-none`) para que textos como **Gestión Productos** no rompan en dos líneas, ocupando todo el ancho del contenedor (`w-full`), centrado (`text-center`) y con padding inferior sutil (`pb-0.5`). Click abre **`AppModal`** **Áreas De La Aplicación** con las tres opciones (navegación con `router.push` al `href` de cada área). Opción de la ruta actual resaltada (`border-sidebar-indicator`, `bg-sidebar-accent/40`). En el modal se muestra solo el nombre de cada área (sin subtítulo/estado ni texto descriptivo superior) y un ícono `lucide-react` por opción (Gestión Productos: `Boxes`; Finanzas: `Landmark`; Estadísticas Productos: `BarChart3`). Variantes **CVA**: `areaOptionVariants` (opción actual vs resto), `areaTitleVariants` / `areaStatusVariants` (`context`: `sidebar` | `modal` para tokens de texto; `areaStatusVariants` queda para reutilización futura si se necesitara estado en otra vista).
-- Rutas placeholder: **`/finanzas`**, **`/estadisticas-productos`** (páginas “A construir” con `SectionHeader`).
+- **`SidebarMainAppArea`** (client): con **`showLogo` y `showLabel`**, el **nombre del área** no va dentro del botón del logo (ese botón usa `max-w-[45%]`): se renderiza **encima**, en un contenedor **`w-full min-w-0 px-1 text-center`** con `role="status"` + `aria-live="polite"`, y el `<span>` del nombre con **`w-full text-center`** + tipografía sidebar (`whitespace-nowrap`, `text-[13px]`, `leading-none`) para una sola línea centrada en todo el ancho del sidebar. El **logo** es solo `<button>` + `Image` (`alt=""`) con `aria-label` **Elegir Área De La Aplicación** (el nombre del área queda anunciado por el `status` de arriba). Con **`showLabel` y sin logo** (`showLogo={false}`), el nombre sigue en `role="status"` con **`pb-0.5`** en el `<span>`. Click en el logo abre **`AppModal`** **Áreas De La Aplicación** con las tres opciones (navegación con `router.push` al `href` de cada área). Opción de la ruta actual resaltada (`border-sidebar-indicator`, `bg-sidebar-accent/40`). En el modal se muestra solo el nombre de cada área (sin subtítulo/estado ni texto descriptivo superior) y un ícono `lucide-react` por opción (Gestión Productos: `Boxes`; Finanzas: `Landmark`; Estadísticas Productos: `BarChart3`). Variantes **CVA**: `areaOptionVariants` (opción actual vs resto), `areaTitleVariants` / `areaStatusVariants` (`context`: `sidebar` | `modal` para tokens de texto; `areaStatusVariants` queda para reutilización futura si se necesitara estado en otra vista).
+- Rutas placeholder: **`/finanzas`**, **`/estadisticas-productos`** (páginas “A construir” con `SectionHeader`). En **`/finanzas`**, rol **editor**: bloque **`SincronizarComprobantesProveedorDuxButton`** (`src/components/finanzas/SincronizarComprobantesProveedorDuxButton.tsx`) llama a **`sincronizarComprobantesProveedorDesdeDuxAction`** (`@/actions/comprobantesProveedor`); feedback con **sonner**; **Últ. Act.:** refleja la última ejecución **exitosa en esa sesión** (cliente), no un estado global en BD.
 - **Jerarquía canónica de URLs (2026-03):** para el área **Gestión Productos** usar siempre prefijo **`/gestion-productos`** con estructura **área/módulo/submódulo**:
   - Proveedores: `/gestion-productos/proveedores`, `/gestion-productos/proveedores/lista-precios`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/proveedores/comparacion-categorias`, `/gestion-productos/proveedores/lista`.
   - Tienda: `/gestion-productos/tienda/comp-proveedores`, `/gestion-productos/tienda/control-aumento`, `/gestion-productos/tienda/control-stock`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`.
@@ -522,13 +538,13 @@ En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de
 
 ### Slidenav — Sincronización DUX (`src/components/layout/SyncStatusIndicator.tsx`)
 
-Botón/indicador persistente en la parte inferior de la slidenav.
+Botón/indicador persistente en la parte inferior de la slidenav. El markup del reposo se delega a **`DuxSyncStyleButton`** (`surface="sidebar"`).
 
 - **Estados**
-  - **Reposo**: muestra “Sincronización DUX” + “Últ. Act.: Hace …” (tiempo transcurrido relativo).
-  - **Consulta (progreso)**: muestra “Sincronizando DUX” + “X de Y”.
+  - **Reposo**: **`SINCRONIZACION DUX`** (hover **`SINCRONIZAR DUX`**) + **`Últ. Act.: Hace …`** (tiempo relativo vía API `lastCompletedAt`).
+  - **Sync en curso** (polling): **`MensajeProceso`** **`SINCRONIZANDO DUX`** + detalle **X de Y** (no usa `DuxSyncStyleButton`).
 - **Feedback visual por estado**
-  - **Reposo**: `bg-sidebar-accent` con hover suave.
+  - **Reposo**: `bg-sidebar-accent` con hover suave (componente compartido).
   - **Consulta**: **fondo amarillo de marca** `bg-accent2` (token `--accent2`) para indicar proceso activo.
 
 ### Comp. Por Cat. — DTO. EXTRA Persistente
@@ -548,10 +564,11 @@ Comparación con casillas `SEL.` (solo front):
 - **Sin casillas**: `VARIACIÓN` en **todas** las filas vs el **menor precio** de la tabla visible.
 - **Con casillas**: solo las filas marcadas muestran `VARIACIÓN`, cada una vs el **menor precio entre las marcadas**; filas sin tilde quedan en blanco.
 
-### Sincronización DUX — Solo desde la slidenav
+### Sincronización DUX — Slidenav y excepción Finanzas
 
-Regla de UX: la acción de sincronizar/importar datos de DUX **no debe aparecer como botón en encabezados de módulos**.  
-Debe ejecutarse **solo** desde el indicador/botón persistente de la slidenav (`SyncStatusIndicator`).
+Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-lista-precios-tienda`) **no debe duplicarse** como botón en encabezados de módulos; debe iniciarse desde **`SyncStatusIndicator`** en la slidenav.
+
+**Excepción acordada:** la consulta/sincronización de **comprobantes de compra** desde DUX (`sincronizarComprobantesProveedorDesdeDuxAction`) puede exponerse en **`/finanzas`** con el mismo patrón visual **`DuxSyncStyleButton`** (líneas **COMPRAS DUX** / **CONSULTAR COMPRAS**), solo para rol **editor**.
 
 ### Orden y labels — LISTA PROVEEDORES (sidebar)
 
@@ -623,7 +640,7 @@ Antes de dar por terminada una tarea de frontend:
 - **Componentes con `cn()`**: TablaAumentos, SyncButton, SyncDuxHeaderButton, UploadZone, ProveedorAlternativoRow, ImportarModal, ImportarListaPreciosModal (botones SÍ/NO y zona drag), FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros — todas las combinaciones de clase pasan por `cn()`.
 - **Encabezados de tabla abreviados (2026-03):** para convivir con el header global de 2 líneas y recorte, se acortan labels largos en columnas angostas (`PROD. PROVISTOS`, `COL. ARCHIVO`, `DESC. PROVEEDOR`, `PX. VTA. SUG.`, `CANT. URG.`, `PX. FINAL`, `MARGEN`, `CANT. PED.`, `CANT. REC.`).
 - **Eliminación de estilos inline estructurales**: anchos de columnas en `TablaPedidoUrgente`, `TablaReposicion` y `ComparacionCategoriasClient` migrados a utilidades Tailwind (`w-[x%]`) y clases globales; plantilla de impresión de stock (`PrintStock`) sin atributos `style`, usando solo clases CSS internas.
-- **Sidebar — Sincronización DUX (persistente y accionable)**: `SyncStatusIndicator` permanece siempre visible en la slidenav. En reposo muestra bloque centrado con "Sincronización DUX" y leyenda de última actualización en formato relativo (`Últ. Act.: Hace …`) solo si existe última sync exitosa. El bloque completo funciona como botón para iniciar `POST /api/sync-lista-precios-tienda` sin modal de confirmación; durante ejecución mantiene el mensaje de progreso reutilizable.
+- **Sidebar — Sincronización DUX (persistente y accionable)**: `SyncStatusIndicator` permanece siempre visible en la slidenav. En reposo usa **`DuxSyncStyleButton`** con **SINCRONIZACION DUX** / hover **SINCRONIZAR DUX** y **Últ. Act.:** en formato relativo cuando la API expone `lastCompletedAt`. El botón inicia `POST /api/sync-lista-precios-tienda` sin modal; durante ejecución muestra **`MensajeProceso`** **SINCRONIZANDO DUX**.
 - **`/tienda/litros` — Cálculo de Lts**: selector **FORMA DE CÁLCULO** (`POR PAREDES`, `POR MÓDULO`, `PILETA`) + selector **TIPO DE PINTURA** (fuente `tipos_pintura_rendimientos`).  
   - **POR PAREDES**: ocho columnas (anchos aprox. 20% / 15% / 15% / 15% / 10% / 10% / 10% / 5%): `SUPERFICIE` (texto `Pared 1`, `Pared 2`, … por fila), `CANT.`, `LARGO`, `ANCHO` (**LARGO** y **ANCHO**: `InputDimensionMts` + sufijo **Mts.**; **CANT.** sin unidad), `MTS2` (`cant × largo × ancho`), `1 MANO`, `2 MANOS`, `ACCIONES` (eliminar). Cálculos en vivo: `1 MANO = MTS2 / rendimiento`, `2 MANOS = 1 MANO × 2`; totales y litros con un decimal. Fila `TOTAL`: celda vacía con `colSpan={3}` (superficie + cant + largo) y texto `TOTAL` en la columna **ANCHO** alineado a la derecha (`!text-right`, `celda-datos--flush-right`) para acercarlo a los totales numéricos; pie resaltado con `border-t-2 border-primary`, `bg-muted/50`, totales en **`font-bold`** (`CALC_LITROS_FOOTER_*` en `TiendaCalcLitrosPageClient.tsx`); botón `+` debajo (mismo bloque, borde superior continuo).  
   - **POR MÓDULO**: arriba, tabla de una fila con `LARGO`, `ANCHO`, `ALTO` (`InputDimensionMts` + **Mts.**), `INCLUYE TECHO` (dimensiones del módulo). Debajo, tabla de **cinco columnas** (`SUPERFICIE`, **`TAMAÑO`**, `MTS2`, `1 MANO`, `2 MANOS`) y **cinco filas fijas** (`Pared 1` … `Pared 4`, `Techo`). **`TAMAÑO`**: texto de la multiplicación con un decimal (`formatTamanoMts` en `@/lib/tiendaCalculosLts`): Pared 1/2 = largo × alto; Pared 3/4 = ancho × alto; Techo = largo × ancho si **incluye techo**, si no **—** (muted). **MTS2**: mismas áreas que antes. **1 MANO** = MTS2 ÷ rendimiento; **2 MANOS** = 1 MANO × 2. Fila `TOTAL`: **`TOTAL`** con `colSpan={2}` (SUPERFICIE + **TAMAÑO**), alineado a la derecha; mismo estilo de pie que **POR PAREDES** (`border-t-2 border-primary`, `bg-muted/50`, valores en **negrita**).

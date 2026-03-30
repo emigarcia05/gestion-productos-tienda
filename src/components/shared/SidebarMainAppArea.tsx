@@ -94,29 +94,35 @@ export default function SidebarMainAppArea({
   return (
     <>
       <div className="flex flex-col items-center gap-2 w-full min-w-0">
+        {showLabel && showLogo ? (
+          <div
+            className="w-full min-w-0 shrink-0 px-1 text-center"
+            role="status"
+            aria-live="polite"
+          >
+            <span
+              className={cn(
+                areaTitleVariants({ context: labelContext }),
+                "tracking-tight block w-full text-center",
+                labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
+              )}
+            >
+              {current.label}
+            </span>
+          </div>
+        ) : null}
         {showLogo ? (
           <button
             type="button"
             onClick={() => setOpen(true)}
             className={cn(
               "rounded-lg p-0 border-0 bg-transparent w-full max-w-[45%]",
-              "flex flex-col items-center justify-center gap-1",
+              "flex flex-col items-center justify-center",
               "transition-opacity hover:opacity-90",
               "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             )}
             aria-label="Elegir Área De La Aplicación"
           >
-            {showLabel ? (
-              <span
-                className={cn(
-                  areaTitleVariants({ context: labelContext }),
-                  "tracking-tight block text-center px-1 w-full",
-                  labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
-                )}
-              >
-                {current.label}
-              </span>
-            ) : null}
             <Image
               src="/logo_tiendacolor.png"
               alt=""
