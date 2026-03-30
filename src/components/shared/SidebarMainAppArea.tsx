@@ -100,7 +100,7 @@ export default function SidebarMainAppArea({
             onClick={() => setOpen(true)}
             className={cn(
               "rounded-lg p-0 border-0 bg-transparent w-full max-w-[45%]",
-              "flex justify-center items-center",
+              "flex flex-col items-center justify-center gap-1",
               "transition-opacity hover:opacity-90",
               "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             )}
@@ -113,6 +113,16 @@ export default function SidebarMainAppArea({
               height={100}
               className="w-full h-auto object-contain pointer-events-none"
             />
+            {!showLabel ? (
+              <span
+                className={cn(
+                  areaTitleVariants({ context: labelContext }),
+                  "tracking-tight block text-center px-1 w-full"
+                )}
+              >
+                {current.label}
+              </span>
+            ) : null}
           </button>
         ) : null}
 
@@ -149,7 +159,13 @@ export default function SidebarMainAppArea({
                   className={cn(areaOptionVariants({ current: area.id === currentId }))}
                 >
                   <span className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        area.id === currentId ? "text-foreground" : "text-muted-foreground"
+                      )}
+                      aria-hidden="true"
+                    />
                     <span className={cn(areaTitleVariants({ context: "modal" }), "block")}>
                       {area.label}
                     </span>
