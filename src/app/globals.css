@@ -745,10 +745,13 @@
 }
 /* Toggle de tilde compacto en tablas (global y reutilizable). */
 .tabla-gestion-compacta tbody td .tabla-check-toggle {
-  width: 0.875rem !important;
-  height: 0.875rem !important;
-  min-width: 0.875rem !important;
-  max-height: 0.875rem !important;
+  --tabla-check-size: calc(var(--tabla-body-row-min-height) - 0.75rem);
+  width: var(--tabla-check-size) !important;
+  height: var(--tabla-check-size) !important;
+  min-width: var(--tabla-check-size) !important;
+  max-width: var(--tabla-check-size) !important;
+  min-height: var(--tabla-check-size) !important;
+  max-height: var(--tabla-check-size) !important;
   border: 1px solid #0072bb !important;
   background-color: transparent !important;
   color: #0072bb !important;
@@ -762,8 +765,8 @@
   background-color: transparent !important;
 }
 .tabla-gestion-compacta tbody td .tabla-check-toggle svg {
-  width: 0.625rem !important;
-  height: 0.625rem !important;
+  width: calc(var(--tabla-check-size) - 0.25rem) !important;
+  height: calc(var(--tabla-check-size) - 0.25rem) !important;
   color: #0072bb !important;
 }
 .tabla-gestion-compacta tbody tr:nth-child(odd) {

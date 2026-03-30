@@ -10,7 +10,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { Check, SquareCheckBig, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface ProductoPedidoUrgente {
@@ -82,7 +82,7 @@ export default function TablaPedidoUrgente({
               </div>
             </TableHead>
             <TableHead className="text-center w-[7%]">
-              OPC. COMPRA
+              PRIORIDAD
             </TableHead>
             <TableHead className="text-center w-[10%]">
               PROVEEDOR
@@ -131,7 +131,7 @@ export default function TablaPedidoUrgente({
                       aria-pressed={!!selectedForCompra[prod.id]}
                     >
                       {selectedForCompra[prod.id] ? (
-                        <SquareCheckBig aria-hidden="true" />
+                        <Check aria-hidden="true" />
                       ) : null}
                     </button>
                   </div>
