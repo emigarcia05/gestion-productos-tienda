@@ -41,17 +41,30 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   const lineas = await listarVencimientosEnRango(fechaDesde, fechaHasta);
 
   const totalPorDia: Record<string, number> = {};
+  const detallePorDiaProveedor: Record<string, Record<string, number>> = {};
   for (const l of lineas) {
     const key = claveDiaFechaVenc(l.fechaVenc);
     totalPorDia[key] = (totalPorDia[key] ?? 0) + Number(l.saldo);
+    if (!detallePorDiaProveedor[key]) detallePorDiaProveedor[key] = {};
+    detallePorDiaProveedor[key][l.nombre] =
+      (detallePorDiaProveedor[key][l.nombre] ?? 0) + Number(l.saldo);
   }
 
   const filas = Object.entries(totalPorDia)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([isoYmd, total]) => ({
+      isoYmd,
       dia: Number(isoYmd.slice(8, 10)),
       aPagar: total,
     }));
+  const detallesPorDia = Object.fromEntries(
+    Object.entries(detallePorDiaProveedor).map(([isoYmd, porProveedor]) => [
+      isoYmd,
+      Object.entries(porProveedor)
+        .map(([proveedor, vencimiento]) => ({ proveedor, vencimiento }))
+        .sort((a, b) => a.proveedor.localeCompare(b.proveedor)),
+    ])
+  );
 
   const mesAnteriorYm = shiftMesYm(year, month, -1);
   const mesSiguienteYm = shiftMesYm(year, month, 1);
@@ -65,6 +78,8 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
           mesYm={ym}
           mesAnteriorYm={mesAnteriorYm}
           mesSiguienteYm={mesSiguienteYm}
+          hoyIso={dateToIsoYmdArgentina(new Date())}
+          detallesPorDia={detallesPorDia}
           filas={filas}
         />
       </ClassicFilteredTableLayout>
