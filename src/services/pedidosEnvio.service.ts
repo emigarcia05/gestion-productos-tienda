@@ -66,7 +66,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
   if (!idProveedor.trim()) return { ok: false, error: "Proveedor requerido." };
   if (!codTienda.trim()) return { ok: false, error: "Código tienda requerido." };
   if (!formaPedir) return { ok: false, error: "Seleccioná Forma Pedir." };
-  if (punto <= 0) return { ok: false, error: "Punto reposición inválido." };
+  if (punto < 0) return { ok: false, error: "Punto reposición inválido." };
   if (cant <= 0) return { ok: false, error: "Cant. reposición inválida." };
 
   try {

@@ -789,12 +789,12 @@
   background-color: var(--card);
 }
 .tabla-gestion-compacta tbody tr:nth-child(even) {
-  --tabla-row-bg: rgba(59, 130, 246, 0.08);
-  background-color: rgba(59, 130, 246, 0.08);
+  --tabla-row-bg: color-mix(in oklab, var(--primary) 8%, var(--card));
+  background-color: color-mix(in oklab, var(--primary) 8%, var(--card));
 }
 .tabla-gestion-compacta tbody tr:hover {
-  --tabla-row-bg: color-mix(in oklab, var(--primary) 20%, transparent);
-  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+  --tabla-row-bg: color-mix(in oklab, var(--primary) 20%, var(--card));
+  background-color: color-mix(in oklab, var(--primary) 20%, var(--card));
 }
 .tabla-gestion-compacta tbody tr[data-state="selected"] {
   --tabla-row-bg: var(--muted);
