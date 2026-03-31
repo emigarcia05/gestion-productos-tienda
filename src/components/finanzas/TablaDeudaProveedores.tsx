@@ -74,7 +74,7 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
       </p>
       <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
         <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
-          <Table variant="compact" scrollX={false}>
+          <Table variant="compact" scrollX={false} className="tabla-deuda-proveedores">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="min-w-[12rem]">PROVEEDOR</TableHead>

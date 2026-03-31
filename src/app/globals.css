@@ -806,6 +806,18 @@
 .tabla-gestion-compacta tbody tr:hover {
   background-color: color-mix(in oklab, var(--primary) 20%, transparent);
 }
+/* Finanzas - Deuda Proveedores:
+ * desactiva el "overlay" por celda para que el hover sea de fila completa. */
+.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr td:hover {
+  overflow: hidden;
+  z-index: auto;
+}
+.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr td:hover::before {
+  content: none;
+}
+.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr td:hover > * {
+  z-index: auto;
+}
 /* Modal vínculos (Tienda): conserva ancho y densidad de celdas; encabezado usa la misma regla global. */
 .tabla-gestion-compacta.tabla-vinculos-modal {
   width: 100% !important;
