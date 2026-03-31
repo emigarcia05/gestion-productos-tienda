@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import VencPorFechaCalendario from "@/components/finanzas/VencPorFechaCalendario";
-import {
-  construirGrillaMes,
-  diasEnMes,
-  parseMesFinanzasParam,
-  shiftMesYm,
-} from "@/lib/calendarioMesFinanzas";
+import { diasEnMes, parseMesFinanzasParam, shiftMesYm } from "@/lib/calendarioMesFinanzas";
 import {
   dateToIsoYmdArgentina,
   formatMesAnioTituloArgentina,
@@ -45,14 +40,19 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
 
   const lineas = await listarVencimientosEnRango(fechaDesde, fechaHasta);
 
-  const porDia: Record<string, { nombre: string; saldo: string }[]> = {};
+  const totalPorDia: Record<string, number> = {};
   for (const l of lineas) {
     const key = claveDiaFechaVenc(l.fechaVenc);
-    if (!porDia[key]) porDia[key] = [];
-    porDia[key].push({ nombre: l.nombre, saldo: l.saldo.toFixed(2) });
+    totalPorDia[key] = (totalPorDia[key] ?? 0) + Number(l.saldo);
   }
 
-  const celdas = construirGrillaMes(year, month);
+  const filas = Object.entries(totalPorDia)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([isoYmd, total]) => ({
+      dia: Number(isoYmd.slice(8, 10)),
+      aPagar: total,
+    }));
+
   const mesAnteriorYm = shiftMesYm(year, month, -1);
   const mesSiguienteYm = shiftMesYm(year, month, 1);
   const tituloMes = formatMesAnioTituloArgentina(year, month);
@@ -65,8 +65,7 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
           mesYm={ym}
           mesAnteriorYm={mesAnteriorYm}
           mesSiguienteYm={mesSiguienteYm}
-          celdas={celdas}
-          porDia={porDia}
+          filas={filas}
         />
       </ClassicFilteredTableLayout>
     </div>
