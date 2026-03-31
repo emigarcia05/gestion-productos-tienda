@@ -91,6 +91,11 @@ export const PERMISOS = {
     acceso: { simple: false, editor: true },
   },
 
+  // ─── Área /finanzas (deuda proveedores, etc.) ─────────────────────────────
+  finanzas: {
+    acceso: { simple: true, editor: true },
+  },
+
 } as const;
 
 /**

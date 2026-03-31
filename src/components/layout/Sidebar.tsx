@@ -20,6 +20,8 @@ import {
   Droplets,
   History,
   GitCompare,
+  Landmark,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -38,6 +40,8 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId = "proveedores" | "tienda" | "pedidos";
+type FinanzasModuleId = "finanzas-main";
+type SidebarModuleId = ModuleId | FinanzasModuleId;
 
 interface SubmoduleItem {
   href: string;
@@ -120,7 +124,29 @@ const MODULES: {
   },
 ];
 
-function getOpenModule(pathname: string): ModuleId {
+const FINANZAS_MODULES: {
+  id: FinanzasModuleId;
+  label: string;
+  icon: React.ReactNode;
+  submodules: SubmoduleItem[];
+}[] = [
+  {
+    id: "finanzas-main",
+    label: "FINANZAS",
+    icon: <Landmark className={iconClass} />,
+    submodules: [
+      {
+        href: "/finanzas/deuda-proveedores",
+        label: "Deuda Proveedores",
+        icon: <Wallet className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+    ],
+  },
+];
+
+function getOpenModule(pathname: string): SidebarModuleId {
+  if (pathname.startsWith("/finanzas")) return "finanzas-main";
   if (pathname === "/" || pathname.startsWith("/gestion-productos/proveedores") || pathname.startsWith("/proveedores")) return "proveedores";
   if (pathname.startsWith("/gestion-productos/tienda") || pathname.startsWith("/tienda")) return "tienda";
   if (pathname.startsWith("/stock")) return "tienda";
@@ -136,6 +162,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
+  if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
   return pathname === href;
 }
 
@@ -143,19 +170,23 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
   const pathModule = getOpenModule(pathname);
   const mainAreaId = getMainAppAreaIdFromPathname(pathname);
-  const [openId, setOpenId] = useState<ModuleId | null>(() => pathModule);
+  const [openId, setOpenId] = useState<SidebarModuleId | null>(() => pathModule);
 
-  const visibleModules =
+  const modulesForArea =
     mainAreaId === "gestion-productos"
-      ? MODULES.filter((module) =>
-          module.submodules.some((sub) => {
-            const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
-            const childAllowed =
-              sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
-            return selfAllowed || childAllowed;
-          })
-        )
-      : [];
+      ? MODULES
+      : mainAreaId === "finanzas"
+        ? FINANZAS_MODULES
+        : [];
+
+  const visibleModules = modulesForArea.filter((module) =>
+    module.submodules.some((sub) => {
+      const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
+      const childAllowed =
+        sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
+      return selfAllowed || childAllowed;
+    })
+  );
 
   useEffect(() => {
     setOpenId(pathModule);

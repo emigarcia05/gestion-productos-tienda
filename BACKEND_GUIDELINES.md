@@ -100,6 +100,14 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - Servicio `updateCoeficientesTintometricos(items)` en `src/services/proveedor.service.ts` con `prisma.$transaction` para actualizar múltiple `proveedor`.
   - Revalidación de rutas dependientes de coeficiente: `/stock`, `/proveedores`, `/proveedores/lista`, `/proveedores/gestion`, `/tienda/tintometrico`, `/tienda/litros`.
 
+### 1.11b Plazos de pago por proveedor (`plazos_pagos`)
+
+- Persistencia: `proveedores.plazos_pagos` (`TEXT`, nullable). Formato canónico separado por comas, p. ej. `30,60,90` — **días** desde la fecha del comprobante de compra hasta cada vencimiento; *N* valores implican *N* cuotas con el total repartido en partes iguales (fechas/montos por cuota pueden calcularse en frontend).
+- Valores permitidos por tramo: **30, 60, 90, 120, 150**; si hay varios, deben ir en **orden estrictamente creciente** (ej. `30,60`, no `60,30`).
+- Validación Zod: `plazosPagosSchema` en `@/lib/validations/proveedor.ts`; incluido en `createProveedorSchema` / `updateProveedorSchema`. Vacío se guarda como `NULL`.
+- Servicio: `createProveedor` / `updateProveedor` en `proveedor.service.ts`; listados `getProveedores` exponen `plazosPagos`.
+- SQL manual (Neon): `scripts/neon-plazos-pagos-proveedores.sql`; migración Prisma `20260401120000_add_plazos_pagos_proveedores`.
+
 ### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
 
 - Tabla de negocio: `tipos_pintura_rendimientos` (campos: `id`, `tipo_pintura`, `rendimiento`, timestamps).
@@ -289,6 +297,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - **Paginación `/compras`**: la API DUX devuelve **como máximo 50** filas por GET (`DUX_COMPRAS_API_PAGE_LIMIT` en `duxComprasApi.ts`). `fetchComprasPagesAcumulado` usa `limit=50` y `offset=0,50,100…` hasta vacío o menos de 50 resultados. `DUX_COMPRAS_SYNC_LIMIT` (opcional) acota 1..50; `DUX_COMPRAS_SYNC_MAX_PAGES` default **500** (techo de seguridad, configurable). Entre páginas y entre sucursales se respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
   - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
 - **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
+- **Deuda por proveedor (Finanzas)**: `listarDeudaProveedores` en `src/services/deudaProveedores.service.ts` — `SUM(total - monto_aplicado)` agrupado por `proveedores.id_proveedor_dux` / `nombre`, `HAVING SUM(...) > 0`, orden descendente por deuda. Lectura solo en **Server Component** (`/finanzas/deuda-proveedores`) con `getRol()` + `PERMISOS.finanzas.acceso` (sin Action dedicada).
 - **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique).
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos

@@ -16,6 +16,7 @@ interface Props {
     idProveedorDux?: string;
     whatsapp?: string | null;
     coeficienteTintometrico?: number;
+    plazosPagos?: string | null;
   };
   onSuccess?: () => void;
   /** Id del form para asociar botón externo con form="id". */
@@ -138,6 +139,21 @@ export default function ProveedorForm({
         />
         <p className="text-xs text-muted-foreground">
           Número para envío de pedido por WhatsApp (internacional, 10 a 15 dígitos, sin +).
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="plazosPagos">PLAZOS PAGO (DÍAS)</Label>
+        <Input
+          id="plazosPagos"
+          name="plazosPagos"
+          placeholder="Ej: 30, 60 o 90, 120, 150"
+          defaultValue={proveedor?.plazosPagos ?? ""}
+          disabled={pending}
+        />
+        <p className="text-xs text-muted-foreground">
+          Días hasta cada vencimiento desde la fecha del comprobante (30, 60, 90, 120 o 150). Varios valores
+          separados por coma, orden creciente; el total se divide en tantas cuotas.
         </p>
       </div>
 

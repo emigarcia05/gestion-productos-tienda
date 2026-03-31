@@ -15,6 +15,8 @@ model Proveedor {
   idProveedorDux  String?  @unique @map("id_proveedor_dux") // ID único del proveedor en DUX; FK desde comprobantes_proveedor
   whatsapp        String?  @map("whatsapp") // Número para envío de pedido por WhatsApp (internacional sin +)
   coeficienteTintometrico Decimal @map("coeficiente_tintometrico") @db.Decimal(12, 6) @default(1)
+  /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
+  plazosPagos     String?  @map("plazos_pagos")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

@@ -18,6 +18,7 @@ export interface ProveedorParaModal {
   idProveedorDux?: string;
   whatsapp?: string | null;
   coeficienteTintometrico?: number;
+  plazosPagos?: string | null;
 }
 
 interface Props {

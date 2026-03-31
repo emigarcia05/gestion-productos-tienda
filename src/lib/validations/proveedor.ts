@@ -20,6 +20,49 @@ const coeficienteTintometricoSchema = z
   .refine((n) => Number.isFinite(n) && n > 0, "Coef. Tintométrico debe ser mayor a 0.")
   .refine((n) => n <= 1_000_000, "Coef. Tintométrico fuera de rango.");
 
+const PLAZOS_PAGO_PERMITIDOS = new Set([30, 60, 90, 120, 150]);
+
+/** Cadena canónica `30,60,90` o null si vacío. Días de vencimiento desde la fecha del comprobante. */
+export const plazosPagosSchema = z
+  .string()
+  .optional()
+  .default("")
+  .transform((s) => (s ?? "").trim())
+  .transform((s) => (s === "" ? null : s))
+  .superRefine((s, ctx) => {
+    if (s === null) return;
+    const parts = s.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Plazos inválidos." });
+      return;
+    }
+    const nums = parts.map((p) => Number.parseInt(p, 10));
+    if (nums.some((n) => !Number.isFinite(n) || !PLAZOS_PAGO_PERMITIDOS.has(n))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Solo se permiten 30, 60, 90, 120 o 150 (separados por coma).",
+      });
+      return;
+    }
+    for (let i = 1; i < nums.length; i++) {
+      if ((nums[i] as number) <= (nums[i - 1] as number)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Los plazos deben ir en orden creciente (ej. 30, 60).",
+        });
+        return;
+      }
+    }
+  })
+  .transform((s) => {
+    if (s === null || s === undefined) return null as string | null;
+    const trimmed = (s as string).trim();
+    if (trimmed === "") return null;
+    const parts = trimmed.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean);
+    const nums = parts.map((p) => Number.parseInt(p, 10));
+    return nums.join(",");
+  });
+
 export const createProveedorSchema = z.object({
   nombre: z
     .string()
@@ -33,6 +76,7 @@ export const createProveedorSchema = z.object({
     .refine((s) => /^[A-Z]{3}$/.test(s), "El prefijo debe tener exactamente 3 letras (A-Z)."),
   whatsapp: whatsappSchema,
   coeficienteTintometrico: coeficienteTintometricoSchema,
+  plazosPagos: plazosPagosSchema,
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;
