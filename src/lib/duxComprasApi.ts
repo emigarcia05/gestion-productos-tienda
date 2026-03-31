@@ -1,5 +1,8 @@
 export const DUX_COMPRAS_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/compras";
 
+/** Máximo de registros que devuelve `/compras` por petición (DUX no acepta más por página). */
+export const DUX_COMPRAS_API_PAGE_LIMIT = 50;
+
 export interface CompraDux {
   comprobante: string;
   total?: string;
@@ -81,23 +84,40 @@ export function parseFechaDuxToQuery(fecha: string): string {
   return fecha;
 }
 
-function duxComprasSyncLimit(): number {
+/**
+ * Tamaño de página para sync (nunca mayor que {@link DUX_COMPRAS_API_PAGE_LIMIT}).
+ * `DUX_COMPRAS_SYNC_LIMIT` en `.env` solo permite 1..50.
+ */
+function duxComprasSyncPageSize(): number {
   const raw = process.env.DUX_COMPRAS_SYNC_LIMIT;
-  if (raw == null || raw === "") return 2000;
+  if (raw == null || raw === "") return DUX_COMPRAS_API_PAGE_LIMIT;
   const n = Number.parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? Math.min(n, 50_000) : 2000;
+  if (!Number.isFinite(n) || n < 1) return DUX_COMPRAS_API_PAGE_LIMIT;
+  return Math.min(n, DUX_COMPRAS_API_PAGE_LIMIT);
 }
 
+/** Tope de páginas por sucursal (50 filas c/u). Default alto; acotar con `DUX_COMPRAS_SYNC_MAX_PAGES`. */
 function duxComprasSyncMaxPages(): number {
   const raw = process.env.DUX_COMPRAS_SYNC_MAX_PAGES;
-  if (raw == null || raw === "") return 1;
+  if (raw == null || raw === "") return 500;
   const n = Number.parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? Math.min(n, 200) : 1;
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 5000) : 500;
+}
+
+function duxComprasMinIntervalMs(): number {
+  const raw = process.env.DUX_COMPRAS_MIN_INTERVAL_MS;
+  if (raw == null || raw === "") return 5000;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 5000;
+}
+
+function delayComprasMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Una petición a `/compras`. `offset` solo se envía si &gt; 0 (si la API lo ignora, no repetir páginas:
- * dejar `DUX_COMPRAS_SYNC_MAX_PAGES=1`).
+ * Una petición GET a `/compras`. `limit` se acota a {@link DUX_COMPRAS_API_PAGE_LIMIT}.
+ * Paginación: `offset` 0, 50, 100… (mismo contrato que curl DUX).
  */
 export async function fetchComprasPage(params: {
   fechaDesde: string;
@@ -112,6 +132,7 @@ export async function fetchComprasPage(params: {
   if (!token) throw new Error("DUX_API_TOKEN no configurado.");
 
   const { fechaDesde, fechaHasta, idEmpresa, idSucursal, limit = 1, offset } = params;
+  const limitCapped = Math.min(Math.max(limit, 1), DUX_COMPRAS_API_PAGE_LIMIT);
 
   const headers: HeadersInit = {
     accept: "application/json",
@@ -126,7 +147,7 @@ export async function fetchComprasPage(params: {
     (idSucursal != null
       ? `&idSucursal=${encodeURIComponent(String(idSucursal))}`
       : "") +
-    `&limit=${encodeURIComponent(String(limit))}` +
+    `&limit=${encodeURIComponent(String(limitCapped))}` +
     (offset != null && offset > 0
       ? `&offset=${encodeURIComponent(String(offset))}`
       : "");
@@ -143,8 +164,9 @@ export async function fetchComprasPage(params: {
 }
 
 /**
- * Acumula páginas hasta vacío, límite por página o `DUX_COMPRAS_SYNC_MAX_PAGES`.
- * Entre páginas no aplica delay (el servicio de sync debe espaciar llamadas por sucursal).
+ * Por cada sucursal: pide `/compras` en páginas de {@link DUX_COMPRAS_API_PAGE_LIMIT} filas
+ * con `offset` 0, 50, 100… hasta respuesta vacía o menos de 50 ítems o tope de páginas.
+ * Entre páginas aplica `DUX_COMPRAS_MIN_INTERVAL_MS` (misma regla anti-429 que entre sucursales).
  */
 export async function fetchComprasPagesAcumulado(params: {
   fechaDesde: string;
@@ -152,22 +174,26 @@ export async function fetchComprasPagesAcumulado(params: {
   idEmpresa: number;
   idSucursal: number;
 }): Promise<CompraDux[]> {
-  const pageLimit = duxComprasSyncLimit();
+  const pageSize = duxComprasSyncPageSize();
   const maxPages = duxComprasSyncMaxPages();
+  const intervalMs = duxComprasMinIntervalMs();
   const all: CompraDux[] = [];
 
   for (let page = 0; page < maxPages; page++) {
-    const offset = page * pageLimit;
+    if (page > 0 && intervalMs > 0) {
+      await delayComprasMs(intervalMs);
+    }
+    const offset = page * pageSize;
     const batch = await fetchComprasPage({
       fechaDesde: params.fechaDesde,
       fechaHasta: params.fechaHasta,
       idEmpresa: params.idEmpresa,
       idSucursal: params.idSucursal,
-      limit: pageLimit,
+      limit: pageSize,
       offset: offset > 0 ? offset : undefined,
     });
     all.push(...batch);
-    if (batch.length === 0 || batch.length < pageLimit) break;
+    if (batch.length === 0 || batch.length < pageSize) break;
   }
 
   return all;

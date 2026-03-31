@@ -286,7 +286,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - **Purga al iniciar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt; **hoy Argentina − 150 días** (misma ventana que `DIAS_VENTANA_COMPRAS_DUX`); el conteo vuelve en `data.eliminadosAntiguos`.
   - **`fechaDesde`**: máximo `fecha_comp` **después** de la purga; si no queda ninguna fila, **hoy AR − 150 días** (`fechaArgentinaMenosDiasComoDux`) hasta `fechaHasta` (hoy Argentina).
   - **`fechaHasta`**: “hoy” calendario Argentina (`fechaHastaArgentinaComoDux`).
-  - **Paginación**: `fetchComprasPagesAcumulado` en `duxComprasApi.ts` — `DUX_COMPRAS_SYNC_LIMIT` (default 2000), `DUX_COMPRAS_SYNC_MAX_PAGES` (default 1). Si DUX admite `offset` y hay más filas, subir `DUX_COMPRAS_SYNC_MAX_PAGES`; si la API ignora `offset`, dejar `1` para no duplicar lecturas.
+  - **Paginación `/compras`**: la API DUX devuelve **como máximo 50** filas por GET (`DUX_COMPRAS_API_PAGE_LIMIT` en `duxComprasApi.ts`). `fetchComprasPagesAcumulado` usa `limit=50` y `offset=0,50,100…` hasta vacío o menos de 50 resultados. `DUX_COMPRAS_SYNC_LIMIT` (opcional) acota 1..50; `DUX_COMPRAS_SYNC_MAX_PAGES` default **500** (techo de seguridad, configurable). Entre páginas y entre sucursales se respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
   - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
 - **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
 - **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique).
@@ -439,7 +439,7 @@ Contrato (SSOT de lógica de negocio + integración externa):
    - Proceso:
      - Lee de DB las sucursales y resuelve `sucursales.id_dux` (columna `sucursales.idDux` en Prisma).
      - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
-       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=1`.
+       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=1` (solo el último comprobante).
      - Entre cada petición a `/compras` y la siguiente espera **al menos 5 s** (DUX responde `429` si se supera la frecuencia). Intervalo configurable con `DUX_COMPRAS_MIN_INTERVAL_MS` (ms; por defecto `5000`; `0` desactiva la espera solo para entornos de prueba).
      - Si tras recorrer sucursales no hay comprobantes válidos y se usa el fallback sin `idSucursal`, también espera ese intervalo **después** de la última consulta por sucursal.
      - Del set resultante toma el mayor `comprobante` numérico y calcula `siguienteComprobante = maxComprobante + 1` usando `BigInt`.
