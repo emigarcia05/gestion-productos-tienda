@@ -665,12 +665,64 @@
   position: relative;
 }
 /* Lectura completa en celdas truncadas:
- * al hacer hover, el contenido puede sobresalir por encima de celdas vecinas. */
+ * al hacer hover, el contenido puede sobresalir sobre celdas vecinas.
+ * ::before opaco (mismo tono que cebra / hover de fila) tapa el texto de las columnas
+ * de la derecha para que no se superponga con el desbordado (orden de pintado en tablas). */
 .tabla-gestion-compacta tbody tr td:hover {
   overflow: visible;
   z-index: 35;
 }
+.tabla-gestion-compacta tbody tr td:hover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100vw;
+  z-index: 0;
+  pointer-events: none;
+}
+.tabla-gestion-compacta tbody tr:nth-child(odd) td:hover::before {
+  background-color: var(--card);
+}
+.tabla-gestion-compacta tbody tr:nth-child(odd):hover td:hover::before {
+  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+}
+.tabla-gestion-compacta tbody tr:nth-child(even) td:hover::before {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+.tabla-gestion-compacta tbody tr:nth-child(even):hover td:hover::before {
+  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+}
 .tabla-gestion-compacta tbody tr td:hover > * {
+  position: relative;
+  z-index: 36;
+}
+/* Pie de tabla: ancla para ::before en hover (misma tabla que tbody). */
+.tabla-gestion-compacta tfoot tr td {
+  position: relative;
+  overflow: hidden;
+}
+/* Mismo comportamiento en pie de tabla (totales, fondo distinto al cuerpo). */
+.tabla-gestion-compacta tfoot tr td:hover {
+  overflow: visible;
+  z-index: 35;
+}
+.tabla-gestion-compacta tfoot tr td:hover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100vw;
+  z-index: 0;
+  pointer-events: none;
+  background-color: color-mix(in oklab, var(--muted) 50%, var(--card));
+}
+.tabla-gestion-compacta tfoot tr:hover td:hover::before {
+  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+}
+.tabla-gestion-compacta tfoot tr td:hover > * {
   position: relative;
   z-index: 36;
 }

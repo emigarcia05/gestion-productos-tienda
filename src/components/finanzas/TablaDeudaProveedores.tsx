@@ -2,6 +2,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -33,7 +34,34 @@ function fmtDeudaArs(deudaStr: string): string {
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 
+const CAMPOS_SUMA = [
+  "deudaTotal",
+  "vencida",
+  "dias5",
+  "dias30",
+  "dias45",
+  "dias60",
+] as const;
+
+function sumarTotales(filas: DeudaProveedorRow[]): Record<(typeof CAMPOS_SUMA)[number], number> {
+  const acc: Record<(typeof CAMPOS_SUMA)[number], number> = {
+    deudaTotal: 0,
+    vencida: 0,
+    dias5: 0,
+    dias30: 0,
+    dias45: 0,
+    dias60: 0,
+  };
+  for (const f of filas) {
+    for (const k of CAMPOS_SUMA) {
+      acc[k] += Number(f[k]);
+    }
+  }
+  return acc;
+}
+
 export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedorRow[] }) {
+  const totales = filas.length > 0 ? sumarTotales(filas) : null;
   return (
     <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 sm:px-6 lg:px-8">
       <p
@@ -80,6 +108,23 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
                 ))
               )}
             </TableBody>
+            {totales ? (
+              <TableFooter>
+                <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-border">
+                  <TableCell className="celda-datos min-w-[12rem] max-w-[24rem] text-left font-bold uppercase">
+                    TOTAL
+                  </TableCell>
+                  <TableCell className={cn(TD_NUM, "font-bold")}>
+                    {fmtDeudaArs(totales.deudaTotal.toFixed(2))}
+                  </TableCell>
+                  <TableCell className={cn(TD_NUM, "font-bold")}>{fmtDeudaArs(totales.vencida.toFixed(2))}</TableCell>
+                  <TableCell className={cn(TD_NUM, "font-bold")}>{fmtDeudaArs(totales.dias5.toFixed(2))}</TableCell>
+                  <TableCell className={cn(TD_NUM, "font-bold")}>{fmtDeudaArs(totales.dias30.toFixed(2))}</TableCell>
+                  <TableCell className={cn(TD_NUM, "font-bold")}>{fmtDeudaArs(totales.dias45.toFixed(2))}</TableCell>
+                  <TableCell className={cn(TD_NUM, "font-bold")}>{fmtDeudaArs(totales.dias60.toFixed(2))}</TableCell>
+                </TableRow>
+              </TableFooter>
+            ) : null}
           </Table>
         </div>
       </div>
