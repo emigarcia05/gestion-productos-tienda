@@ -10,12 +10,16 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface DeudaProveedorRow {
-  idProveedorDux: string;
   nombre: string;
-  deuda: string;
+  deudaTotal: string;
+  vencida: string;
+  dias5: string;
+  dias30: string;
+  dias45: string;
+  dias60: string;
 }
 
-const COLS = 3;
+const COLS = 7;
 
 function fmtDeudaArs(deudaStr: string): string {
   const n = Number(deudaStr);
@@ -25,6 +29,9 @@ function fmtDeudaArs(deudaStr: string): string {
     maximumFractionDigits: 2,
   })}`;
 }
+
+const TH_NUM = "text-right whitespace-nowrap";
+const TD_NUM = "celda-datos text-right tabular-nums";
 
 export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedorRow[] }) {
   return (
@@ -38,13 +45,17 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
         {`${filas.length.toLocaleString("es-AR")} PROVEEDOR${filas.length === 1 ? "" : "ES"} CON DEUDA`}
       </p>
       <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-        <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto">
+        <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
           <Table variant="compact" scrollX={false}>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[45%]">PROVEEDOR</TableHead>
-                <TableHead className="w-[25%]">ID PROV. DUX</TableHead>
-                <TableHead className="w-[30%] text-right">DEUDA</TableHead>
+                <TableHead className="min-w-[12rem]">PROVEEDOR</TableHead>
+                <TableHead className={cn(TH_NUM, "min-w-[7.5rem]")}>DEUDA TOTAL</TableHead>
+                <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>VENCIDA</TableHead>
+                <TableHead className={cn(TH_NUM, "min-w-[6rem]")}>5 DÍAS</TableHead>
+                <TableHead className={cn(TH_NUM, "min-w-[6rem]")}>30 DÍAS</TableHead>
+                <TableHead className={cn(TH_NUM, "min-w-[6rem]")}>45 DÍAS</TableHead>
+                <TableHead className={cn(TH_NUM, "min-w-[6rem]")}>60 DÍAS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -55,16 +66,16 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
                 />
               ) : (
                 filas.map((f) => (
-                  <TableRow key={f.idProveedorDux}>
-                    <TableCell className="celda-datos min-w-0 font-medium">
+                  <TableRow key={f.nombre}>
+                    <TableCell className="celda-datos min-w-[12rem] max-w-[24rem] font-medium">
                       {f.nombre}
                     </TableCell>
-                    <TableCell className="celda-datos tabular-nums text-muted-foreground">
-                      {f.idProveedorDux}
-                    </TableCell>
-                    <TableCell className="celda-datos text-right tabular-nums font-semibold">
-                      {fmtDeudaArs(f.deuda)}
-                    </TableCell>
+                    <TableCell className={cn(TD_NUM, "font-semibold")}>{fmtDeudaArs(f.deudaTotal)}</TableCell>
+                    <TableCell className={TD_NUM}>{fmtDeudaArs(f.vencida)}</TableCell>
+                    <TableCell className={TD_NUM}>{fmtDeudaArs(f.dias5)}</TableCell>
+                    <TableCell className={TD_NUM}>{fmtDeudaArs(f.dias30)}</TableCell>
+                    <TableCell className={TD_NUM}>{fmtDeudaArs(f.dias45)}</TableCell>
+                    <TableCell className={TD_NUM}>{fmtDeudaArs(f.dias60)}</TableCell>
                   </TableRow>
                 ))
               )}
