@@ -684,19 +684,19 @@
   pointer-events: none;
 }
 .tabla-gestion-compacta tbody tr:nth-child(odd) td:hover::before {
-  background-color: transparent;
+  background-color: var(--card);
 }
 .tabla-gestion-compacta tbody tr:nth-child(odd):hover td:hover::before {
-  background-color: transparent;
+  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
 }
 .tabla-gestion-compacta tbody tr:nth-child(even) td:hover::before {
-  background-color: transparent;
+  background-color: rgba(59, 130, 246, 0.08);
 }
 .tabla-gestion-compacta tbody tr:nth-child(even):hover td:hover::before {
-  background-color: transparent;
+  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
 }
 .tabla-gestion-compacta tbody tr[data-state="selected"] td:hover::before {
-  background-color: transparent;
+  background-color: var(--muted);
 }
 .tabla-gestion-compacta tbody tr td:hover > * {
   position: relative;
