@@ -24,7 +24,7 @@ export async function listarDeudaProveedores(): Promise<DeudaProveedorFila[]> {
   const rows = await prisma.$queryRaw<DeudaProveedorFila[]>`
     WITH lineas AS (
       SELECT
-        p.id_proveedor_dux AS "idProveedorDux",
+        p.id_proveedor_dux AS id_proveedor_dux,
         p.nombre AS nombre,
         (c.total - c.monto_aplicado) AS saldo,
         (
