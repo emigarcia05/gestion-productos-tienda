@@ -600,6 +600,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `prisma/migrations/20260317223000_sync_cant_pedir_por_tipo_pedido/migration.sql` | Regla de negocio a nivel BD: `cant_pedir` se sincroniza automáticamente por `tipo_de_pedido` (`TINTOMETRICO -> tintometrio_cant_pedir`, `URGENTE -> urgente_cant_pedir`, `REPOSICION -> reposicion_cant_pedir`) con trigger `BEFORE INSERT OR UPDATE`. |
 | `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` según forma y stock (versión inicial; ver migración canonical). |
 | `prisma/migrations/20260330120000_reposicion_forma_pedido_canonical/migration.sql` | `reposicion_forma_pedido` solo admite **`CANT_FIJA`** o **`CANT_MAXIMA`** (normaliza legados `CANT. FIJA` / `CANT. MAX.`). Trigger: `CANT_FIJA` => `reposicion_cant_pedir = reposicion_cant_conf`; `CANT_MAXIMA` => `GREATEST(0, reposicion_cant_conf - stock sucursal)`; luego `cant_pedir` para `REPOSICION`. |
+| `prisma/migrations/20260330153000_reposicion_punto_stock_trigger/migration.sql` | Reposición con condición inicial por punto: solo calcula pedido cuando `stock_sucursal <= reposicion_punto_pedido`; fuera de ese caso `reposicion_cant_pedir = 0`. Mantiene formas canónicas (`CANT_FIJA` / `CANT_MAXIMA`) y agrega trigger `AFTER UPDATE` en `precios_tienda` (`stock_maipu`, `stock_guaymallen`) para forzar recálculo de ítems REPOSICION tras sincronización DUX. |
 | `prisma/migrations/20260318000000_add_sync_dux_status/migration.sql` | Nueva tabla `sync_dux_status` para persistir estado de sincronización DUX en BD (`running`, `phase`, `processed`, `total`, `error`, `last_completed_at`, `updated_at`) y soportar polling estable en sidebar. |
 | `prisma/schema.prisma` | Nuevo modelo `SyncDuxStatus` (mapeo a `sync_dux_status`) para tipado fuerte y evitar SQL raw en lecturas/escrituras. |
 | `src/lib/syncDuxStatusDb.ts` | Helper tipado de persistencia de estado DUX (start/progress/success/error + lectura) usando Prisma. `last_completed_at` se actualiza **solo en sync OK**; en error se mantiene `processed/total` (no se resetean al hacer update por conflicto). |
@@ -629,7 +630,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-03-30 — `reposicion_forma_pedido` canónico (`CANT_FIJA` \| `CANT_MAXIMA`) + migración y trigger; `reposicionFormaPedidoSchema` en validaciones. Histórico: DUX compras throttle 2026-03-25.*
+*Última actualización: 2026-03-30 — reposición: cálculo condicionado por `punto_pedido` + trigger de recálculo por cambios de stock en `precios_tienda` (sync DUX); formas canónicas `CANT_FIJA` \| `CANT_MAXIMA`. Histórico: DUX compras throttle 2026-03-25.*
 
 ---
 

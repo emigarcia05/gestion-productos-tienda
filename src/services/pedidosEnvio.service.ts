@@ -102,7 +102,16 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       sucursal === "maipu"
         ? Number(tienda?.stockMaipu ?? 0)
         : Number(tienda?.stockGuaymallen ?? 0);
-    const cantPedir = formaPedir === "CANT_FIJA" ? cant : Math.max(0, cant - stock);
+    // Regla de negocio:
+    // - Solo pedir si stock <= punto de reposición.
+    // - CANT_FIJA: pedir la cantidad configurada.
+    // - CANT_MAXIMA: pedir faltante hasta la cantidad configurada.
+    const cantPedir =
+      stock <= punto
+        ? formaPedir === "CANT_FIJA"
+          ? cant
+          : Math.max(0, cant - stock)
+        : 0;
 
     const existing = await prisma.itemPedidoEnvio.findFirst({
       where: {
