@@ -647,6 +647,7 @@
   max-width: 100%;
 }
 .tabla-gestion-compacta tbody tr {
+  --tabla-row-bg: var(--card);
   border-bottom: 1px solid var(--primary-foreground) !important;
   /* Solo fondo en hover: sin cambiar tipografía ni layout (evita “saltos”). */
   transition: background-color 0.15s ease;
@@ -680,23 +681,9 @@
   height: 100%;
   /* Extensión acotada hacia la derecha; no participa del ancho de tabla como 100vw */
   width: max(100%, 42rem);
+  background-color: var(--tabla-row-bg);
   z-index: 0;
   pointer-events: none;
-}
-.tabla-gestion-compacta tbody tr:nth-child(odd) td:hover::before {
-  background-color: var(--card);
-}
-.tabla-gestion-compacta tbody tr:nth-child(odd):hover td:hover::before {
-  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
-}
-.tabla-gestion-compacta tbody tr:nth-child(even) td:hover::before {
-  background-color: rgba(59, 130, 246, 0.08);
-}
-.tabla-gestion-compacta tbody tr:nth-child(even):hover td:hover::before {
-  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
-}
-.tabla-gestion-compacta tbody tr[data-state="selected"] td:hover::before {
-  background-color: var(--muted);
 }
 .tabla-gestion-compacta tbody tr td:hover > * {
   position: relative;
@@ -798,13 +785,20 @@
   color: #0072bb !important;
 }
 .tabla-gestion-compacta tbody tr:nth-child(odd) {
+  --tabla-row-bg: var(--card);
   background-color: var(--card);
 }
 .tabla-gestion-compacta tbody tr:nth-child(even) {
+  --tabla-row-bg: rgba(59, 130, 246, 0.08);
   background-color: rgba(59, 130, 246, 0.08);
 }
 .tabla-gestion-compacta tbody tr:hover {
+  --tabla-row-bg: color-mix(in oklab, var(--primary) 20%, transparent);
   background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+}
+.tabla-gestion-compacta tbody tr[data-state="selected"] {
+  --tabla-row-bg: var(--muted);
+  background-color: var(--muted);
 }
 /* Finanzas - Deuda Proveedores:
  * desactiva el "overlay" por celda para que el hover sea de fila completa. */

@@ -72,7 +72,7 @@ export default function VencPorFechaCalendario({
             {celda.isoYmd != null && celda.dia != null ? (
               <div
                 className={cn(
-                  "flex w-full min-h-[6.5rem] flex-col overflow-hidden rounded-md border border-[#0072BB] bg-card aspect-[4/5]"
+                  "flex w-full min-h-[6.5rem] flex-col overflow-hidden rounded-md border border-[#0072BB] bg-card py-0.5 aspect-[4/5]"
                 )}
               >
                 <div className="flex min-h-[2rem] shrink-0 items-center justify-center border-b border-border bg-muted/40 px-1 py-1.5 text-sm font-semibold tabular-nums">

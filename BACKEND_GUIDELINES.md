@@ -301,6 +301,24 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Venc. por fecha (Finanzas)**: `listarVencimientosEnRango(fechaDesde, fechaHasta)` en `src/services/vencimientosPorFecha.service.ts` — mismas líneas y misma `fecha_venc` que arriba; filtra `fecha_venc` en el rango **inclusive** (un mes calendario). La UI agrupa por día y muestra calendario (`calendarioMesFinanzas.ts`).
 - **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique).
 
+### 2.5b Movimientos de finanzas por sucursal (`movimientos_finanzas`) + cheques (`movimientos_finanzas_cheques`)
+
+Modelo de datos para registrar movimientos con monto y sucursal:
+
+- **Cabecera** (`MovimientoFinanzas` → tabla `movimientos_finanzas`):
+  - `nombre`: texto del movimiento.
+  - `tipo`: enum `TipoMovimientoFinanzas` = `EFECTIVO | BANCO | CHEQUE`.
+  - `sucursal_id`: FK a `sucursales.id`.
+  - `monto`: `DECIMAL(14,2)`.
+- **Detalle de cheques** (`MovimientoFinanzasCheque` → tabla `movimientos_finanzas_cheques`):
+  - relación 1:N por `movimiento_finanzas_id` (FK con `ON DELETE CASCADE`).
+  - `fecha_cobro`: `DATE`.
+  - `monto`: `DECIMAL(14,2)` (permite múltiples cheques con importes distintos por movimiento).
+- **Índices**:
+  - `movimientos_finanzas(sucursal_id, tipo)`
+  - `movimientos_finanzas_cheques(movimiento_finanzas_id, fecha_cobro)`
+- **Migración**: `prisma/migrations/20260402110000_add_movimientos_finanzas_y_cheques/migration.sql`.
+
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
@@ -630,7 +648,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-03-30 — reposición: cálculo condicionado por `punto_pedido` + trigger de recálculo por cambios de stock en `precios_tienda` (sync DUX); formas canónicas `CANT_FIJA` \| `CANT_MAXIMA`. Histórico: DUX compras throttle 2026-03-25.*
+*Última actualización: 2026-04-02 — nueva estructura Finanzas (`movimientos_finanzas` + `movimientos_finanzas_cheques`) con tipo enum y relación 1:N para cheques con fecha de cobro. Histórico: reposición por punto/stock + DUX compras throttle.*
 
 ---
 

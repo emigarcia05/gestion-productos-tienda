@@ -7,6 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TipoMovimientoFinanzas {
+  EFECTIVO
+  BANCO
+  CHEQUE
+}
+
 model Proveedor {
   id              String   @id @default(cuid())
   nombre          String   @unique
@@ -65,9 +71,43 @@ model Sucursal {
 
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
+  movimientosFinanzas MovimientoFinanzas[]
   // Tabla única de pedidos: pedidos_mercaderia
 
   @@map("sucursales")
+}
+
+// Movimiento financiero por sucursal.
+// Si tipo = CHEQUE, puede tener múltiples cheques asociados (vencimientos / cobros).
+model MovimientoFinanzas {
+  id         String   @id @default(cuid())
+  nombre     String
+  tipo       TipoMovimientoFinanzas
+  sucursalId String   @map("sucursal_id")
+  monto      Decimal  @db.Decimal(14, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+  cheques  MovimientoFinanzasCheque[]
+
+  @@index([sucursalId, tipo])
+  @@map("movimientos_finanzas")
+}
+
+// Cheques asociados a un movimiento financiero de tipo CHEQUE.
+model MovimientoFinanzasCheque {
+  id                  String   @id @default(cuid())
+  movimientoFinanzasId String   @map("movimiento_finanzas_id")
+  fechaCobro          DateTime @map("fecha_cobro") @db.Date
+  monto               Decimal  @db.Decimal(14, 2)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  movimientoFinanzas MovimientoFinanzas @relation(fields: [movimientoFinanzasId], references: [id], onDelete: Cascade)
+
+  @@index([movimientoFinanzasId, fechaCobro])
+  @@map("movimientos_finanzas_cheques")
 }
 
 model ListaPrecioProveedor {

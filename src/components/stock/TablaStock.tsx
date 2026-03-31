@@ -2,6 +2,7 @@
 
 import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -54,6 +55,24 @@ function exportarStockExcel(
 function fmtFecha(d: Date | null): string {
   if (!d) return "";
   return formatDdMmHhMmArgentina(new Date(d));
+}
+
+function getVariacionStock(
+  stockOriginal: number,
+  stockEditadoRaw: string | undefined
+): { deltaAbs: string; sube: boolean } | null {
+  if (stockEditadoRaw === undefined || stockEditadoRaw === "") return null;
+  const stockEditado = Number(stockEditadoRaw);
+  if (!Number.isFinite(stockEditado)) return null;
+  const delta = stockEditado - stockOriginal;
+  if (delta === 0) return null;
+  return {
+    deltaAbs: Math.abs(delta).toLocaleString("es-AR", {
+      minimumFractionDigits: Number.isInteger(delta) ? 0 : 2,
+      maximumFractionDigits: 2,
+    }),
+    sube: delta > 0,
+  };
 }
 
 export interface TablaStockHandle {
@@ -216,12 +235,14 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-3 py-2 text-xs w-[10%]">CÓD.</TableHead>
                 <TableHead className="px-3 py-2 text-xs w-[50%]">
                   DESCRIPCIÓN
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-[20%]">
                   STOCK
+                </TableHead>
+                <TableHead className="px-3 py-2 text-xs w-[10%]">
+                  VARIACIÓN
                 </TableHead>
                 <TableHead className="px-3 py-2 text-xs w-[20%]">
                   ÚLT. EXPORT. EXCEL
@@ -252,9 +273,6 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
               )}
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="px-3 py-2 text-xs font-mono w-[10%] whitespace-nowrap">
-                    {item.codItem}
-                  </TableCell>
                   <TableCell className="px-3 py-2 text-xs w-[50%] min-w-0 overflow-hidden">
                     {item.descripcion}
                   </TableCell>
@@ -287,6 +305,22 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                         +
                       </Button>
                     </div>
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-xs tabular-nums w-[10%]">
+                    {(() => {
+                      const variacion = getVariacionStock(item.stock, stocksEditados[item.id]);
+                      if (!variacion) return "";
+                      return (
+                        <div className="flex items-center justify-center gap-1">
+                          {variacion.sube ? (
+                            <ArrowUp className="h-3.5 w-3.5 text-primary" aria-hidden />
+                          ) : (
+                            <ArrowDown className="h-3.5 w-3.5 text-destructive" aria-hidden />
+                          )}
+                          <span className="text-foreground">{variacion.deltaAbs}</span>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-xs tabular-nums w-[20%]">
                     {fmtFecha(exportaciones[item.id] ?? item.ultimaExportacionExcel)}
