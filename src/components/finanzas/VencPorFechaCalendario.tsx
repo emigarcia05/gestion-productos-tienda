@@ -92,7 +92,10 @@ export default function VencPorFechaCalendario({
                 </div>
               </div>
             ) : (
-              <div className="aspect-[4/5] min-h-[6.5rem] w-full rounded-md bg-muted/15 py-0.5" aria-hidden />
+              <div
+                className="aspect-[4/5] min-h-[6.5rem] w-full rounded-md border border-[#0072BB] bg-muted/15 py-0.5"
+                aria-hidden
+              />
             )}
           </div>
         ))}
