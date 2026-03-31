@@ -22,6 +22,7 @@ import {
   GitCompare,
   Landmark,
   Wallet,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -141,6 +142,12 @@ const FINANZAS_MODULES: {
         icon: <Wallet className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
+      {
+        href: "/finanzas/venc-por-fecha",
+        label: "Venc. por fecha",
+        icon: <CalendarDays className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
     ],
   },
 ];
@@ -163,6 +170,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
+  if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   return pathname === href;
 }
 

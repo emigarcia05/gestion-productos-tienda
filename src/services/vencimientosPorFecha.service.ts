@@ -1,0 +1,51 @@
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+
+/**
+ * Líneas con saldo pendiente cuya **fecha de vencimiento** cae en `[fechaDesde, fechaHasta]`.
+ * Misma regla que deuda proveedores: `fecha_comp` + primer plazo de `plazos_pagos` (o 30 días).
+ */
+export interface VencimientoPorFechaLinea {
+  fechaVenc: string;
+  nombre: string;
+  saldo: Prisma.Decimal;
+}
+
+export async function listarVencimientosEnRango(
+  fechaDesde: string,
+  fechaHasta: string
+): Promise<VencimientoPorFechaLinea[]> {
+  const rows = await prisma.$queryRaw<VencimientoPorFechaLinea[]>`
+    WITH lineas AS (
+      SELECT
+        p.nombre AS nombre,
+        (c.total - c.monto_aplicado) AS saldo,
+        (
+          c.fecha_comp::date
+          + GREATEST(
+            1,
+            COALESCE(
+              CASE
+                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
+                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
+                ELSE NULL
+              END,
+              30
+            )
+          )
+        )::date AS fecha_venc
+      FROM comprobantes_proveedor c
+      INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
+      WHERE c.total > c.monto_aplicado
+    )
+    SELECT
+      l.fecha_venc::text AS "fechaVenc",
+      l.nombre AS nombre,
+      l.saldo AS saldo
+    FROM lineas l
+    WHERE l.fecha_venc >= ${fechaDesde}::date
+      AND l.fecha_venc <= ${fechaHasta}::date
+    ORDER BY l.fecha_venc ASC, l.nombre ASC
+  `;
+  return rows;
+}

@@ -17,17 +17,23 @@ export default async function FinanzasPage() {
         titulo="Finanzas"
         subtitulo="Resumen"
         actions={
-          <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-            <Link href="/finanzas/deuda-proveedores">Deuda Proveedores</Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
+              <Link href="/finanzas/deuda-proveedores">Deuda Proveedores</Link>
+            </Button>
+            <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
+              <Link href="/finanzas/venc-por-fecha">Venc. por fecha</Link>
+            </Button>
+          </div>
         }
       />
       <div className="flex-1 overflow-auto p-4">
         <div className="flex flex-col gap-4">
           {esEditor ? <SincronizarComprobantesProveedorDuxButton /> : null}
           <p className="text-sm text-muted-foreground">
-            El módulo Deuda Proveedores lista el saldo pendiente por proveedor según comprobantes sincronizados
-            desde DUX. Acceso desde la cabecera, o slidenav: FINANZAS → Deuda Proveedores.
+            Deuda Proveedores resume saldos por proveedor y columnas por ventana de vencimiento. Venc. por fecha
+            muestra un calendario mensual con los vencimientos por día. Acceso desde la cabecera o slidenav
+            (FINANZAS).
           </p>
         </div>
       </div>

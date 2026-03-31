@@ -94,6 +94,22 @@ export function dateToIsoYmdArgentina(d: Date): string {
   return `${m.year}-${m.month}-${m.day}`;
 }
 
+/** Primeros siete caracteres de {@link dateToIsoYmdArgentina} → `YYYY-MM` (mes calendario AR). */
+export function isoYearMonthArgentina(d = new Date()): string {
+  return dateToIsoYmdArgentina(d).slice(0, 7);
+}
+
+/** Título tipo **Marzo 2026** para encabezado de calendario. */
+export function formatMesAnioTituloArgentina(year: number, month1to12: number): string {
+  const d = new Date(Date.UTC(year, month1to12 - 1, 15, 3, 0, 0));
+  const mes = new Intl.DateTimeFormat("es-AR", {
+    timeZone: TIMEZONE_ARGENTINA,
+    month: "long",
+  }).format(d);
+  const capitalizado = mes.charAt(0).toLocaleUpperCase("es-AR") + mes.slice(1);
+  return `${capitalizado} ${year}`;
+}
+
 /** Sello `dd_mm hh_mm` para nombre de archivo de recepción. */
 export function formatDdMmHhMmGuionesBajosArchivoArgentina(d: Date): string {
   const m = toPartMap(d, {

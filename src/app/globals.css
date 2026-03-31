@@ -665,9 +665,9 @@
   position: relative;
 }
 /* Lectura completa en celdas truncadas:
- * al hacer hover, el contenido puede sobresalir sobre celdas vecinas.
- * ::before opaco (mismo tono que cebra / hover de fila) tapa el texto de las columnas
- * de la derecha para que no se superponga con el desbordado (orden de pintado en tablas). */
+ * el contenido puede desbordar sobre celdas vecinas; un ::before opaco repite la cebra
+ * / hover de fila y tapa el texto de la derecha. Sin width: 100vw (provocaba scroll
+ * horizontal y efectos raros en el contenedor). */
 .tabla-gestion-compacta tbody tr td:hover {
   overflow: visible;
   z-index: 35;
@@ -678,7 +678,8 @@
   top: 0;
   left: 0;
   height: 100%;
-  width: 100vw;
+  /* Extensión acotada hacia la derecha; no participa del ancho de tabla como 100vw */
+  width: max(100%, 42rem);
   z-index: 0;
   pointer-events: none;
 }
@@ -695,34 +696,6 @@
   background-color: color-mix(in oklab, var(--primary) 20%, transparent);
 }
 .tabla-gestion-compacta tbody tr td:hover > * {
-  position: relative;
-  z-index: 36;
-}
-/* Pie de tabla: ancla para ::before en hover (misma tabla que tbody). */
-.tabla-gestion-compacta tfoot tr td {
-  position: relative;
-  overflow: hidden;
-}
-/* Mismo comportamiento en pie de tabla (totales, fondo distinto al cuerpo). */
-.tabla-gestion-compacta tfoot tr td:hover {
-  overflow: visible;
-  z-index: 35;
-}
-.tabla-gestion-compacta tfoot tr td:hover::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100vw;
-  z-index: 0;
-  pointer-events: none;
-  background-color: color-mix(in oklab, var(--muted) 50%, var(--card));
-}
-.tabla-gestion-compacta tfoot tr:hover td:hover::before {
-  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
-}
-.tabla-gestion-compacta tfoot tr td:hover > * {
   position: relative;
   z-index: 36;
 }
