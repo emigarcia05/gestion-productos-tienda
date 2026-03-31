@@ -75,7 +75,7 @@ export default function VencPorFechaCalendario({
                   "flex w-full min-h-[6.5rem] flex-col overflow-hidden rounded-md border border-[#0072BB] bg-card py-0.5 aspect-[4/5]"
                 )}
               >
-                <div className="flex min-h-[2rem] shrink-0 items-center justify-center border-b border-border bg-muted/40 px-1 py-1.5 text-sm font-semibold tabular-nums">
+                <div className="flex min-h-[1.75rem] shrink-0 items-center justify-center border-b border-border bg-muted/40 px-1 py-1 text-sm font-semibold tabular-nums">
                   {celda.dia}
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5">
@@ -92,7 +92,7 @@ export default function VencPorFechaCalendario({
                 </div>
               </div>
             ) : (
-              <div className="aspect-[4/5] min-h-[6.5rem] w-full rounded-md bg-muted/15" aria-hidden />
+              <div className="aspect-[4/5] min-h-[6.5rem] w-full rounded-md bg-muted/15 py-0.5" aria-hidden />
             )}
           </div>
         ))}
