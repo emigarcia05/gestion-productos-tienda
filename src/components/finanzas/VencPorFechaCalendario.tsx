@@ -79,15 +79,16 @@ export default function VencPorFechaCalendario({
                   {celda.dia}
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5">
-                  {(porDia[celda.isoYmd] ?? []).map((item, j) => (
-                    <div
-                      key={`${celda.isoYmd}-${item.nombre}-${j}`}
-                      className="rounded border border-border/80 bg-background/80 px-1 py-0.5 text-left text-[10px] leading-tight text-foreground shadow-sm sm:text-[11px]"
-                    >
-                      <div className="line-clamp-2 font-medium">{item.nombre}</div>
-                      <div className="tabular-nums text-muted-foreground">{fmtMonto(item.saldo)}</div>
-                    </div>
-                  ))}
+                  {(() => {
+                    const itemsDia = porDia[celda.isoYmd] ?? [];
+                    const totalDia = itemsDia.reduce((acc, item) => acc + Number(item.saldo || 0), 0);
+                    if (!Number.isFinite(totalDia) || totalDia <= 0) return null;
+                    return (
+                      <div className="rounded border border-border/80 bg-background/80 px-1 py-0.5 text-left text-[10px] leading-tight text-foreground shadow-sm sm:text-[11px]">
+                        <div className="tabular-nums text-muted-foreground">{fmtMonto(String(totalDia))}</div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ) : (

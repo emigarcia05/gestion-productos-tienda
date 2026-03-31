@@ -818,6 +818,21 @@
 .tabla-gestion-compacta.tabla-deuda-proveedores tbody tr td:hover > * {
   z-index: auto;
 }
+.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr {
+  height: auto !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr td {
+  height: auto !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta.tabla-deuda-proveedores tbody td.celda-proveedor-deuda {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.2 !important;
+  vertical-align: top;
+}
 /* Modal vínculos (Tienda): conserva ancho y densidad de celdas; encabezado usa la misma regla global. */
 .tabla-gestion-compacta.tabla-vinculos-modal {
   width: 100% !important;

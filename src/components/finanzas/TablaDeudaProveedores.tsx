@@ -95,7 +95,10 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
               ) : (
                 filas.map((f) => (
                   <TableRow key={f.nombre}>
-                    <TableCell className="celda-datos min-w-[12rem] max-w-[24rem] font-medium">
+                    <TableCell
+                      className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] font-medium"
+                      title={f.nombre}
+                    >
                       {f.nombre}
                     </TableCell>
                     <TableCell className={cn(TD_NUM, "font-semibold")}>{fmtDeudaArs(f.deudaTotal)}</TableCell>
@@ -111,7 +114,7 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
             {totales ? (
               <TableFooter>
                 <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-border">
-                  <TableCell className="celda-datos min-w-[12rem] max-w-[24rem] text-left font-bold uppercase">
+                  <TableCell className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] text-left font-bold uppercase">
                     TOTAL
                   </TableCell>
                   <TableCell className={cn(TD_NUM, "font-bold")}>
