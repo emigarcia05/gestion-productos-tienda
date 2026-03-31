@@ -68,11 +68,11 @@ export default function VencPorFechaCalendario({
           </div>
         ))}
         {celdas.map((celda, i) => (
-          <div key={i} className="min-h-0 w-full min-w-0">
+          <div key={i} className="min-h-0 w-full min-w-0 rounded-md bg-[#0072BB] p-px">
             {celda.isoYmd != null && celda.dia != null ? (
               <div
                 className={cn(
-                  "flex w-full min-h-[6.5rem] flex-col overflow-hidden rounded-md border border-[#0072BB] bg-card py-0.5 aspect-[4/5]"
+                  "flex w-full min-h-[6.5rem] flex-col overflow-hidden rounded-[calc(var(--radius)-1px)] bg-card py-0.5 aspect-[4/5]"
                 )}
               >
                 <div className="flex min-h-[1.75rem] shrink-0 items-center justify-center border-b border-border bg-muted/40 px-1 py-1 text-sm font-semibold tabular-nums">
@@ -93,7 +93,7 @@ export default function VencPorFechaCalendario({
               </div>
             ) : (
               <div
-                className="aspect-[4/5] min-h-[6.5rem] w-full rounded-md border border-[#0072BB] bg-muted/15 py-0.5"
+                className="aspect-[4/5] min-h-[6.5rem] w-full rounded-[calc(var(--radius)-1px)] bg-muted/15 py-0.5"
                 aria-hidden
               />
             )}
