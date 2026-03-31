@@ -21,13 +21,15 @@ export default function SincronizarComprobantesProveedorDuxButton() {
       }
       const d = res.data;
       setLastOkAt(new Date().toISOString());
+      const purga =
+        d.eliminadosAntiguos > 0 ? ` Eliminadas ${d.eliminadosAntiguos} con más de 150 días.` : "";
       const conError = d.detalleSucursal.filter((s) => s.error);
       if (conError.length > 0) {
         toast.warning(
-          `Comprobantes actualizados: ${d.upserts} filas. Algunas sucursales respondieron con error en DUX.`
+          `Comprobantes actualizados: ${d.upserts} filas.${purga} Algunas sucursales respondieron con error en DUX.`
         );
       } else {
-        toast.success(`Comprobantes actualizados: ${d.upserts} filas.`);
+        toast.success(`Comprobantes actualizados: ${d.upserts} filas.${purga}`);
       }
     } finally {
       setLoading(false);

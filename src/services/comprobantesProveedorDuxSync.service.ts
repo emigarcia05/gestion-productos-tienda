@@ -7,6 +7,9 @@ import type { ServiceResult } from "@/types";
 
 const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
 
+/** Ventana de compras DUX: `fechaDesde` inicial sin datos, y retención (se borran filas más viejas al sync). */
+const DIAS_VENTANA_COMPRAS_DUX = 150;
+
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -22,6 +25,36 @@ export function fechaHastaArgentinaComoDux(now = new Date()): string {
     return "01/01/1970";
   }
   return `${pad2(d)}/${pad2(m)}/${y}`;
+}
+
+/**
+ * Resta `dias` al calendario de **hoy en Argentina** (`dateToIsoYmdArgentina`),
+ * sin depender del huso del servidor para el día de negocio.
+ */
+function fechaArgentinaMenosDiasComoDux(dias: number): string {
+  const isoHoy = dateToIsoYmdArgentina(new Date());
+  const [ys, ms, ds] = isoHoy.split("-");
+  const y = Number(ys);
+  const m = Number(ms);
+  const d = Number(ds);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    return "01/01/1970";
+  }
+  const t = new Date(Date.UTC(y, m - 1, d));
+  t.setUTCDate(t.getUTCDate() - dias);
+  return `${pad2(t.getUTCDate())}/${pad2(t.getUTCMonth() + 1)}/${t.getUTCFullYear()}`;
+}
+
+/** Inicio del día (UTC) usado como límite: `fecha_comp` estrictamente menor → más de `dias` días de antigüedad vs hoy AR. */
+function fechaLimiteRetencionComprasDux(dias: number): Date {
+  const isoHoy = dateToIsoYmdArgentina(new Date());
+  const [ys, ms, ds] = isoHoy.split("-");
+  const y = Number(ys);
+  const m = Number(ms);
+  const d = Number(ds);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  t.setUTCDate(t.getUTCDate() - dias);
+  return t;
 }
 
 function fechaCompDbToDux(d: Date): string {
@@ -138,6 +171,7 @@ export interface SyncComprobantesProveedorDuxResult {
   fechaDesde: string;
   fechaHasta: string;
   idEmpresa: number;
+  eliminadosAntiguos: number;
   upserts: number;
   omitidos: number;
   detalleSucursal: {
@@ -150,7 +184,8 @@ export interface SyncComprobantesProveedorDuxResult {
 
 /**
  * Consulta `/compras` en DUX **una vez por sucursal** (`sucursales.id_dux`).
- * - `fechaDesde`: última `fecha_comp` persistida; si no hay filas, coincide con `fechaHasta` (solo día corriente AR).
+ * Al iniciar: borra filas con `fecha_comp` anterior a hoy AR − `DIAS_VENTANA_COMPRAS_DUX` (150) días.
+ * - `fechaDesde`: última `fecha_comp` persistida (tras la purga); si no hay filas, hoy AR − 150 días.
  * - `fechaHasta`: hoy calendario en Argentina.
  */
 export async function sincronizarComprobantesProveedorDesdeDux(params?: {
@@ -167,6 +202,12 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
   }
 
   try {
+    const limite = fechaLimiteRetencionComprasDux(DIAS_VENTANA_COMPRAS_DUX);
+    const purga = await prisma.comprobanteProveedor.deleteMany({
+      where: { fechaComp: { lt: limite } },
+    });
+    const eliminadosAntiguos = purga.count;
+
     const maxRow = await prisma.comprobanteProveedor.findFirst({
       orderBy: { fechaComp: "desc" },
       select: { fechaComp: true },
@@ -174,7 +215,9 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
 
     const fechaHasta = fechaHastaArgentinaComoDux();
     const fechaDesde =
-      maxRow?.fechaComp != null ? fechaCompDbToDux(maxRow.fechaComp) : fechaHasta;
+      maxRow?.fechaComp != null
+        ? fechaCompDbToDux(maxRow.fechaComp)
+        : fechaArgentinaMenosDiasComoDux(DIAS_VENTANA_COMPRAS_DUX);
 
     const sucursalIdDux = (
       await prisma.sucursal.findMany({
@@ -259,6 +302,7 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
         fechaDesde,
         fechaHasta,
         idEmpresa,
+        eliminadosAntiguos,
         upserts,
         omitidos,
         detalleSucursal,

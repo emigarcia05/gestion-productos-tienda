@@ -283,11 +283,12 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Índices**: `fecha_comp`, `id_proveedor`.
 - **Sync** (`comprobantesProveedorDuxSync.service.ts`):
   - **Una petición (o ráfaga paginada) por cada** `sucursales.id_dux` numérico; entre sucursales respeta `DUX_COMPRAS_MIN_INTERVAL_MS` (igual que `getSiguienteComprobanteDuxCompra`).
-  - **`fechaDesde`**: máximo `fecha_comp` ya guardado; si la tabla está vacía, **igual a `fechaHasta`** (solo día corriente en Argentina, vía `dateToIsoYmdArgentina`).
+  - **Purga al iniciar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt; **hoy Argentina − 150 días** (misma ventana que `DIAS_VENTANA_COMPRAS_DUX`); el conteo vuelve en `data.eliminadosAntiguos`.
+  - **`fechaDesde`**: máximo `fecha_comp` **después** de la purga; si no queda ninguna fila, **hoy AR − 150 días** (`fechaArgentinaMenosDiasComoDux`) hasta `fechaHasta` (hoy Argentina).
   - **`fechaHasta`**: “hoy” calendario Argentina (`fechaHastaArgentinaComoDux`).
   - **Paginación**: `fetchComprasPagesAcumulado` en `duxComprasApi.ts` — `DUX_COMPRAS_SYNC_LIMIT` (default 2000), `DUX_COMPRAS_SYNC_MAX_PAGES` (default 1). Si DUX admite `offset` y hay más filas, subir `DUX_COMPRAS_SYNC_MAX_PAGES`; si la API ignora `offset`, dejar `1` para no duplicar lecturas.
   - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
-- **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
+- **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
 - **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique).
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos

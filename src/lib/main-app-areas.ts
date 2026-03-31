@@ -7,7 +7,7 @@ export type MainAppAreaId = "gestion-productos" | "finanzas" | "estadisticas-pro
 
 export interface MainAppAreaDefinition {
   id: MainAppAreaId;
-  /** Título en title case (sidebar / modal). */
+  /** Título canónico en title case; en UI usar `areaLabelMayusculas(label)` en slidenav y modal de áreas. */
   label: string;
   /** Leyenda de estado bajo el logo (ej. Terminada / A construir). */
   statusLabel: string;
@@ -58,4 +58,9 @@ export function getMainAppAreaById(id: MainAppAreaId): MainAppAreaDefinition {
     throw new Error(`Unknown main app area: ${id}`);
   }
   return found;
+}
+
+/** Nombre del área en MAYÚSCULAS para slidenav y modal (locale `es`). */
+export function areaLabelMayusculas(label: string): string {
+  return label.toLocaleUpperCase("es");
 }

@@ -11,6 +11,7 @@ import AppModal from "@/components/shared/AppModal";
 import { cn } from "@/lib/utils";
 import {
   MAIN_APP_AREAS,
+  areaLabelMayusculas,
   getMainAppAreaById,
   getMainAppAreaIdFromPathname,
   type MainAppAreaId,
@@ -107,7 +108,7 @@ export default function SidebarMainAppArea({
                 labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
               )}
             >
-              {current.label}
+              {areaLabelMayusculas(current.label)}
             </span>
           </div>
         ) : null}
@@ -142,7 +143,7 @@ export default function SidebarMainAppArea({
                 labelContext === "sidebar" && "text-[13px] leading-none whitespace-nowrap"
               )}
             >
-              {current.label}
+              {areaLabelMayusculas(current.label)}
             </span>
           </div>
         ) : null}
@@ -178,7 +179,7 @@ export default function SidebarMainAppArea({
                       aria-hidden="true"
                     />
                     <span className={cn(areaTitleVariants({ context: "modal" }), "block")}>
-                      {area.label}
+                      {areaLabelMayusculas(area.label)}
                     </span>
                   </span>
                 </button>
