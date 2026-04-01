@@ -500,6 +500,7 @@ Contrato (SSOT de integración + armado de filas):
       - `pedidos_historia.sucursal.deposito` => columna `DEPOSITO`
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
       - En el Excel, columnas `FECHA` y `FECHA IMPUTACION CONTABLE` se exportan en formato `DD-MM-AAAA`.
+    - Para resolver `COMPROBANTE` (DUX `/compras`), siempre consultar con la fecha **de hoy en Argentina** (`fechaDesde = fechaHasta = hoy AR`), sin usar `fechaFacturaIso`.
     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.

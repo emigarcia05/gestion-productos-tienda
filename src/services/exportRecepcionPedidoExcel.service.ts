@@ -2,7 +2,10 @@ import { z } from "zod";
 import type { ServiceResult } from "@/types";
 import { getSiguienteComprobanteDuxCompra } from "@/services/duxCompras.service";
 import { prisma } from "@/lib/prisma";
-import { formatDdMmHhMmGuionesBajosArchivoArgentina } from "@/lib/fechaArgentina";
+import {
+  dateToIsoYmdArgentina,
+  formatDdMmHhMmGuionesBajosArchivoArgentina,
+} from "@/lib/fechaArgentina";
 
 export const fechaFacturaIsoSchema = z
   .string()
@@ -107,15 +110,18 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     }
 
     const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);
-    const ultimoDiaMes = new Date(y, m, 0).getDate();
-    const fechaDesde = formatDuxDdMmYyyy(y, m, 1);
-    const fechaHasta = formatDuxDdMmYyyy(y, m, ultimoDiaMes);
     const fechaFacturaExcel = formatExcelDdMmYyyyDash(y, m, d);
+
+    // La numeración de comprobante siempre se consulta con "hoy" (Argentina),
+    // independiente de la fecha de recepción/factura cargada en el modal.
+    const hoyIsoArgentina = dateToIsoYmdArgentina(new Date());
+    const { y: yHoy, m: mHoy, d: dHoy } = parseIsoYmdParts(hoyIsoArgentina);
+    const fechaConsultaComprobante = formatDuxDdMmYyyy(yHoy, mHoy, dHoy);
 
     const { siguienteComprobante, totalImporte } =
       await getSiguienteComprobanteDuxCompra({
-        fechaDesde,
-        fechaHasta,
+        fechaDesde: fechaConsultaComprobante,
+        fechaHasta: fechaConsultaComprobante,
         idEmpresa: idEmpresaParsed.data,
       });
 
