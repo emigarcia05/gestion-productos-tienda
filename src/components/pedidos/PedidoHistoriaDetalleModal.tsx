@@ -494,6 +494,41 @@ export default function PedidoHistoriaDetalleModal({
 
   const clsBotonTabla = "disabled:cursor-not-allowed";
 
+  async function descargarRecepcionExcel(): Promise<boolean> {
+    if (!pedidoHistoriaId) return false;
+    const isoFecha =
+      fechaRecepcion.trim() !== ""
+        ? fechaRecepcion
+        : (() => {
+            const d = toDate(detalle?.generadoAt ?? null);
+            return d ? dateToIsoYmdArgentina(d) : "";
+          })();
+    if (!isoFecha) {
+      toast.error("No hay fecha para descargar la recepcion.");
+      return false;
+    }
+
+    setGuardando("export");
+    try {
+      const excelRes = await exportarExcelRecepcionPedidoAction({
+        pedidoHistoriaId,
+        fechaFacturaIso: isoFecha,
+        totalPedidoIngreso: totalPedidoMontoPositivo(totalPedido)
+          ? Number(totalPedido)
+          : undefined,
+      });
+      if (!excelRes.ok) {
+        toast.error(excelRes.error ?? "Error al generar el Excel.");
+        return false;
+      }
+      descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
+      setTimeout(() => setShowExportInstructor(true), INSTRUCTOR_DELAY_MS);
+      return true;
+    } finally {
+      setGuardando(null);
+    }
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -584,9 +619,13 @@ export default function PedidoHistoriaDetalleModal({
                       type="button"
                       className="disabled:cursor-not-allowed"
                       disabled={guardando != null || loading}
-                      onClick={() => {
+                      onClick={async () => {
+                        const ok = await descargarRecepcionExcel();
+                        if (!ok) return;
                         setModoCorreccionRecepcionado(false);
-                        toast.success("Correccion de recepcion guardada.");
+                        toast.success(
+                          "Correccion de recepcion guardada y descarga actualizada."
+                        );
                       }}
                     >
                       Guardar Correccion
@@ -597,44 +636,7 @@ export default function PedidoHistoriaDetalleModal({
                     className="disabled:cursor-not-allowed"
                     disabled={guardando != null || loading || !pedidoHistoriaId}
                     onClick={async () => {
-                      if (!pedidoHistoriaId) return;
-                      const isoFecha =
-                        fechaRecepcion.trim() !== ""
-                          ? fechaRecepcion
-                          : (() => {
-                              const d = toDate(detalle?.generadoAt ?? null);
-                              return d ? dateToIsoYmdArgentina(d) : "";
-                            })();
-                      if (!isoFecha) {
-                        toast.error("No hay fecha para descargar la recepcion.");
-                        return;
-                      }
-
-                      setGuardando("export");
-                      try {
-                        const excelRes = await exportarExcelRecepcionPedidoAction({
-                          pedidoHistoriaId,
-                          fechaFacturaIso: isoFecha,
-                          totalPedidoIngreso:
-                            totalPedidoMontoPositivo(totalPedido)
-                              ? Number(totalPedido)
-                              : undefined,
-                        });
-                        if (!excelRes.ok) {
-                          toast.error(excelRes.error ?? "Error al generar el Excel.");
-                          return;
-                        }
-                        descargarExcelBase64(
-                          excelRes.data.excelBase64,
-                          excelRes.data.filename
-                        );
-                        setTimeout(
-                          () => setShowExportInstructor(true),
-                          INSTRUCTOR_DELAY_MS
-                        );
-                      } finally {
-                        setGuardando(null);
-                      }
+                      await descargarRecepcionExcel();
                     }}
                   >
                     Descargar Recepcion
