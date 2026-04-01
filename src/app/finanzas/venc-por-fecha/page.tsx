@@ -5,7 +5,6 @@ import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
   formatIsoYmdDdMmYyyyArgentina,
-  formatMesAnioMayusculasDesdeIsoYmd,
 } from "@/lib/fechaArgentina";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -13,8 +12,8 @@ import { listarVencimientosEnRango } from "@/services/vencimientosPorFecha.servi
 
 export const dynamic = "force-dynamic";
 
-/** Ventana fija: desde hoy (AR) hasta 120 días adelante (inclusive). */
-const DIAS_VENTANA_VENC_POR_FECHA = 120;
+/** Ventana fija: desde hoy (AR) hasta 150 días adelante (inclusive). */
+const DIAS_VENTANA_VENC_POR_FECHA = 150;
 
 function claveDiaFechaVenc(fechaVenc: string | Date): string {
   if (typeof fechaVenc === "string") {
@@ -49,8 +48,6 @@ export default async function VencPorFechaPage() {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([isoYmd, total]) => ({
       isoYmd,
-      dia: Number(isoYmd.slice(8, 10)),
-      mesEtiqueta: formatMesAnioMayusculasDesdeIsoYmd(isoYmd),
       vencimientoDelDia: total,
     }));
 

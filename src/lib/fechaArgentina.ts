@@ -135,6 +135,24 @@ export function formatMesAnioMayusculasDesdeIsoYmd(isoYmd: string): string {
   return `${mes.toLocaleUpperCase("es-AR")} ${anio}`;
 }
 
+/** Ej. `ABRIL 1` — mes en mayúsculas + día del mes (calendario Argentina). */
+export function formatMesDiaMayusculasDesdeIsoYmd(isoYmd: string): string {
+  const [y, m, d] = isoYmd.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return "";
+  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const mes = new Intl.DateTimeFormat("es-AR", {
+    timeZone: TIMEZONE_ARGENTINA,
+    month: "long",
+  })
+    .format(dt)
+    .toLocaleUpperCase("es-AR");
+  const dia = new Intl.DateTimeFormat("es-AR", {
+    timeZone: TIMEZONE_ARGENTINA,
+    day: "numeric",
+  }).format(dt);
+  return `${mes} ${dia}`;
+}
+
 /** `2026-03-15` → `15/03/2026` (solo presentación). */
 export function formatIsoYmdDdMmYyyyArgentina(isoYmd: string): string {
   const [y, m, d] = isoYmd.split("-");

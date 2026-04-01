@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
+import {
+  formatFechaLargaNotaPedidoArgentina,
+  formatMesDiaMayusculasDesdeIsoYmd,
+} from "@/lib/fechaArgentina";
 import {
   EmptyTableRow,
   Table,
@@ -35,15 +38,11 @@ const CAJA_DISPONIBLE_PLACEHOLDER = 0;
 function filasConVtosYSaldo(
   filasOrdenadas: Array<{
     isoYmd: string;
-    dia: number;
-    mesEtiqueta: string;
     vencimientoDelDia: number;
   }>,
   cajaDisponiblePorFila: number
 ): Array<{
   isoYmd: string;
-  dia: number;
-  mesEtiqueta: string;
   vencimientoDelDia: number;
   vtosAcumulados: number;
   cajaDisponible: number;
@@ -73,8 +72,6 @@ export interface VencPorFechaCalendarioProps {
   detallesPorDia: Record<string, Array<{ proveedor: string; vencimiento: number }>>;
   filas: Array<{
     isoYmd: string;
-    dia: number;
-    mesEtiqueta: string;
     vencimientoDelDia: number;
   }>;
 }
@@ -107,7 +104,7 @@ export default function VencPorFechaCalendario({
       <div className="flex flex-1 min-h-0 flex-col gap-3 px-4 pb-4 pt-1 sm:px-6 lg:px-8">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-foreground sm:text-lg">Próximos 120 días</h2>
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">Próximos 150 días</h2>
             <p className="text-xs text-muted-foreground tabular-nums">
               {rangoDesdeLabel} — {rangoHastaLabel}
             </p>
@@ -116,21 +113,21 @@ export default function VencPorFechaCalendario({
 
         <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
           <Table variant="compact" scrollX={false}>
+            {/* Cinco columnas al 20% c/u: FECHA, VENCIMIENTO DEL DÍA, VTOS ACUMULADOS, CAJA DISPONIBLE, SALDO */}
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[15%] min-w-[6.5rem]">MES</TableHead>
-                <TableHead className="w-[5%] min-w-[2.25rem]">DÍA</TableHead>
-                <TableHead className="w-[20%] min-w-[5rem]">VENCIMIENTO DEL DÍA</TableHead>
-                <TableHead className="w-[20%] min-w-[5rem]">VTOS ACUMULADOS</TableHead>
-                <TableHead className="w-[20%] min-w-[5rem]">CAJA DISPONIBLE</TableHead>
-                <TableHead className="w-[20%] min-w-[5rem]">SALDO</TableHead>
+                <TableHead className="w-1/5 min-w-[6.5rem]">FECHA</TableHead>
+                <TableHead className="w-1/5 min-w-[5rem]">VENCIMIENTO DEL DÍA</TableHead>
+                <TableHead className="w-1/5 min-w-[5rem]">VTOS ACUMULADOS</TableHead>
+                <TableHead className="w-1/5 min-w-[5rem]">CAJA DISPONIBLE</TableHead>
+                <TableHead className="w-1/5 min-w-[5rem]">SALDO</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filasVista.length === 0 ? (
                 <EmptyTableRow
-                  colSpan={6}
-                  message="Sin vencimientos en los próximos 120 días."
+                  colSpan={5}
+                  message="Sin vencimientos en los próximos 150 días."
                 />
               ) : (
                 filasVista.map((fila) => (
@@ -139,20 +136,19 @@ export default function VencPorFechaCalendario({
                     title="Doble clic para ver el detalle por proveedor"
                     onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
                   >
-                    <TableCell className="celda-datos w-[15%] text-center font-medium uppercase">
-                      {fila.mesEtiqueta}
+                    <TableCell className="celda-datos w-1/5 text-center font-medium uppercase">
+                      {formatMesDiaMayusculasDesdeIsoYmd(fila.isoYmd)}
                     </TableCell>
-                    <TableCell className="celda-datos celda-numero w-[5%]">{fila.dia}</TableCell>
-                    <TableCell className="celda-datos celda-numero w-[20%]">
+                    <TableCell className="celda-datos celda-numero w-1/5">
                       {fmtMonto(String(fila.vencimientoDelDia))}
                     </TableCell>
-                    <TableCell className="celda-datos celda-numero w-[20%]">
+                    <TableCell className="celda-datos celda-numero w-1/5">
                       {fmtMonto(String(fila.vtosAcumulados))}
                     </TableCell>
-                    <TableCell className="celda-datos celda-numero w-[20%]">
+                    <TableCell className="celda-datos celda-numero w-1/5">
                       {fmtMonto(String(fila.cajaDisponible))}
                     </TableCell>
-                    <TableCell className="celda-datos celda-numero w-[20%]">
+                    <TableCell className="celda-datos celda-numero w-1/5">
                       {fmtMonto(String(fila.saldo))}
                     </TableCell>
                   </TableRow>
@@ -184,7 +180,6 @@ export default function VencPorFechaCalendario({
           }
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <p className="text-center text-xs text-muted-foreground">Solo lectura. Montos del día por proveedor.</p>
             <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar min-h-[14rem] max-h-[min(28rem,70vh)] min-w-0 flex-1">
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
