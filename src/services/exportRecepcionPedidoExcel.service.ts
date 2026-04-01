@@ -92,15 +92,18 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     if (!pedido) return { success: false, error: "Pedido no encontrado." };
 
     const itemsRecibidos = pedido.items
-      .filter((it) => it.cantRecibida != null)
       .map((it) => ({
         codTienda: it.codTienda,
-        cantRecibida: Math.max(0, Number(it.cantRecibida) || 0),
-      }));
+        cantRecibida: Number(it.cantRecibida ?? 0),
+      }))
+      .filter((it) => Number.isFinite(it.cantRecibida) && it.cantRecibida > 0);
 
     const sumCantRecibida = itemsRecibidos.reduce((s, it) => s + it.cantRecibida, 0);
     if (itemsRecibidos.length === 0) {
-      return { success: false, error: "El pedido no tiene ítems con cantidad recibida." };
+      return {
+        success: false,
+        error: "El pedido no tiene ítems con cantidad recibida mayor a cero.",
+      };
     }
 
     const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);

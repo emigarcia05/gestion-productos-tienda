@@ -23,7 +23,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Helpers**: `esEditor()` para “solo editor”; para permisos granulares usar `getRol()` y `puede(rol, PERMISOS.modulo.accion)` desde `@/lib/permisos`.
 - **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ListaPrecioTienda`, `ListaPrecioProveedor`, `ItemPedidoEnvio`). Validar con `prismaCuidSchema` (`@/lib/validations/common`), `uuidSchema` o `z.string().min(1).max(128)` según el modelo; **no** mezclar `.uuid()` en IDs que sean `cuid`.
 - **Lecturas con datos sensibles** (precios, vínculos, catálogos):
-  - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`).
+  - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas (no controla si el campo se expone).
   - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`.
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)`; IDs de ítem tienda con `uuidSchema`; filtros de búsqueda acotados con Zod en la Action.
   - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)`. En la matriz actual **`simple` y `editor`** tienen `sincronizar: true` (slidenav y cualquier cliente autenticado con sesión válida). El `GET` de estado (`/api/sync-lista-precios-tienda/status`) sigue sin chequeo de rol explícito en el route: cualquier sesión que pueda llamar la API ve el mismo progreso global.
@@ -500,7 +500,7 @@ Contrato (SSOT de integración + armado de filas):
       - `pedidos_historia.sucursal.deposito` => columna `DEPOSITO`
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
       - En el Excel, columnas `FECHA` y `FECHA IMPUTACION CONTABLE` se exportan en formato `DD-MM-AAAA`.
-     - Filtra ítems con `cant_recibida != null`.
+    - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
     - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:

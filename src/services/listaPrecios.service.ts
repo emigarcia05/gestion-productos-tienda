@@ -166,7 +166,6 @@ export async function getListaPreciosConTiendaFiltrada(
       .map((t) => [t.codExt, t.descripcionTienda as string])
   );
 
-  const incluirPxSugerido = opciones?.soloPxSugerido === true;
   let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => ({
     id: f.id,
     codExt: f.codExt,
@@ -176,7 +175,9 @@ export async function getListaPreciosConTiendaFiltrada(
     marca: f.marca ?? null,
     rubro: f.rubro ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
-    ...(incluirPxSugerido && { pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null }),
+    // Siempre exponer el campo para que módulos como "Px. Vta. Sugeridos"
+    // puedan renderizar la columna aunque no filtren por soloPxSugerido.
+    pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null,
     dtoProveedor: f.dtoProveedor,
     dtoMarca: f.dtoMarca,
     dtoRubro: f.dtoRubro,
