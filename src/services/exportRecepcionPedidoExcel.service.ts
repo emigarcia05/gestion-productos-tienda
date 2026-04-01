@@ -38,6 +38,7 @@ export interface ExportRecepcionPedidoExcelPayload {
 }
 
 const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
+const MAX_LOOKBACK_DIAS_COMPROBANTE_DUX = 365;
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -116,14 +117,48 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     // independiente de la fecha de recepción/factura cargada en el modal.
     const hoyIsoArgentina = dateToIsoYmdArgentina(new Date());
     const { y: yHoy, m: mHoy, d: dHoy } = parseIsoYmdParts(hoyIsoArgentina);
-    const fechaConsultaComprobante = formatDuxDdMmYyyy(yHoy, mHoy, dHoy);
 
-    const { siguienteComprobante, totalImporte } =
-      await getSiguienteComprobanteDuxCompra({
-        fechaDesde: fechaConsultaComprobante,
-        fechaHasta: fechaConsultaComprobante,
-        idEmpresa: idEmpresaParsed.data,
-      });
+    let siguienteComprobante: string | null = null;
+    let totalImporte: number | null = null;
+    let ultimoErrorSinResultados: string | null = null;
+
+    const baseUtc = new Date(Date.UTC(yHoy, mHoy - 1, dHoy));
+    for (let i = 0; i <= MAX_LOOKBACK_DIAS_COMPROBANTE_DUX; i += 1) {
+      const consultaUtc = new Date(baseUtc);
+      consultaUtc.setUTCDate(baseUtc.getUTCDate() - i);
+      const fechaDia = formatDuxDdMmYyyy(
+        consultaUtc.getUTCFullYear(),
+        consultaUtc.getUTCMonth() + 1,
+        consultaUtc.getUTCDate()
+      );
+
+      try {
+        const data = await getSiguienteComprobanteDuxCompra({
+          fechaDesde: fechaDia,
+          fechaHasta: fechaDia,
+          idEmpresa: idEmpresaParsed.data,
+        });
+        siguienteComprobante = data.siguienteComprobante;
+        totalImporte = data.totalImporte;
+        break;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        const sinResultados =
+          message.includes("No se pudo obtener el último comprobante") ||
+          message.includes("sin resultados válidos");
+        if (!sinResultados) throw error;
+        ultimoErrorSinResultados = message || "Sin resultados válidos.";
+      }
+    }
+
+    if (!siguienteComprobante || totalImporte == null) {
+      const detalle = ultimoErrorSinResultados
+        ? ` ${ultimoErrorSinResultados}`
+        : " No se encontraron comprobantes válidos.";
+      throw new Error(
+        `No se pudo resolver el comprobante en DUX luego de buscar hacia atrás ${MAX_LOOKBACK_DIAS_COMPROBANTE_DUX + 1} día(s).${detalle}`
+      );
+    }
 
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
