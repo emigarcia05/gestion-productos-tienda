@@ -17,6 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import { PAGE_SIZE } from "@/lib/pagination";
 
 function fmtMonto(s: string): string {
   const n = Number(s);
@@ -33,7 +35,7 @@ const CAJA_DISPONIBLE_PLACEHOLDER = 0;
 /**
  * Filas ordenadas por fecha (solo ≥ hoy en servidor):
  * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
- * - **SALDO**: 1.ª fila CAJA − vencimiento del día; siguientes: saldo anterior − vencimiento del día.
+ * - **SALDO**: siempre `VTOS ACUMULADOS - CAJA DISPONIBLE`.
  */
 function filasConVtosYSaldo(
   filasOrdenadas: Array<{
@@ -49,15 +51,10 @@ function filasConVtosYSaldo(
   cajaDisponible: number;
   saldo: number;
 }> {
-  let saldoAnterior = 0;
   let vtosAcum = saldoVencidoAntesDeHoy;
-  return filasOrdenadas.map((fila, i) => {
+  return filasOrdenadas.map((fila) => {
     vtosAcum += fila.vencimientoDelDia;
-    const saldo =
-      i === 0
-        ? cajaDisponiblePorFila - fila.vencimientoDelDia
-        : saldoAnterior - fila.vencimientoDelDia;
-    saldoAnterior = saldo;
+    const saldo = vtosAcum - cajaDisponiblePorFila;
     return {
       ...fila,
       vtosAcumulados: vtosAcum,
@@ -77,6 +74,9 @@ export interface VencPorFechaCalendarioProps {
     isoYmd: string;
     vencimientoDelDia: number;
   }>;
+  paginaActual: number;
+  totalPaginas: number;
+  total: number;
 }
 
 export default function VencPorFechaCalendario({
@@ -85,6 +85,9 @@ export default function VencPorFechaCalendario({
   saldoVencidoAntesDeHoy,
   detallesPorDia,
   filas,
+  paginaActual,
+  totalPaginas,
+  total,
 }: VencPorFechaCalendarioProps) {
   const [detalleIsoYmd, setDetalleIsoYmd] = useState<string | null>(null);
   const detalleFilas = useMemo(
@@ -162,6 +165,18 @@ export default function VencPorFechaCalendario({
             </TableBody>
           </Table>
         </div>
+        {totalPaginas > 1 ? (
+          <div className="flex justify-end pt-2 shrink-0">
+            <PaginacionTabla
+              basePath="/finanzas/venc-por-fecha"
+              params={{}}
+              paginaActual={paginaActual}
+              totalPaginas={totalPaginas}
+              total={total}
+              pageSize={PAGE_SIZE}
+            />
+          </div>
+        ) : null}
       </div>
       <Dialog open={detalleIsoYmd !== null} onOpenChange={(open) => !open && setDetalleIsoYmd(null)}>
         <AppModal

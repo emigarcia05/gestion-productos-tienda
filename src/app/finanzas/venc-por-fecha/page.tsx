@@ -12,6 +12,7 @@ import {
   listarVencimientosEnRango,
   sumarSaldoVencimientosConFechaVencAnteriorA,
 } from "@/services/vencimientosPorFecha.service";
+import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,19 @@ function claveDiaFechaVenc(fechaVenc: string | Date): string {
   return dateToIsoYmdArgentina(fechaVenc);
 }
 
-export default async function VencPorFechaPage() {
+interface Props {
+  searchParams: Promise<{
+    pagina?: string;
+  }>;
+}
+
+export default async function VencPorFechaPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
     redirect("/gestion-productos/proveedores/sugeridos");
   }
+  const { pagina = "1" } = await searchParams;
+  const paginaSolicitada = Math.max(1, parseInt(pagina, 10) || 1);
 
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const hastaIso = addDaysToIsoYmdArgentina(hoyIso, DIAS_VENTANA_VENC_POR_FECHA);
@@ -50,12 +59,17 @@ export default async function VencPorFechaPage() {
       (detallePorDiaProveedor[key][l.nombre] ?? 0) + Number(l.saldo);
   }
 
-  const filas = Object.entries(totalPorDia)
+  const filasTotales = Object.entries(totalPorDia)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([isoYmd, total]) => ({
       isoYmd,
       vencimientoDelDia: total,
     }));
+  const total = filasTotales.length;
+  const totalPaginas = totalPaginasFromTotal(total, PAGE_SIZE);
+  const paginaActual = Math.min(paginaSolicitada, totalPaginas);
+  const inicio = skipForPagina(paginaActual, PAGE_SIZE);
+  const filas = filasTotales.slice(inicio, inicio + PAGE_SIZE);
 
   const detallesPorDia = Object.fromEntries(
     Object.entries(detallePorDiaProveedor).map(([isoYmd, porProveedor]) => [
@@ -75,6 +89,9 @@ export default async function VencPorFechaPage() {
           saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
           detallesPorDia={detallesPorDia}
           filas={filas}
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          total={total}
         />
       </ClassicFilteredTableLayout>
     </div>
