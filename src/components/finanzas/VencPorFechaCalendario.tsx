@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
+import { cn } from "@/lib/utils";
 import {
   EmptyTableRow,
   Table,
@@ -23,6 +25,39 @@ function fmtMonto(s: string): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+/** CAJA por día: placeholder hasta integrar origen real (mismo valor en todas las filas si es constante). */
+const CAJA_DISPONIBLE_PLACEHOLDER = 0;
+
+/**
+ * Saldo acumulativo en el mes (filas ordenadas por fecha):
+ * - 1.ª fila: CAJA − A PAGAR
+ * - siguientes: saldo anterior − A PAGAR
+ */
+function filasConSaldoAcumulativo(
+  filasOrdenadas: Array<{ isoYmd: string; dia: number; aPagar: number }>,
+  cajaDisponiblePorFila: number
+): Array<{
+  isoYmd: string;
+  dia: number;
+  aPagar: number;
+  cajaDisponible: number;
+  saldo: number;
+}> {
+  let saldoAnterior = 0;
+  return filasOrdenadas.map((fila, i) => {
+    const saldo =
+      i === 0
+        ? cajaDisponiblePorFila - fila.aPagar
+        : saldoAnterior - fila.aPagar;
+    saldoAnterior = saldo;
+    return {
+      ...fila,
+      cajaDisponible: cajaDisponiblePorFila,
+      saldo,
+    };
+  });
 }
 
 export interface VencPorFechaCalendarioProps {
@@ -53,7 +88,17 @@ export default function VencPorFechaCalendario({
     () => (detalleIsoYmd ? detallesPorDia[detalleIsoYmd] ?? [] : []),
     [detalleIsoYmd, detallesPorDia]
   );
-  const detalleDia = detalleIsoYmd ? Number(detalleIsoYmd.slice(8, 10)) : null;
+  const detalleFechaLarga = useMemo(() => {
+    if (!detalleIsoYmd) return "";
+    const [yy, mm, dd] = detalleIsoYmd.split("-").map(Number);
+    if (!Number.isFinite(yy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return "";
+    return formatFechaLargaNotaPedidoArgentina(new Date(yy, mm - 1, dd));
+  }, [detalleIsoYmd]);
+
+  const filasVista = useMemo(
+    () => filasConSaldoAcumulativo(filas, CAJA_DISPONIBLE_PLACEHOLDER),
+    [filas]
+  );
 
   return (
     <>
@@ -88,17 +133,26 @@ export default function VencPorFechaCalendario({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filas.length === 0 ? (
+              {filasVista.length === 0 ? (
                 <EmptyTableRow colSpan={4} message="Sin vencimientos para el mes seleccionado." />
               ) : (
-                filas.map((fila) => {
-                  const cajaDisponible = 0;
-                  const saldo = cajaDisponible - fila.aPagar;
-                  const estaVencida = fila.isoYmd < hoyIso;
+                filasVista.map((fila) => {
+                  const filaPasada = fila.isoYmd < hoyIso;
                   return (
                     <TableRow
                       key={`${mesYm}-${fila.dia}`}
-                      className={estaVencida ? "bg-muted/60 text-muted-foreground opacity-70" : undefined}
+                      data-fecha-pasada={filaPasada ? "true" : undefined}
+                      aria-label={filaPasada ? `Día ${fila.dia}, fecha pasada` : undefined}
+                      title="Doble clic para ver el detalle por proveedor"
+                      className={cn(
+                        filaPasada &&
+                          cn(
+                            "cursor-default text-muted-foreground",
+                            /* Sobreescribe cebra y hover de `TableRow` para leerse como fila bloqueada */
+                            "!bg-muted/55 odd:!bg-muted/55 even:!bg-muted/55",
+                            "hover:!bg-muted/62 hover:!text-muted-foreground"
+                          )
+                      )}
                       onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
                     >
                       <TableCell className="celda-datos celda-numero w-[10%]">{fila.dia}</TableCell>
@@ -106,10 +160,10 @@ export default function VencPorFechaCalendario({
                         {fmtMonto(String(fila.aPagar))}
                       </TableCell>
                       <TableCell className="celda-datos celda-numero w-[30%]">
-                        {fmtMonto(String(cajaDisponible))}
+                        {fmtMonto(String(fila.cajaDisponible))}
                       </TableCell>
                       <TableCell className="celda-datos celda-numero w-[30%]">
-                        {fmtMonto(String(saldo))}
+                        {fmtMonto(String(fila.saldo))}
                       </TableCell>
                     </TableRow>
                   );
@@ -121,39 +175,51 @@ export default function VencPorFechaCalendario({
       </div>
       <Dialog open={detalleIsoYmd !== null} onOpenChange={(open) => !open && setDetalleIsoYmd(null)}>
         <AppModal
-          title={`Vencimientos Del Día ${detalleDia ?? ""}`}
+          title={
+            detalleFechaLarga ? (
+              <span className="flex flex-col items-center gap-1 text-center">
+                <span>Detalle Del Día</span>
+                <span className="text-sm font-normal text-primary-foreground/95">{detalleFechaLarga}</span>
+              </span>
+            ) : (
+              "Detalle Del Día"
+            )
+          }
           size="lg"
           padding="sm"
           scrollBody={false}
           actions={
-            <Button variant="outline" onClick={() => setDetalleIsoYmd(null)}>
+            <Button type="button" variant="outline" onClick={() => setDetalleIsoYmd(null)}>
               Cerrar
             </Button>
           }
         >
-          <div className="contenedor-tabla-gestion no-scroll-x h-full min-h-[18rem]">
-            <Table variant="compact" scrollX={false}>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[70%]">PROVEEDOR</TableHead>
-                  <TableHead className="w-[30%]">VENCIMIENTO</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {detalleFilas.length === 0 ? (
-                  <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
-                ) : (
-                  detalleFilas.map((fila, idx) => (
-                    <TableRow key={`${fila.proveedor}-${idx}`}>
-                      <TableCell className="celda-datos w-[70%] text-left">{fila.proveedor}</TableCell>
-                      <TableCell className="celda-datos celda-numero w-[30%]">
-                        {fmtMonto(String(fila.vencimiento))}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <p className="text-center text-xs text-muted-foreground">Solo lectura. Montos del día por proveedor.</p>
+            <div className="contenedor-tabla-gestion no-scroll-x min-h-[14rem] flex-1">
+              <Table variant="compact" scrollX={false}>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[65%]">PROVEEDOR</TableHead>
+                    <TableHead className="w-[35%]">MONTO A PAGAR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detalleFilas.length === 0 ? (
+                    <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
+                  ) : (
+                    detalleFilas.map((fila, idx) => (
+                      <TableRow key={`${fila.proveedor}-${idx}`}>
+                        <TableCell className="celda-datos w-[65%] text-left font-medium">{fila.proveedor}</TableCell>
+                        <TableCell className="celda-datos celda-numero w-[35%] tabular-nums">
+                          {fmtMonto(String(fila.vencimiento))}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </AppModal>
       </Dialog>
