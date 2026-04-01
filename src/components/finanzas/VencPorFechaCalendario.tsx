@@ -27,6 +27,10 @@ function fmtMonto(s: string): string {
   })}`;
 }
 
+/** Misma convención que `TablaDeudaProveedores` (Finanzas). */
+const TH_NUM = "text-right whitespace-nowrap";
+const TD_NUM = "celda-datos text-right tabular-nums";
+
 /** CAJA por día: placeholder hasta integrar origen real (mismo valor en todas las filas si es constante). */
 const CAJA_DISPONIBLE_PLACEHOLDER = 0;
 
@@ -122,55 +126,50 @@ export default function VencPorFechaCalendario({
           </div>
         </div>
 
-        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-          <Table variant="compact" scrollX={false}>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[10%]">DÍA</TableHead>
-                <TableHead className="w-[30%]">A PAGAR</TableHead>
-                <TableHead className="w-[30%]">CAJA DISPONIBLE</TableHead>
-                <TableHead className="w-[30%]">SALDO</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filasVista.length === 0 ? (
-                <EmptyTableRow colSpan={4} message="Sin vencimientos para el mes seleccionado." />
-              ) : (
-                filasVista.map((fila) => {
-                  const filaPasada = fila.isoYmd < hoyIso;
-                  return (
-                    <TableRow
-                      key={`${mesYm}-${fila.dia}`}
-                      data-fecha-pasada={filaPasada ? "true" : undefined}
-                      aria-label={filaPasada ? `Día ${fila.dia}, fecha pasada` : undefined}
-                      title="Doble clic para ver el detalle por proveedor"
-                      className={cn(
-                        filaPasada &&
-                          cn(
-                            "cursor-default text-muted-foreground",
-                            /* Sobreescribe cebra y hover de `TableRow` para leerse como fila bloqueada */
-                            "!bg-muted/55 odd:!bg-muted/55 even:!bg-muted/55",
-                            "hover:!bg-muted/62 hover:!text-muted-foreground"
-                          )
-                      )}
-                      onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
-                    >
-                      <TableCell className="celda-datos celda-numero w-[10%]">{fila.dia}</TableCell>
-                      <TableCell className="celda-datos celda-numero w-[30%]">
-                        {fmtMonto(String(fila.aPagar))}
-                      </TableCell>
-                      <TableCell className="celda-datos celda-numero w-[30%]">
-                        {fmtMonto(String(fila.cajaDisponible))}
-                      </TableCell>
-                      <TableCell className="celda-datos celda-numero w-[30%]">
-                        {fmtMonto(String(fila.saldo))}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+        <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+          <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
+            <Table variant="compact" scrollX={false}>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[10%] min-w-[3rem]">DÍA</TableHead>
+                  <TableHead className={cn(TH_NUM, "w-[30%] min-w-[7rem]")}>A PAGAR</TableHead>
+                  <TableHead className={cn(TH_NUM, "w-[30%] min-w-[7rem]")}>CAJA DISPONIBLE</TableHead>
+                  <TableHead className={cn(TH_NUM, "w-[30%] min-w-[7rem]")}>SALDO</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filasVista.length === 0 ? (
+                  <EmptyTableRow colSpan={4} message="Sin vencimientos para el mes seleccionado." />
+                ) : (
+                  filasVista.map((fila) => {
+                    const filaPasada = fila.isoYmd < hoyIso;
+                    return (
+                      <TableRow
+                        key={`${mesYm}-${fila.dia}`}
+                        data-fecha-pasada={filaPasada ? "true" : undefined}
+                        aria-label={filaPasada ? `Día ${fila.dia}, fecha pasada` : undefined}
+                        title="Doble clic para ver el detalle por proveedor"
+                        className={cn(
+                          filaPasada &&
+                            cn(
+                              "cursor-default text-muted-foreground",
+                              "!bg-muted/55 odd:!bg-muted/55 even:!bg-muted/55",
+                              "hover:!bg-muted/62 hover:!text-muted-foreground"
+                            )
+                        )}
+                        onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
+                      >
+                        <TableCell className="celda-datos celda-numero w-[10%] tabular-nums">{fila.dia}</TableCell>
+                        <TableCell className={cn(TD_NUM, "w-[30%]")}>{fmtMonto(String(fila.aPagar))}</TableCell>
+                        <TableCell className={cn(TD_NUM, "w-[30%]")}>{fmtMonto(String(fila.cajaDisponible))}</TableCell>
+                        <TableCell className={cn(TD_NUM, "w-[30%]")}>{fmtMonto(String(fila.saldo))}</TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
       <Dialog open={detalleIsoYmd !== null} onOpenChange={(open) => !open && setDetalleIsoYmd(null)}>
@@ -196,29 +195,31 @@ export default function VencPorFechaCalendario({
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <p className="text-center text-xs text-muted-foreground">Solo lectura. Montos del día por proveedor.</p>
-            <div className="contenedor-tabla-gestion no-scroll-x min-h-[14rem] flex-1">
-              <Table variant="compact" scrollX={false}>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[65%]">PROVEEDOR</TableHead>
-                    <TableHead className="w-[35%]">MONTO A PAGAR</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detalleFilas.length === 0 ? (
-                    <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
-                  ) : (
-                    detalleFilas.map((fila, idx) => (
-                      <TableRow key={`${fila.proveedor}-${idx}`}>
-                        <TableCell className="celda-datos w-[65%] text-left font-medium">{fila.proveedor}</TableCell>
-                        <TableCell className="celda-datos celda-numero w-[35%] tabular-nums">
-                          {fmtMonto(String(fila.vencimiento))}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+            <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+              <div className="min-h-[14rem] min-w-0 flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
+                <Table variant="compact" scrollX={false}>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="min-w-[12rem] w-[65%]">PROVEEDOR</TableHead>
+                      <TableHead className={cn(TH_NUM, "min-w-[7.5rem] w-[35%]")}>MONTO A PAGAR</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detalleFilas.length === 0 ? (
+                      <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
+                    ) : (
+                      detalleFilas.map((fila, idx) => (
+                        <TableRow key={`${fila.proveedor}-${idx}`}>
+                          <TableCell className="celda-datos w-[65%] min-w-[12rem] max-w-[24rem] text-left font-medium">
+                            {fila.proveedor}
+                          </TableCell>
+                          <TableCell className={cn(TD_NUM, "w-[35%]")}>{fmtMonto(String(fila.vencimiento))}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         </AppModal>

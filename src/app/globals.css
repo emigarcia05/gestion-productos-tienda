@@ -293,23 +293,15 @@
   .contenedor-tabla-gestion.no-scroll-x {
     overflow-x: hidden;
   }
-  /* Ocultar barra de scroll vertical (mantiene overflow-y: auto para scroll táctil/rueda) */
-  .contenedor-tabla-gestion.no-scrollbar {
+  /*
+   * Ocultar barras del scrollport (overflow auto/scroll); el desplazamiento con rueda/táctil se mantiene.
+   * Aplicable a cualquier nodo con overflow; combina con `.contenedor-tabla-gestion`, modales, etc.
+   */
+  .no-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  .contenedor-tabla-gestion.no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* AppModal: ocultar barra en área gris con scroll y/o card (scroll con rueda/táctil). */
-  .app-modal__scroll-area.no-scrollbar,
-  .app-modal__body.no-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .app-modal__scroll-area.no-scrollbar::-webkit-scrollbar,
-  .app-modal__body.no-scrollbar::-webkit-scrollbar {
+  .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
