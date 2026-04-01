@@ -110,6 +110,38 @@ export function formatMesAnioTituloArgentina(year: number, month1to12: number): 
   return `${capitalizado} ${year}`;
 }
 
+/** Suma días calendario a `YYYY-MM-DD` (negocio en `TIMEZONE_ARGENTINA`). */
+export function addDaysToIsoYmdArgentina(isoYmd: string, deltaDays: number): string {
+  const [y, m, d] = isoYmd.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return isoYmd;
+  const utc = Date.UTC(y, m - 1, d, 12, 0, 0);
+  const next = new Date(utc + deltaDays * 86400000);
+  return dateToIsoYmdArgentina(next);
+}
+
+/** Etiqueta de mes para tablas: `MARZO 2026` (nombre del mes en mayúsculas + año). */
+export function formatMesAnioMayusculasDesdeIsoYmd(isoYmd: string): string {
+  const [y, m, d] = isoYmd.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return "";
+  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const mes = new Intl.DateTimeFormat("es-AR", {
+    timeZone: TIMEZONE_ARGENTINA,
+    month: "long",
+  }).format(dt);
+  const anio = new Intl.DateTimeFormat("es-AR", {
+    timeZone: TIMEZONE_ARGENTINA,
+    year: "numeric",
+  }).format(dt);
+  return `${mes.toLocaleUpperCase("es-AR")} ${anio}`;
+}
+
+/** `2026-03-15` → `15/03/2026` (solo presentación). */
+export function formatIsoYmdDdMmYyyyArgentina(isoYmd: string): string {
+  const [y, m, d] = isoYmd.split("-");
+  if (!y || !m || !d) return isoYmd;
+  return `${d}/${m}/${y}`;
+}
+
 /** Sello `dd_mm hh_mm` para nombre de archivo de recepción. */
 export function formatDdMmHhMmGuionesBajosArchivoArgentina(d: Date): string {
   const m = toPartMap(d, {

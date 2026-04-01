@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
-import { cn } from "@/lib/utils";
 import {
   EmptyTableRow,
   Table,
@@ -27,37 +24,43 @@ function fmtMonto(s: string): string {
   })}`;
 }
 
-/** Misma convención que `TablaDeudaProveedores` (Finanzas). */
-const TH_NUM = "text-right whitespace-nowrap";
-const TD_NUM = "celda-datos text-right tabular-nums";
-
 /** CAJA por día: placeholder hasta integrar origen real (mismo valor en todas las filas si es constante). */
 const CAJA_DISPONIBLE_PLACEHOLDER = 0;
 
 /**
- * Saldo acumulativo en el mes (filas ordenadas por fecha):
- * - 1.ª fila: CAJA − A PAGAR
- * - siguientes: saldo anterior − A PAGAR
+ * Filas ordenadas por fecha (solo ≥ hoy en servidor):
+ * - **VTOS ACUMULADOS**: suma corrida de vencimiento del día.
+ * - **SALDO**: 1.ª fila CAJA − vencimiento del día; siguientes: saldo anterior − vencimiento del día.
  */
-function filasConSaldoAcumulativo(
-  filasOrdenadas: Array<{ isoYmd: string; dia: number; aPagar: number }>,
+function filasConVtosYSaldo(
+  filasOrdenadas: Array<{
+    isoYmd: string;
+    dia: number;
+    mesEtiqueta: string;
+    vencimientoDelDia: number;
+  }>,
   cajaDisponiblePorFila: number
 ): Array<{
   isoYmd: string;
   dia: number;
-  aPagar: number;
+  mesEtiqueta: string;
+  vencimientoDelDia: number;
+  vtosAcumulados: number;
   cajaDisponible: number;
   saldo: number;
 }> {
   let saldoAnterior = 0;
+  let vtosAcum = 0;
   return filasOrdenadas.map((fila, i) => {
+    vtosAcum += fila.vencimientoDelDia;
     const saldo =
       i === 0
-        ? cajaDisponiblePorFila - fila.aPagar
-        : saldoAnterior - fila.aPagar;
+        ? cajaDisponiblePorFila - fila.vencimientoDelDia
+        : saldoAnterior - fila.vencimientoDelDia;
     saldoAnterior = saldo;
     return {
       ...fila,
+      vtosAcumulados: vtosAcum,
       cajaDisponible: cajaDisponiblePorFila,
       saldo,
     };
@@ -65,25 +68,20 @@ function filasConSaldoAcumulativo(
 }
 
 export interface VencPorFechaCalendarioProps {
-  tituloMes: string;
-  mesYm: string;
-  mesAnteriorYm: string;
-  mesSiguienteYm: string;
-  hoyIso: string;
+  rangoDesdeLabel: string;
+  rangoHastaLabel: string;
   detallesPorDia: Record<string, Array<{ proveedor: string; vencimiento: number }>>;
   filas: Array<{
     isoYmd: string;
     dia: number;
-    aPagar: number;
+    mesEtiqueta: string;
+    vencimientoDelDia: number;
   }>;
 }
 
 export default function VencPorFechaCalendario({
-  tituloMes,
-  mesYm,
-  mesAnteriorYm,
-  mesSiguienteYm,
-  hoyIso,
+  rangoDesdeLabel,
+  rangoHastaLabel,
   detallesPorDia,
   filas,
 }: VencPorFechaCalendarioProps) {
@@ -100,7 +98,7 @@ export default function VencPorFechaCalendario({
   }, [detalleIsoYmd]);
 
   const filasVista = useMemo(
-    () => filasConSaldoAcumulativo(filas, CAJA_DISPONIBLE_PLACEHOLDER),
+    () => filasConVtosYSaldo(filas, CAJA_DISPONIBLE_PLACEHOLDER),
     [filas]
   );
 
@@ -109,67 +107,59 @@ export default function VencPorFechaCalendario({
       <div className="flex flex-1 min-h-0 flex-col gap-3 px-4 pb-4 pt-1 sm:px-6 lg:px-8">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-foreground sm:text-lg">{tituloMes}</h2>
-            <p className="text-xs text-muted-foreground tabular-nums">{mesYm}</p>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
-              <Link href={`/finanzas/venc-por-fecha?mes=${mesAnteriorYm}`} aria-label="Mes anterior">
-                <ChevronLeft className="h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
-            <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
-              <Link href={`/finanzas/venc-por-fecha?mes=${mesSiguienteYm}`} aria-label="Mes siguiente">
-                <ChevronRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">Próximos 120 días</h2>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {rangoDesdeLabel} — {rangoHastaLabel}
+            </p>
           </div>
         </div>
 
-        <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-          <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
-            <Table variant="compact" scrollX={false}>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[10%] min-w-[3rem]">DÍA</TableHead>
-                  <TableHead className={cn(TH_NUM, "w-[30%] min-w-[7rem]")}>A PAGAR</TableHead>
-                  <TableHead className={cn(TH_NUM, "w-[30%] min-w-[7rem]")}>CAJA DISPONIBLE</TableHead>
-                  <TableHead className={cn(TH_NUM, "w-[30%] min-w-[7rem]")}>SALDO</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filasVista.length === 0 ? (
-                  <EmptyTableRow colSpan={4} message="Sin vencimientos para el mes seleccionado." />
-                ) : (
-                  filasVista.map((fila) => {
-                    const filaPasada = fila.isoYmd < hoyIso;
-                    return (
-                      <TableRow
-                        key={`${mesYm}-${fila.dia}`}
-                        data-fecha-pasada={filaPasada ? "true" : undefined}
-                        aria-label={filaPasada ? `Día ${fila.dia}, fecha pasada` : undefined}
-                        title="Doble clic para ver el detalle por proveedor"
-                        className={cn(
-                          filaPasada &&
-                            cn(
-                              "cursor-default text-muted-foreground",
-                              "!bg-muted/55 odd:!bg-muted/55 even:!bg-muted/55",
-                              "hover:!bg-muted/62 hover:!text-muted-foreground"
-                            )
-                        )}
-                        onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
-                      >
-                        <TableCell className="celda-datos celda-numero w-[10%] tabular-nums">{fila.dia}</TableCell>
-                        <TableCell className={cn(TD_NUM, "w-[30%]")}>{fmtMonto(String(fila.aPagar))}</TableCell>
-                        <TableCell className={cn(TD_NUM, "w-[30%]")}>{fmtMonto(String(fila.cajaDisponible))}</TableCell>
-                        <TableCell className={cn(TD_NUM, "w-[30%]")}>{fmtMonto(String(fila.saldo))}</TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+          <Table variant="compact" scrollX={false}>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[15%] min-w-[6.5rem]">MES</TableHead>
+                <TableHead className="w-[5%] min-w-[2.25rem]">DÍA</TableHead>
+                <TableHead className="w-[20%] min-w-[5rem]">VENCIMIENTO DEL DÍA</TableHead>
+                <TableHead className="w-[20%] min-w-[5rem]">VTOS ACUMULADOS</TableHead>
+                <TableHead className="w-[20%] min-w-[5rem]">CAJA DISPONIBLE</TableHead>
+                <TableHead className="w-[20%] min-w-[5rem]">SALDO</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filasVista.length === 0 ? (
+                <EmptyTableRow
+                  colSpan={6}
+                  message="Sin vencimientos en los próximos 120 días."
+                />
+              ) : (
+                filasVista.map((fila) => (
+                  <TableRow
+                    key={fila.isoYmd}
+                    title="Doble clic para ver el detalle por proveedor"
+                    onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
+                  >
+                    <TableCell className="celda-datos w-[15%] text-center font-medium uppercase">
+                      {fila.mesEtiqueta}
+                    </TableCell>
+                    <TableCell className="celda-datos celda-numero w-[5%]">{fila.dia}</TableCell>
+                    <TableCell className="celda-datos celda-numero w-[20%]">
+                      {fmtMonto(String(fila.vencimientoDelDia))}
+                    </TableCell>
+                    <TableCell className="celda-datos celda-numero w-[20%]">
+                      {fmtMonto(String(fila.vtosAcumulados))}
+                    </TableCell>
+                    <TableCell className="celda-datos celda-numero w-[20%]">
+                      {fmtMonto(String(fila.cajaDisponible))}
+                    </TableCell>
+                    <TableCell className="celda-datos celda-numero w-[20%]">
+                      {fmtMonto(String(fila.saldo))}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
       <Dialog open={detalleIsoYmd !== null} onOpenChange={(open) => !open && setDetalleIsoYmd(null)}>
@@ -195,31 +185,29 @@ export default function VencPorFechaCalendario({
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <p className="text-center text-xs text-muted-foreground">Solo lectura. Montos del día por proveedor.</p>
-            <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-              <div className="min-h-[14rem] min-w-0 flex-1 overflow-x-auto overflow-y-auto no-scrollbar">
-                <Table variant="compact" scrollX={false}>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="min-w-[12rem] w-[65%]">PROVEEDOR</TableHead>
-                      <TableHead className={cn(TH_NUM, "min-w-[7.5rem] w-[35%]")}>MONTO A PAGAR</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {detalleFilas.length === 0 ? (
-                      <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
-                    ) : (
-                      detalleFilas.map((fila, idx) => (
-                        <TableRow key={`${fila.proveedor}-${idx}`}>
-                          <TableCell className="celda-datos w-[65%] min-w-[12rem] max-w-[24rem] text-left font-medium">
-                            {fila.proveedor}
-                          </TableCell>
-                          <TableCell className={cn(TD_NUM, "w-[35%]")}>{fmtMonto(String(fila.vencimiento))}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+            <div className="contenedor-tabla-gestion no-scroll-x no-scrollbar min-h-[14rem] max-h-[min(28rem,70vh)] min-w-0 flex-1">
+              <Table variant="compact" scrollX={false}>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="min-w-[12rem] w-[65%]">PROVEEDOR</TableHead>
+                    <TableHead className="min-w-[7.5rem] w-[35%]">MONTO A PAGAR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detalleFilas.length === 0 ? (
+                    <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
+                  ) : (
+                    detalleFilas.map((fila, idx) => (
+                      <TableRow key={`${fila.proveedor}-${idx}`}>
+                        <TableCell className="celda-datos min-w-[12rem] max-w-[24rem] w-[65%] text-left font-medium">
+                          {fila.proveedor}
+                        </TableCell>
+                        <TableCell className="celda-datos celda-numero w-[35%]">{fmtMonto(String(fila.vencimiento))}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </AppModal>

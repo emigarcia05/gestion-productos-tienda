@@ -1,17 +1,20 @@
 import { redirect } from "next/navigation";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import VencPorFechaCalendario from "@/components/finanzas/VencPorFechaCalendario";
-import { diasEnMes, parseMesFinanzasParam, shiftMesYm } from "@/lib/calendarioMesFinanzas";
 import {
+  addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
-  formatMesAnioTituloArgentina,
-  isoYearMonthArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+  formatMesAnioMayusculasDesdeIsoYmd,
 } from "@/lib/fechaArgentina";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { listarVencimientosEnRango } from "@/services/vencimientosPorFecha.service";
 
 export const dynamic = "force-dynamic";
+
+/** Ventana fija: desde hoy (AR) hasta 120 días adelante (inclusive). */
+const DIAS_VENTANA_VENC_POR_FECHA = 120;
 
 function claveDiaFechaVenc(fechaVenc: string | Date): string {
   if (typeof fechaVenc === "string") {
@@ -20,30 +23,22 @@ function claveDiaFechaVenc(fechaVenc: string | Date): string {
   return dateToIsoYmdArgentina(fechaVenc);
 }
 
-interface Props {
-  searchParams: Promise<{ mes?: string }>;
-}
-
-export default async function VencPorFechaPage({ searchParams }: Props) {
+export default async function VencPorFechaPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
     redirect("/gestion-productos/proveedores/sugeridos");
   }
 
-  const sp = await searchParams;
-  const fallback = isoYearMonthArgentina();
-  const { year, month, ym } = parseMesFinanzasParam(sp.mes, fallback);
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+  const hastaIso = addDaysToIsoYmdArgentina(hoyIso, DIAS_VENTANA_VENC_POR_FECHA);
 
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const fechaDesde = `${year}-${pad(month)}-01`;
-  const fechaHasta = `${year}-${pad(month)}-${pad(diasEnMes(year, month))}`;
-
-  const lineas = await listarVencimientosEnRango(fechaDesde, fechaHasta);
+  const lineas = await listarVencimientosEnRango(hoyIso, hastaIso);
 
   const totalPorDia: Record<string, number> = {};
   const detallePorDiaProveedor: Record<string, Record<string, number>> = {};
   for (const l of lineas) {
     const key = claveDiaFechaVenc(l.fechaVenc);
+    if (key < hoyIso || key > hastaIso) continue;
     totalPorDia[key] = (totalPorDia[key] ?? 0) + Number(l.saldo);
     if (!detallePorDiaProveedor[key]) detallePorDiaProveedor[key] = {};
     detallePorDiaProveedor[key][l.nombre] =
@@ -55,8 +50,10 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
     .map(([isoYmd, total]) => ({
       isoYmd,
       dia: Number(isoYmd.slice(8, 10)),
-      aPagar: total,
+      mesEtiqueta: formatMesAnioMayusculasDesdeIsoYmd(isoYmd),
+      vencimientoDelDia: total,
     }));
+
   const detallesPorDia = Object.fromEntries(
     Object.entries(detallePorDiaProveedor).map(([isoYmd, porProveedor]) => [
       isoYmd,
@@ -66,19 +63,12 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
     ])
   );
 
-  const mesAnteriorYm = shiftMesYm(year, month, -1);
-  const mesSiguienteYm = shiftMesYm(year, month, 1);
-  const tituloMes = formatMesAnioTituloArgentina(year, month);
-
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ClassicFilteredTableLayout title="Finanzas" subtitle="Venc. por fecha">
         <VencPorFechaCalendario
-          tituloMes={tituloMes}
-          mesYm={ym}
-          mesAnteriorYm={mesAnteriorYm}
-          mesSiguienteYm={mesSiguienteYm}
-          hoyIso={dateToIsoYmdArgentina(new Date())}
+          rangoDesdeLabel={formatIsoYmdDdMmYyyyArgentina(hoyIso)}
+          rangoHastaLabel={formatIsoYmdDdMmYyyyArgentina(hastaIso)}
           detallesPorDia={detallesPorDia}
           filas={filas}
         />
