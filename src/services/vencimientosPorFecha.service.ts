@@ -49,3 +49,40 @@ export async function listarVencimientosEnRango(
   `;
   return rows;
 }
+
+/**
+ * Suma de saldos pendientes cuya **fecha de vencimiento** es **estrictamente anterior** a `fechaIso`
+ * (misma regla de `fecha_venc` que {@link listarVencimientosEnRango}). Sirve para arrastrar a
+ * **VTOS ACUMULADOS** todo lo vencido antes de la ventana que muestra la tabla.
+ */
+export async function sumarSaldoVencimientosConFechaVencAnteriorA(
+  fechaIso: string
+): Promise<number> {
+  const rows = await prisma.$queryRaw<[{ total: Prisma.Decimal | null }]>`
+    WITH lineas AS (
+      SELECT
+        (c.total - c.monto_aplicado) AS saldo,
+        (
+          c.fecha_comp::date
+          + GREATEST(
+            1,
+            COALESCE(
+              CASE
+                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
+                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
+                ELSE NULL
+              END,
+              30
+            )
+          )
+        )::date AS fecha_venc
+      FROM comprobantes_proveedor c
+      INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
+      WHERE c.total > c.monto_aplicado
+    )
+    SELECT COALESCE(SUM(l.saldo), 0)::numeric AS total
+    FROM lineas l
+    WHERE l.fecha_venc < ${fechaIso}::date
+  `;
+  return Number(rows[0]?.total ?? 0);
+}

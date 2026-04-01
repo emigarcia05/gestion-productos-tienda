@@ -32,7 +32,7 @@ const CAJA_DISPONIBLE_PLACEHOLDER = 0;
 
 /**
  * Filas ordenadas por fecha (solo ≥ hoy en servidor):
- * - **VTOS ACUMULADOS**: suma corrida de vencimiento del día.
+ * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
  * - **SALDO**: 1.ª fila CAJA − vencimiento del día; siguientes: saldo anterior − vencimiento del día.
  */
 function filasConVtosYSaldo(
@@ -40,7 +40,8 @@ function filasConVtosYSaldo(
     isoYmd: string;
     vencimientoDelDia: number;
   }>,
-  cajaDisponiblePorFila: number
+  cajaDisponiblePorFila: number,
+  saldoVencidoAntesDeHoy: number
 ): Array<{
   isoYmd: string;
   vencimientoDelDia: number;
@@ -49,7 +50,7 @@ function filasConVtosYSaldo(
   saldo: number;
 }> {
   let saldoAnterior = 0;
-  let vtosAcum = 0;
+  let vtosAcum = saldoVencidoAntesDeHoy;
   return filasOrdenadas.map((fila, i) => {
     vtosAcum += fila.vencimientoDelDia;
     const saldo =
@@ -69,6 +70,8 @@ function filasConVtosYSaldo(
 export interface VencPorFechaCalendarioProps {
   rangoDesdeLabel: string;
   rangoHastaLabel: string;
+  /** Suma de saldos con `fecha_venc` &lt; hoy (incluye comprobantes no mostrados en la ventana). */
+  saldoVencidoAntesDeHoy: number;
   detallesPorDia: Record<string, Array<{ proveedor: string; vencimiento: number }>>;
   filas: Array<{
     isoYmd: string;
@@ -79,6 +82,7 @@ export interface VencPorFechaCalendarioProps {
 export default function VencPorFechaCalendario({
   rangoDesdeLabel,
   rangoHastaLabel,
+  saldoVencidoAntesDeHoy,
   detallesPorDia,
   filas,
 }: VencPorFechaCalendarioProps) {
@@ -95,8 +99,9 @@ export default function VencPorFechaCalendario({
   }, [detalleIsoYmd]);
 
   const filasVista = useMemo(
-    () => filasConVtosYSaldo(filas, CAJA_DISPONIBLE_PLACEHOLDER),
-    [filas]
+    () =>
+      filasConVtosYSaldo(filas, CAJA_DISPONIBLE_PLACEHOLDER, saldoVencidoAntesDeHoy),
+    [filas, saldoVencidoAntesDeHoy]
   );
 
   return (

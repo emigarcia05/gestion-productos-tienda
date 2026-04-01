@@ -8,7 +8,10 @@ import {
 } from "@/lib/fechaArgentina";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { listarVencimientosEnRango } from "@/services/vencimientosPorFecha.service";
+import {
+  listarVencimientosEnRango,
+  sumarSaldoVencimientosConFechaVencAnteriorA,
+} from "@/services/vencimientosPorFecha.service";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +34,10 @@ export default async function VencPorFechaPage() {
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const hastaIso = addDaysToIsoYmdArgentina(hoyIso, DIAS_VENTANA_VENC_POR_FECHA);
 
-  const lineas = await listarVencimientosEnRango(hoyIso, hastaIso);
+  const [lineas, saldoVencidoAntesDeHoy] = await Promise.all([
+    listarVencimientosEnRango(hoyIso, hastaIso),
+    sumarSaldoVencimientosConFechaVencAnteriorA(hoyIso),
+  ]);
 
   const totalPorDia: Record<string, number> = {};
   const detallePorDiaProveedor: Record<string, Record<string, number>> = {};
@@ -66,6 +72,7 @@ export default async function VencPorFechaPage() {
         <VencPorFechaCalendario
           rangoDesdeLabel={formatIsoYmdDdMmYyyyArgentina(hoyIso)}
           rangoHastaLabel={formatIsoYmdDdMmYyyyArgentina(hastaIso)}
+          saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
           detallesPorDia={detallesPorDia}
           filas={filas}
         />
