@@ -59,12 +59,17 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
       (detallePorDiaProveedor[key][l.nombre] ?? 0) + Number(l.saldo);
   }
 
-  const filasTotales = Object.entries(totalPorDia)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([isoYmd, total]) => ({
-      isoYmd,
-      vencimientoDelDia: total,
-    }));
+  const filasTotales: Array<{ isoYmd: string; vencimientoDelDia: number }> = [];
+  for (
+    let iso = hoyIso;
+    iso <= hastaIso;
+    iso = addDaysToIsoYmdArgentina(iso, 1)
+  ) {
+    filasTotales.push({
+      isoYmd: iso,
+      vencimientoDelDia: totalPorDia[iso] ?? 0,
+    });
+  }
   const total = filasTotales.length;
   const totalPaginas = totalPaginasFromTotal(total, PAGE_SIZE);
   const paginaActual = Math.min(paginaSolicitada, totalPaginas);

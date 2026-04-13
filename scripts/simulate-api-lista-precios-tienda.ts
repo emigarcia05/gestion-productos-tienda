@@ -46,13 +46,15 @@ export interface FilaListaPreciosTienda {
   px_lista_tienda: number;
   stock_maipu?: number;
   stock_guaymallen?: number;
+  /** Default true en script de demo (simula ítem stockeable). */
+  stockeable?: boolean;
 }
 
 const UPSERT_SQL = `
-INSERT INTO lista_precios_tienda (
+INSERT INTO precios_tienda (
   cod_ext, cod_tienda, rubro, sub_rubro, marca, proveedor, descripcion_tienda,
-  costo_compra, px_lista_tienda, stock_maipu, stock_guaymallen
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+  costo_compra, px_lista_tienda, stock_maipu, stock_guaymallen, stockeable
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT (cod_ext) DO UPDATE SET
   cod_tienda       = EXCLUDED.cod_tienda,
   rubro            = EXCLUDED.rubro,
@@ -63,7 +65,8 @@ ON CONFLICT (cod_ext) DO UPDATE SET
   costo_compra     = EXCLUDED.costo_compra,
   px_lista_tienda  = EXCLUDED.px_lista_tienda,
   stock_maipu      = EXCLUDED.stock_maipu,
-  stock_guaymallen = EXCLUDED.stock_guaymallen;
+  stock_guaymallen = EXCLUDED.stock_guaymallen,
+  stockeable       = EXCLUDED.stockeable;
 `;
 
 async function main() {
@@ -126,9 +129,10 @@ async function main() {
         row.px_lista_tienda,
         row.stock_maipu ?? 0,
         row.stock_guaymallen ?? 0,
+        row.stockeable !== false,
       ]);
     }
-    console.log(`✓ Upsert simulando API: ${datosSimulados.length} filas en lista_precios_tienda.`);
+    console.log(`✓ Upsert simulando API: ${datosSimulados.length} filas en precios_tienda.`);
   } finally {
     client.release();
   }

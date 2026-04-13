@@ -225,6 +225,8 @@ model ListaPrecioTienda {
   pxListaTienda   Decimal  @map("px_lista_tienda") @db.Decimal(14, 4)
   stockMaipu      Int      @map("stock_maipu") @default(0)
   stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
+  /** false si en la API DUX ítems falta `ctd_disponible` no nulo en Guaymallén o en Maipú; el producto no es stockeable. */
+  stockeable      Boolean  @default(true)
   lastSync        DateTime @default(now()) @map("last_sync")
   ultimaExportacionExcel DateTime? @map("ultima_exportacion_excel")
 

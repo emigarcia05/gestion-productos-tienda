@@ -79,10 +79,18 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         descripcionTienda: true,
         stockMaipu: true,
         stockGuaymallen: true,
+        stockeable: true,
       },
     });
     if (!tienda) {
       return { ok: false, error: "No se encontró el producto en precios_tienda." };
+    }
+    if (!tienda.stockeable) {
+      return {
+        ok: false,
+        error:
+          "Este producto no es stockeable (DUX: ctd_disponible nulo en algún depósito); no se configura reposición por stock.",
+      };
     }
     const codExtResuelto = (tienda.codExt ?? "").trim();
     if (!codExtResuelto) {

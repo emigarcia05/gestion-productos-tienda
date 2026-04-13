@@ -86,7 +86,7 @@ export async function getControlStock(
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
 
   function baseWhere(exclude?: "marca" | "rubro"): Prisma.ListaPrecioTiendaWhereInput[] {
-    const parts: Prisma.ListaPrecioTiendaWhereInput[] = [];
+    const parts: Prisma.ListaPrecioTiendaWhereInput[] = [{ stockeable: true }];
     if (textFilter.AND?.length) parts.push(textFilter);
     if (exclude !== "marca" && marca) parts.push({ marca });
     if (exclude !== "rubro" && rubro) parts.push({ rubro });

@@ -22,6 +22,8 @@ export interface ItemDux {
   precioMayorista: number;
   stockGuaymallen: number;
   stockMaipu:      number;
+  /** true solo si DUX informa `ctd_disponible` no nulo en Guaymallén y en Maipú (si cualquier sucursal es null → false). */
+  stockeable:      boolean;
   habilitado:      boolean;
 }
 
@@ -42,12 +44,35 @@ interface ItemDuxRaw {
   costo?: unknown;
   porc_iva?: unknown;
   precios?: Array<{ id: number; precio?: unknown }>;
-  stock?: Array<{ id: number; stock_real?: unknown }>;
+  stock?: Array<{ id: number; stock_real?: unknown; ctd_disponible?: unknown }>;
   habilitado?: string;
 }
 
 function isItemDuxRaw(val: unknown): val is ItemDuxRaw {
   return val !== null && typeof val === "object";
+}
+
+/**
+ * `stockeable` se basa **solo** en `ctd_disponible` por depósito DUX (Guaymallén / Maipú).
+ * Si **cualquiera** de las dos sucursales tiene `ctd_disponible` JSON `null` (o falta la fila del depósito), el producto es no stockeable.
+ */
+function duxCtdDisponibleInformadoEnDeposito(raw: ItemDuxRaw, idDeposito: number): boolean {
+  if (!Array.isArray(raw.stock)) return false;
+  for (const s of raw.stock) {
+    if (s == null || typeof s !== "object") continue;
+    const entry = s as { id?: unknown; ctd_disponible?: unknown };
+    const sid = Number(entry.id);
+    if (!Number.isFinite(sid) || sid !== idDeposito) continue;
+    return entry.ctd_disponible != null;
+  }
+  return false;
+}
+
+function duxStockeableDesdeRaw(raw: ItemDuxRaw): boolean {
+  return (
+    duxCtdDisponibleInformadoEnDeposito(raw, ID_STOCK_GUAYMALLEN) &&
+    duxCtdDisponibleInformadoEnDeposito(raw, ID_STOCK_MAIPU)
+  );
 }
 
 export function mapItem(raw: unknown): ItemDux {
@@ -56,6 +81,7 @@ export function mapItem(raw: unknown): ItemDux {
       codItem: "", descripcion: "", rubro: null, subRubro: null, marca: null,
       proveedorDux: null, codigoExterno: null, costo: 0, porcIva: 0,
       precioLista: 0, precioMayorista: 0, stockGuaymallen: 0, stockMaipu: 0,
+      stockeable: false,
       habilitado: false,
     };
   }
@@ -65,8 +91,14 @@ export function mapItem(raw: unknown): ItemDux {
   }
   const stockMap: Record<number, number> = {};
   if (Array.isArray(raw.stock)) {
-    for (const s of raw.stock) stockMap[s.id] = parseNum(s.stock_real);
+    for (const s of raw.stock) {
+      if (s == null || typeof s !== "object") continue;
+      const entry = s as { id?: number; stock_real?: unknown };
+      if (entry.id == null) continue;
+      stockMap[entry.id] = parseNum(entry.stock_real);
+    }
   }
+  const stockeable = duxStockeableDesdeRaw(raw);
   return {
     codItem:         String(raw.cod_item ?? ""),
     descripcion:     String(raw.item ?? ""),
@@ -81,6 +113,7 @@ export function mapItem(raw: unknown): ItemDux {
     precioMayorista: precioMap[ID_PRECIO_MAYORISTA] ?? 0,
     stockGuaymallen: stockMap[ID_STOCK_GUAYMALLEN]  ?? 0,
     stockMaipu:      stockMap[ID_STOCK_MAIPU]       ?? 0,
+    stockeable,
     habilitado:      raw.habilitado === "S",
   };
 }

@@ -53,6 +53,7 @@ function itemDuxToRecord(item: ItemDux) {
     pxListaTienda: Number(item.precioLista) || 0,
     stockMaipu: Math.round(Number(item.stockMaipu) || 0),
     stockGuaymallen: Math.round(Number(item.stockGuaymallen) || 0),
+    stockeable: item.stockeable,
   };
 }
 
@@ -167,6 +168,7 @@ export async function syncListaPrecioTiendaFromDux(
                   pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
                   stockMaipu: row.stockMaipu,
                   stockGuaymallen: row.stockGuaymallen,
+                  stockeable: row.stockeable,
                 },
                 update: {
                   codTienda: row.codTienda,
@@ -180,6 +182,7 @@ export async function syncListaPrecioTiendaFromDux(
                   pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
                   stockMaipu: row.stockMaipu,
                   stockGuaymallen: row.stockGuaymallen,
+                  stockeable: row.stockeable,
                   lastSync: new Date(),
                 },
               });

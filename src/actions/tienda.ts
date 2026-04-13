@@ -67,6 +67,8 @@ export interface ItemTiendaParaTabla {
   precioMayorista: number;
   stockGuaymallen: number;
   stockMaipu: number;
+  /** Derivado de DUX: ambos depósitos informan `ctd_disponible` no nulo. */
+  stockeable: boolean;
   habilitado: boolean;
   _count: { productos: number };
   /**
@@ -291,6 +293,7 @@ export async function getTiendaPageData(params: {
       precioMayorista: 0,
       stockGuaymallen: r.stockGuaymallen,
       stockMaipu: r.stockMaipu,
+      stockeable: r.stockeable,
       habilitado: true,
       _count: { productos: r._count.listaPreciosProveedores },
       mejorProveedorNoOficialPrefijo,

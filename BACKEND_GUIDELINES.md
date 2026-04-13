@@ -56,6 +56,13 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Prisma / Neon**: `DATABASE_URL` en `.env` debe usar el **pooler** de Neon para el runtime (`src/lib/prisma.ts`). Para migraciones, definir además **`DIRECT_URL`** (host **sin** `-pooler`): `prisma.config.ts` usa `DIRECT_URL` si existe; si no, cae a `DATABASE_URL`. Plantilla: `.env.example`.
 - **Migraciones ítems historial pedidos**: `20260322120000_*` y `20260322140000_*` son **idempotentes** (`to_regclass`) respecto de `pedidos_historia_items` / `pedidos_mercaderia_historial`. `20260322200000_*` renombra `pedidos_mercaderia_historial` → `pedidos_historial_mercaderia` si aún existe el nombre intermedio.
 
+### 1.4.1 `stockeable` en `precios_tienda` (API DUX ítems)
+
+- **Columna** `precios_tienda.stockeable` (`BOOLEAN NOT NULL`; migración `20260413120000_add_stockeable_precios_tienda`: default `true` en filas existentes hasta la próxima sync).
+- **Regla DUX**: En `src/lib/duxApi.ts`, `ItemDux.stockeable` se calcula **exclusivamente** con `ctd_disponible` por depósito. Debe existir la entrada de **Guaymallén** (`ID_STOCK_GUAYMALLEN`) y **Maipú** (`ID_STOCK_MAIPU`) y en **ambas** `ctd_disponible` debe ser **no nulo** (un `0` numérico o string numérico cuenta como informado). Si **cualquier** sucursal tiene `ctd_disponible` JSON `null` o falta la fila del depósito, `stockeable` es `false`. Los enteros `stock_maipu` / `stock_guaymallen` siguen tomándose de `stock_real` como hasta ahora.
+- **Sync**: `syncListaPrecioTienda.service.ts` incluye `stockeable` en create/update del upsert.
+- **Uso en negocio**: `getControlStock` restringe a `stockeable: true`; `getSobreStockOtraSucursalParaPedidoEnviar` no evalúa sobrestock para ítems con `stockeable: false`; `upsertPedidoMercaderiaReposicionConfig` rechaza configurar reposición por stock si el ítem no es stockeable. `getTiendaPageData` expone `stockeable` en `ItemTiendaParaTabla`.
+
 ### 1.6 Listados de solo lectura (catálogos)
 
 - Para catálogos de solo lectura (ej. `precios_tienda`), exponer búsquedas mediante:
@@ -503,6 +510,7 @@ Contrato (SSOT de integración + armado de filas):
     - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR` y `fechaDesde = hoy AR - 30 días`, sin usar `fechaFacturaIso`.
     - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit=1` por consulta.
     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
+    - Columna **`REALIZA RECEPCION`**: por fila, según `precios_tienda.stockeable` resuelto por `cod_tienda` (coincidencia con `cod_tienda` del ítem del historial). `stockeable === true` → `"SI"`; `false` → `"NO"`. Si no hay fila en `precios_tienda` para ese código, se usa **`"SI"`** (mismo criterio que antes del flag).
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
     - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:
@@ -635,6 +643,10 @@ Antes de entregar código nuevo o modificado, verificar:
 | Archivo / Área | Cambio |
 |----------------|--------|
 | `src/services/listaPrecios.service.ts` | `upsertListaPrecios()`: optimiza el conteo `creados/actualizados` con un prefetch en chunks de `codProdProv`, evitando el `findUnique()` por fila (patrón N+1) sin cambiar la lógica final del `upsert`. |
+| `prisma/migrations/20260413120000_add_stockeable_precios_tienda/migration.sql` | Columna `stockeable` en `precios_tienda` (default `true` para legado). |
+| `src/lib/duxApi.ts` | `ItemDux.stockeable` y `mapItem`: ambos depósitos DUX con `ctd_disponible` no nulo → `true`. |
+| `src/services/syncListaPrecioTienda.service.ts` | Upsert persiste `stockeable`. |
+| `src/actions/stock.ts`, `src/services/sobreStock.service.ts`, `src/services/pedidosEnvio.service.ts`, `src/actions/tienda.ts`, `src/components/tienda/TablaTienda.tsx` | Lecturas/filtros y reglas de reposición alineadas al flag. |
 
 ### 5.9 Tienda — módulo `Px. Tinto / Cal. Lts.` (lectura por rol)
 
@@ -651,7 +663,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-04-02 — nueva estructura Finanzas (`movimientos_finanzas` + `movimientos_finanzas_cheques`) con tipo enum y relación 1:N para cheques con fecha de cobro. Histórico: reposición por punto/stock + DUX compras throttle.*
+*Última actualización: 2026-04-13 — `precios_tienda.stockeable` (API DUX ítems: `ctd_disponible` no nulo en Guaymallén y Maipú). Histórico: Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
 
 ---
 

@@ -17,7 +17,7 @@ Documento orientado a **desarrollo** y revisión funcional. Describe cómo el ba
 
 | Concepto | Origen | Notas |
 |----------|--------|--------|
-| Stock de la otra sucursal | `precios_tienda` (`ListaPrecioTienda`) | `stock_maipu` / `stock_guaymallen` según la sucursal **donde se mide** el excedente (siempre la otra respecto a quien pide). |
+| Stock de la otra sucursal | `precios_tienda` (`ListaPrecioTienda`) | `stock_maipu` / `stock_guaymallen` según la sucursal **donde se mide** el excedente (siempre la otra respecto a quien pide). Si `stockeable` es `false`, el flujo de sobrestock **no** incluye esa línea (DUX: `ctd_disponible` nulo en algún depósito en la sync de ítems). |
 | Tope / configuración | `pedidos_mercaderia` (`ItemPedidoEnvio`) en la **otra** sucursal | Filas `tipo_de_pedido` **REPOSICIÓN**, mismo `cod_ext` (sin exigir el mismo `id_proveedor` que el pedido). |
 | Cantidad a pedir | Línea del pedido que genera | `cant_pedir` de la sucursal que ordena. |
 | `cod_ext` del producto | `precios_tienda` | Se obtiene desde `cod_tienda` de la línea. |

@@ -33,7 +33,7 @@ function fmtMonto(s: string): string {
 const CAJA_DISPONIBLE_PLACEHOLDER = 0;
 
 /**
- * Filas ordenadas por fecha (solo ≥ hoy en servidor):
+ * Filas ordenadas por fecha (calendario completo en servidor: hoy → hoy+150 inclusive):
  * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
  * - **SALDO**: siempre `VTOS ACUMULADOS - CAJA DISPONIBLE`.
  */

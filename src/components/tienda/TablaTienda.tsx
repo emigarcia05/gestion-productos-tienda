@@ -30,6 +30,7 @@ interface ItemTienda {
   precioMayorista: number;
   stockGuaymallen: number;
   stockMaipu: number;
+  stockeable: boolean;
   habilitado: boolean;
   _count: { productos: number };
   mejorProveedorNoOficialPrefijo: string | null;

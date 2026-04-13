@@ -108,6 +108,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
       descripcionTienda: true,
       stockMaipu: true,
       stockGuaymallen: true,
+      stockeable: true,
     },
   });
 
@@ -233,6 +234,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
   for (const fila of filasConTienda) {
     const tienda = tiendaPorCodTienda.get(fila.codTienda!.trim());
     if (!tienda) continue;
+    if (!tienda.stockeable) continue;
 
     const cx = normCodExt(tienda.codExt);
     if (!cx) continue;
