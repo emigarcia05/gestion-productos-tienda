@@ -28,7 +28,7 @@ export interface RecepcionPedidoExcelRow {
   "CÓDIGO PRODUCTO": string;
   "CANTIDAD": number;
   "PRECIO": number;
-  "PRECIO INCLUYE IVA": "NO";
+  "PRECIO INCLUYE IVA": "SI";
 }
 
 export interface ExportRecepcionPedidoExcelPayload {
@@ -156,7 +156,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       "CÓDIGO PRODUCTO": it.codTienda,
       "CANTIDAD": it.cantRecibida,
       "PRECIO": precio,
-      "PRECIO INCLUYE IVA": "NO",
+      "PRECIO INCLUYE IVA": "SI",
     }));
 
     const stamp = formatDdMmHhMmGuionesBajosArchivoArgentina(new Date());
