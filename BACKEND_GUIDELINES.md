@@ -510,7 +510,6 @@ Contrato (SSOT de integración + armado de filas):
     - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR` y `fechaDesde = hoy AR - 30 días`, sin usar `fechaFacturaIso`.
     - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit=1` por consulta.
     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
-    - Columna **`REALIZA RECEPCION`**: por fila, según `precios_tienda.stockeable` resuelto por `cod_tienda` (coincidencia con `cod_tienda` del ítem del historial). `stockeable === true` → `"SI"`; `false` → `"NO"`. Si no hay fila en `precios_tienda` para ese código, se usa **`"SI"`** (mismo criterio que antes del flag).
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.
     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
     - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:

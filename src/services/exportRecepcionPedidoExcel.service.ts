@@ -23,8 +23,7 @@ export interface RecepcionPedidoExcelRow {
   "ID PROVEEDOR": string;
   "FECHA": string;
   "FECHA IMPUTACION CONTABLE": string;
-  /** Desde `precios_tienda.stockeable`: true → SI, false → NO. Sin fila en catálogo → SI (comportamiento previo). */
-  "REALIZA RECEPCION": "SI" | "NO";
+  "REALIZA RECEPCION": "SI";
   "DEPOSITO": string;
   "CÓDIGO PRODUCTO": string;
   "CANTIDAD": number;
@@ -111,29 +110,6 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       };
     }
 
-    const codTiendasDistintos = [
-      ...new Set(
-        itemsRecibidos
-          .map((it) => (it.codTienda ?? "").trim())
-          .filter((c) => c.length > 0)
-      ),
-    ];
-    const stockeablePorCodTienda = new Map<string, boolean>();
-    if (codTiendasDistintos.length > 0) {
-      const tiendaRows = await prisma.listaPrecioTienda.findMany({
-        where: { codTienda: { in: codTiendasDistintos } },
-        select: { codTienda: true, stockeable: true },
-        orderBy: { id: "asc" },
-      });
-      for (const row of tiendaRows) {
-        const k = (row.codTienda ?? "").trim();
-        if (!k) continue;
-        if (!stockeablePorCodTienda.has(k)) {
-          stockeablePorCodTienda.set(k, row.stockeable);
-        }
-      }
-    }
-
     const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);
     const fechaFacturaExcel = formatExcelDdMmYyyyDash(y, m, d);
 
@@ -169,24 +145,19 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     const precioBruto = sumCantRecibida > 0 ? totalParaPrecio / sumCantRecibida : 0;
     const precio = Number(precioBruto.toFixed(2));
 
-    const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => {
-      const cod = (it.codTienda ?? "").trim();
-      const stockeable = stockeablePorCodTienda.get(cod) ?? true;
-      const realizaRecepcion: "SI" | "NO" = stockeable ? "SI" : "NO";
-      return {
-        "TIPO COMPROBANTE": "Comprobante_Compra" as const,
-        "COMPROBANTE": siguienteComprobante,
-        "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
-        "FECHA": fechaFacturaExcel,
-        "FECHA IMPUTACION CONTABLE": fechaFacturaExcel,
-        "REALIZA RECEPCION": realizaRecepcion,
-        "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
-        "CÓDIGO PRODUCTO": it.codTienda,
-        "CANTIDAD": it.cantRecibida,
-        "PRECIO": precio,
-        "PRECIO INCLUYE IVA": "NO" as const,
-      };
-    });
+    const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => ({
+      "TIPO COMPROBANTE": "Comprobante_Compra",
+      "COMPROBANTE": siguienteComprobante,
+      "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
+      "FECHA": fechaFacturaExcel,
+      "FECHA IMPUTACION CONTABLE": fechaFacturaExcel,
+      "REALIZA RECEPCION": "SI",
+      "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
+      "CÓDIGO PRODUCTO": it.codTienda,
+      "CANTIDAD": it.cantRecibida,
+      "PRECIO": precio,
+      "PRECIO INCLUYE IVA": "NO",
+    }));
 
     const stamp = formatDdMmHhMmGuionesBajosArchivoArgentina(new Date());
     const prefijoProveedor = (pedido.proveedor.prefijo ?? "").trim() || "SIN_PREFIJO";
