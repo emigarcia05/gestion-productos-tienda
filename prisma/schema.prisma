@@ -13,6 +13,12 @@ enum TipoMovimientoFinanzas {
   CHEQUE
 }
 
+enum TipoCajaTesoreria {
+  EFECTIVO
+  BANCO
+  OTRA
+}
+
 model Proveedor {
   id              String   @id @default(cuid())
   nombre          String   @unique
@@ -108,6 +114,20 @@ model MovimientoFinanzasCheque {
 
   @@index([movimientoFinanzasId, fechaCobro])
   @@map("movimientos_finanzas_cheques")
+}
+
+// Cajas de tesorería con saldo actual y marca temporal del último cambio de saldo.
+model CajaTesoreria {
+  id               String            @id @default(cuid())
+  nombreCaja       String            @unique @map("nombre_caja")
+  tipoCaja         TipoCajaTesoreria @map("tipo_caja")
+  monto            Int               @default(0)
+  ultActualizacion DateTime          @map("ult_actualizacion") @default(now())
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  @@index([tipoCaja])
+  @@map("cajas_tesoreria")
 }
 
 model ListaPrecioProveedor {
