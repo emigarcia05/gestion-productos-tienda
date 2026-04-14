@@ -19,6 +19,9 @@ export default async function FinanzasPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
+              <Link href="/finanzas/tesoreria">Tesorería</Link>
+            </Button>
+            <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
               <Link href="/finanzas/deuda-proveedores">Deuda Proveedores</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
@@ -31,9 +34,9 @@ export default async function FinanzasPage() {
         <div className="flex flex-col gap-4">
           {esEditor ? <SincronizarComprobantesProveedorDuxButton /> : null}
           <p className="text-sm text-muted-foreground">
-            Deuda Proveedores resume saldos por proveedor y columnas por ventana de vencimiento. Venc. por fecha
-            muestra un calendario mensual con los vencimientos por día. Acceso desde la cabecera o slidenav
-            (FINANZAS).
+            Tesorería lista las cajas de tesorería con sucursal, tipo, monto y última actualización. Deuda
+            Proveedores resume saldos por proveedor y columnas por ventana de vencimiento. Venc. por fecha muestra
+            vencimientos por día en una ventana fija. Acceso desde la cabecera o slidenav (FINANZAS).
           </p>
         </div>
       </div>

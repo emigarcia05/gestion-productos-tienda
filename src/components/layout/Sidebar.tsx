@@ -23,6 +23,7 @@ import {
   Landmark,
   Wallet,
   CalendarDays,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -137,6 +138,12 @@ const FINANZAS_MODULES: {
     icon: <Landmark className={iconClass} />,
     submodules: [
       {
+        href: "/finanzas/tesoreria",
+        label: "Tesorería",
+        icon: <Banknote className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
         href: "/finanzas/deuda-proveedores",
         label: "Deuda Proveedores",
         icon: <Wallet className="h-4 w-4 shrink-0" />,
@@ -169,6 +176,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
+  if (href === "/finanzas/tesoreria") return pathname === "/finanzas/tesoreria";
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   return pathname === href;
