@@ -96,27 +96,49 @@ function normalizedMontoToDisplayAr(norm: string): string {
   return `$${entFmt},${frac}`;
 }
 
-/** Parsea texto con $, miles (.), decimales (,) a string normalizado "" | "123" | "123.45". */
+/** Repeticiones seguidas del mismo separador (`,,` / `..`) se colapsan a uno (se ignora lo demás). */
+function collapseDuplicateSeparators(s: string): string {
+  return s.replace(/([.,])\1+/g, "$1");
+}
+
+/**
+ * Parsea texto con $; en pantalla miles `.` y decimales `,`.
+ * Si hay `.` y `,`, el separador decimal es el que está más a la derecha; el otro se ignora como agrupador.
+ * Máximo 2 cifras decimales. Ver `collapseDuplicateSeparators`.
+ */
 function parseMontoArInputToNormalized(display: string): string {
-  const s = display.replace(/\$/g, "").replace(/\s/g, "").trim();
+  let s = display.replace(/\$/g, "").replace(/\s/g, "").trim();
   if (s === "" || s === "$") return "";
+  s = collapseDuplicateSeparators(s);
+
   const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+
   let integerRaw: string;
   let fracRaw: string;
-  if (lastComma !== -1) {
-    integerRaw = s.slice(0, lastComma).replace(/\./g, "").replace(/\D/g, "");
-    fracRaw = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
-  } else {
+
+  if (lastComma === -1 && lastDot === -1) {
+    integerRaw = s.replace(/\D/g, "");
+    fracRaw = "";
+  } else if (lastComma === -1) {
     integerRaw = s.replace(/\./g, "").replace(/\D/g, "");
     fracRaw = "";
+  } else if (lastDot === -1) {
+    integerRaw = s.slice(0, lastComma).replace(/\D/g, "");
+    fracRaw = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
+  } else {
+    const decPos = Math.max(lastComma, lastDot);
+    integerRaw = s.slice(0, decPos).replace(/\D/g, "");
+    fracRaw = s.slice(decPos + 1).replace(/\D/g, "").slice(0, 2);
   }
+
   if (integerRaw === "" && fracRaw === "") return "";
   if (fracRaw === "") return integerRaw;
   return `${integerRaw === "" ? "0" : integerRaw}.${fracRaw}`;
 }
 
 /**
- * Con foco: siempre incluye $; miles con "." en vivo; decimales tras una coma (máx. 2).
+ * Con foco: siempre incluye $; miles con "." en vivo; decimales con "," (máx. 2); misma lógica de separadores que `parseMontoArInputToNormalized`.
  */
 /** Total normalizado (`totalPedido`) distinto de vacío y mayor que 0. */
 function totalPedidoMontoPositivo(norm: string): boolean {
@@ -126,25 +148,44 @@ function totalPedidoMontoPositivo(norm: string): boolean {
 }
 
 function formatLiveTotalPedidoInput(raw: string): string {
-  const s = raw.replace(/\$/g, "").replace(/\s/g, "");
+  let s = raw.replace(/\$/g, "").replace(/\s/g, "");
   if (s === "") return "$";
 
+  s = collapseDuplicateSeparators(s);
+
   const lastComma = s.lastIndexOf(",");
-  const hasComma = lastComma !== -1;
-  const trailingComma = hasComma && lastComma === s.length - 1;
+  const lastDot = s.lastIndexOf(".");
 
   let intDigits: string;
   let fracDigits: string;
-  if (hasComma) {
+  let hasDecSep: boolean;
+  let trailingDecSep: boolean;
+
+  if (lastComma === -1 && lastDot === -1) {
+    intDigits = s.replace(/\D/g, "");
+    fracDigits = "";
+    hasDecSep = false;
+    trailingDecSep = false;
+  } else if (lastComma === -1) {
+    intDigits = s.replace(/\D/g, "");
+    fracDigits = "";
+    hasDecSep = false;
+    trailingDecSep = false;
+  } else if (lastDot === -1) {
+    hasDecSep = true;
+    trailingDecSep = lastComma === s.length - 1;
     intDigits = s.slice(0, lastComma).replace(/\D/g, "");
     fracDigits = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
   } else {
-    intDigits = s.replace(/\D/g, "");
-    fracDigits = "";
+    const decPos = Math.max(lastComma, lastDot);
+    hasDecSep = true;
+    trailingDecSep = decPos === s.length - 1;
+    intDigits = s.slice(0, decPos).replace(/\D/g, "");
+    fracDigits = s.slice(decPos + 1).replace(/\D/g, "").slice(0, 2);
   }
 
   if (intDigits === "" && fracDigits === "") {
-    if (trailingComma) return "$0,";
+    if (hasDecSep && trailingDecSep) return "$0,";
     return "$";
   }
 
@@ -157,10 +198,10 @@ function formatLiveTotalPedidoInput(raw: string): string {
 
   const intShown = intForFormat.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-  if (!hasComma) {
+  if (!hasDecSep) {
     return `$${intShown}`;
   }
-  if (trailingComma) {
+  if (trailingDecSep) {
     return `$${intShown},`;
   }
   return `$${intShown},${fracDigits}`;
