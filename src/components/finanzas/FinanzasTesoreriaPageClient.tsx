@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,19 @@ import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaMod
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
 import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
 import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesoreriaModal";
+import FilterBar, {
+  FILTER_SELECT_WRAPPER_CLASS,
+  FilaFiltrosDesplegables,
+  FilterRowSelection,
+  LimpiarFiltrosButton,
+} from "@/components/FilterBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   filas: TesoreriaCajaFila[];
@@ -25,12 +38,124 @@ export default function FinanzasTesoreriaPageClient({
   const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
+  const [filtroCaja, setFiltroCaja] = useState("");
+  const [filtroTitular, setFiltroTitular] = useState("");
+  const [filtroTipoCaja, setFiltroTipoCaja] = useState("");
+
+  const cajasOptions = useMemo(
+    () => [...new Set(filas.map((f) => f.nombreCaja))].sort((a, b) => a.localeCompare(b, "es")),
+    [filas]
+  );
+  const titularesOptions = useMemo(
+    () => [...new Set(filas.map((f) => f.titular))].sort((a, b) => a.localeCompare(b, "es")),
+    [filas]
+  );
+  const tiposCajaOptions = useMemo(
+    () => [...new Set(filas.map((f) => f.tipoCaja))].sort((a, b) => a.localeCompare(b, "es")),
+    [filas]
+  );
+
+  const filasFiltradas = useMemo(
+    () =>
+      filas.filter((fila) => {
+        if (filtroCaja && fila.nombreCaja !== filtroCaja) return false;
+        if (filtroTitular && fila.titular !== filtroTitular) return false;
+        if (filtroTipoCaja && fila.tipoCaja !== filtroTipoCaja) return false;
+        return true;
+      }),
+    [filas, filtroCaja, filtroTitular, filtroTipoCaja]
+  );
+
+  const hayFiltros = !!filtroCaja || !!filtroTitular || !!filtroTipoCaja;
+
+  function limpiarFiltros() {
+    setFiltroCaja("");
+    setFiltroTitular("");
+    setFiltroTipoCaja("");
+  }
 
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
       <ClassicFilteredTableLayout
         title="Finanzas"
         subtitle="Tesorería"
+        filters={
+          <FilterBar className="filtros-contenedor-tienda bg-card">
+            <FilterRowSelection>
+              <FilaFiltrosDesplegables>
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  <Select value={filtroCaja || "none"} onValueChange={(v) => setFiltroCaja(v === "none" ? "" : v)}>
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="CAJA" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">CAJA</SelectItem>
+                      {cajasOptions.map((caja) => (
+                        <SelectItem key={caja} value={caja}>
+                          {caja}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  <Select
+                    value={filtroTitular || "none"}
+                    onValueChange={(v) => setFiltroTitular(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="TITULAR" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TITULAR</SelectItem>
+                      {titularesOptions.map((titular) => (
+                        <SelectItem key={titular} value={titular}>
+                          {titular}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  <Select
+                    value={filtroTipoCaja || "none"}
+                    onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="TIPO CAJA" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TIPO CAJA</SelectItem>
+                      {tiposCajaOptions.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {tipo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </FilaFiltrosDesplegables>
+            </FilterRowSelection>
+            <div className="flex items-center justify-end">
+              <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </FilterBar>
+        }
         actions={
           esEditor ? (
             <Button
@@ -45,7 +170,7 @@ export default function FinanzasTesoreriaPageClient({
         }
       >
         <TablaTesoreriaCajas
-          filas={filas}
+          filas={filasFiltradas}
           esEditor={esEditor}
           onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
           onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}

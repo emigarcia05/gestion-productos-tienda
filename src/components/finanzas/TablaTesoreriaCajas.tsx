@@ -45,21 +45,13 @@ export default function TablaTesoreriaCajas({
   const colCount = esEditor ? COLS + 1 : COLS;
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 sm:px-6 lg:px-8">
-      <p
-        className={cn(
-          "shrink-0 text-sm font-semibold text-muted-foreground tracking-wide uppercase"
-        )}
-        aria-live="polite"
-      >
-        {`${filas.length.toLocaleString("es-AR")} CAJA${filas.length === 1 ? "" : "S"}`}
-      </p>
+    <div className="flex flex-1 min-h-0 flex-col px-4 pb-4 sm:px-6 lg:px-8">
       <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
         <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
           <Table variant="compact" scrollX={false}>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="min-w-[10rem]">NOMBRE CAJA</TableHead>
+                <TableHead className="min-w-[10rem]">CAJA</TableHead>
                 <TableHead className="min-w-[10rem]">TITULAR</TableHead>
                 <TableHead className="min-w-[7rem]">TIPO CAJA</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>MONTO</TableHead>
