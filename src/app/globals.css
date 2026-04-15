@@ -814,6 +814,28 @@
   padding-right: 0.1875rem !important;
 }
 
+/* Recepción pedido (modal): pendientes más altos + cebra global; verificados altura estándar + fondo gris uniforme */
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-pendiente,
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-pendiente td {
+  height: 2.75rem !important;
+  max-height: 2.75rem !important;
+}
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada,
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada td {
+  height: var(--tabla-body-row-min-height) !important;
+  max-height: var(--tabla-body-row-min-height) !important;
+}
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada {
+  --tabla-row-bg: color-mix(in oklab, var(--muted) 58%, var(--card));
+  background-color: color-mix(in oklab, var(--muted) 58%, var(--card)) !important;
+}
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada:hover {
+  background-color: color-mix(in oklab, var(--muted) 72%, var(--card)) !important;
+}
+.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada:hover td {
+  color: var(--foreground) !important;
+}
+
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───
  * Encabezado: fondo primary opaco + línea blanca (evita que al hacer scroll se vea el separador gris del tbody por border-collapse).
  * Cuerpo: celdas transparentes (cebra de fila); separador vertical #0072bb vía box-shadow inset (no participa del grid de bordes colapsados).

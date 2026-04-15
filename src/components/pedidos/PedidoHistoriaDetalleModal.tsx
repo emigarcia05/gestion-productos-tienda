@@ -772,7 +772,7 @@ export default function PedidoHistoriaDetalleModal({
                           "pointer-events-none cursor-not-allowed opacity-50"
                       )}
                     >
-                    <Table variant="compact" scrollX={false}>
+                    <Table variant="compact" className="tabla-recepcion-pedido" scrollX={false}>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[5%] text-center">
@@ -831,25 +831,20 @@ export default function PedidoHistoriaDetalleModal({
                           key={item.id}
                           className={cn(
                             "transition-colors duration-100",
-                            !checkListConfirmed &&
-                              !isControlado &&
-                              "border-l-4 border-accent2 bg-accent/55 hover:bg-accent/70",
-                            checkListConfirmed &&
-                              "cursor-not-allowed border-l-4 border-primary bg-primary/12 odd:bg-primary/12 even:bg-primary/12 hover:bg-primary/18",
-                            isControlado &&
-                              !checkListConfirmed &&
-                              "border-l-4 border-primary/80 bg-primary/22 hover:bg-primary/30"
+                            checkListConfirmed
+                              ? "recepcion-fila-verificada cursor-not-allowed"
+                              : "recepcion-fila-pendiente"
                           )}
                         >
                           <TableCell
                             className={cn("celda-datos w-[5%] text-center align-middle")}
                           >
                             {checkListConfirmed ? (
-                              <span
-                                className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/20"
+                                                           <span
+                                className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/20"
                                 aria-label="Ítem verificado"
                               >
-                                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                                <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
                               </span>
                             ) : locked ? (
                               <span className="text-muted-foreground">—</span>
