@@ -13,6 +13,7 @@ import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesore
 import FilterBar, {
   FILTER_SELECT_WRAPPER_CLASS,
   FilaFiltrosDesplegables,
+  FilterRowNoSearchActions,
   FilterRowSelection,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
@@ -151,9 +152,9 @@ export default function FinanzasTesoreriaPageClient({
                 </div>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>
-            <div className="flex items-center justify-end">
+            <FilterRowNoSearchActions>
               <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-            </div>
+            </FilterRowNoSearchActions>
           </FilterBar>
         }
         actions={

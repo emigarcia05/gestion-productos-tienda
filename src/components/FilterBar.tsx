@@ -60,6 +60,17 @@ export function FilterRowSearch({ children, className }: { children: React.React
   );
 }
 
+/** Fila 2 (sin búsqueda): acciones alineadas a la derecha (ej. limpiar filtros). */
+export function FilterRowNoSearchActions({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("flex items-center justify-end w-full", className)}>{children}</div>;
+}
+
 /** Color de fuente de todos los filtros (heredable). Usa variable de tema. */
 export const FILTER_TEXT_COLOR_CLASS = "text-foreground";
 

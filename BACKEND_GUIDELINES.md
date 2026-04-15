@@ -439,13 +439,13 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 4. `agregarPedidoHistoriaItem({ pedidoHistoriaId, codTienda, cantRecibida })`
    - Reglas:
-     - Solo permitido si el pedido está en estado `"SIN RECEPCION"`.
+     - Permitido también sobre cabeceras en estado `"RECEPCIONADO"` cuando la UI está en flujo de corrección de recepción.
      - Respeta UNIQUE(`pedido_historia_id`, `cod_tienda`): si el item ya existe devuelve error.
    - Inicializa `cant_pedida = cant_recibida = cantRecibida` (asumiendo igualdad para filas agregadas).
 
 5. `actualizarPedidoHistoriaItemCantRecibida({ pedidoHistoriaItemId, cantRecibida })`
    - Reglas:
-     - Solo permitido si el pedido asociado está en estado `"SIN RECEPCION"`.
+     - Permitido también sobre cabeceras en estado `"RECEPCIONADO"` cuando se corrige una recepción.
      - Actualiza únicamente `cant_recibida` (sin tocar `cant_pedida`).
 
 6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`

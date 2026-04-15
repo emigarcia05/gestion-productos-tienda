@@ -350,8 +350,6 @@ export async function agregarPedidoHistoriaItem(params: {
       select: { id: true, estado: true },
     });
     if (!header) return { success: false, error: "Pedido no encontrado." };
-    if (header.estado === "RECEPCIONADO")
-      return { success: false, error: "Pedido ya recepcionado (registrado en DUX)." };
 
     const existing = await prisma.pedidoHistoriaItem.findUnique({
       where: { pedidoHistoriaId_codTienda: { pedidoHistoriaId: header.id, codTienda: cod } },
@@ -397,10 +395,6 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
       },
     });
     if (!item) return { success: false, error: "Ítem no encontrado." };
-
-    if (item.pedidoHistoria.estado === "RECEPCIONADO") {
-      return { success: false, error: "Pedido ya recepcionado (registrado en DUX)." };
-    }
 
     await prisma.pedidoHistoriaItem.update({
       where: { id },

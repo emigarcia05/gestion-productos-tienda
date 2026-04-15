@@ -45,7 +45,7 @@ export default function TablaTesoreriaCajas({
   const colCount = esEditor ? COLS + 1 : COLS;
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col px-4 pb-4 sm:px-6 lg:px-8">
+    <div className="flex flex-1 min-h-0 flex-col pb-4">
       <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
         <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
           <Table variant="compact" scrollX={false}>

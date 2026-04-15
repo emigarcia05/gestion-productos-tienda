@@ -51,6 +51,18 @@ function toDate(value: string | Date | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function buildChecklistConfirmadoInicial(
+  items: PedidoHistoriaDetalle["items"],
+  estado: PedidoHistoriaEstado
+): Record<string, boolean> {
+  // En pedidos ya recepcionados, partimos con todos los ítems marcados como revisados
+  // para que el flujo de corrección solo requiera tocar lo que cambió.
+  if (estado === "RECEPCIONADO") {
+    return Object.fromEntries(items.map((item) => [item.id, true]));
+  }
+  return {};
+}
+
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
@@ -212,6 +224,9 @@ export default function PedidoHistoriaDetalleModal({
     }
     const detalleNormalizado = res.data;
     setDetalle(detalleNormalizado);
+    setCheckListConfirmedByItem(
+      buildChecklistConfirmadoInicial(detalleNormalizado.items, detalleNormalizado.estado)
+    );
     if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total > 0) {
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
@@ -284,34 +299,6 @@ export default function PedidoHistoriaDetalleModal({
     if (locked) return false;
     if (guardando) return false;
     if (fechaRecepcion.trim() === "") return false;
-
-    if (bloqueadoPorEstado && modoCorreccionRecepcionado) {
-      setDetalle((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.map((it) =>
-            it.id === pedidoHistoriaItemId ? { ...it, cantRecibida } : it
-          ),
-        };
-      });
-      setEditingItemId(null);
-      setEditingValue("");
-      if (options?.confirmChecklistAfter) {
-        setCheckListConfirmedByItem((prev) => ({
-          ...prev,
-          [pedidoHistoriaItemId]: true,
-        }));
-        setBusquedaAgregarProducto("");
-      } else {
-        setCheckListConfirmedByItem((prev) => {
-          const next = { ...prev };
-          delete next[pedidoHistoriaItemId];
-          return next;
-        });
-      }
-      return true;
-    }
 
     setGuardando(pedidoHistoriaItemId);
     try {
@@ -458,17 +445,7 @@ export default function PedidoHistoriaDetalleModal({
     };
   }
 
-  const itemsOrdenados = useMemo(() => {
-    const base = detalle?.items ?? [];
-    return [...base].sort((a, b) => {
-      const aChecked = checkListConfirmedByItem[a.id] === true;
-      const bChecked = checkListConfirmedByItem[b.id] === true;
-      if (aChecked !== bChecked) return aChecked ? 1 : -1;
-      return a.descripcionTienda.localeCompare(b.descripcionTienda, "es", {
-        sensitivity: "base",
-      });
-    });
-  }, [detalle?.items, checkListConfirmedByItem]);
+  const itemsOrdenados = useMemo(() => detalle?.items ?? [], [detalle?.items]);
 
   const itemsFiltrados = useMemo(() => {
     const q = busquedaAgregarProducto.trim().toLocaleLowerCase("es");
@@ -840,9 +817,9 @@ export default function PedidoHistoriaDetalleModal({
                           className={cn(
                             !checkListConfirmed &&
                               !isControlado &&
-                              "hover:bg-transparent",
+                              "bg-background hover:bg-accent/30",
                             checkListConfirmed &&
-                              "cursor-not-allowed bg-muted/50 odd:bg-muted/50 even:bg-muted/50 hover:bg-muted/50",
+                              "cursor-not-allowed bg-muted/80 odd:bg-muted/80 even:bg-muted/80 hover:bg-muted/80",
                             isControlado &&
                               !checkListConfirmed &&
                               "bg-primary/10 hover:bg-primary/10"
@@ -851,7 +828,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos w-[5%] text-center align-middle",
-                              checkListConfirmed && "opacity-60"
+                              checkListConfirmed && "text-muted-foreground"
                             )}
                           >
                             {checkListConfirmed ? (
@@ -872,7 +849,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos min-w-0 truncate w-[50%]",
-                              checkListConfirmed && "opacity-60"
+                              checkListConfirmed && "text-muted-foreground"
                             )}
                             title={
                               item.codTienda
@@ -885,7 +862,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos tabular-nums w-[10%]",
-                              checkListConfirmed && "opacity-60"
+                              checkListConfirmed && "text-muted-foreground"
                             )}
                           >
                             {cantPedidaVisible}
@@ -893,7 +870,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos tabular-nums w-[20%]",
-                              checkListConfirmed && !isEditing && "opacity-60"
+                              checkListConfirmed && !isEditing && "text-muted-foreground"
                             )}
                           >
                             {locked ? (
