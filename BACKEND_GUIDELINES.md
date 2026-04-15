@@ -707,6 +707,7 @@ Antes de entregar código nuevo o modificado, verificar:
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
 - Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`.
+- `.cursor/prompts.md` incluye el bloque **Dream Team de 5 agentes** con perfiles de arquitectura backend, frontend y auditoría; usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones.
 - Reglas persistentes activas en `.cursor/rules/`:
   - `manuales-obligatorios.mdc`: exige revisar guías frontend/backend antes de modificar código.
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.

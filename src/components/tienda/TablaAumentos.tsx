@@ -79,6 +79,14 @@ interface GrupoFila {
   items:  ItemAumento[];
 }
 
+const AUMENTOS_ZEBRA_ROW_CLASS = "bg-muted/40";
+const AUMENTOS_GROUP_ROW_BASE_CLASS = "w-full flex items-center justify-between gap-2 px-3 py-2 text-left border-b border-border";
+const AUMENTOS_PRODUCT_ROW_BASE_CLASS = "flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-border hover:bg-primary/10";
+
+function getAumentosRowBackgroundClass(idx: number) {
+  return idx % 2 === 1 ? AUMENTOS_ZEBRA_ROW_CLASS : "bg-card";
+}
+
 function ColumnaGrupo({
   titulo,
   grupos,
@@ -104,11 +112,10 @@ function ColumnaGrupo({
         {grupos.map((g, idx) => {
           const pct = promedio(g.items);
           const conVariacion = g.items.filter((i) => i.pctAumento !== 0).length;
-          const zebra = idx % 2 === 1 ? "bg-blue-50/50" : "bg-card";
           return (
             <div
               key={g.nombre}
-              className={cn("w-full flex items-center justify-between gap-2 px-3 py-2 text-left border-b border-border", zebra)}
+              className={cn(AUMENTOS_GROUP_ROW_BASE_CLASS, getAumentosRowBackgroundClass(idx))}
             >
               <span className="text-xs text-foreground truncate">
                 {g.nombre}
@@ -155,7 +162,7 @@ function ListaProductos({ items, busqueda }: { items: ItemAumento[]; busqueda: s
       {filtrados.map((item, idx) => (
         <div
           key={item.itemId}
-          className={cn("flex items-center justify-between gap-3 px-3 py-2 transition-colors border-b border-border hover:bg-primary/10", idx % 2 === 1 ? "bg-blue-50/50" : "bg-card")}
+          className={cn(AUMENTOS_PRODUCT_ROW_BASE_CLASS, getAumentosRowBackgroundClass(idx))}
         >
           <span className="text-xs text-foreground truncate">{item.descripcion}</span>
           <div className="flex items-center gap-1 shrink-0">
@@ -325,7 +332,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
                 id="filtro-aumentos-busqueda"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por descripción o código..."
+                placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
                 className="input-filtro-unificado pl-9 pr-8"
               />
               {busqueda && (
@@ -343,7 +350,7 @@ const TablaAumentos = forwardRef<TablaAumentosHandle, { data: ControlAumentosDat
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={!!hayFiltros || !!busqueda} onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-            {conAumento.length.toLocaleString()} con variación
+            {conAumento.length.toLocaleString()} CON VARIACIÓN
           </span>
         </div>
       </FilterBar>
