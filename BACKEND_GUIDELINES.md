@@ -339,7 +339,7 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - `ult_actualizacion` (`TIMESTAMP`): última vez que cambió el saldo.
   - `created_at`, `updated_at` (`TIMESTAMP`).
 - **Índices**:
-  - único en `nombre_caja`;
+  - único compuesto en (`nombre_caja`, `titular`) — permite repetir nombre si cambia el titular;
   - índice por `tipo_caja`.
 - **Regla de negocio en BD**:
   - trigger `cajas_tesoreria_set_timestamps` + función `set_cajas_tesoreria_timestamps`:
@@ -350,6 +350,7 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - Ajuste de enum: `prisma/migrations/20260414152000_rename_tipo_caja_tesoreria_values/migration.sql` (`BANCO -> DIGITAL`, `OTRA -> CHEQUE`).
   - Alta de titular: `prisma/migrations/20260414180000_add_titular_to_cajas_tesoreria/migration.sql`.
   - Baja de sucursal en cajas: `prisma/migrations/20260414190000_drop_sucursal_id_from_cajas_tesoreria/migration.sql`.
+  - Unicidad por nombre+titular: `prisma/migrations/20260414193000_unique_nombre_titular_cajas_tesoreria/migration.sql`.
 - **Servicio**: `src/services/cajasTesoreria.service.ts`
   - `listarCajasTesoreria()`: lectura ordenada por `nombre_caja`.
   - `crearCajaTesoreria(input)`: alta con validación de unicidad manejada como `ServiceResult`.
@@ -701,7 +702,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-04-14 — tabla `cajas_tesoreria` con campo obligatorio `titular`, sin relación activa con `sucursales`, enum `TipoCajaTesoreria`, `monto` entero y `ult_actualizacion` controlada por trigger al cambiar saldo. Histórico: `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
+*Última actualización: 2026-04-14 — tabla `cajas_tesoreria` con campo obligatorio `titular`, sin relación activa con `sucursales`, unicidad compuesta (`nombre_caja`, `titular`), enum `TipoCajaTesoreria`, `monto` entero y `ult_actualizacion` controlada por trigger al cambiar saldo. Histórico: `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
 
 ---
 

@@ -119,7 +119,7 @@ model MovimientoFinanzasCheque {
 // Cajas de tesorería con saldo actual y marca temporal del último cambio de saldo.
 model CajaTesoreria {
   id               String            @id @default(cuid())
-  nombreCaja       String            @unique @map("nombre_caja")
+  nombreCaja       String            @map("nombre_caja")
   titular          String            @map("titular")
   tipoCaja         TipoCajaTesoreria @map("tipo_caja")
   monto            Int               @default(0)
@@ -127,6 +127,7 @@ model CajaTesoreria {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
+  @@unique([nombreCaja, titular], map: "cajas_tesoreria_nombre_titular_ux")
   @@index([tipoCaja])
   @@map("cajas_tesoreria")
 }

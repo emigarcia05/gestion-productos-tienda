@@ -54,7 +54,7 @@ function mapDbError(error: unknown, fallback: string): string {
     typeof (error as { code?: unknown }).code === "string"
   ) {
     const code = (error as { code: string }).code;
-    if (code === "P2002") return "Ya existe una caja con ese nombre.";
+    if (code === "P2002") return "Ya existe una caja con ese nombre y titular.";
     if (code === "P2025") return "Caja no encontrada.";
   }
   return error instanceof Error ? error.message : fallback;
