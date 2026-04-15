@@ -16,7 +16,8 @@ export const crearCajaTesoreriaSchema = z.object({
     .string()
     .trim()
     .min(1, "El nombre de caja es obligatorio.")
-    .max(120, "El nombre de caja es demasiado largo."),
+    .max(120, "El nombre de caja es demasiado largo.")
+    .transform((value) => value.toUpperCase()),
   titular: z.enum(TITULARES_CAJA_TESORERIA, "Seleccioná un titular válido."),
   tipoCaja: tipoCajaTesoreriaSchema,
   monto: montoCajaTesoreriaSchema.optional().default(0),

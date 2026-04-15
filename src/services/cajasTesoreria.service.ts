@@ -36,8 +36,8 @@ function mapCaja(row: {
 }): CajaTesoreriaItem {
   return {
     id: row.id,
-    nombreCaja: row.nombreCaja,
-    titular: row.titular,
+    nombreCaja: row.nombreCaja.toUpperCase(),
+    titular: row.titular.toUpperCase(),
     tipoCaja: row.tipoCaja,
     monto: row.monto,
     ultActualizacion: row.ultActualizacion,
@@ -73,8 +73,8 @@ export async function crearCajaTesoreria(
   try {
     const row = await prisma.cajaTesoreria.create({
       data: {
-        nombreCaja: input.nombreCaja.trim(),
-        titular: input.titular.trim(),
+        nombreCaja: input.nombreCaja.trim().toUpperCase(),
+        titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
         monto: input.monto,
       },
@@ -95,8 +95,8 @@ export async function editarCajaTesoreria(
     const row = await prisma.cajaTesoreria.update({
       where: { id: input.id },
       data: {
-        nombreCaja: input.nombreCaja.trim(),
-        titular: input.titular.trim(),
+        nombreCaja: input.nombreCaja.trim().toUpperCase(),
+        titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
         monto: input.monto,
       },

@@ -1,10 +1,10 @@
 export const TITULARES_CAJA_TESORERIA = [
-  "Suc. Guaymallen",
-  "Suc. Maipu",
-  "Walter Garcia",
-  "Fernando Panaia",
-  "Emiliano Garcia",
-  "Vanesa Garcia",
+  "SUC. GUAYMALLEN",
+  "SUC. MAIPU",
+  "WALTER GARCIA",
+  "FERNANDO PANAIA",
+  "EMILIANO GARCIA",
+  "VANESA GARCIA",
 ] as const;
 
 export type TitularCajaTesoreria = (typeof TITULARES_CAJA_TESORERIA)[number];

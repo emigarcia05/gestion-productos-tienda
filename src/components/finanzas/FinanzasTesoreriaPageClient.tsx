@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaTesoreriaCajas, { type TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaModal";
+import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
 
 interface Props {
   filas: TesoreriaCajaFila[];
@@ -19,6 +20,7 @@ export default function FinanzasTesoreriaPageClient({
 }: Props) {
   const router = useRouter();
   const [openNuevaCaja, setOpenNuevaCaja] = useState(false);
+  const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
 
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
@@ -38,11 +40,22 @@ export default function FinanzasTesoreriaPageClient({
           ) : undefined
         }
       >
-        <TablaTesoreriaCajas filas={filas} />
+        <TablaTesoreriaCajas
+          filas={filas}
+          onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
+        />
         <NuevaCajaTesoreriaModal
           open={openNuevaCaja}
           onOpenChange={setOpenNuevaCaja}
           onCreated={() => router.refresh()}
+        />
+        <ActualizarMontoCajaTesoreriaModal
+          open={cajaParaEditarMonto != null}
+          onOpenChange={(open) => {
+            if (!open) setCajaParaEditarMonto(null);
+          }}
+          caja={cajaParaEditarMonto}
+          onUpdated={() => router.refresh()}
         />
       </ClassicFilteredTableLayout>
     </div>

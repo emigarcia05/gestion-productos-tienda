@@ -111,8 +111,8 @@ export default function NuevaCajaTesoreriaModal({
             </span>
             <Input
               value={nombreCaja}
-              onChange={(e) => setNombreCaja(e.target.value)}
-              placeholder="Ingresar nombre de caja"
+              onChange={(e) => setNombreCaja(e.target.value.toUpperCase())}
+              placeholder="INGRESAR NOMBRE DE CAJA"
               maxLength={120}
               disabled={saving}
             />

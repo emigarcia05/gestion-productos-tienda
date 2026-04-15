@@ -359,7 +359,8 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - Lectura `listarCajasTesoreriaAction`: requiere `getRol()` + `puede(rol, PERMISOS.finanzas.acceso)`.
   - Mutaciones (`crear`, `editar`, `eliminar`): requieren permiso de finanzas + `esEditor()`.
   - Validación con Zod en `src/lib/validations/cajasTesoreria.ts`.
-  - `titular` queda restringido por whitelist (alta y edición): `Suc. Guaymallen`, `Suc. Maipu`, `Walter Garcia`, `Fernando Panaia`, `Emiliano Garcia`, `Vanesa Garcia` (constante compartida `src/lib/cajasTesoreriaTitulares.ts`).
+  - `titular` queda restringido por whitelist (alta y edición): `SUC. GUAYMALLEN`, `SUC. MAIPU`, `WALTER GARCIA`, `FERNANDO PANAIA`, `EMILIANO GARCIA`, `VANESA GARCIA` (constante compartida `src/lib/cajasTesoreriaTitulares.ts`).
+  - `nombre_caja` y `titular` se normalizan y persisten en MAYÚSCULAS en servicio (`crearCajaTesoreria`/`editarCajaTesoreria`), y la lectura también expone esos campos en MAYÚSCULAS para UI consistente.
   - Revalidación de rutas: `/finanzas` y `/finanzas/tesoreria`.
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
