@@ -203,6 +203,7 @@ export default function PedidoHistoriaDetalleModal({
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
+  const cantRecEditingInputRef = useRef<HTMLInputElement>(null);
 
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const bloqueadoPorEstado = estado === "RECEPCIONADO";
@@ -295,10 +296,7 @@ export default function PedidoHistoriaDetalleModal({
   useEffect(() => {
     if (!editingItemId) return;
     queueMicrotask(() => {
-      const el = document.querySelector<HTMLInputElement>(
-        `input[data-edit-input="${editingItemId}"]`
-      );
-      el?.focus();
+      cantRecEditingInputRef.current?.focus();
     });
   }, [editingItemId]);
 
@@ -517,9 +515,22 @@ export default function PedidoHistoriaDetalleModal({
     }
   }
 
+  const bloquearNavegacionModalPorEdicionCantidad =
+    editingItemId != null && !locked && fechaFacturaOk && !loading;
+
+  function handleModalOpenChange(next: boolean) {
+    if (!next && bloquearNavegacionModalPorEdicionCantidad) {
+      toast.info(
+        "Confirmá la cantidad con el ícono de verificación antes de continuar."
+      );
+      return;
+    }
+    onOpenChange(next);
+  }
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleModalOpenChange}>
         <AppModal
           title="Recepcion Pedido"
           scrollBody={false}
@@ -535,7 +546,8 @@ export default function PedidoHistoriaDetalleModal({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                disabled={bloquearNavegacionModalPorEdicionCantidad}
+                onClick={() => handleModalOpenChange(false)}
               >
                 Cerrar
               </Button>
@@ -582,12 +594,14 @@ export default function PedidoHistoriaDetalleModal({
                         return;
                       }
                       toast.success("Pedido registrado en DUX.");
-                      onOpenChange(false);
+                      handleModalOpenChange(false);
                     } finally {
                       setGuardando(null);
                     }
                   }}
-                  disabled={!puedeRegistrarEnDux}
+                  disabled={
+                    !puedeRegistrarEnDux || bloquearNavegacionModalPorEdicionCantidad
+                  }
                 >
                   Registrar En Dux
                 </Button>
@@ -597,7 +611,11 @@ export default function PedidoHistoriaDetalleModal({
                     <Button
                       type="button"
                       className="disabled:cursor-not-allowed"
-                      disabled={guardando != null || loading}
+                      disabled={
+                        guardando != null ||
+                        loading ||
+                        bloquearNavegacionModalPorEdicionCantidad
+                      }
                       onClick={() => {
                         setModoCorreccionRecepcionado(true);
                       }}
@@ -608,7 +626,11 @@ export default function PedidoHistoriaDetalleModal({
                     <Button
                       type="button"
                       className="disabled:cursor-not-allowed"
-                      disabled={guardando != null || loading}
+                      disabled={
+                        guardando != null ||
+                        loading ||
+                        bloquearNavegacionModalPorEdicionCantidad
+                      }
                       onClick={async () => {
                         const guardadoOk = await persistirRecepcionActual();
                         if (!guardadoOk) return;
@@ -626,7 +648,12 @@ export default function PedidoHistoriaDetalleModal({
                   <Button
                     type="button"
                     className="disabled:cursor-not-allowed"
-                    disabled={guardando != null || loading || !pedidoHistoriaId}
+                    disabled={
+                      guardando != null ||
+                      loading ||
+                      !pedidoHistoriaId ||
+                      bloquearNavegacionModalPorEdicionCantidad
+                    }
                     onClick={async () => {
                       await descargarRecepcionExcel();
                     }}
@@ -639,7 +666,11 @@ export default function PedidoHistoriaDetalleModal({
           }
         >
         <div className="flex min-h-0 flex-1 flex-col gap-0">
-          <section aria-labelledby="pedido-historia-resumen-title" className="shrink-0">
+          <section
+            aria-labelledby="pedido-historia-resumen-title"
+            className="shrink-0"
+            inert={bloquearNavegacionModalPorEdicionCantidad ? true : undefined}
+          >
             <h2 id="pedido-historia-resumen-title" className="sr-only">
               Resumen del pedido
             </h2>
@@ -708,6 +739,12 @@ export default function PedidoHistoriaDetalleModal({
                   !locked &&
                   "pointer-events-none cursor-not-allowed opacity-50"
               )}
+              inert={
+                (!tablaYAltaHabilitados && !locked) ||
+                bloquearNavegacionModalPorEdicionCantidad
+                  ? true
+                  : undefined
+              }
             >
               <span
                 id="pedido-historia-agregar-recepcion-titulo"
@@ -773,7 +810,7 @@ export default function PedidoHistoriaDetalleModal({
                       )}
                     >
                     <Table variant="compact" className="tabla-recepcion-pedido" scrollX={false}>
-                <TableHeader>
+                <TableHeader inert={editingItemId ? true : undefined}>
                   <TableRow>
                     <TableHead className="w-[5%] text-center">
                       <span className="sr-only">LISTA DE VERIFICACIÓN</span>
@@ -825,10 +862,18 @@ export default function PedidoHistoriaDetalleModal({
                             : "";
 
                       const checkListConfirmed = checkListConfirmedByItem[item.id] === true;
+                      /** En **SIN RECEPCION**, la columna solo muestra valor tras confirmar checklist (OK / cesto / check edición). */
+                      const cantRecibidaCeldaLectura =
+                        estado === "SIN RECEPCION" && !checkListConfirmed
+                          ? ""
+                          : cantRecibidaVisible;
 
                       return (
                         <TableRow
                           key={item.id}
+                          inert={
+                            editingItemId != null && !isEditing ? true : undefined
+                          }
                           className={cn(
                             "transition-colors duration-100",
                             checkListConfirmed
@@ -840,7 +885,7 @@ export default function PedidoHistoriaDetalleModal({
                             className={cn("celda-datos w-[5%] text-center align-middle")}
                           >
                             {checkListConfirmed ? (
-                                                           <span
+                              <span
                                 className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/20"
                                 aria-label="Ítem verificado"
                               >
@@ -901,6 +946,7 @@ export default function PedidoHistoriaDetalleModal({
                                   <span className="text-sm leading-none">-</span>
                                 </Button>
                                 <Input
+                                  ref={cantRecEditingInputRef}
                                   type="number"
                                   min={0}
                                   step={1}
@@ -926,7 +972,12 @@ export default function PedidoHistoriaDetalleModal({
                                       setEditingValue("");
                                       return;
                                     }
-                                    actualizarItemCantRecibidaLocal(item.id, v);
+                                    toast.info(
+                                      "Confirmá la cantidad con el ícono de verificación."
+                                    );
+                                    queueMicrotask(() => {
+                                      cantRecEditingInputRef.current?.focus();
+                                    });
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
@@ -968,7 +1019,7 @@ export default function PedidoHistoriaDetalleModal({
                                 </Button>
                               </div>
                             ) : (
-                              cantRecibidaVisible
+                              cantRecibidaCeldaLectura
                             )}
                           </TableCell>
                           <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
@@ -1036,6 +1087,12 @@ export default function PedidoHistoriaDetalleModal({
                         !locked &&
                         "pointer-events-none cursor-not-allowed opacity-50"
                     )}
+                    inert={
+                      (!totalPedidoInputHabilitado && !locked) ||
+                      bloquearNavegacionModalPorEdicionCantidad
+                        ? true
+                        : undefined
+                    }
                   >
                     <div className="celda-datos col-start-4 flex items-center justify-end border-b-0 text-right">
                       <span className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">

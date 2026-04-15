@@ -814,23 +814,13 @@
   padding-right: 0.1875rem !important;
 }
 
-/* Recepción pedido (modal): pendientes más altos + cebra global; verificados altura estándar + fondo gris uniforme */
-.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-pendiente,
-.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-pendiente td {
-  height: 2.75rem !important;
-  max-height: 2.75rem !important;
-}
-.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada,
-.tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada td {
-  height: var(--tabla-body-row-min-height) !important;
-  max-height: var(--tabla-body-row-min-height) !important;
-}
+/* Recepción pedido (modal): misma altura de fila que el resto de tablas; verificados con gris intermedio neutro (entre blanco/card y cebra celeste) */
 .tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada {
-  --tabla-row-bg: color-mix(in oklab, var(--muted) 58%, var(--card));
-  background-color: color-mix(in oklab, var(--muted) 58%, var(--card)) !important;
+  --tabla-row-bg: color-mix(in oklab, var(--muted) 72%, var(--card) 28%);
+  background-color: color-mix(in oklab, var(--muted) 72%, var(--card) 28%) !important;
 }
 .tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada:hover {
-  background-color: color-mix(in oklab, var(--muted) 72%, var(--card)) !important;
+  background-color: color-mix(in oklab, var(--muted) 84%, var(--card) 16%) !important;
 }
 .tabla-gestion-compacta.tabla-recepcion-pedido tbody tr.recepcion-fila-verificada:hover td {
   color: var(--foreground) !important;
