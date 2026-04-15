@@ -4,6 +4,7 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import PedidoUrgentePageClient from "@/components/pedidos/PedidoUrgentePageClient";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,20 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
 
   const { q = "", pagina = "1", sucursal = "", proveedor = "", pedido = "" } = await searchParams;
+  const sucursalesPedido = await prisma.sucursal.findMany({
+    where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } },
+    select: { codigo: true, nombre: true },
+    orderBy: { nombre: "asc" },
+  });
+  const sucursalesDisponibles = sucursalesPedido.map((s) => ({
+    value: s.codigo as SucursalPedido,
+    label: s.nombre.toUpperCase(),
+  }));
+  const codigosHabilitados = new Set(sucursalesPedido.map((s) => s.codigo));
   const sucursalValida: SucursalPedido | "" =
-    sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
+    (sucursal === "maipu" || sucursal === "guaymallen") && codigosHabilitados.has(sucursal)
+      ? (sucursal as SucursalPedido)
+      : "";
   const pedidoValida: "cualquier" | "urgente" | "reposicion" | "" =
     pedido === "cualquier"
       ? "cualquier"
@@ -43,7 +56,6 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
     pedido: pedidoValida,
   });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const qValida = q.trim().length >= 3;
   const tieneSucursalSeleccionada = !!sucursalValida;
 
   const filters = (
@@ -53,6 +65,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       proveedor={proveedor}
       pedido={pedidoValida}
       proveedores={proveedores}
+      sucursales={sucursalesDisponibles}
       totalProductos={total}
     />
   );

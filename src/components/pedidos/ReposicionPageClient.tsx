@@ -12,6 +12,7 @@ import { PAGE_SIZE } from "@/lib/pagination";
 interface Props {
   data: ReposicionData;
   proveedores: { id: string; nombre: string; prefijo: string }[];
+  sucursales: { value: SucursalReposicion; label: string }[];
   sucursalValida: SucursalReposicion | null;
   proveedor: string;
   q: string;
@@ -25,6 +26,7 @@ interface Props {
 export default function ReposicionPageClient({
   data,
   proveedores,
+  sucursales,
   sucursalValida,
   proveedor,
   q,
@@ -48,6 +50,7 @@ export default function ReposicionPageClient({
       configuradoActual={configurado}
       totalItems={totalFiltrados}
       proveedorActual={proveedorActual}
+      sucursales={sucursales}
       onProveedorChange={() => {}}
     />
   );

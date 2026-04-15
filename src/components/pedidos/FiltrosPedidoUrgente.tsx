@@ -22,11 +22,7 @@ import { cn } from "@/lib/utils";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 export type SucursalPedido = "guaymallen" | "maipu";
-
-const SUCURSALES: { value: SucursalPedido; label: string }[] = [
-  { value: "guaymallen", label: "GUAYMALLÉN" },
-  { value: "maipu", label: "MAIPÚ" },
-];
+type SucursalFiltroOption = { value: SucursalPedido; label: string };
 
 interface Proveedor {
   id: string;
@@ -42,6 +38,7 @@ interface Props {
   proveedor: string;
   pedido: FiltroPedidoValor;
   proveedores: Proveedor[];
+  sucursales: SucursalFiltroOption[];
   totalProductos: number;
 }
 
@@ -51,6 +48,7 @@ export default function FiltrosPedidoUrgente({
   proveedor,
   pedido,
   proveedores,
+  sucursales,
   totalProductos,
 }: Props) {
   const pathname = usePathname();
@@ -124,7 +122,7 @@ export default function FiltrosPedidoUrgente({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">SUCURSAL</SelectItem>
-                {SUCURSALES.map((s) => (
+                {sucursales.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
                   </SelectItem>

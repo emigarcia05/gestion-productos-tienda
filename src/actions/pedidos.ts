@@ -21,7 +21,6 @@ import {
 import { crearPedidoHistoriaSnapshot } from "@/services/pedidosHistoria.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
-import { sendPedidoPdfViaWhatsApp } from "@/lib/whatsappApi";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -68,6 +67,9 @@ export async function getPedidoUrgenteData(params: {
   const proveedorValido = proveedor.trim();
   const qValida = q.trim().length >= 3;
   const tieneSucursal = !!sucursalValida;
+  const sucursalHabilitada = tieneSucursal
+    ? await sucursalPedidoHabilitada(sucursalValida)
+    : false;
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const pedidoTipo: "cualquier" | "urgente" | "reposicion" | undefined =
@@ -80,7 +82,7 @@ export async function getPedidoUrgenteData(params: {
           : undefined;
   const [proveedores, result] = await Promise.all([
     getProveedoresParaPedidoUrgente(),
-    tieneSucursal
+    tieneSucursal && sucursalHabilitada
       ? getListaPreciosParaPedidoUrgente(
           sucursalValida,
           proveedorValido || undefined,
@@ -141,6 +143,9 @@ export async function getEnviarPedidoTablaData(params: {
     sucursal.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
       ? sucursal.trim()
       : undefined;
+  if (sucursalFiltro && !(await sucursalPedidoHabilitada(sucursalFiltro))) {
+    return { items: [] };
+  }
   const tiposFiltro = tipos.length > 0 ? tipos : undefined;
   const { items } = await getItemsTablaEnviarPedido({
     sucursalCodigo: sucursalFiltro,
@@ -180,6 +185,9 @@ export async function comprobarItemsParaGenerarPedidoAction(
     return { ok: false, error: msg };
   }
   const { proveedorId, sucursal, tipos } = parsed.data;
+  if (!(await sucursalPedidoHabilitada(sucursal))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
   const { items } = await getEnviarPedidoTablaData({
     sucursal,
     proveedor: proveedorId,
@@ -189,6 +197,14 @@ export async function comprobarItemsParaGenerarPedidoAction(
 }
 
 const SUCURSALES_VALIDAS: SucursalPedidoEnvio[] = ["guaymallen", "maipu"];
+
+async function sucursalPedidoHabilitada(codigo: string): Promise<boolean> {
+  const row = await prisma.sucursal.findUnique({
+    where: { codigo },
+    select: { pedido: true },
+  });
+  return row?.pedido === true;
+}
 
 const syncPedidoUrgenteEnvioSchema = z.object({
   sucursal: z.enum(["guaymallen", "maipu"]),
@@ -257,6 +273,9 @@ export async function getSobreStockReposicionParaModalAction(
   }
 
   const { proveedorId, sucursal, tipos } = parsed.data;
+  if (!(await sucursalPedidoHabilitada(sucursal))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
 
   const { rows } = await getItemsYProveedorParaEnviar(
     proveedorId.trim(),
@@ -290,6 +309,9 @@ export async function syncPedidoUrgenteEnvioAction(
     return { ok: false, error: "Datos inválidos para sincronizar el pedido urgente." };
   }
   const sucursalValida = rawParsed.data.sucursal;
+  if (!(await sucursalPedidoHabilitada(sucursalValida))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
   const payload: ItemPedidoUrgentePayload[] = rawParsed.data.items
     .filter((i) => i.cant > 0)
     .map((i) => ({ id: i.id.trim(), cant: i.cant }))
@@ -319,6 +341,9 @@ export async function upsertPedidoUrgenteMercaderiaItemAction(raw: z.infer<typeo
     const msg = parsed.error.flatten().fieldErrors;
     const first = Object.values(msg).flat().find(Boolean);
     return { ok: false, error: (first as string) ?? "Datos inválidos." };
+  }
+  if (!(await sucursalPedidoHabilitada(parsed.data.sucursal))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
   }
 
   const result = await upsertPedidoMercaderiaUrgenteItem({
@@ -368,6 +393,9 @@ export async function upsertPedidoTintometricoItemsAction(
   if (!todosMismaSucursal) {
     return { ok: false, error: "Todos los ítems deben ser de la misma sucursal." };
   }
+  if (!(await sucursalPedidoHabilitada(sucursal))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
 
   const { actualizados, error } = await upsertPedidoTintometricoItems(
     sucursal,
@@ -397,6 +425,9 @@ export async function deletePedidoTintometricoItemAction(
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos para borrar el ítem." };
   }
+  if (!(await sucursalPedidoHabilitada(parsed.data.sucursalCodigo))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
 
   const result = await deletePedidoTintometricoItem(parsed.data);
   if (!result.ok) {
@@ -405,10 +436,7 @@ export async function deletePedidoTintometricoItemAction(
   return { ok: true, data: undefined };
 }
 
-/**
- * Genera el PDF del pedido y, si está configurado (token + sucursal.phone_number_id + proveedor.whatsapp),
- * lo envía por WhatsApp Cloud API sin abrir pestaña.
- */
+/** Genera el PDF del pedido y limpia ítems enviados según el flujo del módulo. */
 export async function generarPdfEnviarPedidoAction(params: {
   proveedorId: string;
   sucursal: string;
@@ -447,6 +475,9 @@ export async function generarPdfEnviarPedidoAction(params: {
     confirmarSobreStock,
     ajustesSobreStock,
   } = parsedParams.data;
+  if (!(await sucursalPedidoHabilitada(sucursalValida))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
 
   function sanitizeFilenamePart(s: string): string {
     // Reemplaza caracteres no válidos para nombres de archivo (Windows y, por compatibilidad, también para WhatsApp).
@@ -456,7 +487,7 @@ export async function generarPdfEnviarPedidoAction(params: {
   try {
     const sucursalRow = await prisma.sucursal.findUnique({
       where: { codigo: sucursalValida },
-      select: { id: true, phoneNumberId: true },
+      select: { id: true },
     });
     if (!sucursalRow) {
       return { ok: false, error: "Sucursal no encontrada." };
@@ -527,23 +558,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     const filename = `Nota Pedido - ${prefijoProveedor} - ${fechaStr}.pdf`;
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
-    let sentViaWhatsApp = false;
-    const phoneNumberId = sucursalRow?.phoneNumberId?.trim();
-    if (phoneNumberId && proveedor.whatsapp?.trim()) {
-      const sendResult = await sendPedidoPdfViaWhatsApp(
-        phoneNumberId,
-        proveedor.whatsapp,
-        Buffer.from(pdfBuffer),
-        filename
-      );
-      sentViaWhatsApp = sendResult.ok;
-      if (!sendResult.ok) {
-        return {
-          ok: false,
-          error: sendResult.error ?? "Error al enviar por WhatsApp.",
-        };
-      }
-    }
+    const sentViaWhatsApp = false;
 
     // Al "enviar" (generar y devolver el PDF), limpiar pedidos_mercaderia de los tipos
     // URGENTE/TINTOMETRICO para la sucursal configurada.

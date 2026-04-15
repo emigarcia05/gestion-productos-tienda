@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, TriangleAlert, Trash2 } from "lucide-react";
+import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
 
 export interface TesoreriaCajaFila {
   id: string;
@@ -20,6 +21,7 @@ export interface TesoreriaCajaFila {
   tipoCaja: string;
   monto: number;
   ultActualizacion: string;
+  ultActualizacionIso: string;
 }
 interface Props {
   filas: TesoreriaCajaFila[];
@@ -33,6 +35,15 @@ const COLS = 5;
 
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
+const MS_POR_DIA = 1000 * 60 * 60 * 24;
+
+function getDiasSinActualizar(ultActualizacionIso: string): number | null {
+  const timestamp = Date.parse(ultActualizacionIso);
+  if (Number.isNaN(timestamp)) return null;
+  const diffMs = Date.now() - timestamp;
+  if (diffMs < 0) return 0;
+  return Math.floor(diffMs / MS_POR_DIA);
+}
 
 export default function TablaTesoreriaCajas({
   filas,
@@ -70,55 +81,84 @@ export default function TablaTesoreriaCajas({
                 <EmptyTableRow colSpan={colCount} message="No hay cajas de tesorería registradas." />
               ) : (
                 filas.map((f) => (
-                  <TableRow
-                    key={f.id}
-                    onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(f) : undefined}
-                    className={cn(onRowDoubleClick && "cursor-pointer")}
-                  >
-                    <TableCell className="celda-datos min-w-0" title={f.nombreCaja}>
-                      <span className="celda-destacado truncate block">{f.nombreCaja}</span>
-                    </TableCell>
-                    <TableCell className="celda-datos min-w-0" title={f.titular}>
-                      <span className="truncate block">{f.titular}</span>
-                    </TableCell>
-                    <TableCell className="celda-datos whitespace-nowrap">{f.tipoCaja}</TableCell>
-                    <TableCell className={cn(TD_NUM, "celda-destacado")}>${fmtPrecio(f.monto)}</TableCell>
-                    <TableCell className="celda-datos tabular-nums whitespace-nowrap tabla-bloque-secundario-cell-divider">
-                      {f.ultActualizacion}
-                    </TableCell>
-                    {esEditor ? (
-                      <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            type="button"
-                            size="icon-xs"
-                            variant="outline"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onEditDataClick?.(f);
-                            }}
-                            aria-label="Editar caja"
-                            title="Editar caja"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="icon-xs"
-                            variant="outline"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onDeleteClick?.(f);
-                            }}
-                            aria-label="Eliminar caja"
-                            title="Eliminar caja"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
+                  (() => {
+                    const diasSinActualizar = getDiasSinActualizar(f.ultActualizacionIso);
+                    const estaDesactualizada = diasSinActualizar !== null && diasSinActualizar > 5;
+                    const titleUltActualizacion = estaDesactualizada
+                      ? `${f.ultActualizacion} — ${diasSinActualizar} DÍAS SIN ACTUALIZAR`
+                      : f.ultActualizacion;
+
+                    return (
+                      <TableRow
+                        key={f.id}
+                        onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(f) : undefined}
+                        className={cn(onRowDoubleClick && "cursor-pointer")}
+                      >
+                        <TableCell className="celda-datos min-w-0" title={f.nombreCaja}>
+                          <span className="celda-destacado truncate block">{f.nombreCaja}</span>
+                        </TableCell>
+                        <TableCell className="celda-datos min-w-0" title={f.titular}>
+                          <span className="truncate block">{f.titular}</span>
+                        </TableCell>
+                        <TableCell className="celda-datos whitespace-nowrap">{f.tipoCaja}</TableCell>
+                        <TableCell className={cn(TD_NUM, "celda-destacado")}>${fmtPrecio(f.monto)}</TableCell>
+                        <TableCell
+                          className={cn(
+                            "celda-datos tabular-nums whitespace-nowrap tabla-bloque-secundario-cell-divider",
+                            estaDesactualizada && TEXT_WARNING_CLASS
+                          )}
+                          title={titleUltActualizacion}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            {f.ultActualizacion}
+                            {estaDesactualizada ? (
+                              <>
+                                <TriangleAlert
+                                  className="h-3.5 w-3.5 shrink-0"
+                                  aria-hidden
+                                />
+                                <span className="text-[11px] font-semibold leading-none">
+                                  +{diasSinActualizar} D
+                                </span>
+                              </>
+                            ) : null}
+                          </span>
+                        </TableCell>
+                        {esEditor ? (
+                          <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                type="button"
+                                size="icon-xs"
+                                variant="outline"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onEditDataClick?.(f);
+                                }}
+                                aria-label="Editar caja"
+                                title="Editar caja"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon-xs"
+                                variant="outline"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onDeleteClick?.(f);
+                                }}
+                                aria-label="Eliminar caja"
+                                title="Eliminar caja"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    );
+                  })()
                 ))
               )}
             </TableBody>

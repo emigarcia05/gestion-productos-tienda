@@ -89,6 +89,12 @@ export const FILTER_SELECT_WRAPPER_CLASS = "min-w-0 flex-1";
 /** Misma clase global que INPUT_FILTER_CLASS: un solo estilo para input y trigger. */
 export const SELECT_TRIGGER_FILTER_CLASS = "input-filtro-unificado";
 
+/**
+ * Slot inline para acciones en pantallas sin búsqueda por descripción.
+ * Se usa dentro de `FilaFiltrosDesplegables` para conservar una sola línea.
+ */
+export const FILTER_INLINE_ACTION_SLOT_CLASS = "min-w-0 flex items-center justify-end";
+
 /** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
   "text-sm text-primary tabular-nums shrink-0 font-semibold";

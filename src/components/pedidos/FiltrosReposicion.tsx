@@ -21,10 +21,7 @@ import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
 import type { ReposicionData, SucursalReposicion } from "@/actions/reposicion";
 
-const SUCURSALES: { value: SucursalReposicion; label: string }[] = [
-  { value: "guaymallen", label: "GUAYMALLÉN" },
-  { value: "maipu", label: "MAIPÚ" },
-];
+type SucursalFiltroOption = { value: SucursalReposicion; label: string };
 
 interface Props {
   data: ReposicionData;
@@ -35,6 +32,7 @@ interface Props {
   configuradoActual: "" | "si";
   totalItems: number;
   proveedorActual: string;
+  sucursales: SucursalFiltroOption[];
   onProveedorChange: (proveedorId: string) => void;
 }
 
@@ -47,6 +45,7 @@ export default function FiltrosReposicion({
   configuradoActual,
   totalItems,
   proveedorActual,
+  sucursales,
   onProveedorChange,
 }: Props) {
   const pathname = usePathname();
@@ -188,7 +187,7 @@ export default function FiltrosReposicion({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">SUCURSAL</SelectItem>
-                {SUCURSALES.map((s) => (
+                {sucursales.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
                   </SelectItem>

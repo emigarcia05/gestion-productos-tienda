@@ -21,6 +21,7 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,20 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
   if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
 
   const { sucursal = "", proveedor = "", tipo = "", q = "" } = await searchParams;
+  const sucursalesPedido = await prisma.sucursal.findMany({
+    where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } },
+    select: { codigo: true, nombre: true },
+    orderBy: { nombre: "asc" },
+  });
+  const sucursalesDisponibles = sucursalesPedido.map((s) => ({
+    value: s.codigo as SucursalPedido,
+    label: s.nombre.toUpperCase(),
+  }));
+  const codigosHabilitados = new Set(sucursalesPedido.map((s) => s.codigo));
   const sucursalValida: SucursalPedido | "" =
-    sucursal === "maipu" ? "maipu" : sucursal === "guaymallen" ? "guaymallen" : "";
+    (sucursal === "maipu" || sucursal === "guaymallen") && codigosHabilitados.has(sucursal)
+      ? (sucursal as SucursalPedido)
+      : "";
   const tiposValidos: TipoPedido[] = parseTiposParam(tipo);
   const qNorm = q.trim();
 
@@ -69,6 +82,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
       proveedor={proveedor}
       tipos={tiposValidos}
       proveedores={proveedores}
+      sucursales={sucursalesDisponibles}
       q={qNorm}
     />
   );

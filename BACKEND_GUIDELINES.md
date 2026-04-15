@@ -754,3 +754,12 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/lib/validations/stock.ts` | Nuevo. |
 | `src/actions/comparacionCategorias.ts` | `buscarProductosParaAsignarAction`: Zod en `proveedorId` / `q`. |
 | `src/lib/validations/productos.ts` | `aplicarCampoMasivoSchema.proveedorId` → `cuid`; `editarProductoSchema.id` → string acotado (mock). |
+
+### 5.9 Sucursales habilitadas para Pedido De Mercadería (2026-04-15)
+
+- En `sucursales` se eliminó `phone_number_id` y se agregó `pedido` (`BOOLEAN NOT NULL DEFAULT TRUE`).
+- Migración: `20260415113000_replace_phone_number_id_with_pedido_in_sucursales`.
+- Regla de servicio/action: cualquier flujo de `pedidos` que opere por sucursal debe verificar `sucursal.pedido = true`.
+- Si la sucursal no está habilitada:
+  - lecturas/filtros devuelven vacío;
+  - mutaciones responden `ok: false` con mensaje de sucursal no habilitada.

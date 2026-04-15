@@ -42,6 +42,7 @@ export async function getProveedoresTintometricos(): Promise<ProveedorTintometri
 
 export async function getSucursalesTintometricas(): Promise<SucursalTintometrica[]> {
   const rows = await prisma.sucursal.findMany({
+    where: { pedido: true },
     select: { id: true, codigo: true, nombre: true },
     orderBy: { nombre: "asc" },
   });

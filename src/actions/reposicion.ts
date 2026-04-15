@@ -65,6 +65,14 @@ const emptyReposicionData: ReposicionData = {
   subRubros: [],
 };
 
+async function sucursalPedidoHabilitada(codigo: SucursalReposicion): Promise<boolean> {
+  const row = await prisma.sucursal.findUnique({
+    where: { codigo },
+    select: { pedido: true },
+  });
+  return row?.pedido === true;
+}
+
 function baseWhere(
   sucursal: SucursalReposicion,
   params: GetReposicionParams,
@@ -96,6 +104,9 @@ export async function getReposicionData(
     return emptyReposicionData;
   }
   if (!sucursalReposicionSchema.safeParse(sucursal).success) {
+    return emptyReposicionData;
+  }
+  if (!(await sucursalPedidoHabilitada(sucursal))) {
     return emptyReposicionData;
   }
 
@@ -303,6 +314,7 @@ export async function getProductosReposicionSelector(
   if (!puede(rol, PERMISOS.pedidos.acceso)) return [];
   if (!sucursal) return [];
   if (!sucursalReposicionSchema.safeParse(sucursal).success) return [];
+  if (!(await sucursalPedidoHabilitada(sucursal))) return [];
   const parsedQ = productosReposicionSelectorSchema.safeParse({ q });
   const qNorm = parsedQ.success ? parsedQ.data.q : "";
 
@@ -360,6 +372,9 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
   }
   const { idProveedor, sucursalCodigo, codTienda, formaPedir, puntoReposicion, cant } =
     parsed.data;
+  if (!(await sucursalPedidoHabilitada(sucursalCodigo))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
 
   try {
     const result = await upsertPedidoMercaderiaReposicionConfig({

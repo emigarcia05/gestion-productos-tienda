@@ -23,10 +23,7 @@ import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedido
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 
-const SUCURSALES: { value: SucursalPedido; label: string }[] = [
-  { value: "guaymallen", label: "GUAYMALLÉN" },
-  { value: "maipu", label: "MAIPÚ" },
-];
+type SucursalFiltroOption = { value: SucursalPedido; label: string };
 
 const OPCIONES_TIPO: { value: TipoPedido; label: string }[] = [
   { value: "URGENTE", label: "URGENTE" },
@@ -45,6 +42,7 @@ interface Props {
   proveedor: string;
   tipos: TipoPedido[];
   proveedores: Proveedor[];
+  sucursales: SucursalFiltroOption[];
   q: string;
 }
 
@@ -53,6 +51,7 @@ export default function FiltrosEnviarPedido({
   proveedor,
   tipos,
   proveedores,
+  sucursales,
   q: qActual,
 }: Props) {
   const pathname = usePathname();
@@ -142,7 +141,7 @@ export default function FiltrosEnviarPedido({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">SUCURSAL</SelectItem>
-                {SUCURSALES.map((s) => (
+                {sucursales.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
                   </SelectItem>

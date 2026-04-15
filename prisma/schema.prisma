@@ -63,14 +63,14 @@ model ComprobanteProveedor {
   @@map("comprobantes_proveedor")
 }
 
-// Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX, Phone Number ID (Meta API).
+// Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX y flag de habilitación para pedidos.
 model Sucursal {
   id             String   @id @default(cuid())
   codigo         String   @unique // guaymallen | maipu (estable en URLs y FKs)
   nombre         String
   deposito       String?  // DEPÓSITO para exportaciones (texto para preservar formato)
   whatsapp       String?  @map("whatsapp")
-  phoneNumberId  String?  @map("phone_number_id") // Meta WhatsApp Cloud API: envío sin abrir pestaña
+  pedido         Boolean  @default(true) @map("pedido")
   idDux          String?  @map("id_dux")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")

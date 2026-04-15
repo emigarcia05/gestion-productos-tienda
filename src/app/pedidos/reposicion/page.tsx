@@ -4,6 +4,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getReposicionData, type SucursalReposicion } from "@/actions/reposicion";
 import { getEnviarPedidoData } from "@/actions/pedidos";
 import ReposicionPageClient from "@/components/pedidos/ReposicionPageClient";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,20 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
     proveedor = "",
   } = await searchParams;
 
+  const sucursalesPedido = await prisma.sucursal.findMany({
+    where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } },
+    select: { codigo: true, nombre: true },
+    orderBy: { nombre: "asc" },
+  });
+  const sucursalesDisponibles = sucursalesPedido.map((s) => ({
+    value: s.codigo as SucursalReposicion,
+    label: s.nombre.toUpperCase(),
+  }));
+  const codigosHabilitados = new Set(sucursalesPedido.map((s) => s.codigo));
   const sucursalValida: SucursalReposicion | null =
-    sucursal === "guaymallen" || sucursal === "maipu" ? sucursal : null;
+    (sucursal === "guaymallen" || sucursal === "maipu") && codigosHabilitados.has(sucursal)
+      ? (sucursal as SucursalReposicion)
+      : null;
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
@@ -77,6 +90,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
       rubro={rubro}
       configurado={configurado === "si" ? "si" : ""}
       proveedor={proveedor}
+      sucursales={sucursalesDisponibles}
       paginaNum={paginaNum}
       paramsPagina={paramsPagina}
     />

@@ -11,9 +11,9 @@ import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarM
 import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
 import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesoreriaModal";
 import FilterBar, {
+  FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FilaFiltrosDesplegables,
-  FilterRowNoSearchActions,
   FilterRowSelection,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface Props {
   filas: TesoreriaCajaFila[];
@@ -150,11 +151,11 @@ export default function FinanzasTesoreriaPageClient({
                     </SelectContent>
                   </Select>
                 </div>
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2")}>
+                  <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+                </div>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>
-            <FilterRowNoSearchActions>
-              <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-            </FilterRowNoSearchActions>
           </FilterBar>
         }
         actions={
