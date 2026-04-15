@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
+import { TITULARES_CAJA_TESORERIA } from "@/lib/cajasTesoreriaTitulares";
 
 export const tipoCajaTesoreriaSchema = z.enum(["DIGITAL", "EFECTIVO", "CHEQUE"]);
 
@@ -16,8 +17,8 @@ export const crearCajaTesoreriaSchema = z.object({
     .trim()
     .min(1, "El nombre de caja es obligatorio.")
     .max(120, "El nombre de caja es demasiado largo."),
+  titular: z.enum(TITULARES_CAJA_TESORERIA, "Seleccioná un titular válido."),
   tipoCaja: tipoCajaTesoreriaSchema,
-  sucursalId: prismaCuidSchema,
   monto: montoCajaTesoreriaSchema.optional().default(0),
 });
 

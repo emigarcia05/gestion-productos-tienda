@@ -333,31 +333,33 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
 - **Tabla**: `cajas_tesoreria`
   - `id` (`TEXT`, PK; Prisma `cuid()`).
   - `nombre_caja` (`TEXT`, único).
+  - `titular` (`TEXT`, obligatorio).
   - `tipo_caja` (enum PostgreSQL/Prisma `TipoCajaTesoreria`: `DIGITAL | EFECTIVO | CHEQUE`).
-  - `sucursal_id` (`TEXT`, FK obligatoria a `sucursales.id`, `onDelete: Restrict`).
   - `monto` (`INTEGER`, default `0`; saldo sin decimales).
   - `ult_actualizacion` (`TIMESTAMP`): última vez que cambió el saldo.
   - `created_at`, `updated_at` (`TIMESTAMP`).
 - **Índices**:
   - único en `nombre_caja`;
-  - índice por `sucursal_id`;
   - índice por `tipo_caja`.
 - **Regla de negocio en BD**:
   - trigger `cajas_tesoreria_set_timestamps` + función `set_cajas_tesoreria_timestamps`:
     - siempre actualiza `updated_at` en `UPDATE`;
     - actualiza `ult_actualizacion` **solo** si `monto` cambia (`IS DISTINCT FROM`), preservando el valor previo cuando se edita otro campo.
 - **Migración**: `prisma/migrations/20260414130000_add_cajas_tesoreria/migration.sql`.
-  - Relación con sucursal: `prisma/migrations/20260414143000_add_sucursal_to_cajas_tesoreria/migration.sql`.
+  - Relación con sucursal (histórico): `prisma/migrations/20260414143000_add_sucursal_to_cajas_tesoreria/migration.sql`.
   - Ajuste de enum: `prisma/migrations/20260414152000_rename_tipo_caja_tesoreria_values/migration.sql` (`BANCO -> DIGITAL`, `OTRA -> CHEQUE`).
+  - Alta de titular: `prisma/migrations/20260414180000_add_titular_to_cajas_tesoreria/migration.sql`.
+  - Baja de sucursal en cajas: `prisma/migrations/20260414190000_drop_sucursal_id_from_cajas_tesoreria/migration.sql`.
 - **Servicio**: `src/services/cajasTesoreria.service.ts`
-  - `listarCajasTesoreria()`: lectura con join a `sucursales` (devuelve `sucursalCodigo` y `sucursalNombre`).
-  - `crearCajaTesoreria(input)`: alta con validación de unicidad/ FK manejada como `ServiceResult`.
-  - `editarCajaTesoreria(input)`: edición de `nombre`, `tipo`, `sucursal` y `monto`.
+  - `listarCajasTesoreria()`: lectura ordenada por `nombre_caja`.
+  - `crearCajaTesoreria(input)`: alta con validación de unicidad manejada como `ServiceResult`.
+  - `editarCajaTesoreria(input)`: edición de `nombre`, `titular`, `tipo` y `monto`.
   - `eliminarCajaTesoreria(id)`: baja por ID.
 - **Actions**: `src/actions/cajasTesoreria.ts`
   - Lectura `listarCajasTesoreriaAction`: requiere `getRol()` + `puede(rol, PERMISOS.finanzas.acceso)`.
   - Mutaciones (`crear`, `editar`, `eliminar`): requieren permiso de finanzas + `esEditor()`.
   - Validación con Zod en `src/lib/validations/cajasTesoreria.ts`.
+  - `titular` queda restringido por whitelist (alta y edición): `Suc. Guaymallen`, `Suc. Maipu`, `Walter Garcia`, `Fernando Panaia`, `Emiliano Garcia`, `Vanesa Garcia` (constante compartida `src/lib/cajasTesoreriaTitulares.ts`).
   - Revalidación de rutas: `/finanzas` y `/finanzas/tesoreria`.
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
@@ -698,7 +700,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-04-14 — tabla `cajas_tesoreria` con relación obligatoria a `sucursales` (`sucursal_id`), enum `TipoCajaTesoreria`, `monto` entero y `ult_actualizacion` controlada por trigger al cambiar saldo. Histórico: `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
+*Última actualización: 2026-04-14 — tabla `cajas_tesoreria` con campo obligatorio `titular`, sin relación activa con `sucursales`, enum `TipoCajaTesoreria`, `monto` entero y `ult_actualizacion` controlada por trigger al cambiar saldo. Histórico: `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
 
 ---
 

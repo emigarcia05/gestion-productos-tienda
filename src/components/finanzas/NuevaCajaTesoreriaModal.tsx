@@ -16,43 +16,37 @@ import {
 } from "@/components/ui/select";
 import { crearCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
-
-interface SucursalOption {
-  id: string;
-  nombre: string;
-}
+import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  sucursales: SucursalOption[];
   onCreated?: () => void;
 }
 
 export default function NuevaCajaTesoreriaModal({
   open,
   onOpenChange,
-  sucursales,
   onCreated,
 }: Props) {
   const [nombreCaja, setNombreCaja] = useState("");
+  const [titular, setTitular] = useState<TitularCajaTesoreria | "">("");
   const [tipoCaja, setTipoCaja] = useState<"DIGITAL" | "EFECTIVO" | "CHEQUE">("EFECTIVO");
-  const [sucursalId, setSucursalId] = useState("");
   const [saving, setSaving] = useState(false);
 
   const disabledSubmit = useMemo(
     () =>
       saving ||
       nombreCaja.trim().length === 0 ||
-      tipoCaja.trim().length === 0 ||
-      sucursalId.trim().length === 0,
-    [saving, nombreCaja, tipoCaja, sucursalId]
+      titular.trim().length === 0 ||
+      tipoCaja.trim().length === 0,
+    [saving, nombreCaja, titular, tipoCaja]
   );
 
   function resetForm() {
     setNombreCaja("");
+    setTitular("");
     setTipoCaja("EFECTIVO");
-    setSucursalId("");
   }
 
   async function handleSubmit() {
@@ -61,8 +55,8 @@ export default function NuevaCajaTesoreriaModal({
     try {
       const res = await crearCajaTesoreriaAction({
         nombreCaja,
+        titular,
         tipoCaja,
-        sucursalId,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo crear la caja.");
@@ -126,6 +120,34 @@ export default function NuevaCajaTesoreriaModal({
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              TITULAR
+            </span>
+            <Select
+              value={titular || "none"}
+              onValueChange={(value) => setTitular(value === "none" ? "" : (value as TitularCajaTesoreria))}
+              disabled={saving}
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="SELECCIONAR TITULAR" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">SELECCIONAR TITULAR</SelectItem>
+                {TITULARES_CAJA_TESORERIA.map((titularOption) => (
+                  <SelectItem key={titularOption} value={titularOption}>
+                    {titularOption}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               TIPO CAJA
             </span>
             <Select
@@ -149,28 +171,6 @@ export default function NuevaCajaTesoreriaModal({
             </Select>
           </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              SUCURSAL
-            </span>
-            <Select value={sucursalId} onValueChange={setSucursalId} disabled={saving}>
-              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                <SelectValue placeholder="SELECCIONAR SUCURSAL" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                {sucursales.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
         </div>
       </AppModal>
     </Dialog>

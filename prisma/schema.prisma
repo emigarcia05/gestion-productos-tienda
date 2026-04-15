@@ -78,7 +78,6 @@ model Sucursal {
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   movimientosFinanzas MovimientoFinanzas[]
-  cajasTesoreria      CajaTesoreria[]
   // Tabla única de pedidos: pedidos_mercaderia
 
   @@map("sucursales")
@@ -121,16 +120,13 @@ model MovimientoFinanzasCheque {
 model CajaTesoreria {
   id               String            @id @default(cuid())
   nombreCaja       String            @unique @map("nombre_caja")
+  titular          String            @map("titular")
   tipoCaja         TipoCajaTesoreria @map("tipo_caja")
-  sucursalId       String            @map("sucursal_id")
   monto            Int               @default(0)
   ultActualizacion DateTime          @map("ult_actualizacion") @default(now())
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
-  sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
-
-  @@index([sucursalId])
   @@index([tipoCaja])
   @@map("cajas_tesoreria")
 }

@@ -13,7 +13,7 @@ import { fmtPrecio } from "@/lib/format";
 export interface TesoreriaCajaFila {
   id: string;
   nombreCaja: string;
-  sucursal: string;
+  titular: string;
   tipoCaja: string;
   monto: number;
   ultActualizacion: string;
@@ -41,7 +41,7 @@ export default function TablaTesoreriaCajas({ filas }: { filas: TesoreriaCajaFil
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="min-w-[10rem]">NOMBRE CAJA</TableHead>
-                <TableHead className="min-w-[8rem]">SUCURSAL</TableHead>
+                <TableHead className="min-w-[10rem]">TITULAR</TableHead>
                 <TableHead className="min-w-[7rem]">TIPO CAJA</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>MONTO</TableHead>
                 <TableHead className="min-w-[10rem]">ÚLT. ACTUALIZACIÓN</TableHead>
@@ -56,8 +56,8 @@ export default function TablaTesoreriaCajas({ filas }: { filas: TesoreriaCajaFil
                     <TableCell className="celda-datos min-w-0" title={f.nombreCaja}>
                       <span className="celda-destacado truncate block">{f.nombreCaja}</span>
                     </TableCell>
-                    <TableCell className="celda-datos" title={f.sucursal}>
-                      {f.sucursal}
+                    <TableCell className="celda-datos min-w-0" title={f.titular}>
+                      <span className="truncate block">{f.titular}</span>
                     </TableCell>
                     <TableCell className="celda-datos whitespace-nowrap">{f.tipoCaja}</TableCell>
                     <TableCell className={cn(TD_NUM, "celda-destacado")}>${fmtPrecio(f.monto)}</TableCell>

@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FinanzasTesoreriaPageClient from "@/components/finanzas/FinanzasTesoreriaPageClient";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { listarCajasTesoreria } from "@/services/cajasTesoreria.service";
 import { formatFechaHoraCompletaArgentina } from "@/lib/fechaArgentina";
-import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -16,31 +14,15 @@ export default async function FinanzasTesoreriaPage() {
   }
   const esEditor = rol === "editor";
 
-  const [items, sucursales] = await Promise.all([
-    listarCajasTesoreria(),
-    prisma.sucursal.findMany({
-      orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true },
-    }),
-  ]);
+  const items = await listarCajasTesoreria();
   const filas = items.map((c) => ({
     id: c.id,
     nombreCaja: c.nombreCaja,
-    sucursal: c.sucursalNombre,
+    titular: c.titular,
     tipoCaja: c.tipoCaja,
     monto: c.monto,
     ultActualizacion: formatFechaHoraCompletaArgentina(c.ultActualizacion),
   }));
 
-  return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Tesorería">
-        <FinanzasTesoreriaPageClient
-          filas={filas}
-          sucursales={sucursales}
-          esEditor={esEditor}
-        />
-      </ClassicFilteredTableLayout>
-    </div>
-  );
+  return <FinanzasTesoreriaPageClient filas={filas} esEditor={esEditor} />;
 }
