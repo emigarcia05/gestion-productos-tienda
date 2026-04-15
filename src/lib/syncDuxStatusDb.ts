@@ -132,3 +132,34 @@ export async function setSyncDuxErrorInDb(message: string): Promise<void> {
     },
   });
 }
+
+/**
+ * Marca cancelación cooperativa: solo si había sync en curso.
+ * No modifica `lastCompletedAt` (una cancelación no cuenta como “Últ. Act.”).
+ */
+export async function requestCancelListaPrecioTiendaSyncInDb(): Promise<boolean> {
+  const r = await prisma.syncDuxStatus.updateMany({
+    where: { id: SYNC_DUX_STATUS_ID, running: true },
+    data: {
+      running: false,
+      phase: null,
+      error: null,
+    },
+  });
+  return r.count > 0;
+}
+
+/**
+ * Limpia estado de actividad tras cancelación confirmada en el worker.
+ * No toca `lastCompletedAt`.
+ */
+export async function clearListaPrecioTiendaSyncRunningStateInDb(): Promise<void> {
+  await prisma.syncDuxStatus.updateMany({
+    where: { id: SYNC_DUX_STATUS_ID },
+    data: {
+      running: false,
+      phase: null,
+      error: null,
+    },
+  });
+}

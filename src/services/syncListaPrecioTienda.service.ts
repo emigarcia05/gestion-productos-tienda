@@ -11,7 +11,24 @@ import {
   DUX_API_PAGE_LIMIT,
   type ItemDux,
 } from "@/lib/duxApi";
+import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
 import { vincularProveedoresPorCodExt } from "@/services/vinculosPorCodExt.service";
+
+/** Se lanza cuando el usuario cancela la sync vía API (flag `running` en BD). */
+export class SyncListaPrecioTiendaCancelledError extends Error {
+  constructor() {
+    super("Sincronización cancelada por el usuario.");
+    this.name = "SyncListaPrecioTiendaCancelledError";
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+async function assertListaPrecioTiendaSyncNotCancelled(): Promise<void> {
+  const st = await getSyncDuxStatusFromDb();
+  if (!st.running) {
+    throw new SyncListaPrecioTiendaCancelledError();
+  }
+}
 
 /** Pausa entre peticiones (mínimo 5s según rate limit DUX: 1 petición cada 5 segundos). */
 const DELAY_MS = Math.max(5000, Number(process.env.DUX_SYNC_DELAY_MS) || 5000);
@@ -95,6 +112,7 @@ export async function syncListaPrecioTiendaFromDux(
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    await assertListaPrecioTiendaSyncNotCancelled();
     const { results, total, hasMore } = await Promise.race([
       fetchItemsPage(offset, DUX_API_PAGE_LIMIT),
       timeoutPromise(),
@@ -117,6 +135,7 @@ export async function syncListaPrecioTiendaFromDux(
 
     offset += DUX_API_PAGE_LIMIT;
     await new Promise((r) => setTimeout(r, DELAY_MS));
+    await assertListaPrecioTiendaSyncNotCancelled();
   }
 
   const totalSincronizados = todosLosProductos.length;
@@ -125,8 +144,10 @@ export async function syncListaPrecioTiendaFromDux(
   // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
   // Marcas: se resuelve el texto de la API a la tabla marcas y se asigna idMarca.
   if (totalSincronizados > 0) {
+    await assertListaPrecioTiendaSyncNotCancelled();
     if (onProgress) onProgress(0, totalSincronizados, "guardando");
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
+      await assertListaPrecioTiendaSyncNotCancelled();
       const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
       const byCodExt = new Map<string, RecordTienda>();
       for (const row of chunkRaw) byCodExt.set(row.codExt, row);
@@ -196,6 +217,7 @@ export async function syncListaPrecioTiendaFromDux(
           `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${persistedSoFar}/${totalSincronizados})`
         );
       } catch (e) {
+        if (e instanceof SyncListaPrecioTiendaCancelledError) throw e;
         const msg = e instanceof Error ? e.message : String(e);
         const stack = e instanceof Error ? e.stack : "";
         errores.push(`Chunk offset ${i}: ${msg}`);
@@ -205,6 +227,7 @@ export async function syncListaPrecioTiendaFromDux(
   }
 
   // Vinculación automática por cod_ext: precios_proveedores.id_lista_precios_tienda = precios_tienda.id donde cod_ext coincide
+  await assertListaPrecioTiendaSyncNotCancelled();
   try {
     await vincularProveedoresPorCodExt();
   } catch (e) {

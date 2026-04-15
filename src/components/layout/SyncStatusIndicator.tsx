@@ -6,8 +6,11 @@ import { toast } from "sonner";
 import { formatLastCompletedAtElapsed } from "@/lib/formatElapsedSince";
 import { getMainAppAreaIdFromPathname, type MainAppAreaId } from "@/lib/main-app-areas";
 import { sincronizarComprobantesProveedorDesdeDuxAction } from "@/actions/comprobantesProveedor";
+import AppModal from "@/components/shared/AppModal";
 import DuxSyncStyleButton from "@/components/shared/DuxSyncStyleButton";
 import MensajeProceso from "@/components/shared/MensajeProceso";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -44,6 +47,8 @@ export default function SyncStatusIndicator() {
   const [lastComprasOkAt, setLastComprasOkAt] = useState<string | null>(null);
   const [requestingStart, setRequestingStart] = useState(false);
   const [comprasSyncing, setComprasSyncing] = useState(false);
+  const [cancelSyncModalOpen, setCancelSyncModalOpen] = useState(false);
+  const [cancelSyncPending, setCancelSyncPending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -107,6 +112,28 @@ export default function SyncStatusIndicator() {
     }
   }
 
+  async function confirmCancelListaPrecioSync() {
+    setCancelSyncPending(true);
+    try {
+      const res = await fetch("/api/sync-lista-precios-tienda/cancel", { method: "POST" });
+      const data = res.ok ? await res.json().catch(() => null) : null;
+      if (!res.ok || !data?.ok) {
+        toast.error("No se pudo cancelar la sincronización.");
+        return;
+      }
+      if (data.cancelled) {
+        toast.success("Sincronización cancelada.");
+      } else {
+        toast.info("No había sincronización en curso.");
+      }
+      setCancelSyncModalOpen(false);
+    } catch {
+      toast.error("No se pudo cancelar la sincronización.");
+    } finally {
+      setCancelSyncPending(false);
+    }
+  }
+
   const lastCompletedLabel = formatLastCompletedAtElapsed(lastCompletedAt);
   const lastComprasLabel = formatLastCompletedAtElapsed(lastComprasOkAt);
   const ultimaActLabel =
@@ -114,11 +141,51 @@ export default function SyncStatusIndicator() {
 
   if (running) {
     return (
-      <MensajeProceso
-        variant="sidebar"
-        mensaje="SINCRONIZANDO PROD."
-        detalle={total > 0 ? { procesados: processed, total } : "…"}
-      />
+      <>
+        <MensajeProceso
+          variant="sidebar"
+          mensaje="SINCRONIZANDO PROD."
+          detalle={total > 0 ? { procesados: processed, total } : "…"}
+          onDoubleClick={() => setCancelSyncModalOpen(true)}
+        />
+        <Dialog
+          open={cancelSyncModalOpen}
+          onOpenChange={(open) => {
+            if (!open && cancelSyncPending) return;
+            setCancelSyncModalOpen(open);
+          }}
+        >
+          <AppModal
+            title="Cancelar Sincronización"
+            size="sm"
+            padding="sm"
+            scrollBody={false}
+            actions={
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={cancelSyncPending}
+                  onClick={() => setCancelSyncModalOpen(false)}
+                >
+                  No
+                </Button>
+                <Button
+                  type="button"
+                  disabled={cancelSyncPending}
+                  onClick={() => void confirmCancelListaPrecioSync()}
+                >
+                  Sí, Cancelar
+                </Button>
+              </>
+            }
+          >
+            <p className="text-sm text-foreground">
+              ¿Está seguro que desea cancelar la sincronización?
+            </p>
+          </AppModal>
+        </Dialog>
+      </>
     );
   }
 

@@ -3,12 +3,14 @@ import { syncListaPrecioTiendaFromDux } from "@/services/syncListaPrecioTienda.s
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import {
+  clearListaPrecioTiendaSyncRunningStateInDb,
   getSyncDuxStatusFromDb,
   setSyncDuxErrorInDb,
   setSyncDuxProgressInDb,
   setSyncDuxSuccessInDb,
   startSyncDuxInDb,
 } from "@/lib/syncDuxStatusDb";
+import { SyncListaPrecioTiendaCancelledError } from "@/services/syncListaPrecioTienda.service";
 
 /** Evita ejecutar dos sincronizaciones a la vez (p. ej. doble clic). */
 let syncInProgress = false;
@@ -64,6 +66,13 @@ export async function POST() {
     await setSyncDuxSuccessInDb(finalProcessed, finalTotal);
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
+    if (e instanceof SyncListaPrecioTiendaCancelledError) {
+      await clearListaPrecioTiendaSyncRunningStateInDb();
+      return NextResponse.json(
+        { ok: false, cancelled: true, error: e.message },
+        { status: 200 }
+      );
+    }
     const message = e instanceof Error ? e.message : String(e);
     await setSyncDuxErrorInDb(message);
     console.error("Error en sync lista_precios_tienda:", message);

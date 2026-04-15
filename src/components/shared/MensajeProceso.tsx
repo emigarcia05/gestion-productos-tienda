@@ -44,6 +44,8 @@ export interface MensajeProcesoProps {
   variant?: VariantProps<typeof mensajeProcesoVariants>["variant"];
   /** Clases CSS adicionales para el contenedor. */
   className?: string;
+  /** Doble clic (ej. cancelar sync en sidebar). */
+  onDoubleClick?: () => void;
 }
 
 /**
@@ -67,6 +69,7 @@ export default function MensajeProceso({
   detalle,
   variant = "default",
   className,
+  onDoubleClick,
 }: MensajeProcesoProps) {
   const isSidebar = variant === "sidebar";
   const detailContent =
@@ -82,7 +85,17 @@ export default function MensajeProceso({
     <div
       role="status"
       aria-live="polite"
-      className={cn(mensajeProcesoVariants({ variant }), className)}
+      onDoubleClick={onDoubleClick}
+      title={
+        onDoubleClick
+          ? "Doble Clic Para Cancelar Sincronización"
+          : undefined
+      }
+      className={cn(
+        mensajeProcesoVariants({ variant }),
+        onDoubleClick && "cursor-pointer",
+        className
+      )}
     >
       {isSidebar ? (
         <>

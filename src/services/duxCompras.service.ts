@@ -4,6 +4,7 @@ import type { CompraDux } from "@/lib/duxComprasApi";
 import { prisma } from "@/lib/prisma";
 
 const DUX_COMPROBANTE_QUERY_LIMIT = 10;
+const DUX_COMPROBANTE_INCREMENTO = 5;
 
 /** DUX devuelve 429 si las peticiones a `/compras` van demasiado seguidas; mínimo 5 s entre una y otra. */
 function duxComprasMinIntervalMs(): number {
@@ -40,8 +41,7 @@ export interface SiguienteComprobanteResult {
 function toNextComprobante(comprobante: string): string {
   // El “comprobante” viene como string numérico. Usamos BigInt para no depender del safe integer.
   if (!/^\d+$/.test(comprobante)) throw new Error("El comprobante DUX no es numérico.");
-  // Evitar literal BigInt `1n` porque el TS target del proyecto puede ser < ES2020.
-  const next = BigInt(comprobante) + BigInt(1);
+  const next = BigInt(comprobante) + BigInt(DUX_COMPROBANTE_INCREMENTO);
   return next.toString();
 }
 

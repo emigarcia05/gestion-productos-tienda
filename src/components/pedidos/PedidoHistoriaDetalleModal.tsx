@@ -830,27 +830,27 @@ export default function PedidoHistoriaDetalleModal({
                         <TableRow
                           key={item.id}
                           className={cn(
+                            "transition-colors duration-100",
                             !checkListConfirmed &&
                               !isControlado &&
-                              "bg-accent/55 hover:bg-accent/65 transition-colors duration-100",
+                              "border-l-4 border-accent2 bg-accent/55 hover:bg-accent/70",
                             checkListConfirmed &&
-                              "cursor-not-allowed bg-muted/25 odd:bg-muted/25 even:bg-muted/25 hover:bg-muted/25 transition-colors duration-100",
+                              "cursor-not-allowed border-l-4 border-primary bg-primary/12 odd:bg-primary/12 even:bg-primary/12 hover:bg-primary/18",
                             isControlado &&
                               !checkListConfirmed &&
-                              "bg-primary/22 hover:bg-primary/28 transition-colors duration-100"
+                              "border-l-4 border-primary/80 bg-primary/22 hover:bg-primary/30"
                           )}
                         >
                           <TableCell
-                            className={cn(
-                              "celda-datos w-[5%] text-center align-middle",
-                              checkListConfirmed && "text-muted-foreground"
-                            )}
+                            className={cn("celda-datos w-[5%] text-center align-middle")}
                           >
                             {checkListConfirmed ? (
-                              <Check
-                                className="mx-auto h-4 w-4 shrink-0 text-primary"
+                              <span
+                                className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/20"
                                 aria-label="Ítem verificado"
-                              />
+                              >
+                                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                              </span>
                             ) : locked ? (
                               <span className="text-muted-foreground">—</span>
                             ) : (
@@ -864,7 +864,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos min-w-0 truncate w-[50%]",
-                              checkListConfirmed && "text-muted-foreground"
+                              checkListConfirmed && "font-medium text-foreground"
                             )}
                             title={
                               item.codTienda
@@ -877,7 +877,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos tabular-nums w-[10%]",
-                              checkListConfirmed && "text-muted-foreground"
+                              checkListConfirmed && "text-foreground"
                             )}
                           >
                             {cantPedidaVisible}
@@ -885,7 +885,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell
                             className={cn(
                               "celda-datos tabular-nums w-[20%]",
-                              checkListConfirmed && !isEditing && "text-muted-foreground"
+                              checkListConfirmed && !isEditing && "text-foreground"
                             )}
                           >
                             {locked ? (
