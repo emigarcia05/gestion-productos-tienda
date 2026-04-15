@@ -448,6 +448,15 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
      - Permitido también sobre cabeceras en estado `"RECEPCIONADO"` cuando se corrige una recepción.
      - Actualiza únicamente `cant_recibida` (sin tocar `cant_pedida`).
 
+5b. `guardarRecepcionPedidoHistoria({ pedidoHistoriaId, items })`
+   - Uso: persistencia consolidada al final del flujo (botones **Registrar En Dux** / **Guardar Corrección**).
+   - Entrada: snapshot completo del modal (`id?`, `codTienda`, `cantPedida`, `cantRecibida`).
+   - Reglas:
+     - Si `id` existe, actualiza la fila.
+     - Si no hay `id` (ítem nuevo agregado en cliente), crea la fila.
+     - Si una fila existente no llega en payload, se elimina.
+     - Validar duplicados en payload y pertenencia de IDs al pedido antes de escribir.
+
 6. `marcarPedidoHistoriaRegistrado({ pedidoHistoriaId })`
   - Transición: setea `estado = "RECEPCIONADO"` y `registrado_at` cuando el paso de export/registro en DUX termina OK.
 

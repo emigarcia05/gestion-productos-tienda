@@ -408,6 +408,97 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
   }
 }
 
+export async function guardarRecepcionPedidoHistoria(params: {
+  pedidoHistoriaId: string;
+  items: Array<{
+    id?: string;
+    codTienda: string;
+    cantPedida: number;
+    cantRecibida: number | null;
+  }>;
+}): Promise<ServiceResult<void>> {
+  const id = params.pedidoHistoriaId.trim();
+  if (!id) return { success: false, error: "ID inválido." };
+
+  const itemsNormalizados = params.items.map((item) => ({
+    id: item.id?.trim() || undefined,
+    codTienda: normalizeCodTienda(item.codTienda),
+    cantPedida: Math.max(0, Math.floor(Number(item.cantPedida) || 0)),
+    cantRecibida:
+      item.cantRecibida == null
+        ? null
+        : Math.max(0, Math.floor(Number(item.cantRecibida) || 0)),
+  }));
+
+  const keys = itemsNormalizados.map((item) => `${item.codTienda}::${item.id ?? "new"}`);
+  if (new Set(keys).size !== keys.length) {
+    return { success: false, error: "Hay ítems duplicados en la recepción." };
+  }
+
+  try {
+    await purgarPedidosHistoriaExpirados(prisma);
+
+    await prisma.$transaction(async (tx) => {
+      const pedido = await tx.pedidoHistoria.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+      if (!pedido) throw new Error("Pedido no encontrado.");
+
+      const actuales = await tx.pedidoHistoriaItem.findMany({
+        where: { pedidoHistoriaId: id },
+        select: { id: true },
+      });
+      const idsActuales = new Set(actuales.map((row) => row.id));
+      const idsPayload = new Set(
+        itemsNormalizados.map((item) => item.id).filter((v): v is string => Boolean(v))
+      );
+
+      for (const item of itemsNormalizados) {
+        if (item.id && !idsActuales.has(item.id)) {
+          throw new Error("Hay ítems inválidos en la recepción.");
+        }
+      }
+
+      const idsAEliminar = [...idsActuales].filter((itemId) => !idsPayload.has(itemId));
+      if (idsAEliminar.length > 0) {
+        await tx.pedidoHistoriaItem.deleteMany({
+          where: { pedidoHistoriaId: id, id: { in: idsAEliminar } },
+        });
+      }
+
+      for (const item of itemsNormalizados) {
+        if (item.id) {
+          await tx.pedidoHistoriaItem.update({
+            where: { id: item.id },
+            data: {
+              codTienda: item.codTienda,
+              cantPedida: item.cantPedida,
+              cantRecibida: item.cantRecibida,
+            },
+          });
+          continue;
+        }
+
+        await tx.pedidoHistoriaItem.create({
+          data: {
+            pedidoHistoriaId: id,
+            codTienda: item.codTienda,
+            cantPedida: item.cantPedida,
+            cantRecibida: item.cantRecibida,
+          },
+        });
+      }
+    });
+
+    return { success: true, data: undefined };
+  } catch (e) {
+    const msg =
+      e instanceof Error ? e.message : "Error al guardar la recepción del pedido.";
+    return { success: false, error: msg };
+  }
+}
+
 export async function marcarPedidoHistoriaRegistrado(params: {
   pedidoHistoriaId: string;
   totalPedido: number;

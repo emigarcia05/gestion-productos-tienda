@@ -30,6 +30,20 @@ const marcarRegistradoSchema = z.object({
   totalPedido: z.coerce.number().positive("Total inválido."),
 });
 
+const guardarRecepcionSchema = z.object({
+  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1).optional(),
+        codTienda: z.string().min(1, "Cod. tienda inválido."),
+        cantPedida: z.coerce.number().int().min(0, "Cant. pedida inválida."),
+        cantRecibida: z.coerce.number().int().min(0, "Cant. recibida inválida").nullable(),
+      })
+    )
+    .min(1, "Debe existir al menos un ítem."),
+});
+
 const reabrirRecepcionSchema = z.object({
   pedidoHistoriaId: z.string().min(1, "ID inválido."),
 });
@@ -202,6 +216,27 @@ export async function marcarPedidoHistoriaRegistradoAction(
   const res = await pedidosHistoriaService.marcarPedidoHistoriaRegistrado({
     pedidoHistoriaId: parsed.data.pedidoHistoriaId,
     totalPedido: parsed.data.totalPedido,
+  });
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidatePath("/pedidos/historial");
+  return { ok: true, data: undefined };
+}
+
+export async function guardarRecepcionPedidoHistoriaAction(
+  params: z.infer<typeof guardarRecepcionSchema>
+): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = guardarRecepcionSchema.safeParse(params);
+  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
+
+  const res = await pedidosHistoriaService.guardarRecepcionPedidoHistoria({
+    pedidoHistoriaId: parsed.data.pedidoHistoriaId,
+    items: parsed.data.items,
   });
   if (!res.success) return { ok: false, error: res.error };
 

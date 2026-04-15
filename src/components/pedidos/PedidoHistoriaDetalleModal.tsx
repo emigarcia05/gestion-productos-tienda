@@ -22,9 +22,8 @@ import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
 import type { ProductoTiendaRowBusqueda } from "@/services/productosTienda.service";
 import {
-  actualizarPedidoHistoriaItemCantRecibidaAction,
-  agregarPedidoHistoriaItemAction,
   getPedidoHistoriaDetalleAction,
+  guardarRecepcionPedidoHistoriaAction,
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
@@ -215,7 +214,10 @@ export default function PedidoHistoriaDetalleModal({
     return d ? formatDdMmHhMmArgentina(d) : "";
   }, [detalle?.generadoAt]);
 
-  async function cargarDetalle(id: string): Promise<PedidoHistoriaDetalle | null> {
+  async function cargarDetalle(
+    id: string,
+    options?: { preserveChecklist?: boolean }
+  ): Promise<PedidoHistoriaDetalle | null> {
     const res = await getPedidoHistoriaDetalleAction({ pedidoHistoriaId: id });
     if (!res.ok) {
       setDetalle(null);
@@ -224,9 +226,18 @@ export default function PedidoHistoriaDetalleModal({
     }
     const detalleNormalizado = res.data;
     setDetalle(detalleNormalizado);
-    setCheckListConfirmedByItem(
-      buildChecklistConfirmadoInicial(detalleNormalizado.items, detalleNormalizado.estado)
+    const checklistInicial = buildChecklistConfirmadoInicial(
+      detalleNormalizado.items,
+      detalleNormalizado.estado
     );
+    setCheckListConfirmedByItem((prev) => {
+      if (!options?.preserveChecklist) return checklistInicial;
+      const merged = { ...checklistInicial };
+      for (const item of detalleNormalizado.items) {
+        if (prev[item.id] === true) merged[item.id] = true;
+      }
+      return merged;
+    });
     if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total > 0) {
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
@@ -291,103 +302,70 @@ export default function PedidoHistoriaDetalleModal({
     });
   }, [editingItemId]);
 
-  async function actualizarItemCantRecibida(
+  function actualizarItemCantRecibidaLocal(
     pedidoHistoriaItemId: string,
     cantRecibida: number,
     options?: { confirmChecklistAfter?: boolean }
-  ): Promise<boolean> {
+  ): boolean {
     if (locked) return false;
     if (guardando) return false;
     if (fechaRecepcion.trim() === "") return false;
 
-    setGuardando(pedidoHistoriaItemId);
-    try {
-      const res = await actualizarPedidoHistoriaItemCantRecibidaAction({
-        pedidoHistoriaItemId,
-        cantRecibida,
+    setDetalle((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: prev.items.map((it) =>
+          it.id === pedidoHistoriaItemId ? { ...it, cantRecibida } : it
+        ),
+      };
+    });
+    setEditingItemId(null);
+    setEditingValue("");
+    if (options?.confirmChecklistAfter) {
+      setCheckListConfirmedByItem((prev) => ({
+        ...prev,
+        [pedidoHistoriaItemId]: true,
+      }));
+      setBusquedaAgregarProducto("");
+    } else {
+      setCheckListConfirmedByItem((prev) => {
+        const next = { ...prev };
+        delete next[pedidoHistoriaItemId];
+        return next;
       });
-      if (!res.ok) {
-        toast.error(res.error ?? "Error al guardar.");
-        return false;
-      }
-      setDetalle((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.map((it) =>
-            it.id === pedidoHistoriaItemId ? { ...it, cantRecibida } : it
-          ),
-        };
-      });
-      setEditingItemId(null);
-      setEditingValue("");
-      if (options?.confirmChecklistAfter) {
-        setCheckListConfirmedByItem((prev) => ({
-          ...prev,
-          [pedidoHistoriaItemId]: true,
-        }));
-        setBusquedaAgregarProducto("");
-      } else {
-        setCheckListConfirmedByItem((prev) => {
-          const next = { ...prev };
-          delete next[pedidoHistoriaItemId];
-          return next;
-        });
-      }
-      return true;
-    } finally {
-      setGuardando(null);
     }
+    return true;
   }
 
   function onClickOk(item: PedidoHistoriaDetalle["items"][number]) {
-    return async () => {
+    return () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
-      const checklistPrevio = checkListConfirmedByItem[item.id] === true;
-      setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
       const cant = Math.max(0, item.cantPedida);
-      const ok = await actualizarItemCantRecibida(item.id, cant, {
+      actualizarItemCantRecibidaLocal(item.id, cant, {
         confirmChecklistAfter: true,
       });
-      if (!ok) {
-        setCheckListConfirmedByItem((prev) => {
-          const next = { ...prev };
-          if (checklistPrevio) next[item.id] = true;
-          else delete next[item.id];
-          return next;
-        });
-      }
     };
   }
 
   function onClickCesto(item: PedidoHistoriaDetalle["items"][number]) {
-    return async () => {
+    return () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
-      const checklistPrevio = checkListConfirmedByItem[item.id] === true;
-      setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
-      const ok = await actualizarItemCantRecibida(item.id, 0, {
+      actualizarItemCantRecibidaLocal(item.id, 0, {
         confirmChecklistAfter: true,
       });
-      if (!ok) {
-        setCheckListConfirmedByItem((prev) => {
-          const next = { ...prev };
-          if (checklistPrevio) next[item.id] = true;
-          else delete next[item.id];
-          return next;
-        });
-      }
     };
   }
 
   function onClickEditar(item: PedidoHistoriaDetalle["items"][number]) {
-    return async () => {
+    return () => {
       if (locked) return;
       if (busy) return;
       if (fechaRecepcion.trim() === "") return;
       const cantInicial = Math.max(0, item.cantPedida);
-      const ok = await actualizarItemCantRecibida(item.id, cantInicial);
+      const ok = actualizarItemCantRecibidaLocal(item.id, cantInicial);
       if (!ok) return;
       setEditingItemId(item.id);
       setEditingValue(String(cantInicial));
@@ -400,49 +378,44 @@ export default function PedidoHistoriaDetalleModal({
   ) {
     if (locked) return;
     if (fechaRecepcion.trim() === "") return;
-    if (!pedidoHistoriaId) return;
-    const codTiendaAdded = producto.codTienda;
+    if (!detalle) return;
     const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
     if (cant <= 0) {
       toast.error("Ingresá una Cant. Recibida mayor a 0.");
       return;
     }
-
-    setGuardando("new");
-    try {
-      const res = await agregarPedidoHistoriaItemAction({
-        pedidoHistoriaId,
-        codTienda: producto.codTienda,
-        cantRecibida: cant,
-      });
-      if (!res.ok) {
-        toast.error(res.error ?? "Error al agregar fila.");
-        return;
-      }
-
-      // Recargar detalle para reflejar el consolidado por cod_tienda.
-      setLoading(true);
-      const detalleNuevo = await cargarDetalle(pedidoHistoriaId);
-      toast.success("Ítem agregado.");
-      setAgregarProductosOpen(false);
-
-      const itemNuevo = detalleNuevo?.items.find((it) => it.codTienda === codTiendaAdded);
-      if (itemNuevo) {
-        // La cant. recibida ya quedó confirmada en el alta (modal + persistencia en BD).
-        setCheckListConfirmedByItem((prev) => ({
-          ...prev,
-          [itemNuevo.id]: true,
-        }));
-      }
-    } finally {
-      setLoading(false);
-      setGuardando(null);
-      queueMicrotask(() => {
-        setEditingItemId(null);
-        setEditingValue("");
-        busquedaAgregarRef.current?.focus();
-      });
+    const codNormalizado = producto.codTienda.trim();
+    const yaExiste = detalle.items.some((it) => it.codTienda === codNormalizado);
+    if (yaExiste) {
+      toast.error("El producto ya existe en el pedido.");
+      return;
     }
+
+    const tempId = `tmp-${crypto.randomUUID()}`;
+    setDetalle((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: [
+          ...prev.items,
+          {
+            id: tempId,
+            codTienda: codNormalizado,
+            descripcionTienda: producto.descripcionTienda,
+            cantPedida: cant,
+            cantRecibida: cant,
+          },
+        ],
+      };
+    });
+    setCheckListConfirmedByItem((prev) => ({ ...prev, [tempId]: true }));
+    setAgregarProductosOpen(false);
+    toast.success("Ítem agregado.");
+    queueMicrotask(() => {
+      setEditingItemId(null);
+      setEditingValue("");
+      busquedaAgregarRef.current?.focus();
+    });
   }
 
   function ajustarEditingValue(delta: number) {
@@ -454,24 +427,14 @@ export default function PedidoHistoriaDetalleModal({
   }
 
   function onClickConfirmarEdicion(item: PedidoHistoriaDetalle["items"][number]) {
-    return async () => {
+    return () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
       if (editingItemId !== item.id) return;
-      const checklistPrevio = checkListConfirmedByItem[item.id] === true;
-      setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
       const cant = parseIntSafe(editingValue);
-      const ok = await actualizarItemCantRecibida(item.id, cant, {
+      actualizarItemCantRecibidaLocal(item.id, cant, {
         confirmChecklistAfter: true,
       });
-      if (!ok) {
-        setCheckListConfirmedByItem((prev) => {
-          const next = { ...prev };
-          if (checklistPrevio) next[item.id] = true;
-          else delete next[item.id];
-          return next;
-        });
-      }
     };
   }
 
@@ -500,6 +463,24 @@ export default function PedidoHistoriaDetalleModal({
     totalPedidoMontoPositivo(totalPedido);
 
   const clsBotonTabla = "disabled:cursor-not-allowed";
+
+  async function persistirRecepcionActual(): Promise<boolean> {
+    if (!pedidoHistoriaId || !detalle) return false;
+    const res = await guardarRecepcionPedidoHistoriaAction({
+      pedidoHistoriaId,
+      items: detalle.items.map((item) => ({
+        id: item.id.startsWith("tmp-") ? undefined : item.id,
+        codTienda: item.codTienda,
+        cantPedida: item.cantPedida,
+        cantRecibida: item.cantRecibida,
+      })),
+    });
+    if (!res.ok) {
+      toast.error(res.error ?? "Error al guardar la recepción.");
+      return false;
+    }
+    return true;
+  }
 
   async function descargarRecepcionExcel(): Promise<boolean> {
     if (!pedidoHistoriaId) return false;
@@ -570,6 +551,8 @@ export default function PedidoHistoriaDetalleModal({
 
                     setGuardando("sync");
                     try {
+                      const guardadoOk = await persistirRecepcionActual();
+                      if (!guardadoOk) return;
                       // Secuencia requerida: primero generamos y descargamos el Excel (97-2003),
                       // y luego registramos el pedido como "recibido" en DUX.
                       const excelRes = await exportarExcelRecepcionPedidoAction({
@@ -627,6 +610,8 @@ export default function PedidoHistoriaDetalleModal({
                       className="disabled:cursor-not-allowed"
                       disabled={guardando != null || loading}
                       onClick={async () => {
+                        const guardadoOk = await persistirRecepcionActual();
+                        if (!guardadoOk) return;
                         const ok = await descargarRecepcionExcel();
                         if (!ok) return;
                         setModoCorreccionRecepcionado(false);
@@ -946,7 +931,7 @@ export default function PedidoHistoriaDetalleModal({
                                       setEditingValue("");
                                       return;
                                     }
-                                    void actualizarItemCantRecibida(item.id, v);
+                                    actualizarItemCantRecibidaLocal(item.id, v);
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
