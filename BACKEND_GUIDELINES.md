@@ -520,8 +520,8 @@ Contrato (SSOT de lógica de negocio + integración externa):
      - `idEmpresa`: `number` entero positivo
    - Proceso:
      - Lee de DB las sucursales y resuelve `sucursales.id_dux` (columna `sucursales.idDux` en Prisma).
-     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
-       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=1` (solo el último comprobante).
+    - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
+      - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=10`.
      - Entre cada petición a `/compras` y la siguiente espera **al menos 5 s** (DUX responde `429` si se supera la frecuencia). Intervalo configurable con `DUX_COMPRAS_MIN_INTERVAL_MS` (ms; por defecto `5000`; `0` desactiva la espera solo para entornos de prueba).
      - Si tras recorrer sucursales no hay comprobantes válidos y se usa el fallback sin `idSucursal`, también espera ese intervalo **después** de la última consulta por sucursal.
      - Del set resultante toma el mayor `comprobante` numérico y calcula `siguienteComprobante = maxComprobante + 1` usando `BigInt`.
@@ -555,7 +555,7 @@ Contrato (SSOT de integración + armado de filas):
        - `pedidos_historial_mercaderia.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
       - En el Excel, columnas `FECHA` y `FECHA IMPUTACION CONTABLE` se exportan en formato `DD-MM-AAAA` usando **fecha de recepción - 1 día** (si el usuario carga `2026-04-14`, se exporta `13-04-2026`).
     - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR` y `fechaDesde = hoy AR - 30 días`, sin usar `fechaFacturaIso`.
-    - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit=1` por consulta.
+    - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit=10` por consulta.
     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
     - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** en todas las filas del Excel de recepción.
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 1) y `totalImporte`.

@@ -3,6 +3,8 @@ import { fetchComprasPage } from "@/lib/duxComprasApi";
 import type { CompraDux } from "@/lib/duxComprasApi";
 import { prisma } from "@/lib/prisma";
 
+const DUX_COMPROBANTE_QUERY_LIMIT = 10;
+
 /** DUX devuelve 429 si las peticiones a `/compras` van demasiado seguidas; mínimo 5 s entre una y otra. */
 function duxComprasMinIntervalMs(): number {
   const raw = process.env.DUX_COMPRAS_MIN_INTERVAL_MS;
@@ -84,7 +86,7 @@ export async function getSiguienteComprobanteDuxCompra(params: {
         fechaHasta: parsed.data.fechaHasta,
         idEmpresa: parsed.data.idEmpresa,
         idSucursal,
-        limit: 1,
+        limit: DUX_COMPROBANTE_QUERY_LIMIT,
       });
       comprasPorSucursal.push({ idSucursal, compras });
     } catch {
@@ -107,7 +109,7 @@ export async function getSiguienteComprobanteDuxCompra(params: {
       fechaDesde: parsed.data.fechaDesde,
       fechaHasta: parsed.data.fechaHasta,
       idEmpresa: parsed.data.idEmpresa,
-      limit: 1,
+      limit: DUX_COMPROBANTE_QUERY_LIMIT,
     });
 
     const first = compras[0];
