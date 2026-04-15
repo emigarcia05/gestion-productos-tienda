@@ -344,10 +344,20 @@ export default function PedidoHistoriaDetalleModal({
     return async () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
+      const checklistPrevio = checkListConfirmedByItem[item.id] === true;
+      setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
       const cant = Math.max(0, item.cantPedida);
-      await actualizarItemCantRecibida(item.id, cant, {
+      const ok = await actualizarItemCantRecibida(item.id, cant, {
         confirmChecklistAfter: true,
       });
+      if (!ok) {
+        setCheckListConfirmedByItem((prev) => {
+          const next = { ...prev };
+          if (checklistPrevio) next[item.id] = true;
+          else delete next[item.id];
+          return next;
+        });
+      }
     };
   }
 
@@ -355,9 +365,19 @@ export default function PedidoHistoriaDetalleModal({
     return async () => {
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
-      await actualizarItemCantRecibida(item.id, 0, {
+      const checklistPrevio = checkListConfirmedByItem[item.id] === true;
+      setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
+      const ok = await actualizarItemCantRecibida(item.id, 0, {
         confirmChecklistAfter: true,
       });
+      if (!ok) {
+        setCheckListConfirmedByItem((prev) => {
+          const next = { ...prev };
+          if (checklistPrevio) next[item.id] = true;
+          else delete next[item.id];
+          return next;
+        });
+      }
     };
   }
 
@@ -438,10 +458,20 @@ export default function PedidoHistoriaDetalleModal({
       if (locked || busy) return;
       if (fechaRecepcion.trim() === "") return;
       if (editingItemId !== item.id) return;
+      const checklistPrevio = checkListConfirmedByItem[item.id] === true;
+      setCheckListConfirmedByItem((prev) => ({ ...prev, [item.id]: true }));
       const cant = parseIntSafe(editingValue);
-      await actualizarItemCantRecibida(item.id, cant, {
+      const ok = await actualizarItemCantRecibida(item.id, cant, {
         confirmChecklistAfter: true,
       });
+      if (!ok) {
+        setCheckListConfirmedByItem((prev) => {
+          const next = { ...prev };
+          if (checklistPrevio) next[item.id] = true;
+          else delete next[item.id];
+          return next;
+        });
+      }
     };
   }
 
@@ -817,12 +847,12 @@ export default function PedidoHistoriaDetalleModal({
                           className={cn(
                             !checkListConfirmed &&
                               !isControlado &&
-                              "bg-background hover:bg-accent/30",
+                              "bg-accent/55 hover:bg-accent/65 transition-colors duration-100",
                             checkListConfirmed &&
-                              "cursor-not-allowed bg-muted/80 odd:bg-muted/80 even:bg-muted/80 hover:bg-muted/80",
+                              "cursor-not-allowed bg-muted/25 odd:bg-muted/25 even:bg-muted/25 hover:bg-muted/25 transition-colors duration-100",
                             isControlado &&
                               !checkListConfirmed &&
-                              "bg-primary/10 hover:bg-primary/10"
+                              "bg-primary/22 hover:bg-primary/28 transition-colors duration-100"
                           )}
                         >
                           <TableCell

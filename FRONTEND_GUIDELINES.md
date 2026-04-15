@@ -405,7 +405,9 @@ Modal del módulo **Historial Pedidos** para operar la recepción de ítems del 
 - **Checklist visual (columna 1):** en filas no verificadas no mostrar recuadro/input placeholder en la columna de checklist; dejar celda limpia para evitar confusión. El check visible aparece solo cuando el ítem está confirmado (`TRUE`).
 - **Visualización de `CANT. RECIBIDA`:** mostrar vacío solo cuando el valor es `null` (sin cargar). Si el valor guardado es `0` (por acción del cesto), debe verse explícitamente `0` en la celda.
 - **Edición en CANT. RECIBIDA:** la columna se ensancha para soportar controles inline en edición (`-`, input, `+`, `check`). El botón `check` dentro de la celda confirma checklist con el número editado. Al ampliar esa columna, se incrementa también el ancho del `AppModal` para conservar legibilidad.
-- **Orden de ítems en tabla de recepción:** mantener el orden original de carga (`detalle.items`) y **no** mover la fila cuando cambia checklist. El contraste se resuelve por estilo visual: confirmados en tono muted más marcado y pendientes en fondo base/hover suave.
+- **Orden de ítems en tabla de recepción:** mantener el orden original de carga (`detalle.items`) y **no** mover la fila cuando cambia checklist.
+- **Contraste de estados (Recepción):** pendientes con fondo más fuerte (`accent`) para destacarse visualmente; confirmados con fondo más claro (`muted` suave) para pasar a segundo plano. Ambos estados usan transición corta de color para feedback inmediato.
+- **Confirmación optimista (Recepción):** en acciones **OK**, **cesto** y **check de edición**, el estado visual de checklist se marca en frontend antes de la respuesta del backend para acelerar percepción de respuesta; si la persistencia falla, se revierte al estado previo.
 
 Layout, grillas y reglas de tabla: sección **Guía para IA**, punto 7 (`PedidoHistoriaDetalleModal`).
 
