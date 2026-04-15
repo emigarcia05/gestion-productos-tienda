@@ -8,6 +8,8 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import TablaTesoreriaCajas, { type TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaModal";
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
+import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
+import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesoreriaModal";
 
 interface Props {
   filas: TesoreriaCajaFila[];
@@ -21,6 +23,8 @@ export default function FinanzasTesoreriaPageClient({
   const router = useRouter();
   const [openNuevaCaja, setOpenNuevaCaja] = useState(false);
   const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
+  const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
+  const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
 
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
@@ -42,7 +46,10 @@ export default function FinanzasTesoreriaPageClient({
       >
         <TablaTesoreriaCajas
           filas={filas}
+          esEditor={esEditor}
           onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
+          onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}
+          onDeleteClick={esEditor ? (fila) => setCajaParaEliminar(fila) : undefined}
         />
         <NuevaCajaTesoreriaModal
           open={openNuevaCaja}
@@ -56,6 +63,22 @@ export default function FinanzasTesoreriaPageClient({
           }}
           caja={cajaParaEditarMonto}
           onUpdated={() => router.refresh()}
+        />
+        <EditarCajaTesoreriaModal
+          open={cajaParaEditarDatos != null}
+          onOpenChange={(open) => {
+            if (!open) setCajaParaEditarDatos(null);
+          }}
+          caja={cajaParaEditarDatos}
+          onUpdated={() => router.refresh()}
+        />
+        <EliminarCajaTesoreriaModal
+          open={cajaParaEliminar != null}
+          onOpenChange={(open) => {
+            if (!open) setCajaParaEliminar(null);
+          }}
+          caja={cajaParaEliminar}
+          onDeleted={() => router.refresh()}
         />
       </ClassicFilteredTableLayout>
     </div>

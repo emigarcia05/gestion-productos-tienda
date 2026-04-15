@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -14,34 +14,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { crearCajaTesoreriaAction } from "@/actions/cajasTesoreria";
+import { editarCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
+import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated?: () => void;
+  caja: TesoreriaCajaFila | null;
+  onUpdated?: () => void;
 }
 
-export default function NuevaCajaTesoreriaModal({
+export default function EditarCajaTesoreriaModal({
   open,
   onOpenChange,
-  onCreated,
+  caja,
+  onUpdated,
 }: Props) {
   const [nombreCaja, setNombreCaja] = useState("");
   const [titular, setTitular] = useState<TitularCajaTesoreria | "">("");
   const [tipoCaja, setTipoCaja] = useState<"DIGITAL" | "EFECTIVO" | "CHEQUE">("EFECTIVO");
   const [saving, setSaving] = useState(false);
 
-  const disabledSubmit = useMemo(
-    () =>
-      saving ||
-      nombreCaja.trim().length === 0 ||
-      titular.trim().length === 0 ||
-      tipoCaja.trim().length === 0,
-    [saving, nombreCaja, titular, tipoCaja]
-  );
+  useEffect(() => {
+    if (!open || !caja) return;
+    setNombreCaja(caja.nombreCaja);
+    setTitular(caja.titular as TitularCajaTesoreria);
+    setTipoCaja(caja.tipoCaja as "DIGITAL" | "EFECTIVO" | "CHEQUE");
+  }, [open, caja]);
 
   function resetForm() {
     setNombreCaja("");
@@ -49,24 +50,46 @@ export default function NuevaCajaTesoreriaModal({
     setTipoCaja("EFECTIVO");
   }
 
+  const hasChanges = useMemo(() => {
+    if (!caja) return false;
+    return (
+      nombreCaja.trim() !== caja.nombreCaja ||
+      titular.trim() !== caja.titular ||
+      tipoCaja.trim() !== caja.tipoCaja
+    );
+  }, [caja, nombreCaja, titular, tipoCaja]);
+
+  const disabledSubmit = useMemo(
+    () =>
+      saving ||
+      !caja ||
+      nombreCaja.trim().length === 0 ||
+      titular.trim().length === 0 ||
+      tipoCaja.trim().length === 0 ||
+      !hasChanges,
+    [saving, caja, nombreCaja, titular, tipoCaja, hasChanges]
+  );
+
   async function handleSubmit() {
-    if (disabledSubmit) return;
+    if (!caja || disabledSubmit) return;
     setSaving(true);
     try {
-      const res = await crearCajaTesoreriaAction({
+      const res = await editarCajaTesoreriaAction({
+        id: caja.id,
         nombreCaja,
         titular,
         tipoCaja,
+        monto: caja.monto,
       });
+
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudo crear la caja.");
+        toast.error(res.error ?? "No se pudo editar la caja.");
         return;
       }
 
-      toast.success("Caja creada correctamente.");
+      toast.success("Caja actualizada correctamente.");
       onOpenChange(false);
-      resetForm();
-      onCreated?.();
+      onUpdated?.();
     } finally {
       setSaving(false);
     }
@@ -76,30 +99,23 @@ export default function NuevaCajaTesoreriaModal({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next && !saving) resetForm();
-        onOpenChange(next);
+        if (!saving) {
+          if (!next) resetForm();
+          onOpenChange(next);
+        }
       }}
     >
       <AppModal
-        title="Crear Caja"
+        title="Editar Caja"
         size="md"
         className="sm:max-w-xl"
         actions={
           <div className="flex w-full justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => {
-                if (saving) return;
-                resetForm();
-                onOpenChange(false);
-              }}
-            >
+            <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="button" disabled={disabledSubmit} onClick={handleSubmit}>
-              Guardar
+              Guardar Cambios
             </Button>
           </div>
         }
@@ -130,12 +146,7 @@ export default function NuevaCajaTesoreriaModal({
               <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
                 <SelectValue placeholder="SELECCIONAR TITULAR" />
               </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
+              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
                 <SelectItem value="none">SELECCIONAR TITULAR</SelectItem>
                 {TITULARES_CAJA_TESORERIA.map((titularOption) => (
                   <SelectItem key={titularOption} value={titularOption}>
@@ -158,19 +169,13 @@ export default function NuevaCajaTesoreriaModal({
               <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
                 <SelectValue placeholder="SELECCIONAR TIPO" />
               </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
+              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
                 <SelectItem value="DIGITAL">DIGITAL</SelectItem>
                 <SelectItem value="EFECTIVO">EFECTIVO</SelectItem>
                 <SelectItem value="CHEQUE">CHEQUE</SelectItem>
               </SelectContent>
             </Select>
           </label>
-
         </div>
       </AppModal>
     </Dialog>
