@@ -60,13 +60,13 @@ function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
   return `${pad2(d)}-${pad2(m)}-${y}`;
 }
 
-function subtractDaysFromIsoYmd(
+function addDaysToIsoYmd(
   iso: string,
   days: number
 ): { y: number; m: number; d: number } {
   const { y, m, d } = parseIsoYmdParts(iso);
   const dateUtc = new Date(Date.UTC(y, m - 1, d));
-  dateUtc.setUTCDate(dateUtc.getUTCDate() - days);
+  dateUtc.setUTCDate(dateUtc.getUTCDate() + days);
   return {
     y: dateUtc.getUTCFullYear(),
     m: dateUtc.getUTCMonth() + 1,
@@ -205,8 +205,8 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     }
 
     // Regla de negocio: FECHA y FECHA IMPUTACION CONTABLE se exportan
-    // con un día menos respecto a la fecha seleccionada en recepción.
-    const { y, m, d } = subtractDaysFromIsoYmd(fechaFacturaIso, 1);
+    // con un día más respecto a la fecha seleccionada en recepción.
+    const { y, m, d } = addDaysToIsoYmd(fechaFacturaIso, 1);
     const fechaFacturaExcel = formatExcelDdMmYyyyDash(y, m, d);
 
     // La numeración de comprobante siempre se consulta con "hoy" (Argentina),
