@@ -23,14 +23,26 @@ function parseMontoInputToNormalized(raw: string): string {
   let integerRaw = "";
   let fracRaw = "";
   const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
 
-  if (lastComma === -1) {
-    // Sin coma decimal: todo se interpreta como parte entera.
-    integerRaw = s.replace(/\D/g, "");
-  } else {
+  if (lastComma !== -1) {
     // Con coma decimal: parte entera + hasta 2 decimales.
     integerRaw = s.slice(0, lastComma).replace(/\D/g, "");
     fracRaw = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
+  } else if (lastDot !== -1) {
+    // Con punto y sin coma:
+    // - Si hay 1-2 dígitos tras el punto, lo tratamos como decimal explícito del usuario.
+    // - Si hay 3+ dígitos, lo tratamos como separador de miles (no decimal automático).
+    const fracCandidate = s.slice(lastDot + 1).replace(/\D/g, "");
+    if (fracCandidate.length > 0 && fracCandidate.length <= 2) {
+      integerRaw = s.slice(0, lastDot).replace(/\D/g, "");
+      fracRaw = fracCandidate.slice(0, 2);
+    } else {
+      integerRaw = s.replace(/\D/g, "");
+    }
+  } else {
+    // Sin separador decimal explícito: todo se interpreta como parte entera.
+    integerRaw = s.replace(/\D/g, "");
   }
 
   if (integerRaw === "" && fracRaw === "") return "";
@@ -65,7 +77,9 @@ function formatLiveMontoArInput(raw: string): string {
 
   const lastComma = s.lastIndexOf(",");
   const lastDot = s.lastIndexOf(".");
-  const hasSep = lastComma !== -1 || lastDot !== -1;
+  const hasComma = lastComma !== -1;
+  const hasDot = lastDot !== -1;
+  const hasSep = hasComma || hasDot;
 
   let intDigits = "";
   let fracDigits = "";
@@ -75,11 +89,27 @@ function formatLiveMontoArInput(raw: string): string {
     intDigits = s.replace(/\D/g, "");
     fracDigits = "";
     trailingDecSep = false;
-  } else {
-    const decPos = Math.max(lastComma, lastDot);
+  } else if (hasComma) {
+    const decPos = lastComma;
     trailingDecSep = decPos === s.length - 1;
     intDigits = s.slice(0, decPos).replace(/\D/g, "");
     fracDigits = s.slice(decPos + 1).replace(/\D/g, "").slice(0, 2);
+  } else {
+    // Solo punto:
+    // - 1-2 dígitos luego del punto => decimal explícito.
+    // - 3+ dígitos => miles (sin crear decimales automáticos).
+    const decPos = lastDot;
+    const fracCandidate = s.slice(decPos + 1).replace(/\D/g, "");
+    const shouldTreatDotAsDecimal = fracCandidate.length > 0 && fracCandidate.length <= 2;
+    if (shouldTreatDotAsDecimal) {
+      trailingDecSep = decPos === s.length - 1;
+      intDigits = s.slice(0, decPos).replace(/\D/g, "");
+      fracDigits = fracCandidate.slice(0, 2);
+    } else {
+      trailingDecSep = false;
+      intDigits = s.replace(/\D/g, "");
+      fracDigits = "";
+    }
   }
 
   if (intDigits === "" && fracDigits === "") {
