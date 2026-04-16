@@ -25,7 +25,7 @@ export default async function FinanzasPage() {
               <Link href="/finanzas/deuda-proveedores">Deuda Proveedores</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-              <Link href="/finanzas/venc-por-fecha">Venc. por fecha</Link>
+              <Link href="/finanzas/venc-por-fecha">Flujo De Fondos</Link>
             </Button>
           </div>
         }
@@ -35,7 +35,7 @@ export default async function FinanzasPage() {
           {esEditor ? <SincronizarComprobantesProveedorDuxButton /> : null}
           <p className="text-sm text-muted-foreground">
             Tesorería lista las cajas de tesorería con sucursal, tipo, monto y última actualización. Deuda
-            Proveedores resume saldos por proveedor y columnas por ventana de vencimiento. Venc. por fecha muestra
+            Proveedores resume saldos por proveedor y columnas por ventana de vencimiento. Flujo De Fondos muestra
             vencimientos por día en una ventana fija. Acceso desde la cabecera o slidenav (FINANZAS).
           </p>
         </div>

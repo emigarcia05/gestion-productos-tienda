@@ -12,6 +12,7 @@ import {
   listarVencimientosEnRango,
   sumarSaldoVencimientosConFechaVencAnteriorA,
 } from "@/services/vencimientosPorFecha.service";
+import { listarCajasTesoreria } from "@/services/cajasTesoreria.service";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
@@ -43,10 +44,15 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const hastaIso = addDaysToIsoYmdArgentina(hoyIso, DIAS_VENTANA_VENC_POR_FECHA);
 
-  const [lineas, saldoVencidoAntesDeHoy] = await Promise.all([
+  const [lineas, saldoVencidoAntesDeHoy, cajasTesoreria] = await Promise.all([
     listarVencimientosEnRango(hoyIso, hastaIso),
     sumarSaldoVencimientosConFechaVencAnteriorA(hoyIso),
+    listarCajasTesoreria(),
   ]);
+  const cajaDisponibleInicial = cajasTesoreria.reduce(
+    (acc, caja) => acc + Number(caja.monto || 0),
+    0
+  );
 
   const totalPorDia: Record<string, number> = {};
   const detallePorDiaProveedor: Record<string, Record<string, number>> = {};
@@ -87,11 +93,12 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Venc. por fecha">
+      <ClassicFilteredTableLayout title="Finanzas" subtitle="Flujo De Fondos">
         <VencPorFechaCalendario
           rangoDesdeLabel={formatIsoYmdDdMmYyyyArgentina(hoyIso)}
           rangoHastaLabel={formatIsoYmdDdMmYyyyArgentina(hastaIso)}
           saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
+          cajaDisponibleInicial={cajaDisponibleInicial}
           detallesPorDia={detallesPorDia}
           filas={filas}
           paginaActual={paginaActual}

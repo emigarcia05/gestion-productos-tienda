@@ -151,7 +151,7 @@ const FINANZAS_MODULES: {
       },
       {
         href: "/finanzas/venc-por-fecha",
-        label: "Venc. por fecha",
+        label: "Flujo De Fondos",
         icon: <CalendarDays className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },

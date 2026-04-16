@@ -29,12 +29,11 @@ function fmtMonto(s: string): string {
   })}`;
 }
 
-/** CAJA por día: placeholder hasta integrar origen real (mismo valor en todas las filas si es constante). */
-const CAJA_DISPONIBLE_PLACEHOLDER = 0;
-
 /**
  * Filas ordenadas por fecha (calendario completo en servidor: hoy → hoy+150 inclusive):
  * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
+ * - **CAJA DISPONIBLE**: primera fila toma la suma inicial de cajas de tesorería; desde la segunda,
+ *   toma el saldo de la fila anterior si es positivo (si no, 0).
  * - **SALDO**: siempre `VTOS ACUMULADOS - CAJA DISPONIBLE`.
  */
 function filasConVtosYSaldo(
@@ -42,7 +41,7 @@ function filasConVtosYSaldo(
     isoYmd: string;
     vencimientoDelDia: number;
   }>,
-  cajaDisponiblePorFila: number,
+  cajaDisponibleInicial: number,
   saldoVencidoAntesDeHoy: number
 ): Array<{
   isoYmd: string;
@@ -52,13 +51,19 @@ function filasConVtosYSaldo(
   saldo: number;
 }> {
   let vtosAcum = saldoVencidoAntesDeHoy;
-  return filasOrdenadas.map((fila) => {
+  let saldoAnterior = 0;
+  return filasOrdenadas.map((fila, index) => {
     vtosAcum += fila.vencimientoDelDia;
-    const saldo = vtosAcum - cajaDisponiblePorFila;
+    const cajaDisponible =
+      index === 0
+        ? Math.max(0, cajaDisponibleInicial)
+        : Math.max(0, saldoAnterior);
+    const saldo = vtosAcum - cajaDisponible;
+    saldoAnterior = saldo;
     return {
       ...fila,
       vtosAcumulados: vtosAcum,
-      cajaDisponible: cajaDisponiblePorFila,
+      cajaDisponible,
       saldo,
     };
   });
@@ -69,6 +74,8 @@ export interface VencPorFechaCalendarioProps {
   rangoHastaLabel: string;
   /** Suma de saldos con `fecha_venc` &lt; hoy (incluye comprobantes no mostrados en la ventana). */
   saldoVencidoAntesDeHoy: number;
+  /** Suma de montos de cajas tesorería para la primera fila de la grilla. */
+  cajaDisponibleInicial: number;
   detallesPorDia: Record<string, Array<{ proveedor: string; vencimiento: number }>>;
   filas: Array<{
     isoYmd: string;
@@ -83,6 +90,7 @@ export default function VencPorFechaCalendario({
   rangoDesdeLabel,
   rangoHastaLabel,
   saldoVencidoAntesDeHoy,
+  cajaDisponibleInicial,
   detallesPorDia,
   filas,
   paginaActual,
@@ -103,8 +111,8 @@ export default function VencPorFechaCalendario({
 
   const filasVista = useMemo(
     () =>
-      filasConVtosYSaldo(filas, CAJA_DISPONIBLE_PLACEHOLDER, saldoVencidoAntesDeHoy),
-    [filas, saldoVencidoAntesDeHoy]
+      filasConVtosYSaldo(filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy),
+    [filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy]
   );
 
   return (
