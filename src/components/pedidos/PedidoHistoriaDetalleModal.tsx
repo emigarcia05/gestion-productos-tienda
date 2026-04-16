@@ -29,6 +29,7 @@ import {
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
+import MontoArInput from "@/components/shared/MontoArInput";
 import { cn } from "@/lib/utils";
 import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
 import {
