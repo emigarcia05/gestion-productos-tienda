@@ -84,128 +84,11 @@ const MODAL_SECTION_CARD_CLASS = "min-w-0 bg-transparent";
 
 const MODAL_RESUMEN_PANEL_CLASS = "min-w-0 bg-transparent";
 
-/** Monto en AR: miles con punto, decimales con coma (ej. $1.234,56). Vacío → sin texto. */
-function normalizedMontoToDisplayAr(norm: string): string {
-  if (norm === "") return "";
-  const n = Number(norm);
-  if (!Number.isFinite(n) || n < 0) return "";
-  const [ent, frac] = n.toFixed(2).split(".");
-  const entFmt = Number(ent).toLocaleString("es-AR", {
-    useGrouping: true,
-    maximumFractionDigits: 0,
-  });
-  return `$${entFmt},${frac}`;
-}
-
-/** Repeticiones seguidas del mismo separador (`,,` / `..`) se colapsan a uno (se ignora lo demás). */
-function collapseDuplicateSeparators(s: string): string {
-  return s.replace(/([.,])\1+/g, "$1");
-}
-
-/**
- * Parsea texto con $; en pantalla miles `.` y decimales `,`.
- * Si hay `.` y `,`, el separador decimal es el que está más a la derecha; el otro se ignora como agrupador.
- * Máximo 2 cifras decimales. Ver `collapseDuplicateSeparators`.
- */
-function parseMontoArInputToNormalized(display: string): string {
-  let s = display.replace(/\$/g, "").replace(/\s/g, "").trim();
-  if (s === "" || s === "$") return "";
-  s = collapseDuplicateSeparators(s);
-
-  const lastComma = s.lastIndexOf(",");
-  const lastDot = s.lastIndexOf(".");
-
-  let integerRaw: string;
-  let fracRaw: string;
-
-  if (lastComma === -1 && lastDot === -1) {
-    integerRaw = s.replace(/\D/g, "");
-    fracRaw = "";
-  } else if (lastComma === -1) {
-    integerRaw = s.replace(/\./g, "").replace(/\D/g, "");
-    fracRaw = "";
-  } else if (lastDot === -1) {
-    integerRaw = s.slice(0, lastComma).replace(/\D/g, "");
-    fracRaw = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
-  } else {
-    const decPos = Math.max(lastComma, lastDot);
-    integerRaw = s.slice(0, decPos).replace(/\D/g, "");
-    fracRaw = s.slice(decPos + 1).replace(/\D/g, "").slice(0, 2);
-  }
-
-  if (integerRaw === "" && fracRaw === "") return "";
-  if (fracRaw === "") return integerRaw;
-  return `${integerRaw === "" ? "0" : integerRaw}.${fracRaw}`;
-}
-
-/**
- * Con foco: siempre incluye $; miles con "." en vivo; decimales con "," (máx. 2); misma lógica de separadores que `parseMontoArInputToNormalized`.
- */
 /** Total normalizado (`totalPedido`) distinto de vacío y mayor que 0. */
 function totalPedidoMontoPositivo(norm: string): boolean {
   if (norm === "") return false;
   const n = Number(norm);
   return Number.isFinite(n) && n > 0;
-}
-
-function formatLiveTotalPedidoInput(raw: string): string {
-  let s = raw.replace(/\$/g, "").replace(/\s/g, "");
-  if (s === "") return "$";
-
-  s = collapseDuplicateSeparators(s);
-
-  const lastComma = s.lastIndexOf(",");
-  const lastDot = s.lastIndexOf(".");
-
-  let intDigits: string;
-  let fracDigits: string;
-  let hasDecSep: boolean;
-  let trailingDecSep: boolean;
-
-  if (lastComma === -1 && lastDot === -1) {
-    intDigits = s.replace(/\D/g, "");
-    fracDigits = "";
-    hasDecSep = false;
-    trailingDecSep = false;
-  } else if (lastComma === -1) {
-    intDigits = s.replace(/\D/g, "");
-    fracDigits = "";
-    hasDecSep = false;
-    trailingDecSep = false;
-  } else if (lastDot === -1) {
-    hasDecSep = true;
-    trailingDecSep = lastComma === s.length - 1;
-    intDigits = s.slice(0, lastComma).replace(/\D/g, "");
-    fracDigits = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
-  } else {
-    const decPos = Math.max(lastComma, lastDot);
-    hasDecSep = true;
-    trailingDecSep = decPos === s.length - 1;
-    intDigits = s.slice(0, decPos).replace(/\D/g, "");
-    fracDigits = s.slice(decPos + 1).replace(/\D/g, "").slice(0, 2);
-  }
-
-  if (intDigits === "" && fracDigits === "") {
-    if (hasDecSep && trailingDecSep) return "$0,";
-    return "$";
-  }
-
-  let intForFormat = intDigits;
-  if (intForFormat === "") {
-    intForFormat = "0";
-  } else if (intForFormat.length > 1) {
-    intForFormat = intForFormat.replace(/^0+/, "") || "0";
-  }
-
-  const intShown = intForFormat.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-
-  if (!hasDecSep) {
-    return `$${intShown}`;
-  }
-  if (trailingDecSep) {
-    return `$${intShown},`;
-  }
-  return `$${intShown},${fracDigits}`;
 }
 
 interface Props {
@@ -229,8 +112,6 @@ export default function PedidoHistoriaDetalleModal({
 
   /** Valor normalizado para lógica futura: "" | "123" | "123.45" (punto decimal). */
   const [totalPedido, setTotalPedido] = useState<string>("");
-  const [totalPedidoDraft, setTotalPedidoDraft] = useState<string>("");
-  const [totalPedidoFocused, setTotalPedidoFocused] = useState(false);
   const [agregarProductosOpen, setAgregarProductosOpen] = useState(false);
   const [busquedaAgregarProducto, setBusquedaAgregarProducto] = useState("");
   /** Valor ISO `YYYY-MM-DD` — UI: campo FECHA FACTURA. */
@@ -284,7 +165,6 @@ export default function PedidoHistoriaDetalleModal({
     if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total > 0) {
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
-      setTotalPedidoDraft(totalNorm);
     }
     // Para permitir "Descargar Recepcion" en modo RECEPCIONADO, alimentamos el campo con una fecha razonable.
     // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
@@ -306,8 +186,6 @@ export default function PedidoHistoriaDetalleModal({
       setEditingItemId(null);
       setEditingValue("");
       setTotalPedido("");
-      setTotalPedidoDraft("");
-      setTotalPedidoFocused(false);
       setAgregarProductosOpen(false);
       setBusquedaAgregarProducto("");
       setFechaRecepcion("");
@@ -889,10 +767,6 @@ export default function PedidoHistoriaDetalleModal({
                       const cantRecNum = item.cantRecibida ?? 0;
                       const cantRecibidaVisible =
                         item.cantRecibida != null ? String(item.cantRecibida) : "";
-                      const isControlado =
-                        item.cantPedida > 0 &&
-                        item.cantRecibida != null &&
-                        item.cantRecibida === item.cantPedida;
                       // Si por cualquier motivo el backend registra `cantPedida` en 0 pero el usuario
                       // ya cargó `cantRecibida` al agregar el producto, mostramos `cantRecibida` para
                       // que ambas columnas queden consistentes.
@@ -1142,34 +1016,12 @@ export default function PedidoHistoriaDetalleModal({
                       </span>
                     </div>
                     <div className="celda-datos celda-datos--flush-left celda-datos--flush-right col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0">
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        autoComplete="off"
+                      <MontoArInput
                         disabled={locked || loading || !totalPedidoInputHabilitado}
-                        value={
-                          totalPedidoFocused
-                            ? totalPedidoDraft
-                            : normalizedMontoToDisplayAr(totalPedido)
-                        }
-                        onFocus={() => {
-                          setTotalPedidoDraft(
-                            totalPedido === ""
-                              ? "$"
-                              : normalizedMontoToDisplayAr(totalPedido)
-                          );
-                          setTotalPedidoFocused(true);
-                        }}
-                        onChange={(e) => {
-                          if (!totalPedidoFocused) return;
-                          setTotalPedidoDraft(formatLiveTotalPedidoInput(e.target.value));
-                        }}
-                        onBlur={() => {
-                          setTotalPedido(parseMontoArInputToNormalized(totalPedidoDraft));
-                          setTotalPedidoFocused(false);
-                        }}
+                        valueNormalized={totalPedido}
+                        onValueNormalizedChange={setTotalPedido}
                         className={cn(
-                          "ml-0 h-9 w-full min-w-0 pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
+                          "w-full",
                           inputBorderClassName
                         )}
                         aria-label="Total Pedido"

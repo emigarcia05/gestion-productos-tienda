@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -113,7 +113,7 @@ const montoArInputVariants = cva("", {
 });
 
 export type MontoArInputProps = Omit<
-  React.ComponentProps<typeof Input>,
+  ComponentProps<typeof Input>,
   "value" | "onChange" | "onFocus" | "onBlur"
 > &
   VariantProps<typeof montoArInputVariants> & {

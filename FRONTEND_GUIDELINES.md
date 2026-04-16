@@ -398,7 +398,7 @@ Modal del módulo **Historial Pedidos** para operar la recepción de ítems del 
 - **Lista de verificación / acciones:** el campo de la primera columna no admite tipeo; al abrir en estado **SIN RECEPCION**, la columna **CANT. RECIBIDA** inicia vacía para todas las filas y se completa de forma secuencial por acción del usuario. **OK** copia **cant. pedida** en **cant. recibida** y confirma checklist; **Editar** copia **cant. pedida** en **cant. recibida**, limpia confirmación y abre controles de edición (`-`, input, `+`); **cesto** coloca **0** y confirma checklist en UI. **Registrar En Dux** al completar cierra el modal.
 - **Persistencia diferida (Recepción):** agregar producto, editar cantidades y confirmar checklist son cambios locales del modal; no deben persistirse en BD hasta ejecutar **Registrar En Dux** (o **Guardar Corrección** en pedidos recepcionados).
 - **Persistencia de TOTAL PEDIDO:** al registrar en DUX, el modal envía `totalPedido` a backend para persistirlo en `pedidos_historia.total`. Si el pedido ya está **RECEPCIONADO**, al reabrir el modal el input **TOTAL PEDIDO** se precarga con ese valor guardado para re-descargas del Excel.
-- **Input TOTAL PEDIDO (tipeo):** visual **AR** (`$` + miles `.` + decimales `,`, máx. **2** cifras decimales). Si aparecen **`.`** y **`,`**, el **separador decimal** es el que queda **más a la derecha**; el otro solo agrupa. Repeticiones seguidas del **mismo** separador (`,,` / `..`) se colapsan a **uno** (el resto se ignora). Si solo hay **`.`**, todos son miles (sin parte decimal por coma).
+- **Input TOTAL PEDIDO (tipeo):** visual **AR** (`$` + miles `.` + decimales `,`, máx. **2** cifras decimales). El usuario puede tipear **`,` o `.`** como separador decimal: si aparecen ambos, el **separador decimal** es el que queda **más a la derecha**; el otro solo agrupa. Repeticiones seguidas del **mismo** separador (`,,` / `..`) se colapsan a **uno** (el resto se ignora).
 - **Pedido ya recepcionado (corrección):** cuando el pedido está en estado **RECEPCIONADO**, el footer muestra **Corregir Recepcion**. Al activarlo, el modal habilita los mismos campos cargados para permitir edición y cambia la acción a **Guardar Corrección**; al guardar, además de volver al modo bloqueado, dispara la misma exportación que **Descargar Recepcion** (`exportarExcelRecepcionPedidoAction`) para recalcular el campo **COMPROBANTE** del Excel con la consulta actual a DUX `/compras`.
 - **Checklist inicial en corrección:** al cargar un pedido en estado **RECEPCIONADO**, la lista de verificación inicia con todos los ítems marcados como revisados (según la última recepción persistida), para que en **Corregir Recepcion** el usuario solo ajuste diferencias puntuales y no tenga que rehacer toda la confirmación.
 - **Corrección en recepcionado (persistencia):** durante **Guardar Corrección**, las ediciones de **CANT. RECIBIDA** y el alta por **Agregar Producto** se persisten sobre `pedidos_historial_mercaderia` aun cuando la cabecera esté en estado **RECEPCIONADO**; la corrección no debe mostrar bloqueo por “Pedido ya recepcionado” en ese flujo.
@@ -434,6 +434,19 @@ Input unificado para búsqueda en filtros (ícono Search + limpiar + loader). Us
   - **`inputRef`**: `RefObject<HTMLInputElement | null>`.
   - **`disabled`**: `boolean?`.
   - **`className`**: `string?`.
+
+### `MontoArInput` (`src/components/shared/MontoArInput.tsx`)
+
+Input monetario reutilizable (formato **AR**): muestra **`$`**, miles con `.` y decimales con `,` (máx. **2**).
+
+- **Props**
+  - **`valueNormalized`**: `string` — `"" | "123" | "123.45"` (siempre `.` como separador decimal interno).
+  - **`onValueNormalizedChange(next)`**: callback al confirmar (onBlur) con el valor normalizado.
+  - **`variant`**: `"totalPedido"` (default) — variantes definidas con **CVA**.
+  - **`className`**: `string?` — para borde/ring (ej. `inputBorderClassName`) u overrides puntuales.
+- **Reglas de tipeo**
+  - Acepta **`,` o `.`** como separador decimal (si aparecen ambos, se toma el más a la derecha).
+  - Repeticiones `,,` / `..` se colapsan a una sola.
 
 ### `PageSectionHeader` (`src/components/shared/PageSectionHeader.tsx`)
 
