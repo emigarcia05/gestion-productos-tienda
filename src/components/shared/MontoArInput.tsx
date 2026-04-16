@@ -11,8 +11,8 @@ function collapseDuplicateSeparators(s: string): string {
 
 /**
  * Normaliza input monetario AR a: "" | "123" | "123.45"
- * - Acepta `,` o `.` como separador decimal (se toma el que esté más a la derecha).
- * - El resto de separadores se consideran de miles y se ignoran.
+ * - Usa `,` como separador decimal canónico (si existe en el texto).
+ * - Los `.` se tratan como separadores de miles y se ignoran al normalizar.
  * - Máximo 2 cifras decimales.
  */
 function parseMontoInputToNormalized(raw: string): string {
@@ -20,20 +20,17 @@ function parseMontoInputToNormalized(raw: string): string {
   if (s === "" || s === "$") return "";
   s = collapseDuplicateSeparators(s);
 
-  const lastComma = s.lastIndexOf(",");
-  const lastDot = s.lastIndexOf(".");
-  const hasSep = lastComma !== -1 || lastDot !== -1;
-
   let integerRaw = "";
   let fracRaw = "";
+  const lastComma = s.lastIndexOf(",");
 
-  if (!hasSep) {
+  if (lastComma === -1) {
+    // Sin coma decimal: todo se interpreta como parte entera.
     integerRaw = s.replace(/\D/g, "");
-    fracRaw = "";
   } else {
-    const decPos = Math.max(lastComma, lastDot);
-    integerRaw = s.slice(0, decPos).replace(/\D/g, "");
-    fracRaw = s.slice(decPos + 1).replace(/\D/g, "").slice(0, 2);
+    // Con coma decimal: parte entera + hasta 2 decimales.
+    integerRaw = s.slice(0, lastComma).replace(/\D/g, "");
+    fracRaw = s.slice(lastComma + 1).replace(/\D/g, "").slice(0, 2);
   }
 
   if (integerRaw === "" && fracRaw === "") return "";
