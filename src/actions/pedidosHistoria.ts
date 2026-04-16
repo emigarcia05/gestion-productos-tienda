@@ -58,7 +58,7 @@ const descargarPdfPedidoHistoriaSchema = z.object({
 
 const listarPedidosHistoriaSchema = z.object({
   pagina: z.coerce.number().int().min(1).optional().default(1),
-  estado: z.enum(["SIN RECEPCION", "RECEPCIONADO", "ALL"]).optional(),
+  estado: z.enum(["PENDIENTE", "SIN RECEPCION", "RECEPCIONADO", "ALL"]).optional(),
   proveedorId: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
     z.string().min(1).max(128).optional()
@@ -103,10 +103,12 @@ export async function listarPedidosHistoriaAction(
 
   const parsed = listarPedidosHistoriaSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
+  const estadoNormalizado =
+    parsed.data.estado === "SIN RECEPCION" ? "PENDIENTE" : parsed.data.estado;
 
   const res = await pedidosHistoriaService.listarPedidosHistoria({
     pagina: parsed.data.pagina,
-    estado: parsed.data.estado,
+    estado: estadoNormalizado,
     proveedorId: parsed.data.proveedorId,
     sucursalCodigo: parsed.data.sucursalCodigo,
     q: parsed.data.q?.trim() || undefined,

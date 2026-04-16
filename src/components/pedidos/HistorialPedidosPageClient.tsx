@@ -179,7 +179,7 @@ export default function HistorialPedidosPageClient({
                             <TableCell className="celda-datos">
                               {it.estado === "RECEPCIONADO"
                                 ? "RECEPCIONADO"
-                                : "SIN RECEPCION"}
+                                : "PENDIENTE"}
                             </TableCell>
                             <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                               <div className="flex items-center justify-center gap-2">

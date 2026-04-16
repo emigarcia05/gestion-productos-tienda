@@ -39,9 +39,9 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
       ? "RECEPCIONADO"
       : estadoParam === "ALL"
         ? "ALL"
-        : "SIN RECEPCION";
+        : "PENDIENTE";
 
-  const estadoUi: "SIN RECEPCION" | "RECEPCIONADO" | "ALL" = estadoFiltro;
+  const estadoUi: "PENDIENTE" | "RECEPCIONADO" | "ALL" = estadoFiltro;
 
   const proveedores = await prisma.proveedor.findMany({
     select: { id: true, nombre: true, prefijo: true },

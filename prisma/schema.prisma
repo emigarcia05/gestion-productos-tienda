@@ -312,7 +312,7 @@ model ItemPedidoEnvio {
 model PedidoHistoria {
   id            String   @id @default(cuid())
   generadoAt    DateTime @default(now()) @map("generado_at")
-  estado        String   @default("SIN RECEPCION") @map("estado") // SIN RECEPCION | RECEPCIONADO
+  estado        String   @default("PENDIENTE") @map("estado") // PENDIENTE | RECEPCIONADO
   registradoAt  DateTime? @map("registrado_at")
   total         Decimal? @db.Decimal(14, 2) @map("total")
   proveedorId   String   @map("proveedor_id")

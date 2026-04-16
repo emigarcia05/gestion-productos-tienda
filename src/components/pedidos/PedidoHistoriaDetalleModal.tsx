@@ -778,9 +778,9 @@ export default function PedidoHistoriaDetalleModal({
                             : "";
 
                       const checkListConfirmed = checkListConfirmedByItem[item.id] === true;
-                      /** En **SIN RECEPCION**, la columna solo muestra valor tras confirmar checklist (OK / cesto / check edición). */
+                      /** En **PENDIENTE**, la columna solo muestra valor tras confirmar checklist (OK / cesto / check edición). */
                       const cantRecibidaCeldaLectura =
-                        estado === "SIN RECEPCION" && !checkListConfirmed
+                        estado === "PENDIENTE" && !checkListConfirmed
                           ? ""
                           : cantRecibidaVisible;
 

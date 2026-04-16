@@ -9,25 +9,41 @@ import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/paginatio
 
 const COD_TIENDA_FALLBACK = "1503";
 
-/** Meses de retención de snapshots; filas con `generado_at` anteriores se eliminan en cada escritura al historial. */
-const MESES_RETENCION_PEDIDOS_HISTORIA = 1;
+/** Retención por estado (días): purga automática en cada escritura del historial. */
+const DIAS_RETENCION_PEDIDOS_PENDIENTE = 4;
+const DIAS_RETENCION_PEDIDOS_RECEPCIONADO = 30;
 
-function fechaLimiteRetencionPedidosHistoria(): Date {
+function fechaHaceDias(dias: number): Date {
   const d = new Date();
-  d.setMonth(d.getMonth() - MESES_RETENCION_PEDIDOS_HISTORIA);
+  d.setDate(d.getDate() - dias);
   return d;
 }
 
 /**
- * Elimina cabeceras de `pedidos_historia` con antigüedad mayor a {@link MESES_RETENCION_PEDIDOS_HISTORIA} mes(es).
+ * Elimina cabeceras de `pedidos_historia` por antigüedad según estado:
+ * - PENDIENTE: >= 4 días
+ * - RECEPCIONADO: >= 30 días
  * Los ítems en `pedidos_historial_mercaderia` se borran en cascada (FK).
  * Sin cron ni triggers: se invoca al inicio de cada mutación del historial en este servicio.
  */
 async function purgarPedidosHistoriaExpirados(
   db: Pick<typeof prisma, "pedidoHistoria">
 ): Promise<void> {
+  const limitePendiente = fechaHaceDias(DIAS_RETENCION_PEDIDOS_PENDIENTE);
+  const limiteRecepcionado = fechaHaceDias(DIAS_RETENCION_PEDIDOS_RECEPCIONADO);
   await db.pedidoHistoria.deleteMany({
-    where: { generadoAt: { lt: fechaLimiteRetencionPedidosHistoria() } },
+    where: {
+      OR: [
+        {
+          estado: { in: ["PENDIENTE", "SIN RECEPCION"] },
+          generadoAt: { lte: limitePendiente },
+        },
+        {
+          estado: "RECEPCIONADO",
+          generadoAt: { lte: limiteRecepcionado },
+        },
+      ],
+    },
   });
 }
 
@@ -41,7 +57,13 @@ function normalizarTokensBusquedaHistorial(q: string | undefined): string[] {
   return raw.split(/\s+/).filter(Boolean).slice(0, HISTORIAL_Q_MAX_TOKENS);
 }
 
-export type PedidoHistoriaEstado = "SIN RECEPCION" | "RECEPCIONADO";
+export type PedidoHistoriaEstado = "PENDIENTE" | "RECEPCIONADO";
+
+function normalizarEstadoPedidoHistoria(
+  estado: string | null | undefined
+): PedidoHistoriaEstado {
+  return estado === "RECEPCIONADO" ? "RECEPCIONADO" : "PENDIENTE";
+}
 
 export interface PedidoHistoriaResumen {
   id: string;
@@ -130,7 +152,7 @@ export async function crearPedidoHistoriaSnapshot(params: {
         data: {
           proveedorId: proveedorId.trim(),
           sucursalId: sucursal.id,
-          estado: "SIN RECEPCION",
+          estado: "PENDIENTE",
         },
         select: { id: true },
       });
@@ -210,7 +232,7 @@ export async function getPedidoHistoriaDetalle(params: {
         generadoAt: pedido.generadoAt,
         registradoAt: pedido.registradoAt,
         total: pedido.total == null ? null : Number(pedido.total),
-        estado: pedido.estado as PedidoHistoriaEstado,
+        estado: normalizarEstadoPedidoHistoria(pedido.estado),
         proveedorId: pedido.proveedorId,
         proveedorNombre: pedido.proveedor.nombre,
         sucursalId: pedido.sucursalId,
@@ -262,7 +284,13 @@ export async function listarPedidosHistoria(params: {
     }
 
     const where: Prisma.PedidoHistoriaWhereInput = {};
-    if (params.estado && params.estado !== "ALL") where.estado = params.estado;
+    if (params.estado && params.estado !== "ALL") {
+      if (params.estado === "PENDIENTE") {
+        where.estado = { in: ["PENDIENTE", "SIN RECEPCION"] };
+      } else {
+        where.estado = params.estado;
+      }
+    }
     if (params.proveedorId?.trim()) where.proveedorId = params.proveedorId.trim();
     if (sucursalId) where.sucursalId = sucursalId;
 
@@ -317,7 +345,7 @@ export async function listarPedidosHistoria(params: {
           generadoAt: r.generadoAt,
           proveedorNombre: r.proveedor.nombre,
           sucursalNombre: r.sucursal.nombre,
-          estado: r.estado as PedidoHistoriaEstado,
+          estado: normalizarEstadoPedidoHistoria(r.estado),
           registradoAt: r.registradoAt,
         })),
         total,
@@ -544,14 +572,14 @@ export async function reabrirPedidoHistoriaRecepcion(params: {
     });
     if (!actual) return { success: false, error: "Pedido no encontrado." };
 
-    if (actual.estado === "SIN RECEPCION") {
+    if (actual.estado === "PENDIENTE" || actual.estado === "SIN RECEPCION") {
       // Idempotente: ya está abierto para edición.
       return { success: true, data: undefined };
     }
 
     await prisma.pedidoHistoria.update({
       where: { id },
-      data: { estado: "SIN RECEPCION", registradoAt: null },
+      data: { estado: "PENDIENTE", registradoAt: null },
     });
     return { success: true, data: undefined };
   } catch (e) {

@@ -75,7 +75,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Normalizar**: `q?.trim()` y tratar vacío como `undefined`.
   - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
-- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `SIN RECEPCION` \| `RECEPCIONADO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`SIN RECEPCION`** (pendientes de recepción). Zod en `listarPedidosHistoriaAction`: `estado` incluye `ALL`; `q` con `.max(200).optional()`.
+- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `PENDIENTE` \| `RECEPCIONADO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`PENDIENTE`**. Compatibilidad legacy: se acepta `SIN RECEPCION` y se normaliza a `PENDIENTE`. Zod en `listarPedidosHistoriaAction`: `estado` incluye `ALL`; `q` con `.max(200).optional()`.
 
 ### 1.8 Fuente de costo final (`px_compra_final`)
 
@@ -254,8 +254,8 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
 
 - Cabecera: `pedido_historia` (Prisma: `PedidoHistoria`)
   - `generado_at`: fecha/hora del snapshot (momento en que se arma el pedido y se guarda el detalle).
-  - `estado`: `SIN RECEPCION | RECEPCIONADO`.
-    - `SIN RECEPCION`: snapshot creado (pendiente de recepción).
+  - `estado`: `PENDIENTE | RECEPCIONADO`.
+    - `PENDIENTE`: snapshot creado (pendiente de recepción).
     - `RECEPCIONADO`: se setea cuando en un paso siguiente se exporta/registran los datos en DUX y el proceso finaliza OK.
   - `registrado_at`: fecha/hora cuando se cambia a `RECEPCIONADO` (nullable).
   - `total`: `NUMERIC(14,2)` nullable. Se persiste al registrar recepción para reimpresión y para recalcular el `PRECIO` unitario del Excel sin depender del input en UI.
@@ -272,9 +272,12 @@ Constraint:
 - `UNIQUE (pedido_historia_id, cod_tienda)` para evitar duplicados de producto dentro de un mismo pedido.
 - Índices: además de `(sucursal_id, generado_at)` y `(proveedor_id, generado_at)`, se agrega índice sobre `generado_at` para listar por fecha con buen rendimiento.
 
-**Retención automática (sin triggers ni cron)**  
-- Regla: se eliminan filas de `pedidos_historia` cuyo `generado_at` es **anterior a 1 mes** (mes calendario vía `Date.setMonth` en el servidor, constante `MESES_RETENCION_PEDIDOS_HISTORIA` en `pedidosHistoria.service.ts`).  
-- Las filas de `pedidos_historial_mercaderia` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.  
+**Retención automática (sin triggers ni cron)**
+- Regla: se eliminan filas de `pedidos_historia` según estado (evaluado por `generado_at`):
+  - `PENDIENTE` (incluye legado `SIN RECEPCION`): **4 días o más**.
+  - `RECEPCIONADO`: **30 días o más**.
+- Implementación en `purgarPedidosHistoriaExpirados` (`src/services/pedidosHistoria.service.ts`) con ventanas por días (`Date.setDate`).
+- Las filas de `pedidos_historial_mercaderia` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.
 - La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
 
 ### 2.5a Comprobantes de compra DUX (`comprobantes_proveedor`, Prisma: `ComprobanteProveedor`)
@@ -419,13 +422,13 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo?, q? })`
    - Uso: obtener página de cabeceras para el módulo de historial (`/pedidos/historial`).
-  - `estado`: `SIN RECEPCION`, `RECEPCIONADO` o `ALL`. La UI por defecto envía/equivale a `SIN RECEPCION` si no hay parámetro en la URL.
+  - `estado`: `PENDIENTE`, `RECEPCIONADO` o `ALL`. La UI por defecto envía/equivale a `PENDIENTE` si no hay parámetro en la URL.
    - Con `q` no vacío: solo pedidos que tengan al menos un ítem cuyo `cod_tienda` figure en `precios_tienda` con descripción que contenga todas las palabras de `q` (insensible a mayúsculas).
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
 2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`
    - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar `pedidos_mercaderia` (cuando corresponda).
-   - Crea `PedidoHistoria` con `estado = "SIN RECEPCION"`.
+   - Crea `PedidoHistoria` con `estado = "PENDIENTE"`.
    - Lee `ItemPedidoEnvio` filtrando por `idProveedor`, `sucursalId`, `tipoPedido IN tipos` y `cant_pedir > 0`.
    - Inserta `PedidoHistoriaItem` consolidando por `cod_tienda` (para respetar UNIQUE por `cod_tienda`).
    - Inserta cada ítem con `cant_recibida = NULL` hasta que en recepción se guarde la cantidad recibida.
@@ -462,13 +465,13 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 6b. `reabrirPedidoHistoriaRecepcion({ pedidoHistoriaId })`
    - Uso: habilitar corrección de recepción desde UI cuando el pedido ya está `RECEPCIONADO`.
-   - Transición: setea `estado = "SIN RECEPCION"` y limpia `registrado_at = NULL`.
-   - Idempotente: si ya está en `SIN RECEPCION`, responde éxito sin cambios.
+   - Transición: setea `estado = "PENDIENTE"` y limpia `registrado_at = NULL`.
+   - Idempotente: si ya está en `PENDIENTE`, responde éxito sin cambios.
 
 7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
 
-8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras con `generado_at` &lt; 1 mes; ítems en cascada. Ver bloque “Retención automática” en §2.5.
+8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras por estado (`PENDIENTE` >= 4 días, `RECEPCIONADO` >= 30 días); ítems en cascada. Ver bloque “Retención automática” en §2.5.
 
 ---
 
