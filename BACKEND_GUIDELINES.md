@@ -763,3 +763,12 @@ Antes de entregar código nuevo o modificado, verificar:
 - Si la sucursal no está habilitada:
   - lecturas/filtros devuelven vacío;
   - mutaciones responden `ok: false` con mensaje de sucursal no habilitada.
+
+### 5.10 Exportación Excel de Recepción — distribución de precios (2026-04-15)
+
+- Servicio: `src/services/exportRecepcionPedidoExcel.service.ts`.
+- Regla nueva: en lugar de usar un único precio promedio para todos los ítems, se calculan **precios unitarios diferenciales** por fila para acercar la suma matricial al total ingresado:
+  - objetivo: minimizar `|totalObjetivo - Σ(cantidad * precioUnitario)|`;
+  - ajuste por ítem en pasos de `0.01`, con tope de `±0.10` respecto al precio base;
+  - tolerancia final permitida en exportación: `0.10`.
+- Si no se logra quedar dentro de la tolerancia, el servicio devuelve error y no genera payload de Excel.

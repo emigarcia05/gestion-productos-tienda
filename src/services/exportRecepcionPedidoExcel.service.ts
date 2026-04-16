@@ -39,6 +39,8 @@ export interface ExportRecepcionPedidoExcelPayload {
 
 const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
 const RANGO_DIAS_CONSULTA_COMPROBANTE_DUX = 30;
+const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
+const TOLERANCIA_TOTAL_EXPORTACION = 0.1; // diferencia máxima permitida contra total ingresado
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -69,6 +71,84 @@ function subtractDaysFromIsoYmd(
     y: dateUtc.getUTCFullYear(),
     m: dateUtc.getUTCMonth() + 1,
     d: dateUtc.getUTCDate(),
+  };
+}
+
+function toCentavos(value: number): number {
+  return Math.round(value * 100);
+}
+
+function distribuirPreciosDiferenciales(params: {
+  cantidades: number[];
+  totalObjetivo: number;
+}): { precios: number[]; totalCalculado: number; diferencia: number } {
+  const { cantidades, totalObjetivo } = params;
+  const sumaCantidades = cantidades.reduce((acc, c) => acc + c, 0);
+  const totalObjetivoCentavos = toCentavos(totalObjetivo);
+  const precioBaseCentavos =
+    sumaCantidades > 0 ? Math.round(totalObjetivoCentavos / sumaCantidades) : 0;
+
+  const preciosCentavos = cantidades.map(() => precioBaseCentavos);
+  const deltas = cantidades.map(() => 0);
+  let diffCentavos =
+    totalObjetivoCentavos -
+    cantidades.reduce((acc, cant) => acc + cant * precioBaseCentavos, 0);
+
+  // Ajuste grueso: incrementos/decrementos de 0.01 por ítem respetando tope +/-0.10.
+  const indicesPorCantidadDesc = cantidades
+    .map((cant, idx) => ({ idx, cant }))
+    .sort((a, b) => b.cant - a.cant)
+    .map((x) => x.idx);
+  const indicesPorCantidadAsc = [...indicesPorCantidadDesc].reverse();
+
+  const aplicarPaso = (idx: number, paso: 1 | -1): boolean => {
+    if (paso > 0 && deltas[idx] >= AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS) return false;
+    if (paso < 0 && deltas[idx] <= -AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS) return false;
+    deltas[idx] += paso;
+    preciosCentavos[idx] += paso;
+    diffCentavos -= cantidades[idx] * paso;
+    return true;
+  };
+
+  const intentosMaximos = cantidades.length * AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS * 4;
+  let intentos = 0;
+  while (diffCentavos !== 0 && intentos < intentosMaximos) {
+    intentos += 1;
+    const signo: 1 | -1 = diffCentavos > 0 ? 1 : -1;
+    const candidatos = signo > 0 ? indicesPorCantidadDesc : indicesPorCantidadAsc;
+    let mejorIdx = -1;
+    let mejorError = Number.POSITIVE_INFINITY;
+
+    for (const idx of candidatos) {
+      const deltaActual = deltas[idx];
+      if (
+        (signo > 0 && deltaActual >= AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS) ||
+        (signo < 0 && deltaActual <= -AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS)
+      ) {
+        continue;
+      }
+      const nuevoDiff = diffCentavos - cantidades[idx] * signo;
+      const errorAbs = Math.abs(nuevoDiff);
+      if (errorAbs < mejorError) {
+        mejorError = errorAbs;
+        mejorIdx = idx;
+        if (errorAbs === 0) break;
+      }
+    }
+
+    if (mejorIdx === -1) break;
+    const aplicado = aplicarPaso(mejorIdx, signo);
+    if (!aplicado) break;
+  }
+
+  const precios = preciosCentavos.map((c) => c / 100);
+  const totalCalculado = cantidades.reduce((acc, cant, idx) => acc + cant * precios[idx], 0);
+  const diferencia = Number((totalObjetivo - totalCalculado).toFixed(2));
+
+  return {
+    precios,
+    totalCalculado: Number(totalCalculado.toFixed(2)),
+    diferencia,
   };
 }
 
@@ -158,10 +238,20 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
         : totalPersistido != null && Number.isFinite(totalPersistido) && totalPersistido > 0
           ? totalPersistido
           : totalImporte;
-    const precioBruto = sumCantRecibida > 0 ? totalParaPrecio / sumCantRecibida : 0;
-    const precio = Number(precioBruto.toFixed(2));
+    const cantidades = itemsRecibidos.map((it) => it.cantRecibida);
+    const { precios, diferencia } = distribuirPreciosDiferenciales({
+      cantidades,
+      totalObjetivo: totalParaPrecio,
+    });
+    if (Math.abs(diferencia) > TOLERANCIA_TOTAL_EXPORTACION) {
+      return {
+        success: false,
+        error:
+          "No se pudo ajustar el total del Excel dentro de la tolerancia permitida (0,10).",
+      };
+    }
 
-    const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it) => ({
+    const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it, index) => ({
       "TIPO COMPROBANTE": "Comprobante_Compra",
       "COMPROBANTE": siguienteComprobante,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
@@ -171,7 +261,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
       "CÓDIGO PRODUCTO": it.codTienda,
       "CANTIDAD": it.cantRecibida,
-      "PRECIO": precio,
+      "PRECIO": precios[index],
       "PRECIO INCLUYE IVA": "SI",
     }));
 
