@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import FilterBar, {
+  FILTER_SELECT_WRAPPER_CLASS,
+  FilaFiltrosDesplegables,
+  FilterRowSelection,
+} from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -19,6 +24,14 @@ import {
 } from "@/components/ui/table";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function fmtMonto(s: string): string {
   const n = Number(s);
@@ -34,7 +47,7 @@ function fmtMonto(s: string): string {
  * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
  * - **CAJA DISPONIBLE**: primera fila toma la suma inicial de cajas de tesorería; desde la segunda,
  *   toma el saldo de la fila anterior si es positivo (si no, 0).
- * - **SALDO**: siempre `VTOS ACUMULADOS - CAJA DISPONIBLE`.
+ * - **SALDO**: siempre `CAJA DISPONIBLE - VTOS ACUMULADOS`.
  */
 function filasConVtosYSaldo(
   filasOrdenadas: Array<{
@@ -54,11 +67,8 @@ function filasConVtosYSaldo(
   let saldoAnterior = 0;
   return filasOrdenadas.map((fila, index) => {
     vtosAcum += fila.vencimientoDelDia;
-    const cajaDisponible =
-      index === 0
-        ? Math.max(0, cajaDisponibleInicial)
-        : Math.max(0, saldoAnterior);
-    const saldo = vtosAcum - cajaDisponible;
+    const cajaDisponible = index === 0 ? cajaDisponibleInicial : Math.max(0, saldoAnterior);
+    const saldo = cajaDisponible - vtosAcum;
     saldoAnterior = saldo;
     return {
       ...fila,
@@ -70,13 +80,12 @@ function filasConVtosYSaldo(
 }
 
 export interface VencPorFechaCalendarioProps {
-  rangoDesdeLabel: string;
-  rangoHastaLabel: string;
   /** Suma de saldos con `fecha_venc` &lt; hoy (incluye comprobantes no mostrados en la ventana). */
   saldoVencidoAntesDeHoy: number;
   /** Suma de montos de cajas tesorería para la primera fila de la grilla. */
   cajaDisponibleInicial: number;
   detallesPorDia: Record<string, Array<{ proveedor: string; vencimiento: number }>>;
+  proveedoresConVencimientos: string[];
   filas: Array<{
     isoYmd: string;
     vencimientoDelDia: number;
@@ -87,17 +96,17 @@ export interface VencPorFechaCalendarioProps {
 }
 
 export default function VencPorFechaCalendario({
-  rangoDesdeLabel,
-  rangoHastaLabel,
   saldoVencidoAntesDeHoy,
   cajaDisponibleInicial,
   detallesPorDia,
+  proveedoresConVencimientos,
   filas,
   paginaActual,
   totalPaginas,
   total,
 }: VencPorFechaCalendarioProps) {
   const [detalleIsoYmd, setDetalleIsoYmd] = useState<string | null>(null);
+  const [filtroProveedor, setFiltroProveedor] = useState("");
   const detalleFilas = useMemo(
     () => (detalleIsoYmd ? detallesPorDia[detalleIsoYmd] ?? [] : []),
     [detalleIsoYmd, detallesPorDia]
@@ -114,21 +123,62 @@ export default function VencPorFechaCalendario({
       filasConVtosYSaldo(filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy),
     [filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy]
   );
+  const vencimientoDelDiaPorFila = useMemo(() => {
+    if (!filtroProveedor) {
+      return Object.fromEntries(filas.map((fila) => [fila.isoYmd, fila.vencimientoDelDia]));
+    }
+    const porDia: Record<string, number> = {};
+    for (const fila of filas) {
+      const detalleDia = detallesPorDia[fila.isoYmd] ?? [];
+      const detalleProveedor = detalleDia.find((d) => d.proveedor === filtroProveedor);
+      porDia[fila.isoYmd] = detalleProveedor?.vencimiento ?? 0;
+    }
+    return porDia;
+  }, [detallesPorDia, filas, filtroProveedor]);
+  const haySaldoNegativo = useMemo(
+    () => filasVista.some((fila) => fila.saldo < 0),
+    [filasVista]
+  );
 
   return (
     <>
       <div className="flex flex-1 min-h-0 flex-col gap-3 px-4 pb-4 pt-1 sm:px-6 lg:px-8">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-foreground sm:text-lg">Próximos 150 días</h2>
-            <p className="text-xs text-muted-foreground tabular-nums">
-              {rangoDesdeLabel} — {rangoHastaLabel}
-            </p>
-          </div>
-        </div>
+        <FilterBar className="filtros-contenedor-tienda bg-card">
+          <FilterRowSelection>
+            <FilaFiltrosDesplegables>
+              <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <Select
+                  value={filtroProveedor || "none"}
+                  onValueChange={(valor) => setFiltroProveedor(valor === "none" ? "" : valor)}
+                >
+                  <SelectTrigger className="input-filtro-unificado">
+                    <SelectValue placeholder="PROVEEDOR" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="none">PROVEEDOR</SelectItem>
+                    {proveedoresConVencimientos.map((proveedor) => (
+                      <SelectItem key={proveedor} value={proveedor}>
+                        {proveedor}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </FilaFiltrosDesplegables>
+          </FilterRowSelection>
+        </FilterBar>
 
         <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-          <Table variant="compact" scrollX={false}>
+          <Table
+            variant="compact"
+            scrollX={false}
+            className={cn(haySaldoNegativo && "tabla-venc-por-fecha-alerta")}
+          >
             {/* Cinco columnas al 20% c/u: FECHA, VENCIMIENTO DEL DÍA, VTOS ACUMULADOS, CAJA DISPONIBLE, SALDO */}
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -151,12 +201,13 @@ export default function VencPorFechaCalendario({
                     key={fila.isoYmd}
                     title="Doble clic para ver el detalle por proveedor"
                     onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
+                    className={cn(fila.saldo < 0 && "venc-saldo-negativo")}
                   >
                     <TableCell className="celda-datos w-1/5 text-center font-medium uppercase">
                       {formatMesDiaMayusculasDesdeIsoYmd(fila.isoYmd)}
                     </TableCell>
                     <TableCell className="celda-datos celda-numero w-1/5">
-                      {fmtMonto(String(fila.vencimientoDelDia))}
+                      {fmtMonto(String(vencimientoDelDiaPorFila[fila.isoYmd] ?? 0))}
                     </TableCell>
                     <TableCell className="celda-datos celda-numero w-1/5">
                       {fmtMonto(String(fila.vtosAcumulados))}

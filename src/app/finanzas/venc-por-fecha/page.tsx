@@ -4,7 +4,6 @@ import VencPorFechaCalendario from "@/components/finanzas/VencPorFechaCalendario
 import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
-  formatIsoYmdDdMmYyyyArgentina,
 } from "@/lib/fechaArgentina";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -90,16 +89,18 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
         .sort((a, b) => a.proveedor.localeCompare(b.proveedor)),
     ])
   );
+  const proveedoresConVencimientos = [...new Set(lineas.map((linea) => linea.nombre))]
+    .filter((nombre) => nombre.trim().length > 0)
+    .sort((a, b) => a.localeCompare(b, "es"));
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ClassicFilteredTableLayout title="Finanzas" subtitle="Flujo De Fondos">
         <VencPorFechaCalendario
-          rangoDesdeLabel={formatIsoYmdDdMmYyyyArgentina(hoyIso)}
-          rangoHastaLabel={formatIsoYmdDdMmYyyyArgentina(hastaIso)}
           saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
           cajaDisponibleInicial={cajaDisponibleInicial}
           detallesPorDia={detallesPorDia}
+          proveedoresConVencimientos={proveedoresConVencimientos}
           filas={filas}
           paginaActual={paginaActual}
           totalPaginas={totalPaginas}
