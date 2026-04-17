@@ -104,22 +104,23 @@ export default function TablaControlComprobantes({
 
   function onConfirmarControlado(fila: ControlComprobanteRow) {
     if (!esEditor) return;
-    if (fila.controlado) {
-      toast.info("El comprobante ya está controlado.");
-      return;
-    }
     setPendingId(fila.id);
     startTransition(async () => {
+      const nuevoEstado = !fila.controlado;
       const res = await actualizarControladoComprobanteAction({
         id: fila.id,
-        controlado: true,
+        controlado: nuevoEstado,
       });
       setPendingId(null);
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      toast.success("Estado actualizado.");
+      toast.success(
+        nuevoEstado
+          ? "Comprobante marcado como controlado."
+          : "Comprobante marcado como no controlado."
+      );
       setFilaPendienteControlado(null);
       router.refresh();
     });
@@ -319,19 +320,19 @@ export default function TablaControlComprobantes({
                 onClick={() =>
                   filaPendienteControlado && onConfirmarControlado(filaPendienteControlado)
                 }
-                disabled={
-                  !filaPendienteControlado ||
-                  isPending ||
-                  filaPendienteControlado.controlado
-                }
+                disabled={!filaPendienteControlado || isPending}
               >
-                Marcar Como Controlado
+                {filaPendienteControlado?.controlado
+                  ? "Marcar Como No Controlado"
+                  : "Marcar Como Controlado"}
               </Button>
             </>
           }
         >
           <div className="text-sm text-foreground">
-            Desea marcar este comprobante como &quot;Controlado&quot;?
+            {filaPendienteControlado?.controlado
+              ? "Desea marcar este comprobante como \"No Controlado\"?"
+              : "Desea marcar este comprobante como \"Controlado\"?"}
           </div>
         </AppModal>
       </Dialog>

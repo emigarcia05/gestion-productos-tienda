@@ -302,9 +302,8 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Índices**: `fecha_comp`, `id_proveedor`.
 - **Sync** (`comprobantesProveedorDuxSync.service.ts`):
   - **Una petición (o ráfaga paginada) por cada** `sucursales.id_dux` numérico; entre sucursales respeta `DUX_COMPRAS_MIN_INTERVAL_MS` (igual que `getSiguienteComprobanteDuxCompra`).
-  - **Purga al iniciar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt; **hoy Argentina − 150 días** (misma ventana que `DIAS_VENTANA_COMPRAS_DUX`); el conteo vuelve en `data.eliminadosAntiguos`.
-  - **`fechaDesde`**: máximo `fecha_comp` **después** de la purga; si no queda ninguna fila, **hoy AR − 150 días** (`fechaArgentinaMenosDiasComoDux`) hasta `fechaHasta` (hoy Argentina).
-  - **`fechaHasta`**: “hoy” calendario Argentina (`fechaHastaArgentinaComoDux`).
+  - **Ventana fija de consulta por sync**: `fechaDesde = hoy AR − 150 días` y `fechaHasta = hoy AR + 1 día` (sin depender de `MAX(fecha_comp)` persistida).
+  - **Purga al finalizar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt; `fechaDesde` (mismo límite de retención de 150 días); el conteo vuelve en `data.eliminadosAntiguos`.
   - **Paginación `/compras`**: la API DUX devuelve **como máximo 50** filas por GET (`DUX_COMPRAS_API_PAGE_LIMIT` en `duxComprasApi.ts`). `fetchComprasPagesAcumulado` usa `limit=50` y `offset=0,50,100…` hasta vacío o menos de 50 resultados. `DUX_COMPRAS_SYNC_LIMIT` (opcional) acota 1..50; `DUX_COMPRAS_SYNC_MAX_PAGES` default **500** (techo de seguridad, configurable). Entre páginas y entre sucursales se respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
   - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
 - **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
