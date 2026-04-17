@@ -4,8 +4,9 @@ import type { ServiceResult } from "@/types/service.types";
 
 export interface ControlComprobanteFila {
   id: string;
+  fechaComp: string;
   proveedorNombre: string;
-  idSucursalEmpresa: string;
+  sucursalNombre: string;
   comprobante: string;
   total: Prisma.Decimal;
   montoAplicado: Prisma.Decimal;
@@ -23,8 +24,10 @@ export async function listarControlComprobantes(): Promise<ControlComprobanteFil
     WITH lineas AS (
       SELECT
         c.id AS id,
+        c.fecha_comp::text AS fecha_comp,
         p.nombre AS proveedor_nombre,
         c.id_sucursal_empresa AS id_sucursal_empresa,
+        COALESCE(s.nombre, c.id_sucursal_empresa) AS sucursal_nombre,
         c.comprobante AS comprobante,
         c.total AS total,
         c.monto_aplicado AS monto_aplicado,
@@ -47,11 +50,13 @@ export async function listarControlComprobantes(): Promise<ControlComprobanteFil
         (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
       FROM comprobantes_proveedor c
       INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
+      LEFT JOIN sucursales s ON COALESCE(s.id_dux, '') = c.id_sucursal_empresa
     )
     SELECT
       l.id AS id,
+      l.fecha_comp AS "fechaComp",
       l.proveedor_nombre AS "proveedorNombre",
-      l.id_sucursal_empresa AS "idSucursalEmpresa",
+      l.sucursal_nombre AS "sucursalNombre",
       l.comprobante AS comprobante,
       l.total AS total,
       l.monto_aplicado AS "montoAplicado",
@@ -61,7 +66,7 @@ export async function listarControlComprobantes(): Promise<ControlComprobanteFil
       END::numeric AS "vencimientoSaldo",
       l.controlado AS controlado
     FROM lineas l
-    ORDER BY l.proveedor_nombre ASC, l.comprobante ASC
+    ORDER BY l.fecha_comp ASC, l.proveedor_nombre ASC, l.comprobante ASC
   `;
 
   return rows;

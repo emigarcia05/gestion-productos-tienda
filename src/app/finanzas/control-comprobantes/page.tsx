@@ -16,8 +16,9 @@ export default async function ControlComprobantesPage() {
   const raw = await listarControlComprobantes();
   const filas = raw.map((fila) => ({
     id: fila.id,
+    fechaComp: fila.fechaComp,
     proveedorNombre: fila.proveedorNombre,
-    idSucursalEmpresa: fila.idSucursalEmpresa,
+    sucursalNombre: fila.sucursalNombre,
     comprobante: fila.comprobante,
     total: fila.total.toFixed(2),
     montoAplicado: fila.montoAplicado.toFixed(2),
