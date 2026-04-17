@@ -71,6 +71,17 @@ export function FilterRowNoSearchActions({
   return <div className={cn("flex items-center justify-end w-full", className)}>{children}</div>;
 }
 
+/** Fila 2 alternativa: filtro por rango de fechas (trigger con flecha). */
+export function FilterRowDateRange({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("w-full", className)}>{children}</div>;
+}
+
 /** Color de fuente de todos los filtros (heredable). Usa variable de tema. */
 export const FILTER_TEXT_COLOR_CLASS = "text-foreground";
 
@@ -98,6 +109,10 @@ export const FILTER_INLINE_ACTION_SLOT_CLASS = "min-w-0 flex items-center justif
 /** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
   "text-sm text-primary tabular-nums shrink-0 font-semibold";
+
+/** Trigger estándar para rango de fechas por calendario. */
+export const FILTER_DATE_RANGE_TRIGGER_CLASS =
+  "input-filtro-unificado w-full justify-between text-left font-normal";
 
 /**
  * Botón cuadrado con icono de tacho de basura, al lado del filtro de descripción.
