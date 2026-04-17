@@ -38,7 +38,7 @@ export interface ExportRecepcionPedidoExcelPayload {
 }
 
 const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
-const RANGO_DIAS_CONSULTA_COMPROBANTE_DUX = 30;
+const RANGO_DIAS_CONSULTA_COMPROBANTE_DUX = 5;
 const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
 const TOLERANCIA_TOTAL_EXPORTACION = 0.1; // diferencia máxima permitida contra total ingresado
 
@@ -58,20 +58,6 @@ function formatDuxDdMmYyyy(y: number, m: number, d: number): string {
 
 function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
   return `${pad2(d)}-${pad2(m)}-${y}`;
-}
-
-function addDaysToIsoYmd(
-  iso: string,
-  days: number
-): { y: number; m: number; d: number } {
-  const { y, m, d } = parseIsoYmdParts(iso);
-  const dateUtc = new Date(Date.UTC(y, m - 1, d));
-  dateUtc.setUTCDate(dateUtc.getUTCDate() + days);
-  return {
-    y: dateUtc.getUTCFullYear(),
-    m: dateUtc.getUTCMonth() + 1,
-    d: dateUtc.getUTCDate(),
-  };
 }
 
 function toCentavos(value: number): number {
@@ -205,8 +191,8 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     }
 
     // Regla de negocio: FECHA y FECHA IMPUTACION CONTABLE se exportan
-    // con un día más respecto a la fecha seleccionada en recepción.
-    const { y, m, d } = addDaysToIsoYmd(fechaFacturaIso, 1);
+    // con la misma fecha seleccionada en recepción (sin offset de días).
+    const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);
     const fechaFacturaExcel = formatExcelDdMmYyyyDash(y, m, d);
 
     // La numeración de comprobante siempre se consulta con "hoy" (Argentina),
@@ -222,7 +208,13 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       desdeUtc.getUTCMonth() + 1,
       desdeUtc.getUTCDate()
     );
-    const fechaHastaComprobante = formatDuxDdMmYyyy(yHoy, mHoy, dHoy);
+    const hastaUtc = new Date(hoyUtc);
+    hastaUtc.setUTCDate(hoyUtc.getUTCDate() + 1);
+    const fechaHastaComprobante = formatDuxDdMmYyyy(
+      hastaUtc.getUTCFullYear(),
+      hastaUtc.getUTCMonth() + 1,
+      hastaUtc.getUTCDate()
+    );
 
     const { siguienteComprobante, totalImporte } =
       await getSiguienteComprobanteDuxCompra({
