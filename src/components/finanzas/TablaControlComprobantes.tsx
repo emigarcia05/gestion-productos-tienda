@@ -6,6 +6,7 @@ import { CalendarDays, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { actualizarControladoComprobanteAction } from "@/actions/controlComprobantes";
 import AppModal from "@/components/shared/AppModal";
+import FiltroRangoFechasCalendarioModal from "@/components/shared/FiltroRangoFechasCalendarioModal";
 import FilterBar, {
   FILTER_DATE_RANGE_TRIGGER_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
@@ -33,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface ControlComprobanteRow {
@@ -335,63 +335,20 @@ export default function TablaControlComprobantes({
           </Table>
         </div>
       </div>
-      <Dialog
+      <FiltroRangoFechasCalendarioModal
         open={openRangoFechas}
         onOpenChange={setOpenRangoFechas}
-      >
-        <AppModal
-          title="Rango De Fechas"
-          size="sm"
-          actions={
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setFiltroFechaDesde("");
-                  setFiltroFechaHasta("");
-                }}
-              >
-                Limpiar
-              </Button>
-              <Button type="button" onClick={() => setOpenRangoFechas(false)}>
-                Aplicar
-              </Button>
-            </>
-          }
-        >
-          <div className="grid grid-cols-1 gap-3">
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              FECHA DESDE
-              <Input
-                type="date"
-                className="input-filtro-unificado"
-                value={filtroFechaDesde}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFiltroFechaDesde(value);
-                  if (filtroFechaHasta && value && filtroFechaHasta < value) {
-                    setFiltroFechaHasta(value);
-                  }
-                }}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              FECHA HASTA
-              <Input
-                type="date"
-                className="input-filtro-unificado"
-                value={filtroFechaHasta}
-                min={filtroFechaDesde || undefined}
-                onChange={(e) => setFiltroFechaHasta(e.target.value)}
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Seleccioná fecha desde y fecha hasta para filtrar por rango.
-            </p>
-          </div>
-        </AppModal>
-      </Dialog>
+        fechaDesde={filtroFechaDesde}
+        fechaHasta={filtroFechaHasta}
+        onAplicarRango={(desde, hasta) => {
+          setFiltroFechaDesde(desde);
+          setFiltroFechaHasta(hasta);
+        }}
+        onLimpiar={() => {
+          setFiltroFechaDesde("");
+          setFiltroFechaHasta("");
+        }}
+      />
       <Dialog
         open={filaPendienteControlado !== null}
         onOpenChange={(open) => !open && setFilaPendienteControlado(null)}
