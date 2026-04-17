@@ -334,9 +334,10 @@ Modelo de datos para registrar movimientos con monto y sucursal:
   - `movimientos_finanzas(sucursal_id, tipo_gasto)` — índice `movimientos_finanzas_sucursal_id_tipo_gasto_idx` (migración `20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto`; antes `tipo`).
   - `movimientos_finanzas_cheques(movimiento_finanzas_id, fecha_cobro)`
 - **Migración**: `prisma/migrations/20260402110000_add_movimientos_finanzas_y_cheques/migration.sql` + `prisma/migrations/20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto/migration.sql`.
+- **Sucursal "CORPORATIVO"**: fila maestra en `sucursales` con `codigo = 'corporativo'`, `nombre = 'CORPORATIVO'`, `pedido = FALSE` e `id_dux = NULL`. Id fijo `'suc_corporativo'`. Se usa en el select de Gastos para registrar movimientos sin sucursal física (sueldos de administración, servicios centrales, etc.). Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`duxCompras.service.ts`, `comprobantesProveedorDuxSync.service.ts`). Alta vía migración `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` (idempotente con `ON CONFLICT (codigo) DO NOTHING`).
 - **Servicio**: `src/services/movimientosFinanzas.service.ts`
   - `listarMovimientosFinanzas()`: lista ordenada por `createdAt` descendente, con `include: { sucursal: { select: { nombre: true } } }`; `nombre` se devuelve en MAYÚSCULAS; `monto` convertido a `number`.
-  - `listarSucursalesParaGastos()`: `prisma.sucursal.findMany({ select: { id, nombre }, orderBy: { nombre: "asc" } })` para alimentar el select del modal.
+  - `listarSucursalesParaGastos()`: `prisma.sucursal.findMany({ select: { id, nombre }, orderBy: { nombre: "asc" } })` para alimentar el select del modal. Incluye **CORPORATIVO** (ver punto anterior).
   - `crearMovimientoFinanzas(input)`: alta con `nombre` normalizado a MAYÚSCULAS y `monto` `Decimal(14,2)`; maneja `P2003` (sucursal inválida) como `ServiceResult.error`.
 - **Actions**: `src/actions/movimientosFinanzas.ts`
   - `crearMovimientoFinanzasAction(raw)`: gate `PERMISOS.finanzas.acceso` + `esEditor()`; Zod `crearMovimientoFinanzasSchema`; revalida `/finanzas` y `/finanzas/balance/gastos`.
@@ -401,6 +402,13 @@ Modelo para nombres canónicos de **rubro** y **gasto** ligados a **tipo de cost
   - índice `finanzas_gastos_rubro_id_idx` en `rubro_id`.
 - **Convención**: al persistir desde app, normalizar `nombre` (rubro y gasto) en **MAYÚSCULAS** y `trim`, alineado a otros catálogos finanzas (p. ej. cajas tesorería).
 - **Migración**: `prisma/migrations/20260418120000_add_finanzas_rubros_y_gastos_catalogo/migration.sql`.
+- **Servicio**: `src/services/finanzasGastosCatalogo.service.ts`
+  - `listarRubrosCatalogo()`: `prisma.finanzasRubro.findMany({ select: { id, nombre }, orderBy: { nombre: "asc" } })`; devuelve nombre en MAYÚSCULAS.
+  - `crearGastoCatalogo(input)`: **transacción** (`prisma.$transaction`). Si `rubroId` existe, valida que el rubro esté vigente; si se usa `rubroNombreNuevo`, hace `finanzasRubro.upsert({ where: { nombre } })` (MAYÚSCULAS) y usa ese `id`. Luego crea `finanzasGasto` con `tipoCosto` y `nombre` (MAYÚSCULAS). Normaliza errores: `P2002` → "Ya existe un gasto con ese rubro, tipo de costo y nombre."; `P2025` → "Rubro no encontrado."
+- **Actions**: `src/actions/finanzasGastosCatalogo.ts`
+  - `crearGastoCatalogoAction(raw)`: gate `PERMISOS.finanzas.acceso` + `esEditor()`; valida con `crearGastoCatalogoSchema` (discriminated union por `modoRubro`: `"EXISTENTE"` con `rubroId` o `"NUEVO"` con `rubroNombreNuevo`); revalida `/finanzas` y `/finanzas/balance/gastos`.
+- **Validaciones**: `src/lib/validations/finanzasGastosCatalogo.ts` (`tipoCostoGastoSchema` `VARIABLE|FIJO`, `crearGastoCatalogoSchema` discriminado por `modoRubro`; `nombre` y `rubroNombreNuevo` con `trim + toUpperCase`).
+- **Consumo**: el Server Component `src/app/finanzas/balance/gastos/page.tsx` llama a `listarRubrosCatalogo()` en paralelo con los otros fetchs y pasa los rubros al client (`FinanzasBalanceGastosPageClient` → `CrearGastoCatalogoModal`).
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
@@ -629,6 +637,7 @@ Notas:
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema`, `eliminarCajaTesoreriaSchema`, `tipoCajaTesoreriaSchema`. |
 | `@/lib/validations/movimientosFinanzas.ts` | `crearMovimientoFinanzasSchema`, `tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`. |
+| `@/lib/validations/finanzasGastosCatalogo.ts` | `crearGastoCatalogoSchema` (discriminated union `modoRubro`), `tipoCostoGastoSchema`. |
 
 Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a validación, usar `z.infer<typeof schema>` en `src/lib/validations/*.ts`.
 

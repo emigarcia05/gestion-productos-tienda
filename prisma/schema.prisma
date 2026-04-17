@@ -73,7 +73,7 @@ model ComprobanteProveedor {
 // Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX y flag de habilitación para pedidos.
 model Sucursal {
   id             String   @id @default(cuid())
-  codigo         String   @unique // guaymallen | maipu (estable en URLs y FKs)
+  codigo         String   @unique // guaymallen | maipu | corporativo (estable en URLs y FKs)
   nombre         String
   deposito       String?  // DEPÓSITO para exportaciones (texto para preservar formato)
   whatsapp       String?  @map("whatsapp")
