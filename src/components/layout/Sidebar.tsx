@@ -24,6 +24,8 @@ import {
   Wallet,
   CalendarDays,
   Banknote,
+  Scale,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -42,7 +44,7 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId = "proveedores" | "tienda" | "pedidos";
-type FinanzasModuleId = "finanzas-main";
+type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
 interface SubmoduleItem {
@@ -133,6 +135,19 @@ const FINANZAS_MODULES: {
   submodules: SubmoduleItem[];
 }[] = [
   {
+    id: "balance",
+    label: "BALANCE",
+    icon: <Scale className={iconClass} />,
+    submodules: [
+      {
+        href: "/finanzas/balance/gastos",
+        label: "Gastos",
+        icon: <Receipt className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+    ],
+  },
+  {
     id: "finanzas-main",
     label: "FINANZAS",
     icon: <Landmark className={iconClass} />,
@@ -166,6 +181,7 @@ const FINANZAS_MODULES: {
 ];
 
 function getOpenModule(pathname: string): SidebarModuleId {
+  if (pathname.startsWith("/finanzas/balance")) return "balance";
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
   if (pathname === "/" || pathname.startsWith("/gestion-productos/proveedores") || pathname.startsWith("/proveedores")) return "proveedores";
   if (pathname.startsWith("/gestion-productos/tienda") || pathname.startsWith("/tienda")) return "tienda";
@@ -186,6 +202,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   if (href === "/finanzas/control-comprobantes") return pathname === "/finanzas/control-comprobantes";
+  if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
   return pathname === href;
 }
 

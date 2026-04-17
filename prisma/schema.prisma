@@ -19,6 +19,12 @@ enum TipoCajaTesoreria {
   CHEQUE
 }
 
+/** Costo asociado a un gasto de catálogo (finanzas). */
+enum TipoCostoGasto {
+  VARIABLE
+  FIJO
+}
+
 model Proveedor {
   id              String   @id @default(cuid())
   nombre          String   @unique
@@ -89,7 +95,7 @@ model Sucursal {
 model MovimientoFinanzas {
   id         String   @id @default(cuid())
   nombre     String
-  tipo       TipoMovimientoFinanzas
+  tipoGasto  TipoMovimientoFinanzas @map("tipo_gasto")
   sucursalId String   @map("sucursal_id")
   monto      Decimal  @db.Decimal(14, 2)
   createdAt  DateTime @default(now()) @map("created_at")
@@ -98,7 +104,7 @@ model MovimientoFinanzas {
   sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
   cheques  MovimientoFinanzasCheque[]
 
-  @@index([sucursalId, tipo])
+  @@index([sucursalId, tipoGasto])
   @@map("movimientos_finanzas")
 }
 
@@ -131,6 +137,33 @@ model CajaTesoreria {
   @@unique([nombreCaja, titular], map: "cajas_tesoreria_nombre_titular_ux")
   @@index([tipoCaja])
   @@map("cajas_tesoreria")
+}
+
+// Catálogo finanzas: rubro → gastos con tipo de costo (Variable / Fijo). Nombres únicos por rubro + tipo + nombre de gasto.
+model FinanzasRubro {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  gastos FinanzasGasto[]
+
+  @@map("finanzas_rubros")
+}
+
+model FinanzasGasto {
+  id         String         @id @default(cuid())
+  rubroId    String         @map("rubro_id")
+  tipoCosto  TipoCostoGasto @map("tipo_costo")
+  nombre     String
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  rubro FinanzasRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
+
+  @@unique([rubroId, tipoCosto, nombre], map: "finanzas_gastos_rubro_tipo_nombre_ux")
+  @@index([rubroId])
+  @@map("finanzas_gastos")
 }
 
 model ListaPrecioProveedor {

@@ -323,7 +323,7 @@ Modelo de datos para registrar movimientos con monto y sucursal:
 
 - **Cabecera** (`MovimientoFinanzas` → tabla `movimientos_finanzas`):
   - `nombre`: texto del movimiento.
-  - `tipo`: enum `TipoMovimientoFinanzas` = `EFECTIVO | BANCO | CHEQUE`.
+  - `tipo_gasto` (Prisma `tipoGasto`): enum `TipoMovimientoFinanzas` = `EFECTIVO | BANCO | CHEQUE`.
   - `sucursal_id`: FK a `sucursales.id`.
   - `monto`: `DECIMAL(14,2)`.
 - **Detalle de cheques** (`MovimientoFinanzasCheque` → tabla `movimientos_finanzas_cheques`):
@@ -331,9 +331,17 @@ Modelo de datos para registrar movimientos con monto y sucursal:
   - `fecha_cobro`: `DATE`.
   - `monto`: `DECIMAL(14,2)` (permite múltiples cheques con importes distintos por movimiento).
 - **Índices**:
-  - `movimientos_finanzas(sucursal_id, tipo)`
+  - `movimientos_finanzas(sucursal_id, tipo_gasto)` — índice `movimientos_finanzas_sucursal_id_tipo_gasto_idx` (migración `20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto`; antes `tipo`).
   - `movimientos_finanzas_cheques(movimiento_finanzas_id, fecha_cobro)`
-- **Migración**: `prisma/migrations/20260402110000_add_movimientos_finanzas_y_cheques/migration.sql`.
+- **Migración**: `prisma/migrations/20260402110000_add_movimientos_finanzas_y_cheques/migration.sql` + `prisma/migrations/20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto/migration.sql`.
+- **Servicio**: `src/services/movimientosFinanzas.service.ts`
+  - `listarMovimientosFinanzas()`: lista ordenada por `createdAt` descendente, con `include: { sucursal: { select: { nombre: true } } }`; `nombre` se devuelve en MAYÚSCULAS; `monto` convertido a `number`.
+  - `listarSucursalesParaGastos()`: `prisma.sucursal.findMany({ select: { id, nombre }, orderBy: { nombre: "asc" } })` para alimentar el select del modal.
+  - `crearMovimientoFinanzas(input)`: alta con `nombre` normalizado a MAYÚSCULAS y `monto` `Decimal(14,2)`; maneja `P2003` (sucursal inválida) como `ServiceResult.error`.
+- **Actions**: `src/actions/movimientosFinanzas.ts`
+  - `crearMovimientoFinanzasAction(raw)`: gate `PERMISOS.finanzas.acceso` + `esEditor()`; Zod `crearMovimientoFinanzasSchema`; revalida `/finanzas` y `/finanzas/balance/gastos`.
+  - Validación con Zod en `src/lib/validations/movimientosFinanzas.ts` (`tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`, `crearMovimientoFinanzasSchema`; `nombre` `trim + toUpperCase`, `sucursalId` `prismaCuidSchema`, `monto` numérico finito con tope `< 1e12`).
+- **Página**: `src/app/finanzas/balance/gastos/page.tsx` (Server Component con `getRol()` + `PERMISOS.finanzas.acceso`) consume `listarMovimientosFinanzas()` y `listarSucursalesParaGastos()` y pasa filas + sucursales al client `FinanzasBalanceGastosPageClient` que renderiza `TablaGastos` y el modal `NuevoGastoModal`.
 
 ### 2.5c Cajas de tesorería (`cajas_tesoreria`, Prisma: `CajaTesoreria`)
 
@@ -372,6 +380,27 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - `titular` queda restringido por whitelist (alta y edición): `SUC. GUAYMALLEN`, `SUC. MAIPU`, `WALTER GARCIA`, `FERNANDO PANAIA`, `EMILIANO GARCIA`, `VANESA GARCIA` (constante compartida `src/lib/cajasTesoreriaTitulares.ts`).
   - `nombre_caja` y `titular` se normalizan y persisten en MAYÚSCULAS en servicio (`crearCajaTesoreria`/`editarCajaTesoreria`), y la lectura también expone esos campos en MAYÚSCULAS para UI consistente.
   - Revalidación de rutas: `/finanzas` y `/finanzas/tesoreria`.
+
+### 2.5d Catálogo finanzas — rubros y gastos (`finanzas_rubros`, `finanzas_gastos`)
+
+Modelo para nombres canónicos de **rubro** y **gasto** ligados a **tipo de costo** (Variable / Fijo). Sirve de FK para futuras tablas de movimientos (fecha, sucursal, proveedor, monto, etc.).
+
+- **Enum** `TipoCostoGasto` (PostgreSQL/Prisma): `VARIABLE` \| `FIJO`.
+- **Tabla** `finanzas_rubros` (Prisma: `FinanzasRubro`):
+  - `id` (`TEXT`, PK; `cuid()` en app).
+  - `nombre` (`TEXT`, **único**): nombre oficial del rubro.
+  - `created_at`, `updated_at` (`TIMESTAMP(3)`).
+- **Tabla** `finanzas_gastos` (Prisma: `FinanzasGasto`):
+  - `id` (`TEXT`, PK; `cuid()` en app).
+  - `rubro_id` → FK `finanzas_rubros.id` (`onDelete: Restrict`).
+  - `tipo_costo` → `TipoCostoGasto`.
+  - `nombre` (`TEXT`): nombre oficial del gasto dentro del rubro y tipo.
+  - `created_at`, `updated_at` (`TIMESTAMP(3)`).
+- **Integridad**:
+  - índice único `finanzas_gastos_rubro_tipo_nombre_ux` en `(rubro_id, tipo_costo, nombre)` — no duplicar la misma terna.
+  - índice `finanzas_gastos_rubro_id_idx` en `rubro_id`.
+- **Convención**: al persistir desde app, normalizar `nombre` (rubro y gasto) en **MAYÚSCULAS** y `trim`, alineado a otros catálogos finanzas (p. ej. cajas tesorería).
+- **Migración**: `prisma/migrations/20260418120000_add_finanzas_rubros_y_gastos_catalogo/migration.sql`.
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
@@ -599,6 +628,7 @@ Notas:
 | `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema`, `eliminarCajaTesoreriaSchema`, `tipoCajaTesoreriaSchema`. |
+| `@/lib/validations/movimientosFinanzas.ts` | `crearMovimientoFinanzasSchema`, `tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`. |
 
 Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a validación, usar `z.infer<typeof schema>` en `src/lib/validations/*.ts`.
 
