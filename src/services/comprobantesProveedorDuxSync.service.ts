@@ -98,10 +98,25 @@ function delay(ms: number): Promise<void> {
 }
 
 function toMoney(raw: string | undefined): Prisma.Decimal | null {
-  const s = String(raw ?? "")
-    .trim()
-    .replace(",", ".");
-  const n = Number.parseFloat(s);
+  const rawText = String(raw ?? "").trim();
+  if (!rawText) return null;
+
+  // Soporta formatos con punto/coma (ej. "504366.84", "504.366,84", "504366,84").
+  const compact = rawText.replace(/\s+/g, "");
+  const lastDot = compact.lastIndexOf(".");
+  const lastComma = compact.lastIndexOf(",");
+
+  let normalized = compact;
+  if (lastDot >= 0 && lastComma >= 0) {
+    const decimalSeparator = lastDot > lastComma ? "." : ",";
+    const thousandSeparator = decimalSeparator === "." ? "," : ".";
+    normalized = compact.split(thousandSeparator).join("");
+    if (decimalSeparator === ",") normalized = normalized.replace(",", ".");
+  } else if (lastComma >= 0) {
+    normalized = compact.replace(",", ".");
+  }
+
+  const n = Number.parseFloat(normalized);
   if (!Number.isFinite(n)) return null;
   return new Prisma.Decimal(n.toFixed(2));
 }
@@ -198,7 +213,7 @@ export interface SyncComprobantesProveedorDuxResult {
  * Usa ventana fija de consulta:
  * - `fechaDesde`: hoy AR − `DIAS_VENTANA_COMPRAS_DUX` (150) días.
  * - `fechaHasta`: hoy AR + 1 día.
- * Al finalizar la persistencia, borra filas con `fecha_comp` anterior a `fechaDesde`.
+ * Al finalizar la persistencia, borra filas con `fecha_comp` menor o igual a `fechaDesde`.
  */
 export async function sincronizarComprobantesProveedorDesdeDux(params?: {
   idEmpresa?: number;
@@ -296,7 +311,7 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
     }
 
     const purga = await prisma.comprobanteProveedor.deleteMany({
-      where: { fechaComp: { lt: limite } },
+      where: { fechaComp: { lte: limite } },
     });
     const eliminadosAntiguos = purga.count;
 
