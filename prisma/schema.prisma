@@ -52,6 +52,7 @@ model ComprobanteProveedor {
   idProveedor        String   @map("id_proveedor")
   total              Decimal  @map("total") @db.Decimal(14, 2)
   montoAplicado      Decimal  @map("monto_aplicado") @db.Decimal(14, 2)
+  controlado         Boolean  @default(false)
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 

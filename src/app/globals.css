@@ -827,15 +827,8 @@
 }
 
 /* Flujo de fondos (Finanzas): alerta visual cuando hay saldo negativo.
- * Encabezado rojo suave para toda la tabla y filas negativas con fondo rojo claro.
+ * El encabezado conserva siempre el color original (primary); solo cambian filas negativas.
  */
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta thead,
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta thead tr,
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta thead th,
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta thead tr:hover,
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta thead tr:hover th {
-  background-color: color-mix(in oklab, var(--destructive) 72%, var(--card)) !important;
-}
 .tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo {
   --tabla-row-bg: color-mix(in oklab, var(--destructive) 9%, var(--card));
   background-color: color-mix(in oklab, var(--destructive) 9%, var(--card)) !important;

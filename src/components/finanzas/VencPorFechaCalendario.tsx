@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import FilterBar, {
+  FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FilaFiltrosDesplegables,
   FilterRowSelection,
+  LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -168,6 +170,12 @@ export default function VencPorFechaCalendario({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-4")}>
+                <LimpiarFiltrosButton
+                  visible={!!filtroProveedor}
+                  onClick={() => setFiltroProveedor("")}
+                />
               </div>
             </FilaFiltrosDesplegables>
           </FilterRowSelection>

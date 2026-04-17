@@ -144,15 +144,21 @@ const FINANZAS_MODULES: {
         permiso: PERMISOS.finanzas.acceso,
       },
       {
+        href: "/finanzas/venc-por-fecha",
+        label: "Flujo De Fondo",
+        icon: <CalendarDays className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
         href: "/finanzas/deuda-proveedores",
-        label: "Deuda Proveedores",
+        label: "Saldo Proveedores",
         icon: <Wallet className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
       {
-        href: "/finanzas/venc-por-fecha",
-        label: "Flujo De Fondos",
-        icon: <CalendarDays className="h-4 w-4 shrink-0" />,
+        href: "/finanzas/control-comprobantes",
+        label: "Control Comprobantes",
+        icon: <FileSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
     ],
@@ -179,6 +185,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/finanzas/tesoreria") return pathname === "/finanzas/tesoreria";
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
+  if (href === "/finanzas/control-comprobantes") return pathname === "/finanzas/control-comprobantes";
   return pathname === href;
 }
 

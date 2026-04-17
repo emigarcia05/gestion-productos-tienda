@@ -95,7 +95,7 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Flujo De Fondos">
+      <ClassicFilteredTableLayout title="Finanzas" subtitle="Flujo De Fondo">
         <VencPorFechaCalendario
           saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
           cajaDisponibleInicial={cajaDisponibleInicial}

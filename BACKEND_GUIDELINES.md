@@ -294,6 +294,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 | `id_proveedor`         | `idProveedor`        | `id_proveedor` | FK → `proveedores.id_proveedor_dux` |
 | `total`                | `total`              | `total` | `NUMERIC(14,2)` |
 | `monto_aplicado`       | `montoAplicado`      | `monto_aplicado` / `monto_pagado` | `NUMERIC(14,2)` |
+| `controlado`           | `controlado`         | — | `BOOLEAN NOT NULL DEFAULT FALSE`; control interno post-sync |
 | `created_at`           | `createdAt`          | — | |
 | `updated_at`           | `updatedAt`          | — | |
 
@@ -309,7 +310,11 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
 - **Deuda por proveedor (Finanzas)**: `listarDeudaProveedores` en `src/services/deudaProveedores.service.ts` — por cada línea con saldo (`total > monto_aplicado`), **fecha de vencimiento** = `fecha_comp` + primer plazo en `proveedores.plazos_pagos` (CSV; si falta o no es numérico → **30** días; mínimo **1** día). **Hoy** = fecha en `America/Argentina/Buenos_Aires`. Columnas agregadas: **deuda total**, **vencida** (`fecha_venc` &lt; hoy), **5 / 30 / 45 / 60 DÍAS** según ventanas `hoy … hoy+5`, `hoy+6 … hoy+30`, `hoy+31 … hoy+45`, `≥ hoy+46`. Lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso`.
 - **Venc. por fecha (Finanzas)**: `listarVencimientosEnRango(fechaDesde, fechaHasta)` y **`sumarSaldoVencimientosConFechaVencAnteriorA(fechaIso)`** en `src/services/vencimientosPorFecha.service.ts` — misma CTE y `fecha_venc` que arriba; el listado filtra `fecha_venc` en `[hoy, hoy + 150 días]` **inclusive**. **`sumarSaldoVencimientosConFechaVencAnteriorA`** devuelve la suma de saldos con **`fecha_venc` &lt; hoy** (deuda vencida anterior a la ventana y a cualquier día mostrado). La página `src/app/finanzas/venc-por-fecha/page.tsx` usa ambas: la columna **VTOS ACUMULADOS** = ese total previo + suma corrida del **vencimiento del día** por cada fila de la tabla; **SALDO** en UI se calcula por fila como **`CAJA DISPONIBLE - VTOS ACUMULADOS`**. El paginado se resuelve en la page por query **`pagina`** con estándar global **`PAGE_SIZE = 100`** (slice server-side). **CAJA DISPONIBLE** toma la suma de montos de `cajas_tesoreria` en la primera fila y, desde la segunda, usa `max(SALDO de la fila anterior, 0)`.
-- **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique).
+- **Control Comprobantes (Finanzas)**:
+  - Lectura: `listarControlComprobantes()` en `src/services/controlComprobantes.service.ts` (join `comprobantes_proveedor` + `proveedores`) devuelve: `proveedorNombre`, `idSucursalEmpresa`, `comprobante`, `total`, `montoAplicado`, `controlado` y `vencimientoSaldo`.
+  - Regla de **VENCIMIENTO**: `vencimientoSaldo` = `total - monto_aplicado` **solo** cuando `saldo > 0` y `fecha_venc < hoy` (misma fórmula de `fecha_venc` por primer plazo `plazos_pagos`, default 30, mínimo 1); en caso contrario `0`.
+  - Escritura: `actualizarControladoComprobanteAction(raw)` en `src/actions/controlComprobantes.ts` valida `{ id, controlado }` con Zod (`id` CUID), exige `getRol()+puede(PERMISOS.finanzas.acceso)` y `esEditor()`, delega en `actualizarControladoComprobante()`, y revalida `/finanzas` + `/finanzas/control-comprobantes`.
+- **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_comprobantes_proveedor_dux_campos` (renombres + `id_sucursal_empresa` + unique) y `20260417123000_add_controlado_to_comprobantes_proveedor` (`controlado BOOLEAN NOT NULL DEFAULT FALSE`).
 
 ### 2.5b Movimientos de finanzas por sucursal (`movimientos_finanzas`) + cheques (`movimientos_finanzas_cheques`)
 

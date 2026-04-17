@@ -22,10 +22,13 @@ export default async function FinanzasPage() {
               <Link href="/finanzas/tesoreria">Tesorería</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-              <Link href="/finanzas/deuda-proveedores">Deuda Proveedores</Link>
+              <Link href="/finanzas/venc-por-fecha">Flujo De Fondo</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-              <Link href="/finanzas/venc-por-fecha">Flujo De Fondos</Link>
+              <Link href="/finanzas/deuda-proveedores">Saldo Proveedores</Link>
+            </Button>
+            <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
+              <Link href="/finanzas/control-comprobantes">Control Comprobantes</Link>
             </Button>
           </div>
         }
@@ -34,9 +37,10 @@ export default async function FinanzasPage() {
         <div className="flex flex-col gap-4">
           {esEditor ? <SincronizarComprobantesProveedorDuxButton /> : null}
           <p className="text-sm text-muted-foreground">
-            Tesorería lista las cajas de tesorería con sucursal, tipo, monto y última actualización. Deuda
-            Proveedores resume saldos por proveedor y columnas por ventana de vencimiento. Flujo De Fondos muestra
-            vencimientos por día en una ventana fija. Acceso desde la cabecera o slidenav (FINANZAS).
+            Tesorería lista las cajas de tesorería con sucursal, tipo, monto y última actualización. Flujo De Fondo
+            muestra vencimientos por día en una ventana fija. Saldo Proveedores resume saldos por proveedor y columnas
+            por ventana de vencimiento. Control Comprobantes centraliza el seguimiento de comprobantes. Acceso desde
+            la cabecera o slidenav (FINANZAS).
           </p>
         </div>
       </div>
