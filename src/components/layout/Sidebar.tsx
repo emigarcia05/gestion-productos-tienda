@@ -26,6 +26,7 @@ import {
   Banknote,
   Scale,
   Receipt,
+  FolderTree,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -145,6 +146,12 @@ const FINANZAS_MODULES: {
         icon: <Receipt className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
+      {
+        href: "/finanzas/balance/gastos/catalogo",
+        label: "Catálogo Gastos",
+        icon: <FolderTree className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
     ],
   },
   {
@@ -203,6 +210,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   if (href === "/finanzas/control-comprobantes") return pathname === "/finanzas/control-comprobantes";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
+  if (href === "/finanzas/balance/gastos/catalogo") return pathname === "/finanzas/balance/gastos/catalogo";
   return pathname === href;
 }
 

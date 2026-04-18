@@ -2,33 +2,32 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FolderPlus, Plus } from "lucide-react";
+import { Plus, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaGastos, { type GastoFila } from "@/components/finanzas/TablaGastos";
 import NuevoGastoModal, {
   type SucursalOptionFila,
 } from "@/components/finanzas/NuevoGastoModal";
-import CrearGastoCatalogoModal, {
-  type RubroCatalogoFila,
-} from "@/components/finanzas/CrearGastoCatalogoModal";
+import CrearFinBalGastoModal from "@/components/finanzas/CrearFinBalGastoModal";
+import type { FinBalGastoJerarquiaTipo } from "@/services/finBalGastosCatalogo.service";
 
 interface Props {
   filas: GastoFila[];
   sucursales: SucursalOptionFila[];
-  rubros: RubroCatalogoFila[];
+  jerarquiaGastos: FinBalGastoJerarquiaTipo[];
   esEditor: boolean;
 }
 
 export default function FinanzasBalanceGastosPageClient({
   filas,
   sucursales,
-  rubros,
+  jerarquiaGastos,
   esEditor,
 }: Props) {
   const router = useRouter();
-  const [openNuevo, setOpenNuevo] = useState(false);
-  const [openCrearCatalogo, setOpenCrearCatalogo] = useState(false);
+  const [openNuevoMovimiento, setOpenNuevoMovimiento] = useState(false);
+  const [openCrearGasto, setOpenCrearGasto] = useState(false);
 
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
@@ -41,15 +40,15 @@ export default function FinanzasBalanceGastosPageClient({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpenCrearCatalogo(true)}
-                className="h-10 px-4 gap-2"
+                onClick={() => setOpenCrearGasto(true)}
+                className="h-10 gap-2 px-4"
               >
                 <FolderPlus className="h-4 w-4 shrink-0" aria-hidden />
                 Crear Gasto
               </Button>
               <Button
                 type="button"
-                onClick={() => setOpenNuevo(true)}
+                onClick={() => setOpenNuevoMovimiento(true)}
                 className="h-10 px-4 gap-2"
               >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden />
@@ -61,15 +60,15 @@ export default function FinanzasBalanceGastosPageClient({
       >
         <TablaGastos filas={filas} />
         <NuevoGastoModal
-          open={openNuevo}
-          onOpenChange={setOpenNuevo}
+          open={openNuevoMovimiento}
+          onOpenChange={setOpenNuevoMovimiento}
           sucursales={sucursales}
           onCreated={() => router.refresh()}
         />
-        <CrearGastoCatalogoModal
-          open={openCrearCatalogo}
-          onOpenChange={setOpenCrearCatalogo}
-          rubros={rubros}
+        <CrearFinBalGastoModal
+          open={openCrearGasto}
+          onOpenChange={setOpenCrearGasto}
+          jerarquia={jerarquiaGastos}
           onCreated={() => router.refresh()}
         />
       </ClassicFilteredTableLayout>

@@ -19,12 +19,6 @@ enum TipoCajaTesoreria {
   CHEQUE
 }
 
-/** Costo asociado a un gasto de catálogo (finanzas). */
-enum TipoCostoGasto {
-  VARIABLE
-  FIJO
-}
-
 model Proveedor {
   id              String   @id @default(cuid())
   nombre          String   @unique
@@ -139,31 +133,48 @@ model CajaTesoreria {
   @@map("cajas_tesoreria")
 }
 
-// Catálogo finanzas: rubro → gastos con tipo de costo (Variable / Fijo). Nombres únicos por rubro + tipo + nombre de gasto.
-model FinanzasRubro {
+// Catálogo raíz de la jerarquía Finanzas → Balance → Gastos: Tipo (1) ─→ Rubros (N) ─→ Gastos (N).
+// `nombre` único global; persistido en MAYÚSCULAS desde service/action.
+model FinBalGastoTipo {
   id        String   @id @default(cuid())
   nombre    String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  gastos FinanzasGasto[]
+  rubros FinBalGastoRubro[]
 
-  @@map("finanzas_rubros")
+  @@map("fin_bal_gasto_tipo")
 }
 
-model FinanzasGasto {
-  id         String         @id @default(cuid())
-  rubroId    String         @map("rubro_id")
-  tipoCosto  TipoCostoGasto @map("tipo_costo")
-  nombre     String
-  createdAt  DateTime       @default(now()) @map("created_at")
-  updatedAt  DateTime       @updatedAt @map("updated_at")
+// Rubro dentro de un Tipo. `nombre` único por `tipo_id` (puede repetirse entre tipos).
+model FinBalGastoRubro {
+  id        String   @id @default(cuid())
+  nombre    String
+  tipoId    String   @map("tipo_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  rubro FinanzasRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
+  tipo   FinBalGastoTipo @relation(fields: [tipoId], references: [id], onDelete: Restrict)
+  gastos FinBalGasto[]
 
-  @@unique([rubroId, tipoCosto, nombre], map: "finanzas_gastos_rubro_tipo_nombre_ux")
+  @@unique([tipoId, nombre], map: "fin_bal_gasto_rubro_tipo_nombre_ux")
+  @@index([tipoId])
+  @@map("fin_bal_gasto_rubro")
+}
+
+// Gasto (hoja de la jerarquía) dentro de un Rubro. `nombre` único por `rubro_id`.
+model FinBalGasto {
+  id        String   @id @default(cuid())
+  nombre    String
+  rubroId   String   @map("rubro_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rubro FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
+
+  @@unique([rubroId, nombre], map: "fin_bal_gasto_rubro_nombre_ux")
   @@index([rubroId])
-  @@map("finanzas_gastos")
+  @@map("fin_bal_gasto")
 }
 
 model ListaPrecioProveedor {

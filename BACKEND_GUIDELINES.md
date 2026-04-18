@@ -382,33 +382,87 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - `nombre_caja` y `titular` se normalizan y persisten en MAYÚSCULAS en servicio (`crearCajaTesoreria`/`editarCajaTesoreria`), y la lectura también expone esos campos en MAYÚSCULAS para UI consistente.
   - Revalidación de rutas: `/finanzas` y `/finanzas/tesoreria`.
 
-### 2.5d Catálogo finanzas — rubros y gastos (`finanzas_rubros`, `finanzas_gastos`)
+### 2.5e Catálogo jerárquico de gastos para Balance (`fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_gasto`)
 
-Modelo para nombres canónicos de **rubro** y **gasto** ligados a **tipo de costo** (Variable / Fijo). Sirve de FK para futuras tablas de movimientos (fecha, sucursal, proveedor, monto, etc.).
+Jerarquía de catálogos para Finanzas → Balance → Gastos. Relación canónica:
 
-- **Enum** `TipoCostoGasto` (PostgreSQL/Prisma): `VARIABLE` \| `FIJO`.
-- **Tabla** `finanzas_rubros` (Prisma: `FinanzasRubro`):
+```text
+fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N) fin_bal_gasto
+   FinBalGastoTipo             FinBalGastoRubro                   FinBalGasto
+```
+
+- **Tabla raíz** `fin_bal_gasto_tipo` (Prisma: `FinBalGastoTipo`):
   - `id` (`TEXT`, PK; `cuid()` en app).
-  - `nombre` (`TEXT`, **único**): nombre oficial del rubro.
+  - `nombre` (`TEXT`, **único global** — `fin_bal_gasto_tipo_nombre_key`).
   - `created_at`, `updated_at` (`TIMESTAMP(3)`).
-- **Tabla** `finanzas_gastos` (Prisma: `FinanzasGasto`):
+  - Relación inversa: `rubros FinBalGastoRubro[]`.
+- **Tabla intermedia** `fin_bal_gasto_rubro` (Prisma: `FinBalGastoRubro`):
   - `id` (`TEXT`, PK; `cuid()` en app).
-  - `rubro_id` → FK `finanzas_rubros.id` (`onDelete: Restrict`).
-  - `tipo_costo` → `TipoCostoGasto`.
-  - `nombre` (`TEXT`): nombre oficial del gasto dentro del rubro y tipo.
+  - `nombre` (`TEXT`).
+  - `tipo_id` (`TEXT`, FK → `fin_bal_gasto_tipo.id`, `onDelete: Restrict`, `onUpdate: Cascade`).
   - `created_at`, `updated_at` (`TIMESTAMP(3)`).
-- **Integridad**:
-  - índice único `finanzas_gastos_rubro_tipo_nombre_ux` en `(rubro_id, tipo_costo, nombre)` — no duplicar la misma terna.
-  - índice `finanzas_gastos_rubro_id_idx` en `rubro_id`.
-- **Convención**: al persistir desde app, normalizar `nombre` (rubro y gasto) en **MAYÚSCULAS** y `trim`, alineado a otros catálogos finanzas (p. ej. cajas tesorería).
-- **Migración**: `prisma/migrations/20260418120000_add_finanzas_rubros_y_gastos_catalogo/migration.sql`.
-- **Servicio**: `src/services/finanzasGastosCatalogo.service.ts`
-  - `listarRubrosCatalogo()`: `prisma.finanzasRubro.findMany({ select: { id, nombre }, orderBy: { nombre: "asc" } })`; devuelve nombre en MAYÚSCULAS.
-  - `crearGastoCatalogo(input)`: **transacción** (`prisma.$transaction`). Si `rubroId` existe, valida que el rubro esté vigente; si se usa `rubroNombreNuevo`, hace `finanzasRubro.upsert({ where: { nombre } })` (MAYÚSCULAS) y usa ese `id`. Luego crea `finanzasGasto` con `tipoCosto` y `nombre` (MAYÚSCULAS). Normaliza errores: `P2002` → "Ya existe un gasto con ese rubro, tipo de costo y nombre."; `P2025` → "Rubro no encontrado."
-- **Actions**: `src/actions/finanzasGastosCatalogo.ts`
-  - `crearGastoCatalogoAction(raw)`: gate `PERMISOS.finanzas.acceso` + `esEditor()`; valida con `crearGastoCatalogoSchema` (discriminated union por `modoRubro`: `"EXISTENTE"` con `rubroId` o `"NUEVO"` con `rubroNombreNuevo`); revalida `/finanzas` y `/finanzas/balance/gastos`.
-- **Validaciones**: `src/lib/validations/finanzasGastosCatalogo.ts` (`tipoCostoGastoSchema` `VARIABLE|FIJO`, `crearGastoCatalogoSchema` discriminado por `modoRubro`; `nombre` y `rubroNombreNuevo` con `trim + toUpperCase`).
-- **Consumo**: el Server Component `src/app/finanzas/balance/gastos/page.tsx` llama a `listarRubrosCatalogo()` en paralelo con los otros fetchs y pasa los rubros al client (`FinanzasBalanceGastosPageClient` → `CrearGastoCatalogoModal`).
+  - Unicidad compuesta `@@unique([tipoId, nombre])` (map `fin_bal_gasto_rubro_tipo_nombre_ux`): el mismo nombre puede existir en **distintos tipos**.
+  - Índice en `tipo_id` (`fin_bal_gasto_rubro_tipo_id_idx`).
+  - Relación inversa: `gastos FinBalGasto[]`.
+- **Tabla hoja** `fin_bal_gasto` (Prisma: `FinBalGasto`):
+  - `id` (`TEXT`, PK; `cuid()` en app).
+  - `nombre` (`TEXT`).
+  - `rubro_id` (`TEXT`, FK → `fin_bal_gasto_rubro.id`, `onDelete: Restrict`, `onUpdate: Cascade`).
+  - `created_at`, `updated_at` (`TIMESTAMP(3)`).
+  - Unicidad compuesta `@@unique([rubroId, nombre])` (map `fin_bal_gasto_rubro_nombre_ux`): el mismo nombre puede existir en **distintos rubros**.
+  - Índice en `rubro_id` (`fin_bal_gasto_rubro_id_idx`).
+- **Integridad referencial**:
+  - `onDelete: Restrict` en ambas FKs: no se puede borrar un tipo con rubros asociados ni un rubro con gastos asociados. Si se necesita baja en cascada, cambiar explícitamente a `Cascade` en la migración correspondiente y documentarlo.
+- **Convención de normalización**: al persistir desde service/action, aplicar `trim + toUpperCase` sobre `nombre` (alineado a `cajas_tesoreria`, `movimientos_finanzas.nombre`).
+- **Errores a mapear** (Prisma → `ServiceResult`):
+  - `P2002` (unique violation): “Ya existe un rubro con ese nombre para el tipo seleccionado.” / análogo para gasto.
+  - `P2003` (FK violation): “Tipo/Rubro inválido.”
+  - `P2025` (registro no encontrado): “Registro no encontrado.”
+- **Migraciones**:
+  - `prisma/migrations/20260418170000_add_fin_bal_gasto_tipo/migration.sql` (tabla raíz).
+  - `prisma/migrations/20260418180000_add_fin_bal_gasto_rubro_y_gasto/migration.sql` (rubro + gasto + FKs).
+- **Validaciones Zod**: `src/lib/validations/finBalGastosCatalogo.ts`
+  - `crearFinBalGastoTipoSchema`, `editarFinBalGastoTipoSchema`, `eliminarFinBalGastoTipoSchema`.
+  - `crearFinBalGastoRubroSchema`, `editarFinBalGastoRubroSchema`, `eliminarFinBalGastoRubroSchema`.
+  - `crearFinBalGastoSchema`, `editarFinBalGastoSchema`, `eliminarFinBalGastoSchema`.
+  - `nombre` en todos: `trim + toUpperCase`, `min(1)`, `max(120)`.
+  - IDs validados con `prismaCuidSchema` (común a cuid del proyecto).
+- **Servicio** (`src/services/finBalGastosCatalogo.service.ts`)
+  - **Lecturas** (no devuelven `ServiceResult`; siempre exitosas, consumidas desde Server Components):
+    - `listarFinBalGastoTipos()` → `FinBalGastoTipoItem[]` ordenados por `nombre` asc.
+    - `listarFinBalGastoRubrosPorTipo(tipoId)` → `FinBalGastoRubroItem[]` filtrados por `tipoId`.
+    - `listarFinBalGastosPorRubro(rubroId)` → `FinBalGastoItem[]` filtrados por `rubroId`.
+    - `listarFinBalGastosJerarquia()` → `FinBalGastoJerarquiaTipo[]` (árbol completo Tipo → Rubros → Gastos en **un solo roundtrip** con `include` anidado + orden alfabético en cada nivel). Uso recomendado para la UI de árbol.
+  - **Escrituras** (todas devuelven `ServiceResult<T>`):
+    - Tipo: `crearFinBalGastoTipo`, `editarFinBalGastoTipo`, `eliminarFinBalGastoTipo`.
+    - Rubro: `crearFinBalGastoRubro`, `editarFinBalGastoRubro`, `eliminarFinBalGastoRubro`.
+    - Gasto: `crearFinBalGasto`, `editarFinBalGasto`, `eliminarFinBalGasto`.
+  - **Mapeo de errores** (helper `mapDbError`):
+    - `P2002` → mensaje contextual por nivel (tipo/rubro/gasto) con referencia al padre cuando aplica.
+    - `P2003` en `eliminar*Tipo` / `eliminar*Rubro` → mensaje "No se puede eliminar: tiene rubros/gastos asociados".
+    - `P2003` en `crear*Rubro` / `crear*Gasto` → mensaje "El tipo/rubro seleccionado no existe".
+    - `P2025` → mensaje "Tipo/Rubro/Gasto no encontrado".
+- **Actions** (`src/actions/finBalGastosCatalogo.ts`)
+  - Todas las mutaciones exigen `puede(rol, PERMISOS.finanzas.acceso)` + `esEditor()` vía helper `requireEditorFinanzas()` (catálogos maestros solo editables por editor).
+  - Validan `raw: unknown` con los esquemas Zod correspondientes (`safeParse`).
+  - Delegan en el servicio y mapean `ServiceResult` → `ActionResult`.
+  - Tras cada mutación exitosa, llaman a `revalidateBalancePaths()` que ejecuta `revalidatePath('/finanzas')` y `revalidatePath('/finanzas/balance/gastos')`.
+  - Exportan: `crearFinBalGastoTipoAction`, `editarFinBalGastoTipoAction`, `eliminarFinBalGastoTipoAction`, `crearFinBalGastoRubroAction`, `editarFinBalGastoRubroAction`, `eliminarFinBalGastoRubroAction`, `crearFinBalGastoAction`, `editarFinBalGastoAction`, `eliminarFinBalGastoAction`.
+  - Las **lecturas** NO son Actions: se consumen directamente desde Server Components importando el servicio (mismo patrón que `listarMovimientosFinanzas` / `listarCajasTesoreria`).
+
+### 2.5d Catálogo finanzas — rubros y gastos (ELIMINADO 2026-04-18)
+
+> **Baja**: las tablas `finanzas_rubros` y `finanzas_gastos`, junto con el enum PostgreSQL `TipoCostoGasto`, fueron **eliminadas** el 2026-04-18 sin reemplazo. El catálogo no se estaba usando como FK desde `movimientos_finanzas` (los nombres de gasto vivían como texto libre en `movimientos_finanzas.nombre`), por lo que la baja no impacta datos existentes de Balance.
+>
+> - **Migración de baja**: `prisma/migrations/20260418160000_drop_finanzas_rubros_y_gastos_catalogo/migration.sql` — `DROP TABLE IF EXISTS "finanzas_gastos" CASCADE; DROP TABLE IF EXISTS "finanzas_rubros" CASCADE; DROP TYPE IF EXISTS "TipoCostoGasto";` (idempotente). La migración original de alta (`20260418120000_add_finanzas_rubros_y_gastos_catalogo`) se conserva por inmutabilidad del historial Prisma.
+> - **Código eliminado**:
+>   - Modelos Prisma `FinanzasRubro` y `FinanzasGasto` + enum `TipoCostoGasto` en `prisma/schema.prisma`.
+>   - Servicio `src/services/finanzasGastosCatalogo.service.ts`.
+>   - Action `src/actions/finanzasGastosCatalogo.ts` (incluye `crearGastoCatalogoAction`).
+>   - Validaciones `src/lib/validations/finanzasGastosCatalogo.ts` (`tipoCostoGastoSchema`, `crearGastoCatalogoSchema`).
+>   - Componente `src/components/finanzas/CrearGastoCatalogoModal.tsx`.
+>   - Prop `rubros` y botón **Crear Gasto** en `src/app/finanzas/balance/gastos/page.tsx` y `src/components/finanzas/FinanzasBalanceGastosPageClient.tsx`.
+> - **Consecuencia funcional**: la vista `/finanzas/balance/gastos` queda con un único botón **Nuevo Gasto** (movimiento en `movimientos_finanzas`). Si en el futuro se requiere agrupar por rubro/tipo de costo (Variable vs Fijo), rediseñar el catálogo con FK explícita desde `movimientos_finanzas` y persistir `fecha_gasto` / `periodo` para reportes de balance.
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
@@ -637,7 +691,7 @@ Notas:
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema`, `eliminarCajaTesoreriaSchema`, `tipoCajaTesoreriaSchema`. |
 | `@/lib/validations/movimientosFinanzas.ts` | `crearMovimientoFinanzasSchema`, `tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`. |
-| `@/lib/validations/finanzasGastosCatalogo.ts` | `crearGastoCatalogoSchema` (discriminated union `modoRubro`), `tipoCostoGastoSchema`. |
+| `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` para los 3 niveles. `nombre` con `trim + toUpperCase`, IDs `prismaCuidSchema`. |
 
 Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a validación, usar `z.infer<typeof schema>` en `src/lib/validations/*.ts`.
 
@@ -761,7 +815,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-04-14 — tabla `cajas_tesoreria` con campo obligatorio `titular`, sin relación activa con `sucursales`, unicidad compuesta (`nombre_caja`, `titular`), enum `TipoCajaTesoreria`, `monto` entero y `ult_actualizacion` controlada por trigger al cambiar saldo. Histórico: `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
+*Última actualización: 2026-04-18 — **alta** de la jerarquía `fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_gasto` (migraciones `20260418170000_add_fin_bal_gasto_tipo` y `20260418180000_add_fin_bal_gasto_rubro_y_gasto`), con FKs `onDelete: Restrict`, nombre único global en tipo y único por padre en rubro/gasto. Incluye capa completa backend: validaciones Zod (`finBalGastosCatalogo.ts`), servicio con lectura jerárquica + CRUD 3 niveles (`finBalGastosCatalogo.service.ts`) y Actions con gate `PERMISOS.finanzas.acceso` + `esEditor()` (`actions/finBalGastosCatalogo.ts`). **Baja** previa del catálogo `finanzas_rubros` / `finanzas_gastos` y enum `TipoCostoGasto` (migración `20260418160000_drop_finanzas_rubros_y_gastos_catalogo`); se eliminaron servicio, action, validaciones y modal asociados; `/finanzas/balance/gastos` queda solo con alta de movimientos en `movimientos_finanzas`. Histórico: `cajas_tesoreria` (2026-04-14), `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
 
 ---
 

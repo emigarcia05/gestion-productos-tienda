@@ -6,7 +6,7 @@ import {
   listarMovimientosFinanzas,
   listarSucursalesParaGastos,
 } from "@/services/movimientosFinanzas.service";
-import { listarRubrosCatalogo } from "@/services/finanzasGastosCatalogo.service";
+import { listarFinBalGastosJerarquia } from "@/services/finBalGastosCatalogo.service";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +17,10 @@ export default async function BalanceGastosPage() {
   }
   const esEditor = rol === "editor";
 
-  const [items, sucursales, rubros] = await Promise.all([
+  const [items, sucursales, jerarquiaGastos] = await Promise.all([
     listarMovimientosFinanzas(),
     listarSucursalesParaGastos(),
-    listarRubrosCatalogo(),
+    listarFinBalGastosJerarquia(),
   ]);
 
   const filas = items.map((m) => ({
@@ -34,7 +34,7 @@ export default async function BalanceGastosPage() {
     <FinanzasBalanceGastosPageClient
       filas={filas}
       sucursales={sucursales}
-      rubros={rubros}
+      jerarquiaGastos={jerarquiaGastos}
       esEditor={esEditor}
     />
   );

@@ -307,6 +307,67 @@ Modal estándar (header corporativo + cuerpo en capas `bg-gris → bg-card` + fo
   - **`bodyShellClassName`**: opcional; se aplica al `div` gris que rodea la card del cuerpo (junto con `p-4` por defecto). Útil para reducir padding en modales densos (ej. `VincularModal`: `p-1.5 sm:p-2`).
   - **`headerClassName`** / **`footerClassName`**: opcional; se combinan con el header primary (`pt-5 pb-4` por defecto) y el footer (`py-4`). Ej. `PedidoHistoriaDetalleModal`: `headerClassName="pt-3 pb-3"`, `footerClassName="py-3"`, `padding="sm"` y `bodyClassName` con `py-2` para ganar altura útil en la tabla.
 
+### `ToolbarActionButton` (`src/components/shared/ToolbarActionButton.tsx`)
+
+Botón estándar para **barras de acciones y encabezados de página** (toolbar de `SectionHeader` / `ClassicPageHeader`, modales, cards). Centraliza el patrón `icon + label + estado async` accesible, delegando tipografía, altura y tokens al **`Button`** de `@/components/ui/button`.
+
+- **Por qué existe**
+  - Evita repetir `gap-2 shrink-0` en cada call site: el `Button` base ya los incluye en su clase (y tamaña los SVGs a `size-4` vía selector `[&_svg:not([class*='size-'])]:size-4`).
+  - Encapsula el estado **`loading`** (spinner + `disabled` + `aria-busy`), que antes se resolvía ad hoc en cada toolbar.
+  - Fuerza `type="button"` (previene submit accidental dentro de `<form>`).
+
+- **Props**
+  - **`label`**: `ReactNode?` — texto del botón (title case). Si no hay texto visible, pasar `aria-label`.
+  - **`icon`**: `ReactNode?` — ícono de `lucide-react` (ej. `<RefreshCw />`). No hace falta dimensionarlo: el `Button` base aplica `size-4 shrink-0` a los `<svg>`.
+  - **`loading`**: `boolean` (default `false`) — al activarse deshabilita, reemplaza el ícono por **`Loader2`** con `animate-spin` y setea `aria-busy`.
+  - **`loadingLabel`**: `ReactNode?` — texto alterno mientras `loading` (ej. `"Importando…"`). Si se omite, se mantiene `label`.
+  - **`variant`** / **`size`**: pass-through del `Button` de shadcn (`default` | `outline` | `secondary` | `destructive` | `ghost` | `primaryIcon` | `link`; tamaños `default` | `xs` | `sm` | `lg` | `icon*`).
+  - **`density`** (CVA): `"default"` | `"tight"` — única variante propia, sólo ajusta el gap cuando una toolbar densa lo requiera.
+  - Resto: hereda `ComponentProps<typeof Button>` (incluye `onClick`, `disabled`, `className`, etc.).
+
+- **Ejemplos**
+
+  ```tsx
+  import { RefreshCw, Download } from "lucide-react";
+  import ToolbarActionButton from "@/components/shared/ToolbarActionButton";
+
+  // Acción primaria con ícono
+  <ToolbarActionButton
+    label="Importar Datos Dux"
+    icon={<RefreshCw />}
+    onClick={handleImport}
+  />
+
+  // Acción con estado async y texto alterno
+  <ToolbarActionButton
+    label="Importar Datos Dux"
+    loadingLabel="Importando…"
+    loading={syncing}
+    icon={<RefreshCw />}
+    onClick={handleImport}
+  />
+
+  // Variante secundaria (exportar)
+  <ToolbarActionButton
+    variant="outline"
+    label="Exportar Stock"
+    icon={<Download />}
+  />
+  ```
+
+- **Cuándo usarlo**
+  - **Nuevas** toolbars con íconos y/o estados async (importar, exportar, sincronizar, generar PDF, imprimir, etc.).
+  - Cualquier acción donde actualmente se repetía `className="btn-primario-gestion gap-2 shrink-0"` junto con `<Icon className="h-4 w-4 shrink-0" />`.
+
+- **Cuándo NO usarlo**
+  - Botones puramente ícono (ej. `LimpiarFiltrosButton`): usar `<Button variant="primaryIcon" size="icon-lg" aria-label="…">` directo.
+  - Botones sin ícono ni estado async: `<Button>` de shadcn sigue siendo la API mínima.
+  - Botones con doble línea (texto principal + detalle de última actualización): usar **`DuxSyncStyleButton`** (CVA `surface`).
+
+- **Nota de consolidación**
+  - **`src/lib/actionButtons.ts`** (constantes `MAIN_BUTTON_CLASSES`, `ACTION_BUTTON_PRIMARY`, `ACTION_BUTTON_SECONDARY` armadas con **template literals**) quedó como código muerto y fue **eliminado** en la misma iteración: usar `ToolbarActionButton` (o `Button` directo) en su reemplazo.
+  - La clase CSS global **`.btn-primario-gestion`** (`globals.css`) sigue vigente para no romper los call sites existentes, pero para nuevas toolbars **preferir `ToolbarActionButton`**. Cualquier migración del resto de call sites (`SyncDuxHeaderButton`, `SyncButton`, `ExportarStockButton`, `ImprimirStockButton`, etc.) se hará en una iteración dedicada.
+
 ### `ModalTablaConFiltros` (`src/components/shared/ModalTablaConFiltros.tsx`)
 
 Modal reutilizable de **título + filtros + tabla** con modos:
@@ -448,6 +509,56 @@ Input monetario reutilizable (formato **AR**): muestra **`$`**, miles con `.` y 
   - Acepta **`,` o `.`** como separador decimal (si aparecen ambos, se toma el más a la derecha).
   - Repeticiones `,,` / `..` se colapsan a una sola.
 
+### `SelectFieldWithCreate` (`src/components/shared/SelectFieldWithCreate.tsx`)
+
+Campo de formulario reutilizable: **etiqueta + Select (shadcn/radix) + botón `+` opcional** para disparar un submodal de alta inline cuando la opción deseada no existe. Variantes con **CVA** (`selectFieldVariants`, `selectFieldLabelVariants`).
+
+- **Por qué existe**
+  - Centraliza el patrón “label uppercase + `Select` full-width + acción `+`” que aparece en formularios con catálogos jerárquicos (`Tipo / Rubro / Gasto`, y cualquier catálogo editable por editor).
+  - Evita duplicar las clases del trigger (`SELECT_TRIGGER_FILTER_CLASS`) y del label (`text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground`) en cada formulario.
+  - Deja el botón **`+`** como **prop opcional** (`onCreate`): si se omite, el componente funciona como un "SelectField" estándar sin acción de creación.
+
+- **Props**
+  - **`label`**: `string` (ya en MAYÚSCULAS por convención; el componente sólo aplica `uppercase` tipográfico).
+  - **`value`**: `TValue | ""` — valor seleccionado; `""` representa "sin selección" y se mapea internamente al item placeholder (no se propaga a radix como string vacía, que está reservada).
+  - **`onValueChange(next)`**: recibe `TValue | ""`.
+  - **`options`**: `ReadonlyArray<{ value: TValue; label: string; disabled?: boolean }>`.
+  - **`placeholder`**: texto del `SelectValue` y del ítem "reset" interno.
+  - **`selectId`**: `string?` — id asociado label↔trigger; default derivado de `React.useId()`.
+  - **`disabled`**: `boolean?` — deshabilita trigger y botón `+`.
+  - **`onCreate`**: `() => void` opcional. Si se pasa, se renderiza el botón `+` a la derecha del select (ícono `Plus`, variant `outline`, `size="icon"`, `h-9 w-9`).
+  - **`createAriaLabel`** / **`createTitle`**: overrides accesibilidad del botón `+`. Por defecto `Crear {label en minúsculas}`.
+  - **`helper`**: `ReactNode?` — mensaje auxiliar debajo (p. ej. "Seleccioná un tipo para habilitar el rubro.").
+  - **`density`** (CVA): `"default" | "compact"` — solo ajusta gaps (`gap-1` vs `gap-0.5`) y tamaño del label (`text-xs` vs `text-[11px]`).
+  - **`className`**: override del contenedor.
+- **Accesibilidad**
+  - `label htmlFor` apunta al `SelectTrigger id` (genera id estable con `React.useId()`).
+  - El trigger también recibe `aria-label={label}` como refuerzo.
+  - El botón `+`, siempre con `aria-label` + `title`.
+- **Cuándo usarlo**
+  - Formularios con catálogos editables por rol `editor` donde la UX requiere crear el padre sin salir del flujo (ver `CrearFinBalGastoModal`).
+  - Cualquier select "SELECCIONAR X" con label consistente (el `onCreate` es opcional).
+- **Cuándo NO usarlo**
+  - Selects que se usan solo como filtro de tabla (usar `FilterBar` + patrón existente con `SELECT_TRIGGER_FILTER_CLASS` directamente).
+  - Inputs que no sean `Select` (Combobox, Autocomplete, etc.).
+
+```tsx
+<SelectFieldWithCreate
+  label="RUBRO"
+  placeholder="SELECCIONAR RUBRO"
+  value={rubroId}
+  onValueChange={setRubroId}
+  options={rubros.map((r) => ({ value: r.id, label: r.nombre }))}
+  disabled={!tipoSeleccionado}
+  onCreate={
+    tipoSeleccionado
+      ? () => setSubmodal({ open: true, nivel: "rubro", parentId: tipoSeleccionado.id })
+      : undefined
+  }
+  helper={!tipoSeleccionado ? "Seleccioná un tipo para habilitar el rubro." : undefined}
+/>
+```
+
 ### `PageSectionHeader` (`src/components/shared/PageSectionHeader.tsx`)
 
 Núcleo **único** del encabezado de página (barra primaria, `h1`, `h3`, acciones, `Separator`). Variantes con **CVA** (`pageSectionHeaderRootVariants`) para evitar duplicar clases entre rutas.
@@ -534,7 +645,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 
 - **`MAIN_APP_AREAS`**: cada ítem tiene `id`, `label` (title case en datos), `statusLabel` (ej. **Terminada** / **A construir**), `href` (entrada al elegir el área). En slidenav y modal, el nombre visible usa **`areaLabelMayusculas(label)`** (`toLocaleUpperCase("es")`) → **MAYÚSCULAS** (ej. **GESTIÓN PRODUCTOS**).
 - **`getMainAppAreaIdFromPathname(pathname)`**: `/finanzas` y `/finanzas/*` → **Finanzas**; `/estadisticas-productos` y subrutas → **Estadísticas Productos**; cualquier otra ruta → **Gestión Productos** (incluye `/`, `/proveedores`, `/tienda`, `/stock`, `/pedidos`, `/importar`, etc.).
-- **Navegación lateral por área activa** (`Sidebar.tsx`): los módulos (`PEDIDO DE MERCADERÍA`, `LISTA PROVEEDORES`, `LISTA TIENDA`) se muestran **solo** cuando el área activa es **Gestión Productos**. Con área **Finanzas** se muestran, en este orden, dos bloques: primero **`BALANCE`** (`Scale`) con submódulo **Gastos** → `/finanzas/balance/gastos` (`Receipt`); luego **`FINANZAS`** (`Landmark`) con **Tesorería** → `/finanzas/tesoreria` (`Banknote`), **Flujo De Fondo** → `/finanzas/venc-por-fecha` (`CalendarDays`), **Saldo Proveedores** → `/finanzas/deuda-proveedores` (`Wallet`) y **Control Comprobantes** → `/finanzas/control-comprobantes` (`FileSearch`) (todos `PERMISOS.finanzas.acceso`). `getOpenModule` abre **BALANCE** para rutas `/finanzas/balance/*` y **FINANZAS** para el resto de `/finanzas/*`. En **Estadísticas Productos** no hay módulos en sidebar todavía (mensaje vacío).
+- **Navegación lateral por área activa** (`Sidebar.tsx`): los módulos (`PEDIDO DE MERCADERÍA`, `LISTA PROVEEDORES`, `LISTA TIENDA`) se muestran **solo** cuando el área activa es **Gestión Productos**. Con área **Finanzas** se muestran, en este orden, dos bloques: primero **`BALANCE`** (`Scale`) con submódulos **Gastos** → `/finanzas/balance/gastos` (`Receipt`) y **Catálogo Gastos** → `/finanzas/balance/gastos/catalogo` (`FolderTree`); luego **`FINANZAS`** (`Landmark`) con **Tesorería** → `/finanzas/tesoreria` (`Banknote`), **Flujo De Fondo** → `/finanzas/venc-por-fecha` (`CalendarDays`), **Saldo Proveedores** → `/finanzas/deuda-proveedores` (`Wallet`) y **Control Comprobantes** → `/finanzas/control-comprobantes` (`FileSearch`) (todos `PERMISOS.finanzas.acceso`). `getOpenModule` abre **BALANCE** para rutas `/finanzas/balance/*` y **FINANZAS** para el resto de `/finanzas/*`. En **Estadísticas Productos** no hay módulos en sidebar todavía (mensaje vacío).
 - **`SidebarMainAppArea`** (client): con **`showLogo` y `showLabel`**, el **nombre del área** no va dentro del botón del logo (ese botón usa `max-w-[45%]`): se renderiza **encima**, en un contenedor **`w-full min-w-0 px-1 text-center`** con `role="status"` + `aria-live="polite"`, y el `<span>` del nombre con **`w-full text-center`** + tipografía sidebar (`whitespace-nowrap`, `text-[13px]`, `leading-none`) para una sola línea centrada en todo el ancho del sidebar; el texto del nombre pasa por **`areaLabelMayusculas`**. El **logo** es solo `<button>` + `Image` (`alt=""`) con `aria-label` **Elegir Área De La Aplicación** (el nombre del área queda anunciado por el `status` de arriba). Con **`showLabel` y sin logo** (`showLogo={false}`), el nombre sigue en `role="status"` con **`pb-0.5`** en el `<span>`. Click en el logo abre **`AppModal`** **Áreas De La Aplicación** con las tres opciones (navegación con `router.push` al `href` de cada área). Opción de la ruta actual resaltada (`border-sidebar-indicator`, `bg-sidebar-accent/40`). En el modal se muestra solo el nombre de cada área en **MAYÚSCULAS** (`areaLabelMayusculas`), sin subtítulo/estado ni texto descriptivo superior, y un ícono `lucide-react` por opción (Gestión Productos: `Boxes`; Finanzas: `Landmark`; Estadísticas Productos: `BarChart3`). Variantes **CVA**: `areaOptionVariants` (opción actual vs resto), `areaTitleVariants` / `areaStatusVariants` (`context`: `sidebar` | `modal` para tokens de texto; `areaStatusVariants` queda para reutilización futura si se necesitara estado en otra vista).
 - **`/finanzas`**: `SectionHeader` **Finanzas** / **Resumen**; acceso a **`/finanzas/tesoreria`**, **`/finanzas/venc-por-fecha`**, **`/finanzas/deuda-proveedores`** y **`/finanzas/control-comprobantes`** vía botones secundarios (`h-10`), en ese orden (primero **Tesorería**). Rol **editor**: **`SincronizarComprobantesProveedorDuxButton`** (`sincronizarComprobantesProveedorDesdeDuxAction`, **sonner**; **Últ. Act.** local en página). **`SyncStatusIndicator`** en Finanzas mantiene su propio **Últ. Act.** de compras.
 - **`/finanzas/tesoreria`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Tesorería**. Incluye bloque de filtros con tres desplegables (**CAJA**, **TITULAR**, **TIPO CAJA**) y botón de limpieza inline en la misma fila (`FilterBar` + `FilaFiltrosDesplegables` + `FILTER_INLINE_ACTION_SLOT_CLASS`) cuando el contenido entra en una línea. Botón **Nueva Caja** (solo `editor`) en **`actions`** del **`ClassicPageHeader`** (`h-10 px-4`, `Plus`) abre **`NuevaCajaTesoreriaModal`** (título visible: **Crear Caja**). Modal (`AppModal`) con alta por tres campos: **NOMBRE CAJA**, **TITULAR** y **TIPO CAJA** (`DIGITAL | EFECTIVO | CHEQUE`); guarda con `crearCajaTesoreriaAction` y `router.refresh()`. **NOMBRE CAJA** y **TITULAR** se muestran en MAYÚSCULAS y se persisten en MAYÚSCULAS. **TITULAR** se elige por desplegable fijo (sin texto libre) con estos valores: `SUC. GUAYMALLEN`, `SUC. MAIPU`, `WALTER GARCIA`, `FERNANDO PANAIA`, `EMILIANO GARCIA`, `VANESA GARCIA`. Tabla **`TablaTesoreriaCajas`**: columnas **CAJA**, **TITULAR**, **TIPO CAJA** (`TipoCajaTesoreria`), **MONTO** (`$` + `fmtPrecio`, entero), **ÚLT. ACTUALIZACIÓN** (`ult_actualizacion` con `formatFechaHoraCompletaArgentina`, segunda importancia) y **ACCIONES** (solo `editor`: editar/eliminar). En **ÚLT. ACTUALIZACIÓN**, cuando la caja supera **5 días** sin cambios de monto, mostrar llamado de atención visual con **`TriangleAlert`** y estilo de advertencia (`TEXT_WARNING_CLASS`) junto a la fecha (ej. `+6 D`). Doble clic sobre fila (solo `editor`) abre **`ActualizarMontoCajaTesoreriaModal`** para modificar solo **MONTO** y guardar con `editarCajaTesoreriaAction`. El ícono lápiz abre **`EditarCajaTesoreriaModal`** (edita nombre, titular y tipo; conserva monto) y el cesto abre **`EliminarCajaTesoreriaModal`** con confirmación. Fila de pie **TOTAL** suma la columna **MONTO**. Sin paginación. Datos desde `listarCajasTesoreria` (servidor). `PERMISOS.finanzas.acceso`.
@@ -544,7 +655,14 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 - **`/finanzas/control-comprobantes`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Control Comprobantes**. Tabla **`TablaControlComprobantes`** con columnas: **CONTROLADO** (primera), **FECHA COMP.** (segunda), **PROVEEDOR**, **SUCURSAL**, **COMPROBANTE**, **TOTAL**, **MONTO APLICADO** y **VENCIMIENTO**. La vista usa **filtros de una sola línea** (sin búsqueda por descripción): **PROVEEDOR**, **SUCURSAL**, **PAGADO** (solo opción `PENDIENTE`), **VENCIDO** (solo opción `VENCIDO`) y **CONTROLADO** (solo opción `NO`). En **VENCIMIENTO** se muestra monto solo si existe saldo vencido según regla backend (`vencimientoSaldo > 0`); caso contrario la celda queda vacía. **CONTROLADO** es de solo lectura: renderiza `tabla-check-toggle` (alto autoajustado) sin interacción directa en celda; si está en `true` se pinta con **fondo azul (`primary`) + tilde blanca** para contraste. La marcación se realiza por **doble click en fila** (solo `editor`), que abre `AppModal` dinámico de confirmación: si está en `false` pregunta por marcar como **"Controlado"**; si está en `true` pregunta por marcar como **"No Controlado"**. Al confirmar llama a `actualizarControladoComprobanteAction` + `router.refresh()`.
 - **Nuevo patrón global de filtros por fecha (fila 2 con flecha):** usar `FilterRowDateRange` + `FILTER_DATE_RANGE_TRIGGER_CLASS` (`@/components/FilterBar`). La segunda fila no contiene búsqueda de descripción: muestra un trigger con ícono/flecha que abre **`FiltroRangoFechasCalendarioModal`** (`@/components/shared/FiltroRangoFechasCalendarioModal.tsx`): calendario mensual (semana inicia lunes), navegación mes anterior/siguiente, **primer click** en un día = fecha desde, **segundo click** = fecha hasta (si el segundo es anterior al primero se intercambian); al completar el segundo click se aplica el rango y se cierra el modal. Botones **Limpiar** (borra rango y cierra) y **Cerrar** (cierra sin aplicar cambio si no se completó el segundo click).
 - **`/finanzas/control-comprobantes`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Control Comprobantes**. Tabla **`TablaControlComprobantes`** con columnas: **CONTROLADO** (primera), **FECHA COMP.** (segunda), **PROVEEDOR**, **SUCURSAL**, **COMPROBANTE**, **TOTAL**, **MONTO APLICADO** y **VENCIMIENTO**. La vista usa **filtro doble fila**: primera fila con **PROVEEDOR**, **SUCURSAL**, **PAGADO** (solo `PENDIENTE`), **VENCIDO** (solo `VENCIDO`) y **CONTROLADO** (solo `NO`); segunda fila con filtro de rango de fechas por flecha. En **VENCIMIENTO** se muestra monto solo si existe saldo vencido según regla backend (`vencimientoSaldo > 0`); caso contrario la celda queda vacía. **CONTROLADO** es de solo lectura: renderiza `tabla-check-toggle` (alto autoajustado) sin interacción directa en celda; si está en `true` se pinta con **fondo azul (`primary`) + tilde blanca** para contraste. La marcación se realiza por **doble click en fila** (solo `editor`), que abre `AppModal` dinámico de confirmación: si está en `false` pregunta por marcar como **"Controlado"**; si está en `true` pregunta por marcar como **"No Controlado"**. Al confirmar llama a `actualizarControladoComprobanteAction` + `router.refresh()`.
-- **`/finanzas/balance/gastos`**: **`ClassicFilteredTableLayout`** título **Balance**, subtítulo **Gastos** (submódulo **Gastos** dentro del módulo **BALANCE**). Dos botones en **`actions`** del **`ClassicPageHeader`** (solo `editor`, `h-10 px-4 gap-2`, agrupados en `flex flex-wrap items-center gap-2`): **Crear Gasto** (`variant="outline"`, ícono `FolderPlus`) abre **`CrearGastoCatalogoModal`** para dar de alta un ítem del **catálogo** de gastos (`finanzas_gastos`); **Nuevo Gasto** (primary, ícono `Plus`) abre **`NuevoGastoModal`** para registrar un **movimiento** (`movimientos_finanzas`). `NuevoGastoModal` (`AppModal`, título **Crear Gasto**, `sm:max-w-xl`): **TIPO GASTO** (`EFECTIVO | BANCO | CHEQUE`), **NOMBRE** (persistido en MAYÚSCULAS), **SUCURSAL** (FK a `Sucursal`, desplegable con `nombre`; incluye la opción maestra **CORPORATIVO** para gastos sin sucursal física; ver `BACKEND_GUIDELINES` §2.5b) y **MONTO** (`Input type="number" step="0.01"`, dos decimales); guarda con `crearMovimientoFinanzasAction` y `router.refresh()`. `CrearGastoCatalogoModal` (`AppModal`, título **Crear Gasto**, `sm:max-w-xl`): **RUBRO** (Select de rubros existentes de `finanzas_rubros` + opción especial **`+ CREAR NUEVO RUBRO`** que revela un `Input` **NUEVO RUBRO** inline y hace upsert por nombre en el service), **TIPO COSTO** (`VARIABLE | FIJO`) y **NOMBRE** (MAYÚSCULAS, max 200). Guarda con `crearGastoCatalogoAction` y `router.refresh()`. Tabla **`TablaGastos`** (sin filtros aún): columnas **TIPO GASTO**, **NOMBRE** (`celda-destacado` + `truncate`) y **MONTO** (alineado a derecha, `$` + `fmtPrecio`); fila de pie **TOTAL** suma la columna **MONTO** (colspan 2). Datos desde `listarMovimientosFinanzas` (modelo Prisma `MovimientoFinanzas` = `movimientos_finanzas`), orden por `createdAt` descendente, nombre mostrado en MAYÚSCULAS. Sin paginación. `PERMISOS.finanzas.acceso`.
+- **`/finanzas/balance/gastos/catalogo`**: **`ClassicFilteredTableLayout`** título **FINANZAS**, subtítulo **Balance · Catálogo Gastos** (submódulo **Catálogo Gastos** dentro del módulo **BALANCE**, ícono `FolderTree`). Página dedicada al mantenimiento del catálogo jerárquico `fin_bal_gasto_tipo → fin_bal_gasto_rubro → fin_bal_gasto` (ver `BACKEND_GUIDELINES` §2.5e). `CrearEditarFinBalCatalogoItemModal` también expone un callback opcional **`onCreated(payload)`** con unión discriminada (`{ nivel: "tipo" | "rubro" | "gasto"; data }`) que se dispara solo en modo `"crear"` exitoso; lo consumen formularios padre (ej. `CrearFinBalGastoModal`) para **preseleccionar** el ítem recién creado sin depender de un `router.refresh()` inmediato, mergeando el item a la jerarquía local del modal. **Layout tipo Finder de 3 columnas** con `grid md:grid-cols-3 gap-3` dentro del contenido del layout: **TIPOS** · **RUBROS** · **GASTOS**. Cada columna es una `<section>` con borde y `rounded-lg`, header en `bg-muted/60` que muestra el **título** (uppercase tracking), un **subtítulo contextual** (contador de hijos o prompt `Seleccioná un tipo/rubro`) y un botón **`+ Nuevo`** (solo `editor`, `size="sm"`, `h-8`, ícono `Plus`). El body de la columna es `flex-1 overflow-y-auto` y renderiza filas `FilaCatalogo`. **Selección en cascada:** click en un tipo selecciona y puebla la columna de rubros (reset del rubro seleccionado); click en un rubro selecciona y puebla la columna de gastos. Estado seleccionado: `bg-primary/10` + `ChevronRight` en color `primary`. Filas: `truncate` para el nombre + meta auxiliar (`N rubros` / `N gastos`) en `text-[11px]`, con acciones **editar** (ícono `Pencil`) y **eliminar** (ícono `Trash2`, color destructive) ocultas por defecto y visibles en `group-hover`/`group-focus-within` (solo `editor`). Click/Enter/Space en la fila dispara la selección; los `<Button>` de acción usan `e.stopPropagation()` para no activarla. Estados vacíos centrados con `EmptyState` (columna vacía, padre no seleccionado, padre sin hijos). Todas las mutaciones se resuelven con **dos modales reutilizables**: `CrearEditarFinBalCatalogoItemModal` y `EliminarFinBalCatalogoItemModal` (ambos con prop `nivel: "tipo" | "rubro" | "gasto"`). El modal de alta/edición tiene un único campo **NOMBRE** (`Input`, `maxLength=120`, `uppercase` en `onChange`, `autoFocus`) y — para rubro/gasto — muestra el **nombre del padre** como contexto en solo lectura (bloque `border + bg-muted`); llama internamente a las 6 actions correspondientes y al tener éxito hace `router.refresh()` vía callback `onSuccess` del client. El modal de eliminación es un `AppModal size="sm"` con botón destructivo **Sí, Eliminar**; el backend fuerza `onDelete: Restrict` por lo que si el nodo tiene hijos el toast devuelve el mensaje mapeado ("No se puede eliminar el tipo porque tiene rubros asociados.", etc.). **Permiso:** `PERMISOS.finanzas.acceso` (rol `simple` ve la jerarquía en modo lectura sin botones de mutación).
+- **`/finanzas/balance/gastos`**: **`ClassicFilteredTableLayout`** título **Balance**, subtítulo **Gastos** (submódulo **Gastos** dentro del módulo **BALANCE**). En **`actions`** del **`ClassicPageHeader`** (solo `editor`, `h-10 px-4 gap-2`, agrupados en `flex flex-wrap items-center gap-2`) hay **dos botones**, en este orden:
+  1. **Crear Gasto** (`variant="outline"`, ícono `FolderPlus`) — alta de ítem hoja del **catálogo** (`fin_bal_gasto`). Abre **`CrearFinBalGastoModal`** (`src/components/finanzas/CrearFinBalGastoModal.tsx`, `AppModal` título **Crear Gasto**, `sm:max-w-xl`) con tres campos en este orden: **TIPO** (desplegable `fin_bal_gasto_tipo.nombre` con botón `+` `SelectFieldWithCreate` para crear un tipo nuevo inline), **RUBRO** (desplegable `fin_bal_gasto_rubro.nombre` filtrado por el tipo seleccionado, con botón `+` inline; se deshabilita mientras no haya tipo y muestra `helper` explicativo) y **GASTO** (`Input` texto libre, `maxLength=120`, `uppercase` en `onChange`). Los `+` abren **`CrearEditarFinBalCatalogoItemModal`** reutilizado en modo `"crear"` con el nivel correspondiente; el callback `onCreated` del submodal devuelve el `FinBalGastoTipoItem` / `FinBalGastoRubroItem` creado, que el modal principal agrega a la `jerarquia` local (merge inmutable, orden alfabético por `localeCompare("es")`) y preselecciona automáticamente en el form sin necesidad de `router.refresh()` previo. El botón **Guardar** queda deshabilitado mientras falte tipo, rubro o nombre de gasto, o mientras la action esté en vuelo. Al guardar llama a `crearFinBalGastoAction` y dispara `router.refresh()` del padre. La jerarquía inicial llega vía prop `jerarquiaGastos` desde el Server Component (`listarFinBalGastosJerarquia()`).
+  2. **Nuevo Gasto** (primary, ícono `Plus`) — registra un **movimiento** en `movimientos_finanzas`. Abre **`NuevoGastoModal`** (`AppModal`, título **Nuevo Movimiento**, `sm:max-w-xl`) con **TIPO GASTO** (`EFECTIVO | BANCO | CHEQUE`), **NOMBRE** (persistido en MAYÚSCULAS), **SUCURSAL** (FK a `Sucursal`; incluye la opción maestra **CORPORATIVO** para gastos sin sucursal física; ver `BACKEND_GUIDELINES` §2.5b) y **MONTO** (`Input type="number" step="0.01"`, dos decimales); guarda con `crearMovimientoFinanzasAction` y `router.refresh()`.
+
+  Tabla **`TablaGastos`** (sin filtros aún): columnas **TIPO GASTO**, **NOMBRE** (`celda-destacado` + `truncate`) y **MONTO** (alineado a derecha, `$` + `fmtPrecio`); fila de pie **TOTAL** suma la columna **MONTO** (colspan 2). Datos desde `listarMovimientosFinanzas` (modelo Prisma `MovimientoFinanzas` = `movimientos_finanzas`), orden por `createdAt` descendente, nombre mostrado en MAYÚSCULAS. Sin paginación. `PERMISOS.finanzas.acceso`.
+
+  **Nota de naming (2026-04-18):** el título interno del modal de movimientos se renombró de "Crear Gasto" → **"Nuevo Movimiento"** para liberar el título **Crear Gasto** para el nuevo flujo de alta en catálogo, que es lo que el usuario espera semánticamente (dos alcances distintos: alta de ítem de catálogo vs alta de movimiento con importe). El botón de la toolbar conserva el label **"Nuevo Gasto"** para no romper el hábito visual.
 - Rutas placeholder: **`/estadisticas-productos`** (página “A construir” con `SectionHeader`).
 - **Jerarquía canónica de URLs (2026-03):** para el área **Gestión Productos** usar siempre prefijo **`/gestion-productos`** con estructura **área/módulo/submódulo**:
   - Proveedores: `/gestion-productos/proveedores`, `/gestion-productos/proveedores/lista-precios`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/proveedores/comparacion-categorias`, `/gestion-productos/proveedores/lista`.
@@ -646,6 +764,7 @@ Antes de dar por terminada una tarea de frontend:
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
 - [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` (implementación única vía `PageSectionHeader`; no duplicar markup de `.section-header`).
 - [ ] Mensajes de tabla/lista vacía reutilizan `TableEmptyRow` o `TableEmptyState` (variantes CVA), sin copiar `py-* text-muted-foreground text-center` sueltos.
+- [ ] Botones de toolbar con **ícono + label** (y/o estado async): usan `ToolbarActionButton` (`src/components/shared/ToolbarActionButton.tsx`) o `Button` de shadcn **sin** repetir `gap-2 shrink-0` (el `Button` base ya los aporta) ni dimensionar el `<svg>` con `h-4 w-4 shrink-0` (el `Button` lo hace vía `[&_svg:not([class*='size-'])]:size-4`).
 - [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros, desplegables y encabezados de tablas: MAYÚSCULAS. Abreviaciones con punto final (Px., Cx., Dto., etc.).
 - [ ] Iconos: `lucide-react`. Toasts: `sonner`. Fuente: Geist (vía layout/tema).
 - [ ] No hay `any`; validación de datos con Zod donde aplique.
@@ -686,7 +805,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización: auditoría de tokens — `@/lib/ui-classes`, sustitución de `emerald-*`/`amber-*`/`blue-*` en importación y lectura de historial; `<col>` en Vínculos sin `style` inline; `PedidoHistoriaLecturaModal` con celdas vacías sin `—`.*
+*Última actualización: alta de `ToolbarActionButton` (CVA `density` + pass-through de `variant`/`size` de shadcn, manejo accesible de `loading` con `aria-busy` y `Loader2`); baja de `src/lib/actionButtons.ts` (código muerto con template literals). Checklist PR §4 y catálogo §3.1 alineados.*
+
+*Última actualización (2026-04-18): en **`/finanzas/balance/gastos`** se agrega botón **Crear Gasto** (solo `editor`, `variant="outline"`, ícono `FolderPlus`) que abre **`CrearFinBalGastoModal`** para dar de alta un ítem hoja del catálogo `fin_bal_gasto` con selects **Tipo** y **Rubro** (creables inline vía `+`, reutilizando `CrearEditarFinBalCatalogoItemModal` en modo `"crear"` y preselección automática del ítem creado vía callback `onCreated(payload)` nuevo). Se agrega el componente compartido **`SelectFieldWithCreate`** (`src/components/shared/SelectFieldWithCreate.tsx`) con `cva` (`selectFieldVariants`, `selectFieldLabelVariants`), tipado genérico `TValue`, label accesible con `React.useId()`, placeholder mapeado al item reset (`__none__`) y botón `+` opcional con `aria-label`/`title` por defecto `Crear {label}`. El modal preexistente de movimientos (`NuevoGastoModal`, botón **Nuevo Gasto**) conserva su botón pero renombra el título interno a **Nuevo Movimiento** para separar semánticamente "crear ítem de catálogo" vs "registrar movimiento con importe". La page `src/app/finanzas/balance/gastos/page.tsx` ahora hidrata `jerarquiaGastos` desde `listarFinBalGastosJerarquia()` junto a movimientos y sucursales (un único `Promise.all`). Histórico 2026-04-18: alta de la página **`/finanzas/balance/gastos/catalogo`** (submódulo **Catálogo Gastos** bajo **BALANCE**) con layout tipo Finder de 3 columnas (TIPOS → RUBROS → GASTOS) sobre `ClassicFilteredTableLayout` + `contentWidth="full"`. Dos modales reutilizables por `nivel`: `CrearEditarFinBalCatalogoItemModal` (alta/edición con campo `NOMBRE` normalizado a MAYÚSCULAS + contexto del padre en solo lectura) y `EliminarFinBalCatalogoItemModal` (confirmación destructiva que respeta `onDelete: Restrict` del backend).*
 
 ---
 
