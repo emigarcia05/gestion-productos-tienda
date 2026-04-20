@@ -72,6 +72,11 @@ interface Props {
    * `null` | `undefined` = sin proveedor.
    */
   proveedorIdInicial?: string | null;
+  /**
+   * Flags del gasto (solo `nivel === "gasto"`). `undefined` → `false` (default).
+   */
+  gastoMensualInicial?: boolean;
+  repiteMontoInicial?: boolean;
   onSuccess?: () => void;
 }
 
@@ -104,18 +109,33 @@ export default function CrearEditarFinBalCatalogoItemModal({
   parentNombre,
   proveedores,
   proveedorIdInicial = null,
+  gastoMensualInicial = false,
+  repiteMontoInicial = false,
   onSuccess,
 }: Props) {
   const [nombre, setNombre] = useState("");
   /** Solo relevante si `nivel === "gasto"`. `null` = sin proveedor. */
   const [proveedorId, setProveedorId] = useState<string | null>(null);
+  /** Flags del gasto (solo `nivel === "gasto"`). */
+  const [gastoMensual, setGastoMensual] = useState<boolean>(false);
+  const [repiteMonto, setRepiteMonto] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setNombre(modo === "editar" ? nombreInicial : "");
     setProveedorId(nivel === "gasto" ? proveedorIdInicial ?? null : null);
-  }, [open, modo, nombreInicial, nivel, proveedorIdInicial]);
+    setGastoMensual(nivel === "gasto" ? gastoMensualInicial : false);
+    setRepiteMonto(nivel === "gasto" ? repiteMontoInicial : false);
+  }, [
+    open,
+    modo,
+    nombreInicial,
+    nivel,
+    proveedorIdInicial,
+    gastoMensualInicial,
+    repiteMontoInicial,
+  ]);
 
   const labels = LABELS[nivel];
 
@@ -125,8 +145,23 @@ export default function CrearEditarFinBalCatalogoItemModal({
       nombre.trim().toUpperCase() !== nombreInicial.trim().toUpperCase();
     const proveedorCambio =
       nivel === "gasto" && (proveedorId ?? null) !== (proveedorIdInicial ?? null);
-    return nombreCambio || proveedorCambio;
-  }, [modo, nombre, nombreInicial, nivel, proveedorId, proveedorIdInicial]);
+    const gastoMensualCambio =
+      nivel === "gasto" && gastoMensual !== gastoMensualInicial;
+    const repiteMontoCambio =
+      nivel === "gasto" && repiteMonto !== repiteMontoInicial;
+    return nombreCambio || proveedorCambio || gastoMensualCambio || repiteMontoCambio;
+  }, [
+    modo,
+    nombre,
+    nombreInicial,
+    nivel,
+    proveedorId,
+    proveedorIdInicial,
+    gastoMensual,
+    gastoMensualInicial,
+    repiteMonto,
+    repiteMontoInicial,
+  ]);
 
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
@@ -148,6 +183,8 @@ export default function CrearEditarFinBalCatalogoItemModal({
         id,
         parentId,
         proveedorId: nivel === "gasto" ? proveedorId : null,
+        gastoMensual: nivel === "gasto" ? gastoMensual : false,
+        repiteMonto: nivel === "gasto" ? repiteMonto : false,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
@@ -252,6 +289,58 @@ export default function CrearEditarFinBalCatalogoItemModal({
               </Select>
             </label>
           )}
+
+          {nivel === "gasto" && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  GASTO MENSUAL
+                </span>
+                <Select
+                  value={gastoMensual ? "si" : "no"}
+                  onValueChange={(value) => setGastoMensual(value === "si")}
+                  disabled={saving}
+                >
+                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="si">SI</SelectItem>
+                    <SelectItem value="no">NO</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  REPITE MONTO
+                </span>
+                <Select
+                  value={repiteMonto ? "si" : "no"}
+                  onValueChange={(value) => setRepiteMonto(value === "si")}
+                  disabled={saving}
+                >
+                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="si">SI</SelectItem>
+                    <SelectItem value="no">NO</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            </div>
+          )}
         </div>
       </AppModal>
     </Dialog>
@@ -267,8 +356,10 @@ async function dispatch(args: {
   id?: string;
   parentId?: string;
   proveedorId: string | null;
+  gastoMensual: boolean;
+  repiteMonto: boolean;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { nombre, nivel, modo, id, parentId, proveedorId } = args;
+  const { nombre, nivel, modo, id, parentId, proveedorId, gastoMensual, repiteMonto } = args;
   if (nivel === "tipo") {
     if (modo === "crear") {
       const r = await crearFinBalGastoTipoAction({ nombre });
@@ -293,6 +384,8 @@ async function dispatch(args: {
       nombre,
       rubroId: parentId!,
       proveedorId,
+      gastoMensual,
+      repiteMonto,
     });
     return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
   }
@@ -302,6 +395,8 @@ async function dispatch(args: {
     nombre,
     rubroId: parentId!,
     proveedorId,
+    gastoMensual,
+    repiteMonto,
   });
   return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
 }

@@ -25,6 +25,20 @@ const proveedorIdOpcionalSchema = z
   .union([prismaCuidSchema, z.literal(""), z.null(), z.undefined()])
   .transform((value) => (value == null || value === "" ? null : value));
 
+/**
+ * Flags booleanos tolerantes: aceptan `"si" | "no" | "true" | "false" | "1" | "0"`
+ * (strings de `FormData`), booleanos nativos, `null` o `undefined`. Cualquier valor
+ * ausente/indeterminado se colapsa a `false` (default del catálogo).
+ */
+const booleanFlagSchema = z
+  .union([z.string(), z.boolean(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (typeof value === "boolean") return value;
+    if (value == null) return false;
+    const normalized = value.trim().toLowerCase();
+    return normalized === "si" || normalized === "sí" || normalized === "true" || normalized === "1";
+  });
+
 // ─── Tipo (raíz) ──────────────────────────────────────────────────────────
 
 export const crearFinBalGastoTipoSchema = z.object({
@@ -69,6 +83,8 @@ export const crearFinBalGastoSchema = z.object({
   nombre: nombreCatalogoSchema,
   rubroId: prismaCuidSchema,
   proveedorId: proveedorIdOpcionalSchema,
+  gastoMensual: booleanFlagSchema,
+  repiteMonto: booleanFlagSchema,
 });
 export type CrearFinBalGastoInput = z.infer<typeof crearFinBalGastoSchema>;
 
@@ -77,6 +93,8 @@ export const editarFinBalGastoSchema = z.object({
   nombre: nombreCatalogoSchema,
   rubroId: prismaCuidSchema,
   proveedorId: proveedorIdOpcionalSchema,
+  gastoMensual: booleanFlagSchema,
+  repiteMonto: booleanFlagSchema,
 });
 export type EditarFinBalGastoInput = z.infer<typeof editarFinBalGastoSchema>;
 

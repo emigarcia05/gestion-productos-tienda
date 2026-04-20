@@ -184,6 +184,18 @@ model FinBalGasto {
    * el gasto sobrevive con proveedor = NULL (catálogo maestro inmutable).
    */
   proveedorId String?  @map("proveedor_id")
+  /**
+   * Flag "Gasto mensual": indica si este gasto del catálogo es de frecuencia mensual.
+   * Uso típico: reportes de recurrentes, recordatorios y plantillas de balance.
+   * Default `false`; los registros preexistentes se inicializan en `false` (opt-in).
+   */
+  gastoMensual Boolean @default(false) @map("gasto_mensual")
+  /**
+   * Flag "Repite monto": indica si el gasto mantiene el mismo monto entre períodos
+   * (ej. alquileres, cuotas fijas). Permite precargar el último monto al registrar
+   * el movimiento en balance. Default `false`.
+   */
+  repiteMonto Boolean @default(false) @map("repite_monto")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

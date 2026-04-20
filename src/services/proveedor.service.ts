@@ -87,6 +87,18 @@ export async function getProveedoresMercaderia(): Promise<ProveedorListItem[]> {
   return listarProveedoresInterno({ proveedorMercaderia: true });
 }
 
+/**
+ * Lista únicamente los proveedores con `proveedor_mercaderia = false`
+ * (contraparte de `getProveedoresMercaderia`). Alimenta la columna
+ * "PROVEEDORES" de `/finanzas/balance/gastos/catalogo`, donde se gestiona
+ * el catálogo maestro de proveedores "no de mercadería" (gastos operativos,
+ * servicios, impuestos, etc.). Usa el mismo índice
+ * `proveedores_proveedor_mercaderia_idx`.
+ */
+export async function getProveedoresNoMercaderia(): Promise<ProveedorListItem[]> {
+  return listarProveedoresInterno({ proveedorMercaderia: false });
+}
+
 /** Implementación compartida: arma el payload con conteos en una sola pasada. */
 async function listarProveedoresInterno(
   where: { proveedorMercaderia?: boolean } | null

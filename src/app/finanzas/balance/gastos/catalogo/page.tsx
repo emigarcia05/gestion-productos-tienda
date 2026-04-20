@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarFinBalGastosJerarquia } from "@/services/finBalGastosCatalogo.service";
-import { getProveedores } from "@/services/proveedor.service";
+import { getProveedoresNoMercaderia } from "@/services/proveedor.service";
 import FinBalGastosCatalogoPageClient from "@/components/finanzas/FinBalGastosCatalogoPageClient";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function FinBalGastosCatalogoPage() {
   const esEditor = rol === "editor";
   const [jerarquia, proveedores] = await Promise.all([
     listarFinBalGastosJerarquia(),
-    getProveedores(),
+    getProveedoresNoMercaderia(),
   ]);
 
   return (

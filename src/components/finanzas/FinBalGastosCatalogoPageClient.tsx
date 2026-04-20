@@ -37,9 +37,11 @@ export interface ProveedorOption {
  *
  * Las 3 primeras columnas son la jerarquía en cascada.
  * La columna **PROVEEDORES** es autónoma (no depende de la selección) y
- * permite gestionar el catálogo maestro de proveedores (alta/edición/baja)
- * sin salir del módulo — reutiliza el mismo `ProveedorModal` usado en
- * `/gestion-productos/proveedores/lista`.
+ * permite gestionar el catálogo maestro de proveedores "no-mercadería"
+ * (alta/edición/baja) sin salir del módulo — reutiliza el mismo
+ * `ProveedorModal` usado en `/gestion-productos/proveedores/lista`. La
+ * lista proviene de `getProveedoresNoMercaderia()` (filtro
+ * `proveedor_mercaderia = false`).
  *
  * Interacción:
  *   - Click en un ítem de las 3 primeras columnas lo selecciona y revela la siguiente.
@@ -56,7 +58,8 @@ export interface ProveedorOption {
 interface Props {
   jerarquia: FinBalGastoJerarquiaTipo[];
   /**
-   * Lista completa de proveedores (payload del servicio). Se usa para:
+   * Lista de proveedores "no-mercadería" (payload del servicio
+   * `getProveedoresNoMercaderia`). Se usa para:
    *  - la columna **PROVEEDORES** (lectura + apertura del modal en edición),
    *  - el Select "PROVEEDOR" dentro del modal de alta/edición de gasto.
    */
@@ -76,6 +79,9 @@ type ModalCrearEditarState =
       parentNombre?: string;
       /** Solo aplica a `nivel === "gasto"`. `null` = sin proveedor. */
       proveedorIdInicial?: string | null;
+      /** Flags del gasto (solo `nivel === "gasto"`). Default `false`. */
+      gastoMensualInicial?: boolean;
+      repiteMontoInicial?: boolean;
     };
 
 type ModalEliminarState =
@@ -293,7 +299,13 @@ export default function FinBalGastosCatalogoPageClient({
                 <FilaCatalogo
                   key={gasto.id}
                   nombre={gasto.nombre}
-                  meta={gasto.proveedor ? gasto.proveedor.nombre : "Sin proveedor"}
+                  meta={[
+                    gasto.proveedor ? gasto.proveedor.nombre : "Sin proveedor",
+                    gasto.gastoMensual ? "Mensual" : null,
+                    gasto.repiteMonto ? "Repite monto" : null,
+                  ]
+                    .filter((v): v is string => Boolean(v))
+                    .join(" · ")}
                   selected={false}
                   mostrarAcciones={esEditor}
                   onEditar={() =>
@@ -306,6 +318,8 @@ export default function FinBalGastosCatalogoPageClient({
                       parentId: gasto.rubroId,
                       parentNombre: rubroSeleccionado.nombre,
                       proveedorIdInicial: gasto.proveedorId,
+                      gastoMensualInicial: gasto.gastoMensual,
+                      repiteMontoInicial: gasto.repiteMonto,
                     })
                   }
                   onEliminar={() =>
@@ -321,7 +335,7 @@ export default function FinBalGastosCatalogoPageClient({
             )}
           </CatalogoColumna>
 
-          {/* Columna autónoma: CRUD del catálogo maestro de proveedores.
+          {/* Columna autónoma: CRUD del catálogo maestro de proveedores "no-mercadería".
               Reutiliza `ProveedorModal` (el mismo de /gestion-productos/proveedores/lista). */}
           <CatalogoColumna
             titulo="PROVEEDORES"
@@ -336,7 +350,7 @@ export default function FinBalGastosCatalogoPageClient({
                 <FilaCatalogo
                   key={p.id}
                   nombre={p.nombre}
-                  meta={`${p.prefijo}${p.proveedorMercaderia ? " · Mercadería" : ""}`}
+                  meta={p.prefijo}
                   selected={false}
                   onClick={esEditor ? () => openProveedorEdit(p) : undefined}
                   mostrarAcciones={false}
@@ -362,6 +376,8 @@ export default function FinBalGastosCatalogoPageClient({
           parentNombre={crearEditar.parentNombre}
           proveedores={proveedoresParaSelect}
           proveedorIdInicial={crearEditar.proveedorIdInicial ?? null}
+          gastoMensualInicial={crearEditar.gastoMensualInicial ?? false}
+          repiteMontoInicial={crearEditar.repiteMontoInicial ?? false}
           onSuccess={onSuccessRefresh}
         />
       )}

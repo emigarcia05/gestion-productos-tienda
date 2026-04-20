@@ -50,6 +50,10 @@ export interface FinBalGastoItem {
   proveedorId: string | null;
   /** Proveedor expandido (incluido en listados con `include`). `null` si no hay FK. */
   proveedor: FinBalGastoProveedorRef | null;
+  /** Flag "Gasto mensual": recurrencia mensual del gasto. Default `false`. */
+  gastoMensual: boolean;
+  /** Flag "Repite monto": el gasto mantiene el mismo importe entre períodos. Default `false`. */
+  repiteMonto: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -170,6 +174,8 @@ export async function listarFinBalGastosPorRubro(
     rubroId: r.rubroId,
     proveedorId: r.proveedorId,
     proveedor: mapProveedorRef(r.proveedor),
+    gastoMensual: r.gastoMensual,
+    repiteMonto: r.repiteMonto,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   }));
@@ -212,6 +218,8 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
         rubroId: gasto.rubroId,
         proveedorId: gasto.proveedorId,
         proveedor: mapProveedorRef(gasto.proveedor),
+        gastoMensual: gasto.gastoMensual,
+        repiteMonto: gasto.repiteMonto,
         createdAt: gasto.createdAt,
         updatedAt: gasto.updatedAt,
       })),
@@ -385,6 +393,8 @@ export async function crearFinBalGasto(
         nombre: input.nombre,
         rubroId: input.rubroId,
         proveedorId: input.proveedorId,
+        gastoMensual: input.gastoMensual,
+        repiteMonto: input.repiteMonto,
       },
       include: { proveedor: proveedorIncludeArgs },
     });
@@ -396,6 +406,8 @@ export async function crearFinBalGasto(
         rubroId: row.rubroId,
         proveedorId: row.proveedorId,
         proveedor: mapProveedorRef(row.proveedor),
+        gastoMensual: row.gastoMensual,
+        repiteMonto: row.repiteMonto,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       },
@@ -418,6 +430,8 @@ export async function editarFinBalGasto(
         nombre: input.nombre,
         rubroId: input.rubroId,
         proveedorId: input.proveedorId,
+        gastoMensual: input.gastoMensual,
+        repiteMonto: input.repiteMonto,
       },
       include: { proveedor: proveedorIncludeArgs },
     });
@@ -429,6 +443,8 @@ export async function editarFinBalGasto(
         rubroId: row.rubroId,
         proveedorId: row.proveedorId,
         proveedor: mapProveedorRef(row.proveedor),
+        gastoMensual: row.gastoMensual,
+        repiteMonto: row.repiteMonto,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       },
