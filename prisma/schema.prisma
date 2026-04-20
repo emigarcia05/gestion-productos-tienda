@@ -271,7 +271,7 @@ model ComparacionDtoExtraItem {
 
   listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorId], references: [id], onDelete: Cascade)
 
-  @@map("comparacion_dto_extra_items")
+  @@map("prod_comp_dto_extra")
 }
 
 // ─── Comparación por categorías (Categoria → Subcategoria → Presentacion) ───
@@ -283,7 +283,7 @@ model CategoriaComparacion {
 
   subcategorias  SubcategoriaComparacion[]
 
-  @@map("comparacion_categorias")
+  @@map("prod_comp_cat")
 }
 
 model SubcategoriaComparacion {
@@ -296,7 +296,7 @@ model SubcategoriaComparacion {
   categoria      CategoriaComparacion  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
   presentaciones PresentacionComparacion[]
 
-  @@map("comparacion_subcategorias")
+  @@map("prod_comp_sub_cat")
 }
 
 model PresentacionComparacion {
@@ -312,7 +312,7 @@ model PresentacionComparacion {
   listaPrecios  ListaPrecioProveedor[] @relation("PresentacionItems")
   productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [idProductoReferencia], references: [id], onDelete: SetNull)
 
-  @@map("comparacion_presentaciones")
+  @@map("prod_comp_presentaciones")
 }
 
 // Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en precios_tienda.

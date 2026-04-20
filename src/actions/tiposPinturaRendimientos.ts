@@ -49,7 +49,7 @@ export async function getTiposPinturaRendimientosAction(): Promise<TipoPinturaRe
       id,
       tipo_pintura AS "tipoPintura",
       rendimiento
-    FROM tipos_pintura_rendimientos
+    FROM prod_rendimientos
     ORDER BY tipo_pintura ASC
   `;
   return rows;
@@ -73,7 +73,7 @@ export async function upsertTipoPinturaRendimientoAction(
     let row: TipoPinturaRendimiento;
     if (id) {
       const updated = await prisma.$queryRaw<TipoPinturaRendimiento[]>`
-        UPDATE tipos_pintura_rendimientos
+        UPDATE prod_rendimientos
         SET
           tipo_pintura = ${tipoPintura},
           rendimiento = ${rendimiento},
@@ -87,7 +87,7 @@ export async function upsertTipoPinturaRendimientoAction(
       row = updated[0]!;
     } else {
       const inserted = await prisma.$queryRaw<TipoPinturaRendimiento[]>`
-        INSERT INTO tipos_pintura_rendimientos (tipo_pintura, rendimiento)
+        INSERT INTO prod_rendimientos (tipo_pintura, rendimiento)
         VALUES (${tipoPintura}, ${rendimiento})
         RETURNING
           id,
@@ -111,7 +111,7 @@ export async function deleteTipoPinturaRendimientoAction(idRaw: string): Promise
 
   try {
     await prisma.$executeRaw`
-      DELETE FROM tipos_pintura_rendimientos
+      DELETE FROM prod_rendimientos
       WHERE id = ${id.data}
     `;
     revalidatePath("/tienda/litros");

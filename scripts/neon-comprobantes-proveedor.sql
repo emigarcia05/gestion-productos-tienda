@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS "comprobantes_proveedor" (
     "id_proveedor" TEXT NOT NULL,
     "total" DECIMAL(14,2) NOT NULL,
     "monto_aplicado" DECIMAL(14,2) NOT NULL,
+    "controlado" BOOLEAN NOT NULL DEFAULT FALSE,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

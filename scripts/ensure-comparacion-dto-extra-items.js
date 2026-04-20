@@ -19,17 +19,20 @@ async function main() {
 
   await client.connect();
 
+  // Nombre post-rename: prod_comp_dto_extra (ver migración
+  // `20260418260000_rename_prod_comp_y_comprobantes`). El script sigue siendo
+  // idempotente: en una DB ya migrada via `prisma migrate deploy` no hace nada.
   const sql = `
-CREATE TABLE IF NOT EXISTS "comparacion_dto_extra_items" (
+CREATE TABLE IF NOT EXISTS "prod_comp_dto_extra" (
   "id" TEXT NOT NULL,
   "id_lista_precios_proveedores" UUID NOT NULL,
   "dto_extra" INTEGER,
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP(3) NOT NULL,
 
-  CONSTRAINT "comparacion_dto_extra_items_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "comparacion_dto_extra_items_id_lista_precios_proveedores_key" UNIQUE ("id_lista_precios_proveedores"),
-  CONSTRAINT "comparacion_dto_extra_items_id_lista_precios_proveedores_fkey"
+  CONSTRAINT "prod_comp_dto_extra_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "prod_comp_dto_extra_id_lista_precios_proveedores_key" UNIQUE ("id_lista_precios_proveedores"),
+  CONSTRAINT "prod_comp_dto_extra_id_lista_precios_proveedores_fkey"
     FOREIGN KEY ("id_lista_precios_proveedores") REFERENCES "precios_proveedores"("id")
     ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -38,7 +41,7 @@ CREATE TABLE IF NOT EXISTS "comparacion_dto_extra_items" (
   try {
     await client.query(sql);
     // eslint-disable-next-line no-console
-    console.log("OK: tabla comparacion_dto_extra_items asegurada");
+    console.log("OK: tabla prod_comp_dto_extra asegurada");
   } finally {
     await client.end();
   }
