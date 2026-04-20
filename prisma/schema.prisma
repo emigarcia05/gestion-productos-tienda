@@ -82,6 +82,14 @@ model Sucursal {
   deposito       String?  // DEPÓSITO para exportaciones (texto para preservar formato)
   whatsapp       String?  @map("whatsapp")
   pedido         Boolean  @default(true) @map("pedido")
+  /**
+   * Flag "Centro de costo": indica si la sucursal debe tratarse como centro
+   * de imputación de costos en reportes/balance (independiente de `pedido`,
+   * que rige participación en flujos de pedidos de mercadería). Default
+   * `false`; los registros preexistentes se inicializan en `false` (opt-in).
+   * El flag se marca directamente en DB / seed (no hay UI de alta de sucursal).
+   */
+  centroCosto    Boolean  @default(false) @map("centro_costo")
   idDux          String?  @map("id_dux")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -190,12 +198,6 @@ model FinBalGasto {
    * Default `false`; los registros preexistentes se inicializan en `false` (opt-in).
    */
   gastoMensual Boolean @default(false) @map("gasto_mensual")
-  /**
-   * Flag "Repite monto": indica si el gasto mantiene el mismo monto entre períodos
-   * (ej. alquileres, cuotas fijas). Permite precargar el último monto al registrar
-   * el movimiento en balance. Default `false`.
-   */
-  repiteMonto Boolean @default(false) @map("repite_monto")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

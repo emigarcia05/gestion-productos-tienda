@@ -73,10 +73,9 @@ interface Props {
    */
   proveedorIdInicial?: string | null;
   /**
-   * Flags del gasto (solo `nivel === "gasto"`). `undefined` → `false` (default).
+   * Flag del gasto (solo `nivel === "gasto"`). `undefined` → `false` (default).
    */
   gastoMensualInicial?: boolean;
-  repiteMontoInicial?: boolean;
   onSuccess?: () => void;
 }
 
@@ -110,15 +109,13 @@ export default function CrearEditarFinBalCatalogoItemModal({
   proveedores,
   proveedorIdInicial = null,
   gastoMensualInicial = false,
-  repiteMontoInicial = false,
   onSuccess,
 }: Props) {
   const [nombre, setNombre] = useState("");
   /** Solo relevante si `nivel === "gasto"`. `null` = sin proveedor. */
   const [proveedorId, setProveedorId] = useState<string | null>(null);
-  /** Flags del gasto (solo `nivel === "gasto"`). */
+  /** Flag del gasto (solo `nivel === "gasto"`). */
   const [gastoMensual, setGastoMensual] = useState<boolean>(false);
-  const [repiteMonto, setRepiteMonto] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -126,7 +123,6 @@ export default function CrearEditarFinBalCatalogoItemModal({
     setNombre(modo === "editar" ? nombreInicial : "");
     setProveedorId(nivel === "gasto" ? proveedorIdInicial ?? null : null);
     setGastoMensual(nivel === "gasto" ? gastoMensualInicial : false);
-    setRepiteMonto(nivel === "gasto" ? repiteMontoInicial : false);
   }, [
     open,
     modo,
@@ -134,10 +130,19 @@ export default function CrearEditarFinBalCatalogoItemModal({
     nivel,
     proveedorIdInicial,
     gastoMensualInicial,
-    repiteMontoInicial,
   ]);
 
   const labels = LABELS[nivel];
+
+  /**
+   * En el alta de **gasto** mostramos únicamente el campo NOMBRE:
+   *  - El `rubroId` padre ya viene por contexto (columna RUBROS seleccionada),
+   *    así que el bloque informativo "RUBRO" no aporta valor nuevo.
+   *  - El proveedor se asigna (opcionalmente) luego desde "Editar Gasto";
+   *    al crear se persiste como `null` por defecto.
+   * Edición de gasto sigue exponiendo contexto + Select "PROVEEDOR".
+   */
+  const esAltaGastoSoloNombre = modo === "crear" && nivel === "gasto";
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
@@ -147,9 +152,7 @@ export default function CrearEditarFinBalCatalogoItemModal({
       nivel === "gasto" && (proveedorId ?? null) !== (proveedorIdInicial ?? null);
     const gastoMensualCambio =
       nivel === "gasto" && gastoMensual !== gastoMensualInicial;
-    const repiteMontoCambio =
-      nivel === "gasto" && repiteMonto !== repiteMontoInicial;
-    return nombreCambio || proveedorCambio || gastoMensualCambio || repiteMontoCambio;
+    return nombreCambio || proveedorCambio || gastoMensualCambio;
   }, [
     modo,
     nombre,
@@ -159,8 +162,6 @@ export default function CrearEditarFinBalCatalogoItemModal({
     proveedorIdInicial,
     gastoMensual,
     gastoMensualInicial,
-    repiteMonto,
-    repiteMontoInicial,
   ]);
 
   const disabledSubmit = useMemo(() => {
@@ -184,7 +185,6 @@ export default function CrearEditarFinBalCatalogoItemModal({
         parentId,
         proveedorId: nivel === "gasto" ? proveedorId : null,
         gastoMensual: nivel === "gasto" ? gastoMensual : false,
-        repiteMonto: nivel === "gasto" ? repiteMonto : false,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
@@ -233,7 +233,7 @@ export default function CrearEditarFinBalCatalogoItemModal({
         }
       >
         <div className="grid min-h-0 grid-cols-1 gap-3">
-          {nivel !== "tipo" && parentNombre ? (
+          {nivel !== "tipo" && parentNombre && !esAltaGastoSoloNombre ? (
             <div className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 {labels.parentLabel}
@@ -258,7 +258,7 @@ export default function CrearEditarFinBalCatalogoItemModal({
             />
           </label>
 
-          {nivel === "gasto" && (
+          {nivel === "gasto" && !esAltaGastoSoloNombre && (
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 PROVEEDOR
@@ -291,55 +291,29 @@ export default function CrearEditarFinBalCatalogoItemModal({
           )}
 
           {nivel === "gasto" && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  GASTO MENSUAL
-                </span>
-                <Select
-                  value={gastoMensual ? "si" : "no"}
-                  onValueChange={(value) => setGastoMensual(value === "si")}
-                  disabled={saving}
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                GASTO MENSUAL
+              </span>
+              <Select
+                value={gastoMensual ? "si" : "no"}
+                onValueChange={(value) => setGastoMensual(value === "si")}
+                disabled={saving}
+              >
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
                 >
-                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    className="select-content-filtro"
-                  >
-                    <SelectItem value="si">SI</SelectItem>
-                    <SelectItem value="no">NO</SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
-
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  REPITE MONTO
-                </span>
-                <Select
-                  value={repiteMonto ? "si" : "no"}
-                  onValueChange={(value) => setRepiteMonto(value === "si")}
-                  disabled={saving}
-                >
-                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    className="select-content-filtro"
-                  >
-                    <SelectItem value="si">SI</SelectItem>
-                    <SelectItem value="no">NO</SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
-            </div>
+                  <SelectItem value="si">SI</SelectItem>
+                  <SelectItem value="no">NO</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
           )}
         </div>
       </AppModal>
@@ -357,9 +331,8 @@ async function dispatch(args: {
   parentId?: string;
   proveedorId: string | null;
   gastoMensual: boolean;
-  repiteMonto: boolean;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { nombre, nivel, modo, id, parentId, proveedorId, gastoMensual, repiteMonto } = args;
+  const { nombre, nivel, modo, id, parentId, proveedorId, gastoMensual } = args;
   if (nivel === "tipo") {
     if (modo === "crear") {
       const r = await crearFinBalGastoTipoAction({ nombre });
@@ -385,7 +358,6 @@ async function dispatch(args: {
       rubroId: parentId!,
       proveedorId,
       gastoMensual,
-      repiteMonto,
     });
     return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
   }
@@ -396,7 +368,6 @@ async function dispatch(args: {
     rubroId: parentId!,
     proveedorId,
     gastoMensual,
-    repiteMonto,
   });
   return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
 }

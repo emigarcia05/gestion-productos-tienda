@@ -84,7 +84,6 @@ export const crearFinBalGastoSchema = z.object({
   rubroId: prismaCuidSchema,
   proveedorId: proveedorIdOpcionalSchema,
   gastoMensual: booleanFlagSchema,
-  repiteMonto: booleanFlagSchema,
 });
 export type CrearFinBalGastoInput = z.infer<typeof crearFinBalGastoSchema>;
 
@@ -94,7 +93,6 @@ export const editarFinBalGastoSchema = z.object({
   rubroId: prismaCuidSchema,
   proveedorId: proveedorIdOpcionalSchema,
   gastoMensual: booleanFlagSchema,
-  repiteMonto: booleanFlagSchema,
 });
 export type EditarFinBalGastoInput = z.infer<typeof editarFinBalGastoSchema>;
 

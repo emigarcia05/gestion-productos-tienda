@@ -79,9 +79,8 @@ type ModalCrearEditarState =
       parentNombre?: string;
       /** Solo aplica a `nivel === "gasto"`. `null` = sin proveedor. */
       proveedorIdInicial?: string | null;
-      /** Flags del gasto (solo `nivel === "gasto"`). Default `false`. */
+      /** Flag del gasto (solo `nivel === "gasto"`). Default `false`. */
       gastoMensualInicial?: boolean;
-      repiteMontoInicial?: boolean;
     };
 
 type ModalEliminarState =
@@ -302,7 +301,6 @@ export default function FinBalGastosCatalogoPageClient({
                   meta={[
                     gasto.proveedor ? gasto.proveedor.nombre : "Sin proveedor",
                     gasto.gastoMensual ? "Mensual" : null,
-                    gasto.repiteMonto ? "Repite monto" : null,
                   ]
                     .filter((v): v is string => Boolean(v))
                     .join(" · ")}
@@ -319,7 +317,6 @@ export default function FinBalGastosCatalogoPageClient({
                       parentNombre: rubroSeleccionado.nombre,
                       proveedorIdInicial: gasto.proveedorId,
                       gastoMensualInicial: gasto.gastoMensual,
-                      repiteMontoInicial: gasto.repiteMonto,
                     })
                   }
                   onEliminar={() =>
@@ -377,7 +374,6 @@ export default function FinBalGastosCatalogoPageClient({
           proveedores={proveedoresParaSelect}
           proveedorIdInicial={crearEditar.proveedorIdInicial ?? null}
           gastoMensualInicial={crearEditar.gastoMensualInicial ?? false}
-          repiteMontoInicial={crearEditar.repiteMontoInicial ?? false}
           onSuccess={onSuccessRefresh}
         />
       )}
