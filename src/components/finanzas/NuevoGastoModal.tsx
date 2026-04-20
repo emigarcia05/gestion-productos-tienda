@@ -78,11 +78,11 @@ export default function NuevoGastoModal({
         monto: montoNumber,
       });
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudo registrar el movimiento.");
+        toast.error(res.error ?? "No se pudo crear el gasto.");
         return;
       }
 
-      toast.success("Movimiento registrado correctamente.");
+      toast.success("Gasto creado correctamente.");
       onOpenChange(false);
       resetForm();
       onCreated?.();
@@ -100,7 +100,7 @@ export default function NuevoGastoModal({
       }}
     >
       <AppModal
-        title="Nuevo Movimiento"
+        title="Crear Gasto"
         size="md"
         className="sm:max-w-xl"
         actions={

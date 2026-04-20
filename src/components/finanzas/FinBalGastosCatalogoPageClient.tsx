@@ -15,6 +15,11 @@ import type {
   FinBalGastoJerarquiaTipo,
 } from "@/services/finBalGastosCatalogo.service";
 
+export interface ProveedorOption {
+  id: string;
+  nombre: string;
+}
+
 /**
  * Página del catálogo jerárquico Finanzas → Balance → Gastos.
  *
@@ -33,6 +38,11 @@ import type {
 
 interface Props {
   jerarquia: FinBalGastoJerarquiaTipo[];
+  /**
+   * Lista de proveedores disponibles para asignar a un gasto (se pasa al modal
+   * de alta/edición de gasto). Server Component la carga en un solo roundtrip.
+   */
+  proveedores: ProveedorOption[];
   esEditor: boolean;
 }
 
@@ -46,6 +56,8 @@ type ModalCrearEditarState =
       nombreInicial?: string;
       parentId?: string;
       parentNombre?: string;
+      /** Solo aplica a `nivel === "gasto"`. `null` = sin proveedor. */
+      proveedorIdInicial?: string | null;
     };
 
 type ModalEliminarState =
@@ -59,6 +71,7 @@ type ModalEliminarState =
 
 export default function FinBalGastosCatalogoPageClient({
   jerarquia,
+  proveedores,
   esEditor,
 }: Props) {
   const router = useRouter();
@@ -226,6 +239,7 @@ export default function FinBalGastosCatalogoPageClient({
                 <FilaCatalogo
                   key={gasto.id}
                   nombre={gasto.nombre}
+                  meta={gasto.proveedor ? gasto.proveedor.nombre : "Sin proveedor"}
                   selected={false}
                   mostrarAcciones={esEditor}
                   onEditar={() =>
@@ -237,6 +251,7 @@ export default function FinBalGastosCatalogoPageClient({
                       nombreInicial: gasto.nombre,
                       parentId: gasto.rubroId,
                       parentNombre: rubroSeleccionado.nombre,
+                      proveedorIdInicial: gasto.proveedorId,
                     })
                   }
                   onEliminar={() =>
@@ -265,6 +280,8 @@ export default function FinBalGastosCatalogoPageClient({
           nombreInicial={crearEditar.nombreInicial}
           parentId={crearEditar.parentId}
           parentNombre={crearEditar.parentNombre}
+          proveedores={proveedores}
+          proveedorIdInicial={crearEditar.proveedorIdInicial ?? null}
           onSuccess={onSuccessRefresh}
         />
       )}

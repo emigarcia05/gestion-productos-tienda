@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getProveedores } from "@/actions/proveedores";
+import { getProveedoresMercaderia } from "@/actions/proveedores";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -12,7 +12,7 @@ export default async function ListaProveedoresPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.proveedores.lista)) redirect("/gestion-productos/proveedores/sugeridos");
 
-  const [proveedores] = await Promise.all([getProveedores()]);
+  const [proveedores] = await Promise.all([getProveedoresMercaderia()]);
   const p = PERMISOS.proveedores;
 
   const actions =

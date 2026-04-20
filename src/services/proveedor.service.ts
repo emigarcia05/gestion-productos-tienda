@@ -42,6 +42,11 @@ export interface ProveedorListItem {
   coeficienteTintometrico: number;
   /** Plazos de pago en días (ej. 30,60). */
   plazosPagos: string | null;
+  /**
+   * Flag "proveedor de mercadería". Solo los TRUE se listan en
+   * /gestion-productos/proveedores/lista (ver `getProveedoresMercaderia`).
+   */
+  proveedorMercaderia: boolean;
   /** Cantidad de ítems en precios_proveedores. */
   cantProductos: number;
   /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
@@ -55,10 +60,32 @@ export const PROVEEDOR_ERROR = {
 
 /**
  * Lista de proveedores desde la base de datos con conteos en precios_proveedores y lista_precios_tienda.
+ *
+ * Devuelve TODOS los proveedores (sin filtrar por `proveedorMercaderia`).
+ * Este método alimenta vistas transversales (Px Sugeridos, Lista Px Proveedores,
+ * Comparación por Categorías, sincronizaciones, etc.). Para la vista específica
+ * "Lista Proveedores" usar `getProveedoresMercaderia()`.
  */
 export async function getProveedores(): Promise<ProveedorListItem[]> {
+  return listarProveedoresInterno(null);
+}
+
+/**
+ * Lista únicamente los proveedores con `proveedor_mercaderia = true`.
+ * Alimenta /gestion-productos/proveedores/lista (tabla "Lista Proveedores").
+ * Usa el índice `proveedores_proveedor_mercaderia_idx` para el filtro.
+ */
+export async function getProveedoresMercaderia(): Promise<ProveedorListItem[]> {
+  return listarProveedoresInterno({ proveedorMercaderia: true });
+}
+
+/** Implementación compartida: arma el payload con conteos en una sola pasada. */
+async function listarProveedoresInterno(
+  where: { proveedorMercaderia?: boolean } | null
+): Promise<ProveedorListItem[]> {
   const [rows, provistosByProveedor] = await Promise.all([
     prisma.proveedor.findMany({
+      where: where ?? undefined,
       orderBy: { nombre: "asc" },
       include: { _count: { select: { listaPrecios: true } } },
     }),
@@ -82,6 +109,7 @@ export async function getProveedores(): Promise<ProveedorListItem[]> {
     whatsapp: p.whatsapp ?? null,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
     plazosPagos: p.plazosPagos ?? null,
+    proveedorMercaderia: p.proveedorMercaderia,
     cantProductos: p._count.listaPrecios,
     cantProductosProvistos: provistosMap.get(p.id) ?? 0,
   }));

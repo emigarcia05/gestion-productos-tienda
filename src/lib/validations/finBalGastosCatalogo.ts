@@ -16,6 +16,15 @@ const nombreCatalogoSchema = z
   .max(120, "El nombre es demasiado largo.")
   .transform((value) => value.toUpperCase());
 
+/**
+ * FK opcional a `proveedores.id`.
+ * Acepta: CUID válido, `null`, `undefined` o string vacío (normalizado a `null`).
+ * Se exporta como `string | null` para que el servicio pueda pasarlo directo a Prisma.
+ */
+const proveedorIdOpcionalSchema = z
+  .union([prismaCuidSchema, z.literal(""), z.null(), z.undefined()])
+  .transform((value) => (value == null || value === "" ? null : value));
+
 // ─── Tipo (raíz) ──────────────────────────────────────────────────────────
 
 export const crearFinBalGastoTipoSchema = z.object({
@@ -59,6 +68,7 @@ export type EliminarFinBalGastoRubroInput = z.infer<typeof eliminarFinBalGastoRu
 export const crearFinBalGastoSchema = z.object({
   nombre: nombreCatalogoSchema,
   rubroId: prismaCuidSchema,
+  proveedorId: proveedorIdOpcionalSchema,
 });
 export type CrearFinBalGastoInput = z.infer<typeof crearFinBalGastoSchema>;
 
@@ -66,6 +76,7 @@ export const editarFinBalGastoSchema = z.object({
   id: prismaCuidSchema,
   nombre: nombreCatalogoSchema,
   rubroId: prismaCuidSchema,
+  proveedorId: proveedorIdOpcionalSchema,
 });
 export type EditarFinBalGastoInput = z.infer<typeof editarFinBalGastoSchema>;
 

@@ -43,6 +43,17 @@ export async function getProveedores() {
   return proveedorService.getProveedores();
 }
 
+/**
+ * Lista únicamente los proveedores con `proveedor_mercaderia = true`.
+ * Usada por /gestion-productos/proveedores/lista (tabla "Lista Proveedores").
+ * Gate de permisos idéntico a `getProveedores`.
+ */
+export async function getProveedoresMercaderia() {
+  const rol = await getRol();
+  if (!puedeConsultarCatalogoProveedores(rol)) return [];
+  return proveedorService.getProveedoresMercaderia();
+}
+
 /** Datos para la página /proveedores (lista + productos + total). Sin filtros no se cargan productos para navegación más rápida. MOCK. */
 export async function getProveedoresPageData(params: {
   q?: string;

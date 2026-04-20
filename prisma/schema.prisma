@@ -29,6 +29,14 @@ model Proveedor {
   coeficienteTintometrico Decimal @map("coeficiente_tintometrico") @db.Decimal(12, 6) @default(1)
   /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
   plazosPagos     String?  @map("plazos_pagos")
+  /**
+   * Flag que marca al proveedor como "de mercadería".
+   * Solo los TRUE se listan en /gestion-productos/proveedores/lista.
+   * Default DB: false (nuevos proveedores son opt-in). Los proveedores existentes
+   * al momento de la migración fueron backfilleados a true para preservar el
+   * comportamiento previo de la lista.
+   */
+  proveedorMercaderia Boolean @default(false) @map("proveedor_mercaderia")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -36,8 +44,10 @@ model Proveedor {
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
+  finBalGastos         FinBalGasto[]
   // Tabla única de pedidos: pedidos_mercaderia
 
+  @@index([proveedorMercaderia])
   @@map("proveedores")
 }
 
@@ -164,16 +174,25 @@ model FinBalGastoRubro {
 
 // Gasto (hoja de la jerarquía) dentro de un Rubro. `nombre` único por `rubro_id`.
 model FinBalGasto {
-  id        String   @id @default(cuid())
-  nombre    String
-  rubroId   String   @map("rubro_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(cuid())
+  nombre      String
+  rubroId     String   @map("rubro_id")
+  /**
+   * FK opcional a `proveedores.id`. Identifica al proveedor asociado al gasto.
+   * Nullable porque hay gastos "genéricos" sin proveedor (ej. sueldos, servicios
+   * propios). Política `onDelete: SetNull`: si se da de baja un proveedor,
+   * el gasto sobrevive con proveedor = NULL (catálogo maestro inmutable).
+   */
+  proveedorId String?  @map("proveedor_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  rubro FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
+  rubro     FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
+  proveedor Proveedor?       @relation(fields: [proveedorId], references: [id], onDelete: SetNull)
 
   @@unique([rubroId, nombre], map: "fin_bal_gasto_rubro_nombre_ux")
   @@index([rubroId])
+  @@index([proveedorId])
   @@map("fin_bal_gasto")
 }
 

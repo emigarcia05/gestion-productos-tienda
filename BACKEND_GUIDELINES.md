@@ -24,7 +24,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ListaPrecioTienda`, `ListaPrecioProveedor`, `ItemPedidoEnvio`). Validar con `prismaCuidSchema` (`@/lib/validations/common`), `uuidSchema` o `z.string().min(1).max(128)` según el modelo; **no** mezclar `.uuid()` en IDs que sean `cuid`.
 - **Lecturas con datos sensibles** (precios, vínculos, catálogos):
   - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas (no controla si el campo se expone).
-  - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`.
+  - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` (ver §1.12).
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)`; IDs de ítem tienda con `uuidSchema`; filtros de búsqueda acotados con Zod en la Action.
   - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)`. En la matriz actual **`simple` y `editor`** tienen `sincronizar: true` (slidenav y cualquier cliente autenticado con sesión válida). El `GET` de estado (`/api/sync-lista-precios-tienda/status`) sigue sin chequeo de rol explícito en el route: cualquier sesión que pueda llamar la API ve el mismo progreso global. **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”).
 - **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos, comprobantes proveedor).
@@ -114,6 +114,22 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - Validación Zod: `plazosPagosSchema` en `@/lib/validations/proveedor.ts`; incluido en `createProveedorSchema` / `updateProveedorSchema`. Vacío se guarda como `NULL`.
 - Servicio: `createProveedor` / `updateProveedor` en `proveedor.service.ts`; listados `getProveedores` exponen `plazosPagos`.
 - SQL manual (Neon): `scripts/neon-plazos-pagos-proveedores.sql`; migración Prisma `20260401120000_add_plazos_pagos_proveedores`.
+
+### 1.11c Flag "Proveedor de Mercadería" (`proveedor_mercaderia`)
+
+- Persistencia: `proveedores.proveedor_mercaderia` (`BOOLEAN`, `NOT NULL`, **default DB `false`**). Prisma: `proveedorMercaderia Boolean @default(false) @map("proveedor_mercaderia")`. Índice `proveedores_proveedor_mercaderia_idx` sobre la columna para acelerar el filtro.
+- Semántica: marca al proveedor como "de mercadería". **Solo los `TRUE`** se listan en `/gestion-productos/proveedores/lista` (ruta legacy `/proveedores/lista`, tabla "Lista Proveedores" del módulo `LISTA PROVEEDORES`). Los `FALSE` siguen siendo proveedores válidos del sistema (aparecen en Px Sugeridos, Lista Px Proveedores, Comp. por Cat., sincronizaciones DUX, pedidos, etc.), pero quedan fuera del tablero de gestión de mercadería.
+- Migración `20260418200000_add_proveedores_proveedor_mercaderia`:
+  1. `ADD COLUMN "proveedor_mercaderia" BOOLEAN NOT NULL DEFAULT true` — **backfill** de todos los proveedores existentes a `true` (preserva el comportamiento previo: la lista no se vacía).
+  2. `ALTER COLUMN "proveedor_mercaderia" SET DEFAULT false` — a partir de la migración los proveedores NUEVOS son **opt-in**: no aparecen en la lista hasta marcarlos explícitamente.
+  3. `CREATE INDEX "proveedores_proveedor_mercaderia_idx" ON "proveedores"("proveedor_mercaderia")`.
+- Servicio `src/services/proveedor.service.ts`:
+  - `ProveedorListItem.proveedorMercaderia: boolean` (nuevo campo, expuesto en todos los listados de proveedor).
+  - `getProveedores()` sigue devolviendo **todos** los proveedores (alimenta múltiples vistas transversales).
+  - **`getProveedoresMercaderia()`** nuevo: filtra `where: { proveedorMercaderia: true }` y reutiliza la misma lógica de conteos (helper privado `listarProveedoresInterno`).
+- Action `src/actions/proveedores.ts`: `getProveedoresMercaderia()` con el mismo gate que `getProveedores` (`puedeConsultarCatalogoProveedores`).
+- Consumidor único actual: `src/app/proveedores/lista/page.tsx` (apuntado al nuevo action).
+- **Regla**: si en el futuro se agrega una nueva vista exclusiva de mercadería (ej. dashboard de compras), consumir `getProveedoresMercaderia`; no replicar el filtro en call sites.
 
 ### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
 
@@ -408,31 +424,37 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - `id` (`TEXT`, PK; `cuid()` en app).
   - `nombre` (`TEXT`).
   - `rubro_id` (`TEXT`, FK → `fin_bal_gasto_rubro.id`, `onDelete: Restrict`, `onUpdate: Cascade`).
+  - `proveedor_id` (`TEXT` **NULLable**, FK → `proveedores.id`, `onDelete: SetNull`, `onUpdate: Cascade`). Asocia opcionalmente el gasto a un proveedor. `NULL` = gasto genérico sin proveedor (ej. sueldos, servicios propios). La política `SetNull` preserva el catálogo maestro cuando se dan de baja proveedores (no `Restrict`, que bloquearía bajas; no `Cascade`, que destruiría el catálogo).
   - `created_at`, `updated_at` (`TIMESTAMP(3)`).
-  - Unicidad compuesta `@@unique([rubroId, nombre])` (map `fin_bal_gasto_rubro_nombre_ux`): el mismo nombre puede existir en **distintos rubros**.
-  - Índice en `rubro_id` (`fin_bal_gasto_rubro_id_idx`).
+  - Unicidad compuesta `@@unique([rubroId, nombre])` (map `fin_bal_gasto_rubro_nombre_ux`): el mismo nombre puede existir en **distintos rubros**. La unicidad **no** incluye `proveedor_id` para evitar duplicados ambiguos por UI.
+  - Índices: `rubro_id` (`fin_bal_gasto_rubro_id_idx`) y `proveedor_id` (`fin_bal_gasto_proveedor_id_idx`).
+  - Relación inversa en `Proveedor`: `finBalGastos FinBalGasto[]`.
 - **Integridad referencial**:
   - `onDelete: Restrict` en ambas FKs: no se puede borrar un tipo con rubros asociados ni un rubro con gastos asociados. Si se necesita baja en cascada, cambiar explícitamente a `Cascade` en la migración correspondiente y documentarlo.
 - **Convención de normalización**: al persistir desde service/action, aplicar `trim + toUpperCase` sobre `nombre` (alineado a `cajas_tesoreria`, `movimientos_finanzas.nombre`).
 - **Errores a mapear** (Prisma → `ServiceResult`):
   - `P2002` (unique violation): “Ya existe un rubro con ese nombre para el tipo seleccionado.” / análogo para gasto.
-  - `P2003` (FK violation): “Tipo/Rubro inválido.”
+  - `P2003` (FK violation): “Tipo/Rubro inválido.” En `gasto`, distinguir por `error.meta.field_name` / `error.meta.constraint` — si contiene `proveedor`, mensaje “El proveedor seleccionado no existe.”; si contiene `rubro`, “El rubro seleccionado no existe.”
   - `P2025` (registro no encontrado): “Registro no encontrado.”
 - **Migraciones**:
   - `prisma/migrations/20260418170000_add_fin_bal_gasto_tipo/migration.sql` (tabla raíz).
   - `prisma/migrations/20260418180000_add_fin_bal_gasto_rubro_y_gasto/migration.sql` (rubro + gasto + FKs).
+  - `prisma/migrations/20260418210000_add_fin_bal_gasto_proveedor_id/migration.sql` (FK opcional a `proveedores` con `onDelete: SET NULL` + índice).
 - **Validaciones Zod**: `src/lib/validations/finBalGastosCatalogo.ts`
   - `crearFinBalGastoTipoSchema`, `editarFinBalGastoTipoSchema`, `eliminarFinBalGastoTipoSchema`.
   - `crearFinBalGastoRubroSchema`, `editarFinBalGastoRubroSchema`, `eliminarFinBalGastoRubroSchema`.
   - `crearFinBalGastoSchema`, `editarFinBalGastoSchema`, `eliminarFinBalGastoSchema`.
   - `nombre` en todos: `trim + toUpperCase`, `min(1)`, `max(120)`.
   - IDs validados con `prismaCuidSchema` (común a cuid del proyecto).
+  - `proveedorIdOpcionalSchema` (solo en `crearFinBalGastoSchema` / `editarFinBalGastoSchema`): `union` de `prismaCuidSchema | ""` | `null` | `undefined`, transformado a `string | null`. El cliente puede enviar string vacío o ausente; el servicio recibe siempre `null` en ese caso (Prisma desasigna la FK).
 - **Servicio** (`src/services/finBalGastosCatalogo.service.ts`)
   - **Lecturas** (no devuelven `ServiceResult`; siempre exitosas, consumidas desde Server Components):
     - `listarFinBalGastoTipos()` → `FinBalGastoTipoItem[]` ordenados por `nombre` asc.
     - `listarFinBalGastoRubrosPorTipo(tipoId)` → `FinBalGastoRubroItem[]` filtrados por `tipoId`.
-    - `listarFinBalGastosPorRubro(rubroId)` → `FinBalGastoItem[]` filtrados por `rubroId`.
-    - `listarFinBalGastosJerarquia()` → `FinBalGastoJerarquiaTipo[]` (árbol completo Tipo → Rubros → Gastos en **un solo roundtrip** con `include` anidado + orden alfabético en cada nivel). Uso recomendado para la UI de árbol.
+    - `listarFinBalGastosPorRubro(rubroId)` → `FinBalGastoItem[]` filtrados por `rubroId`, con `proveedor` expandido (`{ id, nombre }` o `null`) para evitar N+1.
+    - `listarFinBalGastosJerarquia()` → `FinBalGastoJerarquiaTipo[]` (árbol completo Tipo → Rubros → Gastos en **un solo roundtrip** con `include` anidado + orden alfabético en cada nivel). Cada gasto incluye `proveedor` expandido. Uso recomendado para la UI de árbol.
+    - Helper privado `mapProveedorRef(proveedor)`: devuelve `{ id, nombre: UPPERCASE } | null`. Usado por todas las lecturas/escrituras de gasto para formateo consistente.
+  - **Tipos expuestos** — `FinBalGastoItem` incluye `proveedorId: string | null` + `proveedor: FinBalGastoProveedorRef | null`. La presencia del objeto expandido es garantizada (nunca `undefined`).
   - **Escrituras** (todas devuelven `ServiceResult<T>`):
     - Tipo: `crearFinBalGastoTipo`, `editarFinBalGastoTipo`, `eliminarFinBalGastoTipo`.
     - Rubro: `crearFinBalGastoRubro`, `editarFinBalGastoRubro`, `eliminarFinBalGastoRubro`.
@@ -815,7 +837,7 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización: 2026-04-18 — **alta** de la jerarquía `fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_gasto` (migraciones `20260418170000_add_fin_bal_gasto_tipo` y `20260418180000_add_fin_bal_gasto_rubro_y_gasto`), con FKs `onDelete: Restrict`, nombre único global en tipo y único por padre en rubro/gasto. Incluye capa completa backend: validaciones Zod (`finBalGastosCatalogo.ts`), servicio con lectura jerárquica + CRUD 3 niveles (`finBalGastosCatalogo.service.ts`) y Actions con gate `PERMISOS.finanzas.acceso` + `esEditor()` (`actions/finBalGastosCatalogo.ts`). **Baja** previa del catálogo `finanzas_rubros` / `finanzas_gastos` y enum `TipoCostoGasto` (migración `20260418160000_drop_finanzas_rubros_y_gastos_catalogo`); se eliminaron servicio, action, validaciones y modal asociados; `/finanzas/balance/gastos` queda solo con alta de movimientos en `movimientos_finanzas`. Histórico: `cajas_tesoreria` (2026-04-14), `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
+*Última actualización: 2026-04-18 — **alta** de `fin_bal_gasto.proveedor_id` (FK opcional a `proveedores`, `BOOLEAN NULLable`, `onDelete: SET NULL`, `onUpdate: CASCADE`, índice `fin_bal_gasto_proveedor_id_idx`). Migración `20260418210000_add_fin_bal_gasto_proveedor_id`. Schema Prisma: campo `proveedorId` + relación `proveedor Proveedor?` en `FinBalGasto` y relación inversa `finBalGastos FinBalGasto[]` en `Proveedor`. Zod (`crearFinBalGastoSchema` / `editarFinBalGastoSchema`) acepta `proveedorIdOpcionalSchema` (union de `prismaCuidSchema | ""` | `null` | `undefined` → normalizado a `string | null`). Servicio: `FinBalGastoItem` expone `proveedorId` + `proveedor: { id, nombre } | null` (expandido en lecturas vía `include: { proveedor: { select: { id, nombre } } }`); `mapDbError` distingue P2003 en gasto por `meta.field_name` / `meta.constraint` entre proveedor y rubro. UI: Select opcional "PROVEEDOR" (con opción "SIN PROVEEDOR") en modal de alta/edición de gasto (`CrearEditarFinBalCatalogoItemModal`); la columna 3 de `/finanzas/balance/gastos/catalogo` muestra el nombre del proveedor (o "Sin proveedor") como meta bajo el nombre del gasto; la página del catálogo carga proveedores vía `getProveedores()` en paralelo con la jerarquía. — **alta** de `proveedores.proveedor_mercaderia` (`BOOLEAN NOT NULL DEFAULT false` en schema final; backfill a `true` para existentes, índice `proveedores_proveedor_mercaderia_idx`). Migración `20260418200000_add_proveedores_proveedor_mercaderia`. Nueva lectura `getProveedoresMercaderia` en servicio y action; `/gestion-productos/proveedores/lista` filtra por `proveedor_mercaderia = true` (ver §1.11c). — **alta** de la jerarquía `fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_gasto` (migraciones `20260418170000_add_fin_bal_gasto_tipo` y `20260418180000_add_fin_bal_gasto_rubro_y_gasto`), con FKs `onDelete: Restrict`, nombre único global en tipo y único por padre en rubro/gasto. Incluye capa completa backend: validaciones Zod (`finBalGastosCatalogo.ts`), servicio con lectura jerárquica + CRUD 3 niveles (`finBalGastosCatalogo.service.ts`) y Actions con gate `PERMISOS.finanzas.acceso` + `esEditor()` (`actions/finBalGastosCatalogo.ts`). **Baja** previa del catálogo `finanzas_rubros` / `finanzas_gastos` y enum `TipoCostoGasto` (migración `20260418160000_drop_finanzas_rubros_y_gastos_catalogo`); se eliminaron servicio, action, validaciones y modal asociados; `/finanzas/balance/gastos` queda solo con alta de movimientos en `movimientos_finanzas`. Histórico: `cajas_tesoreria` (2026-04-14), `precios_tienda.stockeable` (2026-04-13), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
 
 ---
 

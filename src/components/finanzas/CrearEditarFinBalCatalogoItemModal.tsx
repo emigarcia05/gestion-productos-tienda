@@ -6,6 +6,15 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   crearFinBalGastoAction,
   crearFinBalGastoRubroAction,
@@ -14,21 +23,10 @@ import {
   editarFinBalGastoRubroAction,
   editarFinBalGastoTipoAction,
 } from "@/actions/finBalGastosCatalogo";
-import type {
-  FinBalGastoItem,
-  FinBalGastoRubroItem,
-  FinBalGastoTipoItem,
-} from "@/services/finBalGastosCatalogo.service";
+import type { ProveedorOption } from "./FinBalGastosCatalogoPageClient";
 
-/**
- * Payload entregado al callback `onCreated` cuando el modal opera en modo
- * `"crear"` y la Action devuelve éxito. Permite al padre preseleccionar el ítem
- * recién creado (p. ej. en un formulario superior) sin depender de refresh.
- */
-export type FinBalCatalogoCreatedPayload =
-  | { nivel: "tipo"; data: FinBalGastoTipoItem }
-  | { nivel: "rubro"; data: FinBalGastoRubroItem }
-  | { nivel: "gasto"; data: FinBalGastoItem };
+/** Sentinel para el Select de proveedor (shadcn Select no acepta string vacío). */
+const SIN_PROVEEDOR_SENTINEL = "__sin_proveedor__";
 
 /**
  * Modal unificado de alta/edición para los 3 niveles del catálogo jerárquico
@@ -64,12 +62,17 @@ interface Props {
   parentId?: string;
   /** Nombre del padre, se muestra como contexto informativo (read-only). */
   parentNombre?: string;
-  onSuccess?: () => void;
   /**
-   * Callback adicional solo para modo `"crear"` exitoso. Entrega el ítem
-   * creado tipado por `nivel` para que el padre pueda preseleccionarlo.
+   * Lista de proveedores para el Select (solo relevante si `nivel === "gasto"`).
+   * Es responsabilidad de la página cargarla en el Server Component.
    */
-  onCreated?: (payload: FinBalCatalogoCreatedPayload) => void;
+  proveedores?: ProveedorOption[];
+  /**
+   * Proveedor actualmente asignado al gasto (solo `nivel === "gasto"`).
+   * `null` | `undefined` = sin proveedor.
+   */
+  proveedorIdInicial?: string | null;
+  onSuccess?: () => void;
 }
 
 const LABELS: Record<NivelCatalogo, { singular: string; placeholder: string; parentLabel: string }> = {
@@ -99,23 +102,31 @@ export default function CrearEditarFinBalCatalogoItemModal({
   nombreInicial = "",
   parentId,
   parentNombre,
+  proveedores,
+  proveedorIdInicial = null,
   onSuccess,
-  onCreated,
 }: Props) {
   const [nombre, setNombre] = useState("");
+  /** Solo relevante si `nivel === "gasto"`. `null` = sin proveedor. */
+  const [proveedorId, setProveedorId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setNombre(modo === "editar" ? nombreInicial : "");
-  }, [open, modo, nombreInicial]);
+    setProveedorId(nivel === "gasto" ? proveedorIdInicial ?? null : null);
+  }, [open, modo, nombreInicial, nivel, proveedorIdInicial]);
 
   const labels = LABELS[nivel];
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
-    return nombre.trim().toUpperCase() !== nombreInicial.trim().toUpperCase();
-  }, [modo, nombre, nombreInicial]);
+    const nombreCambio =
+      nombre.trim().toUpperCase() !== nombreInicial.trim().toUpperCase();
+    const proveedorCambio =
+      nivel === "gasto" && (proveedorId ?? null) !== (proveedorIdInicial ?? null);
+    return nombreCambio || proveedorCambio;
+  }, [modo, nombre, nombreInicial, nivel, proveedorId, proveedorIdInicial]);
 
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
@@ -130,7 +141,14 @@ export default function CrearEditarFinBalCatalogoItemModal({
     if (disabledSubmit) return;
     setSaving(true);
     try {
-      const res = await dispatch({ nombre, nivel, modo, id, parentId });
+      const res = await dispatch({
+        nombre,
+        nivel,
+        modo,
+        id,
+        parentId,
+        proveedorId: nivel === "gasto" ? proveedorId : null,
+      });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
         return;
@@ -140,9 +158,6 @@ export default function CrearEditarFinBalCatalogoItemModal({
           ? `${labels.singular} creado correctamente.`
           : `${labels.singular} actualizado correctamente.`
       );
-      if (modo === "crear" && res.created && onCreated) {
-        onCreated(res.created);
-      }
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -205,6 +220,38 @@ export default function CrearEditarFinBalCatalogoItemModal({
               autoFocus
             />
           </label>
+
+          {nivel === "gasto" && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                PROVEEDOR
+              </span>
+              <Select
+                value={proveedorId ?? SIN_PROVEEDOR_SENTINEL}
+                onValueChange={(value) =>
+                  setProveedorId(value === SIN_PROVEEDOR_SENTINEL ? null : value)
+                }
+                disabled={saving}
+              >
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value={SIN_PROVEEDOR_SENTINEL}>SIN PROVEEDOR</SelectItem>
+                  {(proveedores ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          )}
         </div>
       </AppModal>
     </Dialog>
@@ -213,24 +260,19 @@ export default function CrearEditarFinBalCatalogoItemModal({
 
 // ─── Dispatch por nivel + modo ────────────────────────────────────────────
 
-type DispatchResult =
-  | { ok: true; created?: FinBalCatalogoCreatedPayload }
-  | { ok: false; error: string };
-
 async function dispatch(args: {
   nombre: string;
   nivel: NivelCatalogo;
   modo: Modo;
   id?: string;
   parentId?: string;
-}): Promise<DispatchResult> {
-  const { nombre, nivel, modo, id, parentId } = args;
+  proveedorId: string | null;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { nombre, nivel, modo, id, parentId, proveedorId } = args;
   if (nivel === "tipo") {
     if (modo === "crear") {
       const r = await crearFinBalGastoTipoAction({ nombre });
-      return r.ok
-        ? { ok: true, created: { nivel: "tipo", data: r.data } }
-        : { ok: false, error: r.error ?? "" };
+      return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
     }
     const r = await editarFinBalGastoTipoAction({ id: id!, nombre });
     return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
@@ -239,9 +281,7 @@ async function dispatch(args: {
   if (nivel === "rubro") {
     if (modo === "crear") {
       const r = await crearFinBalGastoRubroAction({ nombre, tipoId: parentId! });
-      return r.ok
-        ? { ok: true, created: { nivel: "rubro", data: r.data } }
-        : { ok: false, error: r.error ?? "" };
+      return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
     }
     // En edit, `parentId` es el tipoId actual (no hay UI para reparentar).
     const r = await editarFinBalGastoRubroAction({ id: id!, nombre, tipoId: parentId! });
@@ -249,12 +289,19 @@ async function dispatch(args: {
   }
 
   if (modo === "crear") {
-    const r = await crearFinBalGastoAction({ nombre, rubroId: parentId! });
-    return r.ok
-      ? { ok: true, created: { nivel: "gasto", data: r.data } }
-      : { ok: false, error: r.error ?? "" };
+    const r = await crearFinBalGastoAction({
+      nombre,
+      rubroId: parentId!,
+      proveedorId,
+    });
+    return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
   }
   // En edit, `parentId` es el rubroId actual (no hay UI para reparentar).
-  const r = await editarFinBalGastoAction({ id: id!, nombre, rubroId: parentId! });
+  const r = await editarFinBalGastoAction({
+    id: id!,
+    nombre,
+    rubroId: parentId!,
+    proveedorId,
+  });
   return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
 }

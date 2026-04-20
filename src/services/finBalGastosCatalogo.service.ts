@@ -36,10 +36,20 @@ export interface FinBalGastoRubroItem {
   updatedAt: Date;
 }
 
+/** Proveedor referenciado por un gasto del catálogo (payload mínimo para UI). */
+export interface FinBalGastoProveedorRef {
+  id: string;
+  nombre: string;
+}
+
 export interface FinBalGastoItem {
   id: string;
   nombre: string;
   rubroId: string;
+  /** FK opcional a `proveedores.id`. `null` = gasto sin proveedor. */
+  proveedorId: string | null;
+  /** Proveedor expandido (incluido en listados con `include`). `null` si no hay FK. */
+  proveedor: FinBalGastoProveedorRef | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,7 +83,15 @@ function mapDbError(
     }
     if (code === "P2003") {
       if (context === "rubro") return "El tipo seleccionado no existe.";
-      if (context === "gasto") return "El rubro seleccionado no existe.";
+      if (context === "gasto") {
+        // P2003 en `fin_bal_gasto` puede venir de `rubro_id` o `proveedor_id`.
+        // Prisma expone el nombre de la columna en `meta.field_name` / `meta.constraint`.
+        const meta = (error as { meta?: { field_name?: string; constraint?: string } }).meta;
+        const field = meta?.field_name ?? meta?.constraint ?? "";
+        if (field.includes("proveedor")) return "El proveedor seleccionado no existe.";
+        if (field.includes("rubro")) return "El rubro seleccionado no existe.";
+        return "Referencia inválida en el gasto (rubro o proveedor inexistente).";
+      }
       return "No se puede completar la operación por una referencia inválida.";
     }
     if (code === "P2025") {
@@ -123,21 +141,35 @@ export async function listarFinBalGastoRubrosPorTipo(
   }));
 }
 
+/** `include` del proveedor referenciado por un gasto (normalizado a MAYÚSCULAS). */
+const proveedorIncludeArgs = {
+  select: { id: true, nombre: true },
+} as const;
+
+function mapProveedorRef(
+  proveedor: { id: string; nombre: string } | null
+): FinBalGastoProveedorRef | null {
+  return proveedor ? { id: proveedor.id, nombre: proveedor.nombre.toUpperCase() } : null;
+}
+
 /**
  * Devuelve los Gastos de un Rubro (para selects dependientes).
+ * Incluye el proveedor referenciado (si existe) para evitar N+1 en la UI.
  */
 export async function listarFinBalGastosPorRubro(
   rubroId: string
 ): Promise<FinBalGastoItem[]> {
   const rows = await prisma.finBalGasto.findMany({
     where: { rubroId },
-    select: { id: true, nombre: true, rubroId: true, createdAt: true, updatedAt: true },
+    include: { proveedor: proveedorIncludeArgs },
     orderBy: [{ nombre: "asc" }],
   });
   return rows.map((r) => ({
     id: r.id,
     nombre: r.nombre.toUpperCase(),
     rubroId: r.rubroId,
+    proveedorId: r.proveedorId,
+    proveedor: mapProveedorRef(r.proveedor),
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   }));
@@ -156,6 +188,7 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
         include: {
           gastos: {
             orderBy: [{ nombre: "asc" }],
+            include: { proveedor: proveedorIncludeArgs },
           },
         },
       },
@@ -177,6 +210,8 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
         id: gasto.id,
         nombre: gasto.nombre.toUpperCase(),
         rubroId: gasto.rubroId,
+        proveedorId: gasto.proveedorId,
+        proveedor: mapProveedorRef(gasto.proveedor),
         createdAt: gasto.createdAt,
         updatedAt: gasto.updatedAt,
       })),
@@ -346,7 +381,12 @@ export async function crearFinBalGasto(
 ): Promise<ServiceResult<FinBalGastoItem>> {
   try {
     const row = await prisma.finBalGasto.create({
-      data: { nombre: input.nombre, rubroId: input.rubroId },
+      data: {
+        nombre: input.nombre,
+        rubroId: input.rubroId,
+        proveedorId: input.proveedorId,
+      },
+      include: { proveedor: proveedorIncludeArgs },
     });
     return {
       success: true,
@@ -354,6 +394,8 @@ export async function crearFinBalGasto(
         id: row.id,
         nombre: row.nombre.toUpperCase(),
         rubroId: row.rubroId,
+        proveedorId: row.proveedorId,
+        proveedor: mapProveedorRef(row.proveedor),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       },
@@ -372,7 +414,12 @@ export async function editarFinBalGasto(
   try {
     const row = await prisma.finBalGasto.update({
       where: { id: input.id },
-      data: { nombre: input.nombre, rubroId: input.rubroId },
+      data: {
+        nombre: input.nombre,
+        rubroId: input.rubroId,
+        proveedorId: input.proveedorId,
+      },
+      include: { proveedor: proveedorIncludeArgs },
     });
     return {
       success: true,
@@ -380,6 +427,8 @@ export async function editarFinBalGasto(
         id: row.id,
         nombre: row.nombre.toUpperCase(),
         rubroId: row.rubroId,
+        proveedorId: row.proveedorId,
+        proveedor: mapProveedorRef(row.proveedor),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       },
