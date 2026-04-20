@@ -5,16 +5,25 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarFinBalCatalogoItemModal, {
   type NivelCatalogo,
 } from "./CrearEditarFinBalCatalogoItemModal";
 import EliminarFinBalCatalogoItemModal from "./EliminarFinBalCatalogoItemModal";
+import ProveedorModal, {
+  type ProveedorParaModal,
+} from "@/components/proveedores/ProveedorModal";
 import type {
   FinBalGastoJerarquiaRubro,
   FinBalGastoJerarquiaTipo,
 } from "@/services/finBalGastosCatalogo.service";
+import type { ProveedorListItem } from "@/services/proveedor.service";
 
+/**
+ * Tipo mínimo usado por el Select "PROVEEDOR" del modal de gasto.
+ * Se deriva en runtime desde `ProveedorListItem[]`.
+ */
 export interface ProveedorOption {
   id: string;
   nombre: string;
@@ -23,26 +32,35 @@ export interface ProveedorOption {
 /**
  * Página del catálogo jerárquico Finanzas → Balance → Gastos.
  *
- * Layout tipo Finder de 3 columnas:
- *   [TIPOS]  →  [RUBROS]  →  [GASTOS]
+ * Layout tipo Finder de 4 columnas:
+ *   [TIPOS]  →  [RUBROS]  →  [GASTOS]   [PROVEEDORES]
+ *
+ * Las 3 primeras columnas son la jerarquía en cascada.
+ * La columna **PROVEEDORES** es autónoma (no depende de la selección) y
+ * permite gestionar el catálogo maestro de proveedores (alta/edición/baja)
+ * sin salir del módulo — reutiliza el mismo `ProveedorModal` usado en
+ * `/gestion-productos/proveedores/lista`.
  *
  * Interacción:
- *   - Click en un ítem de una columna lo selecciona y revela la columna siguiente.
+ *   - Click en un ítem de las 3 primeras columnas lo selecciona y revela la siguiente.
+ *   - Click en un proveedor abre el modal en modo EDITAR.
  *   - Cada columna tiene su propio header con `+ Nuevo` (solo para editor).
- *   - Cada fila expone acciones "Editar" y "Eliminar" al pasar el mouse.
+ *   - Cada fila expone acciones "Editar" y "Eliminar" al pasar el mouse
+ *     (salvo PROVEEDORES, donde el modal ya tiene botón Eliminar interno).
  *
  * Vistas de rol:
- *   - `editor`: botonera completa (crear / editar / eliminar) en las 3 columnas.
+ *   - `editor`: botonera completa en las 4 columnas.
  *   - `simple`: solo lectura. No se muestran botones de mutación.
  */
 
 interface Props {
   jerarquia: FinBalGastoJerarquiaTipo[];
   /**
-   * Lista de proveedores disponibles para asignar a un gasto (se pasa al modal
-   * de alta/edición de gasto). Server Component la carga en un solo roundtrip.
+   * Lista completa de proveedores (payload del servicio). Se usa para:
+   *  - la columna **PROVEEDORES** (lectura + apertura del modal en edición),
+   *  - el Select "PROVEEDOR" dentro del modal de alta/edición de gasto.
    */
-  proveedores: ProveedorOption[];
+  proveedores: ProveedorListItem[];
   esEditor: boolean;
 }
 
@@ -69,6 +87,15 @@ type ModalEliminarState =
       nombre: string;
     };
 
+/**
+ * Estado del `ProveedorModal` reutilizado.
+ * - `proveedor === null` → modo **alta**.
+ * - `proveedor !== null` → modo **edición** con datos precargados.
+ */
+type ProveedorModalState =
+  | { open: false }
+  | { open: true; proveedor: ProveedorParaModal | null };
+
 export default function FinBalGastosCatalogoPageClient({
   jerarquia,
   proveedores,
@@ -80,6 +107,13 @@ export default function FinBalGastosCatalogoPageClient({
 
   const [crearEditar, setCrearEditar] = useState<ModalCrearEditarState>({ open: false });
   const [eliminar, setEliminar] = useState<ModalEliminarState>({ open: false });
+  const [proveedorModal, setProveedorModal] = useState<ProveedorModalState>({ open: false });
+
+  /** Payload mínimo para el Select "PROVEEDOR" del modal de gasto. */
+  const proveedoresParaSelect = useMemo<ProveedorOption[]>(
+    () => proveedores.map((p) => ({ id: p.id, nombre: p.nombre })),
+    [proveedores]
+  );
 
   const tipoSeleccionado = useMemo(
     () => jerarquia.find((t) => t.id === selectedTipoId) ?? null,
@@ -104,6 +138,26 @@ export default function FinBalGastosCatalogoPageClient({
     router.refresh();
   }
 
+  function openProveedorNuevo() {
+    setProveedorModal({ open: true, proveedor: null });
+  }
+
+  function openProveedorEdit(p: ProveedorListItem) {
+    setProveedorModal({
+      open: true,
+      proveedor: {
+        id: p.id,
+        nombre: p.nombre,
+        prefijo: p.prefijo,
+        idProveedorDux: p.idProveedorDux ?? undefined,
+        whatsapp: p.whatsapp ?? undefined,
+        coeficienteTintometrico: p.coeficienteTintometrico,
+        plazosPagos: p.plazosPagos ?? undefined,
+        proveedorMercaderia: p.proveedorMercaderia,
+      },
+    });
+  }
+
   return (
     <ClassicFilteredTableLayout
       title="FINANZAS"
@@ -111,7 +165,7 @@ export default function FinBalGastosCatalogoPageClient({
       contentWidth="full"
     >
       <div className="flex-1 min-h-0 w-full overflow-hidden py-4">
-        <div className="grid h-full min-h-0 grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid h-full min-h-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <CatalogoColumna
             titulo="TIPOS"
             subtitulo={`${jerarquia.length} registro${jerarquia.length === 1 ? "" : "s"}`}
@@ -266,6 +320,32 @@ export default function FinBalGastosCatalogoPageClient({
               ))
             )}
           </CatalogoColumna>
+
+          {/* Columna autónoma: CRUD del catálogo maestro de proveedores.
+              Reutiliza `ProveedorModal` (el mismo de /gestion-productos/proveedores/lista). */}
+          <CatalogoColumna
+            titulo="PROVEEDORES"
+            subtitulo={`${proveedores.length} registro${proveedores.length === 1 ? "" : "s"}`}
+            mostrarNuevo={esEditor}
+            onNuevo={openProveedorNuevo}
+          >
+            {proveedores.length === 0 ? (
+              <EmptyState mensaje="No hay proveedores cargados." />
+            ) : (
+              proveedores.map((p) => (
+                <FilaCatalogo
+                  key={p.id}
+                  nombre={p.nombre}
+                  meta={`${p.prefijo}${p.proveedorMercaderia ? " · Mercadería" : ""}`}
+                  selected={false}
+                  onClick={esEditor ? () => openProveedorEdit(p) : undefined}
+                  mostrarAcciones={false}
+                  onEditar={() => openProveedorEdit(p)}
+                  onEliminar={() => openProveedorEdit(p)}
+                />
+              ))
+            )}
+          </CatalogoColumna>
         </div>
       </div>
 
@@ -280,7 +360,7 @@ export default function FinBalGastosCatalogoPageClient({
           nombreInicial={crearEditar.nombreInicial}
           parentId={crearEditar.parentId}
           parentNombre={crearEditar.parentNombre}
-          proveedores={proveedores}
+          proveedores={proveedoresParaSelect}
           proveedorIdInicial={crearEditar.proveedorIdInicial ?? null}
           onSuccess={onSuccessRefresh}
         />
@@ -297,6 +377,25 @@ export default function FinBalGastosCatalogoPageClient({
           onSuccess={onSuccessRefresh}
         />
       )}
+
+      {/* ProveedorModal reutilizado (alta + edición + eliminación interna).
+          `proveedor === null` → alta; si no → edición con datos precargados. */}
+      <Dialog
+        open={proveedorModal.open}
+        onOpenChange={(next) => !next && setProveedorModal({ open: false })}
+      >
+        {proveedorModal.open && (
+          <ProveedorModal
+            open={proveedorModal.open}
+            onOpenChange={(next) => !next && setProveedorModal({ open: false })}
+            proveedor={proveedorModal.proveedor}
+            onSuccess={() => {
+              setProveedorModal({ open: false });
+              onSuccessRefresh();
+            }}
+          />
+        )}
+      </Dialog>
     </ClassicFilteredTableLayout>
   );
 }

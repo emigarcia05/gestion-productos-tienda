@@ -12,6 +12,12 @@ export interface CreateProveedorInput {
   coeficienteTintometrico: number;
   /** Días de vencimiento separados por coma (30,60,…); null si no aplica. */
   plazosPagos?: string | null;
+  /**
+   * Flag "Proveedor de Mercadería": si `true`, aparece en la lista
+   * `/gestion-productos/proveedores/lista` (ver `getProveedoresMercaderia`).
+   * Si no se provee, se aplica el DEFAULT del schema final (`false`).
+   */
+  proveedorMercaderia?: boolean;
 }
 
 export interface UpdateProveedorInput {
@@ -22,6 +28,8 @@ export interface UpdateProveedorInput {
   whatsapp?: string | null;
   coeficienteTintometrico: number;
   plazosPagos?: string | null;
+  /** Ver `CreateProveedorInput.proveedorMercaderia`. Undefined = no tocar. */
+  proveedorMercaderia?: boolean;
 }
 
 export interface UpdateCoeficienteTintometricoInput {
@@ -160,6 +168,10 @@ export async function createProveedor(
       whatsapp: normalizarWhatsapp(input.whatsapp),
       coeficienteTintometrico: input.coeficienteTintometrico,
       plazosPagos: input.plazosPagos ?? null,
+      // Si el caller no lo define, Prisma aplica el DEFAULT del schema (false).
+      ...(input.proveedorMercaderia !== undefined && {
+        proveedorMercaderia: input.proveedorMercaderia,
+      }),
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
@@ -181,6 +193,10 @@ export async function updateProveedor(
       whatsapp: normalizarWhatsapp(input.whatsapp),
       coeficienteTintometrico: input.coeficienteTintometrico,
       plazosPagos: input.plazosPagos ?? null,
+      // `undefined` = no tocar el valor existente.
+      ...(input.proveedorMercaderia !== undefined && {
+        proveedorMercaderia: input.proveedorMercaderia,
+      }),
     },
   });
 }

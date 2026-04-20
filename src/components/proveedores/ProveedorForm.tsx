@@ -1,11 +1,18 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
 interface Props {
@@ -17,6 +24,8 @@ interface Props {
     whatsapp?: string | null;
     coeficienteTintometrico?: number;
     plazosPagos?: string | null;
+    /** Flag "Proveedor Mercadería" (FK-less). `false` por defecto. */
+    proveedorMercaderia?: boolean;
   };
   onSuccess?: () => void;
   /** Id del form para asociar botón externo con form="id". */
@@ -45,6 +54,19 @@ export default function ProveedorForm({
 }: Props) {
   const [pending, startTransition] = useTransition();
   const isEdit = !!proveedor;
+
+  /**
+   * Estado SI/NO del flag `proveedorMercaderia`. Controlled porque shadcn `Select`
+   * no rellena `FormData`; sincronizamos un hidden `<input name="proveedorMercaderia">`.
+   *
+   * Default:
+   * - Edición: precarga el valor persistido.
+   * - Alta: "si" (UX — el modal se abre desde `/gestion-productos/proveedores/lista`,
+   *   donde lo natural es querer que el nuevo proveedor aparezca en esa lista).
+   */
+  const [proveedorMercaderia, setProveedorMercaderia] = useState<"si" | "no">(
+    proveedor?.proveedorMercaderia === false ? "no" : "si"
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -169,6 +191,29 @@ export default function ProveedorForm({
         />
         <p className="text-xs text-muted-foreground">
           Se usa para el cálculo: monto ingresado x coeficiente del proveedor.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="proveedorMercaderia">PROVEEDOR MERCADERÍA</Label>
+        <Select
+          value={proveedorMercaderia}
+          onValueChange={(v) => setProveedorMercaderia(v as "si" | "no")}
+          disabled={pending}
+        >
+          <SelectTrigger id="proveedorMercaderia" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" side="bottom" align="start">
+            <SelectItem value="si">SI</SelectItem>
+            <SelectItem value="no">NO</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* Hidden input para que el valor llegue vía FormData al action */}
+        <input type="hidden" name="proveedorMercaderia" value={proveedorMercaderia} />
+        <p className="text-xs text-muted-foreground">
+          Si es <strong>SI</strong>, aparece en la lista de{" "}
+          <code className="bg-muted px-1 rounded">/gestion-productos/proveedores/lista</code>.
         </p>
       </div>
 

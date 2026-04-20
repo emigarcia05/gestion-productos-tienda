@@ -63,6 +63,21 @@ export const plazosPagosSchema = z
     return nums.join(",");
   });
 
+/**
+ * Flag "Proveedor Mercadería" (SI/NO).
+ * Se persiste como boolean en `proveedores.proveedor_mercaderia`.
+ * Acepta los valores del <select> del form (case-insensitive), "true"/"false" y boolean crudo.
+ * Si no viene definido se asume `false` (coherente con el DEFAULT del schema final).
+ */
+export const proveedorMercaderiaSchema = z
+  .union([z.string(), z.boolean(), z.undefined(), z.null()])
+  .transform((v) => {
+    if (typeof v === "boolean") return v;
+    if (v == null) return false;
+    const s = v.trim().toLowerCase();
+    return s === "si" || s === "sí" || s === "true" || s === "1";
+  });
+
 export const createProveedorSchema = z.object({
   nombre: z
     .string()
@@ -77,6 +92,7 @@ export const createProveedorSchema = z.object({
   whatsapp: whatsappSchema,
   coeficienteTintometrico: coeficienteTintometricoSchema,
   plazosPagos: plazosPagosSchema,
+  proveedorMercaderia: proveedorMercaderiaSchema,
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;

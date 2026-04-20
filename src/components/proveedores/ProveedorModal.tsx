@@ -19,6 +19,8 @@ export interface ProveedorParaModal {
   whatsapp?: string | null;
   coeficienteTintometrico?: number;
   plazosPagos?: string | null;
+  /** Flag "Proveedor Mercadería" (default `false`). */
+  proveedorMercaderia?: boolean;
 }
 
 interface Props {

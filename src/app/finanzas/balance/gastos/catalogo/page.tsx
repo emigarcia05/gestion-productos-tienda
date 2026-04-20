@@ -14,13 +14,10 @@ export default async function FinBalGastosCatalogoPage() {
   }
 
   const esEditor = rol === "editor";
-  const [jerarquia, proveedoresRaw] = await Promise.all([
+  const [jerarquia, proveedores] = await Promise.all([
     listarFinBalGastosJerarquia(),
     getProveedores(),
   ]);
-
-  // Payload mínimo para el Select de proveedor en el modal de gasto.
-  const proveedores = proveedoresRaw.map((p) => ({ id: p.id, nombre: p.nombre }));
 
   return (
     <FinBalGastosCatalogoPageClient
