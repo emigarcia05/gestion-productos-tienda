@@ -202,7 +202,24 @@ model FinBalGasto {
   rubro     FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
   proveedor Proveedor?       @relation(fields: [proveedorId], references: [id], onDelete: SetNull)
 
-  @@unique([rubroId, nombre], map: "fin_bal_gasto_rubro_nombre_ux")
+  /**
+   * Unicidad: `(rubroId, nombre, proveedorId)` — dentro de un mismo rubro el
+   * `nombre` puede repetirse siempre que el `proveedor` sea distinto.
+   *
+   * IMPORTANTE — cobertura de `proveedor_id = NULL`:
+   *   PostgreSQL trata `NULL` como "no comparable" en índices UNIQUE, por lo
+   *   que este constraint por sí solo NO impediría dos "ALQUILER" sin proveedor
+   *   en el mismo rubro. Por eso la migración SQL agrega **adicionalmente** el
+   *   índice UNIQUE parcial `fin_bal_gasto_rubro_nombre_sin_prov_ux` con
+   *   `WHERE proveedor_id IS NULL`. Esa segunda restricción NO se declara en
+   *   Prisma (no hay sintaxis para índices parciales ni `NULLS NOT DISTINCT` en
+   *   Prisma 7.4.1): vive solo en SQL — ver migración
+   *   `20260418230000_fin_bal_gasto_unique_rubro_nombre_proveedor`.
+   *
+   * Prisma mapea `P2002` por cualquiera de los dos índices; el servicio
+   * diferencia el mensaje mediante `error.meta.target` / `error.meta.constraint`.
+   */
+  @@unique([rubroId, nombre, proveedorId], map: "fin_bal_gasto_rubro_nombre_proveedor_ux")
   @@index([rubroId])
   @@index([proveedorId])
   @@map("fin_bal_gasto")

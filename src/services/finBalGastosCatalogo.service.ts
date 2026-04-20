@@ -83,7 +83,22 @@ function mapDbError(
     if (code === "P2002") {
       if (context === "tipo") return "Ya existe un tipo con ese nombre.";
       if (context === "rubro") return "Ya existe un rubro con ese nombre para el tipo seleccionado.";
-      return "Ya existe un gasto con ese nombre para el rubro seleccionado.";
+      // Gasto: la unicidad es (rubroId, nombre, proveedorId). Además existe un
+      // índice parcial `fin_bal_gasto_rubro_nombre_sin_prov_ux` que aplica
+      // cuando `proveedor_id IS NULL`. Distinguimos el mensaje según el índice
+      // disparador (Prisma expone el nombre en `meta.target` / `meta.constraint`).
+      const meta = (error as {
+        meta?: { target?: string | string[]; constraint?: string };
+      }).meta;
+      const target = Array.isArray(meta?.target)
+        ? meta.target.join(",")
+        : meta?.target ?? "";
+      const constraint = meta?.constraint ?? "";
+      const indexo = `${target} ${constraint}`;
+      if (indexo.includes("sin_prov")) {
+        return "Ya existe un gasto sin proveedor con ese nombre en ese rubro.";
+      }
+      return "Ya existe un gasto con ese nombre y ese proveedor en ese rubro.";
     }
     if (code === "P2003") {
       if (context === "rubro") return "El tipo seleccionado no existe.";
