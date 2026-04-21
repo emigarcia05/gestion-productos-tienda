@@ -35,6 +35,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 7. **Nuevo modal con tabla**  
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
+   - Micro-etiquetas de campo en modales densos: **`ModalMicroLabel`** (`@/components/shared/ModalMicroLabel.tsx`, CVA `align`).
    - `AppModal` (wrapper estándar) expone variantes con **CVA** para evitar duplicación de clases:
      - `size`: `"sm" | "md" | "lg" | "xl"` (default `"md"` = `sm:max-w-lg`).
      - `padding`: `"sm" | "default" | "lg"` (default `"default"`).
@@ -261,6 +262,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `PaginacionTabla` (`@/components/shared/PaginacionTabla.tsx`) | Paginación por URL: `basePath`, `params`, `paginaActual`, `totalPaginas`, `total`, `pageSize`. |
 | `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
 | `TableEmptyState` + CVA (`@/components/shared/TableEmptyState.tsx`) | Mensajes de lista/tabla vacía; `EmptyTableRow` en `ui/table` reutiliza las mismas variantes. |
+| `ModalMicroLabel` + CVA (`@/components/shared/ModalMicroLabel.tsx`) | Micro-etiquetas MAYÚSCULAS en modales (campos/secciones densas); variantes `align`: `left` \| `center`. |
 | `--gris` | Fondo universal de modales y zonas secundarias. |
 | `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
 
@@ -289,6 +291,14 @@ Estos componentes son **SSOT** para patrones repetidos. Reglas:
 - **Siempre** combinar clases con `cn()` (`@/lib/utils.ts`).
 - **Variantes**: cuando haya duplicación de clases o combinaciones, usar **CVA** (`class-variance-authority`) dentro del componente.
 - **Accesibilidad**: inputs de selección deben tener `aria-label` si no hay texto visible.
+
+**Patrón Design System (nuevos componentes en `shared/`):**
+
+- **CVA**: definir `*Variants = cva(base, { variants, defaultVariants })`; tipar props con `VariantProps<typeof *Variants>` y extender `ComponentPropsWithoutRef<"elemento">` (u otra raíz semántica).
+- **Export**: si otras piezas reutilizan las mismas clases (ej. `EmptyTableRow`), exportar el objeto `*Variants` además del componente.
+- **Tokens**: solo tema (`bg-card`, `text-muted-foreground`, `border-border`, etc.); nunca `bg-white` / `text-slate-*` / paletas genéricas para estados — ver `@/lib/ui-classes`.
+- **Capa cliente**: añadir `"use client"` solo si el componente usa hooks, eventos del navegador o estado; los presentacionales pueden quedarse como Server Components.
+- **Retroalimentación**: al dar de alta un componente compartido, añadir entrada en esta sección **3.1** (props, variantes CVA, accesibilidad, ejemplos breves).
 
 ### `AppModal` (`src/components/shared/AppModal.tsx`)
 
@@ -573,6 +583,18 @@ Indicador de **proceso en curso** (modal, importación, barra lateral). Clases g
   - **`onDoubleClick`**: `() => void?` — si está definido, el contenedor usa **`cursor-pointer`** y **`title`** *«Doble Clic Para Cancelar Sincronización»* (p. ej. sync lista precios en slidenav).
 - **Accesibilidad**: `role="status"`, `aria-live="polite"`.
 
+### `ModalMicroLabel` (`src/components/shared/ModalMicroLabel.tsx`)
+
+Etiqueta visual **compacta** para títulos de campo o bloques dentro de modales (tipografía en MAYÚSCULAS alineada a filtros/tablas). Implementación con **CVA** (`modalMicroLabelVariants`).
+
+- **Props**
+  - **`children`**: `ReactNode` — texto en MAYÚSCULAS (según guía de mayúsculas en filtros cuando aplique).
+  - **`align`** (CVA): `"left"` (default) \| `"center"` — controla `text-left` / `text-center` y `w-full leading-tight`.
+  - **`className`**: `string?` — combina con `cn()` para overrides puntuales.
+  - Resto: atributos nativos de `<span>` (`id`, `ref`, etc.).
+- **Accesibilidad**: es un `<span>` decorativo; si precede a un control, envolver en `<label>` (como en **FECHA FACTURA** de `PedidoHistoriaDetalleModal`) o asociar el control con `aria-labelledby` / `aria-label` explícito en el input.
+- **Cuándo usarlo**: micro-etiquetas sobre inputs o separación de secciones en modales densos; evita duplicar `text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground`.
+
 ### `DuxSyncStyleButton` (`src/components/shared/DuxSyncStyleButton.tsx`)
 
 Botón de **dos líneas** con **swap al hover** en la primera (misma interacción que el sync de lista precios en slidenav). Implementado con **CVA** (`duxSyncStyleButtonVariants`, `duxSyncStyleSecondaryVariants`).
@@ -749,6 +771,8 @@ Antes de dar por terminada una tarea de frontend:
 No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` en `src/`. No quedan `className={\`...\`}` en componentes. Estados de éxito/advertencia no deben usar paletas genéricas (`emerald-*`, `amber-*`, `blue-*`): usar `@/lib/ui-classes` y tokens de tema. Anchos de `<col>` en tablas fijas: preferir `className="w-[x%]"` en lugar de `style` salvo casos dinámicos. Nuevas pantallas o filtros deben seguir esta guía y el checklist de PR.
 
 ---
+
+*Última actualización (2026-04-21): componente `ModalMicroLabel` (CVA `modalMicroLabelVariants`, variantes `align`); refactor en `PedidoHistoriaDetalleModal`; patrón Design System en §3.1 y fila en §2; Guía para IA punto 7.*
 
 *Última actualización: alta de `ToolbarActionButton` (CVA `density` + pass-through de `variant`/`size` de shadcn, manejo accesible de `loading` con `aria-busy` y `Loader2`); baja de `src/lib/actionButtons.ts` (código muerto con template literals). Checklist PR §4 y catálogo §3.1 alineados.*
 

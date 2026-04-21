@@ -30,6 +30,7 @@ import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPed
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
 import MontoArInput from "@/components/shared/MontoArInput";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -79,10 +80,6 @@ const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
 /** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
 const GRID_PEDIDO_HISTORIA_TABLA_COLS =
   "grid w-full grid-cols-[5fr_50fr_10fr_20fr_15fr]";
-
-/** Etiquetas de campo / sección: compactas, mayúsculas, alineadas a la guía de filtros/tablas. */
-const MODAL_MICRO_LABEL_CLASS =
-  "text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground";
 
 /** Contenedor de grilla: sin borde ni fondo (transparente). */
 const MODAL_SECTION_CARD_CLASS = "min-w-0 bg-transparent";
@@ -626,14 +623,7 @@ export default function PedidoHistoriaDetalleModal({
                     locked || loading ? "cursor-default" : "cursor-pointer"
                   )}
                 >
-                  <span
-                    className={cn(
-                      MODAL_MICRO_LABEL_CLASS,
-                      "w-full text-left leading-tight"
-                    )}
-                  >
-                    FECHA FACTURA
-                  </span>
+                  <ModalMicroLabel>FECHA FACTURA</ModalMicroLabel>
                   <Input
                     ref={fechaInputRef}
                     type="date"

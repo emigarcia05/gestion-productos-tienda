@@ -17,7 +17,7 @@ import {
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
-import { Pencil, Trash2 } from "lucide-react";
+import { Banknote, Pencil, Trash2 } from "lucide-react";
 
 export type { BalanceGastoMensualFila };
 
@@ -161,12 +161,13 @@ export default function TablaGastos({
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-8 shrink-0 px-2 text-xs font-semibold"
+                            size="icon-xs"
+                            className={TABLE_ROW_ICON_BUTTON_CLASS}
                             title="Registrar pago"
                             aria-label={`Pagar ${f.gastoNombre}`}
                             onClick={() => onPagar!(f)}
                           >
-                            Pagar
+                            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} />
                           </Button>
                           <Button
                             type="button"
