@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarFinBalGastosJerarquia } from "@/services/finBalGastosCatalogo.service";
+import { listarSucursalesParaGastos } from "@/services/movimientosFinanzas.service";
 import { getProveedoresNoMercaderia } from "@/services/proveedor.service";
 import FinBalGastosCatalogoPageClient from "@/components/finanzas/FinBalGastosCatalogoPageClient";
 
@@ -14,15 +15,17 @@ export default async function FinBalGastosCatalogoPage() {
   }
 
   const esEditor = rol === "editor";
-  const [jerarquia, proveedores] = await Promise.all([
+  const [jerarquia, proveedores, sucursales] = await Promise.all([
     listarFinBalGastosJerarquia(),
     getProveedoresNoMercaderia(),
+    listarSucursalesParaGastos(),
   ]);
 
   return (
     <FinBalGastosCatalogoPageClient
       jerarquia={jerarquia}
       proveedores={proveedores}
+      sucursales={sucursales}
       esEditor={esEditor}
     />
   );

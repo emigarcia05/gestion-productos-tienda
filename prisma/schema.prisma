@@ -45,7 +45,7 @@ model Proveedor {
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
-  finBalGastoProvee   FinBalGastoProvee[]
+  finBalGastoFinal   FinBalGastoFinal[]
   // Tabla única de pedidos: prod_ped_merc
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
@@ -98,6 +98,7 @@ model Sucursal {
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   movimientosFinanzas MovimientoFinanzas[]
+  finBalGastoFinal    FinBalGastoFinal[]
   // Tabla única de pedidos: prod_ped_merc
 
   @@map("global_sucursales")
@@ -191,8 +192,8 @@ model FinBalGasto {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   rubro FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
-  /** Variantes por proveedor (mismo gasto de catálogo, N filas en `fin_bal_gasto_provee`). */
-  asignacionesProveedor FinBalGastoProvee[]
+  /** Gasto de balance por proveedor y sucursal (`fin_bal_gasto_final`, N filas por gasto). */
+  asignacionesFinales FinBalGastoFinal[]
 
   @@unique([rubroId, nombre], map: "fin_bal_cat_gasto_rubro_nombre_ux")
   @@index([rubroId])
@@ -200,24 +201,56 @@ model FinBalGasto {
 }
 
 /**
- * Asignación gasto de balance ↔ proveedor: un ítem de `fin_bal_cat_gasto` puede tener
- * muchas filas aquí (un proveedor distinto por fila) con flag `gasto_mensual`.
+ * Gasto de balance “final”: catálogo `fin_bal_cat_gasto` + proveedor + sucursal + `gasto_mensual` + `dia_devengado`.
+ * Obligatorios en persistencia: `gasto_id`, `proveedor_id`, `gasto_mensual`, `dia_devengado` (1–28).
+ * Un gasto de catálogo puede tener N filas (combinación única gasto + proveedor + sucursal).
  */
-model FinBalGastoProvee {
+model FinBalGastoFinal {
   id            String   @id @default(cuid())
   gastoId       String   @map("gasto_id")
   proveedorId   String   @map("proveedor_id")
-  gastoMensual Boolean  @default(false) @map("gasto_mensual")
+  sucursalId    String   @map("sucursal_id")
+  gastoMensual  Boolean  @map("gasto_mensual")
+  /** Día del mes (1–28) en que se devenga el gasto. CHECK en DB. */
+  diaDevengado  Int      @map("dia_devengado")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   gasto     FinBalGasto @relation(fields: [gastoId], references: [id], onDelete: Cascade)
   proveedor Proveedor   @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  sucursal  Sucursal    @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+  /** Una fila por mes/año imputado (unicidad en DB). */
+  mensuales FinBalGastoMensual[]
 
-  @@unique([gastoId, proveedorId], map: "fin_bal_gasto_provee_gasto_proveedor_ux")
+  @@unique([gastoId, proveedorId, sucursalId], map: "fin_bal_gasto_final_gasto_proveedor_sucursal_ux")
   @@index([gastoId])
   @@index([proveedorId])
-  @@map("fin_bal_gasto_provee")
+  @@index([sucursalId])
+  @@map("fin_bal_gasto_final")
+}
+
+/**
+ * Cuota / imputación mensual ligada a un `FinBalGastoFinal`.
+ * Fecha de devengo lógica: `new Date(anio, mes - 1, diaDevengado)` usando `diaDevengado` del padre.
+ * Restricciones en DB: mes 1–12, anio 2000–2100, monto ≥ 0, 0 ≤ pagado ≤ monto, único (gasto_final_id, mes, anio).
+ */
+model FinBalGastoMensual {
+  id           String   @id @default(cuid())
+  gastoFinalId String   @map("gasto_final_id")
+  /** Mes calendario 1–12. */
+  mes          Int
+  /** Año calendario (columna física `anio`). */
+  anio         Int      @map("anio")
+  monto        Int
+  pagado       Int
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  gastoFinal FinBalGastoFinal @relation(fields: [gastoFinalId], references: [id], onDelete: Cascade)
+
+  @@unique([gastoFinalId, mes, anio], map: "fin_bal_gasto_mensual_gasto_mes_anio_ux")
+  @@index([anio, mes])
+  @@map("fin_bal_gasto_mensual")
 }
 
 model ListaPrecioProveedor {

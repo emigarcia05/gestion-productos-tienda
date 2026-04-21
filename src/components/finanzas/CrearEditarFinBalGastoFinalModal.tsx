@@ -14,15 +14,21 @@ import {
 } from "@/components/ui/select";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
-  crearFinBalGastoProveeAction,
-  editarFinBalGastoProveeAction,
+  crearFinBalGastoFinalAction,
+  editarFinBalGastoFinalAction,
 } from "@/actions/finBalGastosCatalogo";
 
 type Modo = "crear" | "editar";
 
-export interface ProveedorOpcionGastoProvee {
+export interface ProveedorOpcionGastoFinal {
   id: string;
   nombre: string;
+}
+
+export interface AsignacionExistentePar {
+  id: string;
+  proveedorId: string;
+  sucursalId: string;
 }
 
 interface Props {
@@ -34,14 +40,19 @@ interface Props {
   gastoId: string;
   /** Solo lectura: nombre del gasto de catálogo. */
   gastoNombre: string;
-  /** Proveedores elegibles (padre filtra `getProveedoresNoMercaderia` y exclusiones). */
-  proveedoresOpciones: ProveedorOpcionGastoProvee[];
+  proveedoresOpciones: ProveedorOpcionGastoFinal[];
+  sucursales: { id: string; nombre: string }[];
+  /** Filas ya persistidas para este gasto (excluye la fila en edición al filtrar duplicados). */
+  asignacionesExistentes: AsignacionExistentePar[];
   proveedorIdInicial?: string;
+  sucursalIdInicial?: string;
   gastoMensualInicial?: boolean;
+  /** En edición: valor persistido (1–28). En alta se ignora. */
+  diaDevengadoInicial?: number;
   onSuccess?: () => void;
 }
 
-export default function CrearEditarFinBalGastoProveeModal({
+export default function CrearEditarFinBalGastoFinalModal({
   open,
   onOpenChange,
   modo,
@@ -49,61 +60,116 @@ export default function CrearEditarFinBalGastoProveeModal({
   gastoId,
   gastoNombre,
   proveedoresOpciones,
+  sucursales,
+  asignacionesExistentes,
   proveedorIdInicial = "",
+  sucursalIdInicial = "",
   gastoMensualInicial = false,
+  diaDevengadoInicial = 1,
   onSuccess,
 }: Props) {
+  const editingId = modo === "editar" && id ? id : null;
+
+  const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
+
+  const [sucursalId, setSucursalId] = useState("");
   const [proveedorId, setProveedorId] = useState("");
   const [gastoMensual, setGastoMensual] = useState(false);
+  const [diaDevengado, setDiaDevengado] = useState(1);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setSucursalId(modo === "editar" ? sucursalIdInicial : "");
     setProveedorId(modo === "editar" ? proveedorIdInicial : "");
     setGastoMensual(modo === "editar" ? gastoMensualInicial : false);
-  }, [open, modo, proveedorIdInicial, gastoMensualInicial]);
+    setDiaDevengado(modo === "editar" ? diaDevengadoInicial : 1);
+  }, [
+    open,
+    modo,
+    sucursalIdInicial,
+    proveedorIdInicial,
+    gastoMensualInicial,
+    diaDevengadoInicial,
+  ]);
+
+  const proveedoresFiltrados = useMemo(() => {
+    if (!sucursalId) return proveedoresOpciones;
+    return proveedoresOpciones.filter(
+      (p) =>
+        !asignacionesExistentes.some(
+          (a) =>
+            (editingId == null || a.id !== editingId) &&
+            a.proveedorId === p.id &&
+            a.sucursalId === sucursalId
+        )
+    );
+  }, [sucursalId, proveedoresOpciones, asignacionesExistentes, editingId]);
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
     return (
       proveedorId !== proveedorIdInicial ||
-      gastoMensual !== gastoMensualInicial
+      sucursalId !== sucursalIdInicial ||
+      gastoMensual !== gastoMensualInicial ||
+      diaDevengado !== diaDevengadoInicial
     );
-  }, [modo, proveedorId, proveedorIdInicial, gastoMensual, gastoMensualInicial]);
+  }, [
+    modo,
+    proveedorId,
+    proveedorIdInicial,
+    sucursalId,
+    sucursalIdInicial,
+    gastoMensual,
+    gastoMensualInicial,
+    diaDevengado,
+    diaDevengadoInicial,
+  ]);
 
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
-    if (!proveedorId) return true;
+    if (!sucursalId || !proveedorId) return true;
     if (modo === "editar" && (!id || !hasChanges)) return true;
     return false;
-  }, [saving, proveedorId, modo, id, hasChanges]);
+  }, [saving, sucursalId, proveedorId, modo, id, hasChanges]);
+
+  useEffect(() => {
+    if (!open || !sucursalId) return;
+    if (!proveedoresFiltrados.some((p) => p.id === proveedorId)) {
+      setProveedorId("");
+    }
+  }, [open, sucursalId, proveedoresFiltrados, proveedorId]);
 
   async function handleSubmit() {
     if (disabledSubmit) return;
     setSaving(true);
     try {
       if (modo === "crear") {
-        const r = await crearFinBalGastoProveeAction({
+        const r = await crearFinBalGastoFinalAction({
           gastoId,
           proveedorId,
+          sucursalId,
           gastoMensual,
+          diaDevengado,
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
           return;
         }
-        toast.success("Asignación creada correctamente.");
+        toast.success("Gasto final creado correctamente.");
       } else {
-        const r = await editarFinBalGastoProveeAction({
+        const r = await editarFinBalGastoFinalAction({
           id: id!,
           proveedorId,
+          sucursalId,
           gastoMensual,
+          diaDevengado,
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
           return;
         }
-        toast.success("Asignación actualizada correctamente.");
+        toast.success("Gasto final actualizado correctamente.");
       }
       onOpenChange(false);
       onSuccess?.();
@@ -112,7 +178,7 @@ export default function CrearEditarFinBalGastoProveeModal({
     }
   }
 
-  const titulo = modo === "crear" ? "Nueva asignación" : "Editar asignación";
+  const titulo = modo === "crear" ? "Nuevo gasto final" : "Editar gasto final";
 
   return (
     <Dialog
@@ -154,18 +220,40 @@ export default function CrearEditarFinBalGastoProveeModal({
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              SUCURSAL
+            </span>
+            <Select
+              value={sucursalId || undefined}
+              onValueChange={setSucursalId}
+              disabled={saving || sucursales.length === 0}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="Seleccionar sucursal" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               PROVEEDOR
             </span>
             <Select
               value={proveedorId || undefined}
               onValueChange={setProveedorId}
-              disabled={saving || proveedoresOpciones.length === 0}
+              disabled={saving || !sucursalId || proveedoresFiltrados.length === 0}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="Seleccionar proveedor" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                {proveedoresOpciones.map((p) => (
+                {proveedoresFiltrados.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.nombre}
                   </SelectItem>
@@ -189,6 +277,28 @@ export default function CrearEditarFinBalGastoProveeModal({
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 <SelectItem value="no">NO</SelectItem>
                 <SelectItem value="si">SÍ</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              DÍA DEVENGADO
+            </span>
+            <Select
+              value={String(diaDevengado)}
+              onValueChange={(v) => setDiaDevengado(Number(v))}
+              disabled={saving}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="Día del mes" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
+                {diasOpciones.map((d) => (
+                  <SelectItem key={d} value={String(d)}>
+                    {d}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </label>

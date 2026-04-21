@@ -5,34 +5,34 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
-  crearFinBalGastoProveeSchema,
+  crearFinBalGastoFinalSchema,
   crearFinBalGastoRubroSchema,
   crearFinBalGastoSchema,
   crearFinBalGastoTipoSchema,
-  editarFinBalGastoProveeSchema,
+  editarFinBalGastoFinalSchema,
   editarFinBalGastoRubroSchema,
   editarFinBalGastoSchema,
   editarFinBalGastoTipoSchema,
-  eliminarFinBalGastoProveeSchema,
+  eliminarFinBalGastoFinalSchema,
   eliminarFinBalGastoRubroSchema,
   eliminarFinBalGastoSchema,
   eliminarFinBalGastoTipoSchema,
 } from "@/lib/validations/finBalGastosCatalogo";
 import {
   crearFinBalGasto,
-  crearFinBalGastoProvee,
+  crearFinBalGastoFinal,
   crearFinBalGastoRubro,
   crearFinBalGastoTipo,
   editarFinBalGasto,
-  editarFinBalGastoProvee,
+  editarFinBalGastoFinal,
   editarFinBalGastoRubro,
   editarFinBalGastoTipo,
   eliminarFinBalGasto,
-  eliminarFinBalGastoProvee,
+  eliminarFinBalGastoFinal,
   eliminarFinBalGastoRubro,
   eliminarFinBalGastoTipo,
+  type FinBalGastoFinalItem,
   type FinBalGastoItem,
-  type FinBalGastoProveeItem,
   type FinBalGastoRubroItem,
   type FinBalGastoTipoItem,
 } from "@/services/finBalGastosCatalogo.service";
@@ -229,50 +229,50 @@ export async function eliminarFinBalGastoAction(
   return { ok: true, data: res.data };
 }
 
-// ─── Gasto ↔ proveedor (`fin_bal_gasto_provee`) ───────────────────────────
+// ─── Gasto final (`fin_bal_gasto_final`) ───────────────────────────────────
 
-export async function crearFinBalGastoProveeAction(
+export async function crearFinBalGastoFinalAction(
   raw: unknown
-): Promise<ActionResult<FinBalGastoProveeItem>> {
+): Promise<ActionResult<FinBalGastoFinalItem>> {
   const gate = await requireEditorFinanzas();
   if (gate) return gate;
 
-  const parsed = crearFinBalGastoProveeSchema.safeParse(raw);
+  const parsed = crearFinBalGastoFinalSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
-  const res = await crearFinBalGastoProvee(parsed.data);
+  const res = await crearFinBalGastoFinal(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateBalancePaths();
   return { ok: true, data: res.data };
 }
 
-export async function editarFinBalGastoProveeAction(
+export async function editarFinBalGastoFinalAction(
   raw: unknown
-): Promise<ActionResult<FinBalGastoProveeItem>> {
+): Promise<ActionResult<FinBalGastoFinalItem>> {
   const gate = await requireEditorFinanzas();
   if (gate) return gate;
 
-  const parsed = editarFinBalGastoProveeSchema.safeParse(raw);
+  const parsed = editarFinBalGastoFinalSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
-  const res = await editarFinBalGastoProvee(parsed.data);
+  const res = await editarFinBalGastoFinal(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateBalancePaths();
   return { ok: true, data: res.data };
 }
 
-export async function eliminarFinBalGastoProveeAction(
+export async function eliminarFinBalGastoFinalAction(
   raw: unknown
 ): Promise<ActionResult<{ id: string }>> {
   const gate = await requireEditorFinanzas();
   if (gate) return gate;
 
-  const parsed = eliminarFinBalGastoProveeSchema.safeParse(raw);
+  const parsed = eliminarFinBalGastoFinalSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
-  const res = await eliminarFinBalGastoProvee(parsed.data.id);
+  const res = await eliminarFinBalGastoFinal(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateBalancePaths();

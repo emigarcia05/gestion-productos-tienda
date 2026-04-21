@@ -3,9 +3,9 @@ import FinanzasBalanceGastosPageClient from "@/components/finanzas/FinanzasBalan
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import {
-  listarMovimientosFinanzas,
-  listarSucursalesParaGastos,
-} from "@/services/movimientosFinanzas.service";
+  listarImputacionesMensualesBalance,
+  mesAnioCalendarioArgentina,
+} from "@/services/finBalGastoMensualBalance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -16,23 +16,8 @@ export default async function BalanceGastosPage() {
   }
   const esEditor = rol === "editor";
 
-  const [items, sucursales] = await Promise.all([
-    listarMovimientosFinanzas(),
-    listarSucursalesParaGastos(),
-  ]);
+  const { mes, anio } = mesAnioCalendarioArgentina();
+  const filas = await listarImputacionesMensualesBalance({ mes, anio });
 
-  const filas = items.map((m) => ({
-    id: m.id,
-    tipoGasto: m.tipoGasto,
-    nombre: m.nombre,
-    monto: m.monto,
-  }));
-
-  return (
-    <FinanzasBalanceGastosPageClient
-      filas={filas}
-      sucursales={sucursales}
-      esEditor={esEditor}
-    />
-  );
+  return <FinanzasBalanceGastosPageClient filas={filas} esEditor={esEditor} />;
 }

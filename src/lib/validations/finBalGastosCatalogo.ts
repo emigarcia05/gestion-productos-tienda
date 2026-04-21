@@ -3,7 +3,7 @@ import { prismaCuidSchema } from "@/lib/validations/common";
 
 /**
  * Validaciones para el catálogo jerárquico Finanzas → Balance → Gastos:
- * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N) + fin_bal_gasto_provee (gasto ↔ proveedor).
+ * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N) + fin_bal_gasto_final (gasto + proveedor + sucursal).
  *
  * Convención de normalización: todos los `nombre` se normalizan con `trim + toUpperCase`,
  * consistente con fin_tesoreria_cajas, movimientos_finanzas.nombre y demás catálogos finanzas.
@@ -74,23 +74,33 @@ export const eliminarFinBalGastoSchema = z.object({
 });
 export type EliminarFinBalGastoInput = z.infer<typeof eliminarFinBalGastoSchema>;
 
-// ─── Gasto ↔ proveedor (`fin_bal_gasto_provee`) ───────────────────────────
+// ─── Gasto final (`fin_bal_gasto_final`: gasto + proveedor + sucursal) ─────
 
-export const crearFinBalGastoProveeSchema = z.object({
+const diaDevengadoSchema = z.coerce
+  .number()
+  .int("El día devengado debe ser un número entero.")
+  .min(1, "El día devengado debe ser entre 1 y 28.")
+  .max(28, "El día devengado debe ser entre 1 y 28.");
+
+export const crearFinBalGastoFinalSchema = z.object({
   gastoId: prismaCuidSchema,
   proveedorId: prismaCuidSchema,
+  sucursalId: prismaCuidSchema,
   gastoMensual: z.boolean(),
+  diaDevengado: diaDevengadoSchema,
 });
-export type CrearFinBalGastoProveeInput = z.infer<typeof crearFinBalGastoProveeSchema>;
+export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSchema>;
 
-export const editarFinBalGastoProveeSchema = z.object({
+export const editarFinBalGastoFinalSchema = z.object({
   id: prismaCuidSchema,
   proveedorId: prismaCuidSchema,
+  sucursalId: prismaCuidSchema,
   gastoMensual: z.boolean(),
+  diaDevengado: diaDevengadoSchema,
 });
-export type EditarFinBalGastoProveeInput = z.infer<typeof editarFinBalGastoProveeSchema>;
+export type EditarFinBalGastoFinalInput = z.infer<typeof editarFinBalGastoFinalSchema>;
 
-export const eliminarFinBalGastoProveeSchema = z.object({
+export const eliminarFinBalGastoFinalSchema = z.object({
   id: prismaCuidSchema,
 });
-export type EliminarFinBalGastoProveeInput = z.infer<typeof eliminarFinBalGastoProveeSchema>;
+export type EliminarFinBalGastoFinalInput = z.infer<typeof eliminarFinBalGastoFinalSchema>;

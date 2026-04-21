@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 import type {
+  CrearFinBalGastoFinalInput,
   CrearFinBalGastoInput,
-  CrearFinBalGastoProveeInput,
   CrearFinBalGastoRubroInput,
   CrearFinBalGastoTipoInput,
+  EditarFinBalGastoFinalInput,
   EditarFinBalGastoInput,
-  EditarFinBalGastoProveeInput,
   EditarFinBalGastoRubroInput,
   EditarFinBalGastoTipoInput,
 } from "@/lib/validations/finBalGastosCatalogo";
@@ -14,7 +14,7 @@ import type {
 /**
  * Catálogo jerárquico Finanzas → Balance → Gastos:
  *   fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N)
- *   y asignaciones `fin_bal_gasto_provee` (gasto ↔ proveedor, N por gasto).
+ *   y filas `fin_bal_gasto_final` (gasto + proveedor + sucursal + mensual + día devengado, N por gasto).
  *
  * Convenciones:
  * - `nombre` se persiste en MAYÚSCULAS (ya viene normalizado desde Zod en la Action).
@@ -47,21 +47,28 @@ export interface FinBalGastoItem {
   updatedAt: Date;
 }
 
-/** Fila de `fin_bal_gasto_provee` con mini-proveedor para UI de catálogo. */
-export interface FinBalGastoProveeItem {
+/** Fila de `fin_bal_gasto_final` con proveedor y sucursal para UI de catálogo. */
+export interface FinBalGastoFinalItem {
   id: string;
   gastoId: string;
   proveedorId: string;
+  sucursalId: string;
   gastoMensual: boolean;
+  /** 1–28 */
+  diaDevengado: number;
   proveedor: {
     id: string;
     nombre: string;
     prefijo: string;
   };
+  sucursal: {
+    id: string;
+    nombre: string;
+  };
 }
 
 export interface FinBalGastoJerarquiaGasto extends FinBalGastoItem {
-  asignacionesProveedor: FinBalGastoProveeItem[];
+  asignacionesFinales: FinBalGastoFinalItem[];
 }
 
 export interface FinBalGastoJerarquiaRubro extends FinBalGastoRubroItem {
@@ -76,7 +83,7 @@ export interface FinBalGastoJerarquiaTipo extends FinBalGastoTipoItem {
 
 function mapDbError(
   error: unknown,
-  context: "tipo" | "rubro" | "gasto" | "gastoProvee",
+  context: "tipo" | "rubro" | "gasto" | "gastoFinal",
   fallback: string
 ): string {
   if (
@@ -89,15 +96,15 @@ function mapDbError(
     if (code === "P2002") {
       if (context === "tipo") return "Ya existe un tipo con ese nombre.";
       if (context === "rubro") return "Ya existe un rubro con ese nombre para el tipo seleccionado.";
-      if (context === "gastoProvee") {
-        return "Ya existe una asignación de ese proveedor para este gasto.";
+      if (context === "gastoFinal") {
+        return "Ya existe un gasto final con ese proveedor y esa sucursal para este gasto de catálogo.";
       }
       return "Ya existe un gasto con ese nombre en ese rubro.";
     }
     if (code === "P2003") {
       if (context === "rubro") return "El tipo seleccionado no existe.";
-      if (context === "gastoProvee") {
-        return "El gasto o el proveedor no existe o no es válido.";
+      if (context === "gastoFinal") {
+        return "El gasto, el proveedor o la sucursal no existe o no es válido.";
       }
       if (context === "gasto") {
         const meta = (error as { meta?: { field_name?: string; constraint?: string } }).meta;
@@ -110,7 +117,7 @@ function mapDbError(
     if (code === "P2025") {
       if (context === "tipo") return "Tipo no encontrado.";
       if (context === "rubro") return "Rubro no encontrado.";
-      if (context === "gastoProvee") return "Asignación no encontrada.";
+      if (context === "gastoFinal") return "Gasto final no encontrado.";
       return "Gasto no encontrado.";
     }
   }
@@ -188,10 +195,11 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
           gastos: {
             orderBy: [{ nombre: "asc" }],
             include: {
-              asignacionesProveedor: {
-                orderBy: [{ proveedor: { nombre: "asc" } }],
+              asignacionesFinales: {
+                orderBy: [{ proveedor: { nombre: "asc" } }, { sucursal: { nombre: "asc" } }],
                 include: {
                   proveedor: { select: { id: true, nombre: true, prefijo: true } },
+                  sucursal: { select: { id: true, nombre: true } },
                 },
               },
             },
@@ -218,15 +226,21 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
         rubroId: gasto.rubroId,
         createdAt: gasto.createdAt,
         updatedAt: gasto.updatedAt,
-        asignacionesProveedor: gasto.asignacionesProveedor.map((a) => ({
+        asignacionesFinales: gasto.asignacionesFinales.map((a) => ({
           id: a.id,
           gastoId: a.gastoId,
           proveedorId: a.proveedorId,
+          sucursalId: a.sucursalId,
           gastoMensual: a.gastoMensual,
+          diaDevengado: a.diaDevengado,
           proveedor: {
             id: a.proveedor.id,
             nombre: a.proveedor.nombre.toUpperCase(),
             prefijo: a.proveedor.prefijo ?? "",
+          },
+          sucursal: {
+            id: a.sucursal.id,
+            nombre: a.sucursal.nombre.toUpperCase(),
           },
         })),
       })),
@@ -462,84 +476,99 @@ export async function eliminarFinBalGasto(
   }
 }
 
-// ─── Escrituras: Gasto ↔ proveedor (`fin_bal_gasto_provee`) ───────────────
+// ─── Escrituras: Gasto final (`fin_bal_gasto_final`) ──────────────────────
 
-function mapFinBalGastoProveeRow(row: {
+function mapFinBalGastoFinalRow(row: {
   id: string;
   gastoId: string;
   proveedorId: string;
+  sucursalId: string;
   gastoMensual: boolean;
+  diaDevengado: number;
   proveedor: { id: string; nombre: string; prefijo: string | null };
-}): FinBalGastoProveeItem {
+  sucursal: { id: string; nombre: string };
+}): FinBalGastoFinalItem {
   return {
     id: row.id,
     gastoId: row.gastoId,
     proveedorId: row.proveedorId,
+    sucursalId: row.sucursalId,
     gastoMensual: row.gastoMensual,
+    diaDevengado: row.diaDevengado,
     proveedor: {
       id: row.proveedor.id,
       nombre: row.proveedor.nombre.toUpperCase(),
       prefijo: row.proveedor.prefijo ?? "",
     },
+    sucursal: {
+      id: row.sucursal.id,
+      nombre: row.sucursal.nombre.toUpperCase(),
+    },
   };
 }
 
-export async function crearFinBalGastoProvee(
-  input: CrearFinBalGastoProveeInput
-): Promise<ServiceResult<FinBalGastoProveeItem>> {
+export async function crearFinBalGastoFinal(
+  input: CrearFinBalGastoFinalInput
+): Promise<ServiceResult<FinBalGastoFinalItem>> {
   try {
-    const row = await prisma.finBalGastoProvee.create({
+    const row = await prisma.finBalGastoFinal.create({
       data: {
         gastoId: input.gastoId,
         proveedorId: input.proveedorId,
+        sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
+        diaDevengado: input.diaDevengado,
       },
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
+        sucursal: { select: { id: true, nombre: true } },
       },
     });
-    return { success: true, data: mapFinBalGastoProveeRow(row) };
+    return { success: true, data: mapFinBalGastoFinalRow(row) };
   } catch (error) {
     return {
       success: false,
-      error: mapDbError(error, "gastoProvee", "No se pudo crear la asignación."),
+      error: mapDbError(error, "gastoFinal", "No se pudo crear el gasto final."),
     };
   }
 }
 
-export async function editarFinBalGastoProvee(
-  input: EditarFinBalGastoProveeInput
-): Promise<ServiceResult<FinBalGastoProveeItem>> {
+export async function editarFinBalGastoFinal(
+  input: EditarFinBalGastoFinalInput
+): Promise<ServiceResult<FinBalGastoFinalItem>> {
   try {
-    const row = await prisma.finBalGastoProvee.update({
+    const row = await prisma.finBalGastoFinal.update({
       where: { id: input.id },
       data: {
         proveedorId: input.proveedorId,
+        sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
+        diaDevengado: input.diaDevengado,
       },
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
+        sucursal: { select: { id: true, nombre: true } },
       },
     });
-    return { success: true, data: mapFinBalGastoProveeRow(row) };
+    return { success: true, data: mapFinBalGastoFinalRow(row) };
   } catch (error) {
     return {
       success: false,
-      error: mapDbError(error, "gastoProvee", "No se pudo editar la asignación."),
+      error: mapDbError(error, "gastoFinal", "No se pudo editar el gasto final."),
     };
   }
 }
 
-export async function eliminarFinBalGastoProvee(
+export async function eliminarFinBalGastoFinal(
   id: string
 ): Promise<ServiceResult<{ id: string }>> {
   try {
-    await prisma.finBalGastoProvee.delete({ where: { id } });
+    await prisma.finBalGastoFinal.delete({ where: { id } });
     return { success: true, data: { id } };
   } catch (error) {
     return {
       success: false,
-      error: mapDbError(error, "gastoProvee", "No se pudo eliminar la asignación."),
+      error: mapDbError(error, "gastoFinal", "No se pudo eliminar el gasto final."),
     };
   }
 }

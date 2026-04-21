@@ -5,22 +5,24 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
-import { eliminarFinBalGastoProveeAction } from "@/actions/finBalGastosCatalogo";
+import { eliminarFinBalGastoFinalAction } from "@/actions/finBalGastosCatalogo";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   id: string | null;
   proveedorNombre: string | null;
+  sucursalNombre: string | null;
   gastoNombre: string | null;
   onSuccess?: () => void;
 }
 
-export default function EliminarFinBalGastoProveeModal({
+export default function EliminarFinBalGastoFinalModal({
   open,
   onOpenChange,
   id,
   proveedorNombre,
+  sucursalNombre,
   gastoNombre,
   onSuccess,
 }: Props) {
@@ -30,12 +32,12 @@ export default function EliminarFinBalGastoProveeModal({
     if (!id) return;
     setPending(true);
     try {
-      const r = await eliminarFinBalGastoProveeAction({ id });
+      const r = await eliminarFinBalGastoFinalAction({ id });
       if (!r.ok) {
-        toast.error(r.error ?? "No se pudo eliminar la asignación.");
+        toast.error(r.error ?? "No se pudo eliminar el gasto final.");
         return;
       }
-      toast.success("Asignación eliminada correctamente.");
+      toast.success("Gasto final eliminado correctamente.");
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -52,7 +54,7 @@ export default function EliminarFinBalGastoProveeModal({
       }}
     >
       <AppModal
-        title="Eliminar asignación"
+        title="Eliminar gasto final"
         size="sm"
         className="sm:max-w-md"
         actions={
@@ -77,9 +79,9 @@ export default function EliminarFinBalGastoProveeModal({
         }
       >
         <p className="text-sm text-muted-foreground">
-          {id && proveedorNombre && gastoNombre
-            ? `¿Eliminar la asignación del proveedor "${proveedorNombre}" al gasto "${gastoNombre}"? Esta acción no se puede deshacer.`
-            : "Seleccioná una asignación para eliminar."}
+          {id && proveedorNombre && sucursalNombre && gastoNombre
+            ? `¿Eliminar el gasto final "${gastoNombre}" — ${proveedorNombre} — ${sucursalNombre}? Esta acción no se puede deshacer.`
+            : "Seleccioná un gasto final para eliminar."}
         </p>
       </AppModal>
     </Dialog>
