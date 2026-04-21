@@ -409,13 +409,15 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - `nombre_caja` y `titular` se normalizan y persisten en MAYÚSCULAS en servicio (`crearCajaTesoreria`/`editarCajaTesoreria`), y la lectura también expone esos campos en MAYÚSCULAS para UI consistente.
   - Revalidación de rutas: `/finanzas` y `/finanzas/tesoreria`.
 
-### 2.5e Catálogo jerárquico de gastos para Balance (`fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_gasto`)
+### 2.5e Catálogo jerárquico de gastos para Balance (`fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_cat_gasto`)
 
 Jerarquía de catálogos para Finanzas → Balance → Gastos. Relación canónica:
 
 ```text
-fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N) fin_bal_gasto
-   FinBalGastoTipo             FinBalGastoRubro                   FinBalGasto
+fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N) fin_bal_cat_gasto (1) ──── (N) fin_bal_gasto_provee
+   FinBalGastoTipo             FinBalGastoRubro                   FinBalGasto                    FinBalGastoProvee
+                                                                                                      │
+                                                                                                      └── FK → global_proveedores
 ```
 
 - **Tabla raíz** `fin_bal_gasto_tipo` (Prisma: `FinBalGastoTipo`):
@@ -431,28 +433,25 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - Unicidad compuesta `@@unique([tipoId, nombre])` (map `fin_bal_gasto_rubro_tipo_nombre_ux`): el mismo nombre puede existir en **distintos tipos**.
   - Índice en `tipo_id` (`fin_bal_gasto_rubro_tipo_id_idx`).
   - Relación inversa: `gastos FinBalGasto[]`.
-- **Tabla hoja** `fin_bal_gasto` (Prisma: `FinBalGasto`):
+- **Tabla hoja** `fin_bal_cat_gasto` (Prisma: `FinBalGasto`, `@@map("fin_bal_cat_gasto")`):
   - `id` (`TEXT`, PK; `cuid()` en app).
   - `nombre` (`TEXT`).
   - `rubro_id` (`TEXT`, FK → `fin_bal_gasto_rubro.id`, `onDelete: Restrict`, `onUpdate: Cascade`).
-  - `proveedor_id` (`TEXT` **NULLable**, FK → `global_proveedores.id`, `onDelete: SetNull`, `onUpdate: Cascade`). Asocia opcionalmente el gasto a un proveedor. `NULL` = gasto genérico sin proveedor (ej. sueldos, servicios propios). La política `SetNull` preserva el catálogo maestro cuando se dan de baja proveedores (no `Restrict`, que bloquearía bajas; no `Cascade`, que destruiría el catálogo).
-  - `gasto_mensual` (`BOOLEAN NOT NULL DEFAULT FALSE`, Prisma: `gastoMensual`). Flag "Gasto mensual": indica si el gasto es de frecuencia mensual (recurrente). Uso previsto por reportes de gastos fijos / plantillas de balance. Sin índice (baja cardinalidad + el catálogo siempre se lee vía jerarquía rubro→gasto, no por filtro de columna).
-  - **Baja `repite_monto` (2026-04-18)**: el flag fue introducido y removido en la misma sesión (migraciones `20260418220000` de alta + `20260418240000` de baja). El caso de uso ("repetir el último monto al registrar el movimiento") se implementará a nivel de `movimientos_finanzas`, no del catálogo maestro. No hubo datos en uso más allá del `DEFAULT FALSE` inicial, por lo que la baja no impacta registros productivos.
   - `created_at`, `updated_at` (`TIMESTAMP(3)`).
-  - Unicidad compuesta `@@unique([rubroId, nombre, proveedorId])` (map `fin_bal_gasto_rubro_nombre_proveedor_ux`): dentro de un mismo rubro el `nombre` **puede repetirse** siempre que el `proveedor` sea distinto. Matriz de casos:
-    - `(rubro, "ALQUILER", prov=X)` + `(rubro, "ALQUILER", prov=Y)` → ✅ permitido.
-    - `(rubro, "ALQUILER", prov=X)` + `(rubro, "ALQUILER", prov=X)` → ❌ duplicado.
-    - `(rubro, "ALQUILER", prov=NULL)` + `(rubro, "ALQUILER", prov=NULL)` → ❌ duplicado.
-    - `(rubro, "ALQUILER", prov=NULL)` + `(rubro, "ALQUILER", prov=X)` → ✅ permitido.
-  - El UNIQUE principal `fin_bal_gasto_rubro_nombre_proveedor_ux` está declarado en Prisma y en la migración. **Complementariamente** existe un segundo UNIQUE parcial `fin_bal_gasto_rubro_nombre_sin_prov_ux ON (rubro_id, nombre) WHERE proveedor_id IS NULL` creado **solo por SQL** (Prisma 7.4.1 no soporta índices parciales ni `NULLS NOT DISTINCT` en `@@unique`): bloquea el caso "dos gastos sin proveedor con el mismo nombre en el mismo rubro", que el UNIQUE principal dejaría pasar porque PostgreSQL considera `NULL ≠ NULL` en UNIQUE estándar. El índice parcial vive solo en la DB y está documentado en el comentario del modelo; **no causa drift en `migrate deploy`** (no es la vía usada en prod), pero sí lo podría hacer en `migrate dev` — si se requiere, regenerar la migración preservándolo explícitamente.
-  - Índices: `rubro_id` (`fin_bal_gasto_rubro_id_idx`) y `proveedor_id` (`fin_bal_gasto_proveedor_id_idx`). El UNIQUE triple (`rubro_id, nombre, proveedor_id`) ya sirve como índice cubriente para filtros por `rubro_id + nombre`. El flag `gasto_mensual` **no** se indexa (cardinalidad = 2; se lee siempre como payload del gasto, no como predicado).
-  - Relación inversa en `Proveedor`: `finBalGastos FinBalGasto[]`.
+  - **Bajas (2026-04-21)**: se eliminaron `proveedor_id` y `gasto_mensual` de `fin_bal_cat_gasto` (catálogo de nombre de gasto por rubro, sin proveedor). El vínculo gasto ↔ proveedor vive en **`fin_bal_gasto_provee`** (`FinBalGastoProvee`): una fila por par (`gasto_id`, `proveedor_id`) con flag `gasto_mensual`. La columna **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` sigue siendo CRUD autónomo de `global_proveedores` (`proveedor_mercaderia = false`); las asignaciones consumen el mismo listado filtrado.
+- **Tabla puente** `fin_bal_gasto_provee` (Prisma: `FinBalGastoProvee`):
+  - `id` (`TEXT`, PK), `gasto_id` → `fin_bal_cat_gasto.id` (`onDelete: Cascade`), `proveedor_id` → `global_proveedores.id` (`onDelete: Restrict`).
+  - `gasto_mensual` (`BOOLEAN NOT NULL DEFAULT FALSE`).
+  - `@@unique([gastoId, proveedorId])` — un proveedor como máximo una vez por gasto de catálogo.
+  - **Baja `repite_monto` (2026-04-18)**: ver migraciones `20260418220000` / `20260418240000`; el comportamiento previsto pasa a `movimientos_finanzas`.
+  - Unicidad compuesta `@@unique([rubroId, nombre])` (map `fin_bal_cat_gasto_rubro_nombre_ux`): el nombre del gasto es **único por rubro**.
+  - Índice en `rubro_id` (`fin_bal_cat_gasto_rubro_id_idx`, renombrado junto con la tabla en migración `20260421140000`).
 - **Integridad referencial**:
   - `onDelete: Restrict` en ambas FKs: no se puede borrar un tipo con rubros asociados ni un rubro con gastos asociados. Si se necesita baja en cascada, cambiar explícitamente a `Cascade` en la migración correspondiente y documentarlo.
 - **Convención de normalización**: al persistir desde service/action, aplicar `trim + toUpperCase` sobre `nombre` (alineado a `fin_tesoreria_cajas`, `movimientos_finanzas.nombre`).
 - **Errores a mapear** (Prisma → `ServiceResult`):
-  - `P2002` (unique violation): “Ya existe un rubro con ese nombre para el tipo seleccionado.” / análogo para gasto.
-  - `P2003` (FK violation): “Tipo/Rubro inválido.” En `gasto`, distinguir por `error.meta.field_name` / `error.meta.constraint` — si contiene `proveedor`, mensaje “El proveedor seleccionado no existe.”; si contiene `rubro`, “El rubro seleccionado no existe.”
+  - `P2002` (unique violation): “Ya existe un rubro con ese nombre para el tipo seleccionado.” / para gasto: “Ya existe un gasto con ese nombre en ese rubro.”
+  - `P2003` (FK violation): “Tipo/Rubro inválido.” En `gasto`, si el meta apunta a `rubro`, “El rubro seleccionado no existe.”
   - `P2025` (registro no encontrado): “Registro no encontrado.”
 - **Migraciones**:
   - `prisma/migrations/20260418170000_add_fin_bal_gasto_tipo/migration.sql` (tabla raíz).
@@ -460,29 +459,31 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - `prisma/migrations/20260418210000_add_fin_bal_gasto_proveedor_id/migration.sql` (FK opcional a `proveedores` con `onDelete: SET NULL` + índice; tabla referenciada hoy `global_proveedores`).
   - `prisma/migrations/20260418220000_add_fin_bal_gasto_flags_mensual_repite/migration.sql` (alta de `gasto_mensual` + `repite_monto`, `BOOLEAN NOT NULL DEFAULT FALSE`). Se conserva por inmutabilidad del historial Prisma.
   - `prisma/migrations/20260418240000_drop_fin_bal_gasto_repite_monto/migration.sql` (baja de la columna `repite_monto`; `gasto_mensual` se mantiene). Idempotente (`DROP COLUMN IF EXISTS`).
-  - `prisma/migrations/20260418230000_fin_bal_gasto_unique_rubro_nombre_proveedor/migration.sql` (reemplaza el UNIQUE `(rubro_id, nombre)` por el triple `(rubro_id, nombre, proveedor_id)` + UNIQUE parcial `WHERE proveedor_id IS NULL`). Compatible con datos existentes (el constraint anterior era más restrictivo que el nuevo, por lo que no hay duplicados a conciliar).
+  - `prisma/migrations/20260418230000_fin_bal_gasto_unique_rubro_nombre_proveedor/migration.sql` (histórico: UNIQUE triple + parcial; **supersedido** por la migración 20260421140000 que unifica en `(rubro_id, nombre)` al renombrar la tabla).
+  - `prisma/migrations/20260421140000_fin_bal_cat_gasto_sin_proveedor_mensual/migration.sql` (baja FK/columnas `proveedor_id` y `gasto_mensual`, dedupe por `(rubro_id, nombre)`, `fin_bal_gasto` → `fin_bal_cat_gasto`, constraints/índices renombrados, UNIQUE `fin_bal_cat_gasto_rubro_nombre_ux`).
+  - `prisma/migrations/20260421150000_add_fin_bal_gasto_provee/migration.sql` (tabla `fin_bal_gasto_provee`, UNIQUE `(gasto_id, proveedor_id)`, FKs a `fin_bal_cat_gasto` y `global_proveedores`, `gasto_mensual`).
 - **Validaciones Zod**: `src/lib/validations/finBalGastosCatalogo.ts`
   - `crearFinBalGastoTipoSchema`, `editarFinBalGastoTipoSchema`, `eliminarFinBalGastoTipoSchema`.
   - `crearFinBalGastoRubroSchema`, `editarFinBalGastoRubroSchema`, `eliminarFinBalGastoRubroSchema`.
   - `crearFinBalGastoSchema`, `editarFinBalGastoSchema`, `eliminarFinBalGastoSchema`.
+  - `crearFinBalGastoProveeSchema`, `editarFinBalGastoProveeSchema`, `eliminarFinBalGastoProveeSchema` (`gastoId` / `proveedorId` / `gastoMensual` boolean, `id` en edición/eliminación).
   - `nombre` en todos: `trim + toUpperCase`, `min(1)`, `max(120)`.
   - IDs validados con `prismaCuidSchema` (común a cuid del proyecto).
-  - `proveedorIdOpcionalSchema` (solo en `crearFinBalGastoSchema` / `editarFinBalGastoSchema`): `union` de `prismaCuidSchema | ""` | `null` | `undefined`, transformado a `string | null`. El cliente puede enviar string vacío o ausente; el servicio recibe siempre `null` en ese caso (Prisma desasigna la FK).
-  - `booleanFlagSchema` (solo en `crearFinBalGastoSchema` / `editarFinBalGastoSchema`, aplicado a `gastoMensual` y `repiteMonto`): `union` de `string | boolean | null | undefined`, transformado a `boolean`. Acepta valores de `FormData` (`"si" | "sí" | "true" | "1"` → `true`; cualquier otro, incluido ausente, → `false`). Contrato simétrico al helper usado para `proveedor_mercaderia` en el módulo proveedores; permite que el modal envíe los flags tanto como string (hidden input) como boolean nativo (JSON body) sin romper el servicio.
+  - `crearFinBalGastoSchema` / `editarFinBalGastoSchema`: solo `nombre` + `rubroId` (+ `id` en edición).
 - **Servicio** (`src/services/finBalGastosCatalogo.service.ts`)
   - **Lecturas** (no devuelven `ServiceResult`; siempre exitosas, consumidas desde Server Components):
     - `listarFinBalGastoTipos()` → `FinBalGastoTipoItem[]` ordenados por `nombre` asc.
     - `listarFinBalGastoRubrosPorTipo(tipoId)` → `FinBalGastoRubroItem[]` filtrados por `tipoId`.
-    - `listarFinBalGastosPorRubro(rubroId)` → `FinBalGastoItem[]` filtrados por `rubroId`, con `proveedor` expandido (`{ id, nombre }` o `null`) para evitar N+1.
-    - `listarFinBalGastosJerarquia()` → `FinBalGastoJerarquiaTipo[]` (árbol completo Tipo → Rubros → Gastos en **un solo roundtrip** con `include` anidado + orden alfabético en cada nivel). Cada gasto incluye `proveedor` expandido. Uso recomendado para la UI de árbol.
-    - Helper privado `mapProveedorRef(proveedor)`: devuelve `{ id, nombre: UPPERCASE } | null`. Usado por todas las lecturas/escrituras de gasto para formateo consistente.
-  - **Tipos expuestos** — `FinBalGastoItem` incluye `proveedorId: string | null` + `proveedor: FinBalGastoProveedorRef | null` + `gastoMensual: boolean`. La presencia del objeto expandido es garantizada (nunca `undefined`) y el flag siempre llega como `boolean` (nunca `null`) gracias al `DEFAULT FALSE` de la DB.
+    - `listarFinBalGastosPorRubro(rubroId)` → `FinBalGastoItem[]` filtrados por `rubroId`.
+    - `listarFinBalGastosJerarquia()` → `FinBalGastoJerarquiaTipo[]` (árbol Tipo → Rubros → Gastos + `asignacionesProveedor[]` por gasto en un roundtrip con `include` anidado + orden alfabético).
+  - **Tipos expuestos** — `FinBalGastoItem`: `id`, `nombre`, `rubroId`, `createdAt`, `updatedAt`. En jerarquía, cada gasto es `FinBalGastoJerarquiaGasto` con `asignacionesProveedor: FinBalGastoProveeItem[]` (`id`, `gastoId`, `proveedorId`, `gastoMensual`, `proveedor { id, nombre, prefijo }`).
   - **Escrituras** (todas devuelven `ServiceResult<T>`):
     - Tipo: `crearFinBalGastoTipo`, `editarFinBalGastoTipo`, `eliminarFinBalGastoTipo`.
     - Rubro: `crearFinBalGastoRubro`, `editarFinBalGastoRubro`, `eliminarFinBalGastoRubro`.
     - Gasto: `crearFinBalGasto`, `editarFinBalGasto`, `eliminarFinBalGasto`.
+    - Asignación gasto–proveedor: `crearFinBalGastoProvee`, `editarFinBalGastoProvee`, `eliminarFinBalGastoProvee`.
   - **Mapeo de errores** (helper `mapDbError`):
-    - `P2002` → mensaje contextual por nivel (tipo/rubro/gasto) con referencia al padre cuando aplica. **Para `gasto`**, el mensaje se diferencia leyendo `error.meta.target` / `error.meta.constraint`: si contiene `sin_prov` (disparado por el índice parcial `fin_bal_gasto_rubro_nombre_sin_prov_ux`) → "Ya existe un gasto sin proveedor con ese nombre en ese rubro."; caso contrario (UNIQUE triple `fin_bal_gasto_rubro_nombre_proveedor_ux`) → "Ya existe un gasto con ese nombre y ese proveedor en ese rubro."
+    - `P2002` → mensaje contextual por nivel; en `gasto`: "Ya existe un gasto con ese nombre en ese rubro."
     - `P2003` en `eliminar*Tipo` / `eliminar*Rubro` → mensaje "No se puede eliminar: tiene rubros/gastos asociados".
     - `P2003` en `crear*Rubro` / `crear*Gasto` → mensaje "El tipo/rubro seleccionado no existe".
     - `P2025` → mensaje "Tipo/Rubro/Gasto no encontrado".
@@ -490,8 +491,8 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - Todas las mutaciones exigen `puede(rol, PERMISOS.finanzas.acceso)` + `esEditor()` vía helper `requireEditorFinanzas()` (catálogos maestros solo editables por editor).
   - Validan `raw: unknown` con los esquemas Zod correspondientes (`safeParse`).
   - Delegan en el servicio y mapean `ServiceResult` → `ActionResult`.
-  - Tras cada mutación exitosa, llaman a `revalidateBalancePaths()` que ejecuta `revalidatePath('/finanzas')` y `revalidatePath('/finanzas/balance/gastos')`.
-  - Exportan: `crearFinBalGastoTipoAction`, `editarFinBalGastoTipoAction`, `eliminarFinBalGastoTipoAction`, `crearFinBalGastoRubroAction`, `editarFinBalGastoRubroAction`, `eliminarFinBalGastoRubroAction`, `crearFinBalGastoAction`, `editarFinBalGastoAction`, `eliminarFinBalGastoAction`.
+  - Tras cada mutación exitosa, llaman a `revalidateBalancePaths()` que ejecuta `revalidatePath('/finanzas')`, `revalidatePath('/finanzas/balance/gastos')` y `revalidatePath('/finanzas/balance/gastos/catalogo')`.
+  - Exportan: `crearFinBalGastoTipoAction`, `editarFinBalGastoTipoAction`, `eliminarFinBalGastoTipoAction`, `crearFinBalGastoRubroAction`, `editarFinBalGastoRubroAction`, `eliminarFinBalGastoRubroAction`, `crearFinBalGastoAction`, `editarFinBalGastoAction`, `eliminarFinBalGastoAction`, `crearFinBalGastoProveeAction`, `editarFinBalGastoProveeAction`, `eliminarFinBalGastoProveeAction`.
   - Las **lecturas** NO son Actions: se consumen directamente desde Server Components importando el servicio (mismo patrón que `listarMovimientosFinanzas` / `listarCajasTesoreria`).
 
 ### 2.5d Catálogo finanzas — rubros y gastos (ELIMINADO 2026-04-18)
@@ -735,7 +736,7 @@ Notas:
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema`, `eliminarCajaTesoreriaSchema`, `tipoCajaTesoreriaSchema`. |
 | `@/lib/validations/movimientosFinanzas.ts` | `crearMovimientoFinanzasSchema`, `tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`. |
-| `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` para los 3 niveles. `nombre` con `trim + toUpperCase`, IDs `prismaCuidSchema`. |
+| `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto` + `fin_bal_gasto_provee`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` (incluye `*FinBalGastoProvee*`). `nombre` con `trim + toUpperCase`, IDs `prismaCuidSchema`, `gastoMensual` boolean en puente. |
 
 Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a validación, usar `z.infer<typeof schema>` en `src/lib/validations/*.ts`.
 

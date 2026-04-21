@@ -72,12 +72,19 @@ export interface SidebarMainAppAreaProps {
   showLogo?: boolean;
   /** Mostrar nombre del área actual. */
   showLabel?: boolean;
+  /**
+   * Si es `false` (rol simple), el modal del logo solo lista **Gestión Productos**.
+   * Finanzas y Estadísticas Productos quedan reservados para `editor`.
+   * @default true (compatibilidad; el layout pasa `rol === "editor"`).
+   */
+  esEditor?: boolean;
 }
 
 export default function SidebarMainAppArea({
   labelContext = "sidebar",
   showLogo = true,
   showLabel = true,
+  esEditor = true,
 }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -85,6 +92,9 @@ export default function SidebarMainAppArea({
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
   const current = getMainAppAreaById(currentId);
+
+  /** Solo editor puede cambiar de macro-área (Finanzas / Estadísticas). */
+  const logoAbreSelector = esEditor;
 
   function navigateToArea(id: MainAppAreaId) {
     const area = getMainAppAreaById(id);
@@ -113,25 +123,44 @@ export default function SidebarMainAppArea({
           </div>
         ) : null}
         {showLogo ? (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className={cn(
-              "rounded-lg p-0 border-0 bg-transparent w-full max-w-[45%]",
-              "flex flex-col items-center justify-center",
-              "transition-opacity hover:opacity-90",
-              "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-            )}
-            aria-label="Elegir Área De La Aplicación"
-          >
-            <Image
-              src="/logo_tiendacolor.png"
-              alt=""
-              width={200}
-              height={100}
-              className="w-full h-auto object-contain pointer-events-none"
-            />
-          </button>
+          logoAbreSelector ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className={cn(
+                "rounded-lg p-0 border-0 bg-transparent w-full max-w-[45%]",
+                "flex flex-col items-center justify-center",
+                "transition-opacity hover:opacity-90",
+                "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              )}
+              aria-label="Elegir Área De La Aplicación"
+            >
+              <Image
+                src="/logo_tiendacolor.png"
+                alt=""
+                width={200}
+                height={100}
+                className="w-full h-auto object-contain pointer-events-none"
+              />
+            </button>
+          ) : (
+            <div
+              className={cn(
+                "rounded-lg p-0 w-full max-w-[45%]",
+                "flex flex-col items-center justify-center",
+                "cursor-default select-none"
+              )}
+              aria-hidden
+            >
+              <Image
+                src="/logo_tiendacolor.png"
+                alt=""
+                width={200}
+                height={100}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+          )
         ) : null}
 
         {showLabel && !showLogo ? (
@@ -149,45 +178,47 @@ export default function SidebarMainAppArea({
         ) : null}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <AppModal
-          size="sm"
-          title="Áreas De La Aplicación"
-          padding="sm"
-          actions={
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cerrar
-            </Button>
-          }
-        >
-          <div className="flex flex-col gap-2 w-full min-w-0">
-            {MAIN_APP_AREAS.map((area) => {
-              const Icon = areaIcons[area.id];
-              return (
-                <button
-                  key={area.id}
-                  type="button"
-                  onClick={() => navigateToArea(area.id)}
-                  className={cn(areaOptionVariants({ current: area.id === currentId }))}
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon
-                      className={cn(
-                        "h-4 w-4 shrink-0",
-                        area.id === currentId ? "text-foreground" : "text-muted-foreground"
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span className={cn(areaTitleVariants({ context: "modal" }), "block")}>
-                      {areaLabelMayusculas(area.label)}
+      {logoAbreSelector ? (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <AppModal
+            size="sm"
+            title="Áreas De La Aplicación"
+            padding="sm"
+            actions={
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cerrar
+              </Button>
+            }
+          >
+            <div className="flex flex-col gap-2 w-full min-w-0">
+              {MAIN_APP_AREAS.map((area) => {
+                const Icon = areaIcons[area.id];
+                return (
+                  <button
+                    key={area.id}
+                    type="button"
+                    onClick={() => navigateToArea(area.id)}
+                    className={cn(areaOptionVariants({ current: area.id === currentId }))}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          area.id === currentId ? "text-foreground" : "text-muted-foreground"
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className={cn(areaTitleVariants({ context: "modal" }), "block")}>
+                        {areaLabelMayusculas(area.label)}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </AppModal>
-      </Dialog>
+                  </button>
+                );
+              })}
+            </div>
+          </AppModal>
+        </Dialog>
+      ) : null}
     </>
   );
 }

@@ -347,7 +347,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="h-px w-[80%] bg-sidebar-foreground/70" />
         </div>
         <div className="flex flex-col gap-3 pt-3 w-full min-w-0">
-          <SidebarMainAppArea />
+          <SidebarMainAppArea esEditor={rol === "editor"} />
           <SelectorRol rolActual={rol} compact />
         </div>
       </div>

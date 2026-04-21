@@ -5,27 +5,34 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
+  crearFinBalGastoProveeSchema,
   crearFinBalGastoRubroSchema,
   crearFinBalGastoSchema,
   crearFinBalGastoTipoSchema,
+  editarFinBalGastoProveeSchema,
   editarFinBalGastoRubroSchema,
   editarFinBalGastoSchema,
   editarFinBalGastoTipoSchema,
+  eliminarFinBalGastoProveeSchema,
   eliminarFinBalGastoRubroSchema,
   eliminarFinBalGastoSchema,
   eliminarFinBalGastoTipoSchema,
 } from "@/lib/validations/finBalGastosCatalogo";
 import {
   crearFinBalGasto,
+  crearFinBalGastoProvee,
   crearFinBalGastoRubro,
   crearFinBalGastoTipo,
   editarFinBalGasto,
+  editarFinBalGastoProvee,
   editarFinBalGastoRubro,
   editarFinBalGastoTipo,
   eliminarFinBalGasto,
+  eliminarFinBalGastoProvee,
   eliminarFinBalGastoRubro,
   eliminarFinBalGastoTipo,
   type FinBalGastoItem,
+  type FinBalGastoProveeItem,
   type FinBalGastoRubroItem,
   type FinBalGastoTipoItem,
 } from "@/services/finBalGastosCatalogo.service";
@@ -216,6 +223,56 @@ export async function eliminarFinBalGastoAction(
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
   const res = await eliminarFinBalGasto(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateBalancePaths();
+  return { ok: true, data: res.data };
+}
+
+// ─── Gasto ↔ proveedor (`fin_bal_gasto_provee`) ───────────────────────────
+
+export async function crearFinBalGastoProveeAction(
+  raw: unknown
+): Promise<ActionResult<FinBalGastoProveeItem>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = crearFinBalGastoProveeSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const res = await crearFinBalGastoProvee(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateBalancePaths();
+  return { ok: true, data: res.data };
+}
+
+export async function editarFinBalGastoProveeAction(
+  raw: unknown
+): Promise<ActionResult<FinBalGastoProveeItem>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = editarFinBalGastoProveeSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const res = await editarFinBalGastoProvee(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateBalancePaths();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarFinBalGastoProveeAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = eliminarFinBalGastoProveeSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const res = await eliminarFinBalGastoProvee(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateBalancePaths();

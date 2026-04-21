@@ -6,15 +6,6 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import {
   crearFinBalGastoAction,
   crearFinBalGastoRubroAction,
@@ -23,10 +14,6 @@ import {
   editarFinBalGastoRubroAction,
   editarFinBalGastoTipoAction,
 } from "@/actions/finBalGastosCatalogo";
-import type { ProveedorOption } from "./FinBalGastosCatalogoPageClient";
-
-/** Sentinel para el Select de proveedor (shadcn Select no acepta string vacío). */
-const SIN_PROVEEDOR_SENTINEL = "__sin_proveedor__";
 
 /**
  * Modal unificado de alta/edición para los 3 niveles del catálogo jerárquico
@@ -62,20 +49,6 @@ interface Props {
   parentId?: string;
   /** Nombre del padre, se muestra como contexto informativo (read-only). */
   parentNombre?: string;
-  /**
-   * Lista de proveedores para el Select (solo relevante si `nivel === "gasto"`).
-   * Es responsabilidad de la página cargarla en el Server Component.
-   */
-  proveedores?: ProveedorOption[];
-  /**
-   * Proveedor actualmente asignado al gasto (solo `nivel === "gasto"`).
-   * `null` | `undefined` = sin proveedor.
-   */
-  proveedorIdInicial?: string | null;
-  /**
-   * Flag del gasto (solo `nivel === "gasto"`). `undefined` → `false` (default).
-   */
-  gastoMensualInicial?: boolean;
   onSuccess?: () => void;
 }
 
@@ -106,63 +79,28 @@ export default function CrearEditarFinBalCatalogoItemModal({
   nombreInicial = "",
   parentId,
   parentNombre,
-  proveedores,
-  proveedorIdInicial = null,
-  gastoMensualInicial = false,
   onSuccess,
 }: Props) {
   const [nombre, setNombre] = useState("");
-  /** Solo relevante si `nivel === "gasto"`. `null` = sin proveedor. */
-  const [proveedorId, setProveedorId] = useState<string | null>(null);
-  /** Flag del gasto (solo `nivel === "gasto"`). */
-  const [gastoMensual, setGastoMensual] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setNombre(modo === "editar" ? nombreInicial : "");
-    setProveedorId(nivel === "gasto" ? proveedorIdInicial ?? null : null);
-    setGastoMensual(nivel === "gasto" ? gastoMensualInicial : false);
-  }, [
-    open,
-    modo,
-    nombreInicial,
-    nivel,
-    proveedorIdInicial,
-    gastoMensualInicial,
-  ]);
+  }, [open, modo, nombreInicial]);
 
   const labels = LABELS[nivel];
 
   /**
    * En el alta de **gasto** mostramos únicamente el campo NOMBRE:
-   *  - El `rubroId` padre ya viene por contexto (columna RUBROS seleccionada),
-   *    así que el bloque informativo "RUBRO" no aporta valor nuevo.
-   *  - El proveedor se asigna (opcionalmente) luego desde "Editar Gasto";
-   *    al crear se persiste como `null` por defecto.
-   * Edición de gasto sigue exponiendo contexto + Select "PROVEEDOR".
+   * el `rubroId` padre ya viene por contexto (columna RUBROS seleccionada).
    */
   const esAltaGastoSoloNombre = modo === "crear" && nivel === "gasto";
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
-    const nombreCambio =
-      nombre.trim().toUpperCase() !== nombreInicial.trim().toUpperCase();
-    const proveedorCambio =
-      nivel === "gasto" && (proveedorId ?? null) !== (proveedorIdInicial ?? null);
-    const gastoMensualCambio =
-      nivel === "gasto" && gastoMensual !== gastoMensualInicial;
-    return nombreCambio || proveedorCambio || gastoMensualCambio;
-  }, [
-    modo,
-    nombre,
-    nombreInicial,
-    nivel,
-    proveedorId,
-    proveedorIdInicial,
-    gastoMensual,
-    gastoMensualInicial,
-  ]);
+    return nombre.trim().toUpperCase() !== nombreInicial.trim().toUpperCase();
+  }, [modo, nombre, nombreInicial]);
 
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
@@ -183,8 +121,6 @@ export default function CrearEditarFinBalCatalogoItemModal({
         modo,
         id,
         parentId,
-        proveedorId: nivel === "gasto" ? proveedorId : null,
-        gastoMensual: nivel === "gasto" ? gastoMensual : false,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
@@ -257,64 +193,6 @@ export default function CrearEditarFinBalCatalogoItemModal({
               autoFocus
             />
           </label>
-
-          {nivel === "gasto" && !esAltaGastoSoloNombre && (
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                PROVEEDOR
-              </span>
-              <Select
-                value={proveedorId ?? SIN_PROVEEDOR_SENTINEL}
-                onValueChange={(value) =>
-                  setProveedorId(value === SIN_PROVEEDOR_SENTINEL ? null : value)
-                }
-                disabled={saving}
-              >
-                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                  <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  <SelectItem value={SIN_PROVEEDOR_SENTINEL}>SIN PROVEEDOR</SelectItem>
-                  {(proveedores ?? []).map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-          )}
-
-          {nivel === "gasto" && (
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                GASTO MENSUAL
-              </span>
-              <Select
-                value={gastoMensual ? "si" : "no"}
-                onValueChange={(value) => setGastoMensual(value === "si")}
-                disabled={saving}
-              >
-                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  <SelectItem value="si">SI</SelectItem>
-                  <SelectItem value="no">NO</SelectItem>
-                </SelectContent>
-              </Select>
-            </label>
-          )}
         </div>
       </AppModal>
     </Dialog>
@@ -329,10 +207,8 @@ async function dispatch(args: {
   modo: Modo;
   id?: string;
   parentId?: string;
-  proveedorId: string | null;
-  gastoMensual: boolean;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { nombre, nivel, modo, id, parentId, proveedorId, gastoMensual } = args;
+  const { nombre, nivel, modo, id, parentId } = args;
   if (nivel === "tipo") {
     if (modo === "crear") {
       const r = await crearFinBalGastoTipoAction({ nombre });
@@ -347,7 +223,6 @@ async function dispatch(args: {
       const r = await crearFinBalGastoRubroAction({ nombre, tipoId: parentId! });
       return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
     }
-    // En edit, `parentId` es el tipoId actual (no hay UI para reparentar).
     const r = await editarFinBalGastoRubroAction({ id: id!, nombre, tipoId: parentId! });
     return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
   }
@@ -356,18 +231,13 @@ async function dispatch(args: {
     const r = await crearFinBalGastoAction({
       nombre,
       rubroId: parentId!,
-      proveedorId,
-      gastoMensual,
     });
     return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
   }
-  // En edit, `parentId` es el rubroId actual (no hay UI para reparentar).
   const r = await editarFinBalGastoAction({
     id: id!,
     nombre,
     rubroId: parentId!,
-    proveedorId,
-    gastoMensual,
   });
   return r.ok ? { ok: true } : { ok: false, error: r.error ?? "" };
 }

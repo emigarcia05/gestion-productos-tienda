@@ -10,7 +10,9 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import CrearEditarFinBalCatalogoItemModal, {
   type NivelCatalogo,
 } from "./CrearEditarFinBalCatalogoItemModal";
+import CrearEditarFinBalGastoProveeModal from "./CrearEditarFinBalGastoProveeModal";
 import EliminarFinBalCatalogoItemModal from "./EliminarFinBalCatalogoItemModal";
+import EliminarFinBalGastoProveeModal from "./EliminarFinBalGastoProveeModal";
 import ProveedorModal, {
   type ProveedorParaModal,
 } from "@/components/proveedores/ProveedorModal";
@@ -21,21 +23,13 @@ import type {
 import type { ProveedorListItem } from "@/services/proveedor.service";
 
 /**
- * Tipo mínimo usado por el Select "PROVEEDOR" del modal de gasto.
- * Se deriva en runtime desde `ProveedorListItem[]`.
- */
-export interface ProveedorOption {
-  id: string;
-  nombre: string;
-}
-
-/**
  * Página del catálogo jerárquico Finanzas → Balance → Gastos.
  *
- * Layout tipo Finder de 4 columnas:
- *   [TIPOS]  →  [RUBROS]  →  [GASTOS]   [PROVEEDORES]
+ * Layout tipo Finder de 5 columnas:
+ *   [TIPOS]  →  [RUBROS]  →  [GASTOS]  →  [GASTO - PROVEEDOR]  [PROVEEDORES]
  *
- * Las 3 primeras columnas son la jerarquía en cascada.
+ * Las 4 primeras columnas son cascada: tipo → rubro → gasto (`fin_bal_cat_gasto`,
+ * sin proveedor) → filas de `fin_bal_gasto_provee` (gasto + proveedor + flag mensual).
  * La columna **PROVEEDORES** es autónoma (no depende de la selección) y
  * permite gestionar el catálogo maestro de proveedores "no-mercadería"
  * (alta/edición/baja) sin salir del módulo — reutiliza el mismo
@@ -51,7 +45,7 @@ export interface ProveedorOption {
  *     (salvo PROVEEDORES, donde el modal ya tiene botón Eliminar interno).
  *
  * Vistas de rol:
- *   - `editor`: botonera completa en las 4 columnas.
+ *   - `editor`: botonera completa en las columnas mutables.
  *   - `simple`: solo lectura. No se muestran botones de mutación.
  */
 
@@ -59,9 +53,8 @@ interface Props {
   jerarquia: FinBalGastoJerarquiaTipo[];
   /**
    * Lista de proveedores "no-mercadería" (payload del servicio
-   * `getProveedoresNoMercaderia`). Se usa para:
-   *  - la columna **PROVEEDORES** (lectura + apertura del modal en edición),
-   *  - el Select "PROVEEDOR" dentro del modal de alta/edición de gasto.
+   * `getProveedoresNoMercaderia`). Se usa para la columna **PROVEEDORES**
+   * (lectura + apertura del modal en edición).
    */
   proveedores: ProveedorListItem[];
   esEditor: boolean;
@@ -77,10 +70,6 @@ type ModalCrearEditarState =
       nombreInicial?: string;
       parentId?: string;
       parentNombre?: string;
-      /** Solo aplica a `nivel === "gasto"`. `null` = sin proveedor. */
-      proveedorIdInicial?: string | null;
-      /** Flag del gasto (solo `nivel === "gasto"`). Default `false`. */
-      gastoMensualInicial?: boolean;
     };
 
 type ModalEliminarState =
@@ -101,6 +90,20 @@ type ProveedorModalState =
   | { open: false }
   | { open: true; proveedor: ProveedorParaModal | null };
 
+type ModalGastoProveeState =
+  | { open: false }
+  | {
+      open: true;
+      modo: "crear" | "editar";
+      id?: string;
+      proveedorIdInicial?: string;
+      gastoMensualInicial?: boolean;
+    };
+
+type ModalEliminarGastoProveeState =
+  | { open: false }
+  | { open: true; id: string; proveedorNombre: string };
+
 export default function FinBalGastosCatalogoPageClient({
   jerarquia,
   proveedores,
@@ -109,16 +112,15 @@ export default function FinBalGastosCatalogoPageClient({
   const router = useRouter();
   const [selectedTipoId, setSelectedTipoId] = useState<string | null>(null);
   const [selectedRubroId, setSelectedRubroId] = useState<string | null>(null);
+  const [selectedGastoId, setSelectedGastoId] = useState<string | null>(null);
 
   const [crearEditar, setCrearEditar] = useState<ModalCrearEditarState>({ open: false });
   const [eliminar, setEliminar] = useState<ModalEliminarState>({ open: false });
   const [proveedorModal, setProveedorModal] = useState<ProveedorModalState>({ open: false });
-
-  /** Payload mínimo para el Select "PROVEEDOR" del modal de gasto. */
-  const proveedoresParaSelect = useMemo<ProveedorOption[]>(
-    () => proveedores.map((p) => ({ id: p.id, nombre: p.nombre })),
-    [proveedores]
-  );
+  const [gastoProveeModal, setGastoProveeModal] = useState<ModalGastoProveeState>({ open: false });
+  const [eliminarGastoProvee, setEliminarGastoProvee] = useState<ModalEliminarGastoProveeState>({
+    open: false,
+  });
 
   const tipoSeleccionado = useMemo(
     () => jerarquia.find((t) => t.id === selectedTipoId) ?? null,
@@ -130,13 +132,42 @@ export default function FinBalGastosCatalogoPageClient({
     [tipoSeleccionado, selectedRubroId]
   );
 
+  const gastoSeleccionado = useMemo(
+    () => rubroSeleccionado?.gastos.find((g) => g.id === selectedGastoId) ?? null,
+    [rubroSeleccionado, selectedGastoId]
+  );
+
+  const editingAsignacionId =
+    gastoProveeModal.open && gastoProveeModal.modo === "editar" && gastoProveeModal.id
+      ? gastoProveeModal.id
+      : null;
+
+  const proveedoresOpcionesModal = useMemo(() => {
+    if (!gastoSeleccionado) return [];
+    const ocupados = new Set(
+      gastoSeleccionado.asignacionesProveedor
+        .filter((a) => a.id !== editingAsignacionId)
+        .map((a) => a.proveedorId)
+    );
+    return proveedores
+      .filter((p) => !ocupados.has(p.id))
+      .map((p) => ({ id: p.id, nombre: p.nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }, [gastoSeleccionado, proveedores, editingAsignacionId]);
+
   function handleSelectTipo(id: string) {
     setSelectedTipoId(id);
     setSelectedRubroId(null);
+    setSelectedGastoId(null);
   }
 
   function handleSelectRubro(id: string) {
     setSelectedRubroId(id);
+    setSelectedGastoId(null);
+  }
+
+  function handleSelectGasto(id: string) {
+    setSelectedGastoId(id);
   }
 
   function onSuccessRefresh() {
@@ -170,7 +201,7 @@ export default function FinBalGastosCatalogoPageClient({
       contentWidth="full"
     >
       <div className="flex-1 min-h-0 w-full overflow-hidden py-4">
-        <div className="grid h-full min-h-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid h-full min-h-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
           <CatalogoColumna
             titulo="TIPOS"
             subtitulo={`${jerarquia.length} registro${jerarquia.length === 1 ? "" : "s"}`}
@@ -298,13 +329,11 @@ export default function FinBalGastosCatalogoPageClient({
                 <FilaCatalogo
                   key={gasto.id}
                   nombre={gasto.nombre}
-                  meta={[
-                    gasto.proveedor ? gasto.proveedor.nombre : "Sin proveedor",
-                    gasto.gastoMensual ? "Mensual" : null,
-                  ]
-                    .filter((v): v is string => Boolean(v))
-                    .join(" · ")}
-                  selected={false}
+                  meta={`${gasto.asignacionesProveedor.length} asignación${
+                    gasto.asignacionesProveedor.length === 1 ? "" : "es"
+                  }`}
+                  selected={gasto.id === selectedGastoId}
+                  onClick={() => handleSelectGasto(gasto.id)}
                   mostrarAcciones={esEditor}
                   onEditar={() =>
                     setCrearEditar({
@@ -315,8 +344,6 @@ export default function FinBalGastosCatalogoPageClient({
                       nombreInicial: gasto.nombre,
                       parentId: gasto.rubroId,
                       parentNombre: rubroSeleccionado.nombre,
-                      proveedorIdInicial: gasto.proveedorId,
-                      gastoMensualInicial: gasto.gastoMensual,
                     })
                   }
                   onEliminar={() =>
@@ -325,6 +352,60 @@ export default function FinBalGastosCatalogoPageClient({
                       nivel: "gasto",
                       id: gasto.id,
                       nombre: gasto.nombre,
+                    })
+                  }
+                />
+              ))
+            )}
+          </CatalogoColumna>
+
+          <CatalogoColumna
+            titulo="GASTO - PROVEEDOR"
+            subtitulo={
+              gastoSeleccionado
+                ? `${gastoSeleccionado.asignacionesProveedor.length} en ${gastoSeleccionado.nombre}`
+                : "Seleccioná un gasto"
+            }
+            mostrarNuevo={esEditor && gastoSeleccionado !== null}
+            onNuevo={() =>
+              gastoSeleccionado &&
+              setGastoProveeModal({
+                open: true,
+                modo: "crear",
+              })
+            }
+            deshabilitada={gastoSeleccionado === null}
+          >
+            {!gastoSeleccionado ? (
+              <EmptyState mensaje="Seleccioná un gasto para ver sus asignaciones a proveedores." />
+            ) : gastoSeleccionado.asignacionesProveedor.length === 0 ? (
+              <EmptyState mensaje="Este gasto aún no tiene asignaciones a proveedores." />
+            ) : (
+              gastoSeleccionado.asignacionesProveedor.map((a) => (
+                <FilaCatalogo
+                  key={a.id}
+                  nombre={a.proveedor.nombre}
+                  meta={
+                    a.gastoMensual
+                      ? `${a.proveedor.prefijo} · Mensual`
+                      : a.proveedor.prefijo
+                  }
+                  selected={false}
+                  mostrarAcciones={esEditor}
+                  onEditar={() =>
+                    setGastoProveeModal({
+                      open: true,
+                      modo: "editar",
+                      id: a.id,
+                      proveedorIdInicial: a.proveedorId,
+                      gastoMensualInicial: a.gastoMensual,
+                    })
+                  }
+                  onEliminar={() =>
+                    setEliminarGastoProvee({
+                      open: true,
+                      id: a.id,
+                      proveedorNombre: a.proveedor.nombre,
                     })
                   }
                 />
@@ -371,9 +452,32 @@ export default function FinBalGastosCatalogoPageClient({
           nombreInicial={crearEditar.nombreInicial}
           parentId={crearEditar.parentId}
           parentNombre={crearEditar.parentNombre}
-          proveedores={proveedoresParaSelect}
-          proveedorIdInicial={crearEditar.proveedorIdInicial ?? null}
-          gastoMensualInicial={crearEditar.gastoMensualInicial ?? false}
+          onSuccess={onSuccessRefresh}
+        />
+      )}
+
+      {gastoProveeModal.open && gastoSeleccionado && (
+        <CrearEditarFinBalGastoProveeModal
+          open={gastoProveeModal.open}
+          onOpenChange={(next) => !next && setGastoProveeModal({ open: false })}
+          modo={gastoProveeModal.modo}
+          id={gastoProveeModal.id}
+          gastoId={gastoSeleccionado.id}
+          gastoNombre={gastoSeleccionado.nombre}
+          proveedoresOpciones={proveedoresOpcionesModal}
+          proveedorIdInicial={gastoProveeModal.proveedorIdInicial}
+          gastoMensualInicial={gastoProveeModal.gastoMensualInicial}
+          onSuccess={onSuccessRefresh}
+        />
+      )}
+
+      {eliminarGastoProvee.open && (
+        <EliminarFinBalGastoProveeModal
+          open={eliminarGastoProvee.open}
+          onOpenChange={(next) => !next && setEliminarGastoProvee({ open: false })}
+          id={eliminarGastoProvee.open ? eliminarGastoProvee.id : null}
+          proveedorNombre={eliminarGastoProvee.open ? eliminarGastoProvee.proveedorNombre : null}
+          gastoNombre={gastoSeleccionado?.nombre ?? null}
           onSuccess={onSuccessRefresh}
         />
       )}

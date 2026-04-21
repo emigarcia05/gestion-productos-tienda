@@ -3,7 +3,7 @@ import { prismaCuidSchema } from "@/lib/validations/common";
 
 /**
  * Validaciones para el catálogo jerárquico Finanzas → Balance → Gastos:
- * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_gasto (N).
+ * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N) + fin_bal_gasto_provee (gasto ↔ proveedor).
  *
  * Convención de normalización: todos los `nombre` se normalizan con `trim + toUpperCase`,
  * consistente con fin_tesoreria_cajas, movimientos_finanzas.nombre y demás catálogos finanzas.
@@ -15,29 +15,6 @@ const nombreCatalogoSchema = z
   .min(1, "El nombre es obligatorio.")
   .max(120, "El nombre es demasiado largo.")
   .transform((value) => value.toUpperCase());
-
-/**
- * FK opcional a `global_proveedores.id`.
- * Acepta: CUID válido, `null`, `undefined` o string vacío (normalizado a `null`).
- * Se exporta como `string | null` para que el servicio pueda pasarlo directo a Prisma.
- */
-const proveedorIdOpcionalSchema = z
-  .union([prismaCuidSchema, z.literal(""), z.null(), z.undefined()])
-  .transform((value) => (value == null || value === "" ? null : value));
-
-/**
- * Flags booleanos tolerantes: aceptan `"si" | "no" | "true" | "false" | "1" | "0"`
- * (strings de `FormData`), booleanos nativos, `null` o `undefined`. Cualquier valor
- * ausente/indeterminado se colapsa a `false` (default del catálogo).
- */
-const booleanFlagSchema = z
-  .union([z.string(), z.boolean(), z.null(), z.undefined()])
-  .transform((value) => {
-    if (typeof value === "boolean") return value;
-    if (value == null) return false;
-    const normalized = value.trim().toLowerCase();
-    return normalized === "si" || normalized === "sí" || normalized === "true" || normalized === "1";
-  });
 
 // ─── Tipo (raíz) ──────────────────────────────────────────────────────────
 
@@ -82,8 +59,6 @@ export type EliminarFinBalGastoRubroInput = z.infer<typeof eliminarFinBalGastoRu
 export const crearFinBalGastoSchema = z.object({
   nombre: nombreCatalogoSchema,
   rubroId: prismaCuidSchema,
-  proveedorId: proveedorIdOpcionalSchema,
-  gastoMensual: booleanFlagSchema,
 });
 export type CrearFinBalGastoInput = z.infer<typeof crearFinBalGastoSchema>;
 
@@ -91,8 +66,6 @@ export const editarFinBalGastoSchema = z.object({
   id: prismaCuidSchema,
   nombre: nombreCatalogoSchema,
   rubroId: prismaCuidSchema,
-  proveedorId: proveedorIdOpcionalSchema,
-  gastoMensual: booleanFlagSchema,
 });
 export type EditarFinBalGastoInput = z.infer<typeof editarFinBalGastoSchema>;
 
@@ -100,3 +73,24 @@ export const eliminarFinBalGastoSchema = z.object({
   id: prismaCuidSchema,
 });
 export type EliminarFinBalGastoInput = z.infer<typeof eliminarFinBalGastoSchema>;
+
+// ─── Gasto ↔ proveedor (`fin_bal_gasto_provee`) ───────────────────────────
+
+export const crearFinBalGastoProveeSchema = z.object({
+  gastoId: prismaCuidSchema,
+  proveedorId: prismaCuidSchema,
+  gastoMensual: z.boolean(),
+});
+export type CrearFinBalGastoProveeInput = z.infer<typeof crearFinBalGastoProveeSchema>;
+
+export const editarFinBalGastoProveeSchema = z.object({
+  id: prismaCuidSchema,
+  proveedorId: prismaCuidSchema,
+  gastoMensual: z.boolean(),
+});
+export type EditarFinBalGastoProveeInput = z.infer<typeof editarFinBalGastoProveeSchema>;
+
+export const eliminarFinBalGastoProveeSchema = z.object({
+  id: prismaCuidSchema,
+});
+export type EliminarFinBalGastoProveeInput = z.infer<typeof eliminarFinBalGastoProveeSchema>;

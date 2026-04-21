@@ -44,7 +44,7 @@ model Proveedor {
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
-  finBalGastos         FinBalGasto[]
+  finBalGastoProvee   FinBalGastoProvee[]
   // Tabla única de pedidos: prod_ped_merc
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
@@ -180,51 +180,43 @@ model FinBalGastoRubro {
   @@map("fin_bal_gasto_rubro")
 }
 
-// Gasto (hoja de la jerarquía) dentro de un Rubro. `nombre` único por `rubro_id`.
+// Gasto (hoja de la jerarquía) dentro de un Rubro. Tabla física `fin_bal_cat_gasto`.
+// `nombre` único por `rubro_id` (sin vínculo a proveedor).
 model FinBalGasto {
-  id          String   @id @default(cuid())
-  nombre      String
-  rubroId     String   @map("rubro_id")
-  /**
-   * FK opcional a `global_proveedores.id`. Identifica al proveedor asociado al gasto.
-   * Nullable porque hay gastos "genéricos" sin proveedor (ej. sueldos, servicios
-   * propios). Política `onDelete: SetNull`: si se da de baja un proveedor,
-   * el gasto sobrevive con proveedor = NULL (catálogo maestro inmutable).
-   */
-  proveedorId String?  @map("proveedor_id")
-  /**
-   * Flag "Gasto mensual": indica si este gasto del catálogo es de frecuencia mensual.
-   * Uso típico: reportes de recurrentes, recordatorios y plantillas de balance.
-   * Default `false`; los registros preexistentes se inicializan en `false` (opt-in).
-   */
-  gastoMensual Boolean @default(false) @map("gasto_mensual")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(cuid())
+  nombre    String
+  rubroId   String   @map("rubro_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  rubro     FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
-  proveedor Proveedor?       @relation(fields: [proveedorId], references: [id], onDelete: SetNull)
+  rubro FinBalGastoRubro @relation(fields: [rubroId], references: [id], onDelete: Restrict)
+  /** Variantes por proveedor (mismo gasto de catálogo, N filas en `fin_bal_gasto_provee`). */
+  asignacionesProveedor FinBalGastoProvee[]
 
-  /**
-   * Unicidad: `(rubroId, nombre, proveedorId)` — dentro de un mismo rubro el
-   * `nombre` puede repetirse siempre que el `proveedor` sea distinto.
-   *
-   * IMPORTANTE — cobertura de `proveedor_id = NULL`:
-   *   PostgreSQL trata `NULL` como "no comparable" en índices UNIQUE, por lo
-   *   que este constraint por sí solo NO impediría dos "ALQUILER" sin proveedor
-   *   en el mismo rubro. Por eso la migración SQL agrega **adicionalmente** el
-   *   índice UNIQUE parcial `fin_bal_gasto_rubro_nombre_sin_prov_ux` con
-   *   `WHERE proveedor_id IS NULL`. Esa segunda restricción NO se declara en
-   *   Prisma (no hay sintaxis para índices parciales ni `NULLS NOT DISTINCT` en
-   *   Prisma 7.4.1): vive solo en SQL — ver migración
-   *   `20260418230000_fin_bal_gasto_unique_rubro_nombre_proveedor`.
-   *
-   * Prisma mapea `P2002` por cualquiera de los dos índices; el servicio
-   * diferencia el mensaje mediante `error.meta.target` / `error.meta.constraint`.
-   */
-  @@unique([rubroId, nombre, proveedorId], map: "fin_bal_gasto_rubro_nombre_proveedor_ux")
+  @@unique([rubroId, nombre], map: "fin_bal_cat_gasto_rubro_nombre_ux")
   @@index([rubroId])
+  @@map("fin_bal_cat_gasto")
+}
+
+/**
+ * Asignación gasto de balance ↔ proveedor: un ítem de `fin_bal_cat_gasto` puede tener
+ * muchas filas aquí (un proveedor distinto por fila) con flag `gasto_mensual`.
+ */
+model FinBalGastoProvee {
+  id            String   @id @default(cuid())
+  gastoId       String   @map("gasto_id")
+  proveedorId   String   @map("proveedor_id")
+  gastoMensual Boolean  @default(false) @map("gasto_mensual")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  gasto     FinBalGasto @relation(fields: [gastoId], references: [id], onDelete: Cascade)
+  proveedor Proveedor   @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+
+  @@unique([gastoId, proveedorId], map: "fin_bal_gasto_provee_gasto_proveedor_ux")
+  @@index([gastoId])
   @@index([proveedorId])
-  @@map("fin_bal_gasto")
+  @@map("fin_bal_gasto_provee")
 }
 
 model ListaPrecioProveedor {
