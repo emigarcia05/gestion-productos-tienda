@@ -39,10 +39,10 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** FECHA…MONTO DEVENGADO + ACCIONES; suma 100. */
-const COL_WIDTHS_PCT_CON_ACCIONES = [8, 8, 8, 8, 15, 15, 8, 8, 8, 14] as const;
-/** Sin ACCIONES: el 14% de acciones se reparte +7 en GASTO y +7 en PROVEEDOR. */
-const COL_WIDTHS_PCT_SIN_ACCIONES = [8, 8, 8, 8, 22, 22, 8, 8, 8] as const;
+/** FECHA…MONTO VENCIDO + ACCIONES; suma 100. */
+const COL_WIDTHS_PCT_CON_ACCIONES = [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10] as const;
+/** Sin ACCIONES: 10 columnas al 10% c/u. */
+const COL_WIDTHS_PCT_SIN_ACCIONES = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10] as const;
 
 const CELL_MIN = "min-w-0";
 
@@ -67,8 +67,9 @@ export default function TablaGastos({
   const totalMonto = filas.reduce((acc, fila) => acc + fila.monto, 0);
   const totalPagado = filas.reduce((acc, fila) => acc + fila.pagado, 0);
   const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
+  const totalVencido = filas.reduce((acc, fila) => acc + fila.montoVencido, 0);
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
-  const colCount = mostrarAcciones ? 10 : 9;
+  const colCount = mostrarAcciones ? 11 : 10;
   const anchosColPct = mostrarAcciones ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
   function celdaMonto(m: number) {
@@ -95,6 +96,12 @@ export default function TablaGastos({
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO DEVENGADO</TableHead>
+                <TableHead
+                  className={cn(TH_NUM, CELL_MIN)}
+                  title="Si hoy es mayor o igual a la fecha de vencimiento (devengo + 1 mes + 1 día), muestra el pendiente de pago (monto − pagado)."
+                >
+                  MONTO VENCIDO
+                </TableHead>
                 {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
               </TableRow>
             </TableHeader>
@@ -126,6 +133,16 @@ export default function TablaGastos({
                     <TableCell className={cn(TD_NUM, CELL_MIN)}>${fmtPrecio(f.pagado)}</TableCell>
                     <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                       ${fmtPrecio(f.montoDevengadoPendiente)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(TD_NUM, CELL_MIN)}
+                      title={`Vence el ${formatIsoYmdDdMmYyyyArgentina(f.fechaVencimientoIso)}`}
+                    >
+                      {f.montoVencido === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <>${fmtPrecio(f.montoVencido)}</>
+                      )}
                     </TableCell>
                     {mostrarAcciones ? (
                       <TableCell className={cn(TD_ACCIONES, "p-1")}>
@@ -187,7 +204,7 @@ export default function TablaGastos({
                 <tr className="transition-[background-color] duration-150">
                   <td
                     className={cn("celda-datos font-bold uppercase whitespace-nowrap", CELL_MIN)}
-                    colSpan={mostrarAcciones ? 7 : 6}
+                    colSpan={6}
                   >
                     TOTAL
                   </td>
@@ -203,6 +220,13 @@ export default function TablaGastos({
                   </td>
                   <td className={cn(TD_NUM, "celda-datos celda-destacado font-bold whitespace-nowrap", CELL_MIN)}>
                     ${fmtPrecio(totalPendiente)}
+                  </td>
+                  <td className={cn(TD_NUM, "celda-datos font-bold whitespace-nowrap", CELL_MIN)}>
+                    {totalVencido === 0 ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <>${fmtPrecio(totalVencido)}</>
+                    )}
                   </td>
                   {mostrarAcciones ? (
                     <td className={cn(TD_ACCIONES, "whitespace-nowrap")} aria-hidden />

@@ -23,6 +23,7 @@ import {
   Landmark,
   Wallet,
   CalendarDays,
+  CalendarClock,
   Banknote,
   Scale,
   Receipt,
@@ -173,8 +174,14 @@ const FINANZAS_MODULES: {
       },
       {
         href: "/finanzas/deuda-proveedores",
-        label: "Saldo Proveedores",
+        label: "Vencimientos Proveedores",
         icon: <Wallet className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
+        href: "/finanzas/vencimientos-gastos",
+        label: "Vencimientos Gastos",
+        icon: <CalendarClock className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
       {
@@ -207,6 +214,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
   if (href === "/finanzas/tesoreria") return pathname === "/finanzas/tesoreria";
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
+  if (href === "/finanzas/vencimientos-gastos") return pathname === "/finanzas/vencimientos-gastos";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   if (href === "/finanzas/control-comprobantes") return pathname === "/finanzas/control-comprobantes";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
