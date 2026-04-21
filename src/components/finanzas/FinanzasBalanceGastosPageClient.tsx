@@ -302,7 +302,7 @@ export default function FinanzasBalanceGastosPageClient({
                       className="select-content-filtro"
                     >
                       <SelectItem value="none">PAGADO</SelectItem>
-                      <SelectItem value="no">{"NO (DEVENG. PEND. > 0)"}</SelectItem>
+                      <SelectItem value="no">PENDIENTE</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

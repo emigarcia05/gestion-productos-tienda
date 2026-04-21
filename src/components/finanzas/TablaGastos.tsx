@@ -2,7 +2,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -18,7 +17,7 @@ import {
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
-import { Banknote, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 export type { BalanceGastoMensualFila };
 
@@ -40,9 +39,22 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** Anchos con columna ACCIONES (suma 100%). Sin ACCIONES, el 14% de acciones pasa a PROVEEDOR (34%). */
-const ANCHOS_PCT_CON_ACCIONES = [8, 8, 8, 8, 10, 20, 8, 8, 8, 14] as const;
-const ANCHOS_PCT_SIN_ACCIONES = [8, 8, 8, 8, 10, 34, 8, 8, 8] as const;
+/** FECHA…MONTO DEVENGADO + ACCIONES; suma 100. */
+const COL_WIDTHS_PCT_CON_ACCIONES = [8, 8, 8, 8, 15, 15, 8, 8, 8, 14] as const;
+/** Sin ACCIONES: el 14% de acciones se reparte +7 en GASTO y +7 en PROVEEDOR. */
+const COL_WIDTHS_PCT_SIN_ACCIONES = [8, 8, 8, 8, 22, 22, 8, 8, 8] as const;
+
+const CELL_MIN = "min-w-0";
+
+function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
+  return (
+    <colgroup>
+      {anchos.map((pct, i) => (
+        <col key={i} style={{ width: `${pct}%` }} />
+      ))}
+    </colgroup>
+  );
+}
 
 export default function TablaGastos({
   filas,
@@ -57,8 +69,7 @@ export default function TablaGastos({
   const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
   const colCount = mostrarAcciones ? 10 : 9;
-  const anchosPct = mostrarAcciones ? ANCHOS_PCT_CON_ACCIONES : ANCHOS_PCT_SIN_ACCIONES;
-  const wCol = (i: number) => ({ style: { width: `${anchosPct[i]}%` } as const });
+  const anchosColPct = mostrarAcciones ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
   function celdaMonto(m: number) {
     if (m === 0) return <span className="text-muted-foreground">—</span>;
@@ -69,48 +80,22 @@ export default function TablaGastos({
 
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
-      <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-        <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
+      <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
+        <div className="contenedor-tabla-gestion--pie-fijo-scroll">
           <Table variant="compact" scrollX={false} className="table-fixed w-full">
-            <colgroup>
-              {anchosPct.map((pct, i) => (
-                <col key={i} style={{ width: `${pct}%` }} />
-              ))}
-            </colgroup>
+            <ColgroupAnchos anchos={anchosColPct} />
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="min-w-0" {...wCol(0)}>
-                  FECHA
-                </TableHead>
-                <TableHead className="min-w-0" {...wCol(1)}>
-                  SUCURSAL
-                </TableHead>
-                <TableHead className="min-w-0" {...wCol(2)}>
-                  TIPO GASTO
-                </TableHead>
-                <TableHead className="min-w-0" {...wCol(3)}>
-                  RUBRO
-                </TableHead>
-                <TableHead className="min-w-0" {...wCol(4)}>
-                  GASTO
-                </TableHead>
-                <TableHead className="min-w-0" {...wCol(5)}>
-                  PROVEEDOR
-                </TableHead>
-                <TableHead className={cn(TH_NUM, "min-w-0")} {...wCol(6)}>
-                  MONTO
-                </TableHead>
-                <TableHead className={cn(TH_NUM, "min-w-0")} {...wCol(7)}>
-                  PAGADO
-                </TableHead>
-                <TableHead className={cn(TH_NUM, "min-w-0")} {...wCol(8)}>
-                  MONTO DEVENGADO
-                </TableHead>
-                {mostrarAcciones ? (
-                  <TableHead className={cn(TH_ACCIONES, "min-w-0")} {...wCol(9)}>
-                    ACCIONES
-                  </TableHead>
-                ) : null}
+                <TableHead className={CELL_MIN}>FECHA</TableHead>
+                <TableHead className={CELL_MIN}>SUCURSAL</TableHead>
+                <TableHead className={CELL_MIN}>TIPO GASTO</TableHead>
+                <TableHead className={CELL_MIN}>RUBRO</TableHead>
+                <TableHead className={CELL_MIN}>GASTO</TableHead>
+                <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
+                <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+                <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
+                <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO DEVENGADO</TableHead>
+                {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,35 +104,31 @@ export default function TablaGastos({
               ) : (
                 filas.map((f) => (
                   <TableRow key={f.id}>
-                    <TableCell className={cn("celda-datos whitespace-nowrap", "min-w-0")} {...wCol(0)}>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                       {formatIsoYmdDdMmYyyyArgentina(f.fechaDevengoIso)}
                     </TableCell>
-                    <TableCell className={cn("celda-datos whitespace-nowrap", "min-w-0")} {...wCol(1)}>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                       {f.sucursalNombre}
                     </TableCell>
-                    <TableCell className={cn("celda-datos whitespace-nowrap", "min-w-0")} {...wCol(2)}>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                       {f.tipoGastoNombre}
                     </TableCell>
-                    <TableCell className={cn("celda-datos whitespace-nowrap", "min-w-0")} {...wCol(3)}>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                       {f.rubroNombre}
                     </TableCell>
-                    <TableCell className={cn("celda-datos min-w-0")} {...wCol(4)} title={f.gastoNombre}>
+                    <TableCell className={cn("celda-datos", CELL_MIN)} title={f.gastoNombre}>
                       <span className="celda-destacado truncate block">{f.gastoNombre}</span>
                     </TableCell>
-                    <TableCell className={cn("celda-datos min-w-0")} {...wCol(5)} title={f.proveedorNombre}>
+                    <TableCell className={cn("celda-datos", CELL_MIN)} title={f.proveedorNombre}>
                       <span className="truncate block">{f.proveedorNombre}</span>
                     </TableCell>
-                    <TableCell className={cn(TD_NUM, "celda-destacado", "min-w-0")} {...wCol(6)}>
-                      {celdaMonto(f.monto)}
-                    </TableCell>
-                    <TableCell className={cn(TD_NUM, "min-w-0")} {...wCol(7)}>
-                      ${fmtPrecio(f.pagado)}
-                    </TableCell>
-                    <TableCell className={cn(TD_NUM, "celda-destacado", "min-w-0")} {...wCol(8)}>
+                    <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>{celdaMonto(f.monto)}</TableCell>
+                    <TableCell className={cn(TD_NUM, CELL_MIN)}>${fmtPrecio(f.pagado)}</TableCell>
+                    <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                       ${fmtPrecio(f.montoDevengadoPendiente)}
                     </TableCell>
                     {mostrarAcciones ? (
-                      <TableCell className={cn(TD_ACCIONES, "p-1")} {...wCol(9)}>
+                      <TableCell className={cn(TD_ACCIONES, "p-1")}>
                         <div className="flex flex-wrap items-center justify-center gap-1">
                           <Button
                             type="button"
@@ -163,13 +144,12 @@ export default function TablaGastos({
                           <Button
                             type="button"
                             variant="outline"
-                            size="icon-xs"
-                            className={TABLE_ROW_ICON_BUTTON_CLASS}
+                            className="h-8 shrink-0 px-2 text-xs font-semibold"
                             title="Registrar pago"
-                            aria-label={`Registrar pago ${f.gastoNombre}`}
+                            aria-label={`Pagar ${f.gastoNombre}`}
                             onClick={() => onPagar!(f)}
                           >
-                            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} />
+                            Pagar
                           </Button>
                           <Button
                             type="button"
@@ -192,33 +172,46 @@ export default function TablaGastos({
                 ))
               )}
             </TableBody>
-            {filas.length > 0 ? (
-              <TableFooter>
-                <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-border">
-                  <TableCell className="celda-datos font-bold uppercase" colSpan={mostrarAcciones ? 7 : 6}>
+          </Table>
+        </div>
+
+        {filas.length > 0 ? (
+          <div className="contenedor-tabla-gestion--pie-fijo-pie">
+            {/*
+              Tabla auxiliar (sin `.tabla-gestion-compacta`) para alinear columnas con el mismo colgroup;
+              no hereda altura fija de filas del cuerpo de la tabla principal.
+            */}
+            <table className="w-full table-fixed border-collapse text-sm">
+              <ColgroupAnchos anchos={anchosColPct} />
+              <tbody>
+                <tr className="transition-[background-color] duration-150">
+                  <td
+                    className={cn("celda-datos font-bold uppercase whitespace-nowrap", CELL_MIN)}
+                    colSpan={mostrarAcciones ? 7 : 6}
+                  >
                     TOTAL
-                  </TableCell>
-                  <TableCell className={cn(TD_NUM, "celda-destacado font-bold", "min-w-0")} {...wCol(6)}>
+                  </td>
+                  <td className={cn(TD_NUM, "celda-datos celda-destacado font-bold whitespace-nowrap", CELL_MIN)}>
                     {totalMonto === 0 ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
                       <>${fmtPrecio(totalMonto)}</>
                     )}
-                  </TableCell>
-                  <TableCell className={cn(TD_NUM, "font-bold", "min-w-0")} {...wCol(7)}>
+                  </td>
+                  <td className={cn(TD_NUM, "celda-datos font-bold whitespace-nowrap", CELL_MIN)}>
                     ${fmtPrecio(totalPagado)}
-                  </TableCell>
-                  <TableCell className={cn(TD_NUM, "celda-destacado font-bold", "min-w-0")} {...wCol(8)}>
+                  </td>
+                  <td className={cn(TD_NUM, "celda-datos celda-destacado font-bold whitespace-nowrap", CELL_MIN)}>
                     ${fmtPrecio(totalPendiente)}
-                  </TableCell>
+                  </td>
                   {mostrarAcciones ? (
-                    <TableCell className={cn(TD_ACCIONES, "min-w-0")} {...wCol(9)} aria-hidden />
+                    <td className={cn(TD_ACCIONES, "whitespace-nowrap")} aria-hidden />
                   ) : null}
-                </TableRow>
-              </TableFooter>
-            ) : null}
-          </Table>
-        </div>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </div>
     </div>
   );

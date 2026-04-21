@@ -293,6 +293,32 @@
   .contenedor-tabla-gestion.no-scroll-x {
     overflow-x: hidden;
   }
+
+  /**
+   * Tabla con pie de totales siempre visible: el scroll vertical solo afecta a encabezado + cuerpo.
+   * Estructura (misma tarjeta / borde que `.contenedor-tabla-gestion`):
+   * `.contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo` (flex column, overflow hidden)
+   *   → `.contenedor-tabla-gestion--pie-fijo-scroll` (flex-1 min-h-0 overflow auto) → `<Table>` sin `<tfoot>`
+   *   → `.contenedor-tabla-gestion--pie-fijo-pie` (flex-shrink-0) → `<table class="tabla-gestion-compacta table-fixed">` con una fila de totales y el mismo `<colgroup>` que la tabla superior.
+   */
+  .contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo {
+    overflow: hidden;
+  }
+  .contenedor-tabla-gestion--pie-fijo-scroll {
+    flex: 1 1 0%;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+  }
+  .contenedor-tabla-gestion--pie-fijo-pie {
+    flex-shrink: 0;
+    border-top: 2px solid var(--border);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+  .contenedor-tabla-gestion--pie-fijo-pie table {
+    border-collapse: collapse;
+  }
+
   /*
    * Ocultar barras del scrollport (overflow auto/scroll); el desplazamiento con rueda/táctil se mantiene.
    * Aplicable a cualquier nodo con overflow; combina con `.contenedor-tabla-gestion`, modales, etc.
