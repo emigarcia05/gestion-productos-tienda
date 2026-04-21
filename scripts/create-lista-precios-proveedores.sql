@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Tabla principal
 CREATE TABLE IF NOT EXISTS lista_precios_proveedores (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_proveedor          TEXT NOT NULL REFERENCES proveedores(id) ON DELETE CASCADE,
+  id_proveedor          TEXT NOT NULL REFERENCES global_proveedores(id) ON DELETE CASCADE,
   cod_prod_proveedor    TEXT NOT NULL,
   descripcion_proveedor TEXT NOT NULL,
   cod_ext               TEXT NOT NULL,
@@ -43,10 +43,10 @@ RETURNS TRIGGER AS $$
 BEGIN
   SELECT p.prefijo || '-' || NEW.cod_prod_proveedor
   INTO NEW.cod_ext
-  FROM proveedores p
+  FROM global_proveedores p
   WHERE p.id = NEW.id_proveedor;
   IF NEW.cod_ext IS NULL THEN
-    RAISE EXCEPTION 'id_proveedor % no existe en proveedores', NEW.id_proveedor;
+    RAISE EXCEPTION 'id_proveedor % no existe en global_proveedores', NEW.id_proveedor;
   END IF;
   NEW.updated_at := NOW();
   RETURN NEW;

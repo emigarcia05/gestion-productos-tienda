@@ -159,7 +159,7 @@ export async function getTiendaPageData(params: {
       WHERE (SELECT COUNT(*) FROM prod_precios_provee lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
         AND EXISTS (
           SELECT 1 FROM prod_precios_provee lpp
-          INNER JOIN proveedores p ON p.id = lpp.id_proveedor
+          INNER JOIN global_proveedores p ON p.id = lpp.id_proveedor
           WHERE lpp.id_lista_precios_tienda = lpt.id
             AND LOWER(TRIM(COALESCE(p.nombre, ''))) != LOWER(TRIM(COALESCE(lpt.proveedor, '')))
             AND COALESCE(lpp.px_compra_final, lpp.px_lista_proveedor::numeric) < lpt.costo_compra

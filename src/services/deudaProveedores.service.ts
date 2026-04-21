@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * Saldo por comprobante repartido en columnas según **fecha de vencimiento** vs **hoy (AR)**:
- * - `fecha_venc` = `fecha_comp` + primer entero de `proveedores.plazos_pagos` (CSV), mínimo 1 día; si falta o no es numérico → **30** días.
+ * - `fecha_venc` = `fecha_comp` + primer entero de `global_proveedores.plazos_pagos` (CSV), mínimo 1 día; si falta o no es numérico → **30** días.
  * - **VENCIDA**: `fecha_venc` &lt; hoy
  * - **5 DÍAS**: hoy ≤ `fecha_venc` ≤ hoy+5
  * - **30 DÍAS**: hoy+6 … hoy+30
@@ -43,7 +43,7 @@ export async function listarDeudaProveedores(): Promise<DeudaProveedorFila[]> {
         )::date AS fecha_venc,
         (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
       FROM fin_compras_comprobante c
-      INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
+      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
     )
     SELECT

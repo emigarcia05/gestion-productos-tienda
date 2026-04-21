@@ -65,7 +65,7 @@ export const plazosPagosSchema = z
 
 /**
  * Flag "Proveedor Mercadería" (SI/NO).
- * Se persiste como boolean en `proveedores.proveedor_mercaderia`.
+ * Se persiste como boolean en `global_proveedores.proveedor_mercaderia`.
  * Acepta los valores del <select> del form (case-insensitive), "true"/"false" y boolean crudo.
  * Si no viene definido se asume `false` (coherente con el DEFAULT del schema final).
  */

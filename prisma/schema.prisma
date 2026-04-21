@@ -21,10 +21,10 @@ enum TipoCajaTesoreria {
 
 model Proveedor {
   id              String   @id @default(cuid())
-  nombre          String   @unique
-  prefijo         String   @unique
+  nombre          String   @unique(map: "global_proveedores_nombre_key")
+  prefijo         String   @unique(map: "global_proveedores_prefijo_ux")
   codigoUnico     String   @map("codigo_unico")
-  idProveedorDux  String?  @unique @map("id_proveedor_dux") // ID único del proveedor en DUX; FK desde fin_compras_comprobante
+  idProveedorDux  String?  @unique(map: "global_proveedores_id_proveedor_dux_key") @map("id_proveedor_dux") // ID único del proveedor en DUX; FK desde fin_compras_comprobante
   whatsapp        String?  @map("whatsapp") // Número para envío de pedido por WhatsApp (internacional sin +)
   coeficienteTintometrico Decimal @map("coeficiente_tintometrico") @db.Decimal(12, 6) @default(1)
   /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
@@ -47,12 +47,12 @@ model Proveedor {
   finBalGastos         FinBalGasto[]
   // Tabla única de pedidos: prod_ped_merc
 
-  @@index([proveedorMercaderia])
-  @@map("proveedores")
+  @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
+  @@map("global_proveedores")
 }
 
 // Comprobantes de compra sincronizados desde API DUX `/compras`.
-// `id_proveedor` almacena el mismo valor que `proveedores.id_proveedor_dux` (FK).
+// `id_proveedor` almacena el mismo valor que `global_proveedores.id_proveedor_dux` (FK).
 model ComprobanteProveedor {
   id                 String   @id @default(cuid())
   idSucursalEmpresa  String   @map("id_sucursal_empresa")
@@ -77,7 +77,7 @@ model ComprobanteProveedor {
 // Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX y flag de habilitación para pedidos.
 model Sucursal {
   id             String   @id @default(cuid())
-  codigo         String   @unique // guaymallen | maipu | corporativo (estable en URLs y FKs)
+  codigo         String   @unique(map: "global_sucursales_codigo_key") // guaymallen | maipu | corporativo (estable en URLs y FKs)
   nombre         String
   deposito       String?  // DEPÓSITO para exportaciones (texto para preservar formato)
   whatsapp       String?  @map("whatsapp")
@@ -99,7 +99,7 @@ model Sucursal {
   movimientosFinanzas MovimientoFinanzas[]
   // Tabla única de pedidos: prod_ped_merc
 
-  @@map("sucursales")
+  @@map("global_sucursales")
 }
 
 // Movimiento financiero por sucursal.
@@ -186,7 +186,7 @@ model FinBalGasto {
   nombre      String
   rubroId     String   @map("rubro_id")
   /**
-   * FK opcional a `proveedores.id`. Identifica al proveedor asociado al gasto.
+   * FK opcional a `global_proveedores.id`. Identifica al proveedor asociado al gasto.
    * Nullable porque hay gastos "genéricos" sin proveedor (ej. sueldos, servicios
    * propios). Política `onDelete: SetNull`: si se da de baja un proveedor,
    * el gasto sobrevive con proveedor = NULL (catálogo maestro inmutable).
@@ -318,13 +318,13 @@ model PresentacionComparacion {
 // Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en prod_precios_tienda.
 model Marca {
   id     String   @id @default(cuid())
-  nombre String   @unique
+  nombre String   @unique(map: "prod_marcas_nombre_key")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   listaPreciosTienda ListaPrecioTienda[]
 
-  @@map("marcas")
+  @@map("prod_marcas")
 }
 
 // Alimentada solo por API externa (tabla prod_precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
@@ -335,8 +335,8 @@ model ListaPrecioTienda {
   rubro           String?
   subRubro        String?  @map("sub_rubro")
   marca           String?  // texto tal cual viene de la API DUX (se mantiene para trazabilidad)
-  idMarca         String?  @map("id_marca") // FK a marcas: marca normalizada y vinculada
-  proveedor       String?  // texto; cruce con proveedores: WHERE proveedores.nombre ILIKE proveedor
+  idMarca         String?  @map("id_marca") // FK a prod_marcas: marca normalizada y vinculada
+  proveedor       String?  // texto; cruce con global_proveedores: WHERE global_proveedores.nombre ILIKE proveedor
   descripcionTienda String? @map("descripcion_tienda")
   costoCompra     Decimal  @map("costo_compra") @db.Decimal(14, 4)
   pxListaTienda   Decimal  @map("px_lista_tienda") @db.Decimal(14, 4)
@@ -370,13 +370,13 @@ model ImportProgress {
 }
 
 // ─── Enviar Pedido: ítems a enviar.
-// Origen: proveedores (id/nombre/prefijo), prod_precios_provee (cod_prod_proveedor, descripcion_proveedor, cod_ext),
+// Origen: global_proveedores (id/nombre/prefijo), prod_precios_provee (cod_prod_proveedor, descripcion_proveedor, cod_ext),
 //         prod_precios_tienda (cod_tienda, cod_ext, descripcion_tienda; vacío si no existe vínculo).
 model ItemPedidoEnvio {
   id                     String   @id @default(uuid())
   idProveedor            String   @map("id_proveedor")
   tipoPedido             String   @map("tipo_de_pedido") // URGENTE | TINTOMETRICO | REPOSICION
-  sucursalId             String   @map("sucursal_id") // FK a sucursales.id
+  sucursalId             String   @map("sucursal_id") // FK a global_sucursales.id
   codExt                 String   @map("cod_ext")
   codProveedor           String   @map("cod_proveedor") // cod_prod_proveedor
   codTienda              String?  @map("cod_tienda") // prod_precios_tienda.cod_tienda; vacío si no existe

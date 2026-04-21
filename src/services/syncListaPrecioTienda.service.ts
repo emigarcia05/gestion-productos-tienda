@@ -142,7 +142,7 @@ export async function syncListaPrecioTiendaFromDux(
 
   // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
   // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
-  // Marcas: se resuelve el texto de la API a la tabla marcas y se asigna idMarca.
+  // Marcas: se resuelve el texto de la API a la tabla prod_marcas y se asigna idMarca.
   if (totalSincronizados > 0) {
     await assertListaPrecioTiendaSyncNotCancelled();
     if (onProgress) onProgress(0, totalSincronizados, "guardando");

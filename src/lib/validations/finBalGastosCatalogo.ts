@@ -17,7 +17,7 @@ const nombreCatalogoSchema = z
   .transform((value) => value.toUpperCase());
 
 /**
- * FK opcional a `proveedores.id`.
+ * FK opcional a `global_proveedores.id`.
  * Acepta: CUID válido, `null`, `undefined` o string vacío (normalizado a `null`).
  * Se exporta como `string | null` para que el servicio pueda pasarlo directo a Prisma.
  */

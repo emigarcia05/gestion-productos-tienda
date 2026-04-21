@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_lista_precios_tienda_proveedor
 
 COMMENT ON TABLE lista_precios_tienda IS 'Precios tienda desde API externa; solo sincronización API escribe. Frontend solo lectura.';
 COMMENT ON COLUMN lista_precios_tienda.cod_ext IS 'Llave para relacionar con lista_precios_proveedores.cod_ext';
-COMMENT ON COLUMN lista_precios_tienda.proveedor IS 'Texto libre; para cruce con proveedores usar: JOIN proveedores p ON p.nombre ILIKE t.proveedor OR p.nombre = t.proveedor';
+COMMENT ON COLUMN lista_precios_tienda.proveedor IS 'Texto libre; para cruce con global_proveedores usar: JOIN global_proveedores p ON p.nombre ILIKE t.proveedor OR p.nombre = t.proveedor';
 COMMENT ON COLUMN lista_precios_tienda.descripcion_tienda IS 'Descripción provista por la API de tienda';
 COMMENT ON COLUMN lista_precios_tienda.last_sync IS 'Última vez que la API actualizó este registro';
 

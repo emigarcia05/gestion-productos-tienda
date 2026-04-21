@@ -764,7 +764,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 - Reglas persistentes activas en `.cursor/rules/`:
   - `manuales-obligatorios.mdc`: obliga lectura de `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md` antes de codificar.
   - `flujo-fullstack-end-to-end.mdc`: define ciclo de implementación end-to-end y cierre con retroalimentación documental.
-- Módulo **Pedido De Mercadería** (`/pedidos/*`): las opciones de **SUCURSAL** deben venir de `sucursales` con `pedido = true` (no hardcodear listado fijo). Si una sucursal queda deshabilitada en DB, no debe aparecer en filtros/selectores ni operar por URL.
+- Módulo **Pedido De Mercadería** (`/pedidos/*`): las opciones de **SUCURSAL** deben venir de `global_sucursales` con `pedido = true` (no hardcodear listado fijo). Si una sucursal queda deshabilitada en DB, no debe aparecer en filtros/selectores ni operar por URL.
 - Si se agrega un nuevo patrón visual, clase global, componente compartido o convención de UI, debe actualizarse este documento y mantenerse alineado con las reglas de `.cursor/rules/`.
 
 ---

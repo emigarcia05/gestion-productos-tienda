@@ -46,7 +46,7 @@ export interface FinBalGastoItem {
   id: string;
   nombre: string;
   rubroId: string;
-  /** FK opcional a `proveedores.id`. `null` = gasto sin proveedor. */
+  /** FK opcional a `global_proveedores.id`. `null` = gasto sin proveedor. */
   proveedorId: string | null;
   /** Proveedor expandido (incluido en listados con `include`). `null` si no hay FK. */
   proveedor: FinBalGastoProveedorRef | null;

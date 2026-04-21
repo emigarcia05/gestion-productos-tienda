@@ -35,7 +35,7 @@ export async function listarVencimientosEnRango(
           )
         )::date AS fecha_venc
       FROM fin_compras_comprobante c
-      INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
+      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
     )
     SELECT
@@ -77,7 +77,7 @@ export async function sumarSaldoVencimientosConFechaVencAnteriorA(
           )
         )::date AS fecha_venc
       FROM fin_compras_comprobante c
-      INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
+      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
     )
     SELECT COALESCE(SUM(l.saldo), 0)::numeric AS total
