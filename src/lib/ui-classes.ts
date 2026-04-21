@@ -23,3 +23,18 @@ export const IMPORT_STAT_BADGE_CLASSES = {
   updated: "bg-accent text-accent-foreground border-border",
   removed: "bg-accent2/10 text-accent2 border-accent2/20",
 } as const;
+
+/**
+ * Botón de acción con ícono dentro de celdas de tablas de gestión (`Table` compacta).
+ * Usar con `<Button variant="outline" size="icon-xs" className={TABLE_ROW_ICON_BUTTON_CLASS} />`
+ * e ícono Lucide con {@link TABLE_ROW_ACTION_ICON_CLASS}.
+ * Eliminar / cesto: combinar con {@link TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS}.
+ */
+export const TABLE_ROW_ICON_BUTTON_CLASS = "disabled:cursor-not-allowed";
+
+/** Hover para acciones destructivas en tabla (texto negro por defecto, rojo al hover). */
+export const TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS =
+  "hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive";
+
+/** Tamaño uniforme del ícono dentro de botones de acción en tabla. */
+export const TABLE_ROW_ACTION_ICON_CLASS = "h-4 w-4 shrink-0";

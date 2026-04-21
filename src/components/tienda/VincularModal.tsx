@@ -6,6 +6,12 @@ import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, ArrowRightLeft } from
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import AppModal from "@/components/shared/AppModal";
 import {
   Table,
@@ -347,15 +353,18 @@ export default function VincularModal({
                             <div className="flex justify-center">
                               <Button
                                 type="button"
-                                variant="ghost"
+                                variant="outline"
                                 size="icon-xs"
                                 onClick={() => handleDesvincular(p)}
                                 disabled={isPending}
-                                className="text-foreground hover:text-destructive"
+                                className={cn(
+                                  TABLE_ROW_ICON_BUTTON_CLASS,
+                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                                )}
                                 title="Desvincular"
                                 aria-label={`Desvincular ${p.proveedor.prefijo}`}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
                             </div>
                           </TableCell>

@@ -10,6 +10,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
@@ -28,7 +33,11 @@ interface Props {
 
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
-const TD_ACCIONES = "celda-datos w-[5.5rem] bg-muted/25 text-muted-foreground";
+/** Primera columna del bloque secundario: línea vertical #0072bb (mismo patrón que el resto de tablas). */
+const TH_ACCIONES =
+  "min-w-[5.5rem] w-[5.5rem] tabla-bloque-secundario-head-divider text-center text-[11px] font-semibold uppercase";
+const TD_ACCIONES =
+  "celda-datos w-[5.5rem] bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
 export default function TablaGastos({
   filas,
@@ -66,11 +75,7 @@ export default function TablaGastos({
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>MONTO</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>PAGADO.</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[8rem]")}>MTDO. DEVENG. PEND.</TableHead>
-                {mostrarAcciones ? (
-                  <TableHead className={cn(TD_ACCIONES, "text-center text-[11px] font-semibold uppercase")}>
-                    Acc.
-                  </TableHead>
-                ) : null}
+                {mostrarAcciones ? <TableHead className={TH_ACCIONES}>Acc.</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,25 +106,28 @@ export default function TablaGastos({
                         <div className="flex items-center justify-center gap-0.5">
                           <Button
                             type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            variant="outline"
+                            size="icon-xs"
+                            className={TABLE_ROW_ICON_BUTTON_CLASS}
                             title="Editar monto"
                             aria-label={`Editar monto ${f.gastoNombre}`}
                             onClick={() => onEditarMonto!(f)}
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
                           </Button>
                           <Button
                             type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            variant="outline"
+                            size="icon-xs"
+                            className={cn(
+                              TABLE_ROW_ICON_BUTTON_CLASS,
+                              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                            )}
                             title="Eliminar imputación"
                             aria-label={`Eliminar ${f.gastoNombre}`}
                             onClick={() => onEliminar!(f)}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                           </Button>
                         </div>
                       </TableCell>

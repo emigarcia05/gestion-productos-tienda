@@ -6,8 +6,13 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import MontoArInput from "@/components/shared/MontoArInput";
 import { editarCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
+import {
+  montoArNormalizedStringToPesosIntRounded,
+  montoArPesosEnterosToNormalizedString,
+} from "@/lib/montoArMask";
 
 interface Props {
   open: boolean;
@@ -22,17 +27,18 @@ export default function ActualizarMontoCajaTesoreriaModal({
   caja,
   onUpdated,
 }: Props) {
-  const [montoInput, setMontoInput] = useState("");
+  const [montoNorm, setMontoNorm] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !caja) return;
-    setMontoInput(String(caja.monto));
+    setMontoNorm(montoArPesosEnterosToNormalizedString(caja.monto));
   }, [open, caja]);
 
-  const parsedMonto = Number(montoInput);
+  const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
+
   const disabledSubmit = useMemo(
-    () => saving || !caja || !Number.isFinite(parsedMonto) || !Number.isInteger(parsedMonto),
+    () => saving || !caja || parsedMonto === caja.monto,
     [saving, caja, parsedMonto]
   );
 
@@ -98,14 +104,13 @@ export default function ActualizarMontoCajaTesoreriaModal({
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              MONTO
+              MONTO ($)
             </span>
-            <Input
-              value={montoInput}
-              onChange={(e) => setMontoInput(e.target.value)}
-              inputMode="numeric"
-              placeholder="INGRESAR MONTO"
+            <MontoArInput
+              valueNormalized={montoNorm}
+              onValueNormalizedChange={setMontoNorm}
               disabled={saving}
+              aria-label="Monto de la caja"
             />
           </label>
         </div>

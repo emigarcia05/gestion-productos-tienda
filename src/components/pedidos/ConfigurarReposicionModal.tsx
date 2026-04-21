@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -332,9 +336,12 @@ export default function ConfigurarReposicionModal({
                         <TableCell className="text-xs py-2 text-center">
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="icon-xs"
-                            className="text-foreground hover:text-destructive"
+                            className={cn(
+                              TABLE_ROW_ICON_BUTTON_CLASS,
+                              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                            )}
                             aria-label="Quitar producto de la configuración"
                             onClick={() => handleEliminarProductoAdicional(p)}
                           >

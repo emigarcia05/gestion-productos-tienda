@@ -23,6 +23,12 @@ import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.
 import type { ProductoEnCategoria } from "@/services/categoriasComparacion.service";
 import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
+import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import {
   getProductosPorPresentacionAction,
   actualizarDtoExtraComparacionAction,
@@ -431,17 +437,20 @@ export default function ComparacionCategoriasClient({
                             <TableCell className="celda-datos text-center">
                               <Button
                                 type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-foreground hover:text-destructive"
+                                variant="outline"
+                                size="icon-xs"
+                                className={cn(
+                                  TABLE_ROW_ICON_BUTTON_CLASS,
+                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                                )}
                                 onClick={() => handleQuitarFila(p.id)}
                                 disabled={removingItemId === p.id}
                                 title="Quitar fila"
                               >
                                 {removingItemId === p.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <Loader2 className={cn(TABLE_ROW_ACTION_ICON_CLASS, "animate-spin")} />
                                 ) : (
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                                 )}
                               </Button>
                             </TableCell>

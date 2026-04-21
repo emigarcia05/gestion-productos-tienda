@@ -25,10 +25,8 @@ import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas
 import EditarMontoFinBalGastoMensualModal from "@/components/finanzas/EditarMontoFinBalGastoMensualModal";
 import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBalGastoMensualModal";
 import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
+import type { PeriodosImputacionesDisponibles } from "@/services/finBalGastoMensualBalance.service";
 import { cn } from "@/lib/utils";
-
-/** Años permitidos por validación backend (`mesAnioQuerySchema`). */
-const ANIOS_PERIODO = Array.from({ length: 101 }, (_, i) => 2000 + i);
 
 const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
   { valor: 1, etiqueta: "ENERO" },
@@ -50,6 +48,8 @@ interface Props {
   esEditor: boolean;
   mes: number;
   anio: number;
+  /** Años y meses presentes en `fin_bal_gasto_mensual` (el servidor ya alineó URL vs DB). */
+  periodosOpciones: PeriodosImputacionesDisponibles;
 }
 
 export default function FinanzasBalanceGastosPageClient({
@@ -57,6 +57,7 @@ export default function FinanzasBalanceGastosPageClient({
   esEditor,
   mes,
   anio,
+  periodosOpciones,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -107,13 +108,26 @@ export default function FinanzasBalanceGastosPageClient({
     return out;
   }, [filas, filtRubro, filtGasto, filtSucursal, filtProveedor, filtPagado]);
 
-  /** Periodo: siempre `mes` + `anio` (URL / servidor); ambos selects son obligatorios. */
+  const mesesEtiquetadosEnDb = useMemo(() => {
+    const meses = periodosOpciones.mesesPorAnio[String(anio)] ?? [];
+    return MESES_CALENDARIO.filter((m) => meses.includes(m.valor));
+  }, [periodosOpciones, anio]);
+
+  /** Periodo: siempre `mes` + `anio` (URL / servidor); opciones acotadas a la BD. */
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
     const q = new URLSearchParams();
     q.set("mes", String(nuevoMes));
     q.set("anio", String(nuevoAnio));
     router.replace(`${pathname}?${q.toString()}`);
     router.refresh();
+  }
+
+  function onCambioAnio(nuevoAnioStr: string) {
+    const nuevoAnio = parseInt(nuevoAnioStr, 10);
+    const meses = periodosOpciones.mesesPorAnio[String(nuevoAnio)] ?? [];
+    const nuevoMes =
+      meses.includes(mes) ? mes : meses.length > 0 ? meses[meses.length - 1] : mes;
+    navegarPeriodo(nuevoMes, nuevoAnio);
   }
 
   function limpiarFiltros() {
@@ -184,48 +198,6 @@ export default function FinanzasBalanceGastosPageClient({
           <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
             <FilterRowSelection>
               <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
-                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "min-w-[7.5rem] max-w-[9rem]")}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Año
-                  </span>
-                  <Select
-                    value={String(anio)}
-                    onValueChange={(v) => navegarPeriodo(mes, parseInt(v, 10))}
-                  >
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Año del periodo">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      {ANIOS_PERIODO.map((a) => (
-                        <SelectItem key={a} value={String(a)}>
-                          {a}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "min-w-[9.5rem] max-w-[11rem]")}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Mes
-                  </span>
-                  <Select
-                    value={String(mes)}
-                    onValueChange={(v) => navegarPeriodo(parseInt(v, 10), anio)}
-                  >
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Mes del periodo">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      {MESES_CALENDARIO.map((m) => (
-                        <SelectItem key={m.valor} value={String(m.valor)}>
-                          {m.etiqueta}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
                   <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Rubro
@@ -326,6 +298,50 @@ export default function FinanzasBalanceGastosPageClient({
                 <span className={FILTER_COUNT_CLASS}>{filasFiltradas.length}</span>
               </div>
             </FilterRowSelection>
+
+            <FilterRowSelection>
+              <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
+                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "min-w-[7.5rem] max-w-[9rem]")}>
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Año
+                  </span>
+                  <Select value={String(anio)} onValueChange={onCambioAnio}>
+                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Año del periodo">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="select-content-filtro" position="popper">
+                      {periodosOpciones.anios.map((a) => (
+                        <SelectItem key={a} value={String(a)}>
+                          {a}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "min-w-[9.5rem] max-w-[11rem]")}>
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Mes
+                  </span>
+                  <Select
+                    value={String(mes)}
+                    onValueChange={(v) => navegarPeriodo(parseInt(v, 10), anio)}
+                  >
+                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Mes del periodo">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="select-content-filtro" position="popper">
+                      {mesesEtiquetadosEnDb.map((m) => (
+                        <SelectItem key={m.valor} value={String(m.valor)}>
+                          {m.etiqueta}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </FilterRowSelection>
+
             <FilterRowNoSearchActions>
               <LimpiarFiltrosButton onClick={limpiarFiltros} />
             </FilterRowNoSearchActions>

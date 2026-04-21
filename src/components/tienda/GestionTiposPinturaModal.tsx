@@ -5,6 +5,12 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -209,8 +215,12 @@ export default function GestionTiposPinturaModal({
                             disabled={saving}
                             aria-label="Eliminar fila"
                             title="Eliminar Ítem"
+                            className={cn(
+                              TABLE_ROW_ICON_BUTTON_CLASS,
+                              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                            )}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                           </Button>
                         </div>
                       </TableCell>

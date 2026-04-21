@@ -5,21 +5,16 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import MontoArInput from "@/components/shared/MontoArInput";
 import {
   editarMontoFinBalGastoMensualAction,
   obtenerMontoMesAnteriorFinBalGastoMensualAction,
 } from "@/actions/finBalGastoMensualBalance";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
-import { fmtPrecio } from "@/lib/format";
-
-function parseMontoPesosInput(raw: string): number | null {
-  const s = raw.replace(/\./g, "").replace(/,/g, ".").trim();
-  if (s === "") return null;
-  const n = Math.round(Number(s));
-  if (!Number.isFinite(n) || n < 0) return null;
-  return n;
-}
+import {
+  montoArNormalizedStringToPesosIntRounded,
+  montoArPesosEnterosToNormalizedString,
+} from "@/lib/montoArMask";
 
 interface Props {
   open: boolean;
@@ -38,23 +33,22 @@ export default function EditarMontoFinBalGastoMensualModal({
   anio,
   onSuccess,
 }: Props) {
-  const [montoTexto, setMontoTexto] = useState("");
+  const [montoNorm, setMontoNorm] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingRepetir, setLoadingRepetir] = useState(false);
 
   useEffect(() => {
     if (!open || !fila) return;
-    setMontoTexto(fila.monto === 0 ? "" : fmtPrecio(fila.monto));
+    setMontoNorm(montoArPesosEnterosToNormalizedString(fila.monto));
   }, [open, fila]);
 
-  const montoParsed = useMemo(() => parseMontoPesosInput(montoTexto), [montoTexto]);
+  const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
 
   const disabledSubmit = useMemo(() => {
     if (saving || !fila) return true;
-    if (montoParsed === null) return true;
-    if (montoParsed === fila.monto) return true;
+    if (montoPesosInt === fila.monto) return true;
     return false;
-  }, [saving, fila, montoParsed]);
+  }, [saving, fila, montoPesosInt]);
 
   async function handleRepetirUltMonto() {
     if (!fila) return;
@@ -73,17 +67,17 @@ export default function EditarMontoFinBalGastoMensualModal({
         toast.info("No hay imputación en el mes anterior para repetir.");
         return;
       }
-      setMontoTexto(fmtPrecio(r.data.monto));
+      setMontoNorm(montoArPesosEnterosToNormalizedString(r.data.monto));
     } finally {
       setLoadingRepetir(false);
     }
   }
 
   async function handleGuardar() {
-    if (!fila || montoParsed === null || disabledSubmit) return;
+    if (!fila || disabledSubmit) return;
     setSaving(true);
     try {
-      const r = await editarMontoFinBalGastoMensualAction({ id: fila.id, monto: montoParsed });
+      const r = await editarMontoFinBalGastoMensualAction({ id: fila.id, monto: montoPesosInt });
       if (!r.ok) {
         toast.error(r.error ?? "No se pudo guardar.");
         return;
@@ -127,22 +121,21 @@ export default function EditarMontoFinBalGastoMensualModal({
                 {fila.proveedorNombre} · {fila.sucursalNombre}
               </div>
             </div>
-            <label className="flex flex-col gap-1">
+            <label className="flex w-full flex-col items-center gap-1 text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 MONTO ($)
               </span>
-              <Input
-                value={montoTexto}
-                onChange={(e) => setMontoTexto(e.target.value)}
-                placeholder="0"
-                inputMode="numeric"
+              <MontoArInput
+                valueNormalized={montoNorm}
+                onValueNormalizedChange={setMontoNorm}
                 disabled={saving}
                 autoFocus
+                aria-label="Monto en pesos"
               />
             </label>
             <Button
               type="button"
-              variant="secondary"
+              variant="default"
               disabled={saving || loadingRepetir}
               onClick={() => void handleRepetirUltMonto()}
             >

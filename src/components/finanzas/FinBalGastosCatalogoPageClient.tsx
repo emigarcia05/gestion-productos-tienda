@@ -4,6 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -617,9 +622,9 @@ function FilaCatalogo({
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
+            variant="outline"
+            size="icon-xs"
+            className={TABLE_ROW_ICON_BUTTON_CLASS}
             title="Editar"
             aria-label={`Editar ${nombre}`}
             onClick={(e) => {
@@ -627,13 +632,16 @@ function FilaCatalogo({
               onEditar();
             }}
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
           </Button>
           <Button
             type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive hover:text-destructive"
+            variant="outline"
+            size="icon-xs"
+            className={cn(
+              TABLE_ROW_ICON_BUTTON_CLASS,
+              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+            )}
             title="Eliminar"
             aria-label={`Eliminar ${nombre}`}
             onClick={(e) => {
@@ -641,7 +649,7 @@ function FilaCatalogo({
               onEliminar();
             }}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
           </Button>
         </div>
       )}

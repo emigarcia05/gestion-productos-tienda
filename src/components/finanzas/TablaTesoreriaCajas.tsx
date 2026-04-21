@@ -12,7 +12,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
 import { Pencil, TriangleAlert, Trash2 } from "lucide-react";
-import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TEXT_WARNING_CLASS,
+} from "@/lib/ui-classes";
 
 export interface TesoreriaCajaFila {
   id: string;
@@ -131,6 +136,7 @@ export default function TablaTesoreriaCajas({
                                 type="button"
                                 size="icon-xs"
                                 variant="outline"
+                                className={TABLE_ROW_ICON_BUTTON_CLASS}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   onEditDataClick?.(f);
@@ -138,12 +144,16 @@ export default function TablaTesoreriaCajas({
                                 aria-label="Editar caja"
                                 title="Editar caja"
                               >
-                                <Pencil className="h-3.5 w-3.5" />
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
                               <Button
                                 type="button"
                                 size="icon-xs"
                                 variant="outline"
+                                className={cn(
+                                  TABLE_ROW_ICON_BUTTON_CLASS,
+                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                                )}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   onDeleteClick?.(f);
@@ -151,7 +161,7 @@ export default function TablaTesoreriaCajas({
                                 aria-label="Eliminar caja"
                                 title="Eliminar caja"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
                             </div>
                           </TableCell>

@@ -31,6 +31,11 @@ import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
 import MontoArInput from "@/components/shared/MontoArInput";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
 import {
   dateToIsoYmdArgentina,
@@ -379,8 +384,6 @@ export default function PedidoHistoriaDetalleModal({
     fechaFacturaOk &&
     checklistCompleto &&
     totalPedidoMontoPositivo(totalPedido);
-
-  const clsBotonTabla = "disabled:cursor-not-allowed";
 
   async function persistirRecepcionActual(): Promise<boolean> {
     if (!pedidoHistoriaId || !detalle) return false;
@@ -855,7 +858,7 @@ export default function PedidoHistoriaDetalleModal({
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => ajustarEditingValue(-1)}
                                   disabled={locked || busy || !fechaFacturaOk}
-                                  className={clsBotonTabla}
+                                  className={TABLE_ROW_ICON_BUTTON_CLASS}
                                   aria-label="Disminuir"
                                   title="Disminuir"
                                 >
@@ -911,7 +914,7 @@ export default function PedidoHistoriaDetalleModal({
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => ajustarEditingValue(1)}
                                   disabled={locked || busy || !fechaFacturaOk}
-                                  className={clsBotonTabla}
+                                  className={TABLE_ROW_ICON_BUTTON_CLASS}
                                   aria-label="Aumentar"
                                   title="Aumentar"
                                 >
@@ -925,13 +928,13 @@ export default function PedidoHistoriaDetalleModal({
                                   onClick={onClickConfirmarEdicion(item)}
                                   disabled={locked || busy || !fechaFacturaOk}
                                   className={cn(
-                                    clsBotonTabla,
+                                    TABLE_ROW_ICON_BUTTON_CLASS,
                                     "text-primary-foreground [&_svg]:text-primary-foreground"
                                   )}
                                   aria-label="Confirmar Edición"
                                   title="Confirmar Edición"
                                 >
-                                  <Check className="h-4 w-4" />
+                                  <Check className={TABLE_ROW_ACTION_ICON_CLASS} />
                                 </Button>
                               </div>
                             ) : (
@@ -953,12 +956,12 @@ export default function PedidoHistoriaDetalleModal({
                                 disabled={
                                   locked || busy || checkListConfirmed || !fechaFacturaOk
                                 }
-                                className={clsBotonTabla}
+                                className={TABLE_ROW_ICON_BUTTON_CLASS}
                                 aria-label="OK"
                                 title="OK"
                                 data-ok-button={item.id}
                               >
-                                <Check className="h-4 w-4" />
+                                <Check className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
                               <Button
                                 type="button"
@@ -966,11 +969,11 @@ export default function PedidoHistoriaDetalleModal({
                                 size="icon-xs"
                                 onClick={onClickEditar(item)}
                                 disabled={locked || busy || !fechaFacturaOk}
-                                className={clsBotonTabla}
+                                className={TABLE_ROW_ICON_BUTTON_CLASS}
                                 aria-label="Editar"
                                 title="Editar"
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
                               <Button
                                 type="button"
@@ -978,11 +981,14 @@ export default function PedidoHistoriaDetalleModal({
                                 size="icon-xs"
                                 onClick={onClickCesto(item)}
                                 disabled={locked || busy || !fechaFacturaOk}
-                                className={clsBotonTabla}
+                                className={cn(
+                                  TABLE_ROW_ICON_BUTTON_CLASS,
+                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                                )}
                                 aria-label="Cesto De Basura"
                                 title="Cesto De Basura"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
                             </div>
                           </TableCell>
@@ -1017,6 +1023,7 @@ export default function PedidoHistoriaDetalleModal({
                     </div>
                     <div className="celda-datos celda-datos--flush-left celda-datos--flush-right col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0">
                       <MontoArInput
+                        variant="totalPedido"
                         disabled={locked || loading || !totalPedidoInputHabilitado}
                         valueNormalized={totalPedido}
                         onValueNormalizedChange={setTotalPedido}

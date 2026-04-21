@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import MontoArInput from "@/components/shared/MontoArInput";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
   Select,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { crearMovimientoFinanzasAction } from "@/actions/movimientosFinanzas";
 import { cn } from "@/lib/utils";
+import { montoArNormalizedStringToPesosNumber } from "@/lib/montoArMask";
 
 type TipoGasto = "EFECTIVO" | "BANCO" | "CHEQUE";
 
@@ -42,13 +44,13 @@ export default function NuevoGastoModal({
   const [nombre, setNombre] = useState("");
   const [tipoGasto, setTipoGasto] = useState<TipoGasto | "">("");
   const [sucursalId, setSucursalId] = useState("");
-  const [monto, setMonto] = useState("");
+  const [montoNorm, setMontoNorm] = useState("");
   const [saving, setSaving] = useState(false);
 
   const montoNumber = useMemo(() => {
-    const n = Number(monto);
-    return Number.isFinite(n) ? n : Number.NaN;
-  }, [monto]);
+    const n = montoArNormalizedStringToPesosNumber(montoNorm);
+    return Number.isFinite(n) && n > 0 ? n : Number.NaN;
+  }, [montoNorm]);
 
   const disabledSubmit = useMemo(
     () =>
@@ -64,7 +66,7 @@ export default function NuevoGastoModal({
     setNombre("");
     setTipoGasto("");
     setSucursalId("");
-    setMonto("");
+    setMontoNorm("");
   }
 
   async function handleSubmit() {
@@ -195,16 +197,13 @@ export default function NuevoGastoModal({
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              MONTO
+              MONTO ($)
             </span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="0,00"
+            <MontoArInput
+              valueNormalized={montoNorm}
+              onValueNormalizedChange={setMontoNorm}
               disabled={saving}
+              aria-label="Monto del gasto"
             />
           </label>
         </div>

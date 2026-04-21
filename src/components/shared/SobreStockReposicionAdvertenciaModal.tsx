@@ -17,7 +17,12 @@ import { Input } from "@/components/ui/input";
 import AppModal from "@/components/shared/AppModal";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TEXT_WARNING_CLASS,
+} from "@/lib/ui-classes";
 import type { SobreStockReposicionItem } from "@/services/sobreStock.service";
 import type { SucursalPedidoEnvio } from "@/services/pedidosEnvio.service";
 
@@ -74,7 +79,6 @@ function fmtNumero(n: number): string {
 }
 
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
-const clsBotonTabla = "disabled:cursor-not-allowed";
 
 /**
  * Modal de advertencia antes de generar/enviar un pedido cuando hay sobrestock en la **otra** sucursal
@@ -294,7 +298,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => ajustarCantidad(it.idItemPedidoEnvio, -1)}
                               disabled={pending}
-                              className={clsBotonTabla}
+                              className={TABLE_ROW_ICON_BUTTON_CLASS}
                               aria-label="Disminuir Cant. Pedir"
                               title="Disminuir"
                             >
@@ -333,7 +337,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => ajustarCantidad(it.idItemPedidoEnvio, 1)}
                               disabled={pending}
-                              className={clsBotonTabla}
+                              className={TABLE_ROW_ICON_BUTTON_CLASS}
                               aria-label="Aumentar Cant. Pedir"
                               title="Aumentar"
                             >
@@ -349,11 +353,11 @@ export default function SobreStockReposicionAdvertenciaModal({
                               size="icon-xs"
                               onClick={() => confirmarFila(it.idItemPedidoEnvio)}
                               disabled={pending}
-                              className={clsBotonTabla}
+                              className={TABLE_ROW_ICON_BUTTON_CLASS}
                               aria-label="Confirmar"
                               title="Confirmar"
                             >
-                              <Check className="h-4 w-4" />
+                              <Check className={TABLE_ROW_ACTION_ICON_CLASS} />
                             </Button>
                             <Button
                               type="button"
@@ -361,11 +365,14 @@ export default function SobreStockReposicionAdvertenciaModal({
                               size="icon-xs"
                               onClick={() => vaciarYConfirmarFila(it.idItemPedidoEnvio)}
                               disabled={pending}
-                              className={clsBotonTabla}
+                              className={cn(
+                                TABLE_ROW_ICON_BUTTON_CLASS,
+                                TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                              )}
                               aria-label="Poner en cero y confirmar"
                               title="Poner en cero y confirmar"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                             </Button>
                           </div>
                         </TableCell>

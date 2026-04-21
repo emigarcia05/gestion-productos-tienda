@@ -167,6 +167,36 @@ async function mapaMontoReferenciaPrior(
  * `montoDevengadoPendiente`: (valor / días del mes) × días desde devengo hasta hoy (AR).
  * **Valor:** `monto` del mes actual si &gt; 0; si no, último `monto` de un mes anterior.
  */
+/** Años y meses que existen en `fin_bal_gasto_mensual` (al menos una fila). */
+export interface PeriodosImputacionesDisponibles {
+  /** Años distintos, orden descendente (más reciente primero). */
+  anios: number[];
+  /** Clave `String(anio)` → meses 1–12 presentes en DB para ese año, orden ascendente. */
+  mesesPorAnio: Record<string, number[]>;
+}
+
+/**
+ * Lista años y meses que aparecen en `fin_bal_gasto_mensual` (sin inventar periodos).
+ * Si la tabla está vacía, devuelve `{ anios: [], mesesPorAnio: {} }`.
+ */
+export async function listarPeriodosConImputacionesEnDb(): Promise<PeriodosImputacionesDisponibles> {
+  const groups = await prisma.finBalGastoMensual.groupBy({
+    by: ["anio", "mes"],
+    orderBy: [{ anio: "asc" }, { mes: "asc" }],
+  });
+  const mesesPorAnio: Record<string, number[]> = {};
+  for (const g of groups) {
+    const k = String(g.anio);
+    if (!mesesPorAnio[k]) mesesPorAnio[k] = [];
+    mesesPorAnio[k].push(g.mes);
+  }
+  for (const k of Object.keys(mesesPorAnio)) {
+    mesesPorAnio[k].sort((a, b) => a - b);
+  }
+  const anios = [...new Set(groups.map((g) => g.anio))].sort((a, b) => b - a);
+  return { anios, mesesPorAnio };
+}
+
 export async function listarImputacionesMensualesBalance(params: {
   mes: number;
   anio: number;

@@ -17,6 +17,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { PedidoHistoriaResumen } from "@/services/pedidosHistoria.service";
 import PedidoHistoriaDetalleModal from "@/components/pedidos/PedidoHistoriaDetalleModal";
@@ -194,9 +199,9 @@ export default function HistorialPedidosPageClient({
                                         openRecepcion(it.id);
                                       }}
                                       aria-label="Recepción De Mercadería"
-                                      className="disabled:cursor-not-allowed"
+                                      className={TABLE_ROW_ICON_BUTTON_CLASS}
                                     >
-                                      <PackageCheck className="h-4 w-4" />
+                                      <PackageCheck className={TABLE_ROW_ACTION_ICON_CLASS} />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
@@ -214,9 +219,9 @@ export default function HistorialPedidosPageClient({
                                         openLectura(it.id);
                                       }}
                                       aria-label="Ver Detalles"
-                                      className="disabled:cursor-not-allowed"
+                                      className={TABLE_ROW_ICON_BUTTON_CLASS}
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className={TABLE_ROW_ACTION_ICON_CLASS} />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Ver Detalles</TooltipContent>
@@ -233,11 +238,11 @@ export default function HistorialPedidosPageClient({
                                       }}
                                       aria-label="Borrar Pedido"
                                       className={cn(
-                                        "disabled:cursor-not-allowed",
-                                        "hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
+                                        TABLE_ROW_ICON_BUTTON_CLASS,
+                                        TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
                                       )}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Borrar Pedido</TooltipContent>

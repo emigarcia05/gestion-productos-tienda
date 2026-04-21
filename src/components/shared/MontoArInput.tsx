@@ -4,45 +4,25 @@ import { useMemo, type ComponentProps } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const MAX_CENTS = 99_999_999_999; // 999.999.999,99
-
-function normalizedToCents(norm: string): number {
-  if (norm.trim() === "") return 0;
-  const n = Number(norm);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  const cents = Math.round(n * 100);
-  return Math.min(Math.max(cents, 0), MAX_CENTS);
-}
-
-function centsToNormalized(cents: number): string {
-  const safe = Math.min(Math.max(Math.trunc(cents), 0), MAX_CENTS);
-  const enteros = Math.floor(safe / 100);
-  const decimales = safe % 100;
-  if (decimales === 0) return String(enteros);
-  return `${enteros}.${String(decimales).padStart(2, "0")}`;
-}
-
-function centsToDisplayAr(cents: number): string {
-  const safe = Math.min(Math.max(Math.trunc(cents), 0), MAX_CENTS);
-  const enteros = Math.floor(safe / 100);
-  const decimales = safe % 100;
-  const enterosFmt = enteros.toLocaleString("es-AR", {
-    useGrouping: true,
-    maximumFractionDigits: 0,
-  });
-  return `${enterosFmt},${String(decimales).padStart(2, "0")}`;
-}
+import {
+  MONTO_AR_MASK_MAX_CENTS,
+  montoArCentsToNormalizedString,
+  montoArCentsToDisplayWithCurrency,
+  montoArNormalizedStringToCents,
+} from "@/lib/montoArMask";
 
 const montoArInputVariants = cva("", {
   variants: {
     variant: {
+      /** Total pedido en pie de recepción (sin padding izquierdo). */
       totalPedido:
         "ml-0 h-9 w-full min-w-0 pl-0 pr-3 py-1 tabular-nums text-center font-semibold",
+      /** Modales y formularios estándar. */
+      form: "h-9 w-full min-w-0 px-3 py-1 tabular-nums text-center",
     },
   },
   defaultVariants: {
-    variant: "totalPedido",
+    variant: "form",
   },
 });
 
@@ -53,6 +33,8 @@ export type MontoArInputProps = Omit<
   VariantProps<typeof montoArInputVariants> & {
     valueNormalized: string;
     onValueNormalizedChange: (next: string) => void;
+    /** Prefijo visual (ej. `$`). Vacío = solo formato AR sin símbolo. */
+    currencySymbol?: string;
   };
 
 export default function MontoArInput({
@@ -61,9 +43,15 @@ export default function MontoArInput({
   variant,
   className,
   disabled,
+  currencySymbol = "$",
   ...props
 }: MontoArInputProps) {
-  const centsValue = useMemo(() => normalizedToCents(valueNormalized), [valueNormalized]);
+  const centsValue = useMemo(() => montoArNormalizedStringToCents(valueNormalized), [valueNormalized]);
+
+  const display = useMemo(
+    () => montoArCentsToDisplayWithCurrency(centsValue, currencySymbol),
+    [centsValue, currencySymbol]
+  );
 
   return (
     <Input
@@ -71,9 +59,9 @@ export default function MontoArInput({
       inputMode="numeric"
       autoComplete="off"
       disabled={disabled}
-      value={centsToDisplayAr(centsValue)}
+      value={display}
       onChange={() => {
-        // Entrada controlada por teclado/paste en formato POS (centavos desplazables).
+        // Entrada solo por teclado / pegado (máscara POS centavos).
       }}
       onKeyDown={(event) => {
         if (disabled) return;
@@ -92,20 +80,19 @@ export default function MontoArInput({
 
         if (isDigit) {
           event.preventDefault();
-          const next = Math.min(centsValue * 10 + Number(key), MAX_CENTS);
-          onValueNormalizedChange(centsToNormalized(next));
+          const next = Math.min(centsValue * 10 + Number(key), MONTO_AR_MASK_MAX_CENTS);
+          onValueNormalizedChange(montoArCentsToNormalizedString(next));
           return;
         }
 
         if (key === "Backspace" || key === "Delete") {
           event.preventDefault();
           const next = Math.floor(centsValue / 10);
-          onValueNormalizedChange(centsToNormalized(next));
+          onValueNormalizedChange(montoArCentsToNormalizedString(next));
           return;
         }
 
         if (allowedControl) return;
-        // Bloquea explícitamente separadores y cualquier otro caracter no permitido.
         event.preventDefault();
       }}
       onPaste={(event) => {
@@ -116,12 +103,11 @@ export default function MontoArInput({
         if (!digits) return;
         const pastedCents = Number(digits);
         if (!Number.isFinite(pastedCents)) return;
-        const next = Math.min(pastedCents, MAX_CENTS);
-        onValueNormalizedChange(centsToNormalized(next));
+        const next = Math.min(pastedCents, MONTO_AR_MASK_MAX_CENTS);
+        onValueNormalizedChange(montoArCentsToNormalizedString(next));
       }}
       className={cn(montoArInputVariants({ variant }), className)}
       {...props}
     />
   );
 }
-

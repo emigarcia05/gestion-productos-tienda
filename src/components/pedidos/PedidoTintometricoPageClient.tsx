@@ -37,6 +37,11 @@ import {
   tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import type { ProveedorTintometrico, SucursalTintometrica } from "@/services/tintometrico.service";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import NuevoItemTintometricoModal, {
@@ -339,15 +344,18 @@ export default function PedidoTintometricoPageClient({
                           <TableCell className="celda-datos text-right">
                             <Button
                               type="button"
-                              variant="ghost"
-                              size="icon-sm"
+                              variant="outline"
+                              size="icon-xs"
                               onClick={() => borrarItem(i)}
                               disabled={deletingKey === i.key}
-                              className={cn("text-foreground hover:text-destructive")}
+                              className={cn(
+                                TABLE_ROW_ICON_BUTTON_CLASS,
+                                TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                              )}
                               aria-label="Borrar Ítem"
                               title="Borrar Ítem"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                             </Button>
                           </TableCell>
                         </TableRow>

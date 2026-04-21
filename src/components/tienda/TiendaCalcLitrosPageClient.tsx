@@ -13,6 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_CLASS,
+  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+} from "@/lib/ui-classes";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import GestionTiposPinturaModal from "@/components/tienda/GestionTiposPinturaModal";
 import {
@@ -368,8 +373,12 @@ export default function TiendaCalcLitrosPageClient({
                                   onClick={() => eliminarFilaPared(row.id)}
                                   aria-label="Eliminar fila"
                                   title="Eliminar"
+                                  className={cn(
+                                    TABLE_ROW_ICON_BUTTON_CLASS,
+                                    TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                                  )}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
                                 </Button>
                               </div>
                             </TableCell>
