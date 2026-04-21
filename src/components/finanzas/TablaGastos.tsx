@@ -36,10 +36,9 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 /** Primera columna del bloque secundario: línea vertical #0072bb (mismo patrón que el resto de tablas). */
 const TH_ACCIONES =
-  "min-w-[10.5rem] w-[10.5rem] tabla-bloque-secundario-head-divider text-center text-[11px] font-semibold uppercase";
+  "w-[28%] min-w-0 tabla-bloque-secundario-head-divider text-center text-[11px] font-semibold uppercase";
 const TD_ACCIONES =
-  "celda-datos w-[10.5rem] bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
-
+  "celda-datos w-[28%] min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 export default function TablaGastos({
   filas,
   emptyMessage,
@@ -53,6 +52,8 @@ export default function TablaGastos({
   const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
   const colCount = mostrarAcciones ? 10 : 9;
+  /** Alineado con `<colgroup>`: 8% × 9 + 28% acciones, o 9 columnas iguales sin acciones. */
+  const colDataClass = mostrarAcciones ? "w-[8%] min-w-0" : "w-[11.111111%] min-w-0";
 
   function celdaMonto(m: number) {
     if (m === 0) return <span className="text-muted-foreground">—</span>;
@@ -65,19 +66,31 @@ export default function TablaGastos({
     <div className="flex flex-1 min-h-0 flex-col pb-4">
       <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
         <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
-          <Table variant="compact" scrollX={false}>
+          <Table variant="compact" scrollX={false} className="table-fixed w-full">
+            <colgroup>
+              {mostrarAcciones ? (
+                <>
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <col key={i} className="w-[8%]" />
+                  ))}
+                  <col className="w-[28%]" />
+                </>
+              ) : (
+                Array.from({ length: 9 }, (_, i) => <col key={i} className="w-[11.111111%]" />)
+              )}
+            </colgroup>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="min-w-[7rem]">FECHA</TableHead>
-                <TableHead className="min-w-[8rem]">SUCURSAL</TableHead>
-                <TableHead className="min-w-[8rem]">TIPO GASTO</TableHead>
-                <TableHead className="min-w-[8rem]">RUBRO</TableHead>
-                <TableHead className="min-w-[10rem]">GASTO</TableHead>
-                <TableHead className="min-w-[9rem]">PROVEEDOR</TableHead>
-                <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>MONTO</TableHead>
-                <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>PAGADO.</TableHead>
-                <TableHead className={cn(TH_NUM, "min-w-[8rem]")}>MTDO. DEVENG. PEND.</TableHead>
-                {mostrarAcciones ? <TableHead className={TH_ACCIONES}>Acc.</TableHead> : null}
+                <TableHead className={colDataClass}>FECHA</TableHead>
+                <TableHead className={colDataClass}>SUCURSAL</TableHead>
+                <TableHead className={colDataClass}>TIPO GASTO</TableHead>
+                <TableHead className={colDataClass}>RUBRO</TableHead>
+                <TableHead className={colDataClass}>GASTO</TableHead>
+                <TableHead className={colDataClass}>PROVEEDOR</TableHead>
+                <TableHead className={cn(TH_NUM, colDataClass)}>MONTO</TableHead>
+                <TableHead className={cn(TH_NUM, colDataClass)}>PAGADO</TableHead>
+                <TableHead className={cn(TH_NUM, colDataClass)}>MONTO DEVENGADO</TableHead>
+                {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,21 +99,27 @@ export default function TablaGastos({
               ) : (
                 filas.map((f) => (
                   <TableRow key={f.id}>
-                    <TableCell className="celda-datos whitespace-nowrap">
+                    <TableCell className={cn("celda-datos whitespace-nowrap", colDataClass)}>
                       {formatIsoYmdDdMmYyyyArgentina(f.fechaDevengoIso)}
                     </TableCell>
-                    <TableCell className="celda-datos whitespace-nowrap">{f.sucursalNombre}</TableCell>
-                    <TableCell className="celda-datos whitespace-nowrap">{f.tipoGastoNombre}</TableCell>
-                    <TableCell className="celda-datos whitespace-nowrap">{f.rubroNombre}</TableCell>
-                    <TableCell className="celda-datos min-w-0" title={f.gastoNombre}>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", colDataClass)}>
+                      {f.sucursalNombre}
+                    </TableCell>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", colDataClass)}>
+                      {f.tipoGastoNombre}
+                    </TableCell>
+                    <TableCell className={cn("celda-datos whitespace-nowrap", colDataClass)}>
+                      {f.rubroNombre}
+                    </TableCell>
+                    <TableCell className={cn("celda-datos min-w-0", colDataClass)} title={f.gastoNombre}>
                       <span className="celda-destacado truncate block">{f.gastoNombre}</span>
                     </TableCell>
-                    <TableCell className="celda-datos min-w-0" title={f.proveedorNombre}>
+                    <TableCell className={cn("celda-datos min-w-0", colDataClass)} title={f.proveedorNombre}>
                       <span className="truncate block">{f.proveedorNombre}</span>
                     </TableCell>
-                    <TableCell className={cn(TD_NUM, "celda-destacado")}>{celdaMonto(f.monto)}</TableCell>
-                    <TableCell className={cn(TD_NUM)}>${fmtPrecio(f.pagado)}</TableCell>
-                    <TableCell className={cn(TD_NUM, "celda-destacado")}>
+                    <TableCell className={cn(TD_NUM, "celda-destacado", colDataClass)}>{celdaMonto(f.monto)}</TableCell>
+                    <TableCell className={cn(TD_NUM, colDataClass)}>${fmtPrecio(f.pagado)}</TableCell>
+                    <TableCell className={cn(TD_NUM, "celda-destacado", colDataClass)}>
                       ${fmtPrecio(f.montoDevengadoPendiente)}
                     </TableCell>
                     {mostrarAcciones ? (
@@ -154,15 +173,15 @@ export default function TablaGastos({
                   <TableCell className="celda-datos font-bold uppercase" colSpan={mostrarAcciones ? 7 : 6}>
                     TOTAL
                   </TableCell>
-                  <TableCell className={cn(TD_NUM, "celda-destacado font-bold")}>
+                  <TableCell className={cn(TD_NUM, "celda-destacado font-bold", colDataClass)}>
                     {totalMonto === 0 ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
                       <>${fmtPrecio(totalMonto)}</>
                     )}
                   </TableCell>
-                  <TableCell className={cn(TD_NUM, "font-bold")}>${fmtPrecio(totalPagado)}</TableCell>
-                  <TableCell className={cn(TD_NUM, "celda-destacado font-bold")}>
+                  <TableCell className={cn(TD_NUM, "font-bold", colDataClass)}>${fmtPrecio(totalPagado)}</TableCell>
+                  <TableCell className={cn(TD_NUM, "celda-destacado font-bold", colDataClass)}>
                     ${fmtPrecio(totalPendiente)}
                   </TableCell>
                   {mostrarAcciones ? <TableCell className={TD_ACCIONES} aria-hidden /> : null}

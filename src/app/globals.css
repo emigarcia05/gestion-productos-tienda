@@ -189,9 +189,9 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
-  /* Encabezado global de tablas: altura calculada = (2 líneas de texto) + padding vertical corto. */
+  /* Encabezado global: altura mínima = (~2 líneas de texto) + padding; si el título lo requiere, el th puede crecer (sin tope). */
   --tabla-thead-lines: 2;
-  --tabla-thead-line-height: 1.1;
+  --tabla-thead-line-height: 1.15;
   --tabla-thead-padding-y: 0.2rem;
   --tabla-thead-height: calc(
     (0.75rem * var(--tabla-thead-line-height) * var(--tabla-thead-lines)) +
@@ -601,11 +601,10 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  /* Padding corto + altura calculada por 2 líneas de texto. */
+  /* Padding corto + altura mínima (~2 líneas); sin height/max-height fijos para permitir más líneas si el texto lo pide. */
   padding: var(--tabla-thead-padding-y) var(--tabla-body-cell-padding-x) !important;
-  height: var(--tabla-thead-height) !important;
+  height: auto !important;
   min-height: var(--tabla-thead-height) !important;
-  max-height: var(--tabla-thead-height) !important;
   font-size: 0.75rem !important;
   font-weight: 400;
   text-align: center;
@@ -615,26 +614,23 @@
   line-height: var(--tabla-thead-line-height) !important;
   box-sizing: border-box;
   white-space: normal !important;
-  overflow: hidden;
+  overflow: visible;
 }
 .tabla-gestion-compacta thead th .table-head-inner {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   text-align: center;
 }
 .tabla-gestion-compacta thead th .table-head-label {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: block;
+  overflow: visible;
   white-space: normal;
+  word-break: break-word;
   line-height: var(--tabla-thead-line-height);
   max-width: 100%;
 }

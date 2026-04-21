@@ -211,7 +211,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TODOS</SelectItem>
+                      <SelectItem value="none">RUBRO</SelectItem>
                       {rubrosOpciones.map((r) => (
                         <SelectItem key={r} value={r}>
                           {r}
@@ -232,7 +232,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TODOS</SelectItem>
+                      <SelectItem value="none">GASTO</SelectItem>
                       {gastosOpciones.map((g) => (
                         <SelectItem key={g} value={g}>
                           {g}
@@ -256,7 +256,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TODOS</SelectItem>
+                      <SelectItem value="none">SUCURSAL</SelectItem>
                       {sucursalesOpciones.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
@@ -280,7 +280,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TODOS</SelectItem>
+                      <SelectItem value="none">PROVEEDOR</SelectItem>
                       {proveedoresOpciones.map((p) => (
                         <SelectItem key={p} value={p}>
                           {p}
@@ -301,7 +301,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TODOS</SelectItem>
+                      <SelectItem value="none">PAGADO</SelectItem>
                       <SelectItem value="no">{"NO (DEVENG. PEND. > 0)"}</SelectItem>
                     </SelectContent>
                   </Select>
