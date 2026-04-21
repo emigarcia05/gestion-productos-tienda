@@ -33,8 +33,6 @@ export type MontoArInputProps = Omit<
   VariantProps<typeof montoArInputVariants> & {
     valueNormalized: string;
     onValueNormalizedChange: (next: string) => void;
-    /** Prefijo visual (ej. `$`). Vacío = solo formato AR sin símbolo. */
-    currencySymbol?: string;
   };
 
 export default function MontoArInput({
@@ -43,15 +41,11 @@ export default function MontoArInput({
   variant,
   className,
   disabled,
-  currencySymbol = "$",
   ...props
 }: MontoArInputProps) {
   const centsValue = useMemo(() => montoArNormalizedStringToCents(valueNormalized), [valueNormalized]);
 
-  const display = useMemo(
-    () => montoArCentsToDisplayWithCurrency(centsValue, currencySymbol),
-    [centsValue, currencySymbol]
-  );
+  const display = useMemo(() => montoArCentsToDisplayWithCurrency(centsValue, "$"), [centsValue]);
 
   return (
     <Input

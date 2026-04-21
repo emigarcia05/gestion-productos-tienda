@@ -315,6 +315,37 @@ export async function actualizarMontoFinBalGastoMensual(params: {
   }
 }
 
+export async function actualizarPagadoFinBalGastoMensual(params: {
+  id: string;
+  pagado: number;
+}): Promise<ServiceResult<{ id: string; pagado: number }>> {
+  const { id, pagado } = params;
+  try {
+    const current = await prisma.finBalGastoMensual.findUnique({
+      where: { id },
+      select: { monto: true },
+    });
+    if (!current) {
+      return { success: false, error: "Imputación no encontrada." };
+    }
+    if (pagado > current.monto) {
+      return {
+        success: false,
+        error: "El importe pagado no puede superar el monto imputado.",
+      };
+    }
+    const row = await prisma.finBalGastoMensual.update({
+      where: { id },
+      data: { pagado },
+      select: { id: true, pagado: true },
+    });
+    return { success: true, data: { id: row.id, pagado: row.pagado } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo registrar el pago.";
+    return { success: false, error: msg };
+  }
+}
+
 export async function eliminarFinBalGastoMensual(
   id: string
 ): Promise<ServiceResult<{ id: string }>> {

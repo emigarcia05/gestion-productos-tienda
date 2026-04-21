@@ -6,83 +6,57 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import MontoArInput from "@/components/shared/MontoArInput";
-import {
-  editarMontoFinBalGastoMensualAction,
-  obtenerMontoMesAnteriorFinBalGastoMensualAction,
-} from "@/actions/finBalGastoMensualBalance";
+import { registrarPagoFinBalGastoMensualAction } from "@/actions/finBalGastoMensualBalance";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
 import {
   montoArNormalizedStringToPesosIntRounded,
   montoArPesosEnterosToNormalizedString,
 } from "@/lib/montoArMask";
+import { fmtPrecio } from "@/lib/format";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fila: BalanceGastoMensualFila | null;
-  mes: number;
-  anio: number;
   onSuccess?: () => void;
 }
 
-export default function EditarMontoFinBalGastoMensualModal({
+export default function RegistrarPagoFinBalGastoMensualModal({
   open,
   onOpenChange,
   fila,
-  mes,
-  anio,
   onSuccess,
 }: Props) {
-  const [montoNorm, setMontoNorm] = useState("");
+  const [pagadoNorm, setPagadoNorm] = useState("");
   const [saving, setSaving] = useState(false);
-  const [loadingRepetir, setLoadingRepetir] = useState(false);
 
   useEffect(() => {
     if (!open || !fila) return;
-    setMontoNorm(montoArPesosEnterosToNormalizedString(fila.monto));
+    setPagadoNorm(montoArPesosEnterosToNormalizedString(fila.pagado));
   }, [open, fila]);
 
-  const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
+  const pagadoPesosInt = useMemo(
+    () => montoArNormalizedStringToPesosIntRounded(pagadoNorm),
+    [pagadoNorm]
+  );
 
   const disabledSubmit = useMemo(() => {
     if (saving || !fila) return true;
-    if (montoPesosInt === fila.monto) return true;
+    if (pagadoPesosInt === fila.pagado) return true;
+    if (pagadoPesosInt > fila.monto) return true;
     return false;
-  }, [saving, fila, montoPesosInt]);
-
-  async function handleRepetirUltMonto() {
-    if (!fila) return;
-    setLoadingRepetir(true);
-    try {
-      const r = await obtenerMontoMesAnteriorFinBalGastoMensualAction({
-        gastoFinalId: fila.gastoFinalId,
-        mes,
-        anio,
-      });
-      if (!r.ok) {
-        toast.error(r.error ?? "No se pudo obtener el monto anterior.");
-        return;
-      }
-      if (r.data.monto === null) {
-        toast.info("No hay imputación en el mes anterior para repetir.");
-        return;
-      }
-      setMontoNorm(montoArPesosEnterosToNormalizedString(r.data.monto));
-    } finally {
-      setLoadingRepetir(false);
-    }
-  }
+  }, [saving, fila, pagadoPesosInt]);
 
   async function handleGuardar() {
     if (!fila || disabledSubmit) return;
     setSaving(true);
     try {
-      const r = await editarMontoFinBalGastoMensualAction({ id: fila.id, monto: montoPesosInt });
+      const r = await registrarPagoFinBalGastoMensualAction({ id: fila.id, pagado: pagadoPesosInt });
       if (!r.ok) {
         toast.error(r.error ?? "No se pudo guardar.");
         return;
       }
-      toast.success("Monto actualizado.");
+      toast.success("Pago registrado.");
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -99,7 +73,7 @@ export default function EditarMontoFinBalGastoMensualModal({
       }}
     >
       <AppModal
-        title="Editar monto"
+        title="Registrar Pago"
         size="md"
         className="sm:max-w-md"
         actions={
@@ -121,26 +95,22 @@ export default function EditarMontoFinBalGastoMensualModal({
                 {fila.proveedorNombre} · {fila.sucursalNombre}
               </div>
             </div>
+            <p className="text-center text-xs text-muted-foreground">
+              Monto imputado: <span className="font-semibold text-foreground">${fmtPrecio(fila.monto)}</span>{" "}
+              (máximo pagado)
+            </p>
             <label className="flex w-full flex-col items-center gap-1 text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                MONTO
+                PAGADO
               </span>
               <MontoArInput
-                valueNormalized={montoNorm}
-                onValueNormalizedChange={setMontoNorm}
+                valueNormalized={pagadoNorm}
+                onValueNormalizedChange={setPagadoNorm}
                 disabled={saving}
                 autoFocus
-                aria-label="Monto en pesos"
+                aria-label="Importe pagado en pesos"
               />
             </label>
-            <Button
-              type="button"
-              variant="default"
-              disabled={saving || loadingRepetir}
-              onClick={() => void handleRepetirUltMonto()}
-            >
-              {loadingRepetir ? "Buscando…" : "Repetir Ult. Monto"}
-            </Button>
           </div>
         ) : null}
       </AppModal>

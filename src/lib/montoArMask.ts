@@ -43,6 +43,16 @@ export function montoArCentsToDisplayWithCurrency(
   return `${currencySymbol}${montoArCentsToDisplayBody(cents)}`;
 }
 
+/** Pesos enteros (p. ej. saldo) como en la máscara: siempre `$` + miles + `,00`. */
+export function montoArPesosEnterosToDisplay(pesos: number): string {
+  if (!Number.isFinite(pesos) || pesos <= 0) {
+    return montoArCentsToDisplayWithCurrency(0);
+  }
+  const ent = Math.trunc(pesos);
+  const cents = Math.min(ent * 100, MONTO_AR_MASK_MAX_CENTS);
+  return montoArCentsToDisplayWithCurrency(cents);
+}
+
 /** Pesos (2 decimales) desde string normalizado. */
 export function montoArNormalizedStringToPesosNumber(norm: string): number {
   return montoArNormalizedStringToCents(norm) / 100;

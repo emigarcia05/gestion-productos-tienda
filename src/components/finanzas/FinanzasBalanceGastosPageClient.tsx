@@ -13,17 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
-  FilterRowNoSearchActions,
-  FilterRowSelection,
   FILTER_COUNT_CLASS,
+  FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  FilaFiltrosDesplegables,
+  FilterRowSelection,
   LimpiarFiltrosButton,
-  SELECT_TRIGGER_FILTER_CLASS,
 } from "@/components/FilterBar";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas/TablaGastos";
 import EditarMontoFinBalGastoMensualModal from "@/components/finanzas/EditarMontoFinBalGastoMensualModal";
 import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBalGastoMensualModal";
+import RegistrarPagoFinBalGastoMensualModal from "@/components/finanzas/RegistrarPagoFinBalGastoMensualModal";
 import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
 import type { PeriodosImputacionesDisponibles } from "@/services/finBalGastoMensualBalance.service";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,7 @@ export default function FinanzasBalanceGastosPageClient({
   const [filtPagado, setFiltPagado] = useState("");
 
   const [filaEditar, setFilaEditar] = useState<BalanceGastoMensualFila | null>(null);
+  const [filaPagar, setFilaPagar] = useState<BalanceGastoMensualFila | null>(null);
   const [eliminar, setEliminar] = useState<{ id: string; etiqueta: string } | null>(null);
 
   const rubrosOpciones = useMemo(
@@ -195,19 +197,21 @@ export default function FinanzasBalanceGastosPageClient({
           ) : undefined
         }
         filters={
-          <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
-            <FilterRowSelection>
-              <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
+          <FilterBar className="filtros-contenedor-tienda bg-card">
+            <FilterRowSelection className="w-full min-w-0">
+              <FilaFiltrosDesplegables>
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Rubro
-                  </span>
-                  <Select value={filtRubro || "all"} onValueChange={(v) => setFiltRubro(v === "all" ? "" : v)}>
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                      <SelectValue placeholder="Todos" />
+                  <Select value={filtRubro || "none"} onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}>
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="RUBRO" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      <SelectItem value="all">Todos</SelectItem>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TODOS</SelectItem>
                       {rubrosOpciones.map((r) => (
                         <SelectItem key={r} value={r}>
                           {r}
@@ -218,15 +222,17 @@ export default function FinanzasBalanceGastosPageClient({
                 </div>
 
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Gasto
-                  </span>
-                  <Select value={filtGasto || "all"} onValueChange={(v) => setFiltGasto(v === "all" ? "" : v)}>
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                      <SelectValue placeholder="Todos" />
+                  <Select value={filtGasto || "none"} onValueChange={(v) => setFiltGasto(v === "none" ? "" : v)}>
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="GASTO" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      <SelectItem value="all">Todos</SelectItem>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TODOS</SelectItem>
                       {gastosOpciones.map((g) => (
                         <SelectItem key={g} value={g}>
                           {g}
@@ -237,18 +243,20 @@ export default function FinanzasBalanceGastosPageClient({
                 </div>
 
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Sucursal
-                  </span>
                   <Select
-                    value={filtSucursal || "all"}
-                    onValueChange={(v) => setFiltSucursal(v === "all" ? "" : v)}
+                    value={filtSucursal || "none"}
+                    onValueChange={(v) => setFiltSucursal(v === "none" ? "" : v)}
                   >
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                      <SelectValue placeholder="Todos" />
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="SUCURSAL" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      <SelectItem value="all">Todos</SelectItem>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TODOS</SelectItem>
                       {sucursalesOpciones.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
@@ -259,18 +267,20 @@ export default function FinanzasBalanceGastosPageClient({
                 </div>
 
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Proveedor
-                  </span>
                   <Select
-                    value={filtProveedor || "all"}
-                    onValueChange={(v) => setFiltProveedor(v === "all" ? "" : v)}
+                    value={filtProveedor || "none"}
+                    onValueChange={(v) => setFiltProveedor(v === "none" ? "" : v)}
                   >
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                      <SelectValue placeholder="Todos" />
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="PROVEEDOR" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      <SelectItem value="all">Todos</SelectItem>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TODOS</SelectItem>
                       {proveedoresOpciones.map((p) => (
                         <SelectItem key={p} value={p}>
                           {p}
@@ -281,35 +291,37 @@ export default function FinanzasBalanceGastosPageClient({
                 </div>
 
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Pagado
-                  </span>
-                  <Select value={filtPagado || "all"} onValueChange={(v) => setFiltPagado(v === "all" ? "" : v)}>
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                      <SelectValue placeholder="Todos" />
+                  <Select value={filtPagado || "none"} onValueChange={(v) => setFiltPagado(v === "none" ? "" : v)}>
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="PAGADO" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="no">NO (deveng. pend. mayor a 0)</SelectItem>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TODOS</SelectItem>
+                      <SelectItem value="no">{"NO (DEVENG. PEND. > 0)"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                <span className={FILTER_COUNT_CLASS}>{filasFiltradas.length}</span>
-              </div>
+              </FilaFiltrosDesplegables>
             </FilterRowSelection>
 
-            <FilterRowSelection>
-              <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
-                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "min-w-[7.5rem] max-w-[9rem]")}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Año
-                  </span>
+            <FilterRowSelection className="w-full min-w-0">
+              <FilaFiltrosDesplegables>
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
                   <Select value={String(anio)} onValueChange={onCambioAnio}>
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Año del periodo">
-                      <SelectValue />
+                    <SelectTrigger className="input-filtro-unificado" aria-label="Año del periodo">
+                      <SelectValue placeholder="AÑO" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
                       {periodosOpciones.anios.map((a) => (
                         <SelectItem key={a} value={String(a)}>
                           {a}
@@ -319,18 +331,20 @@ export default function FinanzasBalanceGastosPageClient({
                   </Select>
                 </div>
 
-                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "min-w-[9.5rem] max-w-[11rem]")}>
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Mes
-                  </span>
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
                   <Select
                     value={String(mes)}
                     onValueChange={(v) => navegarPeriodo(parseInt(v, 10), anio)}
                   >
-                    <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS} aria-label="Mes del periodo">
-                      <SelectValue />
+                    <SelectTrigger className="input-filtro-unificado" aria-label="Mes del periodo">
+                      <SelectValue placeholder="MES" />
                     </SelectTrigger>
-                    <SelectContent className="select-content-filtro" position="popper">
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
                       {mesesEtiquetadosEnDb.map((m) => (
                         <SelectItem key={m.valor} value={String(m.valor)}>
                           {m.etiqueta}
@@ -339,12 +353,16 @@ export default function FinanzasBalanceGastosPageClient({
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            </FilterRowSelection>
 
-            <FilterRowNoSearchActions>
-              <LimpiarFiltrosButton onClick={limpiarFiltros} />
-            </FilterRowNoSearchActions>
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-3 gap-2")}>
+                  <span className={FILTER_COUNT_CLASS}>
+                    {filasFiltradas.length.toLocaleString("es-AR")} GASTO
+                    {filasFiltradas.length === 1 ? "" : "S"}
+                  </span>
+                  <LimpiarFiltrosButton onClick={limpiarFiltros} />
+                </div>
+              </FilaFiltrosDesplegables>
+            </FilterRowSelection>
           </FilterBar>
         }
       >
@@ -353,6 +371,7 @@ export default function FinanzasBalanceGastosPageClient({
           emptyMessage={emptyMessage}
           esEditor={esEditor}
           onEditarMonto={(f) => setFilaEditar(f)}
+          onPagar={(f) => setFilaPagar(f)}
           onEliminar={(f) =>
             setEliminar({
               id: f.id,
@@ -368,6 +387,13 @@ export default function FinanzasBalanceGastosPageClient({
         fila={filaEditar}
         mes={mes}
         anio={anio}
+        onSuccess={() => router.refresh()}
+      />
+
+      <RegistrarPagoFinBalGastoMensualModal
+        open={filaPagar !== null}
+        onOpenChange={(next) => !next && setFilaPagar(null)}
+        fila={filaPagar}
         onSuccess={() => router.refresh()}
       />
 

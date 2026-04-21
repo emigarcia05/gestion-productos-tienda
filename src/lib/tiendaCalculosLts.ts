@@ -35,10 +35,11 @@ export function parseMonto(value: string): number {
 
 export function formatMonto(value: number): string {
   if (!Number.isFinite(value)) return "";
-  return value.toLocaleString("es-AR", {
+  const body = value.toLocaleString("es-AR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
+  return `$${body}`;
 }
 
 export function roundToNearestHundred(value: number): number {

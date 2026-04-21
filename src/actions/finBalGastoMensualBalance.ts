@@ -9,9 +9,11 @@ import {
   editarMontoFinBalGastoMensualSchema,
   eliminarFinBalGastoMensualSchema,
   obtenerMontoMesAnteriorSchema,
+  registrarPagoFinBalGastoMensualSchema,
 } from "@/lib/validations/finBalGastoMensualBalance";
 import {
   actualizarMontoFinBalGastoMensual,
+  actualizarPagadoFinBalGastoMensual,
   cargarImputacionesMensualesDesdeCatalogo,
   eliminarFinBalGastoMensual,
   mesAnioCalendarioArgentina,
@@ -74,6 +76,22 @@ export async function editarMontoFinBalGastoMensualAction(
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
   const res = await actualizarMontoFinBalGastoMensual(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateGastosPaths();
+  return { ok: true, data: res.data };
+}
+
+export async function registrarPagoFinBalGastoMensualAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string; pagado: number }>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = registrarPagoFinBalGastoMensualSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const res = await actualizarPagadoFinBalGastoMensual(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateGastosPaths();

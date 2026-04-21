@@ -28,6 +28,7 @@ interface Props {
   emptyMessage?: string;
   esEditor?: boolean;
   onEditarMonto?: (fila: BalanceGastoMensualFila) => void;
+  onPagar?: (fila: BalanceGastoMensualFila) => void;
   onEliminar?: (fila: BalanceGastoMensualFila) => void;
 }
 
@@ -35,21 +36,22 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 /** Primera columna del bloque secundario: línea vertical #0072bb (mismo patrón que el resto de tablas). */
 const TH_ACCIONES =
-  "min-w-[5.5rem] w-[5.5rem] tabla-bloque-secundario-head-divider text-center text-[11px] font-semibold uppercase";
+  "min-w-[10.5rem] w-[10.5rem] tabla-bloque-secundario-head-divider text-center text-[11px] font-semibold uppercase";
 const TD_ACCIONES =
-  "celda-datos w-[5.5rem] bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
+  "celda-datos w-[10.5rem] bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
 export default function TablaGastos({
   filas,
   emptyMessage,
   esEditor = false,
   onEditarMonto,
+  onPagar,
   onEliminar,
 }: Props) {
   const totalMonto = filas.reduce((acc, fila) => acc + fila.monto, 0);
   const totalPagado = filas.reduce((acc, fila) => acc + fila.pagado, 0);
   const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
-  const mostrarAcciones = esEditor && onEditarMonto && onEliminar;
+  const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
   const colCount = mostrarAcciones ? 10 : 9;
 
   function celdaMonto(m: number) {
@@ -103,7 +105,7 @@ export default function TablaGastos({
                     </TableCell>
                     {mostrarAcciones ? (
                       <TableCell className={cn(TD_ACCIONES, "p-1")}>
-                        <div className="flex items-center justify-center gap-0.5">
+                        <div className="flex flex-wrap items-center justify-center gap-1">
                           <Button
                             type="button"
                             variant="outline"
@@ -114,6 +116,16 @@ export default function TablaGastos({
                             onClick={() => onEditarMonto!(f)}
                           >
                             <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 shrink-0 px-2 text-xs font-semibold"
+                            title="Registrar pago"
+                            aria-label={`Pagar ${f.gastoNombre}`}
+                            onClick={() => onPagar!(f)}
+                          >
+                            Pagar
                           </Button>
                           <Button
                             type="button"

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import MontoArInput from "@/components/shared/MontoArInput";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -33,6 +34,10 @@ import { fmtPrecio } from "@/lib/format";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
+import {
+  montoArNormalizedStringToCents,
+  montoArNormalizedStringToPesosNumber,
+} from "@/lib/montoArMask";
 
 type ProveedorOption = { id: string; nombre: string; prefijo: string };
 
@@ -53,7 +58,7 @@ export default function EditarCostoObjetivoModal({
   labelCompleto,
   onSaved,
 }: Props) {
-  const [valor, setValor] = useState("");
+  const [valorNorm, setValorNorm] = useState("");
   const [pending, setPending] = useState(false);
 
   const [modo, setModo] = useState<"manual" | "lista">("manual");
@@ -67,7 +72,7 @@ export default function EditarCostoObjetivoModal({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setValor(valorActual != null ? String(valorActual) : "");
+    setValorNorm(valorActual != null ? String(valorActual) : "");
   }, [open, valorActual]);
 
   useEffect(() => {
@@ -101,8 +106,9 @@ export default function EditarCostoObjetivoModal({
   const handleGuardar = async () => {
     setPending(true);
     try {
-      const num = valor.trim() === "" ? null : parseFloat(valor.replace(",", "."));
-      if (valor.trim() !== "" && (Number.isNaN(num) || num! < 0)) {
+      const cents = montoArNormalizedStringToCents(valorNorm);
+      const num = cents === 0 ? null : montoArNormalizedStringToPesosNumber(valorNorm);
+      if (num != null && (Number.isNaN(num) || num < 0)) {
         toast.error("Ingresá un número válido mayor o igual a 0.");
         return;
       }
@@ -179,15 +185,16 @@ export default function EditarCostoObjetivoModal({
 
             {modo === "manual" && (
               <div className="grid gap-2">
-                <Label htmlFor="costo-objetivo">Costo compra objetivo ($)</Label>
-                <Input
+                <Label htmlFor="costo-objetivo">Costo compra objetivo</Label>
+                <MontoArInput
                   id="costo-objetivo"
-                  type="text"
-                  inputMode="decimal"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  placeholder="Dejar vacío para sin objetivo"
+                  valueNormalized={valorNorm}
+                  onValueNormalizedChange={setValorNorm}
+                  aria-label="Costo compra objetivo en pesos"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Dejá en $0,00 para quitar el objetivo.
+                </p>
               </div>
             )}
 

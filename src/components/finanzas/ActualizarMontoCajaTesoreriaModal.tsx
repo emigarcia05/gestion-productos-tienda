@@ -104,7 +104,7 @@ export default function ActualizarMontoCajaTesoreriaModal({
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              MONTO ($)
+              MONTO
             </span>
             <MontoArInput
               valueNormalized={montoNorm}

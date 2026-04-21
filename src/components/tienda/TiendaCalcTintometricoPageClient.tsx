@@ -10,16 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import EditarCoeficientesModal from "@/components/stock/EditarCoeficientesModal";
-import {
-  formatMonto,
-  parseMonto,
-  roundToNearestHundred,
-} from "@/lib/tiendaCalculosLts";
+import MontoArInput from "@/components/shared/MontoArInput";
+import { montoArNormalizedStringToPesosNumber, montoArPesosEnterosToDisplay } from "@/lib/montoArMask";
+import { roundToNearestHundred } from "@/lib/tiendaCalculosLts";
 
 type ProveedorOption = {
   id: string;
@@ -41,7 +38,7 @@ export default function TiendaCalcTintometricoPageClient({
   const router = useRouter();
   /** `id` del proveedor seleccionado. */
   const [proveedorId, setProveedorId] = useState<string>("");
-  const [pxCompra, setPxCompra] = useState<string>("");
+  const [pxCompraNorm, setPxCompraNorm] = useState("");
   const [editarCoefOpen, setEditarCoefOpen] = useState(false);
 
   const proveedoresConCoefMayorAUno = useMemo(
@@ -50,12 +47,14 @@ export default function TiendaCalcTintometricoPageClient({
   );
 
   const pxListaTienda = useMemo(() => {
-    const base = Math.round(parseMonto(pxCompra));
-    if (!proveedorId) return formatMonto(roundToNearestHundred(base));
+    const base = Math.round(montoArNormalizedStringToPesosNumber(pxCompraNorm));
+    if (!proveedorId) {
+      return montoArPesosEnterosToDisplay(roundToNearestHundred(base));
+    }
     const coef =
       proveedoresConCoefMayorAUno.find((p) => p.id === proveedorId)?.coeficienteTintometrico ?? 1;
-    return formatMonto(roundToNearestHundred(base * coef));
-  }, [pxCompra, proveedorId, proveedoresConCoefMayorAUno]);
+    return montoArPesosEnterosToDisplay(roundToNearestHundred(base * coef));
+  }, [pxCompraNorm, proveedorId, proveedoresConCoefMayorAUno]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
@@ -109,20 +108,18 @@ export default function TiendaCalcTintometricoPageClient({
               <span className="text-xs font-semibold uppercase text-foreground">
                 Px. Compra
               </span>
-              <Input
-                value={pxCompra}
-                onChange={(e) => setPxCompra(e.target.value.replace(/\D/g, ""))}
-                placeholder="0,00"
-                inputMode="numeric"
-                className="h-10 text-center"
-                aria-label="Px.Compra"
+              <MontoArInput
+                valueNormalized={pxCompraNorm}
+                onValueNormalizedChange={setPxCompraNorm}
+                className="h-10"
+                aria-label="Px. Compra"
               />
 
               <span className="text-xs font-semibold uppercase text-foreground">
                 Px Lista Tienda
               </span>
               <div className="h-10 rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground flex items-center justify-center">
-                {pxListaTienda || "0,00"}
+                {pxListaTienda}
               </div>
             </div>
 

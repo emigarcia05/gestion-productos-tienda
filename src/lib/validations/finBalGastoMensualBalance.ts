@@ -16,6 +16,12 @@ export const editarMontoFinBalGastoMensualSchema = z.object({
 });
 export type EditarMontoFinBalGastoMensualInput = z.infer<typeof editarMontoFinBalGastoMensualSchema>;
 
+export const registrarPagoFinBalGastoMensualSchema = z.object({
+  id: prismaCuidSchema,
+  pagado: z.coerce.number().int().min(0, "El importe pagado no puede ser negativo."),
+});
+export type RegistrarPagoFinBalGastoMensualInput = z.infer<typeof registrarPagoFinBalGastoMensualSchema>;
+
 export const eliminarFinBalGastoMensualSchema = z.object({
   id: prismaCuidSchema,
 });
