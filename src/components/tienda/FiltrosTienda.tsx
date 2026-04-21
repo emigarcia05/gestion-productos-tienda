@@ -26,7 +26,7 @@ interface Props {
   marcas: string[];
   rubros: string[];
   subRubros: string[];
-  proveedores: { nombre: string; prefijo: string }[];
+  proveedores: { id: string; nombre: string; prefijo: string }[];
   totalItems: number;
   qActual: string;
   marcaActual: string;
@@ -150,8 +150,9 @@ export default function FiltrosTienda({
               >
                 <SelectItem value="none">PROVEEDORES</SelectItem>
                 {proveedores.map((p) => (
-                  <SelectItem key={p.prefijo} value={p.nombre}>
-                    [{p.prefijo}] {p.nombre}
+                  <SelectItem key={p.id} value={p.nombre}>
+                    {p.prefijo ? `[${p.prefijo}] ` : ""}
+                    {p.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>

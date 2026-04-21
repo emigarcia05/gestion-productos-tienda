@@ -25,6 +25,7 @@ type ProveedorOption = {
   id: string;
   nombre: string;
   prefijo: string;
+  codigoUnico: string;
   coeficienteTintometrico: number;
 };
 
@@ -38,7 +39,8 @@ export default function TiendaCalcTintometricoPageClient({
   esEditor,
 }: Props) {
   const router = useRouter();
-  const [proveedor, setProveedor] = useState<string>("");
+  /** `id` del proveedor seleccionado. */
+  const [proveedorId, setProveedorId] = useState<string>("");
   const [pxCompra, setPxCompra] = useState<string>("");
   const [editarCoefOpen, setEditarCoefOpen] = useState(false);
 
@@ -49,12 +51,11 @@ export default function TiendaCalcTintometricoPageClient({
 
   const pxListaTienda = useMemo(() => {
     const base = Math.round(parseMonto(pxCompra));
-    if (!proveedor) return formatMonto(roundToNearestHundred(base));
+    if (!proveedorId) return formatMonto(roundToNearestHundred(base));
     const coef =
-      proveedoresConCoefMayorAUno.find((p) => p.prefijo === proveedor)
-        ?.coeficienteTintometrico ?? 1;
+      proveedoresConCoefMayorAUno.find((p) => p.id === proveedorId)?.coeficienteTintometrico ?? 1;
     return formatMonto(roundToNearestHundred(base * coef));
-  }, [pxCompra, proveedor, proveedoresConCoefMayorAUno]);
+  }, [pxCompra, proveedorId, proveedoresConCoefMayorAUno]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
@@ -82,8 +83,8 @@ export default function TiendaCalcTintometricoPageClient({
               </span>
               <div className="min-w-0">
                 <Select
-                  value={proveedor || "none"}
-                  onValueChange={(value) => setProveedor(value === "none" ? "" : value)}
+                  value={proveedorId || "none"}
+                  onValueChange={(value) => setProveedorId(value === "none" ? "" : value)}
                 >
                   <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>
                     <SelectValue placeholder="SELECCIONAR" />
@@ -96,8 +97,9 @@ export default function TiendaCalcTintometricoPageClient({
                   >
                     <SelectItem value="none">SELECCIONAR</SelectItem>
                     {proveedoresConCoefMayorAUno.map((item) => (
-                      <SelectItem key={item.prefijo} value={item.prefijo}>
-                        [{item.prefijo}] {item.nombre}
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.prefijo ? `[${item.prefijo}] ` : `[${item.codigoUnico}] `}
+                        {item.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>

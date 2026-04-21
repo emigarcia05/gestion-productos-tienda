@@ -23,6 +23,7 @@ import SeleccionarProductoModal from "./SeleccionarProductoModal";
 
 type ProductoConProveedor = {
   id: string;
+  proveedorId: string;
   codigoExterno: string;
   codProdProv: string;
   descripcion: string;
@@ -185,13 +186,14 @@ export default function VincularModal({
 
   async function handleSeleccionar(producto: {
     id: string;
+    proveedorId: string;
     codigoExterno: string;
     codProdProv: string;
     descripcion: string;
     precioLista: number;
     proveedor: { nombre: string; prefijo: string };
   }) {
-    if (vinculados.some((p) => p.proveedor.prefijo === producto.proveedor.prefijo)) {
+    if (vinculados.some((p) => p.proveedorId === producto.proveedorId)) {
       toast.error("Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor.");
       return;
     }
@@ -373,7 +375,7 @@ export default function VincularModal({
         onClose={() => setAbrirSelector(false)}
         onSeleccionar={handleSeleccionar}
         excluirItemTiendaId={itemTiendaId}
-        prefijosYaVinculados={vinculados.map((p) => p.proveedor.prefijo)}
+        idsProveedoresYaVinculados={vinculados.map((p) => p.proveedorId)}
       />
     </>
   );

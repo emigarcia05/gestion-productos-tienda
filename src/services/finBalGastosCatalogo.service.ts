@@ -226,7 +226,7 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
           proveedor: {
             id: a.proveedor.id,
             nombre: a.proveedor.nombre.toUpperCase(),
-            prefijo: a.proveedor.prefijo,
+            prefijo: a.proveedor.prefijo ?? "",
           },
         })),
       })),
@@ -469,7 +469,7 @@ function mapFinBalGastoProveeRow(row: {
   gastoId: string;
   proveedorId: string;
   gastoMensual: boolean;
-  proveedor: { id: string; nombre: string; prefijo: string };
+  proveedor: { id: string; nombre: string; prefijo: string | null };
 }): FinBalGastoProveeItem {
   return {
     id: row.id,
@@ -479,7 +479,7 @@ function mapFinBalGastoProveeRow(row: {
     proveedor: {
       id: row.proveedor.id,
       nombre: row.proveedor.nombre.toUpperCase(),
-      prefijo: row.proveedor.prefijo,
+      prefijo: row.proveedor.prefijo ?? "",
     },
   };
 }

@@ -33,11 +33,13 @@ export async function getProveedoresTintometricos(): Promise<ProveedorTintometri
     PROVEEDORES_TINTOMETRICOS_IDS.map((id, i) => [id, i])
   );
 
-  return [...rows].sort((a, b) => {
-    const ai = order.get(a.id) ?? 999;
-    const bi = order.get(b.id) ?? 999;
-    return ai - bi;
-  });
+  return [...rows]
+    .sort((a, b) => {
+      const ai = order.get(a.id) ?? 999;
+      const bi = order.get(b.id) ?? 999;
+      return ai - bi;
+    })
+    .map((r) => ({ ...r, prefijo: r.prefijo ?? "" }));
 }
 
 export async function getSucursalesTintometricas(): Promise<SucursalTintometrica[]> {

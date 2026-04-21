@@ -16,7 +16,7 @@ import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 async function getTiendaEmptyWithOpciones() {
   const [proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.proveedor.findMany({
-      select: { nombre: true, prefijo: true, coeficienteTintometrico: true },
+      select: { id: true, nombre: true, prefijo: true, codigoUnico: true, coeficienteTintometrico: true },
     }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
@@ -26,8 +26,10 @@ async function getTiendaEmptyWithOpciones() {
     items: [] as ItemTiendaParaTabla[],
     total: 0,
     proveedores: proveedores.map((p) => ({
+      id: p.id,
       nombre: p.nombre,
-      prefijo: p.prefijo,
+      prefijo: p.prefijo ?? "",
+      codigoUnico: p.codigoUnico,
       coeficienteTintometrico: Number(p.coeficienteTintometrico),
     })),
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
@@ -87,7 +89,9 @@ export interface ItemTiendaParaTabla {
 export interface ProveedorTintoLts {
   id: string;
   nombre: string;
+  /** Vacío si el proveedor no tiene prefijo de 3 letras. */
   prefijo: string;
+  codigoUnico: string;
   coeficienteTintometrico: number;
 }
 
@@ -96,14 +100,21 @@ export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
   if (!puede(rol, PERMISOS.tienda.tintoLts)) return [];
 
   const proveedores = await prisma.proveedor.findMany({
-    select: { id: true, nombre: true, prefijo: true, coeficienteTintometrico: true },
+    select: {
+      id: true,
+      nombre: true,
+      prefijo: true,
+      codigoUnico: true,
+      coeficienteTintometrico: true,
+    },
     orderBy: { nombre: "asc" },
   });
 
   return proveedores.map((p) => ({
     id: p.id,
     nombre: p.nombre,
-    prefijo: p.prefijo,
+    prefijo: p.prefijo ?? "",
+    codigoUnico: p.codigoUnico,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
   }));
 }
@@ -195,7 +206,7 @@ export async function getTiendaPageData(params: {
     }),
     prisma.listaPrecioTienda.count({ where }),
     prisma.proveedor.findMany({
-      select: { nombre: true, prefijo: true, coeficienteTintometrico: true },
+      select: { id: true, nombre: true, prefijo: true, codigoUnico: true, coeficienteTintometrico: true },
     }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: whereRubros, orderBy: { rubro: "asc" } }),
     prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: whereSubRubros, orderBy: { subRubro: "asc" } }),
@@ -257,7 +268,10 @@ export async function getTiendaPageData(params: {
   }
 
   const nombreToPrefijo = new Map(
-    proveedores.map((p) => [p.nombre.toLowerCase().trim(), p.prefijo])
+    proveedores.map((p) => [
+      p.nombre.toLowerCase().trim(),
+      (p.prefijo?.trim() || p.codigoUnico) as string,
+    ])
   );
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
@@ -307,8 +321,10 @@ export async function getTiendaPageData(params: {
     items,
     total,
     proveedores: proveedores.map((p) => ({
+      id: p.id,
       nombre: p.nombre,
-      prefijo: p.prefijo,
+      prefijo: p.prefijo ?? "",
+      codigoUnico: p.codigoUnico,
       coeficienteTintometrico: Number(p.coeficienteTintometrico),
     })),
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),

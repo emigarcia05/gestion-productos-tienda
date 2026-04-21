@@ -1,35 +1,34 @@
 /**
  * Servicio de Proveedores – Conexión a Neon/PostgreSQL vía Prisma.
  */
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
 
 export interface CreateProveedorInput {
   nombre: string;
-  prefijo: string;
+  /** Vacío o null: sin prefijo en BD; se genera `codigoUnico` único. */
+  prefijo?: string | null;
   idProveedorDux?: string | null;
   whatsapp?: string | null;
   coeficienteTintometrico: number;
   /** Días de vencimiento separados por coma (30,60,…); null si no aplica. */
   plazosPagos?: string | null;
-  /**
-   * Flag "Proveedor de Mercadería": si `true`, aparece en la lista
-   * `/gestion-productos/proveedores/lista` (ver `getProveedoresMercaderia`).
-   * Si no se provee, se aplica el DEFAULT del schema final (`false`).
-   */
-  proveedorMercaderia?: boolean;
+  /** Obligatorio en alta (formulario SI/NO). */
+  proveedorMercaderia: boolean;
 }
 
 export interface UpdateProveedorInput {
   id: string;
   nombre: string;
-  prefijo: string;
+  /** Vacío o null: se guarda prefijo NULL (salvo validación Zod de 3 letras si hay texto). */
+  prefijo?: string | null;
   idProveedorDux?: string | null;
   whatsapp?: string | null;
   coeficienteTintometrico: number;
   plazosPagos?: string | null;
-  /** Ver `CreateProveedorInput.proveedorMercaderia`. Undefined = no tocar. */
-  proveedorMercaderia?: boolean;
+  /** Obligatorio en edición desde el formulario. */
+  proveedorMercaderia: boolean;
 }
 
 export interface UpdateCoeficienteTintometricoInput {
@@ -64,7 +63,21 @@ export interface ProveedorListItem {
 export const PROVEEDOR_ERROR = {
   NOMBRE_DUPLICADO: "Ya existe un proveedor con ese nombre.",
   PREFIJO_DUPLICADO: "Ya existe un proveedor con ese prefijo.",
+  CODIGO_UNICO_DUPLICADO: "Ya existe un proveedor con ese código interno. Reintentá el alta.",
 } as const;
+
+/** Si no hay prefijo de 3 letras, `codigo_unico` debe ser único (no coincide con prefijos típicos). */
+async function generarCodigoUnicoDisponible(): Promise<string> {
+  for (let i = 0; i < 12; i++) {
+    const candidate = `Z${randomBytes(8).toString("hex").toUpperCase()}`;
+    const exists = await prisma.proveedor.findFirst({
+      where: { codigoUnico: candidate },
+      select: { id: true },
+    });
+    if (!exists) return candidate;
+  }
+  throw new Error("No se pudo generar un código único para el proveedor.");
+}
 
 /**
  * Lista de proveedores desde la base de datos con conteos en prod_precios_provee y prod_precios_tienda.
@@ -124,7 +137,7 @@ async function listarProveedoresInterno(
     id: p.id,
     nombre: p.nombre,
     codigoUnico: p.codigoUnico,
-    prefijo: p.prefijo,
+    prefijo: p.prefijo ?? "",
     idProveedorDux: p.idProveedorDux ?? null,
     whatsapp: p.whatsapp ?? null,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
@@ -136,20 +149,22 @@ async function listarProveedoresInterno(
 }
 
 /** Obtiene un proveedor por id (para validaciones sin cargar toda la lista). */
-export async function getProveedorById(
-  id: string
-): Promise<
-  Pick<
-    ProveedorListItem,
-    "id" | "nombre" | "prefijo" | "whatsapp" | "coeficienteTintometrico" | "plazosPagos"
-  > | null
-> {
+export async function getProveedorById(id: string): Promise<{
+  id: string;
+  nombre: string;
+  prefijo: string | null;
+  codigoUnico: string;
+  whatsapp: string | null;
+  coeficienteTintometrico: number;
+  plazosPagos: string | null;
+} | null> {
   const p = await prisma.proveedor.findUnique({
     where: { id },
     select: {
       id: true,
       nombre: true,
       prefijo: true,
+      codigoUnico: true,
       whatsapp: true,
       coeficienteTintometrico: true,
       plazosPagos: true,
@@ -157,7 +172,11 @@ export async function getProveedorById(
   });
   if (!p) return null;
   return {
-    ...p,
+    id: p.id,
+    nombre: p.nombre,
+    prefijo: p.prefijo,
+    codigoUnico: p.codigoUnico,
+    whatsapp: p.whatsapp ?? null,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
     plazosPagos: p.plazosPagos ?? null,
   };
@@ -165,25 +184,27 @@ export async function getProveedorById(
 
 /**
  * Crea un proveedor en la base de datos.
- * codigoUnico se genera a partir del prefijo (normalizado en mayúsculas).
+ * Si hay prefijo (3 letras), `codigo_unico` coincide con él; si no, se genera un código interno único.
  */
 export async function createProveedor(
   input: CreateProveedorInput
 ): Promise<{ id: string; codigoUnico: string }> {
-  const prefijoNorm = input.prefijo.trim().toUpperCase();
+  const raw = input.prefijo?.trim() ?? "";
+  const prefijoNorm = raw === "" ? null : raw.toUpperCase();
+  if (prefijoNorm !== null && !/^[A-Z]{3}$/.test(prefijoNorm)) {
+    throw new Error("Prefijo inválido.");
+  }
+  const codigoUnico = prefijoNorm ?? (await generarCodigoUnicoDisponible());
   const proveedor = await prisma.proveedor.create({
     data: {
       nombre: input.nombre.trim(),
       prefijo: prefijoNorm,
-      codigoUnico: prefijoNorm,
+      codigoUnico,
       idProveedorDux: input.idProveedorDux?.trim() || null,
       whatsapp: normalizarWhatsapp(input.whatsapp),
       coeficienteTintometrico: input.coeficienteTintometrico,
       plazosPagos: input.plazosPagos ?? null,
-      // Si el caller no lo define, Prisma aplica el DEFAULT del schema (false).
-      ...(input.proveedorMercaderia !== undefined && {
-        proveedorMercaderia: input.proveedorMercaderia,
-      }),
+      proveedorMercaderia: input.proveedorMercaderia,
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
@@ -195,7 +216,11 @@ export async function createProveedor(
 export async function updateProveedor(
   input: UpdateProveedorInput
 ): Promise<void> {
-  const prefijoNorm = input.prefijo.trim().toUpperCase();
+  const raw = input.prefijo?.trim() ?? "";
+  const prefijoNorm = raw === "" ? null : raw.toUpperCase();
+  if (prefijoNorm !== null && !/^[A-Z]{3}$/.test(prefijoNorm)) {
+    throw new Error("Prefijo inválido.");
+  }
   await prisma.proveedor.update({
     where: { id: input.id },
     data: {
@@ -205,10 +230,7 @@ export async function updateProveedor(
       whatsapp: normalizarWhatsapp(input.whatsapp),
       coeficienteTintometrico: input.coeficienteTintometrico,
       plazosPagos: input.plazosPagos ?? null,
-      // `undefined` = no tocar el valor existente.
-      ...(input.proveedorMercaderia !== undefined && {
-        proveedorMercaderia: input.proveedorMercaderia,
-      }),
+      proveedorMercaderia: input.proveedorMercaderia,
     },
   });
 }

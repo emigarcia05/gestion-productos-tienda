@@ -96,11 +96,11 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     const first = parsed.error.flatten().fieldErrors;
     const msg =
       first.nombre?.[0] ??
+      first.proveedorMercaderia?.[0] ??
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
       first.plazosPagos?.[0] ??
-      first.proveedorMercaderia?.[0] ??
       "Datos inválidos.";
     return { ok: false, error: msg };
   }
@@ -121,6 +121,8 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
       const target = (e as { meta?: { target?: string[] } }).meta?.target;
       if (Array.isArray(target) && target.includes("prefijo"))
         return { ok: false, error: proveedorService.PROVEEDOR_ERROR.PREFIJO_DUPLICADO };
+      if (Array.isArray(target) && target.includes("codigo_unico"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.CODIGO_UNICO_DUPLICADO };
       if (Array.isArray(target) && target.includes("nombre"))
         return { ok: false, error: proveedorService.PROVEEDOR_ERROR.NOMBRE_DUPLICADO };
     }
@@ -151,11 +153,11 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     const first = parsed.error.flatten().fieldErrors;
     const msg =
       first.nombre?.[0] ??
+      first.proveedorMercaderia?.[0] ??
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
       first.plazosPagos?.[0] ??
-      first.proveedorMercaderia?.[0] ??
       "Datos inválidos.";
     return { ok: false, error: msg };
   }
@@ -179,6 +181,8 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
       const target = (e as { meta?: { target?: string[] } }).meta?.target;
       if (Array.isArray(target) && target.includes("prefijo"))
         return { ok: false, error: proveedorService.PROVEEDOR_ERROR.PREFIJO_DUPLICADO };
+      if (Array.isArray(target) && target.includes("codigo_unico"))
+        return { ok: false, error: proveedorService.PROVEEDOR_ERROR.CODIGO_UNICO_DUPLICADO };
       if (Array.isArray(target) && target.includes("nombre"))
         return { ok: false, error: proveedorService.PROVEEDOR_ERROR.NOMBRE_DUPLICADO };
     }

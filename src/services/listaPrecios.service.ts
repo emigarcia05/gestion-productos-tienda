@@ -78,7 +78,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor
-      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo, nombre: f.proveedor.nombre }
+      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
       : null,
   }));
 }
@@ -186,7 +186,7 @@ export async function getListaPreciosConTiendaFiltrada(
     cxTransporte: f.cxTransporte,
     pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
     proveedor: f.proveedor
-      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo, nombre: f.proveedor.nombre }
+      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
       : null,
   }));
 
@@ -264,6 +264,7 @@ export async function getRubrosDisponiblesListaPrecios(
 /** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. pxCompraFinal para selector de costo objetivo. */
 export interface ProductoProveedorParaVincular {
   id: string;
+  idProveedor: string;
   codExt: string;
   codProdProv: string;
   descripcionProveedor: string;
@@ -298,11 +299,12 @@ export async function listarProductosProveedoresParaVincular(
 
   return rows.map((r) => ({
     id: r.id,
+    idProveedor: r.idProveedor,
     codExt: r.codExt,
     codProdProv: r.codProdProveedor,
     descripcionProveedor: r.descripcionProveedor,
     rubro: r.rubro ?? null,
-    proveedor: { prefijo: r.proveedor.prefijo, nombre: r.proveedor.nombre },
+    proveedor: { prefijo: r.proveedor.prefijo ?? "", nombre: r.proveedor.nombre },
     pxCompraFinal: r.pxCompraFinal != null ? Number(r.pxCompraFinal) : null,
   }));
 }
@@ -702,5 +704,5 @@ export async function getProveedoresParaPedidoUrgente(): Promise<
     select: { id: true, nombre: true, prefijo: true },
     orderBy: { prefijo: "asc" },
   });
-  return list;
+  return list.map((p) => ({ ...p, prefijo: p.prefijo ?? "" }));
 }

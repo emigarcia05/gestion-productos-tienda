@@ -19,7 +19,7 @@ interface Props {
   proveedor?: {
     id: string;
     nombre: string;
-    prefijo: string;
+    prefijo?: string | null;
     idProveedorDux?: string;
     whatsapp?: string | null;
     coeficienteTintometrico?: number;
@@ -112,7 +112,7 @@ export default function ProveedorForm({
         <Label htmlFor="prefijo">
           Prefijo{" "}
           <span className="text-muted-foreground font-normal text-xs">
-            (se usará como prefijo del código externo)
+            (opcional; prefijo del código externo)
           </span>
         </Label>
         <Input
@@ -120,8 +120,6 @@ export default function ProveedorForm({
           name="prefijo"
           placeholder="Ej: PIN"
           defaultValue={proveedor?.prefijo ?? ""}
-          required
-          minLength={3}
           maxLength={3}
           disabled={pending}
           className="uppercase tracking-widest"
@@ -130,8 +128,9 @@ export default function ProveedorForm({
           }}
         />
         <p className="text-xs text-muted-foreground">
-          Exactamente 3 letras. El código externo quedará como{" "}
-          <code className="bg-muted px-1 rounded">PIN-CODPROD</code>
+          Si lo completás, exactamente 3 letras (A-Z). Ej. código externo{" "}
+          <code className="bg-muted px-1 rounded">PIN-CODPROD</code>. Si lo dejás vacío, el sistema asigna un
+          código interno para importaciones y vínculos.
         </p>
       </div>
 

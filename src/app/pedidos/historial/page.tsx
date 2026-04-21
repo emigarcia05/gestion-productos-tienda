@@ -43,10 +43,15 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
 
   const estadoUi: "PENDIENTE" | "RECEPCIONADO" | "ALL" = estadoFiltro;
 
-  const proveedores = await prisma.proveedor.findMany({
+  const proveedoresRaw = await prisma.proveedor.findMany({
     select: { id: true, nombre: true, prefijo: true },
     orderBy: { prefijo: "asc" },
   });
+  const proveedores = proveedoresRaw.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    prefijo: p.prefijo ?? "",
+  }));
 
   const res = await pedidosHistoriaService.listarPedidosHistoria({
     pagina: paginaNum,

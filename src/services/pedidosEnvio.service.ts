@@ -656,7 +656,7 @@ export async function getItemsYProveedorParaEnviar(
     ? {
         id: proveedor.id,
         nombre: proveedor.nombre,
-        prefijo: proveedor.prefijo,
+        prefijo: proveedor.prefijo ?? "",
         whatsapp: proveedor.whatsapp ?? null,
       }
     : null;

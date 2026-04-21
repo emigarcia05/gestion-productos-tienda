@@ -64,19 +64,23 @@ export const plazosPagosSchema = z
   });
 
 /**
- * Flag "Proveedor Mercadería" (SI/NO).
- * Se persiste como boolean en `global_proveedores.proveedor_mercaderia`.
- * Acepta los valores del <select> del form (case-insensitive), "true"/"false" y boolean crudo.
- * Si no viene definido se asume `false` (coherente con el DEFAULT del schema final).
+ * Flag "Proveedor Mercadería" desde el form (hidden `si` / `no`).
+ * Obligatorio en alta y edición: no se infiere un default si falta el valor.
  */
-export const proveedorMercaderiaSchema = z
-  .union([z.string(), z.boolean(), z.undefined(), z.null()])
-  .transform((v) => {
-    if (typeof v === "boolean") return v;
-    if (v == null) return false;
-    const s = v.trim().toLowerCase();
-    return s === "si" || s === "sí" || s === "true" || s === "1";
-  });
+export const proveedorMercaderiaFormSchema = z
+  .string()
+  .transform((s) => (s ?? "").trim().toLowerCase())
+  .refine((s) => s === "si" || s === "no", "Seleccioná SI o NO en Proveedor Mercadería.")
+  .transform((s) => s === "si");
+
+/** Prefijo opcional: vacío → null; si hay texto, exactamente 3 letras A-Z. */
+export const prefijoProveedorOpcionalSchema = z
+  .string()
+  .optional()
+  .default("")
+  .transform((s) => (s ?? "").trim().toUpperCase())
+  .transform((s) => (s === "" ? null : s))
+  .refine((s) => s === null || /^[A-Z]{3}$/.test(s), "Si completás prefijo, deben ser exactamente 3 letras (A-Z).");
 
 export const createProveedorSchema = z.object({
   nombre: z
@@ -84,19 +88,15 @@ export const createProveedorSchema = z.object({
     .min(1, "El nombre es obligatorio.")
     .transform((s) => s.trim())
     .refine((s) => s.length >= 2, "El nombre debe tener al menos 2 caracteres."),
-  prefijo: z
-    .string()
-    .min(1, "El prefijo es obligatorio.")
-    .transform((s) => s.trim().toUpperCase())
-    .refine((s) => /^[A-Z]{3}$/.test(s), "El prefijo debe tener exactamente 3 letras (A-Z)."),
+  prefijo: prefijoProveedorOpcionalSchema,
   whatsapp: whatsappSchema,
   coeficienteTintometrico: coeficienteTintometricoSchema,
   plazosPagos: plazosPagosSchema,
-  proveedorMercaderia: proveedorMercaderiaSchema,
+  proveedorMercaderia: proveedorMercaderiaFormSchema,
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;
 
-/** Misma validación que crear (nombre + prefijo + whatsapp). Reutilizable en editar. */
+/** Misma validación que crear. Reutilizable en editar. */
 export const updateProveedorSchema = createProveedorSchema;
 export type UpdateProveedorFormData = z.infer<typeof updateProveedorSchema>;

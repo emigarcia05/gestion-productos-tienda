@@ -94,7 +94,7 @@ export async function importarListaPreciosProveedor(
 
   const proveedor = await getProveedorById(pid);
   if (!proveedor) return { ok: false, error: "Proveedor no encontrado." };
-  const prefijo = proveedor.prefijo;
+  const prefijo = (proveedor.prefijo?.trim() || proveedor.codigoUnico).trim();
 
   const filasMapeadas = aplicarMapeoListaPrecios(filas, mapLp);
   if (filasMapeadas.length === 0) return { ok: false, error: "No hay filas válidas para importar." };

@@ -757,6 +757,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-04-21): `/finanzas/balance/gastos/catalogo` pasa a **5 columnas** (`xl:grid-cols-5`): se agrega **GASTO - PROVEEDOR** (`fin_bal_gasto_provee`) en cascada tras seleccionar un gasto; `listarFinBalGastosJerarquia()` incluye `asignacionesProveedor` por gasto. Modales `CrearEditarFinBalGastoProveeModal` y `EliminarFinBalGastoProveeModal` + actions `*FinBalGastoProvee*`. La columna **GASTOS** muestra meta de cantidad de asignaciones; el catálogo `fin_bal_cat_gasto` sigue sin FK a proveedor.*
 
+*Última actualización (2026-04-21): **Proveedores** — `ProveedorForm`: prefijo **opcional** (sin `required` HTML); **PROVEEDOR MERCADERÍA** sigue siendo SI/NO obligatorio vía Zod. **Filtros Tienda** (`FiltrosTienda.tsx`): opciones de proveedor con `key={p.id}`; si no hay prefijo, solo se muestra el nombre (sin corchetes vacíos). **Calc. Tintométrico** (`TiendaCalcTintometricoPageClient.tsx`): valor del `Select` = `id` del proveedor (no prefijo); etiqueta `[prefijo]` o `[codigoUnico]` si falta prefijo. **Vincular / Seleccionar producto** (`VincularModal` + `SeleccionarProductoModal`): exclusión de duplicados por **`idsProveedoresYaVinculados`** (`proveedorId`), no por prefijo.*
+
 ---
 
 ## 6. Organización en Cursor (prompts y reglas persistentes)

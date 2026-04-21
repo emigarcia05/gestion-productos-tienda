@@ -26,7 +26,7 @@ export async function getProductosVinculadosPorItemTienda(itemTiendaId: string):
       pxCompraFinal: r.pxCompraFinal != null ? Number(r.pxCompraFinal) : null,
       disponible: true,
       proveedorId: r.proveedor.id,
-      proveedor: { id: r.proveedor.id, nombre: r.proveedor.nombre, prefijo: r.proveedor.prefijo },
+      proveedor: { id: r.proveedor.id, nombre: r.proveedor.nombre, prefijo: r.proveedor.prefijo ?? "" },
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));

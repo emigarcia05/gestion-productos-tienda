@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 /** Forma que espera VincularModal al seleccionar (id + datos para lista y toast). */
 export type ProductoConProveedor = {
   id: string;
+  proveedorId: string;
   codigoExterno: string;
   codProdProv: string;
   descripcion: string;
@@ -53,8 +54,8 @@ interface Props {
   onClose: () => void;
   onSeleccionar: (producto: ProductoConProveedor) => void;
   excluirItemTiendaId: string;
-  /** Prefijos de proveedores ya vinculados al ítem; se ocultan de la lista para evitar duplicados. */
-  prefijosYaVinculados?: string[];
+  /** IDs de proveedor (`global_proveedores`) ya vinculados; se excluyen filas de esos proveedores. */
+  idsProveedoresYaVinculados?: string[];
 }
 
 export default function SeleccionarProductoModal({
@@ -62,7 +63,7 @@ export default function SeleccionarProductoModal({
   onClose,
   onSeleccionar,
   excluirItemTiendaId: _excluirItemTiendaId,
-  prefijosYaVinculados = [],
+  idsProveedoresYaVinculados = [],
 }: Props) {
   const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
   const [proveedorId, setProveedorId] = useState("");
@@ -94,8 +95,8 @@ export default function SeleccionarProductoModal({
       );
       setLoading(false);
       if (result.success) {
-        const filtrados = prefijosYaVinculados.length
-          ? result.data.filter((r) => !prefijosYaVinculados.includes(r.proveedor.prefijo))
+        const filtrados = idsProveedoresYaVinculados.length
+          ? result.data.filter((r) => !idsProveedoresYaVinculados.includes(r.idProveedor))
           : result.data;
         setRows(filtrados);
       } else {
@@ -107,7 +108,7 @@ export default function SeleccionarProductoModal({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [open, proveedorId, q, hayFiltros]);
+  }, [open, proveedorId, q, hayFiltros, idsProveedoresYaVinculados]);
 
   function limpiar() {
     setProveedorId("");
@@ -117,6 +118,7 @@ export default function SeleccionarProductoModal({
   function handleRowDoubleClick(row: ProductoProveedorParaVincular) {
     const producto: ProductoConProveedor = {
       id: row.id,
+      proveedorId: row.idProveedor,
       codigoExterno: row.codExt,
       codProdProv: row.codProdProv,
       descripcion: row.descripcionProveedor,
