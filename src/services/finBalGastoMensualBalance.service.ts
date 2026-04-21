@@ -8,6 +8,8 @@ import type { ServiceResult } from "@/types/service.types";
 
 export interface BalanceGastoMensualFila {
   id: string;
+  /** FK `fin_bal_gasto_final` (para repetir último monto del mes calendario anterior). */
+  gastoFinalId: string;
   /** Fecha de devengo (mes/año de la fila + día devengado del catálogo). */
   fechaDevengoIso: string;
   sucursalNombre: string;
@@ -62,6 +64,12 @@ export function mesAnioCalendarioArgentina(ahora: Date = new Date()): { mes: num
   const ymd = dateToIsoYmdArgentina(ahora);
   const [y, m] = ymd.split("-").map(Number);
   return { mes: m, anio: y };
+}
+
+/** Mes calendario inmediatamente anterior a `(mes, anio)` (ej. abr → mar; ene → dic año-1). */
+export function mesAnteriorCalendario(mes: number, anio: number): { mes: number; anio: number } {
+  if (mes <= 1) return { mes: 12, anio: anio - 1 };
+  return { mes: mes - 1, anio };
 }
 
 /**
@@ -208,6 +216,7 @@ export async function listarImputacionesMensualesBalance(params: {
 
     return {
       id: r.id,
+      gastoFinalId: r.gastoFinalId,
       fechaDevengoIso,
       sucursalNombre: gf.sucursal.nombre.toUpperCase(),
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
@@ -219,4 +228,71 @@ export async function listarImputacionesMensualesBalance(params: {
       montoDevengadoPendiente,
     };
   });
+}
+
+/**
+ * `monto` persistido en el **mes calendario inmediatamente anterior** a `(mes, anio)`
+ * para el mismo `gasto_final_id`. Si no hay fila en ese mes, devuelve `null`.
+ */
+export async function obtenerMontoImputacionMesAnterior(params: {
+  gastoFinalId: string;
+  mes: number;
+  anio: number;
+}): Promise<number | null> {
+  const { gastoFinalId, mes, anio } = params;
+  const prev = mesAnteriorCalendario(mes, anio);
+  const row = await prisma.finBalGastoMensual.findUnique({
+    where: {
+      gastoFinalId_mes_anio: {
+        gastoFinalId,
+        mes: prev.mes,
+        anio: prev.anio,
+      },
+    },
+    select: { monto: true },
+  });
+  return row?.monto ?? null;
+}
+
+export async function actualizarMontoFinBalGastoMensual(params: {
+  id: string;
+  monto: number;
+}): Promise<ServiceResult<{ id: string; monto: number }>> {
+  const { id, monto } = params;
+  try {
+    const current = await prisma.finBalGastoMensual.findUnique({
+      where: { id },
+      select: { pagado: true },
+    });
+    if (!current) {
+      return { success: false, error: "Imputación no encontrada." };
+    }
+    if (monto < current.pagado) {
+      return {
+        success: false,
+        error: "El monto no puede ser menor al importe ya pagado.",
+      };
+    }
+    const row = await prisma.finBalGastoMensual.update({
+      where: { id },
+      data: { monto },
+      select: { id: true, monto: true },
+    });
+    return { success: true, data: { id: row.id, monto: row.monto } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo actualizar el monto.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function eliminarFinBalGastoMensual(
+  id: string
+): Promise<ServiceResult<{ id: string }>> {
+  try {
+    await prisma.finBalGastoMensual.delete({ where: { id } });
+    return { success: true, data: { id } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo eliminar la imputación.";
+    return { success: false, error: msg };
+  }
 }

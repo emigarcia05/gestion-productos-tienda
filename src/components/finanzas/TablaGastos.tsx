@@ -8,29 +8,47 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
+import { Pencil, Trash2 } from "lucide-react";
 
 export type { BalanceGastoMensualFila };
 
 interface Props {
   filas: BalanceGastoMensualFila[];
+  /** Si hay datos crudos pero `filas` ya filtradas quedó vacío. */
+  emptyMessage?: string;
+  esEditor?: boolean;
+  onEditarMonto?: (fila: BalanceGastoMensualFila) => void;
+  onEliminar?: (fila: BalanceGastoMensualFila) => void;
 }
 
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
+const TD_ACCIONES = "celda-datos w-[5.5rem] bg-muted/25 text-muted-foreground";
 
-export default function TablaGastos({ filas }: Props) {
+export default function TablaGastos({
+  filas,
+  emptyMessage,
+  esEditor = false,
+  onEditarMonto,
+  onEliminar,
+}: Props) {
   const totalMonto = filas.reduce((acc, fila) => acc + fila.monto, 0);
   const totalPagado = filas.reduce((acc, fila) => acc + fila.pagado, 0);
   const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
+  const mostrarAcciones = esEditor && onEditarMonto && onEliminar;
+  const colCount = mostrarAcciones ? 10 : 9;
 
   function celdaMonto(m: number) {
     if (m === 0) return <span className="text-muted-foreground">—</span>;
     return <>${fmtPrecio(m)}</>;
   }
+
+  const mensajeVacio = emptyMessage ?? "No hay gastos registrados.";
 
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
@@ -48,11 +66,16 @@ export default function TablaGastos({ filas }: Props) {
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>MONTO</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>PAGADO.</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[8rem]")}>MTDO. DEVENG. PEND.</TableHead>
+                {mostrarAcciones ? (
+                  <TableHead className={cn(TD_ACCIONES, "text-center text-[11px] font-semibold uppercase")}>
+                    Acc.
+                  </TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filas.length === 0 ? (
-                <EmptyTableRow colSpan={9} message="No hay gastos registrados." />
+                <EmptyTableRow colSpan={colCount} message={mensajeVacio} />
               ) : (
                 filas.map((f) => (
                   <TableRow key={f.id}>
@@ -73,6 +96,34 @@ export default function TablaGastos({ filas }: Props) {
                     <TableCell className={cn(TD_NUM, "celda-destacado")}>
                       ${fmtPrecio(f.montoDevengadoPendiente)}
                     </TableCell>
+                    {mostrarAcciones ? (
+                      <TableCell className={cn(TD_ACCIONES, "p-1")}>
+                        <div className="flex items-center justify-center gap-0.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            title="Editar monto"
+                            aria-label={`Editar monto ${f.gastoNombre}`}
+                            onClick={() => onEditarMonto!(f)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            title="Eliminar imputación"
+                            aria-label={`Eliminar ${f.gastoNombre}`}
+                            onClick={() => onEliminar!(f)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))
               )}
@@ -80,7 +131,7 @@ export default function TablaGastos({ filas }: Props) {
             {filas.length > 0 ? (
               <TableFooter>
                 <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-border">
-                  <TableCell className="celda-datos font-bold uppercase" colSpan={6}>
+                  <TableCell className="celda-datos font-bold uppercase" colSpan={mostrarAcciones ? 7 : 6}>
                     TOTAL
                   </TableCell>
                   <TableCell className={cn(TD_NUM, "celda-destacado font-bold")}>
@@ -94,6 +145,7 @@ export default function TablaGastos({ filas }: Props) {
                   <TableCell className={cn(TD_NUM, "celda-destacado font-bold")}>
                     ${fmtPrecio(totalPendiente)}
                   </TableCell>
+                  {mostrarAcciones ? <TableCell className={TD_ACCIONES} aria-hidden /> : null}
                 </TableRow>
               </TableFooter>
             ) : null}
