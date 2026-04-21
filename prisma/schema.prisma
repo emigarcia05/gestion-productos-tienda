@@ -24,7 +24,7 @@ model Proveedor {
   nombre          String   @unique
   prefijo         String   @unique
   codigoUnico     String   @map("codigo_unico")
-  idProveedorDux  String?  @unique @map("id_proveedor_dux") // ID único del proveedor en DUX; FK desde comprobantes_proveedor
+  idProveedorDux  String?  @unique @map("id_proveedor_dux") // ID único del proveedor en DUX; FK desde fin_compras_comprobante
   whatsapp        String?  @map("whatsapp") // Número para envío de pedido por WhatsApp (internacional sin +)
   coeficienteTintometrico Decimal @map("coeficiente_tintometrico") @db.Decimal(12, 6) @default(1)
   /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
@@ -45,7 +45,7 @@ model Proveedor {
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
   finBalGastos         FinBalGasto[]
-  // Tabla única de pedidos: pedidos_mercaderia
+  // Tabla única de pedidos: prod_ped_merc
 
   @@index([proveedorMercaderia])
   @@map("proveedores")
@@ -68,10 +68,10 @@ model ComprobanteProveedor {
 
   proveedor Proveedor @relation(fields: [idProveedor], references: [idProveedorDux], onDelete: Restrict)
 
-  @@unique([idSucursalEmpresa, tipoComp, comprobante, fechaComp, idProveedor], map: "comprobantes_proveedor_natural_ux")
+  @@unique([idSucursalEmpresa, tipoComp, comprobante, fechaComp, idProveedor], map: "fin_compras_comprobante_natural_ux")
   @@index([fechaComp])
   @@index([idProveedor])
-  @@map("comprobantes_proveedor")
+  @@map("fin_compras_comprobante")
 }
 
 // Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX y flag de habilitación para pedidos.
@@ -97,7 +97,7 @@ model Sucursal {
   itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   movimientosFinanzas MovimientoFinanzas[]
-  // Tabla única de pedidos: pedidos_mercaderia
+  // Tabla única de pedidos: prod_ped_merc
 
   @@map("sucursales")
 }
@@ -146,9 +146,9 @@ model CajaTesoreria {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
-  @@unique([nombreCaja, titular], map: "cajas_tesoreria_nombre_titular_ux")
+  @@unique([nombreCaja, titular], map: "fin_tesoreria_cajas_nombre_titular_ux")
   @@index([tipoCaja])
-  @@map("cajas_tesoreria")
+  @@map("fin_tesoreria_cajas")
 }
 
 // Catálogo raíz de la jerarquía Finanzas → Balance → Gastos: Tipo (1) ─→ Rubros (N) ─→ Gastos (N).
@@ -258,8 +258,8 @@ model ListaPrecioProveedor {
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
   dtoExtraComparacion ComparacionDtoExtraItem?
 
-  @@unique([idProveedor, codProdProveedor])
-  @@map("precios_proveedores")
+  @@unique([idProveedor, codProdProveedor], map: "prod_precios_provee_id_proveedor_cod_prod_prov_key")
+  @@map("prod_precios_provee")
 }
 
 model ComparacionDtoExtraItem {
@@ -315,7 +315,7 @@ model PresentacionComparacion {
   @@map("prod_comp_presentaciones")
 }
 
-// Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en precios_tienda.
+// Catálogo de marcas; se alimenta desde el texto "marca" que viene de la API en prod_precios_tienda.
 model Marca {
   id     String   @id @default(cuid())
   nombre String   @unique
@@ -327,7 +327,7 @@ model Marca {
   @@map("marcas")
 }
 
-// Alimentada solo por API externa (tabla precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
+// Alimentada solo por API externa (tabla prod_precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
   id              String   @id @default(uuid())
   codExt          String   @unique @map("cod_ext")
@@ -350,7 +350,7 @@ model ListaPrecioTienda {
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // 1 tienda → N proveedores (vinculados por id_lista_precios_tienda)
 
-  @@map("precios_tienda")
+  @@map("prod_precios_tienda")
 }
 
 // Progreso de importación (singleton por id) para que el polling desde la sidebar funcione en serverless.
@@ -370,8 +370,8 @@ model ImportProgress {
 }
 
 // ─── Enviar Pedido: ítems a enviar.
-// Origen: proveedores (id/nombre/prefijo), precios_proveedores (cod_prod_proveedor, descripcion_proveedor, cod_ext),
-//         precios_tienda (cod_tienda, cod_ext, descripcion_tienda; vacío si no existe vínculo).
+// Origen: proveedores (id/nombre/prefijo), prod_precios_provee (cod_prod_proveedor, descripcion_proveedor, cod_ext),
+//         prod_precios_tienda (cod_tienda, cod_ext, descripcion_tienda; vacío si no existe vínculo).
 model ItemPedidoEnvio {
   id                     String   @id @default(uuid())
   idProveedor            String   @map("id_proveedor")
@@ -379,9 +379,9 @@ model ItemPedidoEnvio {
   sucursalId             String   @map("sucursal_id") // FK a sucursales.id
   codExt                 String   @map("cod_ext")
   codProveedor           String   @map("cod_proveedor") // cod_prod_proveedor
-  codTienda              String?  @map("cod_tienda") // precios_tienda.cod_tienda; vacío si no existe
+  codTienda              String?  @map("cod_tienda") // prod_precios_tienda.cod_tienda; vacío si no existe
   descripcionProveedor   String   @map("descripcion_proveedor")
-  descripcionTienda      String?  @map("descripcion_tienda") // precios_tienda; vacío si no existe
+  descripcionTienda      String?  @map("descripcion_tienda") // prod_precios_tienda; vacío si no existe
   cantPedir              Int      @map("cant_pedir") @default(0)
   // Reposición (prefijo reposicion_*)
   reposicionFormaPedido  String? @map("reposicion_forma_pedido") // Solo: CANT_MAXIMA | CANT_FIJA (canónico en BD y trigger)
@@ -399,8 +399,8 @@ model ItemPedidoEnvio {
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   sucursal  Sucursal  @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
 
-  @@unique([idProveedor, tipoPedido, sucursalId, codExt])
-  @@map("pedidos_mercaderia")
+  @@unique([idProveedor, tipoPedido, sucursalId, codExt], map: "prod_ped_merc_item_unique")
+  @@map("prod_ped_merc")
 }
 
 // ─── Historial de pedidos (cabecera + items editables) ────────────────
@@ -420,7 +420,7 @@ model PedidoHistoria {
   @@index([sucursalId, generadoAt])
   @@index([generadoAt])
   @@index([proveedorId, generadoAt])
-  @@map("pedidos_historia")
+  @@map("prod_ped_historial")
 }
 
 model PedidoHistoriaItem {
@@ -437,7 +437,7 @@ model PedidoHistoriaItem {
 
   @@unique([pedidoHistoriaId, codTienda])
   @@index([pedidoHistoriaId])
-  @@map("pedidos_historial_mercaderia")
+  @@map("prod_ped_historial_merc")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────

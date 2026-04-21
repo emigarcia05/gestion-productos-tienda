@@ -1,7 +1,7 @@
 /**
- * Control de Aumentos: compara el costo registrado en lista_tienda (precios_tienda.costo_compra)
- * con el mismo producto del mismo proveedor en lista_proveedores (precios_proveedores).
- * Solo se considera el proveedor oficial del ítem (precios_tienda.proveedor). En la exportación
+ * Control de Aumentos: compara el costo registrado en lista_tienda (prod_precios_tienda.costo_compra)
+ * con el mismo producto del mismo proveedor en lista_proveedores (prod_precios_provee).
+ * Solo se considera el proveedor oficial del ítem (prod_precios_tienda.proveedor). En la exportación
  * se muestra el proveedor original (oficial). Solo ítems con variación: |diff| >= UMBRAL.
  */
 

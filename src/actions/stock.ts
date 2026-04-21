@@ -48,7 +48,7 @@ const emptyControlStock: ControlStockData = {
 };
 
 /**
- * Datos para Control Stock desde precios_tienda.
+ * Datos para Control Stock desde prod_precios_tienda.
  * Filtros: MARCA → marca, RUBRO → rubro, SUB-RUBRO → sub_rubro.
  * Opciones de cada desplegable según docs/FILTROS_DINAMICOS.md (valores que existen con los demás filtros).
  * STOCK = stock_maipu o stock_guaymallen según sucursal.

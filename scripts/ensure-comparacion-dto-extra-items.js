@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS "prod_comp_dto_extra" (
   CONSTRAINT "prod_comp_dto_extra_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "prod_comp_dto_extra_id_lista_precios_proveedores_key" UNIQUE ("id_lista_precios_proveedores"),
   CONSTRAINT "prod_comp_dto_extra_id_lista_precios_proveedores_fkey"
-    FOREIGN KEY ("id_lista_precios_proveedores") REFERENCES "precios_proveedores"("id")
+    FOREIGN KEY ("id_lista_precios_proveedores") REFERENCES "prod_precios_provee"("id")
     ON DELETE CASCADE ON UPDATE CASCADE
 );
 `.trim();

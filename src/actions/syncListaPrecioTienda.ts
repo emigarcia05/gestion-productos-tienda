@@ -9,7 +9,7 @@ export type SyncListaPrecioTiendaResult = Awaited<
 >;
 
 /**
- * Sincroniza lista_precios_tienda desde la API DUX ERP.
+ * Sincroniza prod_precios_tienda desde la API DUX ERP.
  * Solo usuarios con rol editor. Ejecuta el bucle paginado (50 ítems/petición), mapeo, upsert por lotes y delay.
  * Los logs de progreso se escriben en la consola del servidor.
  */

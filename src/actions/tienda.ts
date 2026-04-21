@@ -38,7 +38,7 @@ async function getTiendaEmptyWithOpciones() {
   };
 }
 
-/** Última sincronización (max last_sync de lista_precios_tienda). */
+/** Última sincronización (max last_sync de prod_precios_tienda). */
 export async function getUltimoSync() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
@@ -109,7 +109,7 @@ export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
 }
 
 /**
- * Datos para la página /tienda desde lista_precios_tienda.
+ * Datos para la página /tienda desde prod_precios_tienda.
  * Mapeo: cod_tienda → codItem, descripcion_tienda → descripcion, costo_compra → costo,
  * proveedor → proveedorDux (resuelto a prefijo de proveedores cuando hay match).
  */
@@ -147,7 +147,7 @@ export async function getTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
-  // Filtro por proveedor: solo proveedores oficiales (columna proveedor en precios_tienda). Los vinculados son solo para comparación en la tabla.
+  // Filtro por proveedor: solo proveedores oficiales (columna proveedor en prod_precios_tienda). Los vinculados son solo para comparación en la tabla.
   if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
 
   /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
@@ -155,10 +155,10 @@ export async function getTiendaPageData(params: {
   if (mejorPrecio === "true") {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT lpt.id
-      FROM precios_tienda lpt
-      WHERE (SELECT COUNT(*) FROM precios_proveedores lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
+      FROM prod_precios_tienda lpt
+      WHERE (SELECT COUNT(*) FROM prod_precios_provee lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
         AND EXISTS (
-          SELECT 1 FROM precios_proveedores lpp
+          SELECT 1 FROM prod_precios_provee lpp
           INNER JOIN proveedores p ON p.id = lpp.id_proveedor
           WHERE lpp.id_lista_precios_tienda = lpt.id
             AND LOWER(TRIM(COALESCE(p.nombre, ''))) != LOWER(TRIM(COALESCE(lpt.proveedor, '')))
@@ -360,7 +360,7 @@ export async function getControlAumentos(): Promise<ControlAumentosData> {
   return getControlAumentosData();
 }
 
-/** Marca un producto vinculado como proveedor principal: actualiza precios_tienda.cod_ext y precios_tienda.proveedor. */
+/** Marca un producto vinculado como proveedor principal: actualiza prod_precios_tienda.cod_ext y prod_precios_tienda.proveedor. */
 const prismaIdParamSchema = z.object({
   itemTiendaId: z.string().min(1).max(128),
   productoProveedorId: z.string().min(1).max(128),

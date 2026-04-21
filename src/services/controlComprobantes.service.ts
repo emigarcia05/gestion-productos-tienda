@@ -48,7 +48,7 @@ export async function listarControlComprobantes(): Promise<ControlComprobanteFil
           )
         )::date AS fecha_venc,
         (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
-      FROM comprobantes_proveedor c
+      FROM fin_compras_comprobante c
       INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
       LEFT JOIN sucursales s ON COALESCE(s.id_dux, '') = c.id_sucursal_empresa
     )

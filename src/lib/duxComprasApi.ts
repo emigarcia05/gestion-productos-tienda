@@ -9,7 +9,7 @@ export interface CompraDux {
   montoAplicado?: string;
   /** Alias histórico en respuesta DUX (`id_sucursal`). */
   idSucursal?: string;
-  /** Preferido para persistencia en `comprobantes_proveedor.id_sucursal_empresa`. */
+  /** Preferido para persistencia en `fin_compras_comprobante.id_sucursal_empresa`. */
   idSucursalEmpresa?: string;
   idProveedor?: string;
   fechaComp?: string;

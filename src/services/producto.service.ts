@@ -1,11 +1,11 @@
 /**
- * DAL Producto – Vinculados desde lista_precios_proveedores.
+ * DAL Producto – Vinculados desde prod_precios_provee.
  */
 import type { ServiceResult } from "@/types";
 import type { ProductoCompleto } from "@/types";
 import { prisma } from "@/lib/prisma";
 
-/** Productos de lista_precios_proveedores vinculados al ítem tienda (idListaPrecioTienda). */
+/** Productos de prod_precios_provee vinculados al ítem tienda (idListaPrecioTienda). */
 export async function getProductosVinculadosPorItemTienda(itemTiendaId: string): Promise<ServiceResult<ProductoCompleto[]>> {
   try {
     const rows = await prisma.listaPrecioProveedor.findMany({

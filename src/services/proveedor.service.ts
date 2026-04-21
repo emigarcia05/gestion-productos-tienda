@@ -55,7 +55,7 @@ export interface ProveedorListItem {
    * /gestion-productos/proveedores/lista (ver `getProveedoresMercaderia`).
    */
   proveedorMercaderia: boolean;
-  /** Cantidad de ítems en precios_proveedores. */
+  /** Cantidad de ítems en prod_precios_provee. */
   cantProductos: number;
   /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
   cantProductosProvistos: number;
@@ -67,7 +67,7 @@ export const PROVEEDOR_ERROR = {
 } as const;
 
 /**
- * Lista de proveedores desde la base de datos con conteos en precios_proveedores y lista_precios_tienda.
+ * Lista de proveedores desde la base de datos con conteos en prod_precios_provee y prod_precios_tienda.
  *
  * Devuelve TODOS los proveedores (sin filtrar por `proveedorMercaderia`).
  * Este método alimenta vistas transversales (Px Sugeridos, Lista Px Proveedores,

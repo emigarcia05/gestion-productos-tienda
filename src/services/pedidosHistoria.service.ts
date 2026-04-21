@@ -20,10 +20,10 @@ function fechaHaceDias(dias: number): Date {
 }
 
 /**
- * Elimina cabeceras de `pedidos_historia` por antigüedad según estado:
+ * Elimina cabeceras de `prod_ped_historial` por antigüedad según estado:
  * - PENDIENTE: >= 4 días
  * - RECEPCIONADO: >= 30 días
- * Los ítems en `pedidos_historial_mercaderia` se borran en cascada (FK).
+ * Los ítems en `prod_ped_historial_merc` se borran en cascada (FK).
  * Sin cron ni triggers: se invoca al inicio de cada mutación del historial en este servicio.
  */
 async function purgarPedidosHistoriaExpirados(
@@ -257,7 +257,7 @@ export async function listarPedidosHistoria(params: {
   estado?: PedidoHistoriaEstado | "ALL";
   proveedorId?: string;
   sucursalCodigo?: SucursalPedidoEnvio;
-  /** Palabras (separadas por espacio) que deben aparecer en `descripcion_tienda` de `precios_tienda`; el pedido califica si algún ítem tiene `cod_tienda` coincidente. */
+  /** Palabras (separadas por espacio) que deben aparecer en `descripcion_tienda` de `prod_precios_tienda`; el pedido califica si algún ítem tiene `cod_tienda` coincidente. */
   q?: string;
 }): Promise<
   ServiceResult<{
@@ -589,8 +589,8 @@ export async function reabrirPedidoHistoriaRecepcion(params: {
 }
 
 /**
- * Arma los datos para regenerar la nota de pedido PDF desde el snapshot (`pedidos_historia` + ítems)
- * y el catálogo vigente (`precios_proveedores` + `precios_tienda` por `cod_tienda`).
+ * Arma los datos para regenerar la nota de pedido PDF desde el snapshot (`prod_ped_historial` + ítems)
+ * y el catálogo vigente (`prod_precios_provee` + `prod_precios_tienda` por `cod_tienda`).
  */
 export async function getPedidoHistoriaPdfPayload(params: {
   pedidoHistoriaId: string;

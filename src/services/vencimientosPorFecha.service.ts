@@ -34,7 +34,7 @@ export async function listarVencimientosEnRango(
             )
           )
         )::date AS fecha_venc
-      FROM comprobantes_proveedor c
+      FROM fin_compras_comprobante c
       INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
     )
@@ -76,7 +76,7 @@ export async function sumarSaldoVencimientosConFechaVencAnteriorA(
             )
           )
         )::date AS fecha_venc
-      FROM comprobantes_proveedor c
+      FROM fin_compras_comprobante c
       INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
     )

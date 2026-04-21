@@ -1,5 +1,5 @@
 /**
- * Servicio lista_precios_proveedores – Capa de datos (Neon / Prisma).
+ * Servicio prod_precios_provee – Capa de datos (Neon / Prisma).
  * Upsert por código externo (cod_ext = [SUFIJO]-[codProdProv]).
  * getListaPreciosConTienda: una sola entrada para la página lista-precios (DRY).
  */
@@ -41,7 +41,7 @@ export interface ListaPreciosFiltradoOpciones {
 }
 
 /**
- * Obtiene lista de precios proveedor unida con descripciones de lista_precios_tienda.
+ * Obtiene lista de precios proveedor unida con descripciones de prod_precios_tienda.
  * Una sola función para la página lista-precios: evita repetir la lógica de join.
  */
 export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCliente[]> {
@@ -276,7 +276,7 @@ export interface ProductoProveedorParaVincular {
 const MAX_PRODUCTOS_VINCULAR = 500;
 
 /**
- * Lista ítems de lista_precios_proveedores para el modal "Vincular nuevo producto".
+ * Lista ítems de prod_precios_provee para el modal "Vincular nuevo producto".
  * Filtros: proveedor (opcional), descripción/código (q, multi-término).
  */
 export async function listarProductosProveedoresParaVincular(
@@ -319,7 +319,7 @@ export interface UpsertListaPreciosOptions {
 }
 
 /**
- * Upsert de filas en lista_precios_proveedores.
+ * Upsert de filas en prod_precios_provee.
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
  * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = COTIZACION_DOLAR (env) o 1.
@@ -493,7 +493,7 @@ export async function actualizarListaPreciosMasivo(
   params.push(ids);
 
   try {
-    const sql = `UPDATE precios_proveedores SET ${setClauses.join(", ")} WHERE id = ANY($${params.length}::uuid[])`;
+    const sql = `UPDATE prod_precios_provee SET ${setClauses.join(", ")} WHERE id = ANY($${params.length}::uuid[])`;
     const actualizados = await prisma.$executeRawUnsafe(sql, ...params);
     return { actualizados: Number(actualizados) };
   } catch (e) {
@@ -509,13 +509,13 @@ export interface PedidoUrgenteItem {
   codExt: string;
   prefijo: string;
   descripcion: string;
-  /** px_compra_final desde precios_proveedores para lógica de opción de compra. */
+  /** px_compra_final desde prod_precios_provee para lógica de opción de compra. */
   pxCompraFinal: number | null;
-  /** Cantidad pedida (URGENTE) desde pedidos_mercaderia.cant_pedir_urgente. */
+  /** Cantidad pedida (URGENTE) desde prod_ped_merc.cant_pedir_urgente. */
   cantPedidaUrgente: number;
-  /** true si existe el cod_ext en pedidos_mercaderia con tipo_de_pedido = REPOSICION. */
+  /** true si existe el cod_ext en prod_ped_merc con tipo_de_pedido = REPOSICION. */
   confReposicion: boolean;
-  /** cant_pedir_reposicion desde pedidos_mercaderia. */
+  /** cant_pedir_reposicion desde prod_ped_merc. */
   cantReposicion: number;
 }
 

@@ -129,7 +129,7 @@ export async function getListaPreciosConOpcionesAction(
 
 /**
  * Edición masiva: actualiza Desc. rubro, Desc. cant. y/o Cx. aprox. transporte
- * en los registros de lista_precios_proveedores cuyos id están en ids.
+ * en los registros de prod_precios_provee cuyos id están en ids.
  * Solo usuarios con permiso listaPrecios.acciones.edicionMasiva.
  */
 export async function actualizarListaPreciosMasivoAction(

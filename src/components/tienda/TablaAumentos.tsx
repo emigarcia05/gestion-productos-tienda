@@ -32,7 +32,7 @@ function exportarXLS(items: ItemAumento[]) {
       "CODIGO":           i.codItem,
       "CODIGO EXTERNO":   i.codigoExterno,
       "PROVEEDOR":        i.proveedorNombre ?? i.proveedorDux ?? "",
-      // "COSTO" del Excel debe provenir de la fórmula oficial en precios_proveedores (px_compra_final).
+      // "COSTO" del Excel debe provenir de la fórmula oficial en prod_precios_provee (px_compra_final).
       "COSTO":            parseFloat(i.pxCompraFinal.toFixed(2)),
     }));
 

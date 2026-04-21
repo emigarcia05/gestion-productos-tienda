@@ -12,7 +12,7 @@ export interface SobreStockReposicionItem {
   codTienda: string | null;
   descripcionProveedor: string;
   descripcionTienda: string | null;
-  /** Stock en la sucursal `sucursalCodigoSobrestock` (desde `precios_tienda`). */
+  /** Stock en la sucursal `sucursalCodigoSobrestock` (desde `prod_precios_tienda`). */
   stockSucursal: number;
   /** Tope de reposición en esa sucursal; `null` si no hay configuración (> 0) en la fila analizada. */
   topeReposicion: number | null;
@@ -68,7 +68,7 @@ function evaluarSobrestockEnValores(
 
 /**
  * Para cada línea del pedido a generar que tenga **`cod_tienda`**, resuelve el producto en
- * `precios_tienda` por ese código y evalúa si en la **otra sucursal** hay sobrestock
+ * `prod_precios_tienda` por ese código y evalúa si en la **otra sucursal** hay sobrestock
  * (mismas reglas de tope REPOSICIÓN que en reposición).
  *
  * No evalúa la sucursal que genera el pedido; no incluye líneas sin `cod_tienda`.

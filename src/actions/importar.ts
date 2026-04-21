@@ -61,7 +61,7 @@ export async function importarProductos(
   return { ok: true, data: { creados: 0, actualizados: 0, eliminados: 0, errores: [] } };
 }
 
-// ─── Importar lista de precios proveedor (upsert lista_precios_proveedores) ───
+// ─── Importar lista de precios proveedor (upsert prod_precios_provee) ───
 
 export async function importarListaPreciosProveedor(
   proveedorId: string,

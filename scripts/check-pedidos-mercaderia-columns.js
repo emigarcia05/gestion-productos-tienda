@@ -22,7 +22,7 @@ async function main() {
     SELECT column_name
     FROM information_schema.columns
     WHERE table_schema = 'public'
-      AND table_name = 'pedidos_mercaderia'
+      AND table_name = 'prod_ped_merc'
     ORDER BY ordinal_position;
   `;
 

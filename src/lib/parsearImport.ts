@@ -40,7 +40,7 @@ export interface MapeoColumnas {
   [indiceColumna: number]: CampoDestino;
 }
 
-// ─── Lista de precios proveedores (lista_precios_proveedores) ───────────────
+// ─── Lista de precios proveedores (prod_precios_provee) ───────────────
 
 export type CampoDestinoListaPrecios =
   | "codigoExterno"

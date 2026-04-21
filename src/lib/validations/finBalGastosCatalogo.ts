@@ -6,7 +6,7 @@ import { prismaCuidSchema } from "@/lib/validations/common";
  * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_gasto (N).
  *
  * Convención de normalización: todos los `nombre` se normalizan con `trim + toUpperCase`,
- * consistente con cajas_tesoreria, movimientos_finanzas.nombre y demás catálogos finanzas.
+ * consistente con fin_tesoreria_cajas, movimientos_finanzas.nombre y demás catálogos finanzas.
  */
 
 const nombreCatalogoSchema = z

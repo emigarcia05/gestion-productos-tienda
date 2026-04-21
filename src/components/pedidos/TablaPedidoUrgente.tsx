@@ -19,13 +19,13 @@ export interface ProductoPedidoUrgente {
   codExt: string;
   prefijo: string;
   descripcion: string;
-  /** px_compra_final desde precios_proveedores (null si no está disponible). */
+  /** px_compra_final desde prod_precios_provee (null si no está disponible). */
   pxCompraFinal: number | null;
-  /** Cantidad pedida (URGENTE) desde pedidos_mercaderia. */
+  /** Cantidad pedida (URGENTE) desde prod_ped_merc. */
   cantPedidaUrgente: number;
-  /** true si existe el cod_ext en pedidos_mercaderia con tipo_de_pedido = REPOSICION. */
+  /** true si existe el cod_ext en prod_ped_merc con tipo_de_pedido = REPOSICION. */
   confReposicion: boolean;
-  /** cant_pedir_reposicion desde pedidos_mercaderia (0 si no hay). */
+  /** cant_pedir_reposicion desde prod_ped_merc (0 si no hay). */
   cantReposicion: number;
 }
 

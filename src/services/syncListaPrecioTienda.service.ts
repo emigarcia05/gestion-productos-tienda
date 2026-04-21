@@ -226,7 +226,7 @@ export async function syncListaPrecioTiendaFromDux(
     }
   }
 
-  // Vinculación automática por cod_ext: precios_proveedores.id_lista_precios_tienda = precios_tienda.id donde cod_ext coincide
+  // Vinculación automática por cod_ext: prod_precios_provee.id_lista_precios_tienda = prod_precios_tienda.id donde cod_ext coincide
   await assertListaPrecioTiendaSyncNotCancelled();
   try {
     await vincularProveedoresPorCodExt();

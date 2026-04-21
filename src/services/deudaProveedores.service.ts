@@ -42,7 +42,7 @@ export async function listarDeudaProveedores(): Promise<DeudaProveedorFila[]> {
           )
         )::date AS fecha_venc,
         (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
-      FROM comprobantes_proveedor c
+      FROM fin_compras_comprobante c
       INNER JOIN proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
     )

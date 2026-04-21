@@ -1,5 +1,5 @@
 /**
- * Servicio pedidos_mercaderia: sincroniza ítems de Pedido Urgente.
+ * Servicio prod_ped_merc: sincroniza ítems de Pedido Urgente.
  * El servidor construye las filas a partir de ids de ListaPrecioProveedor + cantidades (opción B).
  */
 
@@ -83,7 +83,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       },
     });
     if (!tienda) {
-      return { ok: false, error: "No se encontró el producto en precios_tienda." };
+      return { ok: false, error: "No se encontró el producto en prod_precios_tienda." };
     }
     if (!tienda.stockeable) {
       return {
@@ -94,7 +94,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
     }
     const codExtResuelto = (tienda.codExt ?? "").trim();
     if (!codExtResuelto) {
-      return { ok: false, error: "El producto no tiene cod_ext en precios_tienda." };
+      return { ok: false, error: "El producto no tiene cod_ext en prod_precios_tienda." };
     }
 
     const provRow = await prisma.listaPrecioProveedor.findFirst({
@@ -104,7 +104,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         descripcionProveedor: true,
       },
     });
-    if (!provRow) return { ok: false, error: "No se encontró el ítem en precios_proveedores." };
+    if (!provRow) return { ok: false, error: "No se encontró el ítem en prod_precios_provee." };
 
     const stock =
       sucursal === "maipu"
@@ -251,8 +251,8 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
 
 /**
  * Reemplaza todos los ítems de tipo URGENTE para la sucursal dada por el conjunto
- * (id lista precio, cantidad). Carga datos desde precios_proveedores + precios_tienda
- * y escribe en pedidos_mercaderia.
+ * (id lista precio, cantidad). Carga datos desde prod_precios_provee + prod_precios_tienda
+ * y escribe en prod_ped_merc.
  */
 export async function syncPedidoUrgenteEnvio(
   sucursal: SucursalPedidoEnvio,
@@ -424,7 +424,7 @@ export async function getPedidoTintometricoItems(): Promise<ItemPedidoTintometri
 export async function deletePedidoTintometricoItem(params: {
   sucursalCodigo: SucursalPedidoEnvio;
   proveedorId: string;
-  /** Valor persistido en `pedidos_mercaderia.cod_ext` (incluye base + código fórmula). */
+  /** Valor persistido en `prod_ped_merc.cod_ext` (incluye base + código fórmula). */
   codExt: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const codExt = params.codExt.trim();
@@ -545,7 +545,7 @@ export async function getItemsTablaEnviarPedido(params: {
 }
 
 /**
- * Fila cruda de `pedidos_mercaderia` para generar PDF y validar sobrestock (misma query, sin desalineación).
+ * Fila cruda de `prod_ped_merc` para generar PDF y validar sobrestock (misma query, sin desalineación).
  */
 export interface ItemPedidoEnvioRowParaEnviar {
   id: string;

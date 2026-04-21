@@ -1,5 +1,5 @@
 /**
- * Clave lógica de ítem tintométrico en `pedidos_mercaderia.cod_ext`.
+ * Clave lógica de ítem tintométrico en `prod_ped_merc.cod_ext`.
  * Debe incluir el código tintométrico además del cod. tienda: varias líneas pueden
  * compartir la misma base (mismo cod_tienda) con distinto COD. de fórmula.
  */

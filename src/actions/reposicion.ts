@@ -30,7 +30,7 @@ export interface ItemReposicion {
   stock: number;
   idProveedor: string | null;
   nombreProveedor: string | null;
-  idReposicion: string | null; // id del registro en pedidos_mercaderia (tipo REPOSICION)
+  idReposicion: string | null; // id del registro en prod_ped_merc (tipo REPOSICION)
   formaPedir: FormaPedirReposicionOption;
   puntoReposicion: number;
   cant: number;
@@ -90,7 +90,7 @@ function baseWhere(
 
 /**
  * Datos para Pedido Reposición: lista_tienda filtrada por sucursal (stock), marca, rubro, sub-rubro, descripción.
- * Cada ítem incluye la configuración REPOSICION en pedidos_mercaderia (si existe) para el primer proveedor vinculado.
+ * Cada ítem incluye la configuración REPOSICION en prod_ped_merc (si existe) para el primer proveedor vinculado.
  */
 export async function getReposicionData(
   sucursal: SucursalReposicion | null,
@@ -125,7 +125,7 @@ export async function getReposicionData(
   };
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan configuración REPOSICION en pedidos_mercaderia para esta sucursal.
+  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan configuración REPOSICION en prod_ped_merc para esta sucursal.
   const codExtConfigurados =
     configurado === "si"
       ? await prisma.itemPedidoEnvio.findMany({

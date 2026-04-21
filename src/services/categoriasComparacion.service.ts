@@ -128,7 +128,7 @@ export async function getProductosPorPresentacion(
   return { productos, costoCompraObjetivo: null, labelCompleto };
 }
 
-/** Marcas distintas de lista_tienda (precios_tienda.marca) para filtros. */
+/** Marcas distintas de lista_tienda (prod_precios_tienda.marca) para filtros. */
 export async function getMarcasFromListaTienda(): Promise<string[]> {
   const rows = await prisma.listaPrecioTienda.findMany({
     where: { marca: { not: null } },
@@ -139,7 +139,7 @@ export async function getMarcasFromListaTienda(): Promise<string[]> {
   return rows.map((r) => r.marca as string).filter(Boolean);
 }
 
-/** Proveedores distintos de lista_tienda (precios_tienda.proveedor) para filtros. */
+/** Proveedores distintos de lista_tienda (prod_precios_tienda.proveedor) para filtros. */
 export async function getProveedoresFromListaTienda(): Promise<string[]> {
   const rows = await prisma.listaPrecioTienda.findMany({
     where: { proveedor: { not: null } },
@@ -310,7 +310,7 @@ export async function deletePresentacion(id: string) {
   return prisma.presentacionComparacion.delete({ where: { id } });
 }
 
-/** Asignar productos (ids de lista_precios_proveedores) a una presentación. */
+/** Asignar productos (ids de prod_precios_provee) a una presentación. */
 export async function asignarProductosAPresentacion(
   presentacionId: string,
   idsProductos: string[]

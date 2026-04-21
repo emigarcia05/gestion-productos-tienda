@@ -24,7 +24,7 @@ async function main() {
       data_type
     FROM information_schema.columns
     WHERE table_schema = 'public'
-      AND table_name = 'pedidos_mercaderia'
+      AND table_name = 'prod_ped_merc'
       AND column_name IN ('sucursal_id','sucursal')
     ORDER BY column_name;
   `;
@@ -37,7 +37,7 @@ async function main() {
     JOIN pg_class t ON t.oid = c.conrelid
     JOIN pg_namespace n ON n.oid = t.relnamespace
     WHERE n.nspname = 'public'
-      AND t.relname = 'pedidos_mercaderia'
+      AND t.relname = 'prod_ped_merc'
       AND c.contype = 'f';
   `;
 
@@ -45,7 +45,7 @@ async function main() {
     SELECT indexname, indexdef
     FROM pg_indexes
     WHERE schemaname = 'public'
-      AND tablename = 'pedidos_mercaderia'
+      AND tablename = 'prod_ped_merc'
     ORDER BY indexname;
   `;
 

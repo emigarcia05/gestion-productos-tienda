@@ -32,7 +32,7 @@ export async function getProveedores() {
   return getProveedoresFromProveedores();
 }
 
-/** Lista ítems de lista_precios_proveedores para modal "Vincular nuevo producto". Filtros: proveedor, descripción (q). */
+/** Lista ítems de prod_precios_provee para modal "Vincular nuevo producto". Filtros: proveedor, descripción (q). */
 export async function listarProductosParaVincular(
   proveedorId?: string,
   q?: string
