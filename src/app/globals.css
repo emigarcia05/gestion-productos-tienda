@@ -875,61 +875,17 @@
   color: var(--foreground) !important;
 }
 
-/* Flujo de fondos (Finanzas): alerta visual cuando hay saldo negativo.
- * El encabezado conserva siempre el color original (primary).
- * Las filas negativas mantienen la cebra (impar/par) como el resto de tablas: el tinte destructivo
- * se aplica sobre la misma base que nth-child odd/even para que no se “aplane” todo un listado negativo.
- */
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(odd) {
-  --tabla-row-bg: color-mix(in oklab, var(--destructive) 10%, var(--card));
-  background-color: color-mix(in oklab, var(--destructive) 10%, var(--card)) !important;
-}
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(even) {
-  --tabla-row-bg: color-mix(
-    in oklab,
-    var(--destructive) 10%,
-    color-mix(in oklab, var(--primary) 8%, var(--card))
-  );
-  background-color: color-mix(
-    in oklab,
-    var(--destructive) 10%,
-    color-mix(in oklab, var(--primary) 8%, var(--card))
-  ) !important;
-}
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(odd):hover {
-  --tabla-row-bg: color-mix(in oklab, var(--destructive) 18%, var(--card));
-  background-color: color-mix(in oklab, var(--destructive) 18%, var(--card)) !important;
-}
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(even):hover {
-  --tabla-row-bg: color-mix(
-    in oklab,
-    var(--destructive) 18%,
-    color-mix(in oklab, var(--primary) 8%, var(--card))
-  );
-  background-color: color-mix(
-    in oklab,
-    var(--destructive) 18%,
-    color-mix(in oklab, var(--primary) 8%, var(--card))
-  ) !important;
-}
+/* Flujo de fondo (`/finanzas/venc-por-fecha`): **thead** = misma alineación global que el resto
+ * (centrado, ver `.tabla-gestion-compacta thead th`); en **tbody**, primera columna (FECHA / PROVEEDOR
+ * en modal) a la izquierda, importes con `TD_NUM`. Un **SALDO** negativo se marca solo en la celda
+ * (`text-destructive` en `TablaFlujoDeFondo`), sin tinte de fila, para no romper la cebra card/primary. */
 
-/* Flujo de fondo (`/finanzas/venc-por-fecha`): primera columna alineada a la izquierda (FECHA / PROVEEDOR en modal), SALDO con `celda-destacado`. */
-.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:first-child {
-  text-align: left !important;
-}
-.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:first-child .table-head-inner {
-  justify-content: flex-start !important;
-}
 .tabla-gestion-compacta.tabla-flujo-de-fondo tbody td:first-child.celda-datos {
   text-align: left !important;
 }
-/* Columnas de importe: el `thead` global centra títulos; en Flujo de Fondo las celdas usan
- * `TD_NUM` (derecha). Alinear cabeceras a la derecha salvo la primera (FECHA / PROVEEDOR en modal). */
-.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:not(:first-child) {
-  text-align: right !important;
-}
-.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:not(:first-child) .table-head-inner {
-  justify-content: flex-end !important;
+/* Hover global de fila fuerza `foreground` en td; conservar rojo de **SALDO** negativo. */
+.tabla-gestion-compacta.tabla-flujo-de-fondo tbody tr:hover td.text-destructive {
+  color: var(--color-destructive) !important;
 }
 
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───

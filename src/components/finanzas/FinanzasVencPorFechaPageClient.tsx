@@ -122,11 +122,6 @@ export default function FinanzasVencPorFechaPageClient({
     }
     return porDia;
   }, [detallesPorDia, filas, filtroProveedor]);
-  const haySaldoNegativo = useMemo(
-    () => filasVista.some((fila) => fila.saldo < 0),
-    [filasVista]
-  );
-
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <ClassicFilteredTableLayout
@@ -199,7 +194,6 @@ export default function FinanzasVencPorFechaPageClient({
           <TablaFlujoDeFondo
             filas={filasVista}
             montoVencimientoPorDia={montoVencimientoPorDia}
-            haySaldoNegativo={haySaldoNegativo}
             onRowDoubleClick={setDetalleIsoYmd}
           />
 

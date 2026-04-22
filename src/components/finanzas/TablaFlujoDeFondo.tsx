@@ -3,9 +3,9 @@
 /**
  * Flujo De Fondo (`/finanzas/venc-por-fecha`) — tablas con el **mismo cascarón** que
  * `TablaDeudaProveedores` / `TablaControlComprobantes` (`contenedor-tabla-gestion` → scroll →
- * `<Table variant="compact" scrollX={false}>`). Clases de datos: `celda-datos`, `TH_NUM` / `TD_NUM`.
- * Estilos de variante: `tabla-flujo-de-fondo` (primera columna a la izquierda, importes a la derecha
- * vía `globals.css`) y opcional `tabla-venc-por-fecha-alerta` + `venc-saldo-negativo` en filas.
+ * `<Table variant="compact" scrollX={false}>`). Clase `tabla-flujo-de-fondo`: cuerpo con primera
+ * columna a la **izquierda** (globals); **thead** no se sobrealinea (mismo centrado que el resto
+ * de tablas). **SALDO** negativo: `text-destructive font-semibold` en la **celda**, sin tinte de fila.
  */
 
 import { formatMesDiaMayusculasDesdeIsoYmd } from "@/lib/fechaArgentina";
@@ -55,7 +55,6 @@ export interface FilaFlujoDeFondoVista {
 export interface TablaFlujoDeFondoProps {
   filas: FilaFlujoDeFondoVista[];
   montoVencimientoPorDia: Record<string, number>;
-  haySaldoNegativo: boolean;
   onRowDoubleClick: (isoYmd: string) => void;
 }
 
@@ -65,7 +64,6 @@ export interface TablaFlujoDeFondoProps {
 export function TablaFlujoDeFondo({
   filas,
   montoVencimientoPorDia,
-  haySaldoNegativo,
   onRowDoubleClick,
 }: TablaFlujoDeFondoProps) {
   return (
@@ -74,15 +72,12 @@ export function TablaFlujoDeFondo({
         <Table
           variant="compact"
           scrollX={false}
-          className={cn(
-            "tabla-flujo-de-fondo table-fixed w-full",
-            haySaldoNegativo && "tabla-venc-por-fecha-alerta"
-          )}
+          className="tabla-flujo-de-fondo table-fixed w-full"
         >
           <ColgroupAnchos anchos={COL_WIDTHS_PCT_MAIN} />
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className={cn(CELL_MIN, "text-left")}>FECHA</TableHead>
+              <TableHead className={CELL_MIN}>FECHA</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>VENCIMIENTO DEL DÍA</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>VTOS ACUMULADOS</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>CAJA DISPONIBLE</TableHead>
@@ -101,16 +96,10 @@ export function TablaFlujoDeFondo({
                   key={fila.isoYmd}
                   title="Doble clic para ver el detalle por proveedor"
                   onDoubleClick={() => onRowDoubleClick(fila.isoYmd)}
-                  className={cn(
-                    "cursor-pointer",
-                    fila.saldo < 0 && "venc-saldo-negativo"
-                  )}
+                  className="cursor-pointer"
                 >
                   <TableCell
-                    className={cn(
-                      "celda-datos celda-destacado text-left",
-                      CELL_MIN
-                    )}
+                    className={cn("celda-datos celda-destacado text-left", CELL_MIN)}
                   >
                     {formatMesDiaMayusculasDesdeIsoYmd(fila.isoYmd)}
                   </TableCell>
@@ -123,7 +112,14 @@ export function TablaFlujoDeFondo({
                   <TableCell className={cn(TD_NUM, CELL_MIN)}>
                     {fmtMontoAr(fila.cajaDisponible)}
                   </TableCell>
-                  <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
+                  <TableCell
+                    className={cn(
+                      TD_NUM,
+                      "celda-destacado",
+                      fila.saldo < 0 && "text-destructive font-semibold",
+                      CELL_MIN
+                    )}
+                  >
                     {fmtMontoAr(fila.saldo)}
                   </TableCell>
                 </TableRow>
@@ -156,7 +152,7 @@ export function TablaFlujoDeFondoDetalleDia({ filas }: TablaFlujoDeFondoDetalleD
           <ColgroupAnchos anchos={COL_WIDTHS_PCT_MODAL} />
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className={cn(CELL_MIN, "text-left")}>PROVEEDOR</TableHead>
+              <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO A PAGAR</TableHead>
             </TableRow>
           </TableHeader>
