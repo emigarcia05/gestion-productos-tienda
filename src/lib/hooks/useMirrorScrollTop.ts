@@ -18,7 +18,10 @@ export function useMirrorScrollTop(
     if (!src || !mir) return;
 
     function mirror(): void {
-      mir.scrollTop = src.scrollTop;
+      const s = sourceRef.current;
+      const m = mirrorRef.current;
+      if (!s || !m) return;
+      m.scrollTop = s.scrollTop;
     }
 
     mirror();
