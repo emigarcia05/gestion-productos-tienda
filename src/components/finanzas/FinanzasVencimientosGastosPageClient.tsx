@@ -7,28 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { TablaFlujoDeFondoDetalleDia } from "@/components/finanzas/TablaFlujoDeFondo";
 import TablaVencimientosGastosNoMercaderia from "@/components/finanzas/TablaVencimientosGastosNoMercaderia";
-import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
 import type { ProveedorNoMercaderiaObligacionVencidaFila } from "@/services/finBalGastoMensualBalance.service";
 import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 
 export interface FinanzasVencimientosGastosPageClientProps {
-  hoyIso: string;
   proveedores: ProveedorNoMercaderiaObligacionVencidaFila[];
   detalleLineas: FlujoFondoDetalleDiaFila[];
 }
 
 export default function FinanzasVencimientosGastosPageClient({
-  hoyIso,
   proveedores,
   detalleLineas,
 }: FinanzasVencimientosGastosPageClientProps) {
   const [proveedorDetalle, setProveedorDetalle] = useState<string | null>(null);
-
-  const fechaCorteLarga = useMemo(() => {
-    const [yy, mm, dd] = hoyIso.split("-").map(Number);
-    if (!Number.isFinite(yy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return "";
-    return formatFechaLargaNotaPedidoArgentina(new Date(yy, mm - 1, dd));
-  }, [hoyIso]);
 
   const filasDetalleProveedor = useMemo(() => {
     if (!proveedorDetalle) return [];
@@ -44,11 +35,6 @@ export default function FinanzasVencimientosGastosPageClient({
         contentWidth="full"
       >
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pt-2">
-          <p className="shrink-0 px-4 text-xs text-muted-foreground sm:px-6 lg:px-8">
-            Proveedores que <strong>no</strong> son de mercadería, con imputaciones de gasto de balance cuya fecha de
-            vencimiento es anterior al corte y monto pendiente a hoy mayor a cero. Doble clic en una fila para el
-            detalle (misma grilla que en Flujo de Fondo).
-          </p>
           <TablaVencimientosGastosNoMercaderia
             filas={proveedores}
             onProveedorDoubleClick={(p) => setProveedorDetalle(p)}
@@ -59,13 +45,10 @@ export default function FinanzasVencimientosGastosPageClient({
       <Dialog open={proveedorDetalle !== null} onOpenChange={(open) => !open && setProveedorDetalle(null)}>
         <AppModal
           title={
-            proveedorDetalle && fechaCorteLarga ? (
+            proveedorDetalle ? (
               <span className="flex flex-col items-center gap-1 text-center">
                 <span>Detalle De Vencimientos</span>
                 <span className="text-sm font-normal text-primary-foreground/95">{proveedorDetalle}</span>
-                <span className="text-xs font-normal text-primary-foreground/90">
-                  CORTE: {fechaCorteLarga}
-                </span>
               </span>
             ) : (
               "Detalle De Vencimientos"

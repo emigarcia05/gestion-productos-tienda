@@ -31,7 +31,7 @@ export default async function FinanzasPage() {
               <Link href="/finanzas/vencimientos-gastos">Venc. Provee. Gastos</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-              <Link href="/finanzas/control-comprobantes">Control Comprobantes</Link>
+              <Link href="/finanzas/control-comprobantes">Control Comp. Merc.</Link>
             </Button>
           </div>
         }
@@ -43,7 +43,7 @@ export default async function FinanzasPage() {
             Tesorería lista las cajas de tesorería con sucursal, tipo, monto y última actualización. Flujo De Fondo
             muestra vencimientos por día en una ventana fija. Venc. Provee. Merc. resume saldos por proveedor y
             columnas por ventana de vencimiento. Venc. Provee. Gastos concentrará la vista de vencimientos de gastos de
-            balance. Control Comprobantes centraliza el seguimiento de comprobantes. Acceso desde la cabecera o
+            balance. Control Comp. Merc. centraliza el seguimiento de comprobantes. Acceso desde la cabecera o
             slidenav (FINANZAS).
           </p>
         </div>

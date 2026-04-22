@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -66,6 +67,51 @@ function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
   );
 }
 
+/** Suma `monto` por `tipoCaja` y total general (misma lógica que filtros del padre: recibe `filas` ya filtradas). */
+function totalesPorTipoCaja(filas: TesoreriaCajaFila[]): {
+  efectivo: number;
+  digital: number;
+  cheque: number;
+  total: number;
+} {
+  let efectivo = 0;
+  let digital = 0;
+  let cheque = 0;
+  for (const f of filas) {
+    if (f.tipoCaja === "EFECTIVO") efectivo += f.monto;
+    else if (f.tipoCaja === "DIGITAL") digital += f.monto;
+    else if (f.tipoCaja === "CHEQUE") cheque += f.monto;
+  }
+  const total = filas.reduce((acc, f) => acc + f.monto, 0);
+  return { efectivo, digital, cheque, total };
+}
+
+function TarjetaResumenTesoreria({
+  etiqueta,
+  children,
+  valorDestacado,
+}: {
+  etiqueta: string;
+  children: ReactNode;
+  valorDestacado?: boolean;
+}) {
+  return (
+    <div className="finanzas-resumen-tarjeta min-w-[6.25rem]">
+      <span className="w-full text-[10px] font-semibold uppercase leading-none tracking-wide text-muted-foreground">
+        {etiqueta}
+      </span>
+      <span
+        className={cn(
+          "celda-destacado w-full text-center text-sm tabular-nums leading-tight",
+          valorDestacado ? "font-bold" : "font-medium"
+        )}
+      >
+        {children}
+      </span>
+    </div>
+  );
+}
+
 export default function TablaTesoreriaCajas({
   filas,
   esEditor = false,
@@ -73,7 +119,7 @@ export default function TablaTesoreriaCajas({
   onEditDataClick,
   onDeleteClick,
 }: Props) {
-  const totalMonto = filas.reduce((acc, fila) => acc + fila.monto, 0);
+  const { efectivo, digital, cheque, total } = totalesPorTipoCaja(filas);
   const colCount = esEditor ? COLS + 1 : COLS;
   const anchosColPct = esEditor ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
@@ -202,18 +248,16 @@ export default function TablaTesoreriaCajas({
           <div
             className="w-full shrink-0 border-t border-border px-2 py-2"
             role="region"
-            aria-label="Total tesorería"
+            aria-label="Totales por tipo de caja y total general"
             aria-live="polite"
           >
             <div className="flex w-full flex-wrap items-stretch justify-center gap-2">
-              <div className="finanzas-resumen-tarjeta min-w-[10rem]">
-                <span className="w-full text-[10px] font-semibold uppercase leading-none tracking-wide text-muted-foreground">
-                  TOTAL
-                </span>
-                <span className="celda-destacado w-full text-sm font-bold tabular-nums leading-tight">
-                  ${fmtPrecio(totalMonto)}
-                </span>
-              </div>
+              <TarjetaResumenTesoreria etiqueta="EFECTIVO">${fmtPrecio(efectivo)}</TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria etiqueta="DIGITAL">${fmtPrecio(digital)}</TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria etiqueta="CHEQUE">${fmtPrecio(cheque)}</TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria etiqueta="TOTAL" valorDestacado>
+                ${fmtPrecio(total)}
+              </TarjetaResumenTesoreria>
             </div>
           </div>
         ) : null}

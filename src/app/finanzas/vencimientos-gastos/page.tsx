@@ -12,11 +12,10 @@ export default async function FinanzasVencimientosGastosPage() {
     redirect("/gestion-productos/proveedores/sugeridos");
   }
 
-  const { hoyIso, proveedores, detalleLineas } = await listarObligacionesGastoVencidasNoMercaderia();
+  const { proveedores, detalleLineas } = await listarObligacionesGastoVencidasNoMercaderia();
 
   return (
     <FinanzasVencimientosGastosPageClient
-      hoyIso={hoyIso}
       proveedores={proveedores}
       detalleLineas={detalleLineas}
     />

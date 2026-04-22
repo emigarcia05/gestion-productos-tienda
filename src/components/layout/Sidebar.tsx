@@ -186,7 +186,7 @@ const FINANZAS_MODULES: {
       },
       {
         href: "/finanzas/control-comprobantes",
-        label: "Control Comprobantes",
+        label: "Control Comp. Merc.",
         icon: <FileSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },

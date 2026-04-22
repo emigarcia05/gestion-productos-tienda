@@ -30,7 +30,7 @@ export default async function ControlComprobantesPage() {
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
       <ClassicFilteredTableLayout
         title="Finanzas"
-        subtitle="Control Comprobantes"
+        subtitle="Control Comp. Merc."
       >
         <TablaControlComprobantes filas={filas} esEditor={esEditor} />
       </ClassicFilteredTableLayout>
