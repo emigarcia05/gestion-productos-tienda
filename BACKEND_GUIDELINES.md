@@ -361,11 +361,11 @@ Modelo de datos para registrar movimientos con monto y sucursal:
   - `movimientos_finanzas(sucursal_id, tipo_gasto)` — índice `movimientos_finanzas_sucursal_id_tipo_gasto_idx` (migración `20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto`; antes `tipo`).
   - `movimientos_finanzas_cheques(movimiento_finanzas_id, fecha_cobro)`
 - **Migración**: `prisma/migrations/20260402110000_add_movimientos_finanzas_y_cheques/migration.sql` + `prisma/migrations/20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto/migration.sql`.
-- **Sucursal "CORPORATIVO"**: fila maestra en `global_sucursales` con `codigo = 'corporativo'`, `nombre = 'CORPORATIVO'`, `pedido = FALSE` e `id_dux = NULL`. Id fijo `'suc_corporativo'`. Se usa en el select de Gastos para registrar movimientos sin sucursal física (sueldos de administración, servicios centrales, etc.). Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`duxCompras.service.ts`, `comprobantesProveedorDuxSync.service.ts`). Alta vía migración `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` (idempotente con `ON CONFLICT (codigo) DO NOTHING`; el SQL histórico inserta en `sucursales`, tabla renombrada luego a `global_sucursales`).
+- **Sucursal "CORPORATIVO"**: suele vivir en `global_sucursales` con `codigo = 'corporativo'`, `pedido = FALSE` e `id_dux = NULL` para imputaciones sin sucursal física. Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`duxCompras.service.ts`, `comprobantesProveedorDuxSync.service.ts`). Migración histórica `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` insertó un id fijo `'suc_corporativo'`; **`listarSucursalesParaGastos()` excluye ese id** para que el select de gastos / catálogo solo muestre filas actuales de BD (evita duplicar CORPORATIVO si se creó de nuevo la sucursal con otro PK). FKs antiguas que sigan apuntando a `'suc_corporativo'` siguen válidas en DB hasta migrarlas.
 - **Flag `global_sucursales.centro_costo`** (Prisma: `Sucursal.centroCosto`, `BOOLEAN NOT NULL DEFAULT FALSE`): marca si la sucursal se considera **centro de costo** para reportes de balance / imputación contable. **Ortogonal a `pedido`**: `pedido` rige la participación en flujos de pedidos de mercadería; `centro_costo` sólo tiñe lecturas contables. Una sucursal puede ser `pedido = true, centro_costo = true` (ej. GUAYMALLEN / MAIPU si corresponde), `pedido = false, centro_costo = true` (ej. CORPORATIVO si se decide imputar contra él) o combinaciones opuestas. No hay UI de edición de sucursales: el flag se gestiona por **seed / UPDATE manual** en la DB (mismo canal que el resto de atributos de `global_sucursales`). Sin índice (cardinalidad = 2; se lee como payload, no como predicado masivo). Registros preexistentes quedan en `false` al aplicar la migración; marcar con `UPDATE global_sucursales SET centro_costo = TRUE WHERE codigo IN (...);` cuando se defina la política funcional. Migración: `prisma/migrations/20260418250000_add_sucursales_centro_costo/migration.sql` (SQL histórico sobre tabla `sucursales`, hoy `global_sucursales`).
 - **Servicio**: `src/services/movimientosFinanzas.service.ts`
   - `listarMovimientosFinanzas()`: lista ordenada por `createdAt` descendente, con `include: { sucursal: { select: { nombre: true } } }`; `nombre` se devuelve en MAYÚSCULAS; `monto` convertido a `number`.
-  - `listarSucursalesParaGastos()`: `prisma.sucursal.findMany({ select: { id, nombre }, orderBy: { nombre: "asc" } })` para alimentar el select del modal. Incluye **CORPORATIVO** (ver punto anterior).
+  - `listarSucursalesParaGastos()`: `prisma.sucursal.findMany({ where: { id: { not: "suc_corporativo" } }, select: { id, nombre }, orderBy: { nombre: "asc" } })` — todas las sucursales de BD **salvo** el id sembrado por la migración histórica `suc_corporativo` (ver punto **CORPORATIVO** arriba).
   - `crearMovimientoFinanzas(input)`: alta con `nombre` normalizado a MAYÚSCULAS y `monto` `Decimal(14,2)`; maneja `P2003` (sucursal inválida) como `ServiceResult.error`.
 - **Actions**: `src/actions/movimientosFinanzas.ts`
   - `crearMovimientoFinanzasAction(raw)`: gate `PERMISOS.finanzas.acceso` + `esEditor()`; Zod `crearMovimientoFinanzasSchema`; revalida `/finanzas` y `/finanzas/balance/gastos`.
@@ -477,9 +477,9 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - `crearFinBalGastoTipoSchema`, `editarFinBalGastoTipoSchema`, `eliminarFinBalGastoTipoSchema`.
   - `crearFinBalGastoRubroSchema`, `editarFinBalGastoRubroSchema`, `eliminarFinBalGastoRubroSchema`.
   - `crearFinBalGastoSchema`, `editarFinBalGastoSchema`, `eliminarFinBalGastoSchema`.
-  - `crearFinBalGastoFinalSchema`, `editarFinBalGastoFinalSchema`, `eliminarFinBalGastoFinalSchema` (`gastoId`, `proveedorId`, `sucursalId`, `gastoMensual`; `id` en edición/eliminación).
+  - `crearFinBalGastoFinalSchema`, `editarFinBalGastoFinalSchema`, `eliminarFinBalGastoFinalSchema`: en alta/edición de gasto final, `gastoId`, `proveedorId` y `sucursalId` usan **`prismaCuidOrUuidSchema`** (CUID de Prisma o UUID legacy, p. ej. `global_sucursales.id`); el `id` de la fila `fin_bal_gasto_final` y eliminación siguen con **`prismaCuidSchema`**; `gastoMensual`, `diaDevengado`.
   - `nombre` en todos: `trim + toUpperCase`, `min(1)`, `max(120)`.
-  - IDs validados con `prismaCuidSchema` (común a cuid del proyecto).
+  - IDs de tipo/rubro/gasto de jerarquía: `prismaCuidSchema`.
   - `crearFinBalGastoSchema` / `editarFinBalGastoSchema`: solo `nombre` + `rubroId` (+ `id` en edición).
 - **Servicio** (`src/services/finBalGastosCatalogo.service.ts`)
   - **Lecturas** (no devuelven `ServiceResult`; siempre exitosas, consumidas desde Server Components):
@@ -739,7 +739,7 @@ Notas:
 | `@/lib/permisos` | `Rol`, `PERMISOS`, función `puede(rol, permiso)` |
 | `@/lib/sesion` | `SesionData`, `getSesion()`, `getRol()`, `esEditor()` |
 | `@/lib/validations/importar.ts` | `importarProductosSchema`, `importarListaPreciosProveedorSchema`, mapeos de columnas CSV (índices numéricos como string, límites de filas/celdas). |
-| `@/lib/validations/common.ts` | `uuidSchema`, `uuidsSchema`, `prismaCuidSchema`, `paramsPaginaSchema`. |
+| `@/lib/validations/common.ts` | `uuidSchema`, `uuidsSchema`, `prismaCuidSchema`, `prismaCuidOrUuidSchema` (UUID o CUID para FKs legacy), `paramsPaginaSchema`. |
 | `@/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema` (query de página proveedores). |
 | `@/lib/validations/pedidosLectura.ts` | `getPedidoUrgenteDataParamsSchema`, `getEnviarPedidoTablaParamsSchema`. |
 | `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `reposicionFormaPedidoSchema` (`CANT_FIJA` \| `CANT_MAXIMA`), `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
@@ -747,7 +747,7 @@ Notas:
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema`, `eliminarCajaTesoreriaSchema`, `tipoCajaTesoreriaSchema`. |
 | `@/lib/validations/movimientosFinanzas.ts` | `crearMovimientoFinanzasSchema`, `tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`. |
-| `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto` + `fin_bal_gasto_final`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` (incluye `*FinBalGastoFinal*`). `nombre` con `trim + toUpperCase`, IDs `prismaCuidSchema`, `gastoMensual` boolean en gasto final. |
+| `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto` + `fin_bal_gasto_final`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` (incluye `*FinBalGastoFinal*`). `nombre` con `trim + toUpperCase`; jerarquía con `prismaCuidSchema`; gasto final: `gastoId`/`proveedorId`/`sucursalId` con `prismaCuidOrUuidSchema`; `gastoMensual` boolean. |
 | `@/lib/validations/finBalGastoMensualBalance.ts` | `fin_bal_gasto_mensual`: `mesAnioQuerySchema`, `cargarImputacionesMesParamsSchema`, `editarMontoFinBalGastoMensualSchema`, `eliminarFinBalGastoMensualSchema`, `obtenerMontoMesAnteriorSchema`. |
 
 Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a validación, usar `z.infer<typeof schema>` en `src/lib/validations/*.ts`.

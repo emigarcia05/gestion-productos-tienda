@@ -6,6 +6,14 @@ export const uuidSchema = z.string().uuid("ID inválido.");
 /** ID `cuid()` típico de modelos como `Proveedor`. */
 export const prismaCuidSchema = z.string().cuid("ID inválido.");
 
+/**
+ * FK string aceptada como **UUID** (filas legacy, p. ej. `global_sucursales.id`) o **CUID** (default Prisma).
+ */
+export const prismaCuidOrUuidSchema = z.union([
+  z.string().uuid("ID inválido."),
+  z.string().cuid("ID inválido."),
+]);
+
 /** Lista de UUIDs (mínimo uno). */
 export const uuidsSchema = z.array(uuidSchema).min(1, "Al menos un ID es requerido.");
 

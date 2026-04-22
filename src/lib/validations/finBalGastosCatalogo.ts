@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismaCuidSchema } from "@/lib/validations/common";
+import { prismaCuidOrUuidSchema, prismaCuidSchema } from "@/lib/validations/common";
 
 /**
  * Validaciones para el catálogo jerárquico Finanzas → Balance → Gastos:
@@ -83,9 +83,9 @@ const diaDevengadoSchema = z.coerce
   .max(28, "El día devengado debe ser entre 1 y 28.");
 
 export const crearFinBalGastoFinalSchema = z.object({
-  gastoId: prismaCuidSchema,
-  proveedorId: prismaCuidSchema,
-  sucursalId: prismaCuidSchema,
+  gastoId: prismaCuidOrUuidSchema,
+  proveedorId: prismaCuidOrUuidSchema,
+  sucursalId: prismaCuidOrUuidSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
 });
@@ -93,8 +93,8 @@ export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSch
 
 export const editarFinBalGastoFinalSchema = z.object({
   id: prismaCuidSchema,
-  proveedorId: prismaCuidSchema,
-  sucursalId: prismaCuidSchema,
+  proveedorId: prismaCuidOrUuidSchema,
+  sucursalId: prismaCuidOrUuidSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
 });
