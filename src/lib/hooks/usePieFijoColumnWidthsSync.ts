@@ -23,10 +23,12 @@ export function usePieFijoColumnWidthsSync(
       if (!scrollEl || !footerTable) return;
 
       const sourceTable = scrollEl.querySelector<HTMLTableElement>('[data-slot="table"]');
-      const thList = sourceTable?.querySelectorAll<HTMLTableCellElement>("thead tr th");
+      if (!sourceTable) return;
+
+      const thList = sourceTable.querySelectorAll<HTMLTableCellElement>("thead tr th");
       const colList = footerTable.querySelectorAll("colgroup col");
 
-      if (!thList?.length || !colList.length || thList.length !== colList.length) return;
+      if (!thList.length || !colList.length || thList.length !== colList.length) return;
 
       const measured = [...thList].map((th) => th.getBoundingClientRect().width);
       if (!measured.some((w) => w > 0)) return;
