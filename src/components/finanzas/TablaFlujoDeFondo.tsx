@@ -3,13 +3,13 @@
 /**
  * Flujo De Fondo (`/finanzas/venc-por-fecha`) — tablas con el **mismo cascarón** que
  * `TablaDeudaProveedores` / `TablaControlComprobantes` (`contenedor-tabla-gestion` → scroll →
- * `<Table variant="compact" scrollX={false}>`). Clase `tabla-flujo-de-fondo`: cuerpo con primera
- * columna a la **izquierda** (globals); **thead** no se sobrealinea (mismo centrado que el resto
- * de tablas). **SALDO** negativo: `text-destructive font-semibold` en la **celda**, sin tinte de fila.
+ * `<Table variant="compact" scrollX={false}>`). Clase `tabla-flujo-de-fondo`: columna **FECHA**
+ * centrada; importes con `TD_NUM`. **SALDO** negativo: `text-destructive font-semibold` en la celda.
  */
 
 import { formatMesDiaMayusculasDesdeIsoYmd } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
+import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 import {
   EmptyTableRow,
   Table,
@@ -28,7 +28,7 @@ function fmtMontoAr(n: number): string {
 }
 
 const COL_WIDTHS_PCT_MAIN = [20, 20, 20, 20, 20] as const;
-const COL_WIDTHS_PCT_MODAL = [65, 35] as const;
+const COL_WIDTHS_PCT_MODAL = [28, 44, 28] as const;
 
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
@@ -94,12 +94,12 @@ export function TablaFlujoDeFondo({
               filas.map((fila) => (
                 <TableRow
                   key={fila.isoYmd}
-                  title="Doble clic para ver el detalle por proveedor"
+                  title="Doble clic para abrir el detalle del día (proveedores, detalle, montos)"
                   onDoubleClick={() => onRowDoubleClick(fila.isoYmd)}
                   className="cursor-pointer"
                 >
                   <TableCell
-                    className={cn("celda-datos celda-destacado text-left", CELL_MIN)}
+                    className={cn("celda-datos celda-destacado text-center", CELL_MIN)}
                   >
                     {formatMesDiaMayusculasDesdeIsoYmd(fila.isoYmd)}
                   </TableCell>
@@ -133,11 +133,11 @@ export function TablaFlujoDeFondo({
 }
 
 export interface TablaFlujoDeFondoDetalleDiaProps {
-  filas: Array<{ proveedor: string; vencimiento: number }>;
+  filas: FlujoFondoDetalleDiaFila[];
 }
 
 /**
- * Modal “Detalle del día”: **PROVEEDOR** (izq.) + **MONTO A PAGAR** (importe, derecha);
+ * Modal “Detalle del día”: **PROVEEDOR** + **DETALLE** (MERCADERÍA o nombre de gasto) + **MONTO**;
  * el scroll va en un ancestro del `Table` (misma regla que el resto de modales con tabla).
  */
 export function TablaFlujoDeFondoDetalleDia({ filas }: TablaFlujoDeFondoDetalleDiaProps) {
@@ -153,26 +153,33 @@ export function TablaFlujoDeFondoDetalleDia({ filas }: TablaFlujoDeFondoDetalleD
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
-              <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO A PAGAR</TableHead>
+              <TableHead className={CELL_MIN}>DETALLE</TableHead>
+              <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filas.length === 0 ? (
               <EmptyTableRow
-                colSpan={2}
+                colSpan={3}
                 message="Sin vencimientos para el día seleccionado."
               />
             ) : (
-              filas.map((fila, idx) => (
-                <TableRow key={`${fila.proveedor}-${idx}`}>
+              filas.map((fila) => (
+                <TableRow key={fila.sortId}>
                   <TableCell
-                    className={cn("celda-datos max-w-[24rem] text-left celda-destacado", CELL_MIN)}
+                    className={cn("celda-datos max-w-[14rem] text-left celda-destacado", CELL_MIN)}
                     title={fila.proveedor}
                   >
                     <span className="block truncate">{fila.proveedor}</span>
                   </TableCell>
+                  <TableCell
+                    className={cn("celda-datos max-w-[18rem] text-left", CELL_MIN)}
+                    title={fila.detalle}
+                  >
+                    <span className="block truncate">{fila.detalle}</span>
+                  </TableCell>
                   <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                    {fmtMontoAr(fila.vencimiento)}
+                    {fmtMontoAr(fila.monto)}
                   </TableCell>
                 </TableRow>
               ))

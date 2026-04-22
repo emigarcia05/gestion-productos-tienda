@@ -7,9 +7,16 @@ import {
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import {
+  FLUJO_FONDO_DETALLE_MERCADERIA,
   listarVencimientosEnRango,
+  ordenarDetallesFlujoDia,
+  type FlujoFondoDetalleDiaFila,
   sumarSaldoVencimientosConFechaVencAnteriorA,
 } from "@/services/vencimientosPorFecha.service";
+import {
+  listarVencimientosGastoFlujoEnRango,
+  sumarPendienteGastosConFechaVencAnteriorA,
+} from "@/services/finBalGastoMensualBalance.service";
 import { listarCajasTesoreria } from "@/services/cajasTesoreria.service";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 
@@ -23,6 +30,10 @@ function claveDiaFechaVenc(fechaVenc: string | Date): string {
     return fechaVenc.length >= 10 ? fechaVenc.slice(0, 10) : fechaVenc;
   }
   return dateToIsoYmdArgentina(fechaVenc);
+}
+
+function sortFechaCompToIso(fechaComp: string): string {
+  return fechaComp.length >= 10 ? fechaComp.slice(0, 10) : fechaComp;
 }
 
 interface Props {
@@ -42,26 +53,55 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const hastaIso = addDaysToIsoYmdArgentina(hoyIso, DIAS_VENTANA_VENC_POR_FECHA);
 
-  const [lineas, saldoVencidoAntesDeHoy, cajasTesoreria] = await Promise.all([
-    listarVencimientosEnRango(hoyIso, hastaIso),
-    sumarSaldoVencimientosConFechaVencAnteriorA(hoyIso),
-    listarCajasTesoreria(),
-  ]);
+  const [lineasCompra, lineasGasto, saldoComprasAntes, saldoGastosAntes, cajasTesoreria] =
+    await Promise.all([
+      listarVencimientosEnRango(hoyIso, hastaIso),
+      listarVencimientosGastoFlujoEnRango(hoyIso, hastaIso),
+      sumarSaldoVencimientosConFechaVencAnteriorA(hoyIso),
+      sumarPendienteGastosConFechaVencAnteriorA(hoyIso),
+      listarCajasTesoreria(),
+    ]);
+  const saldoVencidoAntesDeHoy = saldoComprasAntes + saldoGastosAntes;
+
   const cajaDisponibleInicial = cajasTesoreria.reduce(
     (acc, caja) => acc + Number(caja.monto || 0),
     0
   );
 
   const totalPorDia: Record<string, number> = {};
-  const detallePorDiaProveedor: Record<string, Record<string, number>> = {};
-  for (const l of lineas) {
+  const acumDetalle: Record<string, FlujoFondoDetalleDiaFila[]> = {};
+
+  for (const l of lineasCompra) {
     const key = claveDiaFechaVenc(l.fechaVenc);
     if (key < hoyIso || key > hastaIso) continue;
-    totalPorDia[key] = (totalPorDia[key] ?? 0) + Number(l.saldo);
-    if (!detallePorDiaProveedor[key]) detallePorDiaProveedor[key] = {};
-    detallePorDiaProveedor[key][l.nombre] =
-      (detallePorDiaProveedor[key][l.nombre] ?? 0) + Number(l.saldo);
+    const m = Number(l.saldo);
+    totalPorDia[key] = (totalPorDia[key] ?? 0) + m;
+    if (!acumDetalle[key]) acumDetalle[key] = [];
+    acumDetalle[key].push({
+      proveedor: l.nombre.trim().toUpperCase(),
+      detalle: FLUJO_FONDO_DETALLE_MERCADERIA,
+      monto: m,
+      sortFecha: sortFechaCompToIso(l.fechaComp),
+      sortId: l.comprobanteId,
+    });
   }
+
+  for (const g of lineasGasto) {
+    const key = g.fechaVenc;
+    totalPorDia[key] = (totalPorDia[key] ?? 0) + g.monto;
+    if (!acumDetalle[key]) acumDetalle[key] = [];
+    acumDetalle[key].push({
+      proveedor: g.proveedor,
+      detalle: g.detalle,
+      monto: g.monto,
+      sortFecha: g.devengoIso,
+      sortId: g.imputacionId,
+    });
+  }
+
+  const detallesPorDia: Record<string, FlujoFondoDetalleDiaFila[]> = Object.fromEntries(
+    Object.entries(acumDetalle).map(([isoYmd, filas]) => [isoYmd, ordenarDetallesFlujoDia(filas)])
+  );
 
   const filasTotales: Array<{ isoYmd: string; vencimientoDelDia: number }> = [];
   for (
@@ -80,17 +120,12 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   const inicio = skipForPagina(paginaActual, PAGE_SIZE);
   const filas = filasTotales.slice(inicio, inicio + PAGE_SIZE);
 
-  const detallesPorDia = Object.fromEntries(
-    Object.entries(detallePorDiaProveedor).map(([isoYmd, porProveedor]) => [
-      isoYmd,
-      Object.entries(porProveedor)
-        .map(([proveedor, vencimiento]) => ({ proveedor, vencimiento }))
-        .sort((a, b) => a.proveedor.localeCompare(b.proveedor)),
-    ])
+  const nombresProveedores = new Set<string>();
+  for (const l of lineasCompra) nombresProveedores.add(l.nombre.trim().toUpperCase());
+  for (const g of lineasGasto) nombresProveedores.add(g.proveedor);
+  const proveedoresConVencimientos = [...nombresProveedores].sort((a, b) =>
+    a.localeCompare(b, "es")
   );
-  const proveedoresConVencimientos = [...new Set(lineas.map((linea) => linea.nombre))]
-    .filter((nombre) => nombre.trim().length > 0)
-    .sort((a, b) => a.localeCompare(b, "es"));
 
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">

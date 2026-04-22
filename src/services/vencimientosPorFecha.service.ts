@@ -1,6 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+/** Valor fijo de columna **Detalle** para vencimientos de comprobantes (mercadería). */
+export const FLUJO_FONDO_DETALLE_MERCADERIA = "MERCADERÍA" as const;
+
 /**
  * Líneas con saldo pendiente cuya **fecha de vencimiento** cae en `[fechaDesde, fechaHasta]`.
  * Misma regla que deuda proveedores: `fecha_comp` + primer plazo de `plazos_pagos` (o 30 días).
@@ -9,6 +12,9 @@ export interface VencimientoPorFechaLinea {
   fechaVenc: string;
   nombre: string;
   saldo: Prisma.Decimal;
+  comprobanteId: string;
+  /** `fecha_comp` (yyyy-mm-dd). Orden y desempate con gastos. */
+  fechaComp: string;
 }
 
 export async function listarVencimientosEnRango(
@@ -18,6 +24,8 @@ export async function listarVencimientosEnRango(
   const rows = await prisma.$queryRaw<VencimientoPorFechaLinea[]>`
     WITH lineas AS (
       SELECT
+        c.id::text AS id,
+        c.fecha_comp::text AS fecha_comp,
         p.nombre AS nombre,
         (c.total - c.monto_aplicado) AS saldo,
         (
@@ -41,13 +49,41 @@ export async function listarVencimientosEnRango(
     SELECT
       l.fecha_venc::text AS "fechaVenc",
       l.nombre AS nombre,
-      l.saldo AS saldo
+      l.saldo AS saldo,
+      l.id AS "comprobanteId",
+      l.fecha_comp AS "fechaComp"
     FROM lineas l
     WHERE l.fecha_venc >= ${fechaDesde}::date
       AND l.fecha_venc <= ${fechaHasta}::date
     ORDER BY l.fecha_venc ASC, l.nombre ASC
   `;
   return rows;
+}
+
+/**
+ * Fila de **Detalle del día** (comprobante o imputación de balance) y orden estable.
+ * Orden: proveedor, detalle, `sortFecha` (fecha devengo o `fecha_comp`), `sortId`.
+ */
+export type FlujoFondoDetalleDiaFila = {
+  proveedor: string;
+  detalle: string;
+  monto: number;
+  sortFecha: string;
+  sortId: string;
+};
+
+export function ordenarDetallesFlujoDia(
+  filas: FlujoFondoDetalleDiaFila[]
+): FlujoFondoDetalleDiaFila[] {
+  return [...filas].sort((a, b) => {
+    const p = a.proveedor.localeCompare(b.proveedor, "es");
+    if (p !== 0) return p;
+    const d = a.detalle.localeCompare(b.detalle, "es");
+    if (d !== 0) return d;
+    const f = a.sortFecha.localeCompare(b.sortFecha);
+    if (f !== 0) return f;
+    return a.sortId.localeCompare(b.sortId);
+  });
 }
 
 /**

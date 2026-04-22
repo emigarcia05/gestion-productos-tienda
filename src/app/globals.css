@@ -875,14 +875,10 @@
   color: var(--foreground) !important;
 }
 
-/* Flujo de fondo (`/finanzas/venc-por-fecha`): **thead** = misma alineación global que el resto
- * (centrado, ver `.tabla-gestion-compacta thead th`); en **tbody**, primera columna (FECHA / PROVEEDOR
- * en modal) a la izquierda, importes con `TD_NUM`. Un **SALDO** negativo se marca solo en la celda
- * (`text-destructive` en `TablaFlujoDeFondo`), sin tinte de fila, para no romper la cebra card/primary. */
+/* Flujo de fondo (`/finanzas/venc-por-fecha`): **thead** = centrado global. **FECHA** en cuerpo
+ * centrada en la columna (`text-center` en `TablaFlujoDeFondo`); modal detalle: **PROVEEDOR** con
+ * `text-left` en JSX. Importes: `TD_NUM`. **SALDO** negativo: `text-destructive` en la celda. */
 
-.tabla-gestion-compacta.tabla-flujo-de-fondo tbody td:first-child.celda-datos {
-  text-align: left !important;
-}
 /* Hover global de fila fuerza `foreground` en td; conservar rojo de **SALDO** negativo. */
 .tabla-gestion-compacta.tabla-flujo-de-fondo tbody tr:hover td.text-destructive {
   color: var(--color-destructive) !important;

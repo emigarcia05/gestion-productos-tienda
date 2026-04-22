@@ -28,6 +28,7 @@ import {
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
+import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 
 /**
  * Filas ordenadas por fecha (calendario completo en servidor: hoy → hoy+150 inclusive):
@@ -67,11 +68,14 @@ function filasConVtosYSaldo(
 }
 
 export interface FinanzasVencPorFechaPageClientProps {
-  /** Suma de saldos con `fecha_venc` &lt; hoy (incluye comprobantes no mostrados en la ventana). */
+  /**
+   * Suma de **pendiente** vencido antes de hoy: comprobantes (`sumarSaldoVencimientosConFechaVencAnteriorA`)
+   * + **monto devengado pendiente a hoy** de imputaciones de balance con venc &lt; hoy.
+   */
   saldoVencidoAntesDeHoy: number;
   /** Suma de montos de cajas tesorería para la primera fila de la grilla. */
   cajaDisponibleInicial: number;
-  detallesPorDia: Record<string, Array<{ proveedor: string; vencimiento: number }>>;
+  detallesPorDia: Record<string, FlujoFondoDetalleDiaFila[]>;
   proveedoresConVencimientos: string[];
   filas: Array<{
     isoYmd: string;
@@ -94,10 +98,12 @@ export default function FinanzasVencPorFechaPageClient({
 }: FinanzasVencPorFechaPageClientProps) {
   const [detalleIsoYmd, setDetalleIsoYmd] = useState<string | null>(null);
   const [filtroProveedor, setFiltroProveedor] = useState("");
-  const detalleFilas = useMemo(
-    () => (detalleIsoYmd ? detallesPorDia[detalleIsoYmd] ?? [] : []),
-    [detalleIsoYmd, detallesPorDia]
-  );
+  const detalleFilas = useMemo(() => {
+    if (!detalleIsoYmd) return [];
+    const base = detallesPorDia[detalleIsoYmd] ?? [];
+    if (!filtroProveedor) return base;
+    return base.filter((f) => f.proveedor === filtroProveedor);
+  }, [detalleIsoYmd, detallesPorDia, filtroProveedor]);
   const detalleFechaLarga = useMemo(() => {
     if (!detalleIsoYmd) return "";
     const [yy, mm, dd] = detalleIsoYmd.split("-").map(Number);
@@ -117,8 +123,9 @@ export default function FinanzasVencPorFechaPageClient({
     const porDia: Record<string, number> = {};
     for (const fila of filas) {
       const detalleDia = detallesPorDia[fila.isoYmd] ?? [];
-      const detalleProveedor = detalleDia.find((d) => d.proveedor === filtroProveedor);
-      porDia[fila.isoYmd] = detalleProveedor?.vencimiento ?? 0;
+      porDia[fila.isoYmd] = detalleDia
+        .filter((d) => d.proveedor === filtroProveedor)
+        .reduce((s, d) => s + d.monto, 0);
     }
     return porDia;
   }, [detallesPorDia, filas, filtroProveedor]);

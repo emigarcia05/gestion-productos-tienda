@@ -100,6 +100,35 @@ function computePendiente(params: {
   return Math.min(proporcional, valorMensualReferencia);
 }
 
+/**
+ * Pendiente de pago sobre devengado, con devengado acumulado **hasta** `isoCorte` (día del venc o hoy en cartera).
+ * Misma fórmula que la columna **DEVENGADO** en `/finanzas/balance/gastos`.
+ */
+export function montoDevengadoPendienteHastaCorte(
+  params: {
+    isoDevengo: string;
+    isoCorte: string;
+    mesImputacion: number;
+    anioImputacion: number;
+    monto: number;
+    pagado: number;
+    priorMontoReferencia: number;
+  }
+): number {
+  const { isoDevengo, isoCorte, mesImputacion, anioImputacion, monto, pagado, priorMontoReferencia } =
+    params;
+  if (isoCorte < isoDevengo) return 0;
+  const diasMes = diasEnMesCalendario(anioImputacion, mesImputacion);
+  const diasT = diasDesdeDevengoHastaHoy(isoDevengo, isoCorte);
+  const valor = monto > 0 ? monto : priorMontoReferencia;
+  const devengadoAcum = computePendiente({
+    valorMensualReferencia: valor,
+    diasMes,
+    diasTranscurridos: diasT,
+  });
+  return Math.max(0, devengadoAcum - pagado);
+}
+
 /** Mes y año calendario en Argentina (instante actual). */
 export function mesAnioCalendarioArgentina(ahora: Date = new Date()): { mes: number; anio: number } {
   const ymd = dateToIsoYmdArgentina(ahora);
@@ -311,6 +340,124 @@ export async function listarImputacionesMensualesBalance(params: {
       montoVencido,
     };
   });
+}
+
+const includeGastoFlujoGastoMensual = {
+  gastoFinal: {
+    include: {
+      proveedor: { select: { nombre: true } },
+      gasto: { select: { nombre: true } },
+    },
+  },
+} as const;
+
+/** Línea de vencimiento de imputación de balance (Flujo de Fondo, detalle y columna). */
+export interface VencimientoGastoFlujoLinea {
+  imputacionId: string;
+  fechaVenc: string;
+  /** Proveedor (catálogo balance), para filtro y grilla. */
+  proveedor: string;
+  /** Nombre de gasto en catálogo (MAYÚSCULAS, como en Balance). */
+  detalle: string;
+  monto: number;
+  devengoIso: string;
+}
+
+/**
+ * Suma de **monto devengado pendiente a hoy** de imputaciones cuya fecha de vencimiento (desde
+ * devengo) es **&lt; `fechaIso`**, con la misma fórmula que {@link montoDevengadoPendienteHastaCorte}.
+ * Sirve con **VTOS ACUMULADOS** junto a comprobantes.
+ */
+export async function sumarPendienteGastosConFechaVencAnteriorA(
+  fechaIso: string
+): Promise<number> {
+  const hoyCorte = fechaIso;
+  const all = await prisma.finBalGastoMensual.findMany({
+    include: includeGastoFlujoGastoMensual,
+  });
+  if (all.length === 0) return 0;
+  const periodKeys = new Set(all.map((r) => `${r.anio}-${r.mes}`));
+  const priorPorPeriodo = new Map<string, Map<string, number>>();
+  for (const k of periodKeys) {
+    const [anS, mS] = k.split("-");
+    const anio = Number(anS);
+    const mes = Number(mS);
+    const ids = [...new Set(all.filter((r) => r.anio === anio && r.mes === mes).map((r) => r.gastoFinalId))];
+    if (ids.length === 0) continue;
+    priorPorPeriodo.set(k, await mapaMontoReferenciaPrior(ids, mes, anio));
+  }
+  let suma = 0;
+  for (const r of all) {
+    const gf = r.gastoFinal;
+    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
+    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    if (fechaVenc >= hoyCorte) continue;
+    const priorMonto =
+      (priorPorPeriodo.get(`${r.anio}-${r.mes}`) ?? new Map()).get(gf.id) ?? 0;
+    const pend = montoDevengadoPendienteHastaCorte({
+      isoDevengo: fechaDevengoIso,
+      isoCorte: hoyCorte,
+      mesImputacion: r.mes,
+      anioImputacion: r.anio,
+      monto: r.monto,
+      pagado: r.pagado,
+      priorMontoReferencia: priorMonto,
+    });
+    suma += pend;
+  }
+  return suma;
+}
+
+/**
+ * Imputaciones cuyo vencimiento entra en `[desde, hasta]`, con **monto a vencer** = devengado
+ * pendiente a la **fecha de vencimiento** (corte = `fechaVenc`).
+ */
+export async function listarVencimientosGastoFlujoEnRango(
+  fechaDesde: string,
+  fechaHasta: string
+): Promise<VencimientoGastoFlujoLinea[]> {
+  const all = await prisma.finBalGastoMensual.findMany({
+    include: includeGastoFlujoGastoMensual,
+  });
+  if (all.length === 0) return [];
+  const periodKeys = new Set(all.map((r) => `${r.anio}-${r.mes}`));
+  const priorPorPeriodo = new Map<string, Map<string, number>>();
+  for (const k of periodKeys) {
+    const [anS, mS] = k.split("-");
+    const anio = Number(anS);
+    const mes = Number(mS);
+    const ids = [...new Set(all.filter((r) => r.anio === anio && r.mes === mes).map((r) => r.gastoFinalId))];
+    if (ids.length === 0) continue;
+    priorPorPeriodo.set(k, await mapaMontoReferenciaPrior(ids, mes, anio));
+  }
+  const out: VencimientoGastoFlujoLinea[] = [];
+  for (const r of all) {
+    const gf = r.gastoFinal;
+    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
+    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    if (fechaVenc < fechaDesde || fechaVenc > fechaHasta) continue;
+    const priorMonto =
+      (priorPorPeriodo.get(`${r.anio}-${r.mes}`) ?? new Map()).get(gf.id) ?? 0;
+    const montoPendVenc = montoDevengadoPendienteHastaCorte({
+      isoDevengo: fechaDevengoIso,
+      isoCorte: fechaVenc,
+      mesImputacion: r.mes,
+      anioImputacion: r.anio,
+      monto: r.monto,
+      pagado: r.pagado,
+      priorMontoReferencia: priorMonto,
+    });
+    if (montoPendVenc <= 0) continue;
+    out.push({
+      imputacionId: r.id,
+      fechaVenc,
+      proveedor: gf.proveedor.nombre.toUpperCase(),
+      detalle: gf.gasto.nombre.toUpperCase(),
+      monto: montoPendVenc,
+      devengoIso: fechaDevengoIso,
+    });
+  }
+  return out;
 }
 
 /**
