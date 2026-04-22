@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import VencPorFechaCalendario from "@/components/finanzas/VencPorFechaCalendario";
+import FinanzasVencPorFechaPageClient from "@/components/finanzas/FinanzasVencPorFechaPageClient";
 import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
@@ -94,19 +93,17 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
     .sort((a, b) => a.localeCompare(b, "es"));
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Flujo De Fondo">
-        <VencPorFechaCalendario
-          saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
-          cajaDisponibleInicial={cajaDisponibleInicial}
-          detallesPorDia={detallesPorDia}
-          proveedoresConVencimientos={proveedoresConVencimientos}
-          filas={filas}
-          paginaActual={paginaActual}
-          totalPaginas={totalPaginas}
-          total={total}
-        />
-      </ClassicFilteredTableLayout>
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+      <FinanzasVencPorFechaPageClient
+        saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
+        cajaDisponibleInicial={cajaDisponibleInicial}
+        detallesPorDia={detallesPorDia}
+        proveedoresConVencimientos={proveedoresConVencimientos}
+        filas={filas}
+        paginaActual={paginaActual}
+        totalPaginas={totalPaginas}
+        total={total}
+      />
     </div>
   );
 }

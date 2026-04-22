@@ -19,6 +19,10 @@ export interface BalanceGastoMensualFila {
   proveedorNombre: string;
   monto: number;
   pagado: number;
+  /**
+   * Pendiente de pago sobre el devengado acumulado a la fecha: `max(0, devengadoAcumulado − pagado)`.
+   * El acumulado es el proporcional mensual hasta hoy (ver `computePendiente`).
+   */
   montoDevengadoPendiente: number;
   /** Día siguiente al cumplirse un mes calendario desde la fecha de devengo (ej. 21/04/2026 → 22/05/2026). ISO `yyyy-mm-dd`. */
   fechaVencimientoIso: string;
@@ -201,8 +205,9 @@ async function mapaMontoReferenciaPrior(
 
 /**
  * Listado del mes: imputaciones con jerarquía de gasto, proveedor y sucursal.
- * `montoDevengadoPendiente`: **mínimo** entre `valor` y el redondeo de `(valor / días del mes) × días devengados` (días desde devengo hasta hoy AR, extremos inclusive).
+ * **Devengado acumulado (hasta hoy AR):** **mínimo** entre `valor` y el redondeo de `(valor / días del mes) × días devengados` (desde devengo hasta hoy inclusive).
  * **Valor:** `monto` del mes actual si &gt; 0; si no, último `monto` de un mes anterior (también **techo** del devengado).
+ * **`montoDevengadoPendiente`** (UI columna **DEVENGADO**): **`max(0, devengadoAcumulado − pagado)`** — pendiente de pago sobre ese devengado.
  * `fechaVencimientoIso` / `montoVencido`: vence al día siguiente a cumplirse un mes desde el devengo; si hoy (AR) ≥ esa fecha, `montoVencido = max(0, monto - pagado)`.
  */
 /** Años y meses que existen en `fin_bal_gasto_mensual` (al menos una fila). */
@@ -276,11 +281,12 @@ export async function listarImputacionesMensualesBalance(params: {
     const diasT = diasDesdeDevengoHastaHoy(fechaDevengoIso, isoHoy);
     const montoActual = r.monto;
     const valor = montoActual > 0 ? montoActual : (priorMonto.get(gf.id) ?? 0);
-    const montoDevengadoPendiente = computePendiente({
+    const devengadoAcumuladoAHoy = computePendiente({
       valorMensualReferencia: valor,
       diasMes,
       diasTranscurridos: diasT,
     });
+    const montoDevengadoPendiente = Math.max(0, devengadoAcumuladoAHoy - r.pagado);
     const fechaVencimientoIso = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
     const montoVencido = montoVencidoGastoBalance({
       isoHoyArgentina: isoHoy,

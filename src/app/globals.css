@@ -317,6 +317,10 @@
     flex-shrink: 0;
     border-top: 2px solid var(--border);
     background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    /* Misma reserva de canal que `.pie-fijo-scroll`: si solo el scroll tiene gutter, la tabla del pie
+       queda ~ancho de scrollbar más ancha y los % del colgroup no coinciden con el thead/tbody. */
+    scrollbar-gutter: stable;
+    min-width: 0;
   }
   .contenedor-tabla-gestion--pie-fijo-pie table {
     border-collapse: collapse;

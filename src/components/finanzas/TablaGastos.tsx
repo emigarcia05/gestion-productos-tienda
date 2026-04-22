@@ -1,5 +1,4 @@
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -39,9 +38,9 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** Pesos FECHA…MONTO DEVENGADO (sin ACCIONES); suman 86 — se escalan a % para la vista sin columna ACCIONES. */
+/** Pesos FECHA…DEVENGADO (sin ACCIONES); suman 86 — se escalan a % para la vista sin columna ACCIONES. */
 const COL_WIDTHS_DATA_PCT = [8, 8, 8, 8, 15, 15, 8, 8, 8] as const;
-/** FECHA…MONTO DEVENGADO + ACCIONES; suma 100. */
+/** FECHA…DEVENGADO + ACCIONES; suma 100. */
 const COL_WIDTHS_PCT_CON_ACCIONES: readonly number[] = [...COL_WIDTHS_DATA_PCT, 14];
 /** Sin ACCIONES: mismos pesos relativos que {@link COL_WIDTHS_DATA_PCT}, escalados a suma 100%. */
 const COL_WIDTHS_PCT_SIN_ACCIONES: readonly number[] = COL_WIDTHS_DATA_PCT.map(
@@ -86,9 +85,23 @@ export default function TablaGastos({
     <div className="flex flex-1 min-h-0 flex-col pb-4">
       <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
         <div className="contenedor-tabla-gestion--pie-fijo-scroll">
-          <Table variant="compact" scrollX={false} className="table-fixed w-full">
-            <ColgroupAnchos anchos={anchosColPct} />
-            <TableHeader>
+          {/*
+            Misma envoltura que `Table` (`ui/table.tsx`): el `<table>` debe vivir en el mismo árbol que el pie
+            (`div[data-slot="table-container"]` + `table.tabla-gestion-compacta`) para que el ancho útil y el
+            `<colgroup>` coincidan fila a fila con la segunda tabla de totales.
+          */}
+          <div
+            data-slot="table-container"
+            className="relative min-h-0 w-full min-w-0 max-w-full"
+          >
+            <table
+              data-slot="table"
+              className={cn(
+                "w-full caption-bottom text-sm tabla-gestion-compacta table-fixed w-full"
+              )}
+            >
+              <ColgroupAnchos anchos={anchosColPct} />
+              <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className={CELL_MIN}>FECHA</TableHead>
                 <TableHead className={CELL_MIN}>SUCURSAL</TableHead>
@@ -98,11 +111,16 @@ export default function TablaGastos({
                 <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
-                <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO DEVENGADO</TableHead>
+                <TableHead
+                  className={cn(TH_NUM, CELL_MIN)}
+                  title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
+                >
+                  DEVENGADO
+                </TableHead>
                 {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
               </TableRow>
-            </TableHeader>
-            <TableBody>
+              </TableHeader>
+              <TableBody>
               {filas.length === 0 ? (
                 <EmptyTableRow colSpan={colCount} message={mensajeVacio} />
               ) : (
@@ -176,19 +194,23 @@ export default function TablaGastos({
                   </TableRow>
                 ))
               )}
-            </TableBody>
-          </Table>
+              </TableBody>
+            </table>
+          </div>
         </div>
 
         {filas.length > 0 ? (
           <div className="contenedor-tabla-gestion--pie-fijo-pie">
-            {/*
-              Tabla auxiliar (sin `.tabla-gestion-compacta`) para alinear columnas con el mismo colgroup;
-              no hereda altura fija de filas del cuerpo de la tabla principal.
-            */}
-            <table className="tabla-gestion-compacta w-full table-fixed border-collapse text-sm">
-              <ColgroupAnchos anchos={anchosColPct} />
-              <tbody>
+            <div
+              data-slot="table-container"
+              className="relative min-h-0 w-full min-w-0 max-w-full"
+            >
+              <table
+                data-slot="table"
+                className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed w-full"
+              >
+                <ColgroupAnchos anchos={anchosColPct} />
+                <tbody>
                 <tr className="transition-[background-color] duration-150">
                   <td
                     className={cn("celda-datos font-bold uppercase whitespace-nowrap", CELL_MIN)}
@@ -213,8 +235,9 @@ export default function TablaGastos({
                     <td className={cn(TD_ACCIONES, "whitespace-nowrap")} aria-hidden />
                   ) : null}
                 </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : null}
       </div>
