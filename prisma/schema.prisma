@@ -161,6 +161,8 @@ model FinTesoreriaCheque {
   id                  String   @id @default(cuid())
   cajaId              String   @map("caja_id")
   emisor              String
+  /** Misma lista cerrada que `fin_tesoreria.titular` (titulares de caja). */
+  tenedor             String   @map("tenedor")
   monto               Int
   fechaAcreditacion   DateTime @map("fecha_acreditacion") @db.Date
   createdAt           DateTime @default(now()) @map("created_at")

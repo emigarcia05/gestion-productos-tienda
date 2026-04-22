@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
-import type { CrearFinTesoreriaChequeInput } from "@/lib/validations/finTesoreriaCheques";
+import type {
+  ActualizarFinTesoreriaChequeInput,
+  CrearFinTesoreriaChequeInput,
+} from "@/lib/validations/finTesoreriaCheques";
 
 export interface FinTesoreriaChequeItem {
   id: string;
   cajaId: string;
+  tenedor: string;
   emisor: string;
   monto: number;
   fechaAcreditacionIso: string;
@@ -16,6 +20,7 @@ export interface FinTesoreriaChequeItem {
 function mapCheque(row: {
   id: string;
   cajaId: string;
+  tenedor: string;
   emisor: string;
   monto: number;
   fechaAcreditacion: Date;
@@ -25,6 +30,7 @@ function mapCheque(row: {
   return {
     id: row.id,
     cajaId: row.cajaId,
+    tenedor: row.tenedor,
     emisor: row.emisor,
     monto: row.monto,
     fechaAcreditacionIso: dateToIsoYmdArgentina(row.fechaAcreditacion),
@@ -89,6 +95,7 @@ export async function crearFinTesoreriaCheque(
     const row = await prisma.finTesoreriaCheque.create({
       data: {
         cajaId: input.cajaId,
+        tenedor: input.tenedor,
         emisor: input.emisor.trim(),
         monto: input.monto,
         fechaAcreditacion: new Date(`${input.fechaAcreditacion}T12:00:00.000Z`),
@@ -104,5 +111,52 @@ export async function crearFinTesoreriaCheque(
       }
     }
     return { success: false, error: msg };
+  }
+}
+
+export async function actualizarFinTesoreriaCheque(
+  input: ActualizarFinTesoreriaChequeInput
+): Promise<ServiceResult<FinTesoreriaChequeItem>> {
+  const existente = await prisma.finTesoreriaCheque.findUnique({
+    where: { id: input.id },
+    include: { caja: { select: { tipoCaja: true } } },
+  });
+  if (!existente) {
+    return { success: false, error: "Cheque no encontrado." };
+  }
+  if (existente.caja.tipoCaja !== "CHEQUE") {
+    return { success: false, error: "Solo se pueden editar cheques de cajas tipo CHEQUE." };
+  }
+
+  try {
+    const row = await prisma.finTesoreriaCheque.update({
+      where: { id: input.id },
+      data: {
+        tenedor: input.tenedor,
+        emisor: input.emisor.trim(),
+        monto: input.monto,
+        fechaAcreditacion: new Date(`${input.fechaAcreditacion}T12:00:00.000Z`),
+      },
+    });
+    return { success: true, data: mapCheque(row) };
+  } catch (error: unknown) {
+    return { success: false, error: mapDbError(error, "No se pudo actualizar el cheque.") };
+  }
+}
+
+export async function eliminarFinTesoreriaCheque(id: string): Promise<ServiceResult<void>> {
+  try {
+    await prisma.finTesoreriaCheque.delete({ where: { id } });
+    return { success: true, data: undefined };
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2025"
+    ) {
+      return { success: false, error: "Cheque no encontrado." };
+    }
+    return { success: false, error: mapDbError(error, "No se pudo eliminar el cheque.") };
   }
 }

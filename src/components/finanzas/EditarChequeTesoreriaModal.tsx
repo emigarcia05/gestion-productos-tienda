@@ -7,9 +7,6 @@ import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
-import { crearFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
-import { montoArNormalizedStringToPesosIntRounded } from "@/lib/montoArMask";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
   Select,
@@ -19,72 +16,69 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { actualizarFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
+import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import {
   TITULARES_CAJA_TESORERIA,
   type TitularCajaTesoreria,
 } from "@/lib/cajasTesoreriaTitulares";
-
-function tenedorInicialDesdeTitularCaja(raw: string | null | undefined): TitularCajaTesoreria {
-  if (raw && TITULARES_CAJA_TESORERIA.includes(raw as TitularCajaTesoreria)) {
-    return raw as TitularCajaTesoreria;
-  }
-  return TITULARES_CAJA_TESORERIA[0];
-}
+import { montoArNormalizedStringToPesosIntRounded, montoArPesosEnterosToNormalizedString } from "@/lib/montoArMask";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  cajaId: string | null;
-  /** Misma lista que tenedor: se preselecciona con el titular de la caja. */
-  titularCaja?: string | null;
-  onCreated?: () => void;
+  cheque: FinTesoreriaChequeItem | null;
+  onUpdated?: () => void;
 }
 
-export default function AltaChequeTesoreriaModal({
+function tenedorValido(o: string): o is TitularCajaTesoreria {
+  return TITULARES_CAJA_TESORERIA.includes(o as TitularCajaTesoreria);
+}
+
+export default function EditarChequeTesoreriaModal({
   open,
   onOpenChange,
-  cajaId,
-  titularCaja,
-  onCreated,
+  cheque,
+  onUpdated,
 }: Props) {
-  const [tenedor, setTenedor] = useState<TitularCajaTesoreria>(TITULARES_CAJA_TESORERIA[0]);
+  const [tenedor, setTenedor] = useState<TitularCajaTesoreria | "">("");
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
   const [fechaIso, setFechaIso] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    setTenedor(tenedorInicialDesdeTitularCaja(titularCaja ?? null));
-    setEmisor("");
-    setMontoNorm("");
-    setFechaIso(dateToIsoYmdArgentina(new Date()));
-  }, [open, titularCaja]);
+    if (!open || !cheque) return;
+    setEmisor(cheque.emisor);
+    setMontoNorm(montoArPesosEnterosToNormalizedString(cheque.monto));
+    setFechaIso(cheque.fechaAcreditacionIso);
+    setTenedor(tenedorValido(cheque.tenedor) ? cheque.tenedor : "");
+  }, [open, cheque]);
 
   const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
 
   const disabledSubmit = useMemo(() => {
-    return saving || !cajaId || emisor.trim().length === 0 || parsedMonto < 0;
-  }, [saving, cajaId, emisor, parsedMonto]);
+    return saving || !cheque || emisor.trim().length === 0 || parsedMonto < 0 || !tenedor;
+  }, [saving, cheque, emisor, parsedMonto, tenedor]);
 
   async function handleSubmit() {
-    if (disabledSubmit || !cajaId || !fechaIso) return;
+    if (disabledSubmit || !cheque || !fechaIso || !tenedor) return;
     setSaving(true);
     try {
-      const res = await crearFinTesoreriaChequeAction({
-        cajaId,
+      const res = await actualizarFinTesoreriaChequeAction({
+        id: cheque.id,
         tenedor,
         emisor: emisor.trim(),
         monto: parsedMonto,
         fechaAcreditacion: fechaIso,
       });
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudo registrar el cheque.");
+        toast.error(res.error ?? "No se pudo guardar el cheque.");
         return;
       }
-      toast.success("Cheque registrado correctamente.");
+      toast.success("Cheque actualizado correctamente.");
       onOpenChange(false);
-      onCreated?.();
+      onUpdated?.();
     } finally {
       setSaving(false);
     }
@@ -93,7 +87,7 @@ export default function AltaChequeTesoreriaModal({
   return (
     <Dialog open={open} onOpenChange={(next) => (!saving ? onOpenChange(next) : undefined)}>
       <AppModal
-        title="Registrar cheque"
+        title="Editar cheque"
         size="sm"
         className="sm:max-w-md"
         scrollBody={false}
@@ -114,9 +108,11 @@ export default function AltaChequeTesoreriaModal({
               TENEDOR
             </span>
             <Select
-              value={tenedor}
-              onValueChange={(value) => setTenedor(value as TitularCajaTesoreria)}
-              disabled={saving || !cajaId}
+              value={tenedor || "none"}
+              onValueChange={(value) =>
+                setTenedor(value === "none" ? "" : (value as TitularCajaTesoreria))
+              }
+              disabled={saving || !cheque}
             >
               <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
                 <SelectValue placeholder="SELECCIONAR TENEDOR" />
@@ -127,6 +123,7 @@ export default function AltaChequeTesoreriaModal({
                 align="start"
                 className="select-content-filtro"
               >
+                <SelectItem value="none">SELECCIONAR TENEDOR</SelectItem>
                 {TITULARES_CAJA_TESORERIA.map((opt) => (
                   <SelectItem key={opt} value={opt}>
                     {opt}

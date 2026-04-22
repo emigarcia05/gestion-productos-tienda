@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
+import { TITULARES_CAJA_TESORERIA } from "@/lib/cajasTesoreriaTitulares";
+
+export const tenedorChequeTesoreriaSchema = z.enum(
+  TITULARES_CAJA_TESORERIA,
+  "Seleccioná un tenedor válido."
+);
 
 const isoYmdSchema = z
   .string()
@@ -18,6 +24,7 @@ export const montoChequeTesoreriaSchema = z
 
 export const crearFinTesoreriaChequeSchema = z.object({
   cajaId: prismaCuidSchema,
+  tenedor: tenedorChequeTesoreriaSchema,
   emisor: z
     .string()
     .trim()
@@ -31,4 +38,23 @@ export const listarFinTesoreriaChequesPorCajaSchema = z.object({
   cajaId: prismaCuidSchema,
 });
 
+export const actualizarFinTesoreriaChequeSchema = z.object({
+  id: prismaCuidSchema,
+  tenedor: tenedorChequeTesoreriaSchema,
+  emisor: z
+    .string()
+    .trim()
+    .min(1, "Indique el emisor.")
+    .max(500, "Emisor demasiado largo."),
+  monto: montoChequeTesoreriaSchema,
+  fechaAcreditacion: isoYmdSchema,
+});
+
+export const eliminarFinTesoreriaChequeSchema = z.object({
+  id: prismaCuidSchema,
+});
+
 export type CrearFinTesoreriaChequeInput = z.infer<typeof crearFinTesoreriaChequeSchema>;
+export type ActualizarFinTesoreriaChequeInput = z.infer<
+  typeof actualizarFinTesoreriaChequeSchema
+>;

@@ -5,11 +5,15 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
+  actualizarFinTesoreriaChequeSchema,
   crearFinTesoreriaChequeSchema,
+  eliminarFinTesoreriaChequeSchema,
   listarFinTesoreriaChequesPorCajaSchema,
 } from "@/lib/validations/finTesoreriaCheques";
 import {
+  actualizarFinTesoreriaCheque,
   crearFinTesoreriaCheque,
+  eliminarFinTesoreriaCheque,
   listarChequesPorCajaId,
   type FinTesoreriaChequeItem,
 } from "@/services/finTesoreriaCheques.service";
@@ -66,4 +70,46 @@ export async function crearFinTesoreriaChequeAction(
   revalidatePath("/finanzas");
   revalidatePath("/finanzas/tesoreria");
   return { ok: true, data: res.data };
+}
+
+export async function actualizarFinTesoreriaChequeAction(
+  raw: unknown
+): Promise<ActionResult<FinTesoreriaChequeItem>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = actualizarFinTesoreriaChequeSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await actualizarFinTesoreriaCheque(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidatePath("/finanzas");
+  revalidatePath("/finanzas/tesoreria");
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarFinTesoreriaChequeAction(raw: unknown): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = eliminarFinTesoreriaChequeSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await eliminarFinTesoreriaCheque(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidatePath("/finanzas");
+  revalidatePath("/finanzas/tesoreria");
+  return { ok: true, data: undefined };
 }

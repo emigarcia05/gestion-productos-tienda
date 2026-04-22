@@ -10,6 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import ModalFeedbackRegion from "@/components/shared/ModalFeedbackRegion";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -477,11 +478,7 @@ export default function GenerarPedidoToolbarButton({
               </DropdownMenu.Root>
             </div>
 
-            <div
-              className="flex min-h-[5rem] flex-col items-center justify-center gap-2 rounded-md border border-border bg-muted/40 px-4 py-3 text-center"
-              role="status"
-              aria-live="polite"
-            >
+            <ModalFeedbackRegion>
               {mensajeFaltantes ? (
                 <div className="flex max-w-full flex-col items-center justify-center gap-2">
                   <AlertCircle
@@ -533,7 +530,7 @@ export default function GenerarPedidoToolbarButton({
                   </p>
                 </div>
               ) : null}
-            </div>
+            </ModalFeedbackRegion>
           </div>
         </AppModal>
       </Dialog>

@@ -266,6 +266,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
 | `TableEmptyState` + CVA (`@/components/shared/TableEmptyState.tsx`) | Mensajes de lista/tabla vacía; `EmptyTableRow` en `ui/table` reutiliza las mismas variantes. |
 | `ModalMicroLabel` + CVA (`@/components/shared/ModalMicroLabel.tsx`) | Micro-etiquetas MAYÚSCULAS en modales (campos/secciones densas); variantes `align`: `left` \| `center`. |
+| `ModalFeedbackRegion` + CVA (`@/components/shared/ModalFeedbackRegion.tsx`) | Zona reservada de feedback bajo filtros en modales (tokens; `role="status"` + `aria-live`). |
 | `--gris` | Fondo universal de modales y zonas secundarias. |
 | `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
 
@@ -429,7 +430,7 @@ Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`).
 - **Props**: `proveedores`, `defaultSucursal`, `defaultProveedor`, `defaultTipos`, `modulo` (`"enviar" | "urgente" | "tintometrico" | "reposicion"`), `triggerLabel?`, `triggerClassName?`, `triggerSize?`.
 - **Título del modal**: **Generar Pedido** (title case). Footer: **Cancelar** (outline) + **Generar Pedido** (primary).
 - **Tipo de pedido**: `DropdownMenu` de **`radix-ui`** (`modal={false}` dentro del `Dialog`) con **`Portal`** + **`CheckboxItem`** (tres opciones: URGENTE, TINTOMÉTRICO, REPOSICIÓN); no usar panel `absolute` bajo el trigger — el **`AppModal`**/`DialogContent` llevan `overflow-hidden` y recortaban el menú.
-- **Bajo los tres desplegables**: recuadro reservado (`min-h`, borde `border-border`, `bg-muted/40`), contenido **centrado** (`items-center`, `text-center`). Estados: aviso/error → ícono **`AlertCircle`** `text-destructive`; comprobación → **`Loader2`** `text-muted-foreground`; sin ítems → **`AlertCircle`** rojo + texto muted; listo → **`CheckCircle2`** `text-primary` (#0072BB vía token) + **«Listo para generar el pedido.»**. El footer **Generar Pedido** solo con los tres filtros y **`hayItems === true`**.
+- **Bajo los tres desplegables**: cascarón **`ModalFeedbackRegion`** (CVA `surface` / `minHeight`; default `muted` + altura cómoda), contenido **centrado** (`items-center`, `text-center`). Estados: aviso/error → ícono **`AlertCircle`** `text-destructive`; comprobación → **`Loader2`** `text-muted-foreground`; sin ítems → **`AlertCircle`** rojo + texto muted; listo → **`CheckCircle2`** `text-primary` (#0072BB vía token) + **«Listo para generar el pedido.»**. El footer **Generar Pedido** solo con los tres filtros y **`hayItems === true`**.
 - **Validación de sobrestock (otra sucursal):** al confirmar **Generar Pedido**, la primera llamada es `generarPdfEnviarPedidoAction` **sin** `confirmarSobreStock`. El servidor valida antes del snapshot: para cada línea del pedido con **`cod_tienda`**, si en la **otra** sucursal hay sobrestock (stock en `prod_precios_tienda` vs tope resuelto con filas REPOSICIÓN en `prod_ped_merc`), responde `SOBRESTOCK_REQUIERE_CONFIRMACION:…` **sin persistir** (aplica con cualquier combinación de tipos URGENTE / TINTOMÉTRICO / REPOSICIÓN). El cliente llama `getSobreStockReposicionParaModalAction` y abre **`SobreStockReposicionAdvertenciaModal`**. **Confirmar Cant. Pedida** reintenta con `confirmarSobreStock: true`.
 
 ### `SobreStockReposicionAdvertenciaModal` (`src/components/shared/SobreStockReposicionAdvertenciaModal.tsx`)
@@ -597,6 +598,19 @@ Etiqueta visual **compacta** para títulos de campo o bloques dentro de modales 
   - Resto: atributos nativos de `<span>` (`id`, `ref`, etc.).
 - **Accesibilidad**: es un `<span>` decorativo; si precede a un control, envolver en `<label>` (como en **FECHA FACTURA** de `PedidoHistoriaDetalleModal`) o asociar el control con `aria-labelledby` / `aria-label` explícito en el input.
 - **Cuándo usarlo**: micro-etiquetas sobre inputs o separación de secciones en modales densos; evita duplicar `text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground`.
+
+### `ModalFeedbackRegion` (`src/components/shared/ModalFeedbackRegion.tsx`)
+
+Cascarón para **mensajes de estado inline** en modales (debajo de filtros, zona reservada de altura mínima). Centraliza borde, padding, centrado y tokens de fondo; el contenido (icono + texto) sigue definido por la pantalla.
+
+- **CVA exportado**: `modalFeedbackRegionVariants` (`surface`, `minHeight`).
+- **Props**
+  - **`children`**: `ReactNode`.
+  - **`surface`**: `"muted"` (default, `border-border` + `bg-muted/40`) \| `"card"` \| `"tinted"` (`border-primary/20` + `bg-primary/5`).
+  - **`minHeight`**: `"comfortable"` (default, `min-h-[5rem]`) \| `"compact"` (`min-h-12`) \| `"auto"` (`min-h-0`).
+  - **`live`**: `"polite"` (default) \| `"assertive"` \| `"off"` — controla `aria-live` del contenedor (sin anuncio si `off`).
+  - **`className`**: opcional; admite el resto de atributos de `<div>` (spread).
+- **Accesibilidad**: `role="status"`; combinar con copy que describa el estado en los hijos (iconos con `aria-hidden` cuando sea redundante).
 
 ### `DuxSyncStyleButton` (`src/components/shared/DuxSyncStyleButton.tsx`)
 

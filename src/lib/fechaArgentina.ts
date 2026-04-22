@@ -160,6 +160,36 @@ export function formatIsoYmdDdMmYyyyArgentina(isoYmd: string): string {
   return `${d}/${m}/${y}`;
 }
 
+const MS_CALENDARIO_DIA = 86_400_000;
+
+/**
+ * Días calendario entre `desdeIso` y `hastaIso` (solo `YYYY-MM-DD`), ambas en zona de negocio Argentina.
+ * Si `hastaIso` es anterior a `desdeIso`, devuelve `null`. Si coinciden, `0`.
+ */
+export function diasCalendarioDesdeHastaIsoYmdArgentina(
+  desdeIso: string,
+  hastaIso: string
+): number | null {
+  const [ya, ma, da] = desdeIso.split("-").map(Number);
+  const [yh, mh, dh] = hastaIso.split("-").map(Number);
+  if (![ya, ma, da, yh, mh, dh].every((n) => Number.isFinite(n))) return null;
+  const t0 = Date.UTC(ya, ma - 1, da);
+  const t1 = Date.UTC(yh, mh - 1, dh);
+  if (t1 < t0) return null;
+  return Math.round((t1 - t0) / MS_CALENDARIO_DIA);
+}
+
+/**
+ * Para cheques de tesorería: días que restan hasta la fecha de acreditación (calendario Argentina).
+ * Vacío si la fecha de acreditación ya pasó respecto de hoy en AR.
+ */
+export function textoDiasFaltantesAcreditacionCheque(fechaAcreditacionIso: string): string {
+  const hoy = dateToIsoYmdArgentina(new Date());
+  const n = diasCalendarioDesdeHastaIsoYmdArgentina(hoy, fechaAcreditacionIso);
+  if (n === null) return "";
+  return String(n);
+}
+
 /** Sello `dd_mm hh_mm` para nombre de archivo de recepción. */
 export function formatDdMmHhMmGuionesBajosArchivoArgentina(d: Date): string {
   const m = toPartMap(d, {
