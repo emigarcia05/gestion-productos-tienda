@@ -781,7 +781,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-04-21): catálogo hoja `fin_bal_cat_gasto` (sin proveedor en la fila de catálogo); detalle en columna **GASTO FINAL** (`fin_bal_gasto_final`: proveedor + sucursal + mensual). Ver `BACKEND_GUIDELINES` §2.5e.*
 
-*Última actualización (2026-04-21): `/finanzas/balance/gastos/catalogo` — columna **GASTO FINAL** (`fin_bal_gasto_final`): proveedor + sucursal + mensual; `listarFinBalGastosJerarquia()` expone `asignacionesFinales`. Modales `CrearEditarFinBalGastoFinalModal` / `EliminarFinBalGastoFinalModal` + actions `*FinBalGastoFinal*`; página carga `listarSucursalesParaGastos()`.*
+*Última actualización (2026-04-21): `/finanzas/balance/gastos/catalogo` — columna **GASTO FINAL** (`fin_bal_gasto_final`): proveedor + sucursal + mensual; `listarFinBalGastosJerarquia()` expone `asignacionesFinales`. Modales `CrearEditarFinBalGastoFinalModal` / `EliminarFinBalGastoFinalModal` + actions `*FinBalGastoFinal*`; página carga `listarSucursalesParaGastos()` (**solo** `global_sucursales` con `centro_costo`; `FinBalGastosCatalogoPageClient` fusiona la sucursal actual en **editar** si la fila legacy no está en esa lista).*
 
 *Última actualización (2026-04-21): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); año/mes y opciones de periodo **solo desde BD** (`listarPeriodosConImputacionesEnDb`); rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
 

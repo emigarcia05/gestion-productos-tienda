@@ -75,9 +75,13 @@ export async function listarMovimientosFinanzas(): Promise<MovimientoFinanzasIte
   return rows.map(mapMovimiento);
 }
 
+/** Sucursales con `centro_costo` (modal **Gasto final** y selects de gastos de balance). */
 export async function listarSucursalesParaGastos(): Promise<SucursalOption[]> {
   const rows = await prisma.sucursal.findMany({
-    where: { id: { not: LEGACY_SUCURSAL_CORPORATIVO_SEED_ID } },
+    where: {
+      centroCosto: true,
+      id: { not: LEGACY_SUCURSAL_CORPORATIVO_SEED_ID },
+    },
     select: { id: true, nombre: true },
     orderBy: [{ nombre: "asc" }],
   });

@@ -507,9 +507,23 @@ function mapFinBalGastoFinalRow(row: {
   };
 }
 
+async function sucursalEsCentroDeCosto(sucursalId: string): Promise<boolean> {
+  const s = await prisma.sucursal.findUnique({
+    where: { id: sucursalId },
+    select: { centroCosto: true },
+  });
+  return Boolean(s?.centroCosto);
+}
+
 export async function crearFinBalGastoFinal(
   input: CrearFinBalGastoFinalInput
 ): Promise<ServiceResult<FinBalGastoFinalItem>> {
+  if (!(await sucursalEsCentroDeCosto(input.sucursalId))) {
+    return {
+      success: false,
+      error: "La sucursal debe ser centro de costo.",
+    };
+  }
   try {
     const row = await prisma.finBalGastoFinal.create({
       data: {
@@ -536,6 +550,22 @@ export async function crearFinBalGastoFinal(
 export async function editarFinBalGastoFinal(
   input: EditarFinBalGastoFinalInput
 ): Promise<ServiceResult<FinBalGastoFinalItem>> {
+  const prev = await prisma.finBalGastoFinal.findUnique({
+    where: { id: input.id },
+    select: { sucursalId: true },
+  });
+  if (!prev) {
+    return { success: false, error: "Gasto final no encontrado." };
+  }
+  if (
+    input.sucursalId !== prev.sucursalId &&
+    !(await sucursalEsCentroDeCosto(input.sucursalId))
+  ) {
+    return {
+      success: false,
+      error: "La sucursal debe ser centro de costo.",
+    };
+  }
   try {
     const row = await prisma.finBalGastoFinal.update({
       where: { id: input.id },

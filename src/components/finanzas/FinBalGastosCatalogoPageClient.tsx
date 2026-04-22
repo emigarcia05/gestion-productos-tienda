@@ -154,6 +154,25 @@ export default function FinBalGastosCatalogoPageClient({
     [proveedores]
   );
 
+  /** Centros de costo desde servidor; en edición agrega la sucursal actual si ya no está en la lista (legacy). */
+  const sucursalesParaModalGastoFinal = useMemo(() => {
+    const ids = new Set(sucursales.map((s) => s.id));
+    if (
+      gastoFinalModal.open &&
+      gastoFinalModal.modo === "editar" &&
+      gastoFinalModal.id &&
+      gastoSeleccionado
+    ) {
+      const row = gastoSeleccionado.asignacionesFinales.find((a) => a.id === gastoFinalModal.id);
+      if (row && !ids.has(row.sucursal.id)) {
+        return [...sucursales, { id: row.sucursal.id, nombre: row.sucursal.nombre }].sort((a, b) =>
+          a.nombre.localeCompare(b.nombre, "es")
+        );
+      }
+    }
+    return sucursales;
+  }, [sucursales, gastoFinalModal, gastoSeleccionado]);
+
   function handleSelectTipo(id: string) {
     setSelectedTipoId(id);
     setSelectedRubroId(null);
@@ -472,7 +491,7 @@ export default function FinBalGastosCatalogoPageClient({
           gastoId={gastoSeleccionado.id}
           gastoNombre={gastoSeleccionado.nombre}
           proveedoresOpciones={proveedoresOpcionesModal}
-          sucursales={sucursales}
+          sucursales={sucursalesParaModalGastoFinal}
           asignacionesExistentes={gastoSeleccionado.asignacionesFinales.map((a) => ({
             id: a.id,
             proveedorId: a.proveedorId,
