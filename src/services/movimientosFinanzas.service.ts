@@ -25,12 +25,6 @@ export interface SucursalOption {
   nombre: string;
 }
 
-/**
- * PK fija insertada por `20260418150000_seed_sucursal_corporativo` (tabla renombrada a `global_sucursales`).
- * Se excluye del listado de selects de gastos: la sucursal **CORPORATIVO** debe existir solo como fila real en BD.
- */
-const LEGACY_SUCURSAL_CORPORATIVO_SEED_ID = "suc_corporativo";
-
 function mapMovimiento(row: {
   id: string;
   nombre: string;
@@ -75,13 +69,10 @@ export async function listarMovimientosFinanzas(): Promise<MovimientoFinanzasIte
   return rows.map(mapMovimiento);
 }
 
-/** Sucursales con `centro_costo` (modal **Gasto final** y selects de gastos de balance). */
+/** Sucursales con `centro_costo` (modal **Gasto final** y selects de gastos de balance). Incluye filas seed p. ej. `suc_corporativo` si `centro_costo = true`. */
 export async function listarSucursalesParaGastos(): Promise<SucursalOption[]> {
   const rows = await prisma.sucursal.findMany({
-    where: {
-      centroCosto: true,
-      id: { not: LEGACY_SUCURSAL_CORPORATIVO_SEED_ID },
-    },
+    where: { centroCosto: true },
     select: { id: true, nombre: true },
     orderBy: [{ nombre: "asc" }],
   });

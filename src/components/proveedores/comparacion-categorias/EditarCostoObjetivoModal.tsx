@@ -168,7 +168,7 @@ export default function EditarCostoObjetivoModal({
                   modo === "manual" ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                1. Manual
+                1. MANUAL
               </button>
               <span className="text-muted-foreground">|</span>
               <button
@@ -179,29 +179,29 @@ export default function EditarCostoObjetivoModal({
                   modo === "lista" ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                2. Desde lista de precios
+                2. DESDE LISTA DE PRECIOS
               </button>
             </div>
 
             {modo === "manual" && (
               <div className="grid gap-2">
-                <Label htmlFor="costo-objetivo">Costo compra objetivo</Label>
+                <Label htmlFor="costo-objetivo">COSTO COMPRA OBJETIVO</Label>
                 <MontoArInput
                   id="costo-objetivo"
                   valueNormalized={valorNorm}
                   onValueNormalizedChange={setValorNorm}
                   aria-label="Costo compra objetivo en pesos"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Dejá en $0,00 para quitar el objetivo.
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  DEJÁ EN $0,00 PARA QUITAR EL OBJETIVO.
                 </p>
               </div>
             )}
 
             {modo === "lista" && (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Filtrá por proveedor y/o descripción; elegí un producto y usá su precio final de compra como costo objetivo.
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  FILTRÁ POR PROVEEDOR Y/O DESCRIPCIÓN; ELEGÍ UN PRODUCTO Y USÁ SU PRECIO FINAL DE COMPRA COMO COSTO OBJETIVO.
                 </p>
                 <div className="flex flex-col gap-2">
                   <Select
@@ -209,10 +209,10 @@ export default function EditarCostoObjetivoModal({
                     onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Proveedor" />
+                      <SelectValue placeholder="PROVEEDOR" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Todos los proveedores</SelectItem>
+                      <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
                       {proveedores.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           [{p.prefijo}] {p.nombre}
@@ -223,21 +223,21 @@ export default function EditarCostoObjetivoModal({
                   <Input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Buscar por descripción o código..."
+                    placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
                     className="w-full"
                   />
                 </div>
                 <div className="border rounded-md overflow-hidden max-h-48 overflow-y-auto">
                   {loadingLista ? (
                     <TableEmptyState
-                      message="Cargando…"
+                      message="CARGANDO…"
                       placement="tableCell"
                       textSize="sm"
                       maxWidth="full"
                     />
                   ) : rows.length === 0 ? (
                     <TableEmptyState
-                      message="Aplicá filtros para ver productos."
+                      message="APLICÁ FILTROS PARA VER PRODUCTOS."
                       placement="tableCell"
                       textSize="sm"
                       maxWidth="full"

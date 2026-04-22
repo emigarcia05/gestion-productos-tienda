@@ -28,10 +28,10 @@ interface Props {
 }
 
 const CAMPOS_OPCIONES: { value: CampoMasivo; label: string; tipo: "porcentaje" | "boolean" }[] = [
-  { value: "descuentoRubro", label: "Descuento rubro", tipo: "porcentaje" },
-  { value: "descuentoCantidad", label: "Descuento por cant.", tipo: "porcentaje" },
-  { value: "cxTransporte",      label: "Cx Transporte",      tipo: "porcentaje" },
-  { value: "disponible",        label: "Disponible",         tipo: "boolean" },
+  { value: "descuentoRubro", label: "DESCUENTO RUBRO", tipo: "porcentaje" },
+  { value: "descuentoCantidad", label: "DESCUENTO POR CANT.", tipo: "porcentaje" },
+  { value: "cxTransporte",      label: "CX TRANSPORTE",      tipo: "porcentaje" },
+  { value: "disponible",        label: "DISPONIBLE",         tipo: "boolean" },
 ];
 
 export default function AccionMasivaModal({
@@ -123,10 +123,10 @@ export default function AccionMasivaModal({
 
             {/* Alcance de la acción */}
             <div className="rounded-md border border-border/50 bg-muted/30 px-3 py-2.5 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Alcance</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">ALCANCE</p>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Proveedor</Label>
+                <Label className="text-xs">PROVEEDOR</Label>
                 <div className="relative">
                   <select
                     value={proveedorId}
@@ -176,7 +176,7 @@ export default function AccionMasivaModal({
 
             {/* Campo y valor */}
             <div className="space-y-1.5">
-              <Label>Campo</Label>
+              <Label>CAMPO</Label>
               <div className="relative">
                 <select
                   value={campo}
@@ -190,7 +190,7 @@ export default function AccionMasivaModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Valor</Label>
+              <Label>VALOR</Label>
               {campoActual.tipo === "boolean" ? (
                 <div className="relative">
                   <select
@@ -199,15 +199,15 @@ export default function AccionMasivaModal({
                     className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">SELECCIONAR...</option>
-                    <option value="true">Disponible</option>
-                    <option value="false">No disponible</option>
+                    <option value="true">DISPONIBLE</option>
+                    <option value="false">NO DISPONIBLE</option>
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Input
-                    type="number" min={0} max={100} step={0.1} placeholder="Ej: 10"
+                    type="number" min={0} max={100} step={0.1} placeholder="EJ: 10"
                     value={valor} onChange={(e) => setValor(e.target.value)}
                   />
                   <span className="text-sm text-muted-foreground shrink-0">%</span>

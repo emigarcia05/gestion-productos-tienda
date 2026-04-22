@@ -142,7 +142,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                 </p>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="clave-editor">Clave</Label>
+                  <Label htmlFor="clave-editor">CLAVE</Label>
                   <div className="relative">
                     <Input
                       id="clave-editor"
@@ -155,7 +155,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleActivar();
                       }}
-                      placeholder="••••••••"
+                      placeholder="INGRESAR CLAVE"
                       autoFocus
                       className="pr-10"
                     />
@@ -217,7 +217,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
             </p>
 
             <div className="space-y-1.5">
-              <Label htmlFor="clave-editor">Clave</Label>
+              <Label htmlFor="clave-editor">CLAVE</Label>
               <div className="relative">
                 <Input
                   id="clave-editor"
@@ -230,7 +230,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleActivar();
                   }}
-                  placeholder="••••••••"
+                  placeholder="INGRESAR CLAVE"
                   autoFocus
                   className="pr-10"
                 />

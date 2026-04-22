@@ -99,7 +99,7 @@ export default function EditarMontoFinBalGastoMensualModal({
       }}
     >
       <AppModal
-        title="Editar monto"
+        title="Editar Monto"
         size="md"
         className="sm:max-w-md"
         actions={

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { prismaCuidOrUuidSchema, prismaCuidSchema } from "@/lib/validations/common";
+import {
+  globalSucursalIdSchema,
+  prismaCuidOrUuidSchema,
+  prismaCuidSchema,
+} from "@/lib/validations/common";
 
 /**
  * Validaciones para el catálogo jerárquico Finanzas → Balance → Gastos:
@@ -85,7 +89,7 @@ const diaDevengadoSchema = z.coerce
 export const crearFinBalGastoFinalSchema = z.object({
   gastoId: prismaCuidOrUuidSchema,
   proveedorId: prismaCuidOrUuidSchema,
-  sucursalId: prismaCuidOrUuidSchema,
+  sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
 });
@@ -94,7 +98,7 @@ export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSch
 export const editarFinBalGastoFinalSchema = z.object({
   id: prismaCuidSchema,
   proveedorId: prismaCuidOrUuidSchema,
-  sucursalId: prismaCuidOrUuidSchema,
+  sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
 });

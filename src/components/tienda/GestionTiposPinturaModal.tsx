@@ -182,7 +182,7 @@ export default function GestionTiposPinturaModal({
               </TableHeader>
               <TableBody>
                 {draft.length === 0 ? (
-                  <EmptyTableRow colSpan={2} message="Sin registros." />
+                  <EmptyTableRow colSpan={2} message="SIN REGISTROS." />
                 ) : (
                   draft.map((row) => (
                     <TableRow key={row.key}>

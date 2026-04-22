@@ -251,7 +251,7 @@ export default function VincularModal({
         )}
 
         <AppModal
-          title="Vínculos con Proveedores"
+          title="Vínculos Con Proveedores"
           size="lg"
           className="sm:max-w-2xl w-[calc(100%-2rem)]"
           scrollBody={false}

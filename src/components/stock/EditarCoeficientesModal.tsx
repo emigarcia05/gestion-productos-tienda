@@ -125,7 +125,7 @@ export default function EditarCoeficientesModal({
               </TableHeader>
               <TableBody>
                 {proveedores.length === 0 ? (
-                  <EmptyTableRow colSpan={2} message="Sin proveedores." />
+                  <EmptyTableRow colSpan={2} message="SIN PROVEEDORES." />
                 ) : (
                   proveedores.map((p) => (
                     <TableRow key={p.id}>
@@ -135,6 +135,7 @@ export default function EditarCoeficientesModal({
                           <Input
                             type="text"
                             inputMode="decimal"
+                            placeholder="COEF."
                             value={draft[p.id] ?? String(p.coeficienteTintometrico)}
                             onChange={(e) => setCoef(p.id, e.target.value)}
                             className="h-8 w-28 text-center"

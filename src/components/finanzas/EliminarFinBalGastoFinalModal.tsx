@@ -54,7 +54,7 @@ export default function EliminarFinBalGastoFinalModal({
       }}
     >
       <AppModal
-        title="Eliminar gasto final"
+        title="Eliminar Gasto Final"
         size="sm"
         className="sm:max-w-md"
         actions={

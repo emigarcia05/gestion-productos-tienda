@@ -290,8 +290,8 @@ export default function ConfigurarReposicionModal({
             </div>
 
             <div className="flex flex-col items-center gap-3">
-              <span className="text-sm text-foreground">
-                Agregar esta configuración a estos productos
+              <span className="text-sm text-foreground uppercase tracking-wide">
+                AGREGAR ESTA CONFIGURACIÓN A ESTOS PRODUCTOS
               </span>
               <Button
                 type="button"

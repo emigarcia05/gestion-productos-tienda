@@ -47,11 +47,11 @@ type CampoDestinoListaPrecios =
   | "ignorar";
 
 const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolean }[] = [
-  { value: "codProdProv", label: "Cod. Proveedor", required: true },          // cod_prod_proveedor
-  { value: "descripcion", label: "Descripcion Proveedor", required: false },
-  { value: "precioLista", label: "Px. Lista Proveedor", required: true },
-  { value: "precioVentaSugerido", label: "Px. Venta Sugerido", required: false },
-  { value: "ignorar", label: "Ignorar / (sin asignar)", required: false },
+  { value: "codProdProv", label: "COD. PROVEEDOR", required: true },          // cod_prod_proveedor
+  { value: "descripcion", label: "DESCRIPCIÓN PROVEEDOR", required: false },
+  { value: "precioLista", label: "PX. LISTA PROVEEDOR", required: true },
+  { value: "precioVentaSugerido", label: "PX. VENTA SUGERIDO", required: false },
+  { value: "ignorar", label: "IGNORAR / (SIN ASIGNAR)", required: false },
 ];
 
 export default function ImportarListaPreciosModal({ proveedores }: Props) {
@@ -197,7 +197,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
         <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
             {/* Fila 0: Proveedor */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">Proveedor</label>
+              <label className="text-sm font-medium text-muted-foreground">PROVEEDOR</label>
               <div className="relative">
                 <select
                   value={proveedorId}
@@ -219,7 +219,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             <div className="grid grid-cols-[1fr_10rem] gap-x-4 gap-y-3 items-center">
               {/* Fila 1: Adjuntar / Modificar archivo */}
               <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">
-                {fileName ? "Modificar archivo" : "Adjuntar un archivo"}
+                {fileName ? "MODIFICAR ARCHIVO" : "ADJUNTAR UN ARCHIVO"}
               </span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
@@ -236,7 +236,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                   }}
                   className="flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                 >
-                  {fileName ? "Modificar archivo" : "Adjuntar archivo"}
+                  {fileName ? "MODIFICAR ARCHIVO" : "ADJUNTAR ARCHIVO"}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -251,7 +251,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
 
               {/* Fila 2: Los datos tienen encabezados — SÍ / NO */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Los datos tienen encabezados</span>
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">LOS DATOS TIENEN ENCABEZADOS</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"
@@ -276,7 +276,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
 
               {/* Fila 3: Habilitado — SÍ / NO */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Habilitado</span>
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">HABILITADO</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"
@@ -301,7 +301,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
 
               {/* Fila 4: Precio en dólares — SÍ / NO */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">Precio en dólares</span>
+              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">PRECIO EN DÓLARES</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"

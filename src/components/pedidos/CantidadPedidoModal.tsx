@@ -62,13 +62,13 @@ export default function CantidadPedidoModal({
 
         <div className="space-y-4 py-2">
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Descripción</p>
+            <p className="text-xs text-muted-foreground mb-1">DESCRIPCIÓN</p>
             <p className="text-sm font-medium text-foreground">
               {producto.descripcion}
             </p>
           </div>
 
-          <p className="text-sm font-medium">¿Cuántas unidades desea pedir?</p>
+          <p className="text-sm font-medium">¿CUÁNTAS UNIDADES DESEA PEDIR?</p>
 
           {/* Contenedor fijo para alinear las 3 filas */}
           <div className="w-[14rem] mx-auto space-y-3">
@@ -106,13 +106,13 @@ export default function CantidadPedidoModal({
 
             {/* Fila 3: Otra Cantidad (una fila) + input y Agregar centrados */}
             <div className="flex flex-col items-center gap-2">
-              <span className="text-sm text-muted-foreground">Otra Cantidad</span>
+              <span className="text-sm text-muted-foreground">OTRA CANTIDAD</span>
               <div className="flex items-center justify-center gap-2">
                 <Input
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  placeholder="—"
+                  placeholder="CANT."
                   value={otraCantidad}
                   onChange={(e) => setOtraCantidad(e.target.value.replace(/\D/g, "").slice(0, 5))}
                   onKeyDown={(e) => {

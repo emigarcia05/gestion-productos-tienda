@@ -160,13 +160,13 @@ export default function ModalTablaConFiltros<T>({
   onConfirm,
   onConfirmSingle,
   selectionMode = "single",
-  confirmLabel = (n) => `Asignar ${n} producto(s)`,
+  confirmLabel = (n) => `ASIGNAR ${n} PRODUCTO(S)`,
   confirmSingleLabel = "AGREGAR",
   confirmPending = false,
   confirmSingleDisabled = false,
   showSingleConfirmCheckbox = false,
   loading = false,
-  emptyMessage = "Sin resultados",
+  emptyMessage = "SIN RESULTADOS",
   count,
   contentClassName,
   footerRight: footerRightProp,
@@ -297,7 +297,9 @@ export default function ModalTablaConFiltros<T>({
         <div className="modal-app__content flex-1 min-h-0 flex flex-col">
           <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
             {subtitle && (
-              <p className="text-xs text-muted-foreground shrink-0">{subtitle}</p>
+              <p className="text-xs text-muted-foreground shrink-0 uppercase tracking-wide">
+                {subtitle}
+              </p>
             )}
             <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
               {filterContent}
@@ -353,7 +355,7 @@ export default function ModalTablaConFiltros<T>({
                       aria-live="polite"
                     >
                       <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
-                      Cargando...
+                      CARGANDO…
                     </div>
                   </div>
                 </>
@@ -510,7 +512,7 @@ export default function ModalTablaConFiltros<T>({
               {count !== undefined && (
                 <>
                   <strong className="text-primary font-semibold">{count.toLocaleString()}</strong>
-                  {" resultado(s)"}
+                  {" RESULTADO(S)"}
                 </>
               )}
             </p>

@@ -67,11 +67,12 @@ export default function CantidadPedidoUrgenteModal({
           </div>
 
           <div className="flex flex-col items-center gap-3 w-full">
-            <span className="text-sm font-medium text-foreground">Cant. A Pedir</span>
+            <span className="text-sm font-medium text-foreground">CANT. A PEDIR</span>
             <Input
               type="number"
               min={1}
               step={1}
+              placeholder="CANTIDAD"
               value={valor}
               onChange={(e) => {
                 const soloDigitos = e.target.value.replace(/\D/g, "");

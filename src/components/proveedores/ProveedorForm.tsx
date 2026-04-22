@@ -96,11 +96,11 @@ export default function ProveedorForm({
   return (
     <form id={id} onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="nombre">Nombre del proveedor</Label>
+        <Label htmlFor="nombre">NOMBRE DEL PROVEEDOR</Label>
         <Input
           id="nombre"
           name="nombre"
-          placeholder="Ej: Distribuidora Norte S.A."
+          placeholder="EJ: DISTRIBUIDORA NORTE S.A."
           defaultValue={proveedor?.nombre ?? ""}
           required
           minLength={2}
@@ -110,15 +110,15 @@ export default function ProveedorForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="prefijo">
-          Prefijo{" "}
-          <span className="text-muted-foreground font-normal text-xs">
-            (opcional; prefijo del código externo)
+          PREFIJO{" "}
+          <span className="text-muted-foreground font-normal text-xs uppercase">
+            (OPCIONAL; PREFIJO DEL CÓDIGO EXTERNO)
           </span>
         </Label>
         <Input
           id="prefijo"
           name="prefijo"
-          placeholder="Ej: PIN"
+          placeholder="EJ: PIN"
           defaultValue={proveedor?.prefijo ?? ""}
           maxLength={3}
           disabled={pending}
@@ -139,7 +139,7 @@ export default function ProveedorForm({
         <Input
           id="idProveedorDux"
           name="idProveedorDux"
-          placeholder="Ej: 1234"
+          placeholder="EJ: 1234"
           defaultValue={proveedor?.idProveedorDux ?? ""}
           disabled={pending}
         />
@@ -149,11 +149,11 @@ export default function ProveedorForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="whatsapp">WhatsApp</Label>
+        <Label htmlFor="whatsapp">WHATSAPP</Label>
         <Input
           id="whatsapp"
           name="whatsapp"
-          placeholder="Ej: 5491112345678 (sin +)"
+          placeholder="EJ: 5491112345678 (SIN +)"
           defaultValue={proveedor?.whatsapp ?? ""}
           disabled={pending}
           inputMode="numeric"
@@ -168,7 +168,7 @@ export default function ProveedorForm({
         <Input
           id="plazosPagos"
           name="plazosPagos"
-          placeholder="Ej: 30, 60 o 90, 120, 150"
+          placeholder="EJ: 30, 60 O 90, 120, 150"
           defaultValue={proveedor?.plazosPagos ?? ""}
           disabled={pending}
         />
@@ -183,7 +183,7 @@ export default function ProveedorForm({
         <Input
           id="coeficienteTintometrico"
           name="coeficienteTintometrico"
-          placeholder="Ej: 1,250000"
+          placeholder="EJ: 1,250000"
           defaultValue={String(proveedor?.coeficienteTintometrico ?? 1)}
           disabled={pending}
           inputMode="decimal"

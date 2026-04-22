@@ -114,10 +114,10 @@ export default function ElegirProductoReferenciaModal({
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
                 <SelectTrigger className="input-filtro-unificado w-full">
-                  <SelectValue placeholder="Proveedor" />
+                  <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Todos los proveedores</SelectItem>
+                  <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
                   {proveedores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
@@ -129,7 +129,7 @@ export default function ElegirProductoReferenciaModal({
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Buscar por descripción o código..."
+                  placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
                   className="input-filtro-unificado flex-1 min-w-0"
                 />
                 <LimpiarFiltrosButton visible={!!hayFiltros} onClick={limpiarFiltros} />
@@ -140,7 +140,7 @@ export default function ElegirProductoReferenciaModal({
                 <TableEmptyState message="Cargando…" placement="panel" />
               ) : rows.length === 0 ? (
                 <TableEmptyState
-                  message="Aplicá filtros para ver productos."
+                  message="APLICÁ FILTROS PARA VER PRODUCTOS."
                   placement="panel"
                 />
               ) : (

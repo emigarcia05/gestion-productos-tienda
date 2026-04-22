@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismaCuidSchema } from "@/lib/validations/common";
+import { globalSucursalIdSchema } from "@/lib/validations/common";
 
 export const tipoMovimientoFinanzasSchema = z.enum([
   "EFECTIVO",
@@ -20,7 +20,7 @@ export const crearMovimientoFinanzasSchema = z.object({
     .max(200, "El nombre es demasiado largo.")
     .transform((value) => value.toUpperCase()),
   tipoGasto: tipoMovimientoFinanzasSchema,
-  sucursalId: prismaCuidSchema,
+  sucursalId: globalSucursalIdSchema,
   monto: montoMovimientoFinanzasSchema,
 });
 

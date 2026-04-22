@@ -146,9 +146,9 @@ export default function FiltroRangoFechasCalendarioModal({
         }
       >
         <div className="flex flex-col gap-3">
-          <p className="text-xs text-muted-foreground">
-            Primer click en el calendario: fecha desde. Segundo click: fecha hasta. Al elegir la
-            segunda fecha se aplica el filtro.
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+            PRIMER CLICK EN EL CALENDARIO: FECHA DESDE. SEGUNDO CLICK: FECHA HASTA. AL ELEGIR LA
+            SEGUNDA FECHA SE APLICA EL FILTRO.
           </p>
           <div className="flex items-center justify-between gap-2">
             <Button
@@ -218,10 +218,10 @@ export default function FiltroRangoFechasCalendarioModal({
             })}
           </div>
           {(draftDesde || draftHasta) && (
-            <p className="text-xs text-muted-foreground tabular-nums">
-              {draftDesde ? `Desde: ${draftDesde}` : ""}
+            <p className="text-xs text-muted-foreground tabular-nums uppercase">
+              {draftDesde ? `DESDE: ${draftDesde}` : ""}
               {draftDesde && draftHasta ? " · " : ""}
-              {draftHasta ? `Hasta: ${draftHasta}` : draftDesde ? " · Elegí fecha hasta" : ""}
+              {draftHasta ? `HASTA: ${draftHasta}` : draftDesde ? " · ELEGÍ FECHA HASTA" : ""}
             </p>
           )}
         </div>

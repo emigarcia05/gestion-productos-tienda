@@ -93,10 +93,10 @@ export default function AsignarProductosModal({
         onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
       >
         <SelectTrigger className="input-filtro-unificado w-full">
-          <SelectValue placeholder="Proveedor" />
+          <SelectValue placeholder="PROVEEDOR" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="none">Todos los proveedores</SelectItem>
+          <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
           {proveedores.map((p) => (
             <SelectItem key={p.id} value={p.id}>
               [{p.prefijo}] {p.nombre}
@@ -109,7 +109,7 @@ export default function AsignarProductosModal({
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por descripción o código..."
+          placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
           className="input-filtro-unificado flex-1 min-w-0"
         />
         <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
@@ -146,16 +146,16 @@ export default function AsignarProductosModal({
       onClose={() => onOpenChange(false)}
       selectionMode="multi"
       title="Asignar Productos A Esta Categoría"
-      subtitle="Filtrá Por Proveedor Y Descripción. Marcá Los Productos Y Presioná Asignar."
+      subtitle="FILTRÁ POR PROVEEDOR Y DESCRIPCIÓN. MARCÁ LOS PRODUCTOS Y PRESIONÁ ASIGNAR."
       filterContent={filterContent}
       columns={columns}
       rows={rows}
       getRowId={(row) => row.id}
       onConfirm={handleConfirm}
-      confirmLabel={(n) => `Asignar ${n} Producto(s)`}
+      confirmLabel={(n) => `ASIGNAR ${n} PRODUCTO(S)`}
       confirmPending={asignando}
       loading={loading}
-      emptyMessage="No hay productos o no coinciden los filtros."
+      emptyMessage="NO HAY PRODUCTOS O NO COINCIDEN LOS FILTROS."
       count={rows.length}
       contentClassName="max-w-[84rem]"
     />

@@ -14,6 +14,15 @@ export const prismaCuidOrUuidSchema = z.union([
   z.string().cuid("ID inválido."),
 ]);
 
+/**
+ * `global_sucursales.id`: CUID, UUID, o id fijo de seed **CORPORATIVO** (`suc_corporativo`, migración `20260418150000_seed_sucursal_corporativo`).
+ */
+export const globalSucursalIdSchema = z.union([
+  z.string().uuid("ID inválido."),
+  z.string().cuid("ID inválido."),
+  z.literal("suc_corporativo"),
+]);
+
 /** Lista de UUIDs (mínimo uno). */
 export const uuidsSchema = z.array(uuidSchema).min(1, "Al menos un ID es requerido.");
 

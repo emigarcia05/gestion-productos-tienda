@@ -69,21 +69,21 @@ export function ImportResultProvider({ children }: { children: React.ReactNode }
             <div className="space-y-4 text-sm">
               <ul className="grid gap-2">
                 <li>
-                  <span className="font-medium">Creados:</span> {state.data.creados}
+                  <span className="font-medium">CREADOS:</span> {state.data.creados}
                 </li>
                 <li>
-                  <span className="font-medium">Actualizados:</span> {state.data.actualizados}
+                  <span className="font-medium">ACTUALIZADOS:</span> {state.data.actualizados}
                 </li>
                 {state.data.eliminados > 0 && (
                   <li>
-                    <span className="font-medium">Eliminados:</span> {state.data.eliminados}
+                    <span className="font-medium">ELIMINADOS:</span> {state.data.eliminados}
                   </li>
                 )}
               </ul>
               {state.data.errores.length > 0 && (
                 <div>
                   <p className={cn("mb-1 font-medium", TEXT_WARNING_CLASS)}>
-                    Advertencias ({state.data.errores.length}):
+                    ADVERTENCIAS ({state.data.errores.length}):
                   </p>
                   <ul className="max-h-40 overflow-auto list-disc list-inside text-muted-foreground space-y-0.5">
                     {state.data.errores.slice(0, 20).map((e, i) => (

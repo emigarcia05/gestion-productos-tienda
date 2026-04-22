@@ -208,7 +208,7 @@ export default function NuevoItemTintometricoModal({
                 }
               >
                 <SelectTrigger className="h-10 w-full">
-                  <SelectValue placeholder="Seleccionar Sucursal" />
+                  <SelectValue placeholder="SELECCIONAR SUCURSAL" />
                 </SelectTrigger>
                 <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 {sucursales.map((s) => (
@@ -224,7 +224,7 @@ export default function NuevoItemTintometricoModal({
               <span className="text-xs text-foreground">Proveedor</span>
               <Select value={proveedorId} onValueChange={setProveedorId}>
                 <SelectTrigger className="h-10 w-full">
-                  <SelectValue placeholder="Seleccionar Proveedor" />
+                  <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                   {proveedores.map((p) => (
@@ -245,7 +245,7 @@ export default function NuevoItemTintometricoModal({
                 onChange={(e) => setCodTintometrico(e.target.value)}
                 disabled={!proveedorSeleccionado}
                 className="h-10"
-                placeholder="Ingresar Código..."
+                placeholder="INGRESAR CÓDIGO..."
               />
               <Button
                 type="button"

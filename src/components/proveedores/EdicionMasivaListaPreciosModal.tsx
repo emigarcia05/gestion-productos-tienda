@@ -28,13 +28,13 @@ interface RubroOption {
 }
 
 const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: string }[] = [
-  { key: "dtoProveedor", label: "Desc. Proveedor (%)" },
-  { key: "dtoMarca", label: "Desc. Marca (%)" },
-  { key: "dtoRubro", label: "Desc. Rubro (%)" },
-  { key: "dtoCantidad", label: "Desc. Cantidad (%)" },
-  { key: "dtoFinanciero", label: "Desc. Finan. (%)" },
-  { key: "cxTransporte", label: "Cx. Transporte (%)" },
-  { key: "cotizacionDolar", label: "Cotización Dolar" },
+  { key: "dtoProveedor", label: "DESC. PROVEEDOR (%)" },
+  { key: "dtoMarca", label: "DESC. MARCA (%)" },
+  { key: "dtoRubro", label: "DESC. RUBRO (%)" },
+  { key: "dtoCantidad", label: "DESC. CANTIDAD (%)" },
+  { key: "dtoFinanciero", label: "DESC. FINAN. (%)" },
+  { key: "cxTransporte", label: "CX. TRANSPORTE (%)" },
+  { key: "cotizacionDolar", label: "COTIZACIÓN DÓLAR" },
 ];
 
 interface Props {
@@ -144,11 +144,11 @@ export default function EdicionMasivaListaPreciosModal({
           <div className="grid gap-0 py-1">
             <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
               <Label htmlFor="marca" className="text-right font-medium">
-                Marca
+                MARCA
               </Label>
               <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
                 <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums border-primary">
-                  <SelectValue placeholder="Seleccionar marca" />
+                  <SelectValue placeholder="SELECCIONAR MARCA" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">—</SelectItem>
@@ -162,11 +162,11 @@ export default function EdicionMasivaListaPreciosModal({
             </div>
             <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
               <Label htmlFor="rubro" className="text-right font-medium">
-                Rubro
+                RUBRO
               </Label>
               <Select value={rubroNombre || "none"} onValueChange={(v) => setRubroNombre(v === "none" ? "" : v)}>
                 <SelectTrigger id="rubro" className="input-filtro-unificado tabular-nums border-primary">
-                  <SelectValue placeholder="Seleccionar rubro" />
+                  <SelectValue placeholder="SELECCIONAR RUBRO" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">—</SelectItem>

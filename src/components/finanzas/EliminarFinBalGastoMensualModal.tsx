@@ -50,7 +50,7 @@ export default function EliminarFinBalGastoMensualModal({
       }}
     >
       <AppModal
-        title="Eliminar imputación"
+        title="Eliminar Imputación"
         size="sm"
         className="sm:max-w-md"
         actions={

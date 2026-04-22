@@ -178,7 +178,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     }
   }
 
-  const titulo = modo === "crear" ? "Nuevo gasto final" : "Editar gasto final";
+  const titulo = modo === "crear" ? "Nuevo Gasto Final" : "Editar Gasto Final";
 
   return (
     <Dialog
@@ -228,7 +228,7 @@ export default function CrearEditarFinBalGastoFinalModal({
               disabled={saving || sucursales.length === 0}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="Seleccionar sucursal" />
+                <SelectValue placeholder="SELECCIONAR SUCURSAL" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 {sucursales.map((s) => (
@@ -250,7 +250,7 @@ export default function CrearEditarFinBalGastoFinalModal({
               disabled={saving || !sucursalId || proveedoresFiltrados.length === 0}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="Seleccionar proveedor" />
+                <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 {proveedoresFiltrados.map((p) => (
@@ -291,7 +291,7 @@ export default function CrearEditarFinBalGastoFinalModal({
               disabled={saving}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="Día del mes" />
+                <SelectValue placeholder="DÍA DEL MES" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {diasOpciones.map((d) => (

@@ -129,7 +129,7 @@ export default function SeleccionarProductoModal({
   }
 
   const MENSAJE_SIN_FILTRO =
-    "Aplicá al menos un filtro (Proveedor o Descripción) para ver los productos.";
+    "APLICÁ AL MENOS UN FILTRO (PROVEEDOR O DESCRIPCIÓN) PARA VER LOS PRODUCTOS.";
 
   return (
     <Dialog
@@ -159,10 +159,10 @@ export default function SeleccionarProductoModal({
                 onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
               >
                 <SelectTrigger className="input-filtro-unificado w-full">
-                  <SelectValue placeholder="Proveedor" />
+                  <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Todos los proveedores</SelectItem>
+                  <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
                   {proveedores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
@@ -176,7 +176,7 @@ export default function SeleccionarProductoModal({
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Descripción"
+                  placeholder="DESCRIPCIÓN"
                   className="input-filtro-unificado flex-1 min-w-0"
                 />
                 <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
@@ -194,11 +194,11 @@ export default function SeleccionarProductoModal({
                   aria-live="polite"
                 >
                   <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
-                  Cargando...
+                  CARGANDO…
                 </div>
               ) : rows.length === 0 ? (
                 <TableEmptyState
-                  message="No hay productos o no coinciden los filtros."
+                  message="NO HAY PRODUCTOS O NO COINCIDEN LOS FILTROS."
                   placement="panel"
                 />
               ) : (
@@ -254,7 +254,7 @@ export default function SeleccionarProductoModal({
               {rows.length > 0 && (
                 <>
                   <strong className="text-primary font-semibold">{rows.length.toLocaleString()}</strong>
-                  {" resultado(s)"}
+                  {" RESULTADO(S)"}
                 </>
               )}
             </p>

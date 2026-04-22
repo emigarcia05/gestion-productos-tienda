@@ -126,7 +126,7 @@ export default function AgregarProductosModal({
       rows={data.items}
       getRowId={(r) => r.id}
       loading={loading}
-      emptyMessage="Sin resultados"
+      emptyMessage="SIN RESULTADOS"
       count={data.total}
       selectionMode="singleConfirm"
       showSingleConfirmCheckbox

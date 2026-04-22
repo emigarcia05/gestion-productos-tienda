@@ -46,11 +46,11 @@ type Step = "upload" | "mapear" | "result";
 type CampoDestino = "codProdProv" | "descripcion" | "precioLista" | "precioVentaSugerido" | "ignorar";
 
 const CAMPOS: { value: CampoDestino; label: string; required: boolean }[] = [
-  { value: "codProdProv",          label: "Cod. Producto Proveedor",  required: true },
-  { value: "descripcion",          label: "Descripción",              required: true },
-  { value: "precioLista",          label: "Px. Lista Proveedor",       required: true },
-  { value: "precioVentaSugerido",  label: "Px. Venta Sugerido",        required: false },
-  { value: "ignorar",              label: "Ignorar columna",          required: false },
+  { value: "codProdProv",          label: "COD. PRODUCTO PROVEEDOR",  required: true },
+  { value: "descripcion",          label: "DESCRIPCIÓN",              required: true },
+  { value: "precioLista",          label: "PX. LISTA PROVEEDOR",       required: true },
+  { value: "precioVentaSugerido",  label: "PX. VENTA SUGERIDO",        required: false },
+  { value: "ignorar",              label: "IGNORAR COLUMNA",          required: false },
 ];
 
 export default function ImportarModal({ proveedores, proveedorPreseleccionado }: Props) {
@@ -180,7 +180,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
           <div className="space-y-5 pt-2">
             {/* Selector de proveedor */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Proveedor</label>
+              <label className="text-sm font-medium">PROVEEDOR</label>
               <div className="relative">
                 <select
                   value={proveedorId}
@@ -213,7 +213,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                 <div className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform", tieneEncabezados ? "translate-x-4" : "translate-x-0.5")} />
               </div>
               <div className="text-left">
-                <p className="font-medium">El archivo tiene encabezados</p>
+                <p className="font-medium">EL ARCHIVO TIENE ENCABEZADOS</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {tieneEncabezados
                     ? "La primera fila se omitirá y se usará como nombre de columnas"
@@ -345,9 +345,9 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
         {step === "result" && (
           <div className="space-y-5 pt-2">
             <div className="grid grid-cols-3 gap-3">
-              <ResultStat label="Creados"      value={result?.creados ?? 0}      variant="created" />
-              <ResultStat label="Actualizados" value={result?.actualizados ?? 0} variant="updated" />
-              <ResultStat label="Eliminados"   value={result?.eliminados ?? 0}   variant="removed" />
+              <ResultStat label="CREADOS"      value={result?.creados ?? 0}      variant="created" />
+              <ResultStat label="ACTUALIZADOS" value={result?.actualizados ?? 0} variant="updated" />
+              <ResultStat label="ELIMINADOS"   value={result?.eliminados ?? 0}   variant="removed" />
             </div>
 
             {result && result.errores.length > 0 && (

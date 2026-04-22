@@ -168,7 +168,7 @@ export default function SobreStockReposicionAdvertenciaModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        title="Advertencia SobreStock"
+        title="Advertencia Sobrestock"
         size="lg"
         className="sm:max-w-[72rem]"
         padding="sm"

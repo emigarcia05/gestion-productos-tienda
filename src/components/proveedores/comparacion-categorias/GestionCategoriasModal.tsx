@@ -278,7 +278,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
           {/* Filtros */}
           <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="grid gap-1">
-              <Label>Categoría</Label>
+              <Label>CATEGORÍA</Label>
               <select
                 className={cn(
                   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
@@ -299,7 +299,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               </select>
             </div>
             <div className="grid gap-1">
-              <Label>Subcategoría</Label>
+              <Label>SUBCATEGORÍA</Label>
               <select
                 className={cn(
                   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
@@ -321,9 +321,9 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
 
           {/* Tabla de combinaciones */}
           <div className="shrink-0 mb-4">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Combinaciones Creadas</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-2">COMBINACIONES CREADAS</h3>
             {loadingTabla ? (
-              <p className="text-sm text-muted-foreground py-4">Cargando…</p>
+              <p className="text-sm text-muted-foreground py-4">CARGANDO…</p>
             ) : filas.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">
                 No hay presentaciones. Creá categoría, subcategoría y presentación con el botón de arriba.
@@ -389,7 +389,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                 {/* Fila de selects: Categoría, Subcategoría, Presentación */}
                 <div className="grid gap-4 pb-4 border-b border-border">
                   <div className="grid gap-1">
-                    <Label>Categoría</Label>
+                    <Label>CATEGORÍA</Label>
                     <div className="flex gap-2">
                       <select
                         className={cn(
@@ -426,7 +426,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   </div>
 
                   <div className="grid gap-1">
-                    <Label>Subcategoría</Label>
+                    <Label>SUBCATEGORÍA</Label>
                     <div className="flex gap-2">
                       <select
                         className={cn(
@@ -467,7 +467,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   </div>
 
                   <div className="grid gap-1">
-                    <Label>Presentación</Label>
+                    <Label>PRESENTACIÓN</Label>
                     <div className="flex gap-2">
                       <select
                         className={cn(
@@ -541,7 +541,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   size="sm"
                   onClick={() => setTab("categoria")}
                 >
-                  Crear Categoría
+                  CREAR CATEGORÍA
                 </Button>
                 <Button
                   type="button"
@@ -549,7 +549,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   size="sm"
                   onClick={() => setTab("subcategoria")}
                 >
-                  Crear Subcategoría
+                  CREAR SUBCATEGORÍA
                 </Button>
                 <Button
                   type="button"
@@ -557,19 +557,19 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                   size="sm"
                   onClick={() => setTab("presentacion")}
                 >
-                  Crear Presentación
+                  CREAR PRESENTACIÓN
                 </Button>
               </div>
 
               {tab === "categoria" && (
                 <div className="grid gap-4 py-2">
                   <div className="grid gap-2">
-                    <Label htmlFor="nombre-cat-campos">Nombre</Label>
+                    <Label htmlFor="nombre-cat-campos">NOMBRE</Label>
                     <Input
                       id="nombre-cat-campos"
                       value={nombreCategoria}
                       onChange={(e) => setNombreCategoria(e.target.value)}
-                      placeholder="Ej. Látex"
+                      placeholder="EJ. LÁTEX"
                     />
                   </div>
                 </div>
@@ -578,7 +578,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               {tab === "subcategoria" && (
                 <div className="grid gap-4 py-2">
                   <div className="grid gap-2">
-                    <Label>Categoría</Label>
+                    <Label>CATEGORÍA</Label>
                     <select
                       className={cn(
                         "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
@@ -596,12 +596,12 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                     </select>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="nombre-sub-campos">Nombre</Label>
+                    <Label htmlFor="nombre-sub-campos">NOMBRE</Label>
                     <Input
                       id="nombre-sub-campos"
                       value={nombreSubcategoria}
                       onChange={(e) => setNombreSubcategoria(e.target.value)}
-                      placeholder="Ej. Calidad Intermedia"
+                      placeholder="EJ. CALIDAD INTERMEDIA"
                     />
                   </div>
                 </div>
@@ -610,7 +610,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
               {tab === "presentacion" && (
                 <div className="grid gap-4 py-2">
                   <div className="grid gap-2">
-                    <Label>Subcategoría</Label>
+                    <Label>SUBCATEGORÍA</Label>
                     <select
                       className={cn(
                         "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm",
@@ -628,12 +628,12 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                     </select>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="nombre-pre-campos">Nombre</Label>
+                    <Label htmlFor="nombre-pre-campos">NOMBRE</Label>
                     <Input
                       id="nombre-pre-campos"
                       value={nombrePresentacion}
                       onChange={(e) => setNombrePresentacion(e.target.value)}
-                      placeholder="Ej. 20 Lts"
+                      placeholder="EJ. 20 LTS"
                     />
                   </div>
                 </div>

@@ -183,7 +183,7 @@ export default function GenerarPedidoToolbarButton({
 
   const mensajeFaltantes =
     faltantes.length > 0
-      ? `Falta seleccionar: ${faltantes.join(", ")}.`
+      ? `FALTA SELECCIONAR: ${faltantes.join(", ")}.`
       : null;
 
   const puedeGenerar =
@@ -508,8 +508,8 @@ export default function GenerarPedidoToolbarButton({
                     className="h-5 w-5 shrink-0 animate-spin text-muted-foreground"
                     aria-hidden
                   />
-                  <p className="text-sm leading-snug text-muted-foreground">
-                    Comprobando ítems…
+                  <p className="text-sm leading-snug text-muted-foreground uppercase tracking-wide">
+                    COMPROBANDO ÍTEMS…
                   </p>
                 </div>
               ) : filtrosCompletos && hayItems === false ? (
@@ -518,8 +518,8 @@ export default function GenerarPedidoToolbarButton({
                     className="h-5 w-5 shrink-0 text-destructive"
                     aria-hidden
                   />
-                  <p className="text-sm leading-snug text-muted-foreground">
-                    No hay ítems para esta combinación de filtros.
+                  <p className="text-sm leading-snug text-muted-foreground uppercase tracking-wide">
+                    NO HAY ÍTEMS PARA ESTA COMBINACIÓN DE FILTROS.
                   </p>
                 </div>
               ) : filtrosCompletos && hayItems === true ? (
@@ -528,8 +528,8 @@ export default function GenerarPedidoToolbarButton({
                     className="h-5 w-5 shrink-0 text-primary"
                     aria-hidden
                   />
-                  <p className="text-sm font-medium leading-snug text-foreground">
-                    Listo para generar el pedido.
+                  <p className="text-sm font-medium leading-snug text-foreground uppercase tracking-wide">
+                    LISTO PARA GENERAR EL PEDIDO.
                   </p>
                 </div>
               ) : null}

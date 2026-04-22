@@ -452,7 +452,7 @@ export default function PedidoHistoriaDetalleModal({
     <>
       <Dialog open={open} onOpenChange={handleModalOpenChange}>
         <AppModal
-          title="Recepcion Pedido"
+          title="Recepción Pedido"
           scrollBody={false}
           size="xl"
           className="sm:max-w-[66rem] h-[95vh] max-h-[95vh]"
@@ -742,7 +742,7 @@ export default function PedidoHistoriaDetalleModal({
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <EmptyTableRow colSpan={5} message="Cargando…" />
+                    <EmptyTableRow colSpan={5} message="CARGANDO…" />
                   ) : errorMsg ? (
                     <EmptyTableRow colSpan={5} message={errorMsg} />
                   ) : itemsFiltrados.length === 0 ? (
@@ -750,8 +750,8 @@ export default function PedidoHistoriaDetalleModal({
                       colSpan={5}
                       message={
                         busquedaAgregarProducto.trim()
-                          ? "Sin ítems para la descripción buscada."
-                          : "Sin ítems."
+                          ? "SIN ÍTEMS PARA LA DESCRIPCIÓN BUSCADA."
+                          : "SIN ÍTEMS."
                       }
                     />
                   ) : (

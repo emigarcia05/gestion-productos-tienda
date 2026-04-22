@@ -203,7 +203,7 @@ export default function PedidoHistoriaLecturaModal({
                   {detalle.items.length === 0 ? (
                     <EmptyTableRow
                       colSpan={esRecibido ? 4 : 2}
-                      message="Sin ítems."
+                      message="SIN ÍTEMS."
                     />
                   ) : (
                     detalle.items.map((it) => {
