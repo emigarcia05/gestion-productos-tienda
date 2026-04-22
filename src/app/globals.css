@@ -895,6 +895,17 @@
   ) !important;
 }
 
+/* Flujo de fondo (`/finanzas/venc-por-fecha`): primera columna alineada a la izquierda (FECHA / PROVEEDOR en modal), SALDO con `celda-destacado`. */
+.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:first-child {
+  text-align: left !important;
+}
+.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:first-child .table-head-inner {
+  justify-content: flex-start !important;
+}
+.tabla-gestion-compacta.tabla-flujo-de-fondo tbody td:first-child.celda-datos {
+  text-align: left !important;
+}
+
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───
  * Encabezado: fondo primary opaco + línea blanca (evita que al hacer scroll se vea el separador gris del tbody por border-collapse).
  * Cuerpo: celdas transparentes (cebra de fila); separador vertical #0072bb vía box-shadow inset (no participa del grid de bordes colapsados).

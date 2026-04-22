@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import FilterBar, {
+  FILTER_COUNT_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FilaFiltrosDesplegables,
@@ -166,6 +167,7 @@ export default function FinanzasVencPorFechaPageClient({
         title="Finanzas"
         subtitle="Flujo De Fondo"
         className="min-h-0 flex-1"
+        contentWidth="full"
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection>
@@ -204,21 +206,44 @@ export default function FinanzasVencPorFechaPageClient({
           </FilterBar>
         }
       >
-        <div className="flex flex-1 min-h-0 flex-col pb-4">
+        <div className="flex flex-1 min-h-0 flex-col gap-2 pb-4">
+          <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+            <p
+              className={cn(
+                "text-sm font-semibold uppercase tracking-wide text-muted-foreground"
+              )}
+              aria-live="polite"
+            >
+              <span className={FILTER_COUNT_CLASS}>
+                {filasVista.length.toLocaleString("es-AR")}
+              </span>
+              {` DÍA${filasVista.length === 1 ? "" : "S"} EN ESTA PÁGINA`}
+              {totalPaginas > 1 ? (
+                <span className="font-normal normal-case text-muted-foreground">
+                  {" "}
+                  · Pág. {paginaActual} / {totalPaginas}
+                </span>
+              ) : null}
+            </p>
+            <p className="text-xs tabular-nums text-muted-foreground sm:text-right">
+              Ventana: {total.toLocaleString("es-AR")} día{total === 1 ? "" : "s"} (hoy + 150)
+            </p>
+          </div>
+
           <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
               <Table
                 variant="compact"
                 scrollX={false}
                 className={cn(
-                  "table-fixed w-full",
+                  "tabla-flujo-de-fondo table-fixed w-full",
                   haySaldoNegativo && "tabla-venc-por-fecha-alerta"
                 )}
               >
                 <ColgroupAnchos anchos={COL_WIDTHS_PCT_MAIN} />
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className={CELL_MIN}>FECHA</TableHead>
+                    <TableHead className={cn(CELL_MIN, "text-left")}>FECHA</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>VENCIMIENTO DEL DÍA</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>VTOS ACUMULADOS</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>CAJA DISPONIBLE</TableHead>
@@ -242,7 +267,12 @@ export default function FinanzasVencPorFechaPageClient({
                           fila.saldo < 0 && "venc-saldo-negativo"
                         )}
                       >
-                        <TableCell className={cn("celda-datos font-medium uppercase", CELL_MIN)}>
+                        <TableCell
+                          className={cn(
+                            "celda-datos celda-destacado font-medium uppercase text-left",
+                            CELL_MIN
+                          )}
+                        >
                           {formatMesDiaMayusculasDesdeIsoYmd(fila.isoYmd)}
                         </TableCell>
                         <TableCell className={cn(TD_NUM, CELL_MIN)}>
@@ -254,7 +284,7 @@ export default function FinanzasVencPorFechaPageClient({
                         <TableCell className={cn(TD_NUM, CELL_MIN)}>
                           {fmtMontoAr(fila.cajaDisponible)}
                         </TableCell>
-                        <TableCell className={cn(TD_NUM, CELL_MIN)}>
+                        <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                           {fmtMontoAr(fila.saldo)}
                         </TableCell>
                       </TableRow>
@@ -304,11 +334,11 @@ export default function FinanzasVencPorFechaPageClient({
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
               <div className="no-scrollbar flex-1 min-h-[14rem] max-h-[min(28rem,70vh)] min-w-0 overflow-x-auto overflow-y-auto">
-                <Table variant="compact" scrollX={false} className="table-fixed w-full">
+                <Table variant="compact" scrollX={false} className="tabla-flujo-de-fondo table-fixed w-full">
                   <ColgroupAnchos anchos={COL_WIDTHS_PCT_MODAL} />
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
+                      <TableHead className={cn(CELL_MIN, "text-left")}>PROVEEDOR</TableHead>
                       <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO A PAGAR</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -318,8 +348,14 @@ export default function FinanzasVencPorFechaPageClient({
                     ) : (
                       detalleFilas.map((fila, idx) => (
                         <TableRow key={`${fila.proveedor}-${idx}`}>
-                          <TableCell className={cn("celda-datos max-w-[24rem] text-left font-medium", CELL_MIN)} title={fila.proveedor}>
-                            <span className="truncate block">{fila.proveedor}</span>
+                          <TableCell
+                            className={cn(
+                              "celda-datos max-w-[24rem] text-left font-medium celda-destacado",
+                              CELL_MIN
+                            )}
+                            title={fila.proveedor}
+                          >
+                            <span className="block truncate">{fila.proveedor}</span>
                           </TableCell>
                           <TableCell className={cn(TD_NUM, CELL_MIN)}>{fmtMontoAr(fila.vencimiento)}</TableCell>
                         </TableRow>
