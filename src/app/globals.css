@@ -309,6 +309,9 @@
     min-height: 0;
     min-width: 0;
     overflow: auto;
+    /* Evita desalinear el `<colgroup>` del cuerpo vs la tabla de totales: sin esto, la barra vertical
+       consume ancho solo en el scroll y la fila TOTAL queda corrida respecto a MONTO/PAGADO/DEVENGADO. */
+    scrollbar-gutter: stable;
   }
   .contenedor-tabla-gestion--pie-fijo-pie {
     flex-shrink: 0;
@@ -849,15 +852,41 @@
 }
 
 /* Flujo de fondos (Finanzas): alerta visual cuando hay saldo negativo.
- * El encabezado conserva siempre el color original (primary); solo cambian filas negativas.
+ * El encabezado conserva siempre el color original (primary).
+ * Las filas negativas mantienen la cebra (impar/par) como el resto de tablas: el tinte destructivo
+ * se aplica sobre la misma base que nth-child odd/even para que no se “aplane” todo un listado negativo.
  */
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo {
-  --tabla-row-bg: color-mix(in oklab, var(--destructive) 9%, var(--card));
-  background-color: color-mix(in oklab, var(--destructive) 9%, var(--card)) !important;
+.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(odd) {
+  --tabla-row-bg: color-mix(in oklab, var(--destructive) 10%, var(--card));
+  background-color: color-mix(in oklab, var(--destructive) 10%, var(--card)) !important;
 }
-.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:hover {
-  --tabla-row-bg: color-mix(in oklab, var(--destructive) 16%, var(--card));
-  background-color: color-mix(in oklab, var(--destructive) 16%, var(--card)) !important;
+.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(even) {
+  --tabla-row-bg: color-mix(
+    in oklab,
+    var(--destructive) 10%,
+    color-mix(in oklab, var(--primary) 8%, var(--card))
+  );
+  background-color: color-mix(
+    in oklab,
+    var(--destructive) 10%,
+    color-mix(in oklab, var(--primary) 8%, var(--card))
+  ) !important;
+}
+.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(odd):hover {
+  --tabla-row-bg: color-mix(in oklab, var(--destructive) 18%, var(--card));
+  background-color: color-mix(in oklab, var(--destructive) 18%, var(--card)) !important;
+}
+.tabla-gestion-compacta.tabla-venc-por-fecha-alerta tbody tr.venc-saldo-negativo:nth-child(even):hover {
+  --tabla-row-bg: color-mix(
+    in oklab,
+    var(--destructive) 18%,
+    color-mix(in oklab, var(--primary) 8%, var(--card))
+  );
+  background-color: color-mix(
+    in oklab,
+    var(--destructive) 18%,
+    color-mix(in oklab, var(--primary) 8%, var(--card))
+  ) !important;
 }
 
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───

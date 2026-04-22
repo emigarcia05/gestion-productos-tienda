@@ -186,7 +186,7 @@ export default function TablaGastos({
               Tabla auxiliar (sin `.tabla-gestion-compacta`) para alinear columnas con el mismo colgroup;
               no hereda altura fija de filas del cuerpo de la tabla principal.
             */}
-            <table className="w-full table-fixed border-collapse text-sm">
+            <table className="tabla-gestion-compacta w-full table-fixed border-collapse text-sm">
               <ColgroupAnchos anchos={anchosColPct} />
               <tbody>
                 <tr className="transition-[background-color] duration-150">
