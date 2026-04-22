@@ -19,9 +19,8 @@ import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
 import { Banknote, Pencil, Trash2 } from "lucide-react";
-import { usePieFijoColumnWidthsSync } from "@/lib/hooks/usePieFijoColumnWidthsSync";
 import { useMirrorScrollTop } from "@/lib/hooks/useMirrorScrollTop";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 
 export type { BalanceGastoMensualFila };
 
@@ -56,11 +55,30 @@ const COL_WIDTHS_PCT_SIN_ACCIONES: readonly number[] = COL_WIDTHS_DATA_PCT.map(
 const ACCIONES_PANEL_SCROLL_CLASS =
   "flex min-h-0 min-w-[7.5rem] max-w-[18rem] shrink-0 grow-0 basis-[14%] flex-col overflow-y-auto border-l border-[#0072bb] bg-muted/25 no-scrollbar";
 
-/** Pie alineado al panel ACCIONES (sin scroll interno). */
-const ACCIONES_PIE_PANEL_CLASS =
-  "flex min-w-[7.5rem] max-w-[18rem] shrink-0 grow-0 basis-[14%] flex-col justify-center border-l border-[#0072bb] bg-muted/25";
-
 const CELL_MIN = "min-w-0";
+
+/** Resumen de totales bajo la tabla (sin fila de pie). */
+function TarjetaTotalGasto({
+  etiqueta,
+  children,
+  title,
+}: {
+  etiqueta: string;
+  children: ReactNode;
+  title?: string;
+}) {
+  return (
+    <div
+      className="flex min-w-[6.25rem] flex-col gap-0 rounded-md border border-border bg-card px-2 py-1"
+      title={title}
+    >
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-none">
+        {etiqueta}
+      </span>
+      <span className="celda-destacado text-sm font-medium tabular-nums leading-tight">{children}</span>
+    </div>
+  );
+}
 
 function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
   return (
@@ -98,20 +116,11 @@ export default function TablaGastos({
   /** Scroll con barra vertical: solo FECHA…DEVENGADO cuando hay ACCIONES en panel aparte; si no, envuelve la tabla única. */
   const datosScrollRef = useRef<HTMLDivElement>(null);
   const accionesScrollRef = useRef<HTMLDivElement>(null);
-  const pieFooterDatosRef = useRef<HTMLTableElement>(null);
-  const pieFooterFullRef = useRef<HTMLTableElement>(null);
 
   useMirrorScrollTop(
     !!(mostrarAcciones && filas.length > 0),
     datosScrollRef,
     accionesScrollRef
-  );
-
-  usePieFijoColumnWidthsSync(
-    filas.length > 0,
-    datosScrollRef,
-    mostrarAcciones ? pieFooterDatosRef : pieFooterFullRef,
-    mostrarAcciones ? "9-acciones-aparte" : "9"
   );
 
   function renderCeldasDatos(f: BalanceGastoMensualFila) {
@@ -190,7 +199,7 @@ export default function TablaGastos({
   }
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col pb-4">
+    <div className="flex flex-1 min-h-0 flex-col gap-2 pb-4">
       <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
         <div
           className={cn(
@@ -319,139 +328,31 @@ export default function TablaGastos({
             </div>
           )}
         </div>
-
-        {filas.length > 0 ? (
-          <div className="contenedor-tabla-gestion--pie-fijo-pie flex min-h-0 flex-row border-t-2 border-border">
-            {mostrarAcciones ? (
-              <>
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div
-                    data-slot="table-container"
-                    className="relative min-h-0 w-full min-w-0 max-w-full"
-                  >
-                    <table
-                      ref={pieFooterDatosRef}
-                      data-slot="table"
-                      className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
-                    >
-                      <ColgroupAnchos anchos={anchosDatosPct} />
-                      <tbody>
-                        <tr className="transition-[background-color] duration-150">
-                          <td
-                            className={cn(
-                              "celda-datos font-bold uppercase whitespace-nowrap",
-                              CELL_MIN
-                            )}
-                            colSpan={6}
-                          >
-                            TOTAL
-                          </td>
-                          <td
-                            className={cn(
-                              TD_NUM,
-                              "celda-datos celda-destacado font-bold whitespace-nowrap",
-                              CELL_MIN
-                            )}
-                          >
-                            {totalMonto === 0 ? (
-                              <span className="text-muted-foreground">—</span>
-                            ) : (
-                              <>${fmtPrecio(totalMonto)}</>
-                            )}
-                          </td>
-                          <td
-                            className={cn(
-                              TD_NUM,
-                              "celda-datos font-bold whitespace-nowrap",
-                              CELL_MIN
-                            )}
-                          >
-                            ${fmtPrecio(totalPagado)}
-                          </td>
-                          <td
-                            className={cn(
-                              TD_NUM,
-                              "celda-datos celda-destacado font-bold whitespace-nowrap",
-                              CELL_MIN
-                            )}
-                          >
-                            ${fmtPrecio(totalPendiente)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div className={cn(ACCIONES_PIE_PANEL_CLASS, "self-stretch")} aria-hidden>
-                  <div data-slot="table-container" className="relative min-h-0 w-full min-w-0 max-w-full">
-                    <table
-                      data-slot="table"
-                      className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
-                    >
-                      <colgroup>
-                        <col style={{ width: "100%" }} />
-                      </colgroup>
-                      <tbody>
-                        <tr className="transition-[background-color] duration-150">
-                          <td className={cn(TD_ACCIONES, "whitespace-nowrap")} aria-hidden />
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div
-                data-slot="table-container"
-                className="relative min-h-0 w-full min-w-0 max-w-full"
-              >
-                <table
-                  ref={pieFooterFullRef}
-                  data-slot="table"
-                  className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
-                >
-                  <ColgroupAnchos anchos={anchosFullPct} />
-                  <tbody>
-                    <tr className="transition-[background-color] duration-150">
-                      <td
-                        className={cn("celda-datos font-bold uppercase whitespace-nowrap", CELL_MIN)}
-                        colSpan={6}
-                      >
-                        TOTAL
-                      </td>
-                      <td
-                        className={cn(
-                          TD_NUM,
-                          "celda-datos celda-destacado font-bold whitespace-nowrap",
-                          CELL_MIN
-                        )}
-                      >
-                        {totalMonto === 0 ? (
-                          <span className="text-muted-foreground">—</span>
-                        ) : (
-                          <>${fmtPrecio(totalMonto)}</>
-                        )}
-                      </td>
-                      <td className={cn(TD_NUM, "celda-datos font-bold whitespace-nowrap", CELL_MIN)}>
-                        ${fmtPrecio(totalPagado)}
-                      </td>
-                      <td
-                        className={cn(
-                          TD_NUM,
-                          "celda-datos celda-destacado font-bold whitespace-nowrap",
-                          CELL_MIN
-                        )}
-                      >
-                        ${fmtPrecio(totalPendiente)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ) : null}
       </div>
+
+      {filas.length > 0 ? (
+        <div
+          className="flex shrink-0 flex-wrap items-stretch gap-2"
+          role="region"
+          aria-label="Totales del listado visible"
+          aria-live="polite"
+        >
+          <TarjetaTotalGasto etiqueta="MONTO">
+            {totalMonto === 0 ? (
+              <span className="text-muted-foreground">—</span>
+            ) : (
+              <>${fmtPrecio(totalMonto)}</>
+            )}
+          </TarjetaTotalGasto>
+          <TarjetaTotalGasto etiqueta="PAGADO">${fmtPrecio(totalPagado)}</TarjetaTotalGasto>
+          <TarjetaTotalGasto
+            etiqueta="DEVENGADO"
+            title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
+          >
+            ${fmtPrecio(totalPendiente)}
+          </TarjetaTotalGasto>
+        </div>
+      ) : null}
     </div>
   );
 }
