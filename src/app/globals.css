@@ -300,6 +300,8 @@
    * `.contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo` (flex column, overflow hidden)
    *   → `.contenedor-tabla-gestion--pie-fijo-scroll` (flex-1 min-h-0 overflow auto) → `<Table>` sin `<tfoot>`
    *   → `.contenedor-tabla-gestion--pie-fijo-pie` (flex-shrink-0) → `<table class="tabla-gestion-compacta table-fixed">` con una fila de totales y el mismo `<colgroup>` que la tabla superior.
+   * Alineación entre la tabla superior y el pie: `scrollbar-gutter: stable` en scroll + pie; además,
+   * `usePieFijoColumnWidthsSync` (`src/lib/hooks/usePieFijoColumnWidthsSync.ts`) medición de cada `th` y anchos en px en el `colgroup` del pie (última columna absorbe el redondeo).
    */
   .contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo {
     overflow: hidden;

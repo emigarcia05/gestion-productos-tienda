@@ -1,3 +1,5 @@
+"use client";
+
 import {
   TableBody,
   TableCell,
@@ -17,6 +19,8 @@ import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
 import { Banknote, Pencil, Trash2 } from "lucide-react";
+import { usePieFijoColumnWidthsSync } from "@/lib/hooks/usePieFijoColumnWidthsSync";
+import { useRef } from "react";
 
 export type { BalanceGastoMensualFila };
 
@@ -81,10 +85,14 @@ export default function TablaGastos({
 
   const mensajeVacio = emptyMessage ?? "No hay gastos registrados.";
 
+  const pieScrollRef = useRef<HTMLDivElement>(null);
+  const pieFooterTableRef = useRef<HTMLTableElement>(null);
+  usePieFijoColumnWidthsSync(filas.length > 0, pieScrollRef, pieFooterTableRef, colCount);
+
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
       <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
-        <div className="contenedor-tabla-gestion--pie-fijo-scroll">
+        <div ref={pieScrollRef} className="contenedor-tabla-gestion--pie-fijo-scroll">
           {/*
             Misma envoltura que `Table` (`ui/table.tsx`): el `<table>` debe vivir en el mismo árbol que el pie
             (`div[data-slot="table-container"]` + `table.tabla-gestion-compacta`) para que el ancho útil y el
@@ -206,6 +214,7 @@ export default function TablaGastos({
               className="relative min-h-0 w-full min-w-0 max-w-full"
             >
               <table
+                ref={pieFooterTableRef}
                 data-slot="table"
                 className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed w-full"
               >

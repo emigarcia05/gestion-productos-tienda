@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Table,
   TableBody,
@@ -17,6 +19,8 @@ import {
   TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
   TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
+import { usePieFijoColumnWidthsSync } from "@/lib/hooks/usePieFijoColumnWidthsSync";
+import { useRef } from "react";
 
 export interface TesoreriaCajaFila {
   id: string;
@@ -75,10 +79,14 @@ export default function TablaTesoreriaCajas({
   const colCount = esEditor ? COLS + 1 : COLS;
   const anchosColPct = esEditor ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
+  const pieScrollRef = useRef<HTMLDivElement>(null);
+  const pieFooterTableRef = useRef<HTMLTableElement>(null);
+  usePieFijoColumnWidthsSync(filas.length > 0, pieScrollRef, pieFooterTableRef, colCount);
+
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
       <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-        <div className="contenedor-tabla-gestion--pie-fijo-scroll">
+        <div ref={pieScrollRef} className="contenedor-tabla-gestion--pie-fijo-scroll">
           <Table variant="compact" scrollX={false} className="table-fixed w-full">
             <ColgroupAnchos anchos={anchosColPct} />
             <TableHeader>
@@ -198,7 +206,10 @@ export default function TablaTesoreriaCajas({
 
         {filas.length > 0 ? (
           <div className="contenedor-tabla-gestion--pie-fijo-pie">
-            <table className="tabla-gestion-compacta w-full table-fixed border-collapse text-sm">
+            <table
+              ref={pieFooterTableRef}
+              className="tabla-gestion-compacta w-full table-fixed border-collapse text-sm"
+            >
               <ColgroupAnchos anchos={anchosColPct} />
               <tbody>
                 <tr className="transition-[background-color] duration-150">
