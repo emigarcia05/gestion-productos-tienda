@@ -25,10 +25,10 @@ export default async function FinanzasPage() {
               <Link href="/finanzas/venc-por-fecha">Flujo De Fondo</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-              <Link href="/finanzas/deuda-proveedores">Vencimientos Proveedores</Link>
+              <Link href="/finanzas/deuda-proveedores">Venc. Provee. Merc.</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
-              <Link href="/finanzas/vencimientos-gastos">Vencimientos Gastos</Link>
+              <Link href="/finanzas/vencimientos-gastos">Venc. Provee. Gastos</Link>
             </Button>
             <Button type="button" variant="secondary" className={cn("h-10 px-4")} asChild>
               <Link href="/finanzas/control-comprobantes">Control Comprobantes</Link>
@@ -41,8 +41,8 @@ export default async function FinanzasPage() {
           {esEditor ? <SincronizarComprobantesProveedorDuxButton /> : null}
           <p className="text-sm text-muted-foreground">
             Tesorería lista las cajas de tesorería con sucursal, tipo, monto y última actualización. Flujo De Fondo
-            muestra vencimientos por día en una ventana fija. Vencimientos Proveedores resume saldos por proveedor y
-            columnas por ventana de vencimiento. Vencimientos Gastos concentrará la vista de vencimientos de gastos de
+            muestra vencimientos por día en una ventana fija. Venc. Provee. Merc. resume saldos por proveedor y
+            columnas por ventana de vencimiento. Venc. Provee. Gastos concentrará la vista de vencimientos de gastos de
             balance. Control Comprobantes centraliza el seguimiento de comprobantes. Acceso desde la cabecera o
             slidenav (FINANZAS).
           </p>

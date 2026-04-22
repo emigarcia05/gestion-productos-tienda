@@ -174,13 +174,13 @@ const FINANZAS_MODULES: {
       },
       {
         href: "/finanzas/deuda-proveedores",
-        label: "Vencimientos Proveedores",
+        label: "Venc. Provee. Merc.",
         icon: <Wallet className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
       {
         href: "/finanzas/vencimientos-gastos",
-        label: "Vencimientos Gastos",
+        label: "Venc. Provee. Gastos",
         icon: <CalendarClock className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },

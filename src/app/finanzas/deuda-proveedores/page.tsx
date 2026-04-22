@@ -26,7 +26,7 @@ export default async function DeudaProveedoresPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Vencimientos Proveedores">
+      <ClassicFilteredTableLayout title="Finanzas" subtitle="Venc. Provee. Merc.">
         <TablaDeudaProveedores filas={filas} />
       </ClassicFilteredTableLayout>
     </div>

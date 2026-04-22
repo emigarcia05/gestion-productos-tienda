@@ -5,6 +5,8 @@
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types/service.types";
+import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
+import { ordenarDetallesFlujoDia } from "@/services/vencimientosPorFecha.service";
 
 export interface BalanceGastoMensualFila {
   id: string;
@@ -344,7 +346,7 @@ export async function listarImputacionesMensualesBalance(params: {
 const includeGastoFlujoGastoMensual = {
   gastoFinal: {
     include: {
-      proveedor: { select: { nombre: true } },
+      proveedor: { select: { nombre: true, proveedorMercaderia: true } },
       gasto: { select: { nombre: true } },
     },
   },
@@ -457,6 +459,89 @@ export async function listarVencimientosGastoFlujoEnRango(
     });
   }
   return out;
+}
+
+/** Proveedor (nombre en MAYÚSCULAS) no mercadería con suma de obligaciones de gasto ya vencidas. */
+export interface ProveedorNoMercaderiaObligacionVencidaFila {
+  proveedor: string;
+  totalVencido: number;
+}
+
+/**
+ * Obligaciones de balance (imputaciones mensuales) **ya vencidas** (`fecha_venc` &lt; hoy AR),
+ * pendiente a hoy &gt; 0, solo si el proveedor del gasto final **no** es mercadería (`proveedorMercaderia === false`).
+ *
+ * - `detalleLineas`: filas compatibles con {@link TablaFlujoDeFondoDetalleDia} / Flujo de Fondo.
+ * - `proveedores`: agregado por proveedor, orden alfabético.
+ */
+export async function listarObligacionesGastoVencidasNoMercaderia(): Promise<{
+  hoyIso: string;
+  proveedores: ProveedorNoMercaderiaObligacionVencidaFila[];
+  detalleLineas: FlujoFondoDetalleDiaFila[];
+}> {
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+  const all = await prisma.finBalGastoMensual.findMany({
+    include: includeGastoFlujoGastoMensual,
+  });
+  if (all.length === 0) {
+    return { hoyIso, proveedores: [], detalleLineas: [] };
+  }
+
+  const periodKeys = new Set(all.map((r) => `${r.anio}-${r.mes}`));
+  const priorPorPeriodo = new Map<string, Map<string, number>>();
+  for (const k of periodKeys) {
+    const [anS, mS] = k.split("-");
+    const anio = Number(anS);
+    const mes = Number(mS);
+    const ids = [...new Set(all.filter((r) => r.anio === anio && r.mes === mes).map((r) => r.gastoFinalId))];
+    if (ids.length === 0) continue;
+    priorPorPeriodo.set(k, await mapaMontoReferenciaPrior(ids, mes, anio));
+  }
+
+  const detalleLineas: FlujoFondoDetalleDiaFila[] = [];
+  const totales = new Map<string, number>();
+
+  for (const r of all) {
+    const gf = r.gastoFinal;
+    if (gf.proveedor.proveedorMercaderia) continue;
+
+    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
+    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    if (fechaVenc >= hoyIso) continue;
+
+    const priorMonto =
+      (priorPorPeriodo.get(`${r.anio}-${r.mes}`) ?? new Map()).get(gf.id) ?? 0;
+    const pend = montoDevengadoPendienteHastaCorte({
+      isoDevengo: fechaDevengoIso,
+      isoCorte: hoyIso,
+      mesImputacion: r.mes,
+      anioImputacion: r.anio,
+      monto: r.monto,
+      pagado: r.pagado,
+      priorMontoReferencia: priorMonto,
+    });
+    if (pend <= 0) continue;
+
+    const proveedor = gf.proveedor.nombre.toUpperCase();
+    detalleLineas.push({
+      proveedor,
+      detalle: gf.gasto.nombre.toUpperCase(),
+      monto: pend,
+      sortFecha: fechaDevengoIso,
+      sortId: r.id,
+    });
+    totales.set(proveedor, (totales.get(proveedor) ?? 0) + pend);
+  }
+
+  const proveedores: ProveedorNoMercaderiaObligacionVencidaFila[] = [...totales.entries()]
+    .map(([proveedor, totalVencido]) => ({ proveedor, totalVencido }))
+    .sort((a, b) => a.proveedor.localeCompare(b.proveedor, "es"));
+
+  return {
+    hoyIso,
+    proveedores,
+    detalleLineas: ordenarDetallesFlujoDia(detalleLineas),
+  };
 }
 
 /**
