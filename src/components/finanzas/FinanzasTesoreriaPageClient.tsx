@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaTesoreriaCajas, { type TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
+import ChequesCajaTesoreriaModal from "@/components/finanzas/ChequesCajaTesoreriaModal";
 import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaModal";
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
 import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
@@ -40,6 +41,7 @@ export default function FinanzasTesoreriaPageClient({
   const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
+  const [cajaCheques, setCajaCheques] = useState<TesoreriaCajaFila | null>(null);
   const [filtroCaja, setFiltroCaja] = useState("");
   const [filtroTitular, setFiltroTitular] = useState("");
   const [filtroTipoCaja, setFiltroTipoCaja] = useState("");
@@ -174,9 +176,19 @@ export default function FinanzasTesoreriaPageClient({
         <TablaTesoreriaCajas
           filas={filasFiltradas}
           esEditor={esEditor}
+          onChequeRowClick={(fila) => setCajaCheques(fila)}
           onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
           onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}
           onDeleteClick={esEditor ? (fila) => setCajaParaEliminar(fila) : undefined}
+        />
+        <ChequesCajaTesoreriaModal
+          open={cajaCheques !== null}
+          onOpenChange={(next) => {
+            if (!next) setCajaCheques(null);
+          }}
+          caja={cajaCheques}
+          esEditor={esEditor}
+          onChequesChanged={() => router.refresh()}
         />
         <NuevaCajaTesoreriaModal
           open={openNuevaCaja}

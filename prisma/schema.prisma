@@ -148,9 +148,29 @@ model CajaTesoreria {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
-  @@unique([nombreCaja, titular], map: "fin_tesoreria_cajas_nombre_titular_ux")
-  @@index([tipoCaja])
-  @@map("fin_tesoreria_cajas")
+  cheques FinTesoreriaCheque[]
+
+  @@unique([nombreCaja, titular], map: "fin_tesoreria_nombre_titular_ux")
+  @@index([tipoCaja], map: "fin_tesoreria_tipo_caja_idx")
+  @@map("fin_tesoreria")
+}
+
+// Cheques asociados a una caja de tesorería tipo CHEQUE. El disponible para totales
+// (hoy en calendario Argentina) suma solo filas con fecha_acreditacion <= hoy.
+model FinTesoreriaCheque {
+  id                  String   @id @default(cuid())
+  cajaId              String   @map("caja_id")
+  emisor              String
+  monto               Int
+  fechaAcreditacion   DateTime @map("fecha_acreditacion") @db.Date
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  caja CajaTesoreria @relation(fields: [cajaId], references: [id], onDelete: Cascade)
+
+  @@index([cajaId], map: "fin_tesoreria_cheques_caja_id_idx")
+  @@index([cajaId, fechaAcreditacion], map: "fin_tesoreria_cheques_caja_id_fecha_acreditacion_idx")
+  @@map("fin_tesoreria_cheques")
 }
 
 // Catálogo raíz de la jerarquía Finanzas → Balance → Gastos: Tipo (1) ─→ Rubros (N) ─→ Gastos (N).

@@ -64,7 +64,7 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   const saldoVencidoAntesDeHoy = saldoComprasAntes + saldoGastosAntes;
 
   const cajaDisponibleInicial = cajasTesoreria.reduce(
-    (acc, caja) => acc + Number(caja.monto || 0),
+    (acc, caja) => acc + Number(caja.montoDisponible || 0),
     0
   );
 

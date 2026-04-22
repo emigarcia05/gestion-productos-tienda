@@ -1,13 +1,21 @@
 import type { TipoCajaTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
+import { sumarMontosChequesAcreditadosHasta } from "@/services/finTesoreriaCheques.service";
 
 export interface CajaTesoreriaItem {
   id: string;
   nombreCaja: string;
   titular: string;
   tipoCaja: TipoCajaTesoreria;
+  /** Valor persistido en `fin_tesoreria.monto` (para edición legacy; en CHEQUE no alimenta el disponible). */
   monto: number;
+  /**
+   * Monto que cuenta para totales y “caja disponible”: en `CHEQUE`, suma de `fin_tesoreria_cheques`
+   * con `fecha_acreditacion` ≤ hoy (calendario Argentina); en otros tipos, igual a `monto`.
+   */
+  montoDisponible: number;
   ultActualizacion: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -24,22 +32,26 @@ export interface EditarCajaTesoreriaInput extends CrearCajaTesoreriaInput {
   id: string;
 }
 
-function mapCaja(row: {
-  id: string;
-  nombreCaja: string;
-  titular: string;
-  tipoCaja: TipoCajaTesoreria;
-  monto: number;
-  ultActualizacion: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}): CajaTesoreriaItem {
+function mapCaja(
+  row: {
+    id: string;
+    nombreCaja: string;
+    titular: string;
+    tipoCaja: TipoCajaTesoreria;
+    monto: number;
+    ultActualizacion: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  montoDisponible: number
+): CajaTesoreriaItem {
   return {
     id: row.id,
     nombreCaja: row.nombreCaja.toUpperCase(),
     titular: row.titular.toUpperCase(),
     tipoCaja: row.tipoCaja,
     monto: row.monto,
+    montoDisponible,
     ultActualizacion: row.ultActualizacion,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -64,7 +76,13 @@ export async function listarCajasTesoreria(): Promise<CajaTesoreriaItem[]> {
   const rows = await prisma.cajaTesoreria.findMany({
     orderBy: [{ nombreCaja: "asc" }],
   });
-  return rows.map(mapCaja);
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+  const sumasCheque = await sumarMontosChequesAcreditadosHasta(hoyIso);
+  return rows.map((row) => {
+    const disponible =
+      row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
+    return mapCaja(row, disponible);
+  });
 }
 
 export async function crearCajaTesoreria(
@@ -79,7 +97,7 @@ export async function crearCajaTesoreria(
         monto: input.monto,
       },
     });
-    return { success: true, data: mapCaja(row) };
+    return { success: true, data: mapCaja(row, row.tipoCaja === "CHEQUE" ? 0 : row.monto) };
   } catch (error: unknown) {
     return {
       success: false,
@@ -92,6 +110,23 @@ export async function editarCajaTesoreria(
   input: EditarCajaTesoreriaInput
 ): Promise<ServiceResult<CajaTesoreriaItem>> {
   try {
+    const existing = await prisma.cajaTesoreria.findUnique({
+      where: { id: input.id },
+      select: { tipoCaja: true },
+    });
+    if (!existing) {
+      return { success: false, error: "Caja no encontrada." };
+    }
+    if (existing.tipoCaja === "CHEQUE" && input.tipoCaja !== "CHEQUE") {
+      const n = await prisma.finTesoreriaCheque.count({ where: { cajaId: input.id } });
+      if (n > 0) {
+        return {
+          success: false,
+          error: "No se puede cambiar el tipo: la caja tiene cheques registrados.",
+        };
+      }
+    }
+
     const row = await prisma.cajaTesoreria.update({
       where: { id: input.id },
       data: {
@@ -101,7 +136,11 @@ export async function editarCajaTesoreria(
         monto: input.monto,
       },
     });
-    return { success: true, data: mapCaja(row) };
+    const hoyIso = dateToIsoYmdArgentina(new Date());
+    const sumasCheque = await sumarMontosChequesAcreditadosHasta(hoyIso);
+    const disponible =
+      row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
+    return { success: true, data: mapCaja(row, disponible) };
   } catch (error: unknown) {
     return {
       success: false,

@@ -26,13 +26,18 @@ export interface TesoreriaCajaFila {
   nombreCaja: string;
   titular: string;
   tipoCaja: string;
+  /** Valor persistido en BD (p. ej. edición de caja); no usar para totales si existe `montoDisponible`. */
   monto: number;
+  /** Monto que cuenta hoy para totales y columna MONTO (cajas CHEQUE: cheques con fecha de acreditación ≤ hoy AR). */
+  montoDisponible: number;
   ultActualizacion: string;
   ultActualizacionIso: string;
 }
 interface Props {
   filas: TesoreriaCajaFila[];
   esEditor?: boolean;
+  /** Caja tipo CHEQUE: un clic abre el detalle de cheques (no confunde con doble clic de monto). */
+  onChequeRowClick?: (fila: TesoreriaCajaFila) => void;
   onRowDoubleClick?: (fila: TesoreriaCajaFila) => void;
   onEditDataClick?: (fila: TesoreriaCajaFila) => void;
   onDeleteClick?: (fila: TesoreriaCajaFila) => void;
@@ -78,11 +83,12 @@ function totalesPorTipoCaja(filas: TesoreriaCajaFila[]): {
   let digital = 0;
   let cheque = 0;
   for (const f of filas) {
-    if (f.tipoCaja === "EFECTIVO") efectivo += f.monto;
-    else if (f.tipoCaja === "DIGITAL") digital += f.monto;
-    else if (f.tipoCaja === "CHEQUE") cheque += f.monto;
+    const m = f.montoDisponible;
+    if (f.tipoCaja === "EFECTIVO") efectivo += m;
+    else if (f.tipoCaja === "DIGITAL") digital += m;
+    else if (f.tipoCaja === "CHEQUE") cheque += m;
   }
-  const total = filas.reduce((acc, f) => acc + f.monto, 0);
+  const total = filas.reduce((acc, f) => acc + f.montoDisponible, 0);
   return { efectivo, digital, cheque, total };
 }
 
@@ -96,7 +102,7 @@ function TarjetaResumenTesoreria({
   valorDestacado?: boolean;
 }) {
   return (
-    <div className="finanzas-resumen-tarjeta min-w-[6.25rem]">
+    <div className="finanzas-resumen-tarjeta">
       <span className="w-full text-[10px] font-semibold uppercase leading-none tracking-wide text-muted-foreground">
         {etiqueta}
       </span>
@@ -115,6 +121,7 @@ function TarjetaResumenTesoreria({
 export default function TablaTesoreriaCajas({
   filas,
   esEditor = false,
+  onChequeRowClick,
   onRowDoubleClick,
   onEditDataClick,
   onDeleteClick,
@@ -157,11 +164,30 @@ export default function TablaTesoreriaCajas({
                       ? `${f.ultActualizacion} — ${diasSinActualizar} DÍAS SIN ACTUALIZAR`
                       : f.ultActualizacion;
 
+                    const puedeEditarMontoDblClick =
+                      onRowDoubleClick != null && f.tipoCaja !== "CHEQUE";
+                    const abrirListaCheques =
+                      f.tipoCaja === "CHEQUE" && onChequeRowClick
+                        ? () => onChequeRowClick(f)
+                        : undefined;
+
                     return (
                       <TableRow
                         key={f.id}
-                        onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(f) : undefined}
-                        className={cn(onRowDoubleClick && "cursor-pointer")}
+                        onClick={abrirListaCheques}
+                        onDoubleClick={
+                          puedeEditarMontoDblClick ? () => onRowDoubleClick!(f) : undefined
+                        }
+                        title={
+                          abrirListaCheques
+                            ? "Clic para ver los cheques de esta caja"
+                            : puedeEditarMontoDblClick
+                              ? "Doble clic para actualizar el monto"
+                              : undefined
+                        }
+                        className={cn(
+                          (puedeEditarMontoDblClick || abrirListaCheques) && "cursor-pointer"
+                        )}
                       >
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={f.nombreCaja}>
                           <span className="celda-destacado truncate block">{f.nombreCaja}</span>
@@ -173,7 +199,7 @@ export default function TablaTesoreriaCajas({
                           {f.tipoCaja}
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-                          ${fmtPrecio(f.monto)}
+                          ${fmtPrecio(f.montoDisponible)}
                         </TableCell>
                         <TableCell
                           className={cn(

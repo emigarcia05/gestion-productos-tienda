@@ -10,7 +10,7 @@ import {
  * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N) + fin_bal_gasto_final (gasto + proveedor + sucursal).
  *
  * Convención de normalización: todos los `nombre` se normalizan con `trim + toUpperCase`,
- * consistente con fin_tesoreria_cajas, movimientos_finanzas.nombre y demás catálogos finanzas.
+ * consistente con fin_tesoreria, movimientos_finanzas.nombre y demás catálogos finanzas.
  */
 
 const nombreCatalogoSchema = z

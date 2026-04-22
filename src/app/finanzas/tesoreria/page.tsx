@@ -21,6 +21,7 @@ export default async function FinanzasTesoreriaPage() {
     titular: c.titular,
     tipoCaja: c.tipoCaja,
     monto: c.monto,
+    montoDisponible: c.montoDisponible,
     ultActualizacion: formatFechaHoraCompletaArgentina(c.ultActualizacion),
     ultActualizacionIso: c.ultActualizacion.toISOString(),
   }));
