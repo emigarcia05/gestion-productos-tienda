@@ -19,8 +19,7 @@ import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
 import { Banknote, Pencil, Trash2 } from "lucide-react";
-import { useMirrorScrollTop } from "@/lib/hooks/useMirrorScrollTop";
-import { useRef, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 export type { BalanceGastoMensualFila };
 
@@ -50,10 +49,6 @@ const COL_WIDTHS_PCT_CON_ACCIONES: readonly number[] = [...COL_WIDTHS_DATA_PCT, 
 const COL_WIDTHS_PCT_SIN_ACCIONES: readonly number[] = COL_WIDTHS_DATA_PCT.map(
   (w) => (w * 100) / 86
 );
-
-/** Panel ACCIONES al 14% del layout con editor (coherente con {@link COL_WIDTHS_PCT_CON_ACCIONES}). */
-const ACCIONES_PANEL_SCROLL_CLASS =
-  "flex min-h-0 min-w-[7.5rem] max-w-[18rem] shrink-0 grow-0 basis-[14%] flex-col overflow-y-auto border-l border-[#0072bb] bg-muted/25 no-scrollbar";
 
 const CELL_MIN = "min-w-0";
 
@@ -102,8 +97,6 @@ export default function TablaGastos({
   const totalPagado = filas.reduce((acc, fila) => acc + fila.pagado, 0);
   const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
-  /** Tabla datos (FECHA…DEVENGADO): siempre 9 columnas; el panel ACCIONES va aparte cuando editor. */
-  const anchosDatosPct = COL_WIDTHS_PCT_SIN_ACCIONES;
   const anchosFullPct = mostrarAcciones ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
   function celdaMonto(m: number) {
@@ -112,16 +105,6 @@ export default function TablaGastos({
   }
 
   const mensajeVacio = emptyMessage ?? "No hay gastos registrados.";
-
-  /** Scroll con barra vertical: solo FECHA…DEVENGADO cuando hay ACCIONES en panel aparte; si no, envuelve la tabla única. */
-  const datosScrollRef = useRef<HTMLDivElement>(null);
-  const accionesScrollRef = useRef<HTMLDivElement>(null);
-
-  useMirrorScrollTop(
-    !!(mostrarAcciones && filas.length > 0),
-    datosScrollRef,
-    accionesScrollRef
-  );
 
   function renderCeldasDatos(f: BalanceGastoMensualFila) {
     return (
@@ -198,161 +181,79 @@ export default function TablaGastos({
     );
   }
 
-  return (
-    <div className="flex flex-1 min-h-0 flex-col gap-2 pb-4">
-      <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
-        <div
-          className={cn(
-            "contenedor-tabla-gestion--pie-fijo-scroll flex min-h-0 flex-1 flex-row",
-            !mostrarAcciones && "flex-col"
-          )}
-        >
-          {mostrarAcciones ? (
-            <>
-              <div
-                ref={datosScrollRef}
-                className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto overflow-y-auto"
-              >
-                <div
-                  data-slot="table-container"
-                  className="relative min-h-0 w-full min-w-0 max-w-full"
-                >
-                  <table
-                    data-slot="table"
-                    className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
-                  >
-                    <ColgroupAnchos anchos={anchosDatosPct} />
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className={CELL_MIN}>FECHA</TableHead>
-                        <TableHead className={CELL_MIN}>SUCURSAL</TableHead>
-                        <TableHead className={CELL_MIN}>TIPO GASTO</TableHead>
-                        <TableHead className={CELL_MIN}>RUBRO</TableHead>
-                        <TableHead className={CELL_MIN}>GASTO</TableHead>
-                        <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
-                        <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                        <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
-                        <TableHead
-                          className={cn(TH_NUM, CELL_MIN)}
-                          title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
-                        >
-                          DEVENGADO
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filas.length === 0 ? (
-                        <EmptyTableRow colSpan={9} message={mensajeVacio} />
-                      ) : (
-                        filas.map((f) => (
-                          <TableRow key={f.id}>{renderCeldasDatos(f)}</TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </table>
-                </div>
-              </div>
-              <div
-                ref={accionesScrollRef}
-                className={ACCIONES_PANEL_SCROLL_CLASS}
-                aria-hidden={filas.length === 0}
-              >
-                <div data-slot="table-container" className="relative min-h-0 w-full min-w-0 max-w-full">
-                  <table
-                    data-slot="table"
-                    className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
-                  >
-                    <colgroup>
-                      <col style={{ width: "100%" }} />
-                    </colgroup>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className={TH_ACCIONES}>ACCIONES</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filas.length === 0 ? (
-                        <TableRow>
-                          <TableCell className={cn(TD_ACCIONES, "p-1")} aria-hidden />
-                        </TableRow>
-                      ) : (
-                        filas.map((f) => (
-                          <TableRow key={f.id}>{renderCeldaAcciones(f)}</TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </table>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div ref={datosScrollRef} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto overflow-y-auto">
-              <div
-                data-slot="table-container"
-                className="relative min-h-0 w-full min-w-0 max-w-full"
-              >
-                <table
-                  data-slot="table"
-                  className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
-                >
-                  <ColgroupAnchos anchos={anchosFullPct} />
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className={CELL_MIN}>FECHA</TableHead>
-                      <TableHead className={CELL_MIN}>SUCURSAL</TableHead>
-                      <TableHead className={CELL_MIN}>TIPO GASTO</TableHead>
-                      <TableHead className={CELL_MIN}>RUBRO</TableHead>
-                      <TableHead className={CELL_MIN}>GASTO</TableHead>
-                      <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
-                      <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                      <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
-                      <TableHead
-                        className={cn(TH_NUM, CELL_MIN)}
-                        title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
-                      >
-                        DEVENGADO
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filas.length === 0 ? (
-                      <EmptyTableRow colSpan={9} message={mensajeVacio} />
-                    ) : (
-                      filas.map((f) => (
-                        <TableRow key={f.id}>{renderCeldasDatos(f)}</TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+  const colSpanVacio = mostrarAcciones ? 10 : 9;
 
-      {filas.length > 0 ? (
-        <div
-          className="flex shrink-0 flex-wrap items-stretch gap-2"
-          role="region"
-          aria-label="Totales del listado visible"
-          aria-live="polite"
-        >
-          <TarjetaTotalGasto etiqueta="MONTO">
-            {totalMonto === 0 ? (
-              <span className="text-muted-foreground">—</span>
-            ) : (
-              <>${fmtPrecio(totalMonto)}</>
-            )}
-          </TarjetaTotalGasto>
-          <TarjetaTotalGasto etiqueta="PAGADO">${fmtPrecio(totalPagado)}</TarjetaTotalGasto>
-          <TarjetaTotalGasto
-            etiqueta="DEVENGADO"
-            title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
-          >
-            ${fmtPrecio(totalPendiente)}
-          </TarjetaTotalGasto>
+  return (
+    <div className="flex flex-1 min-h-0 flex-col pb-4">
+      <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <div className="contenedor-tabla-gestion--pie-fijo-scroll flex min-h-0 min-w-0 flex-1 flex-col">
+          <div data-slot="table-container" className="relative min-h-0 w-full min-w-0 max-w-full">
+            <table
+              data-slot="table"
+              className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
+            >
+              <ColgroupAnchos anchos={anchosFullPct} />
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className={CELL_MIN}>FECHA</TableHead>
+                  <TableHead className={CELL_MIN}>SUCURSAL</TableHead>
+                  <TableHead className={CELL_MIN}>TIPO GASTO</TableHead>
+                  <TableHead className={CELL_MIN}>RUBRO</TableHead>
+                  <TableHead className={CELL_MIN}>GASTO</TableHead>
+                  <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
+                  <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+                  <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
+                  <TableHead
+                    className={cn(TH_NUM, CELL_MIN)}
+                    title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
+                  >
+                    DEVENGADO
+                  </TableHead>
+                  {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filas.length === 0 ? (
+                  <EmptyTableRow colSpan={colSpanVacio} message={mensajeVacio} />
+                ) : (
+                  filas.map((f) => (
+                    <TableRow key={f.id}>
+                      {renderCeldasDatos(f)}
+                      {mostrarAcciones ? renderCeldaAcciones(f) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </table>
+          </div>
         </div>
-      ) : null}
+
+        {filas.length > 0 ? (
+          <div
+            className="w-full shrink-0 border-t border-border px-2 py-2"
+            role="region"
+            aria-label="Totales del listado visible"
+            aria-live="polite"
+          >
+            <div className="flex w-full flex-wrap items-stretch justify-center gap-2">
+              <TarjetaTotalGasto etiqueta="MONTO">
+                {totalMonto === 0 ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : (
+                  <>${fmtPrecio(totalMonto)}</>
+                )}
+              </TarjetaTotalGasto>
+              <TarjetaTotalGasto etiqueta="PAGADO">${fmtPrecio(totalPagado)}</TarjetaTotalGasto>
+              <TarjetaTotalGasto
+                etiqueta="DEVENGADO"
+                title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
+              >
+                ${fmtPrecio(totalPendiente)}
+              </TarjetaTotalGasto>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
