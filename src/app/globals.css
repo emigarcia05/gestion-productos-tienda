@@ -299,8 +299,9 @@
    * Estructura (misma tarjeta / borde que `.contenedor-tabla-gestion`):
    * `.contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo` (flex column, overflow hidden)
    *   → `.contenedor-tabla-gestion--pie-fijo-scroll` (flex-1 min-h-0 overflow auto) → `<Table>` sin `<tfoot>`
+   *   → (opcional) **total en tarjeta** `.finanzas-resumen-tarjeta` bajo el scroll, sin segunda tabla (p. ej. Tesorería, Balance · Gastos), o
    *   → `.contenedor-tabla-gestion--pie-fijo-pie` (flex-shrink-0) → `<table class="tabla-gestion-compacta table-fixed">` con una fila de totales y el mismo `<colgroup>` que la tabla superior.
-   * Alineación entre la tabla superior y el pie: `scrollbar-gutter: stable` en scroll + pie; además,
+   * Alineación si hay **dos** tablas: `scrollbar-gutter: stable` en scroll + pie; además,
    * `usePieFijoColumnWidthsSync` (`src/lib/hooks/usePieFijoColumnWidthsSync.ts`) medición de cada `th` y anchos en px en el `colgroup` del pie (última columna absorbe el redondeo).
    */
   .contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo {
@@ -326,6 +327,23 @@
   }
   .contenedor-tabla-gestion--pie-fijo-pie table {
     border-collapse: collapse;
+  }
+
+  /**
+   * Tarjetas de totales bajo tablas Finanzas (p. ej. Balance · Gastos, Tesorería): contorno #0072BB, interior centrado.
+   */
+  .finanzas-resumen-tarjeta {
+    display: flex;
+    min-width: 6.25rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+    border-radius: 0.375rem;
+    border: 2px solid #0072bb;
+    background-color: var(--card);
+    padding: 0.5rem 0.75rem;
+    text-align: center;
   }
 
   /*
@@ -904,6 +922,14 @@
 }
 .tabla-gestion-compacta.tabla-flujo-de-fondo tbody td:first-child.celda-datos {
   text-align: left !important;
+}
+/* Columnas de importe: el `thead` global centra títulos; en Flujo de Fondo las celdas usan
+ * `TD_NUM` (derecha). Alinear cabeceras a la derecha salvo la primera (FECHA / PROVEEDOR en modal). */
+.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:not(:first-child) {
+  text-align: right !important;
+}
+.tabla-gestion-compacta.tabla-flujo-de-fondo thead th:not(:first-child) .table-head-inner {
+  justify-content: flex-end !important;
 }
 
 /* ─── Bloques de columnas en tablas (solo línea vertical entre sub-grupos) ───

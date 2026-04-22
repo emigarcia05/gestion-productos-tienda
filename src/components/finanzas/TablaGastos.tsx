@@ -63,14 +63,13 @@ function TarjetaTotalGasto({
   title?: string;
 }) {
   return (
-    <div
-      className="flex min-w-[6.25rem] flex-col gap-0 rounded-md border border-border bg-card px-2 py-1"
-      title={title}
-    >
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-none">
+    <div className="finanzas-resumen-tarjeta" title={title}>
+      <span className="w-full text-[10px] font-semibold uppercase leading-none tracking-wide text-muted-foreground">
         {etiqueta}
       </span>
-      <span className="celda-destacado text-sm font-medium tabular-nums leading-tight">{children}</span>
+      <span className="celda-destacado w-full text-sm font-medium tabular-nums leading-tight">
+        {children}
+      </span>
     </div>
   );
 }

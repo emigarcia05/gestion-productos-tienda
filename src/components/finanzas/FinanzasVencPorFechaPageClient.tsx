@@ -9,26 +9,15 @@ import FilterBar, {
   FilterRowSelection,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import {
+  TablaFlujoDeFondo,
+  TablaFlujoDeFondoDetalleDia,
+} from "@/components/finanzas/TablaFlujoDeFondo";
 import AppModal from "@/components/shared/AppModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import {
-  formatFechaLargaNotaPedidoArgentina,
-  formatMesDiaMayusculasDesdeIsoYmd,
-} from "@/lib/fechaArgentina";
-import {
-  EmptyTableRow,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import { PAGE_SIZE } from "@/lib/pagination";
-import { cn } from "@/lib/utils";
+import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
 import {
   Select,
   SelectContent,
@@ -36,13 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-function fmtMontoAr(n: number): string {
-  return `$${n.toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
+import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import { PAGE_SIZE } from "@/lib/pagination";
+import { cn } from "@/lib/utils";
 
 /**
  * Filas ordenadas por fecha (calendario completo en servidor: hoy → hoy+150 inclusive):
@@ -97,25 +82,6 @@ export interface FinanzasVencPorFechaPageClientProps {
   total: number;
 }
 
-/** Cinco columnas al 20% (misma proporción que documentación del módulo). */
-const COL_WIDTHS_PCT_MAIN = [20, 20, 20, 20, 20] as const;
-/** Modal detalle: proveedor / monto. */
-const COL_WIDTHS_PCT_MODAL = [65, 35] as const;
-
-const TH_NUM = "text-right whitespace-nowrap";
-const TD_NUM = "celda-datos text-right tabular-nums";
-const CELL_MIN = "min-w-0";
-
-function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
-  return (
-    <colgroup>
-      {anchos.map((pct, i) => (
-        <col key={i} style={{ width: `${pct}%` }} />
-      ))}
-    </colgroup>
-  );
-}
-
 export default function FinanzasVencPorFechaPageClient({
   saldoVencidoAntesDeHoy,
   cajaDisponibleInicial,
@@ -144,7 +110,7 @@ export default function FinanzasVencPorFechaPageClient({
       filasConVtosYSaldo(filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy),
     [filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy]
   );
-  const vencimientoDelDiaPorFila = useMemo(() => {
+  const montoVencimientoPorDia = useMemo(() => {
     if (!filtroProveedor) {
       return Object.fromEntries(filas.map((fila) => [fila.isoYmd, fila.vencimientoDelDia]));
     }
@@ -230,70 +196,12 @@ export default function FinanzasVencPorFechaPageClient({
             </p>
           </div>
 
-          <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-            <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto">
-              <Table
-                variant="compact"
-                scrollX={false}
-                className={cn(
-                  "tabla-flujo-de-fondo table-fixed w-full",
-                  haySaldoNegativo && "tabla-venc-por-fecha-alerta"
-                )}
-              >
-                <ColgroupAnchos anchos={COL_WIDTHS_PCT_MAIN} />
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className={cn(CELL_MIN, "text-left")}>FECHA</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>VENCIMIENTO DEL DÍA</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>VTOS ACUMULADOS</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>CAJA DISPONIBLE</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>SALDO</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filasVista.length === 0 ? (
-                    <EmptyTableRow
-                      colSpan={5}
-                      message="Sin vencimientos en los próximos 150 días."
-                    />
-                  ) : (
-                    filasVista.map((fila) => (
-                      <TableRow
-                        key={fila.isoYmd}
-                        title="Doble clic para ver el detalle por proveedor"
-                        onDoubleClick={() => setDetalleIsoYmd(fila.isoYmd)}
-                        className={cn(
-                          "cursor-pointer",
-                          fila.saldo < 0 && "venc-saldo-negativo"
-                        )}
-                      >
-                        <TableCell
-                          className={cn(
-                            "celda-datos celda-destacado font-medium uppercase text-left",
-                            CELL_MIN
-                          )}
-                        >
-                          {formatMesDiaMayusculasDesdeIsoYmd(fila.isoYmd)}
-                        </TableCell>
-                        <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                          {fmtMontoAr(vencimientoDelDiaPorFila[fila.isoYmd] ?? 0)}
-                        </TableCell>
-                        <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                          {fmtMontoAr(fila.vtosAcumulados)}
-                        </TableCell>
-                        <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                          {fmtMontoAr(fila.cajaDisponible)}
-                        </TableCell>
-                        <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-                          {fmtMontoAr(fila.saldo)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <TablaFlujoDeFondo
+            filas={filasVista}
+            montoVencimientoPorDia={montoVencimientoPorDia}
+            haySaldoNegativo={haySaldoNegativo}
+            onRowDoubleClick={setDetalleIsoYmd}
+          />
 
           {totalPaginas > 1 ? (
             <div className="flex shrink-0 justify-end pt-2">
@@ -332,39 +240,7 @@ export default function FinanzasVencPorFechaPageClient({
           }
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-              <div className="no-scrollbar flex-1 min-h-[14rem] max-h-[min(28rem,70vh)] min-w-0 overflow-x-auto overflow-y-auto">
-                <Table variant="compact" scrollX={false} className="tabla-flujo-de-fondo table-fixed w-full">
-                  <ColgroupAnchos anchos={COL_WIDTHS_PCT_MODAL} />
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className={cn(CELL_MIN, "text-left")}>PROVEEDOR</TableHead>
-                      <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO A PAGAR</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {detalleFilas.length === 0 ? (
-                      <EmptyTableRow colSpan={2} message="Sin vencimientos para el día seleccionado." />
-                    ) : (
-                      detalleFilas.map((fila, idx) => (
-                        <TableRow key={`${fila.proveedor}-${idx}`}>
-                          <TableCell
-                            className={cn(
-                              "celda-datos max-w-[24rem] text-left font-medium celda-destacado",
-                              CELL_MIN
-                            )}
-                            title={fila.proveedor}
-                          >
-                            <span className="block truncate">{fila.proveedor}</span>
-                          </TableCell>
-                          <TableCell className={cn(TD_NUM, CELL_MIN)}>{fmtMontoAr(fila.vencimiento)}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <TablaFlujoDeFondoDetalleDia filas={detalleFilas} />
           </div>
         </AppModal>
       </Dialog>

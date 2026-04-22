@@ -19,8 +19,6 @@ import {
   TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
   TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
-import { usePieFijoColumnWidthsSync } from "@/lib/hooks/usePieFijoColumnWidthsSync";
-import { useRef } from "react";
 
 export interface TesoreriaCajaFila {
   id: string;
@@ -79,14 +77,10 @@ export default function TablaTesoreriaCajas({
   const colCount = esEditor ? COLS + 1 : COLS;
   const anchosColPct = esEditor ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
-  const pieScrollRef = useRef<HTMLDivElement>(null);
-  const pieFooterTableRef = useRef<HTMLTableElement>(null);
-  usePieFijoColumnWidthsSync(filas.length > 0, pieScrollRef, pieFooterTableRef, colCount);
-
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
       <div className="contenedor-tabla-gestion contenedor-tabla-gestion--pie-fijo flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-        <div ref={pieScrollRef} className="contenedor-tabla-gestion--pie-fijo-scroll">
+        <div className="contenedor-tabla-gestion--pie-fijo-scroll">
           <Table variant="compact" scrollX={false} className="table-fixed w-full">
             <ColgroupAnchos anchos={anchosColPct} />
             <TableHeader>
@@ -205,42 +199,22 @@ export default function TablaTesoreriaCajas({
         </div>
 
         {filas.length > 0 ? (
-          <div className="contenedor-tabla-gestion--pie-fijo-pie">
-            <table
-              ref={pieFooterTableRef}
-              className="tabla-gestion-compacta w-full table-fixed border-collapse text-sm"
-            >
-              <ColgroupAnchos anchos={anchosColPct} />
-              <tbody>
-                <tr className="transition-[background-color] duration-150">
-                  <td
-                    className={cn("celda-datos font-bold uppercase whitespace-nowrap", CELL_MIN)}
-                    colSpan={3}
-                  >
-                    TOTAL
-                  </td>
-                  <td className={cn(TD_NUM, "celda-datos celda-destacado font-bold whitespace-nowrap", CELL_MIN)}>
-                    ${fmtPrecio(totalMonto)}
-                  </td>
-                  <td
-                    className={cn(
-                      "celda-datos tabular-nums whitespace-nowrap tabla-bloque-secundario-cell-divider",
-                      CELL_MIN
-                    )}
-                    aria-hidden
-                  />
-                  {esEditor ? (
-                    <td
-                      className={cn(
-                        "celda-datos tabular-nums whitespace-nowrap tabla-bloque-secundario-cell-divider",
-                        CELL_MIN
-                      )}
-                      aria-hidden
-                    />
-                  ) : null}
-                </tr>
-              </tbody>
-            </table>
+          <div
+            className="w-full shrink-0 border-t border-border px-2 py-2"
+            role="region"
+            aria-label="Total tesorería"
+            aria-live="polite"
+          >
+            <div className="flex w-full flex-wrap items-stretch justify-center gap-2">
+              <div className="finanzas-resumen-tarjeta min-w-[10rem]">
+                <span className="w-full text-[10px] font-semibold uppercase leading-none tracking-wide text-muted-foreground">
+                  TOTAL
+                </span>
+                <span className="celda-destacado w-full text-sm font-bold tabular-nums leading-tight">
+                  ${fmtPrecio(totalMonto)}
+                </span>
+              </div>
+            </div>
           </div>
         ) : null}
       </div>
