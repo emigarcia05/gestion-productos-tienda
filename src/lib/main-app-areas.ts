@@ -26,7 +26,7 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     id: "finanzas",
     label: "Finanzas",
     statusLabel: "A construir",
-    href: "/finanzas",
+    href: "/finanzas/tesoreria",
   },
   {
     id: "estadisticas-productos",

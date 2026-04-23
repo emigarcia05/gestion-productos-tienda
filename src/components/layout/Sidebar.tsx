@@ -186,7 +186,7 @@ const FINANZAS_MODULES: {
       },
       {
         href: "/finanzas/control-comprobantes",
-        label: "Control Comp. Merc.",
+        label: "Control Comprobantes",
         icon: <FileSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
@@ -212,7 +212,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
-  if (href === "/finanzas/tesoreria") return pathname === "/finanzas/tesoreria";
+  if (href === "/finanzas/tesoreria")
+    return pathname === "/finanzas/tesoreria" || pathname === "/finanzas";
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";
   if (href === "/finanzas/vencimientos-gastos") return pathname === "/finanzas/vencimientos-gastos";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";

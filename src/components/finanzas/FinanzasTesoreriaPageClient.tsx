@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import SincronizarComprobantesProveedorDuxButton from "@/components/finanzas/SincronizarComprobantesProveedorDuxButton";
 import TablaTesoreriaCajas, { type TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
-import ChequesCajaTesoreriaModal from "@/components/finanzas/ChequesCajaTesoreriaModal";
 import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaModal";
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
 import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
@@ -41,7 +41,6 @@ export default function FinanzasTesoreriaPageClient({
   const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
-  const [cajaCheques, setCajaCheques] = useState<TesoreriaCajaFila | null>(null);
   const [filtroCaja, setFiltroCaja] = useState("");
   const [filtroTitular, setFiltroTitular] = useState("");
   const [filtroTipoCaja, setFiltroTipoCaja] = useState("");
@@ -162,33 +161,26 @@ export default function FinanzasTesoreriaPageClient({
         }
         actions={
           esEditor ? (
-            <Button
-              type="button"
-              onClick={() => setOpenNuevaCaja(true)}
-              className="h-10 px-4 gap-2"
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              Nueva Caja
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <SincronizarComprobantesProveedorDuxButton />
+              <Button
+                type="button"
+                onClick={() => setOpenNuevaCaja(true)}
+                className="h-10 px-4 gap-2"
+              >
+                <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                Nueva Caja
+              </Button>
+            </div>
           ) : undefined
         }
       >
         <TablaTesoreriaCajas
           filas={filasFiltradas}
           esEditor={esEditor}
-          onChequeRowClick={(fila) => setCajaCheques(fila)}
           onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
           onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}
           onDeleteClick={esEditor ? (fila) => setCajaParaEliminar(fila) : undefined}
-        />
-        <ChequesCajaTesoreriaModal
-          open={cajaCheques !== null}
-          onOpenChange={(next) => {
-            if (!next) setCajaCheques(null);
-          }}
-          caja={cajaCheques}
-          esEditor={esEditor}
-          onChequesChanged={() => router.refresh()}
         />
         <NuevaCajaTesoreriaModal
           open={openNuevaCaja}

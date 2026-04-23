@@ -134,13 +134,21 @@ export function TablaFlujoDeFondo({
 
 export interface TablaFlujoDeFondoDetalleDiaProps {
   filas: FlujoFondoDetalleDiaFila[];
+  /**
+   * Texto de fila vacía (`EmptyTableRow`). Por defecto: detalle por día en Flujo de Fondo.
+   * En **Venc. Provee. Gastos** pasar mensaje acorde al filtro por proveedor.
+   */
+  emptyMessage?: string;
 }
 
 /**
  * Modal “Detalle del día”: **PROVEEDOR** + **DETALLE** (MERCADERÍA o nombre de gasto) + **MONTO**;
  * el scroll va en un ancestro del `Table` (misma regla que el resto de modales con tabla).
  */
-export function TablaFlujoDeFondoDetalleDia({ filas }: TablaFlujoDeFondoDetalleDiaProps) {
+export function TablaFlujoDeFondoDetalleDia({
+  filas,
+  emptyMessage = "Sin vencimientos para el día seleccionado.",
+}: TablaFlujoDeFondoDetalleDiaProps) {
   return (
     <div className="contenedor-tabla-gestion flex min-h-0 max-h-full flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
       <div className="no-scrollbar flex-1 min-h-[14rem] min-w-0 max-h-[min(28rem,70vh)] overflow-x-auto overflow-y-auto">
@@ -159,10 +167,7 @@ export function TablaFlujoDeFondoDetalleDia({ filas }: TablaFlujoDeFondoDetalleD
           </TableHeader>
           <TableBody>
             {filas.length === 0 ? (
-              <EmptyTableRow
-                colSpan={3}
-                message="Sin vencimientos para el día seleccionado."
-              />
+              <EmptyTableRow colSpan={3} message={emptyMessage} />
             ) : (
               filas.map((fila) => (
                 <TableRow key={fila.sortId}>
