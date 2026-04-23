@@ -86,12 +86,24 @@ const diaDevengadoSchema = z.coerce
   .min(1, "El día devengado debe ser entre 1 y 28.")
   .max(28, "El día devengado debe ser entre 1 y 28.");
 
+const comentariosFinBalGastoFinalSchema = z
+  .string()
+  .max(10000, "Los comentarios no pueden superar 10000 caracteres.")
+  .optional()
+  .nullable()
+  .transform((v) => {
+    if (v == null) return null;
+    const t = v.trim().toLocaleUpperCase("es-AR");
+    return t === "" ? null : t;
+  });
+
 export const crearFinBalGastoFinalSchema = z.object({
   gastoId: prismaCuidOrUuidSchema,
   proveedorId: prismaCuidOrUuidSchema,
   sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
+  comentarios: comentariosFinBalGastoFinalSchema,
 });
 export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSchema>;
 
@@ -101,6 +113,7 @@ export const editarFinBalGastoFinalSchema = z.object({
   sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
+  comentarios: comentariosFinBalGastoFinalSchema,
 });
 export type EditarFinBalGastoFinalInput = z.infer<typeof editarFinBalGastoFinalSchema>;
 

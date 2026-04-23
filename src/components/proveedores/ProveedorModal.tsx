@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export interface ProveedorParaModal {
   whatsapp?: string | null;
   coeficienteTintometrico?: number;
   plazosPagos?: string | null;
-  /** Flag "Proveedor Mercadería" (default `false`). */
+  /** Flag "Proveedor Mercadería" (edición). */
   proveedorMercaderia?: boolean;
 }
 
@@ -36,7 +36,13 @@ export default function ProveedorModal({ open, onOpenChange, proveedor, onSucces
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [mercaderiaListo, setMercaderiaListo] = useState(false);
   const isEdit = !!proveedor;
+
+  useEffect(() => {
+    if (!open) return;
+    setMercaderiaListo(isEdit);
+  }, [open, isEdit, proveedor?.id]);
 
   function handleSuccess() {
     onOpenChange(false);
@@ -83,27 +89,24 @@ export default function ProveedorModal({ open, onOpenChange, proveedor, onSucces
               Eliminar
             </Button>
           )}
-          <Button type="submit" form={FORM_ID} disabled={pending || deleting} className="gap-2">
+          <Button
+            type="submit"
+            form={FORM_ID}
+            disabled={pending || deleting || (!isEdit && !mercaderiaListo)}
+            className="gap-2"
+          >
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEdit ? "Guardar" : "Guardar"}
           </Button>
         </>
       }
     >
-      {!isEdit && (
-        <p className="text-sm text-muted-foreground mb-4">
-          Se generará un código único automáticamente.
-        </p>
-      )}
-      {isEdit && (
-        <p className="text-sm text-muted-foreground mb-4">
-          El código único no puede modificarse.
-        </p>
-      )}
       <ProveedorForm
         id={FORM_ID}
         proveedor={proveedor ?? undefined}
         hideSubmitButton
+        modalOpen={open}
+        onProveedorMercaderiaListoChange={setMercaderiaListo}
         onSuccess={handleSuccess}
         onPendingChange={setPending}
       />

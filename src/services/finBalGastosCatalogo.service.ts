@@ -14,7 +14,7 @@ import type {
 /**
  * Catálogo jerárquico Finanzas → Balance → Gastos:
  *   fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N)
- *   y filas `fin_bal_gasto_final` (gasto + proveedor + sucursal + mensual + día devengado, N por gasto).
+ *   y filas `fin_bal_gasto_final` (gasto + proveedor + sucursal + mensual + día devengado + comentarios opcional, N por gasto).
  *
  * Convenciones:
  * - `nombre` se persiste en MAYÚSCULAS (ya viene normalizado desde Zod en la Action).
@@ -56,6 +56,8 @@ export interface FinBalGastoFinalItem {
   gastoMensual: boolean;
   /** 1–28 */
   diaDevengado: number;
+  /** Texto libre (`fin_bal_gasto_final.comentarios`). */
+  comentarios: string | null;
   proveedor: {
     id: string;
     nombre: string;
@@ -233,6 +235,7 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
           sucursalId: a.sucursalId,
           gastoMensual: a.gastoMensual,
           diaDevengado: a.diaDevengado,
+          comentarios: a.comentarios,
           proveedor: {
             id: a.proveedor.id,
             nombre: a.proveedor.nombre.toUpperCase(),
@@ -485,6 +488,7 @@ function mapFinBalGastoFinalRow(row: {
   sucursalId: string;
   gastoMensual: boolean;
   diaDevengado: number;
+  comentarios: string | null;
   proveedor: { id: string; nombre: string; prefijo: string | null };
   sucursal: { id: string; nombre: string };
 }): FinBalGastoFinalItem {
@@ -495,6 +499,7 @@ function mapFinBalGastoFinalRow(row: {
     sucursalId: row.sucursalId,
     gastoMensual: row.gastoMensual,
     diaDevengado: row.diaDevengado,
+    comentarios: row.comentarios,
     proveedor: {
       id: row.proveedor.id,
       nombre: row.proveedor.nombre.toUpperCase(),
@@ -532,6 +537,7 @@ export async function crearFinBalGastoFinal(
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
         diaDevengado: input.diaDevengado,
+        comentarios: input.comentarios ?? null,
       },
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
@@ -574,6 +580,7 @@ export async function editarFinBalGastoFinal(
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
         diaDevengado: input.diaDevengado,
+        comentarios: input.comentarios ?? null,
       },
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },

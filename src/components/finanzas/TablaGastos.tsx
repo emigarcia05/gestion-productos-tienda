@@ -127,9 +127,9 @@ export default function TablaGastos({
           <span className="truncate block">{f.proveedorNombre}</span>
         </TableCell>
         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>{celdaMonto(f.monto)}</TableCell>
-        <TableCell className={cn(TD_NUM, CELL_MIN)}>${fmtPrecio(f.pagado)}</TableCell>
+        <TableCell className={cn(TD_NUM, CELL_MIN)}>{celdaMonto(f.pagado)}</TableCell>
         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-          ${fmtPrecio(f.montoDevengadoPendiente)}
+          {celdaMonto(f.montoDevengadoPendiente)}
         </TableCell>
       </>
     );
@@ -242,12 +242,22 @@ export default function TablaGastos({
                   <>${fmtPrecio(totalMonto)}</>
                 )}
               </TarjetaTotalGasto>
-              <TarjetaTotalGasto etiqueta="PAGADO">${fmtPrecio(totalPagado)}</TarjetaTotalGasto>
+              <TarjetaTotalGasto etiqueta="PAGADO">
+                {totalPagado === 0 ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : (
+                  <>${fmtPrecio(totalPagado)}</>
+                )}
+              </TarjetaTotalGasto>
               <TarjetaTotalGasto
                 etiqueta="DEVENGADO"
                 title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
               >
-                ${fmtPrecio(totalPendiente)}
+                {totalPendiente === 0 ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : (
+                  <>${fmtPrecio(totalPendiente)}</>
+                )}
               </TarjetaTotalGasto>
             </div>
           </div>

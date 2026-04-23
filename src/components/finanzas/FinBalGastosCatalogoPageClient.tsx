@@ -106,6 +106,7 @@ type ModalGastoFinalState =
       sucursalIdInicial?: string;
       gastoMensualInicial?: boolean;
       diaDevengadoInicial?: number;
+      comentariosInicial?: string | null;
     };
 
 type ModalEliminarGastoFinalState =
@@ -399,7 +400,10 @@ export default function FinBalGastosCatalogoPageClient({
             ) : gastoSeleccionado.asignacionesFinales.length === 0 ? (
               <EmptyState mensaje="Este gasto aún no tiene gastos finales." />
             ) : (
-              gastoSeleccionado.asignacionesFinales.map((a) => (
+              gastoSeleccionado.asignacionesFinales.map((a) => {
+                const comTrim = a.comentarios?.trim() ?? "";
+                const terceraLinea = comTrim.length > 0 ? comTrim : undefined;
+                return (
                 <FilaCatalogo
                   key={a.id}
                   nombre={a.proveedor.nombre}
@@ -413,6 +417,7 @@ export default function FinBalGastosCatalogoPageClient({
                       .filter((v): v is string => Boolean(v))
                       .join(" · ")
                   }
+                  terceraLinea={terceraLinea}
                   selected={false}
                   mostrarAcciones={esEditor}
                   onEditar={() =>
@@ -424,6 +429,7 @@ export default function FinBalGastosCatalogoPageClient({
                       sucursalIdInicial: a.sucursalId,
                       gastoMensualInicial: a.gastoMensual,
                       diaDevengadoInicial: a.diaDevengado,
+                      comentariosInicial: a.comentarios,
                     })
                   }
                   onEliminar={() =>
@@ -435,7 +441,8 @@ export default function FinBalGastosCatalogoPageClient({
                     })
                   }
                 />
-              ))
+              );
+              })
             )}
           </CatalogoColumna>
 
@@ -501,6 +508,9 @@ export default function FinBalGastosCatalogoPageClient({
           sucursalIdInicial={gastoFinalModal.sucursalIdInicial}
           gastoMensualInicial={gastoFinalModal.gastoMensualInicial}
           diaDevengadoInicial={gastoFinalModal.diaDevengadoInicial}
+          comentariosInicial={
+            gastoFinalModal.modo === "editar" ? gastoFinalModal.comentariosInicial : undefined
+          }
           onSuccess={onSuccessRefresh}
         />
       )}
@@ -599,6 +609,7 @@ function CatalogoColumna({
 function FilaCatalogo({
   nombre,
   meta,
+  terceraLinea,
   selected,
   onClick,
   mostrarAcciones,
@@ -607,6 +618,8 @@ function FilaCatalogo({
 }: {
   nombre: string;
   meta?: string;
+  /** Tercera fila bajo `meta` (p. ej. comentarios de gasto final). */
+  terceraLinea?: string;
   selected: boolean;
   onClick?: () => void;
   mostrarAcciones: boolean;
@@ -632,9 +645,17 @@ function FilaCatalogo({
         }
       }}
     >
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         <div className="truncate font-medium">{nombre}</div>
         {meta && <div className="truncate text-[11px] text-muted-foreground">{meta}</div>}
+        {terceraLinea && (
+          <div
+            className="line-clamp-2 break-words text-[11px] text-muted-foreground"
+            title={terceraLinea}
+          >
+            {terceraLinea}
+          </div>
+        )}
       </div>
 
       {mostrarAcciones && (

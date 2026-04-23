@@ -17,6 +17,7 @@ import {
   crearFinBalGastoFinalAction,
   editarFinBalGastoFinalAction,
 } from "@/actions/finBalGastosCatalogo";
+import { cn } from "@/lib/utils";
 
 type Modo = "crear" | "editar";
 
@@ -49,7 +50,13 @@ interface Props {
   gastoMensualInicial?: boolean;
   /** En edición: valor persistido (1–28). En alta se ignora. */
   diaDevengadoInicial?: number;
+  /** En edición: comentarios persistidos (`fin_bal_gasto_final.comentarios`). */
+  comentariosInicial?: string | null;
   onSuccess?: () => void;
+}
+
+function comentariosNormalizadosParaEstado(raw: string | null | undefined): string {
+  return (raw ?? "").toLocaleUpperCase("es-AR");
 }
 
 export default function CrearEditarFinBalGastoFinalModal({
@@ -66,6 +73,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   sucursalIdInicial = "",
   gastoMensualInicial = false,
   diaDevengadoInicial = 1,
+  comentariosInicial = null,
   onSuccess,
 }: Props) {
   const editingId = modo === "editar" && id ? id : null;
@@ -76,6 +84,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   const [proveedorId, setProveedorId] = useState("");
   const [gastoMensual, setGastoMensual] = useState(false);
   const [diaDevengado, setDiaDevengado] = useState(1);
+  const [comentarios, setComentarios] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -84,6 +93,9 @@ export default function CrearEditarFinBalGastoFinalModal({
     setProveedorId(modo === "editar" ? proveedorIdInicial : "");
     setGastoMensual(modo === "editar" ? gastoMensualInicial : false);
     setDiaDevengado(modo === "editar" ? diaDevengadoInicial : 1);
+    setComentarios(
+      modo === "editar" ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
+    );
   }, [
     open,
     modo,
@@ -91,6 +103,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     proveedorIdInicial,
     gastoMensualInicial,
     diaDevengadoInicial,
+    comentariosInicial,
   ]);
 
   const proveedoresFiltrados = useMemo(() => {
@@ -108,11 +121,13 @@ export default function CrearEditarFinBalGastoFinalModal({
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
+    const comIni = comentariosNormalizadosParaEstado(comentariosInicial);
     return (
       proveedorId !== proveedorIdInicial ||
       sucursalId !== sucursalIdInicial ||
       gastoMensual !== gastoMensualInicial ||
-      diaDevengado !== diaDevengadoInicial
+      diaDevengado !== diaDevengadoInicial ||
+      comentarios !== comIni
     );
   }, [
     modo,
@@ -124,6 +139,8 @@ export default function CrearEditarFinBalGastoFinalModal({
     gastoMensualInicial,
     diaDevengado,
     diaDevengadoInicial,
+    comentarios,
+    comentariosInicial,
   ]);
 
   const disabledSubmit = useMemo(() => {
@@ -140,6 +157,11 @@ export default function CrearEditarFinBalGastoFinalModal({
     }
   }, [open, sucursalId, proveedoresFiltrados, proveedorId]);
 
+  function comentariosParaPersistir(): string | null {
+    const t = comentarios.trim().toLocaleUpperCase("es-AR");
+    return t === "" ? null : t;
+  }
+
   async function handleSubmit() {
     if (disabledSubmit) return;
     setSaving(true);
@@ -151,6 +173,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           sucursalId,
           gastoMensual,
           diaDevengado,
+          comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
@@ -164,6 +187,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           sucursalId,
           gastoMensual,
           diaDevengado,
+          comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
@@ -191,7 +215,7 @@ export default function CrearEditarFinBalGastoFinalModal({
       <AppModal
         title={titulo}
         size="md"
-        className="sm:max-w-lg"
+        className="sm:max-w-xl"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button
@@ -301,6 +325,31 @@ export default function CrearEditarFinBalGastoFinalModal({
                 ))}
               </SelectContent>
             </Select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              COMENTARIOS
+            </span>
+            <textarea
+              value={comentarios}
+              onChange={(e) =>
+                setComentarios(e.target.value.toLocaleUpperCase("es-AR"))
+              }
+              disabled={saving}
+              rows={4}
+              maxLength={10000}
+              placeholder="TEXTO LIBRE (OPCIONAL)"
+              spellCheck={false}
+              autoComplete="off"
+              className={cn(
+                "border-input w-full min-w-0 resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow]",
+                "placeholder:text-muted-foreground",
+                "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+            />
+            <span className="text-xs text-muted-foreground">{comentarios.length} / 10000</span>
           </label>
         </div>
       </AppModal>
