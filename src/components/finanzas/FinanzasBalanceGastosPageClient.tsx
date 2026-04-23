@@ -213,48 +213,6 @@ export default function FinanzasBalanceGastosPageClient({
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables>
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <Select value={filtRubro || "none"} onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}>
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="RUBRO" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro"
-                    >
-                      <SelectItem value="none">RUBRO</SelectItem>
-                      {rubrosOpciones.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <Select value={filtGasto || "none"} onValueChange={(v) => setFiltGasto(v === "none" ? "" : v)}>
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="GASTO" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro"
-                    >
-                      <SelectItem value="none">GASTO</SelectItem>
-                      {gastosOpciones.map((g) => (
-                        <SelectItem key={g} value={g}>
-                          {g}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
                   <Select
                     value={filtSucursal || "none"}
                     onValueChange={(v) => setFiltSucursal(v === "none" ? "" : v)}
@@ -296,6 +254,48 @@ export default function FinanzasBalanceGastosPageClient({
                       {proveedoresOpciones.map((p) => (
                         <SelectItem key={p} value={p}>
                           {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  <Select value={filtRubro || "none"} onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}>
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="RUBRO" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">RUBRO</SelectItem>
+                      {rubrosOpciones.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  <Select value={filtGasto || "none"} onValueChange={(v) => setFiltGasto(v === "none" ? "" : v)}>
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="GASTO" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">GASTO</SelectItem>
+                      {gastosOpciones.map((g) => (
+                        <SelectItem key={g} value={g}>
+                          {g}
                         </SelectItem>
                       ))}
                     </SelectContent>
