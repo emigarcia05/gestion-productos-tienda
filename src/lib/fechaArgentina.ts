@@ -94,6 +94,17 @@ export function dateToIsoYmdArgentina(d: Date): string {
   return `${m.year}-${m.month}-${m.day}`;
 }
 
+/**
+ * Día del mes en calendario Argentina (1–31), acotado a **28** para `fin_bal_gasto_final.dia_devengado` (CHECK 1–28 en BD).
+ * Uso típico: alta de **gasto único** (`gasto_mensual = false`) con devengo el día de la carga.
+ */
+export function diaDevengadoFinBalDesdeCalendarioArgentina(d: Date = new Date()): number {
+  const m = toPartMap(d, { day: "numeric" });
+  const day = Number.parseInt(m.day ?? "1", 10);
+  if (!Number.isFinite(day) || day < 1) return 1;
+  return Math.min(day, 28);
+}
+
 /** Primeros siete caracteres de {@link dateToIsoYmdArgentina} → `YYYY-MM` (mes calendario AR). */
 export function isoYearMonthArgentina(d = new Date()): string {
   return dateToIsoYmdArgentina(d).slice(0, 7);

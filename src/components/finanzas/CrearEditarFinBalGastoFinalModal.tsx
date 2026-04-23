@@ -17,6 +17,11 @@ import {
   crearFinBalGastoFinalAction,
   editarFinBalGastoFinalAction,
 } from "@/actions/finBalGastosCatalogo";
+import {
+  dateToIsoYmdArgentina,
+  diaDevengadoFinBalDesdeCalendarioArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+} from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 
 type Modo = "crear" | "editar";
@@ -95,12 +100,20 @@ export default function CrearEditarFinBalGastoFinalModal({
 
   useEffect(() => {
     if (!open) return;
-    setSucursalId(modo === "editar" ? sucursalIdInicial : "");
-    setProveedorId(modo === "editar" ? proveedorIdInicial : "");
-    setGastoMensual(modo === "editar" ? gastoMensualInicial : false);
-    setDiaDevengado(modo === "editar" ? diaDevengadoInicial : 1);
+    const esEdicion = modo === "editar";
+    setSucursalId(esEdicion ? sucursalIdInicial : "");
+    setProveedorId(esEdicion ? proveedorIdInicial : "");
+    const mensualInicial = esEdicion ? gastoMensualInicial : false;
+    setGastoMensual(mensualInicial);
+    setDiaDevengado(
+      esEdicion
+        ? diaDevengadoInicial
+        : mensualInicial
+          ? 1
+          : diaDevengadoFinBalDesdeCalendarioArgentina()
+    );
     setComentarios(
-      modo === "editar" ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
+      esEdicion ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
     );
   }, [
     open,
@@ -111,6 +124,12 @@ export default function CrearEditarFinBalGastoFinalModal({
     diaDevengadoInicial,
     comentariosInicial,
   ]);
+
+  /** En alta, al pasar entre mensual y único, el día de devengo sigue la regla de negocio (hoy AR si único). */
+  useEffect(() => {
+    if (!open || modo !== "crear") return;
+    setDiaDevengado(gastoMensual ? 1 : diaDevengadoFinBalDesdeCalendarioArgentina());
+  }, [gastoMensual, open, modo]);
 
   const hermanosMismaProveedorSucursal = useMemo(() => {
     if (!proveedorId || !sucursalId) return [];
@@ -337,7 +356,7 @@ export default function CrearEditarFinBalGastoFinalModal({
             <Select
               value={String(diaDevengado)}
               onValueChange={(v) => setDiaDevengado(Number(v))}
-              disabled={saving}
+              disabled={saving || (modo === "crear" && !gastoMensual)}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="DÍA DEL MES" />
@@ -350,6 +369,13 @@ export default function CrearEditarFinBalGastoFinalModal({
                 ))}
               </SelectContent>
             </Select>
+            {modo === "crear" && !gastoMensual ? (
+              <p className="text-xs text-muted-foreground">
+                Gasto único: el día de devengo es el del calendario de hoy en Argentina (
+                {formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date()))}
+                ). Si el día es mayor a 28, se guarda 28 (límite del modelo).
+              </p>
+            ) : null}
           </label>
 
           <label className="flex flex-col gap-1">

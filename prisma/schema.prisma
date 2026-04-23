@@ -240,7 +240,7 @@ model FinBalGastoFinal {
   proveedorId   String   @map("proveedor_id")
   sucursalId    String   @map("sucursal_id")
   gastoMensual  Boolean  @map("gasto_mensual")
-  /** Día del mes (1–28) en que se devenga el gasto. CHECK en DB. */
+  /** Día del mes (1–28) en que se devenga el gasto. CHECK en DB. Gasto único: en alta, día de hoy AR (cap 28). */
   diaDevengado  Int      @map("dia_devengado")
   /** Texto libre (UI: COMENTARIOS, mayúsculas). */
   comentarios   String?  @db.Text @map("comentarios")

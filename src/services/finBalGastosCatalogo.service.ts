@@ -1,3 +1,4 @@
+import { diaDevengadoFinBalDesdeCalendarioArgentina } from "@/lib/fechaArgentina";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 import type {
@@ -595,7 +596,10 @@ export async function crearFinBalGastoFinal(
         proveedorId: input.proveedorId,
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
-        diaDevengado: input.diaDevengado,
+        diaDevengado:
+          input.gastoMensual === false
+            ? diaDevengadoFinBalDesdeCalendarioArgentina()
+            : input.diaDevengado,
         comentarios: input.comentarios ?? null,
       },
       include: {
@@ -617,7 +621,7 @@ export async function editarFinBalGastoFinal(
 ): Promise<ServiceResult<FinBalGastoFinalItem>> {
   const prev = await prisma.finBalGastoFinal.findUnique({
     where: { id: input.id },
-    select: { sucursalId: true, gastoId: true },
+    select: { sucursalId: true, gastoId: true, gastoMensual: true },
   });
   if (!prev) {
     return { success: false, error: "Gasto final no encontrado." };
@@ -641,6 +645,10 @@ export async function editarFinBalGastoFinal(
   if (!triplaOk.success) {
     return { success: false, error: triplaOk.error };
   }
+  const diaDevengadoPersist =
+    input.gastoMensual === false && prev.gastoMensual === true
+      ? diaDevengadoFinBalDesdeCalendarioArgentina()
+      : input.diaDevengado;
   try {
     const row = await prisma.finBalGastoFinal.update({
       where: { id: input.id },
@@ -648,7 +656,7 @@ export async function editarFinBalGastoFinal(
         proveedorId: input.proveedorId,
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
-        diaDevengado: input.diaDevengado,
+        diaDevengado: diaDevengadoPersist,
         comentarios: input.comentarios ?? null,
       },
       include: {
