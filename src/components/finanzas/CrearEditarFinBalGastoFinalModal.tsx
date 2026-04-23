@@ -26,6 +26,20 @@ export interface ProveedorOpcionGastoFinal {
   nombre: string;
 }
 
+/** Otras filas `fin_bal_gasto_final` del mismo gasto de catálogo (para reglas de COMENTARIOS). */
+export interface FinBalGastoFinalFilaHermana {
+  id: string;
+  proveedorId: string;
+  sucursalId: string;
+  comentarios: string | null;
+}
+
+function comentariosNormModal(c: string | null | undefined): string {
+  if (c == null || c === "") return "";
+  const t = c.trim().toLocaleUpperCase("es-AR");
+  return t === "" ? "" : t;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,6 +51,8 @@ interface Props {
   gastoNombre: string;
   proveedoresOpciones: ProveedorOpcionGastoFinal[];
   sucursales: { id: string; nombre: string }[];
+  /** Filas de gasto final ya cargadas para este mismo gasto de catálogo (ids + proveedor + sucursal + comentarios). */
+  filasMismoGastoFinal?: FinBalGastoFinalFilaHermana[];
   proveedorIdInicial?: string;
   sucursalIdInicial?: string;
   gastoMensualInicial?: boolean;
@@ -60,6 +76,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   gastoNombre,
   proveedoresOpciones,
   sucursales,
+  filasMismoGastoFinal = [],
   proveedorIdInicial = "",
   sucursalIdInicial = "",
   gastoMensualInicial = false,
@@ -95,6 +112,26 @@ export default function CrearEditarFinBalGastoFinalModal({
     comentariosInicial,
   ]);
 
+  const hermanosMismaProveedorSucursal = useMemo(() => {
+    if (!proveedorId || !sucursalId) return [];
+    return filasMismoGastoFinal.filter(
+      (f) =>
+        f.proveedorId === proveedorId &&
+        f.sucursalId === sucursalId &&
+        (modo === "crear" || !id || f.id !== id)
+    );
+  }, [filasMismoGastoFinal, proveedorId, sucursalId, modo, id]);
+
+  const comentariosNorm = useMemo(() => comentariosNormModal(comentarios), [comentarios]);
+
+  const comentarioObligatorioPorTripla = hermanosMismaProveedorSucursal.length > 0;
+  const comentarioChocaConOtro = useMemo(() => {
+    if (!comentarioObligatorioPorTripla) return false;
+    return hermanosMismaProveedorSucursal.some(
+      (f) => comentariosNormModal(f.comentarios) === comentariosNorm
+    );
+  }, [hermanosMismaProveedorSucursal, comentarioObligatorioPorTripla, comentariosNorm]);
+
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
     const comIni = comentariosNormalizadosParaEstado(comentariosInicial);
@@ -123,8 +160,20 @@ export default function CrearEditarFinBalGastoFinalModal({
     if (saving) return true;
     if (!sucursalId || !proveedorId) return true;
     if (modo === "editar" && (!id || !hasChanges)) return true;
+    if (comentarioObligatorioPorTripla && comentariosNorm === "") return true;
+    if (comentarioChocaConOtro) return true;
     return false;
-  }, [saving, sucursalId, proveedorId, modo, id, hasChanges]);
+  }, [
+    saving,
+    sucursalId,
+    proveedorId,
+    modo,
+    id,
+    hasChanges,
+    comentarioObligatorioPorTripla,
+    comentariosNorm,
+    comentarioChocaConOtro,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -325,6 +374,17 @@ export default function CrearEditarFinBalGastoFinalModal({
               )}
             />
             <span className="text-xs text-muted-foreground">{comentarios.length} / 10000</span>
+            {comentarioObligatorioPorTripla ? (
+              <p className="text-xs text-muted-foreground">
+                Ya hay otra fila con el mismo proveedor y sucursal para este gasto. Complete COMENTARIOS con un texto
+                distinto para poder guardar.
+              </p>
+            ) : null}
+            {comentarioChocaConOtro ? (
+              <p className="text-xs text-destructive">
+                Ese texto en COMENTARIOS coincide con otra fila del mismo proveedor y sucursal. Cambie el texto.
+              </p>
+            ) : null}
           </label>
         </div>
       </AppModal>

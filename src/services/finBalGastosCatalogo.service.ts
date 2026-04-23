@@ -99,7 +99,7 @@ function mapDbError(
       if (context === "tipo") return "Ya existe un tipo con ese nombre.";
       if (context === "rubro") return "Ya existe un rubro con ese nombre para el tipo seleccionado.";
       if (context === "gastoFinal") {
-        return "Operación rechazada por una restricción de unicidad en gasto final.";
+        return "Violación de unicidad en gasto final. Ejecute `npx prisma migrate deploy` en el servidor (debe aplicarse la migración que elimina el índice único gasto+proveedor+sucursal). Si ya migró, use COMENTARIOS distintos para cada fila con el mismo proveedor y sucursal.";
       }
       return "Ya existe un gasto con ese nombre en ese rubro.";
     }
@@ -520,6 +520,56 @@ async function sucursalEsCentroDeCosto(sucursalId: string): Promise<boolean> {
   return Boolean(s?.centroCosto);
 }
 
+/** Comentarios persistidos comparables (misma regla que Zod `comentariosFinBalGastoFinalSchema`). */
+function comentariosGastoFinalNormalizado(c: string | null | undefined): string {
+  if (c == null) return "";
+  const t = c.trim().toLocaleUpperCase("es-AR");
+  return t === "" ? "" : t;
+}
+
+/**
+ * Si ya hay otra fila con el mismo gasto + proveedor + sucursal, hace obligatorio un COMENTARIOS no vacío
+ * y distinto (normalizado) al resto, para poder coexistir varias filas sin índice único en BD.
+ */
+async function validarComentariosParaTriplaGastoFinalRepetida(params: {
+  gastoId: string;
+  proveedorId: string;
+  sucursalId: string;
+  comentarios: string | null;
+  excludeId?: string;
+}): Promise<ServiceResult<void>> {
+  const norm = comentariosGastoFinalNormalizado(params.comentarios);
+  const otros = await prisma.finBalGastoFinal.findMany({
+    where: {
+      gastoId: params.gastoId,
+      proveedorId: params.proveedorId,
+      sucursalId: params.sucursalId,
+      ...(params.excludeId ? { NOT: { id: params.excludeId } } : {}),
+    },
+    select: { comentarios: true },
+  });
+  if (otros.length === 0) {
+    return { success: true, data: undefined };
+  }
+  if (norm === "") {
+    return {
+      success: false,
+      error:
+        "Ya existe un gasto final con el mismo proveedor y sucursal para este gasto. Ingrese COMENTARIOS para diferenciar esta fila.",
+    };
+  }
+  for (const o of otros) {
+    if (comentariosGastoFinalNormalizado(o.comentarios) === norm) {
+      return {
+        success: false,
+        error:
+          "Ya existe otra fila con el mismo proveedor, sucursal y comentarios. Cambie el texto en COMENTARIOS.",
+      };
+    }
+  }
+  return { success: true, data: undefined };
+}
+
 export async function crearFinBalGastoFinal(
   input: CrearFinBalGastoFinalInput
 ): Promise<ServiceResult<FinBalGastoFinalItem>> {
@@ -528,6 +578,15 @@ export async function crearFinBalGastoFinal(
       success: false,
       error: "La sucursal debe ser centro de costo.",
     };
+  }
+  const triplaOk = await validarComentariosParaTriplaGastoFinalRepetida({
+    gastoId: input.gastoId,
+    proveedorId: input.proveedorId,
+    sucursalId: input.sucursalId,
+    comentarios: input.comentarios ?? null,
+  });
+  if (!triplaOk.success) {
+    return { success: false, error: triplaOk.error };
   }
   try {
     const row = await prisma.finBalGastoFinal.create({
@@ -558,7 +617,7 @@ export async function editarFinBalGastoFinal(
 ): Promise<ServiceResult<FinBalGastoFinalItem>> {
   const prev = await prisma.finBalGastoFinal.findUnique({
     where: { id: input.id },
-    select: { sucursalId: true },
+    select: { sucursalId: true, gastoId: true },
   });
   if (!prev) {
     return { success: false, error: "Gasto final no encontrado." };
@@ -571,6 +630,16 @@ export async function editarFinBalGastoFinal(
       success: false,
       error: "La sucursal debe ser centro de costo.",
     };
+  }
+  const triplaOk = await validarComentariosParaTriplaGastoFinalRepetida({
+    gastoId: prev.gastoId,
+    proveedorId: input.proveedorId,
+    sucursalId: input.sucursalId,
+    comentarios: input.comentarios ?? null,
+    excludeId: input.id,
+  });
+  if (!triplaOk.success) {
+    return { success: false, error: triplaOk.error };
   }
   try {
     const row = await prisma.finBalGastoFinal.update({

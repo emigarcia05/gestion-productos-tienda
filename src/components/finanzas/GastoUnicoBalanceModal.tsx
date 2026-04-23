@@ -6,6 +6,14 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FILTER_SELECT_WRAPPER_CLASS } from "@/components/FilterBar";
 import MontoArInput from "@/components/shared/MontoArInput";
 import {
   crearFinBalImputacionGastoUnicoAction,
@@ -38,6 +46,10 @@ export default function GastoUnicoBalanceModal({
   const [montoNorm, setMontoNorm] = useState("");
   const [pagadoNorm, setPagadoNorm] = useState("");
   const [guardando, setGuardando] = useState(false);
+  /** Obligatorio para ver el listado de gastos únicos. */
+  const [filtSucursal, setFiltSucursal] = useState("");
+  /** Opcional; acota por rubro dentro de la sucursal elegida. */
+  const [filtRubro, setFiltRubro] = useState("");
 
   const cargarLista = useCallback(async () => {
     setCargandoLista(true);
@@ -60,8 +72,37 @@ export default function GastoUnicoBalanceModal({
     setSeleccion(null);
     setMontoNorm("");
     setPagadoNorm("");
+    setFiltSucursal("");
+    setFiltRubro("");
     void cargarLista();
   }, [open, mes, anio, cargarLista]);
+
+  const sucursalesOpciones = useMemo(() => {
+    const u = [...new Set(items.map((i) => i.sucursalNombre))];
+    u.sort((a, b) => a.localeCompare(b, "es"));
+    return u;
+  }, [items]);
+
+  const rubrosOpciones = useMemo(() => {
+    if (!filtSucursal) return [];
+    const u = [
+      ...new Set(items.filter((i) => i.sucursalNombre === filtSucursal).map((i) => i.rubroNombre)),
+    ];
+    u.sort((a, b) => a.localeCompare(b, "es"));
+    return u;
+  }, [items, filtSucursal]);
+
+  useEffect(() => {
+    if (!filtRubro) return;
+    if (!rubrosOpciones.includes(filtRubro)) setFiltRubro("");
+  }, [filtRubro, rubrosOpciones]);
+
+  const itemsFiltrados = useMemo(() => {
+    if (!filtSucursal) return [];
+    return items.filter(
+      (i) => i.sucursalNombre === filtSucursal && (!filtRubro || i.rubroNombre === filtRubro)
+    );
+  }, [items, filtSucursal, filtRubro]);
 
   const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
   const pagadoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(pagadoNorm), [pagadoNorm]);
@@ -153,6 +194,50 @@ export default function GastoUnicoBalanceModal({
                 Gastos del catálogo con periodicidad <span className="font-medium text-foreground">GASTO ÚNICO</span>
                 . Periodo: <span className="font-medium text-foreground">{mes}/{anio}</span>.
               </p>
+              {!cargandoLista && items.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                    <Select
+                      value={filtSucursal || "none"}
+                      onValueChange={(v) => {
+                        setFiltSucursal(v === "none" ? "" : v);
+                        setFiltRubro("");
+                      }}
+                    >
+                      <SelectTrigger className="input-filtro-unificado" aria-label="Sucursal (obligatorio)">
+                        <SelectValue placeholder="SUCURSAL" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                        <SelectItem value="none">SUCURSAL *</SelectItem>
+                        {sucursalesOpciones.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                    <Select
+                      value={filtRubro || "none"}
+                      onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}
+                      disabled={!filtSucursal}
+                    >
+                      <SelectTrigger className="input-filtro-unificado" aria-label="Rubro (opcional)">
+                        <SelectValue placeholder="RUBRO" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                        <SelectItem value="none">RUBRO (opcional)</SelectItem>
+                        {rubrosOpciones.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : null}
               <div className="max-h-[min(60vh,28rem)] overflow-y-auto rounded-md border border-border">
                 {cargandoLista ? (
                   <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
@@ -163,9 +248,19 @@ export default function GastoUnicoBalanceModal({
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
                     No hay gastos únicos en el catálogo.
                   </p>
+                ) : !filtSucursal ? (
+                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    Seleccioná una <span className="font-medium text-foreground">SUCURSAL</span> para ver los gastos
+                    únicos.
+                  </p>
+                ) : itemsFiltrados.length === 0 ? (
+                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    No hay gastos únicos para esta sucursal
+                    {filtRubro ? " y el rubro elegido" : ""}.
+                  </p>
                 ) : (
                   <ul className="divide-y divide-border">
-                    {items.map((it) => (
+                    {itemsFiltrados.map((it) => (
                       <li
                         key={it.gastoFinalId}
                         className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5"
