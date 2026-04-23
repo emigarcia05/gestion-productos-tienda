@@ -15,6 +15,7 @@ import {
   montoArNormalizedStringToPesosIntRounded,
   montoArPesosEnterosToNormalizedString,
 } from "@/lib/montoArMask";
+import { fmtPrecio } from "@/lib/format";
 
 interface Props {
   open: boolean;
@@ -35,41 +36,74 @@ export default function EditarMontoFinBalGastoMensualModal({
 }: Props) {
   const [montoNorm, setMontoNorm] = useState("");
   const [saving, setSaving] = useState(false);
-  const [loadingRepetir, setLoadingRepetir] = useState(false);
+  /** `undefined` = aún no cargado; `null` = sin imputación en mes anterior. */
+  const [ultMonto, setUltMonto] = useState<number | null | undefined>(undefined);
+  const [loadingUltMonto, setLoadingUltMonto] = useState(false);
+  const [aplicandoRepetir, setAplicandoRepetir] = useState(false);
 
   useEffect(() => {
     if (!open || !fila) return;
     setMontoNorm(montoArPesosEnterosToNormalizedString(fila.monto));
   }, [open, fila]);
 
-  const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
-
-  const disabledSubmit = useMemo(() => {
-    if (saving || !fila) return true;
-    if (montoPesosInt === fila.monto) return true;
-    return false;
-  }, [saving, fila, montoPesosInt]);
-
-  async function handleRepetirUltMonto() {
-    if (!fila) return;
-    setLoadingRepetir(true);
-    try {
+  useEffect(() => {
+    if (!open || !fila) {
+      setUltMonto(undefined);
+      return;
+    }
+    let cancelled = false;
+    setLoadingUltMonto(true);
+    setUltMonto(undefined);
+    void (async () => {
       const r = await obtenerMontoMesAnteriorFinBalGastoMensualAction({
         gastoFinalId: fila.gastoFinalId,
         mes,
         anio,
       });
+      if (cancelled) return;
+      setLoadingUltMonto(false);
       if (!r.ok) {
-        toast.error(r.error ?? "No se pudo obtener el monto anterior.");
+        toast.error(r.error ?? "No se pudo obtener el monto del mes anterior.");
+        setUltMonto(null);
         return;
       }
-      if (r.data.monto === null) {
-        toast.info("No hay imputación en el mes anterior para repetir.");
+      setUltMonto(r.data.monto);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, fila?.id, fila?.gastoFinalId, mes, anio]);
+
+  const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
+
+  const disabledSubmit = useMemo(() => {
+    if (saving || aplicandoRepetir || !fila) return true;
+    if (montoPesosInt === fila.monto) return true;
+    return false;
+  }, [saving, aplicandoRepetir, fila, montoPesosInt]);
+
+  const puedeRepetirMonto =
+    !!fila &&
+    !loadingUltMonto &&
+    ultMonto !== undefined &&
+    ultMonto !== null &&
+    !saving &&
+    !aplicandoRepetir;
+
+  async function handleRepetirMonto() {
+    if (!fila || !puedeRepetirMonto || ultMonto == null) return;
+    setAplicandoRepetir(true);
+    try {
+      const r = await editarMontoFinBalGastoMensualAction({ id: fila.id, monto: ultMonto });
+      if (!r.ok) {
+        toast.error(r.error ?? "No se pudo guardar.");
         return;
       }
-      setMontoNorm(montoArPesosEnterosToNormalizedString(r.data.monto));
+      toast.success("Monto actualizado con el del mes anterior.");
+      onOpenChange(false);
+      onSuccess?.();
     } finally {
-      setLoadingRepetir(false);
+      setAplicandoRepetir(false);
     }
   }
 
@@ -94,7 +128,7 @@ export default function EditarMontoFinBalGastoMensualModal({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (saving && !next) return;
+        if ((saving || aplicandoRepetir) && !next) return;
         onOpenChange(next);
       }}
     >
@@ -104,10 +138,19 @@ export default function EditarMontoFinBalGastoMensualModal({
         className="sm:max-w-md"
         actions={
           <div className="flex w-full flex-wrap justify-end gap-2">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving || aplicandoRepetir}
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
-            <Button type="button" disabled={disabledSubmit} onClick={() => void handleGuardar()}>
+            <Button
+              type="button"
+              disabled={disabledSubmit}
+              onClick={() => void handleGuardar()}
+            >
               Guardar
             </Button>
           </div>
@@ -128,19 +171,37 @@ export default function EditarMontoFinBalGastoMensualModal({
               <MontoArInput
                 valueNormalized={montoNorm}
                 onValueNormalizedChange={setMontoNorm}
-                disabled={saving}
+                disabled={saving || aplicandoRepetir}
                 autoFocus
                 aria-label="Monto en pesos"
               />
             </label>
-            <Button
-              type="button"
-              variant="default"
-              disabled={saving || loadingRepetir}
-              onClick={() => void handleRepetirUltMonto()}
-            >
-              {loadingRepetir ? "Buscando…" : "Repetir Ult. Monto"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-sm">
+              <span className="min-w-0 text-muted-foreground">
+                {loadingUltMonto || ultMonto === undefined ? (
+                  <>Ult. Monto …</>
+                ) : ultMonto !== null ? (
+                  <>
+                    Ult. Monto ${fmtPrecio(ultMonto)}
+                  </>
+                ) : (
+                  <>Sin monto en mes anterior</>
+                )}
+              </span>
+              <span className="text-muted-foreground select-none" aria-hidden>
+                {" "}
+                -{" "}
+              </span>
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto min-h-0 p-0 text-primary underline-offset-4"
+                disabled={!puedeRepetirMonto}
+                onClick={() => void handleRepetirMonto()}
+              >
+                {aplicandoRepetir ? "Aplicando…" : "Repetir Monto"}
+              </Button>
+            </div>
           </div>
         ) : null}
       </AppModal>

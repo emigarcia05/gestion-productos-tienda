@@ -15,7 +15,15 @@ function clampAnio(a: number): number {
 }
 
 interface Props {
-  searchParams: Promise<{ mes?: string; anio?: string }>;
+  searchParams: Promise<{ mes?: string | string[]; anio?: string | string[] }>;
+}
+
+/** Primer valor de un query param (Next puede devolver `string[]`). */
+function primerSearchParam(v: string | string[] | undefined): string | undefined {
+  if (v === undefined) return undefined;
+  const s = Array.isArray(v) ? v[0] : v;
+  if (s === undefined || s === "") return undefined;
+  return s;
 }
 
 export default async function BalanceGastosPage({ searchParams }: Props) {
@@ -29,16 +37,23 @@ export default async function BalanceGastosPage({ searchParams }: Props) {
   const defRaw = mesAnioCalendarioArgentina();
   const def = { mes: defRaw.mes, anio: clampAnio(defRaw.anio) };
 
-  let mes = def.mes;
-  let anio = def.anio;
-  const parsed = mesAnioQuerySchema.safeParse({
-    mes: sp.mes ?? def.mes,
-    anio: sp.anio ?? def.anio,
-  });
-  if (parsed.success) {
-    mes = parsed.data.mes;
-    anio = parsed.data.anio;
+  const mesStr = primerSearchParam(sp.mes);
+  const anioStr = primerSearchParam(sp.anio);
+
+  /** Primera carga sin periodo en la URL: fijar mes/año calendario Argentina en la query. */
+  if (mesStr === undefined && anioStr === undefined) {
+    redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
   }
+
+  const parsed = mesAnioQuerySchema.safeParse({
+    mes: mesStr ?? def.mes,
+    anio: anioStr ?? def.anio,
+  });
+  if (!parsed.success) {
+    redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
+  }
+
+  const { mes, anio } = parsed.data;
 
   const filas = await listarImputacionesMensualesBalance({ mes, anio });
 
