@@ -6,8 +6,10 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
   cargarImputacionesMesParamsSchema,
+  crearImputacionGastoUnicoBalanceSchema,
   editarMontoFinBalGastoMensualSchema,
   eliminarFinBalGastoMensualSchema,
+  listarGastosFinalesNoMensualesParamsSchema,
   obtenerMontoMesAnteriorSchema,
   registrarPagoFinBalGastoMensualSchema,
 } from "@/lib/validations/finBalGastoMensualBalance";
@@ -15,9 +17,12 @@ import {
   actualizarMontoFinBalGastoMensual,
   actualizarPagadoFinBalGastoMensual,
   cargarImputacionesMensualesDesdeCatalogo,
+  crearImputacionGastoUnicoBalance,
   eliminarFinBalGastoMensual,
+  listarGastosFinalesNoMensualesConEstadoPeriodo,
   mesAnioCalendarioArgentina,
   obtenerMontoImputacionMesAnterior,
+  type FinBalGastoFinalNoMensualListItem,
 } from "@/services/finBalGastoMensualBalance.service";
 
 function revalidateGastosPaths(): void {
@@ -60,6 +65,37 @@ export async function cargarFinBalGastoMensualMesAction(
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
   const res = await cargarImputacionesMensualesDesdeCatalogo(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateGastosPaths();
+  return { ok: true, data: res.data };
+}
+
+/** Catálogo de gastos finales con `gasto_mensual = false` y estado en el periodo. */
+export async function listarFinBalGastosFinalesNoMensualesAction(
+  raw: unknown
+): Promise<ActionResult<FinBalGastoFinalNoMensualListItem[]>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = listarGastosFinalesNoMensualesParamsSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const data = await listarGastosFinalesNoMensualesConEstadoPeriodo(parsed.data);
+  return { ok: true, data };
+}
+
+/** Alta de imputación mensual para un gasto único (`gasto_mensual = false`) en el periodo. */
+export async function crearFinBalImputacionGastoUnicoAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = crearImputacionGastoUnicoBalanceSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const res = await crearImputacionGastoUnicoBalance(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateGastosPaths();

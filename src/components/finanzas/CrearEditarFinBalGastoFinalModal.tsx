@@ -26,12 +26,6 @@ export interface ProveedorOpcionGastoFinal {
   nombre: string;
 }
 
-export interface AsignacionExistentePar {
-  id: string;
-  proveedorId: string;
-  sucursalId: string;
-}
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,8 +37,6 @@ interface Props {
   gastoNombre: string;
   proveedoresOpciones: ProveedorOpcionGastoFinal[];
   sucursales: { id: string; nombre: string }[];
-  /** Filas ya persistidas para este gasto (excluye la fila en edición al filtrar duplicados). */
-  asignacionesExistentes: AsignacionExistentePar[];
   proveedorIdInicial?: string;
   sucursalIdInicial?: string;
   gastoMensualInicial?: boolean;
@@ -68,7 +60,6 @@ export default function CrearEditarFinBalGastoFinalModal({
   gastoNombre,
   proveedoresOpciones,
   sucursales,
-  asignacionesExistentes,
   proveedorIdInicial = "",
   sucursalIdInicial = "",
   gastoMensualInicial = false,
@@ -76,8 +67,6 @@ export default function CrearEditarFinBalGastoFinalModal({
   comentariosInicial = null,
   onSuccess,
 }: Props) {
-  const editingId = modo === "editar" && id ? id : null;
-
   const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
 
   const [sucursalId, setSucursalId] = useState("");
@@ -105,19 +94,6 @@ export default function CrearEditarFinBalGastoFinalModal({
     diaDevengadoInicial,
     comentariosInicial,
   ]);
-
-  const proveedoresFiltrados = useMemo(() => {
-    if (!sucursalId) return proveedoresOpciones;
-    return proveedoresOpciones.filter(
-      (p) =>
-        !asignacionesExistentes.some(
-          (a) =>
-            (editingId == null || a.id !== editingId) &&
-            a.proveedorId === p.id &&
-            a.sucursalId === sucursalId
-        )
-    );
-  }, [sucursalId, proveedoresOpciones, asignacionesExistentes, editingId]);
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
@@ -151,11 +127,11 @@ export default function CrearEditarFinBalGastoFinalModal({
   }, [saving, sucursalId, proveedorId, modo, id, hasChanges]);
 
   useEffect(() => {
-    if (!open || !sucursalId) return;
-    if (!proveedoresFiltrados.some((p) => p.id === proveedorId)) {
+    if (!open) return;
+    if (proveedorId && !proveedoresOpciones.some((p) => p.id === proveedorId)) {
       setProveedorId("");
     }
-  }, [open, sucursalId, proveedoresFiltrados, proveedorId]);
+  }, [open, proveedorId, proveedoresOpciones]);
 
   function comentariosParaPersistir(): string | null {
     const t = comentarios.trim().toLocaleUpperCase("es-AR");
@@ -271,13 +247,13 @@ export default function CrearEditarFinBalGastoFinalModal({
             <Select
               value={proveedorId || undefined}
               onValueChange={setProveedorId}
-              disabled={saving || !sucursalId || proveedoresFiltrados.length === 0}
+              disabled={saving || !sucursalId || proveedoresOpciones.length === 0}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                {proveedoresFiltrados.map((p) => (
+                {proveedoresOpciones.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.nombre}
                   </SelectItem>

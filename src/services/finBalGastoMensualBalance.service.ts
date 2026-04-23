@@ -349,6 +349,147 @@ export async function listarImputacionesMensualesBalance(params: {
   });
 }
 
+/** Ítem del catálogo `fin_bal_gasto_final` con `gasto_mensual = false` (gasto único). */
+export interface FinBalGastoFinalNoMensualListItem {
+  gastoFinalId: string;
+  tipoGastoNombre: string;
+  rubroNombre: string;
+  gastoNombre: string;
+  proveedorNombre: string;
+  sucursalNombre: string;
+  diaDevengado: number;
+  gastoFinalComentarios: string | null;
+  /** Si ya existe `fin_bal_gasto_mensual` para este gasto final y el periodo (mes, año). */
+  yaImputadoEnPeriodo: boolean;
+}
+
+/**
+ * Gastos finales no mensuales del catálogo, con indicador de si ya hay imputación en `(mes, anio)`.
+ */
+export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
+  mes: number;
+  anio: number;
+}): Promise<FinBalGastoFinalNoMensualListItem[]> {
+  const { mes, anio } = params;
+
+  const [finals, imputadas] = await Promise.all([
+    prisma.finBalGastoFinal.findMany({
+      where: { gastoMensual: false },
+      include: {
+        sucursal: { select: { nombre: true } },
+        proveedor: { select: { nombre: true } },
+        gasto: {
+          select: {
+            nombre: true,
+            rubro: {
+              select: {
+                nombre: true,
+                tipo: { select: { nombre: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.finBalGastoMensual.findMany({
+      where: { mes, anio },
+      select: { gastoFinalId: true },
+    }),
+  ]);
+
+  const ya = new Set(imputadas.map((i) => i.gastoFinalId));
+
+  const rows: FinBalGastoFinalNoMensualListItem[] = finals.map((gf) => {
+    const comRaw = gf.comentarios?.trim() ?? "";
+    return {
+      gastoFinalId: gf.id,
+      tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
+      rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
+      gastoNombre: gf.gasto.nombre.toUpperCase(),
+      proveedorNombre: gf.proveedor.nombre.toUpperCase(),
+      sucursalNombre: gf.sucursal.nombre.toUpperCase(),
+      diaDevengado: gf.diaDevengado,
+      gastoFinalComentarios: comRaw.length > 0 ? comRaw.toUpperCase() : null,
+      yaImputadoEnPeriodo: ya.has(gf.id),
+    };
+  });
+
+  rows.sort((a, b) => {
+    const t = a.tipoGastoNombre.localeCompare(b.tipoGastoNombre, "es");
+    if (t !== 0) return t;
+    const r = a.rubroNombre.localeCompare(b.rubroNombre, "es");
+    if (r !== 0) return r;
+    const g = a.gastoNombre.localeCompare(b.gastoNombre, "es");
+    if (g !== 0) return g;
+    const p = a.proveedorNombre.localeCompare(b.proveedorNombre, "es");
+    if (p !== 0) return p;
+    return a.sucursalNombre.localeCompare(b.sucursalNombre, "es");
+  });
+
+  return rows;
+}
+
+/**
+ * Crea una fila `fin_bal_gasto_mensual` para un gasto final con `gasto_mensual = false`
+ * (imputación puntual del periodo).
+ */
+export async function crearImputacionGastoUnicoBalance(params: {
+  gastoFinalId: string;
+  mes: number;
+  anio: number;
+  monto: number;
+  pagado: number;
+}): Promise<ServiceResult<{ id: string }>> {
+  const { gastoFinalId, mes, anio, monto, pagado } = params;
+  if (monto < 1) {
+    return { success: false, error: "El monto es obligatorio y debe ser mayor a cero." };
+  }
+  if (pagado < 0 || pagado > monto) {
+    return { success: false, error: "El importe pagado debe estar entre 0 y el monto." };
+  }
+  try {
+    const gf = await prisma.finBalGastoFinal.findUnique({
+      where: { id: gastoFinalId },
+      select: { id: true, gastoMensual: true },
+    });
+    if (!gf) {
+      return { success: false, error: "Gasto no encontrado en el catálogo." };
+    }
+    if (gf.gastoMensual) {
+      return {
+        success: false,
+        error: "Este gasto está configurado como mensual; usá «Cargar Mes».",
+      };
+    }
+    const dupe = await prisma.finBalGastoMensual.findUnique({
+      where: {
+        gastoFinalId_mes_anio: { gastoFinalId, mes, anio },
+      },
+      select: { id: true },
+    });
+    if (dupe) {
+      return {
+        success: false,
+        error: "Este gasto único ya tiene imputación en el periodo seleccionado.",
+      };
+    }
+    const row = await prisma.finBalGastoMensual.create({
+      data: { gastoFinalId, mes, anio, monto, pagado },
+      select: { id: true },
+    });
+    return { success: true, data: { id: row.id } };
+  } catch (e: unknown) {
+    if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
+      return {
+        success: false,
+        error: "Este gasto único ya tiene imputación en el periodo seleccionado.",
+      };
+    }
+    const msg = e instanceof Error ? e.message : "No se pudo crear la imputación.";
+    return { success: false, error: msg };
+  }
+}
+
 const includeGastoFlujoGastoMensual = {
   gastoFinal: {
     include: {

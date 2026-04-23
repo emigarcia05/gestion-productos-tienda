@@ -446,7 +446,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 - **Tabla** `fin_bal_gasto_final` (Prisma: `FinBalGastoFinal`):
   - `id` (`TEXT`, PK), `gasto_id` → `fin_bal_cat_gasto.id` (`onDelete: Cascade`), `proveedor_id` → `global_proveedores.id` (`onDelete: Restrict`), `sucursal_id` → `global_sucursales.id` (`onDelete: Restrict`).
   - `gasto_mensual` (`BOOLEAN NOT NULL DEFAULT FALSE`).
-  - `@@unique([gastoId, proveedorId, sucursalId])` (map `fin_bal_gasto_final_gasto_proveedor_sucursal_ux`).
+  - Varias filas pueden compartir la misma terna `gasto_id` + `proveedor_id` + `sucursal_id` (cada una con su `id` e imputaciones `fin_bal_gasto_mensual` propias). Migración `20260423120000_drop_fin_bal_gasto_final_gasto_proveedor_sucursal_ux` elimina el índice único previo.
   - Índices en `gasto_id`, `proveedor_id`, `sucursal_id`. La columna **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` sigue siendo CRUD autónomo de `global_proveedores` (`proveedor_mercaderia = false`); los gastos finales consumen ese listado y **`listarSucursalesParaGastos()`** (sucursales con `centro_costo`) para el select de sucursal.
   - `dia_devengado` (`INTEGER`, CHECK 1–28): día del mes en que se devenga el gasto mensual (ver `fin_bal_gasto_mensual` y pantalla Balance Gastos).
 - **Tabla** `fin_bal_gasto_mensual` (Prisma: `FinBalGastoMensual`): imputación por mes/año ligada a `fin_bal_gasto_final` (`gasto_final_id`, `mes` 1–12, `anio`, `monto` y `pagado` enteros ≥ 0, `pagado ≤ monto`). UNIQUE `(gasto_final_id, mes, anio)`. Migración `20260421200000_add_fin_bal_gasto_mensual`.

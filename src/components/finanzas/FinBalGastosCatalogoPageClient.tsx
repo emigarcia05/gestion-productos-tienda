@@ -490,11 +490,6 @@ export default function FinBalGastosCatalogoPageClient({
           gastoNombre={gastoSeleccionado.nombre}
           proveedoresOpciones={proveedoresOpcionesModal}
           sucursales={sucursalesParaModalGastoFinal}
-          asignacionesExistentes={gastoSeleccionado.asignacionesFinales.map((a) => ({
-            id: a.id,
-            proveedorId: a.proveedorId,
-            sucursalId: a.sucursalId,
-          }))}
           proveedorIdInicial={gastoFinalModal.proveedorIdInicial}
           sucursalIdInicial={gastoFinalModal.sucursalIdInicial}
           gastoMensualInicial={gastoFinalModal.gastoMensualInicial}

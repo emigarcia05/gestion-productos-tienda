@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CalendarDays, Loader2 } from "lucide-react";
+import { CalendarDays, Loader2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -24,6 +24,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas/TablaGastos";
 import EditarMontoFinBalGastoMensualModal from "@/components/finanzas/EditarMontoFinBalGastoMensualModal";
 import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBalGastoMensualModal";
+import GastoUnicoBalanceModal from "@/components/finanzas/GastoUnicoBalanceModal";
 import RegistrarPagoFinBalGastoMensualModal from "@/components/finanzas/RegistrarPagoFinBalGastoMensualModal";
 import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
 import type { PeriodosImputacionesDisponibles } from "@/services/finBalGastoMensualBalance.service";
@@ -74,6 +75,7 @@ export default function FinanzasBalanceGastosPageClient({
   const [filaEditar, setFilaEditar] = useState<BalanceGastoMensualFila | null>(null);
   const [filaPagar, setFilaPagar] = useState<BalanceGastoMensualFila | null>(null);
   const [eliminar, setEliminar] = useState<{ id: string; etiqueta: string } | null>(null);
+  const [gastoUnicoOpen, setGastoUnicoOpen] = useState(false);
 
   const rubrosOpciones = useMemo(
     () => [...new Set(filas.map((f) => f.rubroNombre))].sort((a, b) => a.localeCompare(b, "es")),
@@ -191,7 +193,17 @@ export default function FinanzasBalanceGastosPageClient({
                 ) : (
                   <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
                 )}
-                Cargar Datos Mes.
+                Cargar Mes
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setGastoUnicoOpen(true)}
+                disabled={loading}
+                className="h-10 px-4 gap-2"
+              >
+                <Receipt className="h-4 w-4 shrink-0" aria-hidden />
+                Gasto Único
               </Button>
             </div>
           ) : undefined
@@ -402,6 +414,14 @@ export default function FinanzasBalanceGastosPageClient({
         onOpenChange={(next) => !next && setEliminar(null)}
         id={eliminar?.id ?? null}
         etiqueta={eliminar?.etiqueta ?? null}
+        onSuccess={() => router.refresh()}
+      />
+
+      <GastoUnicoBalanceModal
+        open={gastoUnicoOpen}
+        onOpenChange={setGastoUnicoOpen}
+        mes={mes}
+        anio={anio}
         onSuccess={() => router.refresh()}
       />
     </div>

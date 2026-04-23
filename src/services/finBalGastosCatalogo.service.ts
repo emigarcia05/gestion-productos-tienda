@@ -99,7 +99,7 @@ function mapDbError(
       if (context === "tipo") return "Ya existe un tipo con ese nombre.";
       if (context === "rubro") return "Ya existe un rubro con ese nombre para el tipo seleccionado.";
       if (context === "gastoFinal") {
-        return "Ya existe un gasto final con ese proveedor y esa sucursal para este gasto de catálogo.";
+        return "Operación rechazada por una restricción de unicidad en gasto final.";
       }
       return "Ya existe un gasto con ese nombre en ese rubro.";
     }

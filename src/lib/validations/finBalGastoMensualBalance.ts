@@ -33,3 +33,24 @@ export const obtenerMontoMesAnteriorSchema = z.object({
   anio: z.coerce.number().int().min(2000).max(2100),
 });
 export type ObtenerMontoMesAnteriorInput = z.infer<typeof obtenerMontoMesAnteriorSchema>;
+
+export const listarGastosFinalesNoMensualesParamsSchema = mesAnioQuerySchema;
+export type ListarGastosFinalesNoMensualesParams = z.infer<
+  typeof listarGastosFinalesNoMensualesParamsSchema
+>;
+
+export const crearImputacionGastoUnicoBalanceSchema = z
+  .object({
+    gastoFinalId: prismaCuidSchema,
+    mes: z.coerce.number().int().min(1).max(12),
+    anio: z.coerce.number().int().min(2000).max(2100),
+    monto: z.coerce.number().int().min(1, "El monto es obligatorio."),
+    pagado: z.coerce.number().int().min(0).optional().default(0),
+  })
+  .refine((d) => d.pagado <= d.monto, {
+    message: "El pagado no puede superar el monto.",
+    path: ["pagado"],
+  });
+export type CrearImputacionGastoUnicoBalanceInput = z.infer<
+  typeof crearImputacionGastoUnicoBalanceSchema
+>;
