@@ -39,9 +39,10 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** TENEDOR, TIPO, EMISOR, MONTO, FECHA, DIAS, [ACCIONES] */
-const COL_ANCHOS_CON_ACCIONES = [11, 8, 17, 10, 10, 9, 35] as const;
-const COL_ANCHOS_SIN_ACCIONES = [12, 9, 20, 11, 12, 36] as const;
+/** TIPO, TENEDOR, EMISOR, MONTO, ACREDITACION, DÍAS, [ACCIONES] */
+const COL_ANCHOS_CON_ACCIONES = [15, 20, 20, 15, 10, 5, 15] as const;
+/** Sin ACCIONES: reparto del 15% extra entre columnas (suma 100). */
+const COL_ANCHOS_SIN_ACCIONES = [16, 21, 21, 16, 13, 13] as const;
 
 interface Props {
   open: boolean;
@@ -147,12 +148,12 @@ export default function ChequesCajaTesoreriaModal({
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className={CELL_MIN}>TENEDOR</TableHead>
                     <TableHead className={CELL_MIN}>TIPO</TableHead>
+                    <TableHead className={CELL_MIN}>TENEDOR</TableHead>
                     <TableHead className={CELL_MIN}>EMISOR</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>FECHA ACREDITACIÓN</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS FALTANTES</TableHead>
+                    <TableHead className={cn(TH_NUM, CELL_MIN)}>ACREDITACION</TableHead>
+                    <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
                     {esEditor ? (
                       <TableHead
                         className={cn(
@@ -187,11 +188,11 @@ export default function ChequesCajaTesoreriaModal({
                       );
                       return (
                       <TableRow key={row.id}>
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={row.tenedor}>
-                          <span className="celda-destacado block truncate">{row.tenedor}</span>
-                        </TableCell>
                         <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                           {row.tipo}
+                        </TableCell>
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={row.tenedor}>
+                          <span className="celda-destacado block truncate">{row.tenedor}</span>
                         </TableCell>
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={row.emisor}>
                           <span className="block truncate">{row.emisor}</span>

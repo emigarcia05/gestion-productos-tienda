@@ -160,6 +160,31 @@ export function formatIsoYmdDdMmYyyyArgentina(isoYmd: string): string {
   return `${d}/${m}/${y}`;
 }
 
+/**
+ * `15/03/2026` → `2026-03-15`. Vacío si el texto no es una fecha calendario válida (`dd/mm/aaaa`).
+ */
+export function parseDdMmYyyyToIsoYmdArgentina(fechaDdMmYyyy: string): string {
+  const t = fechaDdMmYyyy.trim();
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
+  if (!m) return "";
+  const d = Number(m[1]);
+  const mo = Number(m[2]);
+  const y = Number(m[3]);
+  if (!Number.isFinite(d) || !Number.isFinite(mo) || !Number.isFinite(y)) return "";
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return "";
+  const dt = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return "";
+  return `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** Solo dígitos (máx. 8) → fragmento `dd/mm/aaaa` para tipeo asistido. */
+export function maskDigitsToDdMmYyyyDisplay(digits: string): string {
+  const only = digits.replace(/\D/g, "").slice(0, 8);
+  if (only.length <= 2) return only;
+  if (only.length <= 4) return `${only.slice(0, 2)}/${only.slice(2)}`;
+  return `${only.slice(0, 2)}/${only.slice(2, 4)}/${only.slice(4)}`;
+}
+
 const MS_CALENDARIO_DIA = 86_400_000;
 
 /**

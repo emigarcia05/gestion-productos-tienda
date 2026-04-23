@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
 import { crearFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import {
+  dateToIsoYmdArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+  maskDigitsToDdMmYyyyDisplay,
+  parseDdMmYyyyToIsoYmdArgentina,
+} from "@/lib/fechaArgentina";
 import { montoArNormalizedStringToPesosIntRounded } from "@/lib/montoArMask";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
@@ -54,7 +59,7 @@ export default function AltaChequeTesoreriaModal({
   const [tenedor, setTenedor] = useState<TitularCajaTesoreria>(TITULARES_CAJA_TESORERIA[0]);
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
-  const [fechaIso, setFechaIso] = useState("");
+  const [fechaDdMmYyyy, setFechaDdMmYyyy] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -63,17 +68,27 @@ export default function AltaChequeTesoreriaModal({
     setTenedor(tenedorInicialDesdeTitularCaja(titularCaja ?? null));
     setEmisor("");
     setMontoNorm("");
-    setFechaIso(dateToIsoYmdArgentina(new Date()));
+    setFechaDdMmYyyy(formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date())));
   }, [open, titularCaja]);
 
   const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
+  const fechaAcreditacionIso = useMemo(
+    () => parseDdMmYyyyToIsoYmdArgentina(fechaDdMmYyyy),
+    [fechaDdMmYyyy]
+  );
 
   const disabledSubmit = useMemo(() => {
-    return saving || !cajaId || emisor.trim().length === 0 || parsedMonto < 0;
-  }, [saving, cajaId, emisor, parsedMonto]);
+    return (
+      saving ||
+      !cajaId ||
+      emisor.trim().length === 0 ||
+      parsedMonto < 0 ||
+      fechaAcreditacionIso === ""
+    );
+  }, [saving, cajaId, emisor, parsedMonto, fechaAcreditacionIso]);
 
   async function handleSubmit() {
-    if (disabledSubmit || !cajaId || !fechaIso) return;
+    if (disabledSubmit || !cajaId) return;
     setSaving(true);
     try {
       const res = await crearFinTesoreriaChequeAction({
@@ -82,7 +97,7 @@ export default function AltaChequeTesoreriaModal({
         tenedor,
         emisor: emisor.trim(),
         monto: parsedMonto,
-        fechaAcreditacion: fechaIso,
+        fechaAcreditacion: fechaAcreditacionIso,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo registrar el cheque.");
@@ -195,11 +210,17 @@ export default function AltaChequeTesoreriaModal({
               FECHA ACREDITACIÓN
             </span>
             <Input
-              type="date"
-              value={fechaIso}
-              onChange={(e) => setFechaIso(e.target.value)}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="dd/mm/aaaa"
+              value={fechaDdMmYyyy}
+              onChange={(e) =>
+                setFechaDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
+              }
               disabled={saving}
-              aria-label="Fecha de acreditación del cheque"
+              className="tabular-nums"
+              aria-label="Fecha de acreditación del cheque (dd/mm/aaaa)"
             />
           </label>
         </div>

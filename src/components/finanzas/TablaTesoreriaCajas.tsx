@@ -304,41 +304,50 @@ export default function TablaTesoreriaCajas({
           <div
             className="w-full shrink-0 border-t border-border px-2 py-1"
             role="region"
-            aria-label="Totales por tipo de caja: al día, total y cheques diferidos"
+            aria-label="Totales con cheques al día y con cheque diferido"
             aria-live="polite"
           >
-            <div className="flex w-full flex-wrap items-stretch justify-center gap-x-2 gap-y-1.5">
-              <div className="flex flex-wrap items-stretch justify-center gap-1.5">
-                <TarjetaResumenTesoreria etiqueta="EFECTIVO" compact>
-                  ${fmtPrecio(efectivo)}
-                </TarjetaResumenTesoreria>
-                <TarjetaResumenTesoreria etiqueta="DIGITAL" compact>
-                  ${fmtPrecio(digital)}
-                </TarjetaResumenTesoreria>
-                <TarjetaResumenTesoreria etiqueta="CHEQUE AL DÍA" compact>
-                  ${fmtPrecio(chequeAlDia)}
-                </TarjetaResumenTesoreria>
-                <TarjetaResumenTesoreria etiqueta="TOTAL" valorDestacado compact>
-                  ${fmtPrecio(total)}
-                </TarjetaResumenTesoreria>
-              </div>
-              <div
-                className="mx-0.5 w-[2px] shrink-0 self-stretch min-h-[2.75rem] bg-[#0072BB]"
-                aria-hidden
-              />
-              <div className="flex flex-wrap items-stretch justify-center gap-1.5">
-                <TarjetaResumenTesoreria etiqueta="CHEQUE DIFERIDO" compact>
-                  ${fmtPrecio(chequeDiferido)}
-                </TarjetaResumenTesoreria>
-                <TarjetaResumenTesoreria
-                  etiqueta="TOTAL CON CHEQUE DIFERIDO"
-                  valorDestacado
-                  compact
-                  etiquetaClassName="whitespace-normal leading-tight"
-                >
-                  ${fmtPrecio(totalConChequeDiferido)}
-                </TarjetaResumenTesoreria>
-              </div>
+            {/*
+              Cuadrícula 4×2:
+              EFECTIVO | DIGITAL | CHEQUE AL DÍA | TOTAL CON CHEQUE AL DÍA
+              (vacío)  | (vacío) | CHEQUE DIFERIDO | TOTAL CON CHEQUE DIFERIDO
+            */}
+            <div
+              className={cn(
+                "grid w-full grid-cols-4 items-stretch gap-x-2 gap-y-2",
+                "[&_.finanzas-resumen-tarjeta]:!w-full [&_.finanzas-resumen-tarjeta]:!min-w-0 [&_.finanzas-resumen-tarjeta]:!max-w-none"
+              )}
+            >
+              <TarjetaResumenTesoreria etiqueta="EFECTIVO" compact>
+                ${fmtPrecio(efectivo)}
+              </TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria etiqueta="DIGITAL" compact>
+                ${fmtPrecio(digital)}
+              </TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria etiqueta="CHEQUE AL DÍA" compact>
+                ${fmtPrecio(chequeAlDia)}
+              </TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria
+                etiqueta="TOTAL CON CHEQUE AL DÍA"
+                valorDestacado
+                compact
+                etiquetaClassName="whitespace-normal leading-tight"
+              >
+                ${fmtPrecio(total)}
+              </TarjetaResumenTesoreria>
+              <div aria-hidden className="min-w-0" />
+              <div aria-hidden className="min-w-0" />
+              <TarjetaResumenTesoreria etiqueta="CHEQUE DIFERIDO" compact>
+                ${fmtPrecio(chequeDiferido)}
+              </TarjetaResumenTesoreria>
+              <TarjetaResumenTesoreria
+                etiqueta="TOTAL CON CHEQUE DIFERIDO"
+                valorDestacado
+                compact
+                etiquetaClassName="whitespace-normal leading-tight"
+              >
+                ${fmtPrecio(totalConChequeDiferido)}
+              </TarjetaResumenTesoreria>
             </div>
           </div>
         ) : null}
