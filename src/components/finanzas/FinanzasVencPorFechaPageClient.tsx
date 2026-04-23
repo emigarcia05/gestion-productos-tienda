@@ -29,66 +29,24 @@ import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
+import type { FilaFlujoDeFondoVista } from "@/components/finanzas/TablaFlujoDeFondo";
 
 /**
- * Filas ordenadas por fecha (calendario completo en servidor: hoy → hoy+150 inclusive):
- * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
- * - **CAJA DISPONIBLE**: primera fila toma la suma inicial de cajas de tesorería; desde la segunda,
- *   toma el saldo de la fila anterior si es positivo (si no, 0).
- * - **SALDO**: siempre `CAJA DISPONIBLE - VTOS ACUMULADOS`.
+ * Filas calculadas en servidor (ventana hoy → hoy+150): **VTOS ACUMULADOS**, **CAJA DISPONIBLE**, **SALDO**.
+ * **CAJA DISPONIBLE** suma, por cada día, la liquidez de tesorería (inicial + cheques diferidos cuya fecha de acreditación
+ * cae en ese día o antes) y, a partir de la segunda fila, el máximo entre eso y un saldo previo favorable.
  */
-function filasConVtosYSaldo(
-  filasOrdenadas: Array<{
-    isoYmd: string;
-    vencimientoDelDia: number;
-  }>,
-  cajaDisponibleInicial: number,
-  saldoVencidoAntesDeHoy: number
-): Array<{
-  isoYmd: string;
-  vencimientoDelDia: number;
-  vtosAcumulados: number;
-  cajaDisponible: number;
-  saldo: number;
-}> {
-  let vtosAcum = saldoVencidoAntesDeHoy;
-  let saldoAnterior = 0;
-  return filasOrdenadas.map((fila, index) => {
-    vtosAcum += fila.vencimientoDelDia;
-    const cajaDisponible = index === 0 ? cajaDisponibleInicial : Math.max(0, saldoAnterior);
-    const saldo = cajaDisponible - vtosAcum;
-    saldoAnterior = saldo;
-    return {
-      ...fila,
-      vtosAcumulados: vtosAcum,
-      cajaDisponible,
-      saldo,
-    };
-  });
-}
 
 export interface FinanzasVencPorFechaPageClientProps {
-  /**
-   * Suma de **pendiente** vencido antes de hoy: comprobantes (`sumarSaldoVencimientosConFechaVencAnteriorA`)
-   * + **monto devengado pendiente a hoy** de imputaciones de balance con venc &lt; hoy.
-   */
-  saldoVencidoAntesDeHoy: number;
-  /** Suma de montos de cajas tesorería para la primera fila de la grilla. */
-  cajaDisponibleInicial: number;
   detallesPorDia: Record<string, FlujoFondoDetalleDiaFila[]>;
   proveedoresConVencimientos: string[];
-  filas: Array<{
-    isoYmd: string;
-    vencimientoDelDia: number;
-  }>;
+  filas: FilaFlujoDeFondoVista[];
   paginaActual: number;
   totalPaginas: number;
   total: number;
 }
 
 export default function FinanzasVencPorFechaPageClient({
-  saldoVencidoAntesDeHoy,
-  cajaDisponibleInicial,
   detallesPorDia,
   proveedoresConVencimientos,
   filas,
@@ -111,11 +69,6 @@ export default function FinanzasVencPorFechaPageClient({
     return formatFechaLargaNotaPedidoArgentina(new Date(yy, mm - 1, dd));
   }, [detalleIsoYmd]);
 
-  const filasVista = useMemo(
-    () =>
-      filasConVtosYSaldo(filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy),
-    [filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy]
-  );
   const montoVencimientoPorDia = useMemo(() => {
     if (!filtroProveedor) {
       return Object.fromEntries(filas.map((fila) => [fila.isoYmd, fila.vencimientoDelDia]));
@@ -183,9 +136,9 @@ export default function FinanzasVencPorFechaPageClient({
               aria-live="polite"
             >
               <span className={FILTER_COUNT_CLASS}>
-                {filasVista.length.toLocaleString("es-AR")}
+                {filas.length.toLocaleString("es-AR")}
               </span>
-              {` DÍA${filasVista.length === 1 ? "" : "S"} EN ESTA PÁGINA`}
+              {` DÍA${filas.length === 1 ? "" : "S"} EN ESTA PÁGINA`}
               {totalPaginas > 1 ? (
                 <span className="font-normal normal-case text-muted-foreground">
                   {" "}
@@ -199,7 +152,7 @@ export default function FinanzasVencPorFechaPageClient({
           </div>
 
           <TablaFlujoDeFondo
-            filas={filasVista}
+            filas={filas}
             montoVencimientoPorDia={montoVencimientoPorDia}
             onRowDoubleClick={setDetalleIsoYmd}
           />

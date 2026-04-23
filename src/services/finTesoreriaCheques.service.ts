@@ -86,6 +86,44 @@ export async function sumarMontosChequesAcreditadosHasta(
   return map;
 }
 
+/** Suma `monto` por caja con `fecha_acreditacion` > `hoyIso` (cheques diferidos; comparación en DATE). */
+export async function sumarMontosChequesDiferidosPorCaja(
+  hoyIso: string
+): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<Array<{ caja_id: string; suma: bigint }>>`
+    SELECT "caja_id", COALESCE(SUM("monto"), 0)::bigint AS suma
+    FROM "fin_tesoreria_cheques"
+    WHERE "fecha_acreditacion" > ${hoyIso}::date
+    GROUP BY "caja_id"
+  `;
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    map.set(r.caja_id, Number(r.suma));
+  }
+  return map;
+}
+
+/**
+ * Por cada fecha de acreditación **posterior** a `hoyIso`, suma de montos que ingresan a “caja líquida” ese día (calendario Argentina).
+ * Usado en Flujo de fondo para proyectar disponibilidad cuando vence la fecha del cheque.
+ */
+export async function sumarMontosChequesDiferidosPorFechaAcreditacion(
+  hoyIso: string
+): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<Array<{ fecha: string; suma: bigint }>>`
+    SELECT to_char("fecha_acreditacion", 'YYYY-MM-DD') AS fecha,
+           COALESCE(SUM("monto"), 0)::bigint AS suma
+    FROM "fin_tesoreria_cheques"
+    WHERE "fecha_acreditacion" > ${hoyIso}::date
+    GROUP BY "fecha_acreditacion"
+  `;
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    map.set(r.fecha, Number(r.suma));
+  }
+  return map;
+}
+
 export async function listarChequesPorCajaId(cajaId: string): Promise<FinTesoreriaChequeItem[]> {
   const rows = await prisma.finTesoreriaCheque.findMany({
     where: { cajaId },

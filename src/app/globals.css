@@ -360,6 +360,24 @@
     white-space: nowrap;
   }
 
+  /** Pie compacto en Tesorería (varias tarjetas en fila + grupo diferidos). */
+  .finanzas-resumen-tarjeta--compact {
+    min-height: 3rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    gap: 0.0625rem;
+  }
+
+  .finanzas-resumen-tarjeta--compact-etiqueta {
+    font-size: 0.5625rem;
+    line-height: 1.15;
+  }
+
+  .finanzas-resumen-tarjeta--compact-valor {
+    font-size: 0.8125rem;
+    line-height: 1.15;
+  }
+
   /*
    * Ocultar barras del scrollport (overflow auto/scroll); el desplazamiento con rueda/táctil se mantiene.
    * Aplicable a cualquier nodo con overflow; combina con `.contenedor-tabla-gestion`, modales, etc.

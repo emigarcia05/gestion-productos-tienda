@@ -83,7 +83,6 @@ export default function AcreditarChequeTesoreriaModal({
   }
 
   const colSpan = 4;
-  const montoChequeFmt = cheque ? fmtPrecio(cheque.monto) : "";
 
   return (
     <Dialog
@@ -113,13 +112,6 @@ export default function AcreditarChequeTesoreriaModal({
         }
       >
         <div className="flex flex-col gap-3">
-          {cheque ? (
-            <p className="text-sm text-muted-foreground">
-              Se transferirán <span className="font-semibold text-foreground">${montoChequeFmt}</span>{" "}
-              (emisor: {cheque.emisor}) a la caja <span className="font-semibold text-foreground">DIGITAL</span>{" "}
-              elegida. El cheque se eliminará del listado.
-            </p>
-          ) : null}
           <div className="max-h-[min(22rem,45vh)] overflow-auto rounded-md border border-border">
             <Table variant="compact" scrollX={false} className="table-fixed w-full">
               <colgroup>
@@ -169,7 +161,7 @@ export default function AcreditarChequeTesoreriaModal({
                             aria-busy={busy}
                             onClick={() => void ejecutarTransferencia(c.id)}
                           >
-                            {busy ? "Acreditando…" : "Acreditar Aquí"}
+                            {busy ? "ACREDITANDO…" : "ACREDITAR"}
                           </Button>
                         </TableCell>
                       </TableRow>

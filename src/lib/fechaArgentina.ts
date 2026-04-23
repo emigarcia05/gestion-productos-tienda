@@ -190,6 +190,15 @@ export function textoDiasFaltantesAcreditacionCheque(fechaAcreditacionIso: strin
   return String(n);
 }
 
+/**
+ * Cheque de tesorería: la fecha de acreditación (`YYYY-MM-DD`, calendario Argentina) ya llegó o es hoy.
+ * Coincide con la regla del backend que rechaza si la fecha es posterior a hoy en Argentina.
+ */
+export function chequePuedeAcreditarsePorFechaArgentina(fechaAcreditacionIso: string): boolean {
+  const hoy = dateToIsoYmdArgentina(new Date());
+  return fechaAcreditacionIso <= hoy;
+}
+
 /** Sello `dd_mm hh_mm` para nombre de archivo de recepción. */
 export function formatDdMmHhMmGuionesBajosArchivoArgentina(d: Date): string {
   const m = toPartMap(d, {

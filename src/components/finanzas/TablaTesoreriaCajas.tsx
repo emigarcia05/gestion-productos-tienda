@@ -18,7 +18,6 @@ import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_CLASS,
   TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
-  TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 
 export interface TesoreriaCajaFila {
@@ -30,6 +29,8 @@ export interface TesoreriaCajaFila {
   monto: number;
   /** Monto que cuenta hoy para totales y columna MONTO (cajas CHEQUE: cheques con fecha de acreditación ≤ hoy AR). */
   montoDisponible: number;
+  /** Solo cajas CHEQUE: cheques con fecha de acreditación > hoy AR (diferidos). */
+  montoChequesDiferidos: number;
   ultActualizacion: string;
   ultActualizacionIso: string;
 }
@@ -72,43 +73,74 @@ function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
   );
 }
 
-/** Suma `monto` por `tipoCaja` y total general (misma lógica que filtros del padre: recibe `filas` ya filtradas). */
+/** Suma por `tipoCaja` y totales (misma lógica que filtros del padre: recibe `filas` ya filtradas). */
 function totalesPorTipoCaja(filas: TesoreriaCajaFila[]): {
   efectivo: number;
   digital: number;
-  cheque: number;
+  chequeAlDia: number;
   total: number;
+  chequeDiferido: number;
+  totalConChequeDiferido: number;
 } {
   let efectivo = 0;
   let digital = 0;
-  let cheque = 0;
+  let chequeAlDia = 0;
+  let chequeDiferido = 0;
   for (const f of filas) {
     const m = f.montoDisponible;
     if (f.tipoCaja === "EFECTIVO") efectivo += m;
     else if (f.tipoCaja === "DIGITAL") digital += m;
-    else if (f.tipoCaja === "CHEQUE") cheque += m;
+    else if (f.tipoCaja === "CHEQUE") {
+      chequeAlDia += m;
+      chequeDiferido += f.montoChequesDiferidos;
+    }
   }
   const total = filas.reduce((acc, f) => acc + f.montoDisponible, 0);
-  return { efectivo, digital, cheque, total };
+  return {
+    efectivo,
+    digital,
+    chequeAlDia,
+    total,
+    chequeDiferido,
+    totalConChequeDiferido: total + chequeDiferido,
+  };
 }
 
 function TarjetaResumenTesoreria({
   etiqueta,
   children,
   valorDestacado,
+  compact,
+  etiquetaClassName,
 }: {
   etiqueta: string;
   children: ReactNode;
   valorDestacado?: boolean;
+  compact?: boolean;
+  etiquetaClassName?: string;
 }) {
   return (
-    <div className="finanzas-resumen-tarjeta">
-      <span className="w-full text-[10px] font-semibold uppercase leading-none tracking-wide text-muted-foreground">
+    <div
+      className={cn(
+        "finanzas-resumen-tarjeta",
+        compact && "finanzas-resumen-tarjeta--compact"
+      )}
+    >
+      <span
+        className={cn(
+          "w-full font-semibold uppercase tracking-wide text-muted-foreground",
+          compact
+            ? "finanzas-resumen-tarjeta--compact-etiqueta leading-tight"
+            : "text-[10px] leading-none",
+          etiquetaClassName
+        )}
+      >
         {etiqueta}
       </span>
       <span
         className={cn(
           "celda-destacado w-full text-center text-sm tabular-nums leading-tight",
+          compact && "finanzas-resumen-tarjeta--compact-valor",
           valorDestacado ? "font-bold" : "font-medium"
         )}
       >
@@ -126,7 +158,14 @@ export default function TablaTesoreriaCajas({
   onEditDataClick,
   onDeleteClick,
 }: Props) {
-  const { efectivo, digital, cheque, total } = totalesPorTipoCaja(filas);
+  const {
+    efectivo,
+    digital,
+    chequeAlDia,
+    total,
+    chequeDiferido,
+    totalConChequeDiferido,
+  } = totalesPorTipoCaja(filas);
   const colCount = esEditor ? COLS + 1 : COLS;
   const anchosColPct = esEditor ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
@@ -160,9 +199,6 @@ export default function TablaTesoreriaCajas({
                   (() => {
                     const diasSinActualizar = getDiasSinActualizar(f.ultActualizacionIso);
                     const estaDesactualizada = diasSinActualizar !== null && diasSinActualizar > 5;
-                    const titleUltActualizacion = estaDesactualizada
-                      ? `${f.ultActualizacion} — ${diasSinActualizar} DÍAS SIN ACTUALIZAR`
-                      : f.ultActualizacion;
 
                     const puedeEditarMontoDblClick =
                       onRowDoubleClick != null && f.tipoCaja !== "CHEQUE";
@@ -204,23 +240,17 @@ export default function TablaTesoreriaCajas({
                         <TableCell
                           className={cn(
                             "celda-datos tabular-nums whitespace-nowrap tabla-bloque-secundario-cell-divider",
-                            CELL_MIN,
-                            estaDesactualizada && TEXT_WARNING_CLASS
+                            CELL_MIN
                           )}
-                          title={titleUltActualizacion}
+                          title={f.ultActualizacion}
                         >
-                          <span className="inline-flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1.5">
                             {f.ultActualizacion}
                             {estaDesactualizada ? (
-                              <>
-                                <TriangleAlert
-                                  className="h-3.5 w-3.5 shrink-0"
-                                  aria-hidden
-                                />
-                                <span className="text-[11px] font-semibold leading-none">
-                                  +{diasSinActualizar} D
-                                </span>
-                              </>
+                              <TriangleAlert
+                                className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500"
+                                aria-hidden
+                              />
                             ) : null}
                           </span>
                         </TableCell>
@@ -272,18 +302,43 @@ export default function TablaTesoreriaCajas({
 
         {filas.length > 0 ? (
           <div
-            className="w-full shrink-0 border-t border-border px-2 py-2"
+            className="w-full shrink-0 border-t border-border px-2 py-1"
             role="region"
-            aria-label="Totales por tipo de caja y total general"
+            aria-label="Totales por tipo de caja: al día, total y cheques diferidos"
             aria-live="polite"
           >
-            <div className="flex w-full flex-wrap items-stretch justify-center gap-2">
-              <TarjetaResumenTesoreria etiqueta="EFECTIVO">${fmtPrecio(efectivo)}</TarjetaResumenTesoreria>
-              <TarjetaResumenTesoreria etiqueta="DIGITAL">${fmtPrecio(digital)}</TarjetaResumenTesoreria>
-              <TarjetaResumenTesoreria etiqueta="CHEQUE">${fmtPrecio(cheque)}</TarjetaResumenTesoreria>
-              <TarjetaResumenTesoreria etiqueta="TOTAL" valorDestacado>
-                ${fmtPrecio(total)}
-              </TarjetaResumenTesoreria>
+            <div className="flex w-full flex-wrap items-stretch justify-center gap-x-2 gap-y-1.5">
+              <div className="flex flex-wrap items-stretch justify-center gap-1.5">
+                <TarjetaResumenTesoreria etiqueta="EFECTIVO" compact>
+                  ${fmtPrecio(efectivo)}
+                </TarjetaResumenTesoreria>
+                <TarjetaResumenTesoreria etiqueta="DIGITAL" compact>
+                  ${fmtPrecio(digital)}
+                </TarjetaResumenTesoreria>
+                <TarjetaResumenTesoreria etiqueta="CHEQUE AL DÍA" compact>
+                  ${fmtPrecio(chequeAlDia)}
+                </TarjetaResumenTesoreria>
+                <TarjetaResumenTesoreria etiqueta="TOTAL" valorDestacado compact>
+                  ${fmtPrecio(total)}
+                </TarjetaResumenTesoreria>
+              </div>
+              <div
+                className="mx-0.5 w-[2px] shrink-0 self-stretch min-h-[2.75rem] bg-[#0072BB]"
+                aria-hidden
+              />
+              <div className="flex flex-wrap items-stretch justify-center gap-1.5">
+                <TarjetaResumenTesoreria etiqueta="CHEQUE DIFERIDO" compact>
+                  ${fmtPrecio(chequeDiferido)}
+                </TarjetaResumenTesoreria>
+                <TarjetaResumenTesoreria
+                  etiqueta="TOTAL CON CHEQUE DIFERIDO"
+                  valorDestacado
+                  compact
+                  etiquetaClassName="whitespace-normal leading-tight"
+                >
+                  ${fmtPrecio(totalConChequeDiferido)}
+                </TarjetaResumenTesoreria>
+              </div>
             </div>
           </div>
         ) : null}

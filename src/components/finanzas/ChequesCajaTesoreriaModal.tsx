@@ -19,7 +19,11 @@ import { listarChequesPorCajaAction } from "@/actions/finTesoreriaCheques";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import { fmtPrecio } from "@/lib/format";
-import { formatIsoYmdDdMmYyyyArgentina, textoDiasFaltantesAcreditacionCheque } from "@/lib/fechaArgentina";
+import {
+  chequePuedeAcreditarsePorFechaArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+  textoDiasFaltantesAcreditacionCheque,
+} from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 import AltaChequeTesoreriaModal from "@/components/finanzas/AltaChequeTesoreriaModal";
 import EditarChequeTesoreriaModal from "@/components/finanzas/EditarChequeTesoreriaModal";
@@ -177,7 +181,11 @@ export default function ChequesCajaTesoreriaModal({
                       message="No hay cheques registrados para esta caja."
                     />
                   ) : (
-                    filas.map((row) => (
+                    filas.map((row) => {
+                      const puedeAcreditar = chequePuedeAcreditarsePorFechaArgentina(
+                        row.fechaAcreditacionIso
+                      );
+                      return (
                       <TableRow key={row.id}>
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={row.tenedor}>
                           <span className="celda-destacado block truncate">{row.tenedor}</span>
@@ -211,9 +219,18 @@ export default function ChequesCajaTesoreriaModal({
                                 size="icon-xs"
                                 variant="outline"
                                 className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                disabled={!puedeAcreditar}
                                 onClick={() => setChequeParaAcreditar(row)}
-                                aria-label="Acreditar cheque"
-                                title="Acreditar cheque"
+                                aria-label={
+                                  puedeAcreditar
+                                    ? "Acreditar cheque"
+                                    : "Acreditar cheque (disponible desde la fecha de acreditación)"
+                                }
+                                title={
+                                  puedeAcreditar
+                                    ? "Acreditar cheque"
+                                    : "Solo se puede acreditar desde la fecha de acreditación (calendario Argentina)."
+                                }
                               >
                                 <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} />
                               </Button>
@@ -246,7 +263,8 @@ export default function ChequesCajaTesoreriaModal({
                           </TableCell>
                         ) : null}
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

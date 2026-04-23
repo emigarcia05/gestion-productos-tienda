@@ -2,7 +2,10 @@ import type { TipoCajaTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
-import { sumarMontosChequesAcreditadosHasta } from "@/services/finTesoreriaCheques.service";
+import {
+  sumarMontosChequesAcreditadosHasta,
+  sumarMontosChequesDiferidosPorCaja,
+} from "@/services/finTesoreriaCheques.service";
 
 export interface CajaTesoreriaItem {
   id: string;
@@ -16,6 +19,10 @@ export interface CajaTesoreriaItem {
    * con `fecha_acreditacion` ≤ hoy (calendario Argentina); en otros tipos, igual a `monto`.
    */
   montoDisponible: number;
+  /**
+   * Solo `CHEQUE`: suma de cheques con `fecha_acreditacion` > hoy (diferidos). En otros tipos, `0`.
+   */
+  montoChequesDiferidos: number;
   ultActualizacion: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -43,7 +50,8 @@ function mapCaja(
     createdAt: Date;
     updatedAt: Date;
   },
-  montoDisponible: number
+  montoDisponible: number,
+  montoChequesDiferidos: number
 ): CajaTesoreriaItem {
   return {
     id: row.id,
@@ -52,6 +60,7 @@ function mapCaja(
     tipoCaja: row.tipoCaja,
     monto: row.monto,
     montoDisponible,
+    montoChequesDiferidos,
     ultActualizacion: row.ultActualizacion,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -77,11 +86,16 @@ export async function listarCajasTesoreria(): Promise<CajaTesoreriaItem[]> {
     orderBy: [{ nombreCaja: "asc" }],
   });
   const hoyIso = dateToIsoYmdArgentina(new Date());
-  const sumasCheque = await sumarMontosChequesAcreditadosHasta(hoyIso);
+  const [sumasCheque, sumasDiferido] = await Promise.all([
+    sumarMontosChequesAcreditadosHasta(hoyIso),
+    sumarMontosChequesDiferidosPorCaja(hoyIso),
+  ]);
   return rows.map((row) => {
     const disponible =
       row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
-    return mapCaja(row, disponible);
+    const diferido =
+      row.tipoCaja === "CHEQUE" ? (sumasDiferido.get(row.id) ?? 0) : 0;
+    return mapCaja(row, disponible, diferido);
   });
 }
 
@@ -94,11 +108,16 @@ export async function listarCajasTesoreriaPorTipo(
     orderBy: [{ nombreCaja: "asc" }],
   });
   const hoyIso = dateToIsoYmdArgentina(new Date());
-  const sumasCheque = await sumarMontosChequesAcreditadosHasta(hoyIso);
+  const [sumasCheque, sumasDiferido] = await Promise.all([
+    sumarMontosChequesAcreditadosHasta(hoyIso),
+    sumarMontosChequesDiferidosPorCaja(hoyIso),
+  ]);
   return rows.map((row) => {
     const disponible =
       row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
-    return mapCaja(row, disponible);
+    const diferido =
+      row.tipoCaja === "CHEQUE" ? (sumasDiferido.get(row.id) ?? 0) : 0;
+    return mapCaja(row, disponible, diferido);
   });
 }
 
@@ -114,7 +133,10 @@ export async function crearCajaTesoreria(
         monto: input.monto,
       },
     });
-    return { success: true, data: mapCaja(row, row.tipoCaja === "CHEQUE" ? 0 : row.monto) };
+    return {
+      success: true,
+      data: mapCaja(row, row.tipoCaja === "CHEQUE" ? 0 : row.monto, 0),
+    };
   } catch (error: unknown) {
     return {
       success: false,
@@ -154,10 +176,15 @@ export async function editarCajaTesoreria(
       },
     });
     const hoyIso = dateToIsoYmdArgentina(new Date());
-    const sumasCheque = await sumarMontosChequesAcreditadosHasta(hoyIso);
+    const [sumasCheque, sumasDiferido] = await Promise.all([
+      sumarMontosChequesAcreditadosHasta(hoyIso),
+      sumarMontosChequesDiferidosPorCaja(hoyIso),
+    ]);
     const disponible =
       row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
-    return { success: true, data: mapCaja(row, disponible) };
+    const diferido =
+      row.tipoCaja === "CHEQUE" ? (sumasDiferido.get(row.id) ?? 0) : 0;
+    return { success: true, data: mapCaja(row, disponible, diferido) };
   } catch (error: unknown) {
     return {
       success: false,
