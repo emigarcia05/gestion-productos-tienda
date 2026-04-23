@@ -85,6 +85,23 @@ export async function listarCajasTesoreria(): Promise<CajaTesoreriaItem[]> {
   });
 }
 
+/** Cajas de un tipo concreto (ej. **DIGITAL** para acreditar cheques). */
+export async function listarCajasTesoreriaPorTipo(
+  tipo: TipoCajaTesoreria
+): Promise<CajaTesoreriaItem[]> {
+  const rows = await prisma.cajaTesoreria.findMany({
+    where: { tipoCaja: tipo },
+    orderBy: [{ nombreCaja: "asc" }],
+  });
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+  const sumasCheque = await sumarMontosChequesAcreditadosHasta(hoyIso);
+  return rows.map((row) => {
+    const disponible =
+      row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
+    return mapCaja(row, disponible);
+  });
+}
+
 export async function crearCajaTesoreria(
   input: CrearCajaTesoreriaInput
 ): Promise<ServiceResult<CajaTesoreriaItem>> {

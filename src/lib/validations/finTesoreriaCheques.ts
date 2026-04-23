@@ -22,8 +22,11 @@ export const montoChequeTesoreriaSchema = z
   .min(0, "El monto no puede ser negativo.")
   .max(2_000_000_000, "Monto demasiado grande.");
 
+export const tipoChequeTesoreriaSchema = z.enum(["FISICO", "ECHEQUE"]);
+
 export const crearFinTesoreriaChequeSchema = z.object({
   cajaId: prismaCuidSchema,
+  tipo: tipoChequeTesoreriaSchema,
   tenedor: tenedorChequeTesoreriaSchema,
   emisor: z
     .string()
@@ -40,6 +43,7 @@ export const listarFinTesoreriaChequesPorCajaSchema = z.object({
 
 export const actualizarFinTesoreriaChequeSchema = z.object({
   id: prismaCuidSchema,
+  tipo: tipoChequeTesoreriaSchema,
   tenedor: tenedorChequeTesoreriaSchema,
   emisor: z
     .string()
@@ -54,7 +58,13 @@ export const eliminarFinTesoreriaChequeSchema = z.object({
   id: prismaCuidSchema,
 });
 
+export const transferirFinTesoreriaChequeSchema = z.object({
+  chequeId: prismaCuidSchema,
+  cajaDestinoId: prismaCuidSchema,
+});
+
 export type CrearFinTesoreriaChequeInput = z.infer<typeof crearFinTesoreriaChequeSchema>;
 export type ActualizarFinTesoreriaChequeInput = z.infer<
   typeof actualizarFinTesoreriaChequeSchema
 >;
+export type TransferirFinTesoreriaChequeInput = z.infer<typeof transferirFinTesoreriaChequeSchema>;

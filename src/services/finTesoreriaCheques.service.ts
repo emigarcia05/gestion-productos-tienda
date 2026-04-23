@@ -1,14 +1,29 @@
+import type { TipoChequeTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
 import type {
   ActualizarFinTesoreriaChequeInput,
   CrearFinTesoreriaChequeInput,
+  TransferirFinTesoreriaChequeInput,
 } from "@/lib/validations/finTesoreriaCheques";
+
+/** Límite alineado con `montoCajaTesoreriaSchema` (cajas tesorería). */
+const MONTO_CAJA_MAX = 999_999_999;
+const MONTO_CAJA_MIN = -999_999_999;
+
+export interface TransferirChequeFinTesoreriaResultado {
+  chequeId: string;
+  cajaOrigenId: string;
+  cajaDestinoId: string;
+  monto: number;
+  montoDestinoTrasTransferencia: number;
+}
 
 export interface FinTesoreriaChequeItem {
   id: string;
   cajaId: string;
+  tipo: TipoChequeTesoreria;
   tenedor: string;
   emisor: string;
   monto: number;
@@ -20,6 +35,7 @@ export interface FinTesoreriaChequeItem {
 function mapCheque(row: {
   id: string;
   cajaId: string;
+  tipo: TipoChequeTesoreria;
   tenedor: string;
   emisor: string;
   monto: number;
@@ -30,6 +46,7 @@ function mapCheque(row: {
   return {
     id: row.id,
     cajaId: row.cajaId,
+    tipo: row.tipo,
     tenedor: row.tenedor,
     emisor: row.emisor,
     monto: row.monto,
@@ -95,6 +112,7 @@ export async function crearFinTesoreriaCheque(
     const row = await prisma.finTesoreriaCheque.create({
       data: {
         cajaId: input.cajaId,
+        tipo: input.tipo,
         tenedor: input.tenedor,
         emisor: input.emisor.trim(),
         monto: input.monto,
@@ -132,6 +150,7 @@ export async function actualizarFinTesoreriaCheque(
     const row = await prisma.finTesoreriaCheque.update({
       where: { id: input.id },
       data: {
+        tipo: input.tipo,
         tenedor: input.tenedor,
         emisor: input.emisor.trim(),
         monto: input.monto,
@@ -141,6 +160,106 @@ export async function actualizarFinTesoreriaCheque(
     return { success: true, data: mapCheque(row) };
   } catch (error: unknown) {
     return { success: false, error: mapDbError(error, "No se pudo actualizar el cheque.") };
+  }
+}
+
+/**
+ * Transfiere el importe del cheque a otra caja (`fin_tesoreria.monto`) y elimina el registro del cheque.
+ * Requiere `fecha_acreditacion` ≤ hoy (calendario Argentina).
+ */
+export async function transferirChequeFinTesoreria(
+  input: TransferirFinTesoreriaChequeInput
+): Promise<ServiceResult<TransferirChequeFinTesoreriaResultado>> {
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+
+  try {
+    const resultado = await prisma.$transaction(async (tx) => {
+      const cheque = await tx.finTesoreriaCheque.findUnique({
+        where: { id: input.chequeId },
+      });
+      if (!cheque) {
+        throw new Error("CHEQUE_NOT_FOUND");
+      }
+
+      const fechaChequeIso = dateToIsoYmdArgentina(cheque.fechaAcreditacion);
+      if (fechaChequeIso > hoyIso) {
+        throw new Error("CHEQUE_NO_ACREDITADO");
+      }
+
+      if (cheque.cajaId === input.cajaDestinoId) {
+        throw new Error("DESTINO_IGUAL_ORIGEN");
+      }
+
+      const destino = await tx.cajaTesoreria.findUnique({
+        where: { id: input.cajaDestinoId },
+      });
+      if (!destino) {
+        throw new Error("DESTINO_NOT_FOUND");
+      }
+      if (destino.tipoCaja !== "DIGITAL") {
+        throw new Error("DESTINO_NO_DIGITAL");
+      }
+
+      const nuevoSaldo = destino.monto + cheque.monto;
+      if (nuevoSaldo > MONTO_CAJA_MAX || nuevoSaldo < MONTO_CAJA_MIN) {
+        throw new Error("SALDO_DESTINO_FUERA_DE_RANGO");
+      }
+
+      await tx.cajaTesoreria.update({
+        where: { id: input.cajaDestinoId },
+        data: { monto: { increment: cheque.monto } },
+      });
+
+      await tx.finTesoreriaCheque.delete({ where: { id: cheque.id } });
+
+      return {
+        chequeId: cheque.id,
+        cajaOrigenId: cheque.cajaId,
+        cajaDestinoId: input.cajaDestinoId,
+        monto: cheque.monto,
+        montoDestinoTrasTransferencia: nuevoSaldo,
+      };
+    });
+
+    return { success: true, data: resultado };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error.message === "CHEQUE_NOT_FOUND") {
+        return { success: false, error: "Cheque no encontrado." };
+      }
+      if (error.message === "CHEQUE_NO_ACREDITADO") {
+        return {
+          success: false,
+          error:
+            "No se puede transferir: la fecha de acreditación del cheque es posterior a hoy.",
+        };
+      }
+      if (error.message === "DESTINO_IGUAL_ORIGEN") {
+        return {
+          success: false,
+          error: "La caja destino debe ser distinta de la caja donde está el cheque.",
+        };
+      }
+      if (error.message === "DESTINO_NOT_FOUND") {
+        return { success: false, error: "Caja destino no encontrada." };
+      }
+      if (error.message === "DESTINO_NO_DIGITAL") {
+        return {
+          success: false,
+          error: "La acreditación solo puede hacerse hacia una caja tipo DIGITAL.",
+        };
+      }
+      if (error.message === "SALDO_DESTINO_FUERA_DE_RANGO") {
+        return {
+          success: false,
+          error: "El saldo de la caja destino superaría el máximo permitido.",
+        };
+      }
+    }
+    return {
+      success: false,
+      error: mapDbError(error, "No se pudo transferir el cheque."),
+    };
   }
 }
 

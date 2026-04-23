@@ -19,6 +19,11 @@ enum TipoCajaTesoreria {
   CHEQUE
 }
 
+enum TipoChequeTesoreria {
+  FISICO
+  ECHEQUE
+}
+
 model Proveedor {
   id              String   @id @default(cuid())
   nombre          String   @unique(map: "global_proveedores_nombre_key")
@@ -158,13 +163,14 @@ model CajaTesoreria {
 // Cheques asociados a una caja de tesorería tipo CHEQUE. El disponible para totales
 // (hoy en calendario Argentina) suma solo filas con fecha_acreditacion <= hoy.
 model FinTesoreriaCheque {
-  id                  String   @id @default(cuid())
-  cajaId              String   @map("caja_id")
+  id                  String               @id @default(cuid())
+  cajaId              String               @map("caja_id")
+  tipo                TipoChequeTesoreria  @map("tipo")
   emisor              String
   /** Misma lista cerrada que `fin_tesoreria.titular` (titulares de caja). */
-  tenedor             String   @map("tenedor")
+  tenedor             String               @map("tenedor")
   monto               Int
-  fechaAcreditacion   DateTime @map("fecha_acreditacion") @db.Date
+  fechaAcreditacion   DateTime             @map("fecha_acreditacion") @db.Date
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 

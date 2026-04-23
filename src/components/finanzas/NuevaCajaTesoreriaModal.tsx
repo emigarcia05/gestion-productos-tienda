@@ -17,6 +17,7 @@ import {
 import { crearCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
+import type { TipoCajaTesoreria } from "@prisma/client";
 
 interface Props {
   open: boolean;
@@ -31,7 +32,7 @@ export default function NuevaCajaTesoreriaModal({
 }: Props) {
   const [nombreCaja, setNombreCaja] = useState("");
   const [titular, setTitular] = useState<TitularCajaTesoreria | "">("");
-  const [tipoCaja, setTipoCaja] = useState<"DIGITAL" | "EFECTIVO" | "CHEQUE">("EFECTIVO");
+  const [tipoCaja, setTipoCaja] = useState<TipoCajaTesoreria>("EFECTIVO");
   const [saving, setSaving] = useState(false);
 
   const disabledSubmit = useMemo(
@@ -152,7 +153,7 @@ export default function NuevaCajaTesoreriaModal({
             </span>
             <Select
               value={tipoCaja}
-              onValueChange={(value) => setTipoCaja(value as "DIGITAL" | "EFECTIVO" | "CHEQUE")}
+              onValueChange={(value) => setTipoCaja(value as TipoCajaTesoreria)}
               disabled={saving}
             >
               <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>

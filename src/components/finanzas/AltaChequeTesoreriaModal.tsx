@@ -23,6 +23,9 @@ import {
   TITULARES_CAJA_TESORERIA,
   type TitularCajaTesoreria,
 } from "@/lib/cajasTesoreriaTitulares";
+import type { TipoChequeTesoreria } from "@prisma/client";
+
+const TIPOS_CHEQUE: readonly TipoChequeTesoreria[] = ["FISICO", "ECHEQUE"];
 
 function tenedorInicialDesdeTitularCaja(raw: string | null | undefined): TitularCajaTesoreria {
   if (raw && TITULARES_CAJA_TESORERIA.includes(raw as TitularCajaTesoreria)) {
@@ -47,6 +50,7 @@ export default function AltaChequeTesoreriaModal({
   titularCaja,
   onCreated,
 }: Props) {
+  const [tipo, setTipo] = useState<TipoChequeTesoreria>("FISICO");
   const [tenedor, setTenedor] = useState<TitularCajaTesoreria>(TITULARES_CAJA_TESORERIA[0]);
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
@@ -55,6 +59,7 @@ export default function AltaChequeTesoreriaModal({
 
   useEffect(() => {
     if (!open) return;
+    setTipo("FISICO");
     setTenedor(tenedorInicialDesdeTitularCaja(titularCaja ?? null));
     setEmisor("");
     setMontoNorm("");
@@ -73,6 +78,7 @@ export default function AltaChequeTesoreriaModal({
     try {
       const res = await crearFinTesoreriaChequeAction({
         cajaId,
+        tipo,
         tenedor,
         emisor: emisor.trim(),
         monto: parsedMonto,
@@ -111,6 +117,32 @@ export default function AltaChequeTesoreriaModal({
         <div className="grid grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              TIPO
+            </span>
+            <Select
+              value={tipo}
+              onValueChange={(value) => setTipo(value as TipoChequeTesoreria)}
+              disabled={saving || !cajaId}
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="TIPO DE CHEQUE" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {TIPOS_CHEQUE.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt === "ECHEQUE" ? "E-CHEQUE" : "FÍSICO"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               TENEDOR
             </span>
             <Select
@@ -141,7 +173,7 @@ export default function AltaChequeTesoreriaModal({
             </span>
             <Input
               value={emisor}
-              onChange={(e) => setEmisor(e.target.value)}
+              onChange={(e) => setEmisor(e.target.value.toLocaleUpperCase("es-AR"))}
               disabled={saving}
               placeholder="Nombre del emisor"
               aria-label="Emisor del cheque"

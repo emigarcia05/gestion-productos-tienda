@@ -14,6 +14,7 @@ import {
   editarCajaTesoreria,
   eliminarCajaTesoreria,
   listarCajasTesoreria,
+  listarCajasTesoreriaPorTipo,
   type CajaTesoreriaItem,
 } from "@/services/cajasTesoreria.service";
 
@@ -40,6 +41,22 @@ export async function listarCajasTesoreriaAction(): Promise<ActionResult<CajaTes
 
   try {
     const items = await listarCajasTesoreria();
+    return { ok: true, data: items };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";
+    return { ok: false, error: message };
+  }
+}
+
+/** Cajas `tipo_caja = DIGITAL` (destino de acreditación de cheques). */
+export async function listarCajasTesoreriaTipoDigitalAction(): Promise<ActionResult<CajaTesoreriaItem[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  try {
+    const items = await listarCajasTesoreriaPorTipo("DIGITAL");
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";

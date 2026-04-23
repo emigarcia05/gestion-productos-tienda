@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import type { TipoChequeTesoreria } from "@prisma/client";
 import { actualizarFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import {
@@ -35,12 +36,19 @@ function tenedorValido(o: string): o is TitularCajaTesoreria {
   return TITULARES_CAJA_TESORERIA.includes(o as TitularCajaTesoreria);
 }
 
+const TIPOS_CHEQUE: readonly TipoChequeTesoreria[] = ["FISICO", "ECHEQUE"];
+
+function tipoChequeValido(o: string): o is TipoChequeTesoreria {
+  return TIPOS_CHEQUE.includes(o as TipoChequeTesoreria);
+}
+
 export default function EditarChequeTesoreriaModal({
   open,
   onOpenChange,
   cheque,
   onUpdated,
 }: Props) {
+  const [tipo, setTipo] = useState<TipoChequeTesoreria>("FISICO");
   const [tenedor, setTenedor] = useState<TitularCajaTesoreria | "">("");
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
@@ -49,9 +57,10 @@ export default function EditarChequeTesoreriaModal({
 
   useEffect(() => {
     if (!open || !cheque) return;
-    setEmisor(cheque.emisor);
+    setEmisor(cheque.emisor.toLocaleUpperCase("es-AR"));
     setMontoNorm(montoArPesosEnterosToNormalizedString(cheque.monto));
     setFechaIso(cheque.fechaAcreditacionIso);
+    setTipo(tipoChequeValido(cheque.tipo) ? cheque.tipo : "FISICO");
     setTenedor(tenedorValido(cheque.tenedor) ? cheque.tenedor : "");
   }, [open, cheque]);
 
@@ -67,6 +76,7 @@ export default function EditarChequeTesoreriaModal({
     try {
       const res = await actualizarFinTesoreriaChequeAction({
         id: cheque.id,
+        tipo,
         tenedor,
         emisor: emisor.trim(),
         monto: parsedMonto,
@@ -105,6 +115,32 @@ export default function EditarChequeTesoreriaModal({
         <div className="grid grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              TIPO
+            </span>
+            <Select
+              value={tipo}
+              onValueChange={(value) => setTipo(value as TipoChequeTesoreria)}
+              disabled={saving || !cheque}
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="TIPO DE CHEQUE" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {TIPOS_CHEQUE.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt === "ECHEQUE" ? "E-CHEQUE" : "FÍSICO"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               TENEDOR
             </span>
             <Select
@@ -138,7 +174,7 @@ export default function EditarChequeTesoreriaModal({
             </span>
             <Input
               value={emisor}
-              onChange={(e) => setEmisor(e.target.value)}
+              onChange={(e) => setEmisor(e.target.value.toLocaleUpperCase("es-AR"))}
               disabled={saving}
               placeholder="Nombre del emisor"
               aria-label="Emisor del cheque"

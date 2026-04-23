@@ -18,6 +18,7 @@ import { editarCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
+import type { TipoCajaTesoreria } from "@prisma/client";
 
 interface Props {
   open: boolean;
@@ -34,14 +35,14 @@ export default function EditarCajaTesoreriaModal({
 }: Props) {
   const [nombreCaja, setNombreCaja] = useState("");
   const [titular, setTitular] = useState<TitularCajaTesoreria | "">("");
-  const [tipoCaja, setTipoCaja] = useState<"DIGITAL" | "EFECTIVO" | "CHEQUE">("EFECTIVO");
+  const [tipoCaja, setTipoCaja] = useState<TipoCajaTesoreria>("EFECTIVO");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !caja) return;
     setNombreCaja(caja.nombreCaja);
     setTitular(caja.titular as TitularCajaTesoreria);
-    setTipoCaja(caja.tipoCaja as "DIGITAL" | "EFECTIVO" | "CHEQUE");
+    setTipoCaja(caja.tipoCaja as TipoCajaTesoreria);
   }, [open, caja]);
 
   function resetForm() {
@@ -163,7 +164,7 @@ export default function EditarCajaTesoreriaModal({
             </span>
             <Select
               value={tipoCaja}
-              onValueChange={(value) => setTipoCaja(value as "DIGITAL" | "EFECTIVO" | "CHEQUE")}
+              onValueChange={(value) => setTipoCaja(value as TipoCajaTesoreria)}
               disabled={saving}
             >
               <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>

@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import AltaChequeTesoreriaModal from "@/components/finanzas/AltaChequeTesoreriaModal";
 import EditarChequeTesoreriaModal from "@/components/finanzas/EditarChequeTesoreriaModal";
 import EliminarChequeTesoreriaModal from "@/components/finanzas/EliminarChequeTesoreriaModal";
+import AcreditarChequeTesoreriaModal from "@/components/finanzas/AcreditarChequeTesoreriaModal";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_CLASS,
@@ -34,8 +35,9 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-const COL_ANCHOS_CON_ACCIONES = [15, 22, 12, 13, 12, 26] as const;
-const COL_ANCHOS_SIN_ACCIONES = [18, 26, 14, 14, 28] as const;
+/** TENEDOR, TIPO, EMISOR, MONTO, FECHA, DIAS, [ACCIONES] */
+const COL_ANCHOS_CON_ACCIONES = [11, 8, 17, 10, 10, 9, 35] as const;
+const COL_ANCHOS_SIN_ACCIONES = [12, 9, 20, 11, 12, 36] as const;
 
 interface Props {
   open: boolean;
@@ -57,6 +59,7 @@ export default function ChequesCajaTesoreriaModal({
   const [openAlta, setOpenAlta] = useState(false);
   const [chequeEditando, setChequeEditando] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeEliminando, setChequeEliminando] = useState<FinTesoreriaChequeItem | null>(null);
+  const [chequeParaAcreditar, setChequeParaAcreditar] = useState<FinTesoreriaChequeItem | null>(null);
 
   const cargar = useCallback(async () => {
     if (!caja) return;
@@ -84,6 +87,7 @@ export default function ChequesCajaTesoreriaModal({
       setOpenAlta(false);
       setChequeEditando(null);
       setChequeEliminando(null);
+      setChequeParaAcreditar(null);
     }
   }, [open]);
 
@@ -91,17 +95,12 @@ export default function ChequesCajaTesoreriaModal({
     setOpenAlta(false);
     setChequeEditando(null);
     setChequeEliminando(null);
+    setChequeParaAcreditar(null);
     onOpenChange(false);
     setFilas([]);
   }
 
-  function handleAcreditarPendiente() {
-    toast.message("Acreditar", {
-      description: "Esta acción se definirá próximamente.",
-    });
-  }
-
-  const colCount = esEditor ? 6 : 5;
+  const colCount = esEditor ? 7 : 6;
   const anchos = esEditor ? COL_ANCHOS_CON_ACCIONES : COL_ANCHOS_SIN_ACCIONES;
 
   return (
@@ -145,6 +144,7 @@ export default function ChequesCajaTesoreriaModal({
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className={CELL_MIN}>TENEDOR</TableHead>
+                    <TableHead className={CELL_MIN}>TIPO</TableHead>
                     <TableHead className={CELL_MIN}>EMISOR</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>FECHA ACREDITACIÓN</TableHead>
@@ -182,6 +182,9 @@ export default function ChequesCajaTesoreriaModal({
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={row.tenedor}>
                           <span className="celda-destacado block truncate">{row.tenedor}</span>
                         </TableCell>
+                        <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
+                          {row.tipo}
+                        </TableCell>
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={row.emisor}>
                           <span className="block truncate">{row.emisor}</span>
                         </TableCell>
@@ -208,7 +211,7 @@ export default function ChequesCajaTesoreriaModal({
                                 size="icon-xs"
                                 variant="outline"
                                 className={TABLE_ROW_ICON_BUTTON_CLASS}
-                                onClick={handleAcreditarPendiente}
+                                onClick={() => setChequeParaAcreditar(row)}
                                 aria-label="Acreditar cheque"
                                 title="Acreditar cheque"
                               >
@@ -287,6 +290,19 @@ export default function ChequesCajaTesoreriaModal({
           void cargar();
           onChequesChanged?.();
           setChequeEliminando(null);
+        }}
+      />
+
+      <AcreditarChequeTesoreriaModal
+        open={chequeParaAcreditar != null}
+        onOpenChange={(next) => {
+          if (!next) setChequeParaAcreditar(null);
+        }}
+        cheque={chequeParaAcreditar}
+        onAcreditado={() => {
+          void cargar();
+          onChequesChanged?.();
+          setChequeParaAcreditar(null);
         }}
       />
     </>
