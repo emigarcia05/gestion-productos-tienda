@@ -661,7 +661,7 @@ function FilaCatalogo({
             </div>
             {gastoFinalComentarios ? (
               <div
-                className="line-clamp-2 break-words text-xs font-normal text-muted-foreground"
+                className="line-clamp-2 break-words text-[11px] font-normal leading-snug text-muted-foreground"
                 title={gastoFinalComentarios}
               >
                 ({gastoFinalComentarios})

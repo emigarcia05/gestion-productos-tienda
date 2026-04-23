@@ -18,6 +18,8 @@ export interface BalanceGastoMensualFila {
   tipoGastoNombre: string;
   rubroNombre: string;
   gastoNombre: string;
+  /** Comentarios del `fin_bal_gasto_final` (gasto + proveedor + sucursal), si hay. */
+  gastoFinalComentarios: string | null;
   proveedorNombre: string;
   monto: number;
   pagado: number;
@@ -325,6 +327,9 @@ export async function listarImputacionesMensualesBalance(params: {
       pagado: r.pagado,
     });
 
+    const comRaw = gf.comentarios?.trim() ?? "";
+    const gastoFinalComentarios = comRaw.length > 0 ? comRaw.toUpperCase() : null;
+
     return {
       id: r.id,
       gastoFinalId: r.gastoFinalId,
@@ -333,6 +338,7 @@ export async function listarImputacionesMensualesBalance(params: {
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),
+      gastoFinalComentarios,
       proveedorNombre: gf.proveedor.nombre.toUpperCase(),
       monto: montoActual,
       pagado: r.pagado,

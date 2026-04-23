@@ -41,8 +41,8 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** Pesos FECHA…DEVENGADO (sin ACCIONES); suman 86 — se escalan a % para la vista sin columna ACCIONES. */
-const COL_WIDTHS_DATA_PCT = [8, 8, 8, 8, 15, 15, 8, 8, 8] as const;
+/** Pesos FECHA…DEVENGADO (sin ACCIONES): FECHA, SUCURSAL, TIPO, PROVEEDOR, RUBRO, GASTO, MONTO, PAGADO, DEVENGADO. Suman 86. */
+const COL_WIDTHS_DATA_PCT = [8, 8, 8, 15, 8, 15, 8, 8, 8] as const;
 /** FECHA…DEVENGADO + ACCIONES; suma 100. */
 const COL_WIDTHS_PCT_CON_ACCIONES: readonly number[] = [...COL_WIDTHS_DATA_PCT, 14];
 /** Sin ACCIONES: mismos pesos relativos que {@link COL_WIDTHS_DATA_PCT}, escalados a suma 100%. */
@@ -117,14 +117,31 @@ export default function TablaGastos({
         <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
           {f.tipoGastoNombre}
         </TableCell>
+        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.proveedorNombre}>
+          <span className="truncate block">{f.proveedorNombre}</span>
+        </TableCell>
         <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
           {f.rubroNombre}
         </TableCell>
-        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.gastoNombre}>
-          <span className="celda-destacado truncate block">{f.gastoNombre}</span>
-        </TableCell>
-        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.proveedorNombre}>
-          <span className="truncate block">{f.proveedorNombre}</span>
+        <TableCell
+          className={cn("celda-datos", CELL_MIN)}
+          title={
+            f.gastoFinalComentarios
+              ? `${f.gastoNombre} (${f.gastoFinalComentarios})`
+              : f.gastoNombre
+          }
+        >
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="celda-destacado block truncate">{f.gastoNombre}</span>
+            {f.gastoFinalComentarios ? (
+              <span
+                className="line-clamp-2 break-words text-[11px] font-normal leading-snug text-muted-foreground"
+                title={f.gastoFinalComentarios}
+              >
+                ({f.gastoFinalComentarios})
+              </span>
+            ) : null}
+          </div>
         </TableCell>
         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>{celdaMonto(f.monto)}</TableCell>
         <TableCell className={cn(TD_NUM, CELL_MIN)}>{celdaMonto(f.pagado)}</TableCell>
@@ -197,9 +214,9 @@ export default function TablaGastos({
                   <TableHead className={CELL_MIN}>FECHA</TableHead>
                   <TableHead className={CELL_MIN}>SUCURSAL</TableHead>
                   <TableHead className={CELL_MIN}>TIPO GASTO</TableHead>
+                  <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
                   <TableHead className={CELL_MIN}>RUBRO</TableHead>
                   <TableHead className={CELL_MIN}>GASTO</TableHead>
-                  <TableHead className={CELL_MIN}>PROVEEDOR</TableHead>
                   <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                   <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
                   <TableHead
