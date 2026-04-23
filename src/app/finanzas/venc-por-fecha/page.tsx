@@ -170,6 +170,8 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
       <FinanzasVencPorFechaPageClient
+        saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
+        cajaDisponibleInicial={cajaDisponibleInicial}
         detallesPorDia={detallesPorDia}
         proveedoresConVencimientos={proveedoresConVencimientos}
         filas={filas}
