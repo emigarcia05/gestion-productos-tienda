@@ -41,8 +41,8 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** Pesos FECHA…DEVENGADO (sin ACCIONES): FECHA, SUCURSAL, TIPO, PROVEEDOR, RUBRO, GASTO, MONTO, PAGADO, DEVENGADO. Suman 86. */
-const COL_WIDTHS_DATA_PCT = [8, 8, 8, 15, 8, 15, 8, 8, 8] as const;
+/** Pesos FECHA…DEVENGADO (sin ACCIONES): FECHA, SUCURSAL, TIPO, PROVEEDOR, RUBRO, GASTO, MONTO, PAGADO, DEVENGADO. Suman 86 (con editor + ACCIONES 14 → 100%). */
+const COL_WIDTHS_DATA_PCT = [8, 8, 8, 15, 12, 14, 7, 7, 7] as const;
 /** FECHA…DEVENGADO + ACCIONES; suma 100. */
 const COL_WIDTHS_PCT_CON_ACCIONES: readonly number[] = [...COL_WIDTHS_DATA_PCT, 14];
 /** Sin ACCIONES: mismos pesos relativos que {@link COL_WIDTHS_DATA_PCT}, escalados a suma 100%. */

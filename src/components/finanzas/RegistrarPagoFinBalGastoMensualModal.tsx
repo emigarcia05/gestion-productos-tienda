@@ -47,6 +47,13 @@ export default function RegistrarPagoFinBalGastoMensualModal({
     return false;
   }, [saving, fila, pagadoPesosInt]);
 
+  const disabledPagarTotal = useMemo(() => {
+    if (saving || !fila) return true;
+    if (fila.monto <= 0) return true;
+    if (fila.pagado >= fila.monto) return true;
+    return false;
+  }, [saving, fila]);
+
   async function handleGuardar() {
     if (!fila || disabledSubmit) return;
     setSaving(true);
@@ -57,6 +64,26 @@ export default function RegistrarPagoFinBalGastoMensualModal({
         return;
       }
       toast.success("Pago registrado.");
+      onOpenChange(false);
+      onSuccess?.();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePagarTotal() {
+    if (!fila || disabledPagarTotal) return;
+    setSaving(true);
+    try {
+      const r = await registrarPagoFinBalGastoMensualAction({
+        id: fila.id,
+        pagado: fila.monto,
+      });
+      if (!r.ok) {
+        toast.error(r.error ?? "No se pudo registrar el pago total.");
+        return;
+      }
+      toast.success("Pago total registrado.");
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -111,6 +138,15 @@ export default function RegistrarPagoFinBalGastoMensualModal({
                 aria-label="Importe pagado en pesos"
               />
             </label>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              disabled={disabledPagarTotal}
+              onClick={() => void handlePagarTotal()}
+            >
+              PAGAR TOTAL
+            </Button>
           </div>
         ) : null}
       </AppModal>
