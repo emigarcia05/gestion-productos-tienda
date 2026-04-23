@@ -400,24 +400,16 @@ export default function FinBalGastosCatalogoPageClient({
             ) : gastoSeleccionado.asignacionesFinales.length === 0 ? (
               <EmptyState mensaje="Este gasto aún no tiene gastos finales." />
             ) : (
-              gastoSeleccionado.asignacionesFinales.map((a) => {
-                const comTrim = a.comentarios?.trim() ?? "";
-                const terceraLinea = comTrim.length > 0 ? comTrim : undefined;
-                return (
+              gastoSeleccionado.asignacionesFinales.map((a) => (
                 <FilaCatalogo
                   key={a.id}
                   nombre={a.proveedor.nombre}
-                  meta={
-                    [
-                      a.sucursal.nombre,
-                      a.proveedor.prefijo,
-                      `Día ${a.diaDevengado}`,
-                      a.gastoMensual ? "Mensual" : null,
-                    ]
-                      .filter((v): v is string => Boolean(v))
-                      .join(" · ")
-                  }
-                  terceraLinea={terceraLinea}
+                  gastoFinalDetalle={{
+                    sucursalNombre: a.sucursal.nombre,
+                    gastoMensual: a.gastoMensual,
+                    diaDevengado: a.diaDevengado,
+                    comentarios: a.comentarios,
+                  }}
                   selected={false}
                   mostrarAcciones={esEditor}
                   onEditar={() =>
@@ -441,8 +433,7 @@ export default function FinBalGastosCatalogoPageClient({
                     })
                   }
                 />
-              );
-              })
+              ))
             )}
           </CatalogoColumna>
 
@@ -606,10 +597,19 @@ function CatalogoColumna({
   );
 }
 
+/** Layout de fila en columna GASTO FINAL (catálogo balance). */
+interface FilaCatalogoGastoFinalDetalle {
+  sucursalNombre: string;
+  gastoMensual: boolean;
+  diaDevengado: number;
+  comentarios: string | null;
+}
+
 function FilaCatalogo({
   nombre,
   meta,
   terceraLinea,
+  gastoFinalDetalle,
   selected,
   onClick,
   mostrarAcciones,
@@ -618,8 +618,10 @@ function FilaCatalogo({
 }: {
   nombre: string;
   meta?: string;
-  /** Tercera fila bajo `meta` (p. ej. comentarios de gasto final). */
+  /** Tercera fila bajo `meta` (tipos/rubros/gastos; no usar con `gastoFinalDetalle`). */
   terceraLinea?: string;
+  /** Si está definido, sustituye `meta`/`terceraLinea` con el layout de gasto final. */
+  gastoFinalDetalle?: FilaCatalogoGastoFinalDetalle;
   selected: boolean;
   onClick?: () => void;
   mostrarAcciones: boolean;
@@ -627,6 +629,7 @@ function FilaCatalogo({
   onEliminar: () => void;
 }) {
   const isClickable = typeof onClick === "function";
+  const gastoFinalComentarios = gastoFinalDetalle?.comentarios?.trim() ?? "";
   return (
     <div
       className={cn(
@@ -646,15 +649,38 @@ function FilaCatalogo({
       }}
     >
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-        <div className="truncate font-medium">{nombre}</div>
-        {meta && <div className="truncate text-[11px] text-muted-foreground">{meta}</div>}
-        {terceraLinea && (
-          <div
-            className="line-clamp-2 break-words text-[11px] text-muted-foreground"
-            title={terceraLinea}
-          >
-            {terceraLinea}
-          </div>
+        {gastoFinalDetalle ? (
+          <>
+            <div className="truncate text-sm font-medium text-foreground">{nombre}</div>
+            <div className="truncate text-xs text-foreground">
+              {gastoFinalDetalle.sucursalNombre}
+            </div>
+            <div className="truncate text-xs font-normal text-muted-foreground">
+              {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "GASTO ÚNICO"} · DÍA{" "}
+              {gastoFinalDetalle.diaDevengado}
+            </div>
+            {gastoFinalComentarios ? (
+              <div
+                className="line-clamp-2 break-words text-xs font-normal text-muted-foreground"
+                title={gastoFinalComentarios}
+              >
+                ({gastoFinalComentarios})
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div className="truncate font-medium">{nombre}</div>
+            {meta && <div className="truncate text-[11px] text-muted-foreground">{meta}</div>}
+            {terceraLinea && (
+              <div
+                className="line-clamp-2 break-words text-[11px] text-muted-foreground"
+                title={terceraLinea}
+              >
+                {terceraLinea}
+              </div>
+            )}
+          </>
         )}
       </div>
 

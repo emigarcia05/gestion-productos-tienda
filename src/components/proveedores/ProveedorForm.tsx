@@ -131,12 +131,7 @@ export default function ProveedorForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="prefijo">
-          PREFIJO{" "}
-          <span className="text-muted-foreground font-normal text-xs uppercase">
-            (OPCIONAL; PREFIJO DEL CÓDIGO EXTERNO)
-          </span>
-        </Label>
+        <Label htmlFor="prefijo">PREFIJO</Label>
         <Input
           id="prefijo"
           name="prefijo"
@@ -149,11 +144,6 @@ export default function ProveedorForm({
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, "");
           }}
         />
-        <p className="text-xs text-muted-foreground">
-          Si lo completás, exactamente 3 letras (A-Z). Ej. código externo{" "}
-          <code className="bg-muted px-1 rounded">PIN-CODPROD</code>. Si lo dejás vacío, el sistema asigna un
-          código interno para importaciones y vínculos.
-        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -178,10 +168,6 @@ export default function ProveedorForm({
           </SelectContent>
         </Select>
         <input type="hidden" name="proveedorMercaderia" value={proveedorMercaderia} />
-        <p className="text-xs text-muted-foreground">
-          Si es <strong>SI</strong>, aparece en la lista de{" "}
-          <code className="bg-muted px-1 rounded">/gestion-productos/proveedores/lista</code>.
-        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -193,9 +179,6 @@ export default function ProveedorForm({
           defaultValue={proveedor?.idProveedorDux ?? ""}
           disabled={pending}
         />
-        <p className="text-xs text-muted-foreground">
-          Identificador del proveedor en el sistema DUX (se usa para actualizar costos vía API).
-        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -208,9 +191,6 @@ export default function ProveedorForm({
           disabled={pending}
           inputMode="numeric"
         />
-        <p className="text-xs text-muted-foreground">
-          Número para envío de pedido por WhatsApp (internacional, 10 a 15 dígitos, sin +).
-        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -222,10 +202,6 @@ export default function ProveedorForm({
           defaultValue={proveedor?.plazosPagos ?? ""}
           disabled={pending}
         />
-        <p className="text-xs text-muted-foreground">
-          Días hasta cada vencimiento desde la fecha del comprobante (30, 60, 90, 120 o 150). Varios valores
-          separados por coma, orden creciente; el total se divide en tantas cuotas.
-        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -238,9 +214,6 @@ export default function ProveedorForm({
           disabled={pending}
           inputMode="decimal"
         />
-        <p className="text-xs text-muted-foreground">
-          Se usa para el cálculo: monto ingresado x coeficiente del proveedor.
-        </p>
       </div>
 
       {!hideSubmitButton && (

@@ -337,15 +337,14 @@ export default function CrearEditarFinBalGastoFinalModal({
                 setComentarios(e.target.value.toLocaleUpperCase("es-AR"))
               }
               disabled={saving}
-              rows={4}
+              rows={1}
               maxLength={10000}
               placeholder="TEXTO LIBRE (OPCIONAL)"
               spellCheck={false}
               autoComplete="off"
               className={cn(
-                "border-input w-full min-w-0 resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow]",
-                "placeholder:text-muted-foreground",
-                "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                SELECT_TRIGGER_FILTER_CLASS,
+                "resize-none overflow-y-auto leading-snug",
                 "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
               )}
             />
