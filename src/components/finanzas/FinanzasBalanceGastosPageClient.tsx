@@ -27,8 +27,15 @@ import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBa
 import GastoUnicoBalanceModal from "@/components/finanzas/GastoUnicoBalanceModal";
 import RegistrarPagoFinBalGastoMensualModal from "@/components/finanzas/RegistrarPagoFinBalGastoMensualModal";
 import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
-import type { PeriodosImputacionesDisponibles } from "@/services/finBalGastoMensualBalance.service";
 import { cn } from "@/lib/utils";
+
+/** Filtros de periodo (Balance · Gastos): acotados a los mismos límites que `mesAnioQuerySchema`. */
+const ANIO_FILTRO_MIN = 2026;
+const ANIO_FILTRO_MAX = 2046;
+const ANIOS_FILTRO_BALANCE_GASTOS = Array.from(
+  { length: ANIO_FILTRO_MAX - ANIO_FILTRO_MIN + 1 },
+  (_, i) => ANIO_FILTRO_MIN + i
+);
 
 const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
   { valor: 1, etiqueta: "ENERO" },
@@ -50,8 +57,6 @@ interface Props {
   esEditor: boolean;
   mes: number;
   anio: number;
-  /** Años y meses presentes en `fin_bal_gasto_mensual` (el servidor ya alineó URL vs DB). */
-  periodosOpciones: PeriodosImputacionesDisponibles;
 }
 
 export default function FinanzasBalanceGastosPageClient({
@@ -59,7 +64,6 @@ export default function FinanzasBalanceGastosPageClient({
   esEditor,
   mes,
   anio,
-  periodosOpciones,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -112,12 +116,7 @@ export default function FinanzasBalanceGastosPageClient({
     return out;
   }, [filas, filtRubro, filtGasto, filtSucursal, filtProveedor, filtPagado]);
 
-  const mesesEtiquetadosEnDb = useMemo(() => {
-    const meses = periodosOpciones.mesesPorAnio[String(anio)] ?? [];
-    return MESES_CALENDARIO.filter((m) => meses.includes(m.valor));
-  }, [periodosOpciones, anio]);
-
-  /** Periodo: siempre `mes` + `anio` (URL / servidor); opciones acotadas a la BD. */
+  /** Periodo: siempre `mes` + `anio` (URL / servidor). */
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
     const q = new URLSearchParams();
     q.set("mes", String(nuevoMes));
@@ -128,10 +127,7 @@ export default function FinanzasBalanceGastosPageClient({
 
   function onCambioAnio(nuevoAnioStr: string) {
     const nuevoAnio = parseInt(nuevoAnioStr, 10);
-    const meses = periodosOpciones.mesesPorAnio[String(nuevoAnio)] ?? [];
-    const nuevoMes =
-      meses.includes(mes) ? mes : meses.length > 0 ? meses[meses.length - 1] : mes;
-    navegarPeriodo(nuevoMes, nuevoAnio);
+    navegarPeriodo(mes, nuevoAnio);
   }
 
   function limpiarFiltros() {
@@ -334,7 +330,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      {periodosOpciones.anios.map((a) => (
+                      {ANIOS_FILTRO_BALANCE_GASTOS.map((a) => (
                         <SelectItem key={a} value={String(a)}>
                           {a}
                         </SelectItem>
@@ -357,7 +353,7 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      {mesesEtiquetadosEnDb.map((m) => (
+                      {MESES_CALENDARIO.map((m) => (
                         <SelectItem key={m.valor} value={String(m.valor)}>
                           {m.etiqueta}
                         </SelectItem>

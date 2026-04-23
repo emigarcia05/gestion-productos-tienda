@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
 
+/** Periodo calendario para Balance · Gastos y acciones relacionadas (`fin_bal_gasto_mensual`). */
 export const mesAnioQuerySchema = z.object({
   mes: z.coerce.number().int().min(1).max(12),
-  anio: z.coerce.number().int().min(2000).max(2100),
+  anio: z.coerce.number().int().min(2026).max(2046),
 });
 export type MesAnioQuery = z.infer<typeof mesAnioQuerySchema>;
 
@@ -30,7 +31,7 @@ export type EliminarFinBalGastoMensualInput = z.infer<typeof eliminarFinBalGasto
 export const obtenerMontoMesAnteriorSchema = z.object({
   gastoFinalId: prismaCuidSchema,
   mes: z.coerce.number().int().min(1).max(12),
-  anio: z.coerce.number().int().min(2000).max(2100),
+  anio: z.coerce.number().int().min(2026).max(2046),
 });
 export type ObtenerMontoMesAnteriorInput = z.infer<typeof obtenerMontoMesAnteriorSchema>;
 
@@ -43,7 +44,7 @@ export const crearImputacionGastoUnicoBalanceSchema = z
   .object({
     gastoFinalId: prismaCuidSchema,
     mes: z.coerce.number().int().min(1).max(12),
-    anio: z.coerce.number().int().min(2000).max(2100),
+    anio: z.coerce.number().int().min(2026).max(2046),
     monto: z.coerce.number().int().min(1, "El monto es obligatorio."),
     pagado: z.coerce.number().int().min(0).optional().default(0),
   })
