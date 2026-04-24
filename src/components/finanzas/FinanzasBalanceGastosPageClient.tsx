@@ -29,6 +29,62 @@ import RegistrarPagoFinBalGastoMensualModal from "@/components/finanzas/Registra
 import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
 import { cn } from "@/lib/utils";
 
+type DimensionOpcionesFiltro = "sucursal" | "proveedor" | "rubro" | "gasto";
+
+/** Valores del filtro ESTADO (MONTO / PAGADO). */
+type FiltroEstadoBalanceGastos = "" | "con_monto" | "sin_monto" | "pagado" | "sin_pago";
+
+function aplicarFiltroEstadoFilas(
+  rows: BalanceGastoMensualFila[],
+  filtroEstado: FiltroEstadoBalanceGastos
+): BalanceGastoMensualFila[] {
+  if (!filtroEstado) return rows;
+  switch (filtroEstado) {
+    case "con_monto":
+      return rows.filter((r) => r.monto > 0);
+    case "sin_monto":
+      return rows.filter((r) => r.monto === 0);
+    case "pagado":
+      return rows.filter((r) => r.pagado > 0);
+    case "sin_pago":
+      return rows.filter((r) => r.pagado === 0);
+    default:
+      return rows;
+  }
+}
+
+/**
+ * Filas coherentes con los filtros activos **excepto** la dimensión del desplegable
+ * que se está poblando (así, si elegís RUBRO, PROVEEDOR solo lista proveedores que
+ * tienen al menos una fila con ese rubro en el periodo filtrado).
+ */
+function filasParaOpcionesDesplegable(
+  filas: BalanceGastoMensualFila[],
+  omitir: DimensionOpcionesFiltro,
+  estado: {
+    filtSucursal: string;
+    filtProveedor: string;
+    filtRubro: string;
+    filtGasto: string;
+    filtEstado: FiltroEstadoBalanceGastos;
+  }
+): BalanceGastoMensualFila[] {
+  let out = filas;
+  if (omitir !== "sucursal" && estado.filtSucursal) {
+    out = out.filter((r) => r.sucursalNombre === estado.filtSucursal);
+  }
+  if (omitir !== "proveedor" && estado.filtProveedor) {
+    out = out.filter((r) => r.proveedorNombre === estado.filtProveedor);
+  }
+  if (omitir !== "rubro" && estado.filtRubro) {
+    out = out.filter((r) => r.rubroNombre === estado.filtRubro);
+  }
+  if (omitir !== "gasto" && estado.filtGasto) {
+    out = out.filter((r) => r.gastoNombre === estado.filtGasto);
+  }
+  return aplicarFiltroEstadoFilas(out, estado.filtEstado);
+}
+
 /** Filtros de periodo (Balance · Gastos): acotados a los mismos límites que `mesAnioQuerySchema`. */
 const ANIO_FILTRO_MIN = 2026;
 const ANIO_FILTRO_MAX = 2046;
@@ -73,38 +129,60 @@ export default function FinanzasBalanceGastosPageClient({
   const [filtGasto, setFiltGasto] = useState("");
   const [filtSucursal, setFiltSucursal] = useState("");
   const [filtProveedor, setFiltProveedor] = useState("");
-  /** "" = todos; "no" = solo filas con devengado pendiente &gt; 0 (equivalente a “no saldado” en devengado). */
-  const [filtPagado, setFiltPagado] = useState("");
+  /** Filtro ESTADO: MONTO / PAGADO; vacío = sin filtrar por estado. */
+  const [filtEstado, setFiltEstado] = useState<FiltroEstadoBalanceGastos>("");
 
   const [filaEditar, setFilaEditar] = useState<BalanceGastoMensualFila | null>(null);
   const [filaPagar, setFilaPagar] = useState<BalanceGastoMensualFila | null>(null);
   const [eliminar, setEliminar] = useState<{ id: string; etiqueta: string } | null>(null);
   const [gastoUnicoOpen, setGastoUnicoOpen] = useState(false);
 
-  const rubrosOpciones = useMemo(
-    () => [...new Set(filas.map((f) => f.rubroNombre))].sort((a, b) => a.localeCompare(b, "es")),
-    [filas]
+  const estadoFiltros = useMemo(
+    () => ({
+      filtSucursal,
+      filtProveedor,
+      filtRubro,
+      filtGasto,
+      filtEstado,
+    }),
+    [filtSucursal, filtProveedor, filtRubro, filtGasto, filtEstado]
   );
+
+  const sucursalesOpciones = useMemo(() => {
+    const base = filasParaOpcionesDesplegable(filas, "sucursal", estadoFiltros);
+    return [...new Set(base.map((f) => f.sucursalNombre))].sort((a, b) => a.localeCompare(b, "es"));
+  }, [filas, estadoFiltros]);
+
+  const proveedoresOpciones = useMemo(() => {
+    const base = filasParaOpcionesDesplegable(filas, "proveedor", estadoFiltros);
+    return [...new Set(base.map((f) => f.proveedorNombre))].sort((a, b) => a.localeCompare(b, "es"));
+  }, [filas, estadoFiltros]);
+
+  const rubrosOpciones = useMemo(() => {
+    const base = filasParaOpcionesDesplegable(filas, "rubro", estadoFiltros);
+    return [...new Set(base.map((f) => f.rubroNombre))].sort((a, b) => a.localeCompare(b, "es"));
+  }, [filas, estadoFiltros]);
 
   const gastosOpciones = useMemo(() => {
-    const base = filtRubro ? filas.filter((f) => f.rubroNombre === filtRubro) : filas;
+    const base = filasParaOpcionesDesplegable(filas, "gasto", estadoFiltros);
     return [...new Set(base.map((f) => f.gastoNombre))].sort((a, b) => a.localeCompare(b, "es"));
-  }, [filas, filtRubro]);
-
-  const sucursalesOpciones = useMemo(
-    () => [...new Set(filas.map((f) => f.sucursalNombre))].sort((a, b) => a.localeCompare(b, "es")),
-    [filas]
-  );
-
-  const proveedoresOpciones = useMemo(
-    () => [...new Set(filas.map((f) => f.proveedorNombre))].sort((a, b) => a.localeCompare(b, "es")),
-    [filas]
-  );
+  }, [filas, estadoFiltros]);
 
   useEffect(() => {
-    if (!filtGasto) return;
-    if (!gastosOpciones.includes(filtGasto)) setFiltGasto("");
-  }, [filtRubro, gastosOpciones, filtGasto]);
+    if (filtSucursal && !sucursalesOpciones.includes(filtSucursal)) setFiltSucursal("");
+  }, [filtSucursal, sucursalesOpciones]);
+
+  useEffect(() => {
+    if (filtProveedor && !proveedoresOpciones.includes(filtProveedor)) setFiltProveedor("");
+  }, [filtProveedor, proveedoresOpciones]);
+
+  useEffect(() => {
+    if (filtRubro && !rubrosOpciones.includes(filtRubro)) setFiltRubro("");
+  }, [filtRubro, rubrosOpciones]);
+
+  useEffect(() => {
+    if (filtGasto && !gastosOpciones.includes(filtGasto)) setFiltGasto("");
+  }, [filtGasto, gastosOpciones]);
 
   const filasFiltradas = useMemo(() => {
     let out = filas;
@@ -112,9 +190,9 @@ export default function FinanzasBalanceGastosPageClient({
     if (filtGasto) out = out.filter((f) => f.gastoNombre === filtGasto);
     if (filtSucursal) out = out.filter((f) => f.sucursalNombre === filtSucursal);
     if (filtProveedor) out = out.filter((f) => f.proveedorNombre === filtProveedor);
-    if (filtPagado === "no") out = out.filter((f) => f.montoDevengadoPendiente > 0);
+    out = aplicarFiltroEstadoFilas(out, filtEstado);
     return out;
-  }, [filas, filtRubro, filtGasto, filtSucursal, filtProveedor, filtPagado]);
+  }, [filas, filtRubro, filtGasto, filtSucursal, filtProveedor, filtEstado]);
 
   /** Periodo: siempre `mes` + `anio` (URL / servidor). */
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
@@ -135,7 +213,7 @@ export default function FinanzasBalanceGastosPageClient({
     setFiltGasto("");
     setFiltSucursal("");
     setFiltProveedor("");
-    setFiltPagado("");
+    setFiltEstado("");
   }
 
   async function handleCargarMes() {
@@ -299,9 +377,14 @@ export default function FinanzasBalanceGastosPageClient({
                 </div>
 
                 <div className={FILTER_SELECT_WRAPPER_CLASS}>
-                  <Select value={filtPagado || "none"} onValueChange={(v) => setFiltPagado(v === "none" ? "" : v)}>
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="PAGADO" />
+                  <Select
+                    value={filtEstado || "none"}
+                    onValueChange={(v) =>
+                      setFiltEstado(v === "none" ? "" : (v as FiltroEstadoBalanceGastos))
+                    }
+                  >
+                    <SelectTrigger className="input-filtro-unificado" aria-label="Estado (monto / pagado)">
+                      <SelectValue placeholder="ESTADO" />
                     </SelectTrigger>
                     <SelectContent
                       position="popper"
@@ -309,8 +392,11 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">PAGADO</SelectItem>
-                      <SelectItem value="no">PENDIENTE</SelectItem>
+                      <SelectItem value="none">ESTADO</SelectItem>
+                      <SelectItem value="con_monto">CON MONTO</SelectItem>
+                      <SelectItem value="sin_monto">SIN MONTO</SelectItem>
+                      <SelectItem value="pagado">PAGADO</SelectItem>
+                      <SelectItem value="sin_pago">SIN PAGO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
