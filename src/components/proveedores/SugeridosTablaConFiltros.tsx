@@ -239,7 +239,7 @@ export default function SugeridosTablaConFiltros({
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-28">COD. EXT.</TableHead>
               <TableHead className="min-w-0">DESCRIPCIÓN</TableHead>
-              <TableHead className="w-28">PX. VTA. SUG.</TableHead>
+              <TableHead className="w-28">PX. LISTA GENERAL</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

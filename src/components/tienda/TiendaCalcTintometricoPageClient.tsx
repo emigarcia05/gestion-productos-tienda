@@ -46,7 +46,8 @@ export default function TiendaCalcTintometricoPageClient({
     [proveedores]
   );
 
-  const pxListaTienda = useMemo(() => {
+  /** Lista general (tienda): px. compra × coef. tintométrico del proveedor, redondeo a centenas. */
+  const pxListaGeneral = useMemo(() => {
     const base = Math.round(montoArNormalizedStringToPesosNumber(pxCompraNorm));
     if (!proveedorId) {
       return montoArPesosEnterosToDisplay(roundToNearestHundred(base));
@@ -55,6 +56,9 @@ export default function TiendaCalcTintometricoPageClient({
       proveedoresConCoefMayorAUno.find((p) => p.id === proveedorId)?.coeficienteTintometrico ?? 1;
     return montoArPesosEnterosToDisplay(roundToNearestHundred(base * coef));
   }, [pxCompraNorm, proveedorId, proveedoresConCoefMayorAUno]);
+
+  /** Lista mayorista: fórmula de negocio pendiente; marcador hasta definir cálculo. */
+  const pxListaMayorista = "—";
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
@@ -116,10 +120,17 @@ export default function TiendaCalcTintometricoPageClient({
               />
 
               <span className="text-xs font-semibold uppercase text-foreground">
-                Px Lista Tienda
+                Tienda - Px Lista General
               </span>
-              <div className="h-10 rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground flex items-center justify-center">
-                {pxListaTienda}
+              <div className="flex h-10 items-center justify-center rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground">
+                {pxListaGeneral}
+              </div>
+
+              <span className="text-xs font-semibold uppercase text-foreground">
+                Tienda - Px Lista Mayorista
+              </span>
+              <div className="flex h-10 items-center justify-center rounded-md border border-border bg-muted/30 px-3 text-sm tabular-nums text-muted-foreground">
+                {pxListaMayorista}
               </div>
             </div>
 
