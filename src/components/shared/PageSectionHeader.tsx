@@ -53,7 +53,17 @@ export default function PageSectionHeader({
           </div>
         </div>
         {actions != null && (
-          <div className="section-header-actions flex flex-wrap items-center justify-end gap-2 shrink-0">
+          <div
+            className={cn(
+              "section-header-actions flex flex-wrap items-center justify-end gap-2 shrink-0",
+              // Misma apariencia que `Button` primary (#0072BB vía token `primary`) para toda acción del header.
+              "[&_[data-slot=button]:not([data-variant=destructive])]:border-transparent",
+              "[&_[data-slot=button]:not([data-variant=destructive])]:bg-primary",
+              "[&_[data-slot=button]:not([data-variant=destructive])]:text-primary-foreground",
+              "[&_[data-slot=button]:not([data-variant=destructive])]:shadow-sm",
+              "[&_[data-slot=button]:not([data-variant=destructive])]:hover:brightness-90"
+            )}
+          >
             {actions}
           </div>
         )}

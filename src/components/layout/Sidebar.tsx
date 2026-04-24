@@ -28,6 +28,7 @@ import {
   Scale,
   Receipt,
   FolderTree,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -142,6 +143,12 @@ const FINANZAS_MODULES: {
     icon: <Scale className={iconClass} />,
     submodules: [
       {
+        href: "/finanzas/balance/mensual",
+        label: "Balance Mensual",
+        icon: <BookOpen className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
         href: "/finanzas/balance/gastos",
         label: "Gastos",
         icon: <Receipt className="h-4 w-4 shrink-0" />,
@@ -218,6 +225,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/finanzas/vencimientos-gastos") return pathname === "/finanzas/vencimientos-gastos";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   if (href === "/finanzas/control-comprobantes") return pathname === "/finanzas/control-comprobantes";
+  if (href === "/finanzas/balance/mensual")
+    return pathname === "/finanzas/balance/mensual" || pathname === "/finanzas/balance";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
   if (href === "/finanzas/balance/gastos/catalogo") return pathname === "/finanzas/balance/gastos/catalogo";
   return pathname === href;

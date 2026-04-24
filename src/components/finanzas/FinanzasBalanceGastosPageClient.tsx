@@ -273,7 +273,6 @@ export default function FinanzasBalanceGastosPageClient({
               </Button>
               <Button
                 type="button"
-                variant="secondary"
                 onClick={() => setGastoUnicoOpen(true)}
                 disabled={loading}
                 className="h-10 px-4 gap-2"

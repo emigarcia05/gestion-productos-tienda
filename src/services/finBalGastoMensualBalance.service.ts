@@ -15,6 +15,9 @@ export interface BalanceGastoMensualFila {
   /** Fecha de devengo (mes/año de la fila + día devengado del catálogo). */
   fechaDevengoIso: string;
   sucursalNombre: string;
+  /** Flags de `global_sucursales` al momento de la imputación (lectura en vivo). */
+  sucursalGeneraBalance: boolean;
+  sucursalCentroCosto: boolean;
   tipoGastoNombre: string;
   rubroNombre: string;
   gastoNombre: string;
@@ -252,7 +255,7 @@ export async function listarImputacionesMensualesBalance(params: {
     include: {
       gastoFinal: {
         include: {
-          sucursal: { select: { nombre: true } },
+          sucursal: { select: { nombre: true, generaBalance: true, centroCosto: true } },
           proveedor: { select: { nombre: true } },
           gasto: {
             select: {
@@ -298,6 +301,8 @@ export async function listarImputacionesMensualesBalance(params: {
       gastoFinalId: r.gastoFinalId,
       fechaDevengoIso,
       sucursalNombre: gf.sucursal.nombre.toUpperCase(),
+      sucursalGeneraBalance: gf.sucursal.generaBalance,
+      sucursalCentroCosto: gf.sucursal.centroCosto,
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),

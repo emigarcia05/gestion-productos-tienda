@@ -96,6 +96,11 @@ model Sucursal {
    * El flag se marca directamente en DB / seed (no hay UI de alta de sucursal).
    */
   centroCosto    Boolean  @default(false) @map("centro_costo")
+  /**
+   * Si la sucursal participa en balance / selects de imputación de gastos finales.
+   * Independiente de `centro_costo`: una sucursal puede ser centro de costo sin generar balance.
+   */
+  generaBalance  Boolean  @default(false) @map("genera_balance")
   idDux          String?  @map("id_dux")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
