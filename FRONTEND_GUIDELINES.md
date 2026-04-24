@@ -14,6 +14,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 2. **Estilos**  
    - **Nunca** uses `bg-white`, `text-slate-*`, `bg-slate-*`, `border-slate-*`. Usa **siempre** tokens: `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-muted`, `border-border`, `bg-primary`, etc.  
    - **No** uses utilidades de paleta genérica (`emerald-*`, `amber-*`, `blue-*`, etc.) para éxito, advertencia o resaltados: usá **`@/lib/ui-classes`** (`BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `IMPORT_STAT_BADGE_CLASSES`) o tokens **`primary`**, **`accent`**, **`accent2`** (amarillo de marca) en combinación con `cn()`.  
+   - **Excepción acordada**: la pantalla **Balance mensual** (`FinanzasBalanceMensualPageClient`) usa **hex fijos de informe** en el encabezado de la grilla (`#0072BB` + texto blanco) y en las filas de **resultado operativo / resultado ejercicio** (fondo `#a9d6f1`, texto `#063652`). No extrapolar este patrón a otras pantallas sin actualizar esta guía. Detalle en la subsección **Balance mensual** bajo `ClassicFilteredTableLayout`.  
    - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
    - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
 
@@ -556,6 +557,18 @@ Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza e
   - **`filtersAriaLabel`**: `string` (default `"Filtros"`), para accesibilidad del bloque `role="search"`.
   - **`className`** / **`contentClassName`**: overrides puntuales.
 
+### Balance mensual (`src/components/finanzas/FinanzasBalanceMensualPageClient.tsx`)
+
+Página **Finanzas → Balance → Balance mensual** (`/finanzas/balance/mensual`). Objetivo: **una sola tabla en CSS Grid** con columna **Concepto** + una columna por **Global** y cada sucursal con `genera_balance`, para alinear importes en la misma línea visual.
+
+- **Layout**: `grid-template-columns: minmax(10.5rem, 1.05fr) repeat(N, minmax(6.75rem, 1fr))`; contenedor con `overflow-x-auto` y ancho mínimo para scroll en pantallas chicas.
+- **Cabecera de columnas** (Concepto / Global / sucursales): fondo **`#0072BB`**, texto **blanco**, divisores `border-white/20`. *Es la excepción documentada en la guía para IA (punto 2 de estilos).*
+- **Filas de datos**: orden lógico — **Ventas**, **Costo variable**, **Resultado operativo**, **Costo fijo**, **Resultado ejercicio**, **Margen Contribución** (%), **Punto de Equilibrio** ($ o `—`), **Margen Contribución Histórico**, **Punto de Equilibrio Histórico** (últimos dos con `—` hasta backend). Etiquetas de costos en el mismo color que Ventas (`text-foreground`).
+- **Filas resultado** (operativo y ejercicio): fondo **`#a9d6f1`**, texto **`#063652`**, **negrita** en concepto e importes; en la columna Concepto **`pl-10`** para indentar. Constantes `BG_FILA_RESULTADO` / `FG_FILA_RESULTADO` en el componente.
+- **Fila Ventas — edición**: si `puedeEditarVentas` y la columna tiene `sucursalId`, cada celda usa grid **`[1fr_2.25rem]`**: monto a la izquierda, **botón lápiz** (`ghost`, `size="icon"`) a la **derecha** del importe; en **Global** se reserva un hueco `h-8 w-8` para alinear montos con las columnas que llevan botón.
+- **Modal**: `EditarVentasBalanceMensualModal.tsx` — `MontoArInput`, `crearFinBalVtasAction`, `router.refresh()` al guardar.
+- **Filtros**: mes y año en `FilterBar` + `ClassicFilteredTableLayout` (`contentWidth="full"`). Aviso ámbar si no hay sucursales con `genera_balance`.
+
 ### `SectionHeader` (`src/components/SectionHeader.tsx`)
 
 API histórica (`titulo`, `subtitulo`, `actions`). Delega en `PageSectionHeader` con `tone` default (sin refuerzo `bg-card` explícito en Tailwind).
@@ -788,6 +801,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-04-23): **Gasto único** — en alta (`GASTO MENSUAL` = NO), **DÍA DEVENGADO** se fija al calendario de hoy en Argentina (máx. 28) y el select queda deshabilitado; el servidor ignora el día enviado en create si `gastoMensual === false`. Helper `diaDevengadoFinBalDesdeCalendarioArgentina` en `@/lib/fechaArgentina`.*
 
 *Última actualización (2026-04-23): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); **Mes** = 12 meses; **Año** = 2026…2046; entrada sin query **`redirect`** a mes/año **hoy AR**; rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
+
+*Última actualización (2026-04-24): **Balance mensual** — tabla única alineada, cabecera `#0072BB`, filas resultado `#a9d6f1` / `#063652`, edición de ventas por sucursal; excepción de color en “Guía para IA” §2; detalle bajo **`ClassicFilteredTableLayout`**; backend **`BACKEND_GUIDELINES` §2.5f**.*
 
 *Última actualización (2026-04-21): **Proveedores** — `ProveedorForm`: prefijo **opcional** (sin `required` HTML); **PROVEEDOR MERCADERÍA** sigue siendo SI/NO obligatorio vía Zod. **Filtros Tienda** (`FiltrosTienda.tsx`): opciones de proveedor con `key={p.id}`; si no hay prefijo, solo se muestra el nombre (sin corchetes vacíos). **Calc. Tintométrico** (`TiendaCalcTintometricoPageClient.tsx`): valor del `Select` = `id` del proveedor (no prefijo); etiqueta `[prefijo]` o `[codigoUnico]` si falta prefijo. **Vincular / Seleccionar producto** (`VincularModal` + `SeleccionarProductoModal`): exclusión de duplicados por **`idsProveedoresYaVinculados`** (`proveedorId`), no por prefijo.*
 

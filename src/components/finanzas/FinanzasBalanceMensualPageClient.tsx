@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import FilterBar, {
@@ -28,6 +28,16 @@ import { Button } from "@/components/ui/button";
 import EditarVentasBalanceMensualModal, {
   type EditarVentasBalanceMensualContext,
 } from "@/components/finanzas/EditarVentasBalanceMensualModal";
+import BalanceMensualDetallePorRubroModal from "@/components/finanzas/BalanceMensualDetallePorRubroModal";
+import BalanceMensualDetalleGastosRubroModal from "@/components/finanzas/BalanceMensualDetalleGastosRubroModal";
+import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
+import {
+  agruparRubrosCostoMensual,
+  BALANCE_MENSUAL_RUBRO_REPARTO_CC,
+  listarGastosDetalleRubro,
+  type BalanceMensualColumnaDetalle,
+  type BalanceMensualRubroAgrupado,
+} from "@/lib/balanceMensualDetalle";
 
 const ANIO_FILTRO_MIN = 2026;
 const ANIO_FILTRO_MAX = 2046;
@@ -62,6 +72,11 @@ function fmtMontoPe(b: BalanceMensualBloque) {
   return `$${fmtPrecio(pe)}`;
 }
 
+function etiquetaPeriodoBalance(mes: number, anio: number): string {
+  const m = MESES_CALENDARIO.find((x) => x.valor === mes)?.etiqueta.toLowerCase() ?? String(mes);
+  return `${m} ${anio}`;
+}
+
 type ColumnaBalance = {
   key: string;
   titulo: string;
@@ -90,8 +105,7 @@ type FilaBalance =
       etiquetaConcepto: ReactNode;
       valor: (b: BalanceMensualBloque) => string;
       valorNegrita: boolean;
-    }
-  | { id: string; tipo: "espacio" };
+    };
 
 const FILAS_BALANCE: FilaBalance[] = [
   {
@@ -104,7 +118,7 @@ const FILAS_BALANCE: FilaBalance[] = [
   {
     id: "cv",
     tipo: "monto",
-    etiquetaConcepto: <span className="text-muted-foreground">Costo variable</span>,
+    etiquetaConcepto: "Costo variable",
     get: (b) => b.costosVariables,
     valorNegrita: false,
   },
@@ -119,7 +133,7 @@ const FILAS_BALANCE: FilaBalance[] = [
   {
     id: "cf",
     tipo: "monto",
-    etiquetaConcepto: <span className="text-muted-foreground">Costo fijos</span>,
+    etiquetaConcepto: "Costo fijo",
     get: (b) => b.costosFijos,
     valorNegrita: false,
   },
@@ -131,8 +145,6 @@ const FILAS_BALANCE: FilaBalance[] = [
     valorNegrita: false,
     filaResultado: true,
   },
-  { id: "gap1", tipo: "espacio" },
-  { id: "gap2", tipo: "espacio" },
   {
     id: "mc",
     tipo: "texto",
@@ -147,7 +159,6 @@ const FILAS_BALANCE: FilaBalance[] = [
     valor: (b) => fmtMontoPe(b),
     valorNegrita: false,
   },
-  { id: "gap3", tipo: "espacio" },
   {
     id: "mc_hist",
     tipo: "texto",
@@ -170,12 +181,18 @@ function TablaBalanceMensualAlineada({
   anio,
   puedeEditarVentas,
   onEditarVentas,
+  onAbrirDetalleCostos,
 }: {
   columnas: ColumnaBalance[];
   mes: number;
   anio: number;
   puedeEditarVentas: boolean;
   onEditarVentas: (ctx: EditarVentasBalanceMensualContext) => void;
+  onAbrirDetalleCostos?: (payload: {
+    tipo: "variables" | "fijos";
+    columna: BalanceMensualColumnaDetalle;
+    etiquetaColumna: string;
+  }) => void;
 }) {
   const nDatos = columnas.length;
   const gridTemplateColumns = `minmax(10.5rem, 1.05fr) repeat(${nDatos}, minmax(6.75rem, 1fr))`;
@@ -205,25 +222,6 @@ function TablaBalanceMensualAlineada({
             ))}
           </div>
           {FILAS_BALANCE.map((fila) => {
-            if (fila.tipo === "espacio") {
-              return (
-                <div
-                  key={fila.id}
-                  className="grid border-b border-border/40 bg-card"
-                  style={{ gridTemplateColumns }}
-                >
-                  <div className="h-6 border-r border-border/60" aria-hidden />
-                  {columnas.map((c) => (
-                    <div
-                      key={`${fila.id}-${c.key}`}
-                      className="h-6 border-r border-border/60 last:border-r-0"
-                      aria-hidden
-                    />
-                  ))}
-                </div>
-              );
-            }
-
             const esFilaResultado = fila.tipo === "monto" && Boolean(fila.filaResultado);
             const negritaValor =
               fila.tipo === "monto"
@@ -304,6 +302,31 @@ function TablaBalanceMensualAlineada({
                             )}
                           </div>
                         </div>
+                      ) : fila.tipo === "monto" &&
+                        (fila.id === "cv" || fila.id === "cf") &&
+                        onAbrirDetalleCostos ? (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            className={cn(
+                              "min-w-0 text-right text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                              negritaValor ? "font-bold" : "font-normal"
+                            )}
+                            onClick={() =>
+                              onAbrirDetalleCostos({
+                                tipo: fila.id === "cv" ? "variables" : "fijos",
+                                columna:
+                                  c.key === "global"
+                                    ? { ambito: "global" }
+                                    : { ambito: "sucursal", nombre: c.titulo },
+                                etiquetaColumna: c.titulo,
+                              })
+                            }
+                            aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                          >
+                            {txt}
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex justify-end">
                           <span className={cn(negritaValor ? "font-bold" : "font-normal")}>
@@ -327,19 +350,58 @@ interface Props {
   mes: number;
   anio: number;
   resumen: BalanceMensualResumen;
+  filas: BalanceGastoMensualFila[];
+  sucursalesGeneranBalance: { id: string; nombre: string }[];
   puedeEditarVentas: boolean;
 }
+
+type DetalleRubrosModalCtx = {
+  columna: BalanceMensualColumnaDetalle;
+  tipo: "variables" | "fijos";
+  etiquetaColumna: string;
+};
+
+type DetalleGastosModalCtx = DetalleRubrosModalCtx & {
+  rubroClave: string;
+  tituloRubro: string;
+};
 
 export default function FinanzasBalanceMensualPageClient({
   mes,
   anio,
   resumen,
+  filas,
+  sucursalesGeneranBalance,
   puedeEditarVentas,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [ventasModalOpen, setVentasModalOpen] = useState(false);
   const [ventasModalCtx, setVentasModalCtx] = useState<EditarVentasBalanceMensualContext | null>(null);
+  const [detalleRubrosOpen, setDetalleRubrosOpen] = useState(false);
+  const [detalleRubrosCtx, setDetalleRubrosCtx] = useState<DetalleRubrosModalCtx | null>(null);
+  const [detalleGastosOpen, setDetalleGastosOpen] = useState(false);
+  const [detalleGastosCtx, setDetalleGastosCtx] = useState<DetalleGastosModalCtx | null>(null);
+
+  const rubrosDetalle = useMemo(() => {
+    if (!detalleRubrosCtx) return [];
+    return agruparRubrosCostoMensual(
+      filas,
+      sucursalesGeneranBalance,
+      detalleRubrosCtx.columna,
+      detalleRubrosCtx.tipo,
+    );
+  }, [detalleRubrosCtx, filas, sucursalesGeneranBalance]);
+
+  const filasGastosDetalle = useMemo(() => {
+    if (!detalleGastosCtx) return [];
+    return listarGastosDetalleRubro(
+      filas,
+      detalleGastosCtx.columna,
+      detalleGastosCtx.tipo,
+      detalleGastosCtx.rubroClave,
+    );
+  }, [detalleGastosCtx, filas]);
 
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
     const q = new URLSearchParams();
@@ -429,6 +491,10 @@ export default function FinanzasBalanceMensualPageClient({
               setVentasModalCtx(ctx);
               setVentasModalOpen(true);
             }}
+            onAbrirDetalleCostos={(payload) => {
+              setDetalleRubrosCtx(payload);
+              setDetalleRubrosOpen(true);
+            }}
           />
         </div>
       </ClassicFilteredTableLayout>
@@ -440,6 +506,56 @@ export default function FinanzasBalanceMensualPageClient({
         }}
         ctx={ventasModalCtx}
         onSuccess={() => router.refresh()}
+      />
+      <BalanceMensualDetallePorRubroModal
+        open={detalleRubrosOpen}
+        onOpenChange={(open) => {
+          setDetalleRubrosOpen(open);
+          if (!open) setDetalleRubrosCtx(null);
+        }}
+        titulo={
+          detalleRubrosCtx
+            ? detalleRubrosCtx.tipo === "variables"
+              ? "Costo variable por rubro"
+              : "Costo fijo por rubro"
+            : "Detalle por rubro"
+        }
+        subtitulo={
+          detalleRubrosCtx
+            ? `${detalleRubrosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+            : ""
+        }
+        rubros={rubrosDetalle}
+        onElegirRubro={(r: BalanceMensualRubroAgrupado) => {
+          if (!detalleRubrosCtx) return;
+          setDetalleGastosCtx({
+            ...detalleRubrosCtx,
+            rubroClave: r.clave,
+            tituloRubro: r.etiqueta,
+          });
+          setDetalleGastosOpen(true);
+        }}
+      />
+      <BalanceMensualDetalleGastosRubroModal
+        open={detalleGastosOpen}
+        onOpenChange={(open) => {
+          setDetalleGastosOpen(open);
+          if (!open) setDetalleGastosCtx(null);
+        }}
+        titulo={detalleGastosCtx?.tituloRubro ?? "Detalle de gastos"}
+        subtitulo={
+          detalleGastosCtx
+            ? `${
+                detalleGastosCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
+              } · ${detalleGastosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+            : ""
+        }
+        filas={filasGastosDetalle}
+        notaInformativa={
+          detalleGastosCtx?.rubroClave === BALANCE_MENSUAL_RUBRO_REPARTO_CC
+            ? "Los importes son el total del mes imputado a cada centro de costo (sin balance). En la tabla del balance, ese total se reparte en partes iguales entre las sucursales que generan balance."
+            : null
+        }
       />
     </div>
   );

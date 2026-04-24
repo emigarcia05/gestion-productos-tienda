@@ -28,7 +28,7 @@ export interface BalanceMensualResumen {
   sucursales: BalanceMensualSucursalBloque[];
 }
 
-function partCostosVariablesFijos(tipoGastoNombre: string, monto: number): {
+export function partCostosVariablesFijos(tipoGastoNombre: string, monto: number): {
   costosVariables: number;
   costosFijos: number;
 } {
@@ -76,7 +76,7 @@ function construirBloque(ventas: number, cv: number, cf: number): BalanceMensual
  * Reparte `total` en `cantidad` partes enteras lo más iguales posible (el resto se suma
  * a las primeras entradas del arreglo).
  */
-function repartoIgualEnteros(total: number, cantidad: number): number[] {
+export function repartoIgualEnteros(total: number, cantidad: number): number[] {
   if (cantidad <= 0) return [];
   if (total === 0) return Array(cantidad).fill(0);
   const base = Math.floor(total / cantidad);

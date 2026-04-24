@@ -372,6 +372,20 @@ Modelo de datos para registrar movimientos con monto y sucursal:
   - Validación con Zod en `src/lib/validations/movimientosFinanzas.ts` (`tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`, `crearMovimientoFinanzasSchema`; `nombre` `trim + toUpperCase`, `sucursalId` **`globalSucursalIdSchema`** (UUID, CUID o literal `suc_corporativo`), `monto` numérico finito con tope `< 1e12`).
 - **Página Balance · Gastos** (`/finanzas/balance/gastos`): ver en §2.5e la rama **`fin_bal_gasto_mensual`** + `finBalGastoMensualBalance.service.ts`. El modelo `movimientos_finanzas` y `crearMovimientoFinanzasAction` siguen disponibles para otros flujos; la grilla principal de esa página ya no los usa.
 
+### 2.5f Balance mensual (`/finanzas/balance/mensual`) y ventas de balance (`fin_bal_vtas`)
+
+- **Rutas**: `src/app/finanzas/balance/mensual/page.tsx` (redirect desde `/finanzas/balance`); cliente `src/components/finanzas/FinanzasBalanceMensualPageClient.tsx`. Permiso: `PERMISOS.finanzas.acceso`; edición de ventas además **`esEditor()`** (misma regla que **Balance · Ventas**).
+- **Datos en servidor (por mes/año calendario Argentina)**: en paralelo se cargan `listarImputacionesMensualesBalance({ mes, anio })` (`finBalGastoMensualBalance.service.ts`), `listarSucursalesGeneraBalanceParaVtas()` y `listarFinBalVtasPorMesAnio(mes, anio)` (`finBalVtas.service.ts`). El resumen se arma con **`resumenBalanceMensualDesdeFilas(filas, ventasPorNombre, sucursalesGeneranBalance)`** en `src/lib/balanceMensual.ts`.
+- **Reglas de negocio del resumen** (`balanceMensual.ts`):
+  - **Global**: suma todas las imputaciones del mes; **ventas** del global = suma de ventas cargadas en sucursales con `genera_balance` (no es un registro aparte en `fin_bal_vtas`).
+  - **Por sucursal**: entran **todas** las sucursales con `genera_balance = true` (aunque no tengan imputaciones ese mes), más cualquier nombre con `genera_balance` que solo aparezca en filas de gasto; costos de sucursales `centro_costo` y **sin** `genera_balance` se reparten en partes **iguales** entre las que sí generan balance.
+  - Clasificación **costos variables / fijos** por texto del tipo de gasto (`VARIABLE` / `FIJO`; si no coincide, se trata como fijo).
+  - **Exportado para UI o informes**: `fmtMargenContribucionPct(p)` (porcentaje sobre ventas o `—`); `puntoEquilibrioVentasPesos(b)` — ventas en pesos necesarias para cubrir costos fijos con el ratio actual `(resultadoOperativo / ventas)`; devuelve `null` si no es calculable.
+- **Tabla `fin_bal_vtas`** (Prisma `FinBalVtas`): montos enteros por **`sucursal_id` + `mes` + `anio`**. **`@@unique([sucursalId, mes, anio])`** (`fin_bal_vtas_sucursal_mes_anio_ux`); migración **`20260427120000_fin_bal_vtas_unique_sucursal_mes_anio`** deduplica antes del unique. **`crearFinBalVtas`** en `finBalVtas.service.ts` hace **`upsert`** (misma acción alinea **Balance · Ventas** y balance mensual). Validación: `crearFinBalVtasSchema` en `@/lib/validations/finBalVtas.ts`. La sucursal debe tener **`genera_balance`** (validado en servicio).
+- **Actions** (`src/actions/finBalVtas.ts`): mutaciones con `esEditor()`; tras crear/eliminar ventas, **`revalidatePath`** de `/finanzas/balance/vtas` y **`/finanzas/balance/mensual`**.
+- **Modal de edición de ventas** (solo editor): `src/components/finanzas/EditarVentasBalanceMensualModal.tsx`; persiste vía `crearFinBalVtasAction`.
+- **Histórico MC / PE en pantalla**: hoy la UI muestra **—** hasta definir fuente (mes anterior, promedio, tabla nueva, etc.).
+
 ### 2.5c Cajas de tesorería (`fin_tesoreria_cajas`, Prisma: `CajaTesoreria`)
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.
@@ -872,6 +886,8 @@ Antes de entregar código nuevo o modificado, verificar:
   - `manuales-obligatorios.mdc`: exige revisar guías frontend/backend antes de modificar código.
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
+
+*Última actualización (2026-04-24): **Balance mensual** y **`fin_bal_vtas`** (resumen, upsert, unique, revalidaciones, helpers `fmtMargenContribucionPct` / `puntoEquilibrioVentasPesos`) — ver **§2.5f**.*
 
 *Última actualización (2026-04-21): `global_proveedores.prefijo` **opcional** (NULL permitido; unique PostgreSQL). Alta sin prefijo: servicio genera `codigo_unico` tipo `Z`+hex; importación de lista usa `prefijo` efectivo = prefijo trim o `codigo_unico`. Migración `20260421180000_global_proveedores_prefijo_nullable` + función `trg_lista_precios_set_cod_ext` con `COALESCE(NULLIF(trim(p.prefijo), ''), p.codigo_unico)` para `cod_ext`. Zod: `prefijoProveedorOpcionalSchema`, `proveedorMercaderiaFormSchema` (SI/NO obligatorio desde form). Ver §1.11c.*
 

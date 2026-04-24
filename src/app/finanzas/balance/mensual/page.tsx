@@ -76,6 +76,8 @@ export default async function BalanceMensualPage({ searchParams }: Props) {
       mes={mes}
       anio={anio}
       resumen={resumen}
+      filas={filas}
+      sucursalesGeneranBalance={sucursalesBalance}
       puedeEditarVentas={puedeEditarVentas}
     />
   );
