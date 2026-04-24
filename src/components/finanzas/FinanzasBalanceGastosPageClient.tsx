@@ -31,8 +31,12 @@ import { cn } from "@/lib/utils";
 
 type DimensionOpcionesFiltro = "sucursal" | "proveedor" | "rubro" | "gasto";
 
-/** Valores del filtro ESTADO (MONTO / PAGADO). */
-type FiltroEstadoBalanceGastos = "" | "con_monto" | "sin_monto" | "pagado" | "sin_pago";
+/** Valores del filtro ESTADO (combinación monto / pago). */
+type FiltroEstadoBalanceGastos =
+  | ""
+  | "con_monto_sin_pago"
+  | "con_monto_con_pago"
+  | "sin_monto";
 
 function aplicarFiltroEstadoFilas(
   rows: BalanceGastoMensualFila[],
@@ -40,14 +44,12 @@ function aplicarFiltroEstadoFilas(
 ): BalanceGastoMensualFila[] {
   if (!filtroEstado) return rows;
   switch (filtroEstado) {
-    case "con_monto":
-      return rows.filter((r) => r.monto > 0);
+    case "con_monto_sin_pago":
+      return rows.filter((r) => r.monto > 0 && r.pagado === 0);
+    case "con_monto_con_pago":
+      return rows.filter((r) => r.monto > 0 && r.pagado > 0);
     case "sin_monto":
       return rows.filter((r) => r.monto === 0);
-    case "pagado":
-      return rows.filter((r) => r.pagado > 0);
-    case "sin_pago":
-      return rows.filter((r) => r.pagado === 0);
     default:
       return rows;
   }
@@ -129,7 +131,7 @@ export default function FinanzasBalanceGastosPageClient({
   const [filtGasto, setFiltGasto] = useState("");
   const [filtSucursal, setFiltSucursal] = useState("");
   const [filtProveedor, setFiltProveedor] = useState("");
-  /** Filtro ESTADO: MONTO / PAGADO; vacío = sin filtrar por estado. */
+  /** Filtro ESTADO (monto + pago); vacío = sin filtrar por estado. */
   const [filtEstado, setFiltEstado] = useState<FiltroEstadoBalanceGastos>("");
 
   const [filaEditar, setFilaEditar] = useState<BalanceGastoMensualFila | null>(null);
@@ -393,10 +395,9 @@ export default function FinanzasBalanceGastosPageClient({
                       className="select-content-filtro"
                     >
                       <SelectItem value="none">ESTADO</SelectItem>
-                      <SelectItem value="con_monto">CON MONTO</SelectItem>
+                      <SelectItem value="con_monto_sin_pago">CON MONTO Y SIN PAGO</SelectItem>
+                      <SelectItem value="con_monto_con_pago">CON MONTO Y CON PAGO</SelectItem>
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
-                      <SelectItem value="pagado">PAGADO</SelectItem>
-                      <SelectItem value="sin_pago">SIN PAGO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
