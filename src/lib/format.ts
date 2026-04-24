@@ -34,3 +34,14 @@ export function fmtPctEntero(n: number): string {
   if (entero < 0) return `${entero}%`;
   return "0%";
 }
+
+/**
+ * Porcentaje `numerador / denominador` con un decimal (es-AR).
+ * Denominador ≤ 0 → "—"; numerador 0 → "0,0 %".
+ */
+export function fmtPctDeTotal(numerador: number, denominador: number): string {
+  if (denominador <= 0) return "—";
+  if (numerador === 0) return "0,0 %";
+  const p = (numerador / denominador) * 100;
+  return `${p.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+}

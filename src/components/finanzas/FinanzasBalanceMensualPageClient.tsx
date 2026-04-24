@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { PanelRightOpen, Pencil } from "lucide-react";
 import FilterBar, {
   FILTER_SELECT_WRAPPER_CLASS,
   FilaFiltrosDesplegables,
@@ -192,6 +192,8 @@ function TablaBalanceMensualAlineada({
     tipo: "variables" | "fijos";
     columna: BalanceMensualColumnaDetalle;
     etiquetaColumna: string;
+    totalCvCelda: number;
+    totalCfCelda: number;
   }) => void;
 }) {
   const nDatos = columnas.length;
@@ -305,27 +307,38 @@ function TablaBalanceMensualAlineada({
                       ) : fila.tipo === "monto" &&
                         (fila.id === "cv" || fila.id === "cf") &&
                         onAbrirDetalleCostos ? (
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
+                        <div className="grid w-full grid-cols-[1fr_2.25rem] items-center gap-x-1">
+                          <span
                             className={cn(
-                              "min-w-0 text-right text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                              "min-w-0 text-right",
                               negritaValor ? "font-bold" : "font-normal"
                             )}
-                            onClick={() =>
-                              onAbrirDetalleCostos({
-                                tipo: fila.id === "cv" ? "variables" : "fijos",
-                                columna:
-                                  c.key === "global"
-                                    ? { ambito: "global" }
-                                    : { ambito: "sucursal", nombre: c.titulo },
-                                etiquetaColumna: c.titulo,
-                              })
-                            }
-                            aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
                           >
                             {txt}
-                          </button>
+                          </span>
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                              aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                              onClick={() =>
+                                onAbrirDetalleCostos({
+                                  tipo: fila.id === "cv" ? "variables" : "fijos",
+                                  columna:
+                                    c.key === "global"
+                                      ? { ambito: "global" }
+                                      : { ambito: "sucursal", nombre: c.titulo },
+                                  etiquetaColumna: c.titulo,
+                                  totalCvCelda: c.bloque.costosVariables,
+                                  totalCfCelda: c.bloque.costosFijos,
+                                })
+                              }
+                            >
+                              <PanelRightOpen className="h-4 w-4" aria-hidden />
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex justify-end">
@@ -359,6 +372,8 @@ type DetalleRubrosModalCtx = {
   columna: BalanceMensualColumnaDetalle;
   tipo: "variables" | "fijos";
   etiquetaColumna: string;
+  totalCvCelda: number;
+  totalCfCelda: number;
 };
 
 type DetalleGastosModalCtx = DetalleRubrosModalCtx & {
@@ -525,6 +540,9 @@ export default function FinanzasBalanceMensualPageClient({
             ? `${detalleRubrosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
             : ""
         }
+        tipo={detalleRubrosCtx?.tipo ?? "variables"}
+        totalCvCelda={detalleRubrosCtx?.totalCvCelda ?? 0}
+        totalCfCelda={detalleRubrosCtx?.totalCfCelda ?? 0}
         rubros={rubrosDetalle}
         onElegirRubro={(r: BalanceMensualRubroAgrupado) => {
           if (!detalleRubrosCtx) return;
@@ -550,6 +568,9 @@ export default function FinanzasBalanceMensualPageClient({
               } · ${detalleGastosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
             : ""
         }
+        tipo={detalleGastosCtx?.tipo ?? "variables"}
+        totalCvCelda={detalleGastosCtx?.totalCvCelda ?? 0}
+        totalCfCelda={detalleGastosCtx?.totalCfCelda ?? 0}
         filas={filasGastosDetalle}
         notaInformativa={
           detalleGastosCtx?.rubroClave === BALANCE_MENSUAL_RUBRO_REPARTO_CC
