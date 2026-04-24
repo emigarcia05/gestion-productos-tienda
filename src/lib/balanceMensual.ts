@@ -38,6 +38,25 @@ function partCostosVariablesFijos(tipoGastoNombre: string, monto: number): {
   return { costosVariables: 0, costosFijos: monto };
 }
 
+/** Texto para UI: porcentaje de margen de contribución sobre ventas. */
+export function fmtMargenContribucionPct(p: number | null): string {
+  if (p === null) return "—";
+  return `${p.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+}
+
+/**
+ * Ventas mínimas en pesos para cubrir costos fijos, con el mix actual
+ * (ratio de contribución = resultado operativo / ventas).
+ * `null` si no es calculable (sin ventas, sin margen positivo o sin costos fijos).
+ */
+export function puntoEquilibrioVentasPesos(b: BalanceMensualBloque): number | null {
+  const { ventas, resultadoOperativo, costosFijos } = b;
+  if (ventas <= 0 || resultadoOperativo <= 0 || costosFijos <= 0) return null;
+  const ratio = resultadoOperativo / ventas;
+  if (ratio <= 0) return null;
+  return Math.round(costosFijos / ratio);
+}
+
 function construirBloque(ventas: number, cv: number, cf: number): BalanceMensualBloque {
   const resultadoOperativo = ventas - cv;
   const resultadoEjercicio = ventas - cv - cf;

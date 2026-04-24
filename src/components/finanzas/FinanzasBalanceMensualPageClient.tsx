@@ -17,7 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fmtPrecio } from "@/lib/format";
-import type { BalanceMensualBloque, BalanceMensualResumen } from "@/lib/balanceMensual";
+import {
+  type BalanceMensualBloque,
+  type BalanceMensualResumen,
+  fmtMargenContribucionPct,
+  puntoEquilibrioVentasPesos,
+} from "@/lib/balanceMensual";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import EditarVentasBalanceMensualModal, {
@@ -51,99 +56,220 @@ function fmtMonto(n: number) {
   return `$${fmtPrecio(n)}`;
 }
 
-function fmtPorcentaje(p: number | null) {
-  if (p === null) return "—";
-  return `${p.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+function fmtMontoPe(b: BalanceMensualBloque) {
+  const pe = puntoEquilibrioVentasPesos(b);
+  if (pe === null) return "—";
+  return `$${fmtPrecio(pe)}`;
 }
 
-function filaBalance({
-  label,
-  sublabel,
-  detalle,
-  value,
-  valueClassName,
-  className,
+type ColumnaBalance = {
+  key: string;
+  titulo: string;
+  bloque: BalanceMensualBloque;
+  sucursalId: string | null;
+};
+
+type FilaBalance =
+  | {
+      id: string;
+      tipo: "monto";
+      etiquetaConcepto: ReactNode;
+      get: (b: BalanceMensualBloque) => number;
+      valorNegrita: boolean;
+      filaVentas: boolean;
+      tonoFila?: "muted" | "acentuado";
+    }
+  | {
+      id: string;
+      tipo: "texto";
+      etiquetaConcepto: ReactNode;
+      valor: (b: BalanceMensualBloque) => string;
+      valorNegrita: boolean;
+      filaVentas: false;
+      tonoFila?: "muted" | "acentuado";
+    };
+
+const FILAS_BALANCE: FilaBalance[] = [
+  {
+    id: "ventas",
+    tipo: "monto",
+    etiquetaConcepto: "Ventas",
+    get: (b) => b.ventas,
+    valorNegrita: true,
+    filaVentas: true,
+    tonoFila: "acentuado",
+  },
+  {
+    id: "cv",
+    tipo: "monto",
+    etiquetaConcepto: <span className="text-muted-foreground">− Costos variables</span>,
+    get: (b) => b.costosVariables,
+    valorNegrita: false,
+    filaVentas: false,
+  },
+  {
+    id: "ro",
+    tipo: "monto",
+    etiquetaConcepto: "Resultado operativo",
+    get: (b) => b.resultadoOperativo,
+    valorNegrita: false,
+    filaVentas: false,
+    tonoFila: "muted",
+  },
+  {
+    id: "mc",
+    tipo: "texto",
+    etiquetaConcepto: "Margen de contribución",
+    valor: (b) => fmtMargenContribucionPct(b.margenContribucionPct),
+    valorNegrita: false,
+    filaVentas: false,
+  },
+  {
+    id: "pe",
+    tipo: "texto",
+    etiquetaConcepto: "Punto de equilibrio",
+    valor: (b) => fmtMontoPe(b),
+    valorNegrita: false,
+    filaVentas: false,
+  },
+  {
+    id: "mc_hist",
+    tipo: "texto",
+    etiquetaConcepto: "Margen de contribución histórico",
+    valor: () => "—",
+    valorNegrita: false,
+    filaVentas: false,
+  },
+  {
+    id: "pe_hist",
+    tipo: "texto",
+    etiquetaConcepto: "Punto de equilibrio histórico",
+    valor: () => "—",
+    valorNegrita: false,
+    filaVentas: false,
+  },
+  {
+    id: "cf",
+    tipo: "monto",
+    etiquetaConcepto: <span className="text-muted-foreground">− Costos fijos</span>,
+    get: (b) => b.costosFijos,
+    valorNegrita: false,
+    filaVentas: false,
+  },
+  {
+    id: "re",
+    tipo: "monto",
+    etiquetaConcepto: "Resultado ejercicio",
+    get: (b) => b.resultadoEjercicio,
+    valorNegrita: true,
+    filaVentas: false,
+    tonoFila: "acentuado",
+  },
+];
+
+function TablaBalanceMensualAlineada({
+  columnas,
+  mes,
+  anio,
+  puedeEditarVentas,
+  onEditarVentas,
 }: {
-  label: ReactNode;
-  sublabel?: ReactNode;
-  /** Texto auxiliar bajo el sublabel (ej. ratio de margen). */
-  detalle?: ReactNode;
-  value: string;
-  valueClassName?: string;
-  className?: string;
+  columnas: ColumnaBalance[];
+  mes: number;
+  anio: number;
+  puedeEditarVentas: boolean;
+  onEditarVentas: (ctx: EditarVentasBalanceMensualContext) => void;
 }) {
+  const nDatos = columnas.length;
+  const gridTemplateColumns = `minmax(10.5rem, 1.05fr) repeat(${nDatos}, minmax(6.75rem, 1fr))`;
+
   return (
-    <div
-      className={cn(
-        "flex items-start justify-between gap-4 border-b border-border/60 py-2.5 last:border-b-0",
-        className
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-normal leading-snug text-foreground">{label}</div>
-        {sublabel ? <div className="mt-0.5 text-xs font-normal leading-snug text-muted-foreground">{sublabel}</div> : null}
-        {detalle ? <div className="mt-1.5 text-xs font-normal leading-snug text-muted-foreground">{detalle}</div> : null}
-      </div>
-      <div
-        className={cn(
-          "shrink-0 pt-0.5 text-right text-sm tabular-nums tracking-tight text-foreground",
-          valueClassName ?? "font-normal"
-        )}
-      >
-        {value}
+    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="overflow-x-auto">
+        <div className="min-w-[min(100%,40rem)] sm:min-w-[44rem]">
+          <div
+            className="grid border-b border-border"
+            style={{ gridTemplateColumns }}
+          >
+            <div className="flex items-center justify-center border-r border-border/80 bg-surface px-2 py-2.5 sm:px-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Concepto
+              </span>
+            </div>
+            {columnas.map((c) => (
+              <div
+                key={c.key}
+                className="border-r border-border/80 bg-surface px-3 py-2.5 text-center last:border-r-0"
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  {c.titulo}
+                </span>
+              </div>
+            ))}
+          </div>
+          {FILAS_BALANCE.map((fila) => (
+            <div
+              key={fila.id}
+              className={cn(
+                "grid border-b border-border/60 last:border-b-0",
+                fila.tonoFila === "muted" && "bg-muted/15",
+                fila.tonoFila === "acentuado" && "bg-muted/25"
+              )}
+              style={{ gridTemplateColumns }}
+            >
+              <div className="flex items-center border-r border-border/80 px-3 py-2.5 text-sm font-normal leading-snug text-foreground">
+                {fila.filaVentas ? (
+                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    {columnas.map((c) => {
+                      const sid = c.sucursalId;
+                      if (!puedeEditarVentas || !sid) return null;
+                      return (
+                        <Button
+                          key={`edit-ventas-${c.key}`}
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                          aria-label={`Editar ventas — ${c.titulo}`}
+                          onClick={() =>
+                            onEditarVentas({
+                              sucursalId: sid,
+                              nombreSucursal: c.titulo,
+                              mes,
+                              anio,
+                              ventaActual: c.bloque.ventas,
+                            })
+                          }
+                        >
+                          <Pencil className="h-4 w-4" aria-hidden />
+                        </Button>
+                      );
+                    })}
+                    {fila.etiquetaConcepto}
+                  </div>
+                ) : (
+                  fila.etiquetaConcepto
+                )}
+              </div>
+              {columnas.map((c) => {
+                const txt =
+                  fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
+                const negrita = fila.valorNegrita;
+
+                return (
+                  <div
+                    key={`${fila.id}-${c.key}`}
+                    className="border-r border-border/80 px-3 py-2.5 text-right text-sm tabular-nums tracking-tight text-foreground last:border-r-0"
+                  >
+                    <span className={cn(negrita ? "font-bold" : "font-normal")}>{txt}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  );
-}
-
-function BloqueContable({
-  titulo,
-  b,
-  headerEnd,
-}: {
-  titulo: string;
-  b: BalanceMensualBloque;
-  headerEnd?: ReactNode;
-}) {
-  return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/25 px-4 py-3">
-        <h2 className="min-w-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          {titulo}
-        </h2>
-        {headerEnd ? <div className="shrink-0">{headerEnd}</div> : null}
-      </div>
-      <div className="px-4 pb-1 pt-0.5">
-        {filaBalance({
-          label: "Ventas",
-          value: fmtMonto(b.ventas),
-          valueClassName: "font-bold",
-          className: "bg-muted/15",
-        })}
-        {filaBalance({
-          label: <span className="text-muted-foreground">− Costos variables</span>,
-          value: fmtMonto(b.costosVariables),
-        })}
-        {filaBalance({
-          label: "Resultado operativo",
-          sublabel: "(Ventas − Costos variables)",
-          detalle: <>Margen contribución / ventas: {fmtPorcentaje(b.margenContribucionPct)}</>,
-          value: fmtMonto(b.resultadoOperativo),
-          className: "border-border/80 bg-muted/10",
-        })}
-        {filaBalance({
-          label: <span className="text-muted-foreground">− Costos fijos</span>,
-          value: fmtMonto(b.costosFijos),
-        })}
-        {filaBalance({
-          label: "Resultado ejercicio",
-          sublabel: "(Resultado operativo − Costos fijos)",
-          value: fmtMonto(b.resultadoEjercicio),
-          valueClassName: "font-bold",
-          className: "border-t border-border/80 bg-muted/15",
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -236,39 +362,24 @@ export default function FinanzasBalanceMensualPageClient({
               global. Configurá al menos una sucursal en base de datos para ver el desglose.
             </p>
           ) : null}
-          <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3")}>
-            <BloqueContable titulo="Global" b={resumen.global} />
-            {resumen.sucursales.map(({ nombre, sucursalId, bloque }) => (
-              <BloqueContable
-                key={nombre}
-                titulo={nombre}
-                b={bloque}
-                headerEnd={
-                  puedeEditarVentas && sucursalId ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      aria-label={`Editar ventas — ${nombre}`}
-                      onClick={() => {
-                        setVentasModalCtx({
-                          sucursalId,
-                          nombreSucursal: nombre,
-                          mes,
-                          anio,
-                          ventaActual: bloque.ventas,
-                        });
-                        setVentasModalOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" aria-hidden />
-                    </Button>
-                  ) : null
-                }
-              />
-            ))}
-          </div>
+          <TablaBalanceMensualAlineada
+            columnas={[
+              { key: "global", titulo: "Global", bloque: resumen.global, sucursalId: null },
+              ...resumen.sucursales.map((s) => ({
+                key: s.nombre,
+                titulo: s.nombre,
+                bloque: s.bloque,
+                sucursalId: s.sucursalId || null,
+              })),
+            ]}
+            mes={mes}
+            anio={anio}
+            puedeEditarVentas={puedeEditarVentas}
+            onEditarVentas={(ctx) => {
+              setVentasModalCtx(ctx);
+              setVentasModalOpen(true);
+            }}
+          />
         </div>
       </ClassicFilteredTableLayout>
       <EditarVentasBalanceMensualModal
