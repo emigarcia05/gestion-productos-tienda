@@ -69,15 +69,20 @@ type ColumnaBalance = {
   sucursalId: string | null;
 };
 
+/** Fondo más claro que el encabezado #0072BB, para filas de resultado. */
+const BG_FILA_RESULTADO = "#a9d6f1";
+const FG_FILA_RESULTADO = "#063652";
+
 type FilaBalance =
   | {
       id: string;
       tipo: "monto";
       etiquetaConcepto: ReactNode;
       get: (b: BalanceMensualBloque) => number;
+      /** Negrita en celdas de importe (p. ej. ventas). */
       valorNegrita: boolean;
-      filaVentas: boolean;
-      tonoFila?: "muted" | "acentuado";
+      /** Fila de subtotal resultado: fondo azul claro, concepto indentado, todo en negrita. */
+      filaResultado?: boolean;
     }
   | {
       id: string;
@@ -85,9 +90,8 @@ type FilaBalance =
       etiquetaConcepto: ReactNode;
       valor: (b: BalanceMensualBloque) => string;
       valorNegrita: boolean;
-      filaVentas: false;
-      tonoFila?: "muted" | "acentuado";
-    };
+    }
+  | { id: string; tipo: "espacio" };
 
 const FILAS_BALANCE: FilaBalance[] = [
   {
@@ -96,16 +100,13 @@ const FILAS_BALANCE: FilaBalance[] = [
     etiquetaConcepto: "Ventas",
     get: (b) => b.ventas,
     valorNegrita: true,
-    filaVentas: true,
-    tonoFila: "acentuado",
   },
   {
     id: "cv",
     tipo: "monto",
-    etiquetaConcepto: <span className="text-muted-foreground">− Costos variables</span>,
+    etiquetaConcepto: <span className="text-muted-foreground">Costo variable</span>,
     get: (b) => b.costosVariables,
     valorNegrita: false,
-    filaVentas: false,
   },
   {
     id: "ro",
@@ -113,57 +114,53 @@ const FILAS_BALANCE: FilaBalance[] = [
     etiquetaConcepto: "Resultado operativo",
     get: (b) => b.resultadoOperativo,
     valorNegrita: false,
-    filaVentas: false,
-    tonoFila: "muted",
-  },
-  {
-    id: "mc",
-    tipo: "texto",
-    etiquetaConcepto: "Margen de contribución",
-    valor: (b) => fmtMargenContribucionPct(b.margenContribucionPct),
-    valorNegrita: false,
-    filaVentas: false,
-  },
-  {
-    id: "pe",
-    tipo: "texto",
-    etiquetaConcepto: "Punto de equilibrio",
-    valor: (b) => fmtMontoPe(b),
-    valorNegrita: false,
-    filaVentas: false,
-  },
-  {
-    id: "mc_hist",
-    tipo: "texto",
-    etiquetaConcepto: "Margen de contribución histórico",
-    valor: () => "—",
-    valorNegrita: false,
-    filaVentas: false,
-  },
-  {
-    id: "pe_hist",
-    tipo: "texto",
-    etiquetaConcepto: "Punto de equilibrio histórico",
-    valor: () => "—",
-    valorNegrita: false,
-    filaVentas: false,
+    filaResultado: true,
   },
   {
     id: "cf",
     tipo: "monto",
-    etiquetaConcepto: <span className="text-muted-foreground">− Costos fijos</span>,
+    etiquetaConcepto: <span className="text-muted-foreground">Costo fijos</span>,
     get: (b) => b.costosFijos,
     valorNegrita: false,
-    filaVentas: false,
   },
   {
     id: "re",
     tipo: "monto",
     etiquetaConcepto: "Resultado ejercicio",
     get: (b) => b.resultadoEjercicio,
-    valorNegrita: true,
-    filaVentas: false,
-    tonoFila: "acentuado",
+    valorNegrita: false,
+    filaResultado: true,
+  },
+  { id: "gap1", tipo: "espacio" },
+  { id: "gap2", tipo: "espacio" },
+  {
+    id: "mc",
+    tipo: "texto",
+    etiquetaConcepto: "Margen Contribución",
+    valor: (b) => fmtMargenContribucionPct(b.margenContribucionPct),
+    valorNegrita: false,
+  },
+  {
+    id: "pe",
+    tipo: "texto",
+    etiquetaConcepto: "Punto de Equilibrio",
+    valor: (b) => fmtMontoPe(b),
+    valorNegrita: false,
+  },
+  { id: "gap3", tipo: "espacio" },
+  {
+    id: "mc_hist",
+    tipo: "texto",
+    etiquetaConcepto: "Margen Contribución Histórico",
+    valor: () => "—",
+    valorNegrita: false,
+  },
+  {
+    id: "pe_hist",
+    tipo: "texto",
+    etiquetaConcepto: "Punto de Equilibrio Histórico",
+    valor: () => "—",
+    valorNegrita: false,
   },
 ];
 
@@ -188,85 +185,138 @@ function TablaBalanceMensualAlineada({
       <div className="overflow-x-auto">
         <div className="min-w-[min(100%,40rem)] sm:min-w-[44rem]">
           <div
-            className="grid border-b border-border"
+            className="grid border-b border-white/20 bg-[#0072BB] text-white"
             style={{ gridTemplateColumns }}
           >
-            <div className="flex items-center justify-center border-r border-border/80 bg-surface px-2 py-2.5 sm:px-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <div className="flex items-center justify-center border-r border-white/20 px-2 py-2.5 sm:px-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
                 Concepto
               </span>
             </div>
             {columnas.map((c) => (
               <div
                 key={c.key}
-                className="border-r border-border/80 bg-surface px-3 py-2.5 text-center last:border-r-0"
+                className="border-r border-white/20 px-3 py-2.5 text-center last:border-r-0"
               >
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-white">
                   {c.titulo}
                 </span>
               </div>
             ))}
           </div>
-          {FILAS_BALANCE.map((fila) => (
-            <div
-              key={fila.id}
-              className={cn(
-                "grid border-b border-border/60 last:border-b-0",
-                fila.tonoFila === "muted" && "bg-muted/15",
-                fila.tonoFila === "acentuado" && "bg-muted/25"
-              )}
-              style={{ gridTemplateColumns }}
-            >
-              <div className="flex items-center border-r border-border/80 px-3 py-2.5 text-sm font-normal leading-snug text-foreground">
-                {fila.filaVentas ? (
-                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                    {columnas.map((c) => {
-                      const sid = c.sucursalId;
-                      if (!puedeEditarVentas || !sid) return null;
-                      return (
-                        <Button
-                          key={`edit-ventas-${c.key}`}
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                          aria-label={`Editar ventas — ${c.titulo}`}
-                          onClick={() =>
-                            onEditarVentas({
-                              sucursalId: sid,
-                              nombreSucursal: c.titulo,
-                              mes,
-                              anio,
-                              ventaActual: c.bloque.ventas,
-                            })
-                          }
-                        >
-                          <Pencil className="h-4 w-4" aria-hidden />
-                        </Button>
-                      );
-                    })}
-                    {fila.etiquetaConcepto}
-                  </div>
-                ) : (
-                  fila.etiquetaConcepto
-                )}
-              </div>
-              {columnas.map((c) => {
-                const txt =
-                  fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
-                const negrita = fila.valorNegrita;
+          {FILAS_BALANCE.map((fila) => {
+            if (fila.tipo === "espacio") {
+              return (
+                <div
+                  key={fila.id}
+                  className="grid border-b border-border/40 bg-card"
+                  style={{ gridTemplateColumns }}
+                >
+                  <div className="h-6 border-r border-border/60" aria-hidden />
+                  {columnas.map((c) => (
+                    <div
+                      key={`${fila.id}-${c.key}`}
+                      className="h-6 border-r border-border/60 last:border-r-0"
+                      aria-hidden
+                    />
+                  ))}
+                </div>
+              );
+            }
 
-                return (
-                  <div
-                    key={`${fila.id}-${c.key}`}
-                    className="border-r border-border/80 px-3 py-2.5 text-right text-sm tabular-nums tracking-tight text-foreground last:border-r-0"
-                  >
-                    <span className={cn(negrita ? "font-bold" : "font-normal")}>{txt}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            const esFilaResultado = fila.tipo === "monto" && Boolean(fila.filaResultado);
+            const negritaValor =
+              fila.tipo === "monto"
+                ? fila.valorNegrita || esFilaResultado
+                : fila.tipo === "texto" && fila.valorNegrita;
+
+            return (
+              <div
+                key={fila.id}
+                className={cn(
+                  "grid border-b border-border/60 last:border-b-0",
+                  esFilaResultado && "border-[#0072BB]/25"
+                )}
+                style={{
+                  gridTemplateColumns,
+                  ...(esFilaResultado ? { backgroundColor: BG_FILA_RESULTADO } : {}),
+                }}
+              >
+                <div
+                  className={cn(
+                    "flex items-center border-r border-border/80 px-3 py-2.5 text-sm leading-snug",
+                    esFilaResultado
+                      ? "border-[#0072BB]/20 pl-10 font-bold"
+                      : "font-normal text-foreground"
+                  )}
+                  style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
+                >
+                  {fila.etiquetaConcepto}
+                </div>
+                {columnas.map((c) => {
+                  const txt =
+                    fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
+                  const sid = c.sucursalId;
+                  const esFilaVentas = fila.id === "ventas";
+                  const mostrarEditarVentas = esFilaVentas && puedeEditarVentas && Boolean(sid);
+
+                  return (
+                    <div
+                      key={`${fila.id}-${c.key}`}
+                      className={cn(
+                        "border-r border-border/80 px-3 py-2.5 text-sm tabular-nums tracking-tight last:border-r-0",
+                        esFilaResultado ? "border-[#0072BB]/20 font-bold" : "text-foreground"
+                      )}
+                      style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
+                    >
+                      {esFilaVentas ? (
+                        <div className="grid w-full grid-cols-[1fr_2.25rem] items-center gap-x-1">
+                          <span
+                            className={cn(
+                              "min-w-0 text-right",
+                              negritaValor ? "font-bold" : "font-normal"
+                            )}
+                          >
+                            {txt}
+                          </span>
+                          <div className="flex justify-end">
+                            {mostrarEditarVentas && sid ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                                aria-label={`Editar ventas — ${c.titulo}`}
+                                onClick={() =>
+                                  onEditarVentas({
+                                    sucursalId: sid,
+                                    nombreSucursal: c.titulo,
+                                    mes,
+                                    anio,
+                                    ventaActual: c.bloque.ventas,
+                                  })
+                                }
+                              >
+                                <Pencil className="h-4 w-4" aria-hidden />
+                              </Button>
+                            ) : (
+                              <span className="inline-block h-8 w-8 shrink-0" aria-hidden />
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end">
+                          <span className={cn(negritaValor ? "font-bold" : "font-normal")}>
+                            {txt}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
