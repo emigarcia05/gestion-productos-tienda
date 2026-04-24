@@ -26,11 +26,6 @@ export interface BalanceGastoMensualFila {
   proveedorNombre: string;
   monto: number;
   pagado: number;
-  /**
-   * Pendiente de pago sobre el devengado acumulado a la fecha: `max(0, devengadoAcumulado − pagado)`.
-   * El proporcional usa solo **`monto` del mes de la fila**; si es 0, el devengado es 0.
-   */
-  montoDevengadoPendiente: number;
   /** Mismo día del mes calendario siguiente al devengo (ej. 01/04/2026 → 01/05/2026). ISO `yyyy-mm-dd`. */
   fechaVencimientoIso: string;
   /** Si hoy (AR) ≥ fecha de vencimiento: pendiente de pago `max(0, monto - pagado)`; si no, 0. */
@@ -107,9 +102,8 @@ function computePendiente(params: {
 }
 
 /**
- * Pendiente de pago sobre devengado, con devengado acumulado **hasta** `isoCorte` (día del venc o hoy en cartera).
- * Misma fórmula que la columna **DEVENGADO** en `/finanzas/balance/gastos`.
- * Solo usa el **monto imputado en ese mes calendario**; si es `0`, no hay devengado (no se hereda el mes anterior).
+ * Pendiente de pago proporcional al devengo acumulado **hasta** `isoCorte` (vencimientos / flujo de fondo).
+ * Solo usa el **monto imputado en ese mes calendario**; si es `0`, no hay base proporcional en ese mes.
  */
 export function montoDevengadoPendienteHastaCorte(
   params: {
@@ -206,9 +200,6 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
 
 /**
  * Listado del mes: imputaciones con jerarquía de gasto, proveedor y sucursal.
- * **Devengado acumulado (hasta hoy AR):** **mínimo** entre `monto` del mes (si &gt; 0) y el redondeo proporcional por días desde devengo a hoy.
- * Si el **monto del mes es 0**, no hay devengado en ese mes (no se usa el monto de meses anteriores).
- * **`montoDevengadoPendiente`** (UI columna **DEVENGADO**): **`max(0, devengadoAcumulado − pagado)`** — pendiente de pago sobre ese devengado.
  * `fechaVencimientoIso` / `montoVencido`: vence el mismo día del mes siguiente al devengo; si hoy (AR) ≥ esa fecha, `montoVencido = max(0, monto - pagado)`.
  */
 /** Años y meses que existen en `fin_bal_gasto_mensual` (al menos una fila). */
@@ -247,7 +238,6 @@ export async function listarImputacionesMensualesBalance(params: {
 }): Promise<BalanceGastoMensualFila[]> {
   const { mes, anio } = params;
   const isoHoy = dateToIsoYmdArgentina(new Date());
-  const diasMes = diasEnMesCalendario(anio, mes);
 
   const rows = await prisma.finBalGastoMensual.findMany({
     where: { mes, anio },
@@ -276,15 +266,7 @@ export async function listarImputacionesMensualesBalance(params: {
   return rows.map((r) => {
     const gf = r.gastoFinal;
     const fechaDevengoIso = isoFechaDevengo(anio, mes, gf.diaDevengado);
-    const diasT = diasDesdeDevengoHastaHoy(fechaDevengoIso, isoHoy);
     const montoActual = r.monto;
-    const valor = montoActual > 0 ? montoActual : 0;
-    const devengadoAcumuladoAHoy = computePendiente({
-      valorMensualReferencia: valor,
-      diasMes,
-      diasTranscurridos: diasT,
-    });
-    const montoDevengadoPendiente = Math.max(0, devengadoAcumuladoAHoy - r.pagado);
     const fechaVencimientoIso = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
     const montoVencido = montoVencidoGastoBalance({
       isoHoyArgentina: isoHoy,
@@ -310,11 +292,54 @@ export async function listarImputacionesMensualesBalance(params: {
       proveedorNombre: gf.proveedor.nombre.toUpperCase(),
       monto: montoActual,
       pagado: r.pagado,
-      montoDevengadoPendiente,
       fechaVencimientoIso,
       montoVencido,
     };
   });
+}
+
+const MESES_CORTO_ES: Record<number, string> = {
+  1: "ene",
+  2: "feb",
+  3: "mar",
+  4: "abr",
+  5: "may",
+  6: "jun",
+  7: "jul",
+  8: "ago",
+  9: "sep",
+  10: "oct",
+  11: "nov",
+  12: "dic",
+};
+
+/** Punto mensual de imputación para un gasto final (evolución en el tiempo). */
+export interface HistoricoMontoGastoFinalBalanceItem {
+  mes: number;
+  anio: number;
+  monto: number;
+  /** Etiqueta corta para el eje X (ej. `abr 2026`). */
+  etiquetaMes: string;
+}
+
+/**
+ * Lista todos los meses con imputación en `fin_bal_gasto_mensual` para un `gasto_final_id`,
+ * orden cronológico ascendente.
+ */
+export async function listarHistoricoMontosGastoFinalBalance(
+  gastoFinalId: string,
+): Promise<HistoricoMontoGastoFinalBalanceItem[]> {
+  const rows = await prisma.finBalGastoMensual.findMany({
+    where: { gastoFinalId },
+    orderBy: [{ anio: "asc" }, { mes: "asc" }],
+    select: { mes: true, anio: true, monto: true },
+  });
+  return rows.map((r) => ({
+    mes: r.mes,
+    anio: r.anio,
+    monto: r.monto,
+    etiquetaMes: `${MESES_CORTO_ES[r.mes] ?? String(r.mes)} ${r.anio}`,
+  }));
 }
 
 /** Ítem del catálogo `fin_bal_gasto_final` con `gasto_mensual = false` (gasto único). */

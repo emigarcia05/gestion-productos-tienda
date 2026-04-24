@@ -36,6 +36,19 @@ export function fmtPctEntero(n: number): string {
 }
 
 /**
+ * Título de modal: primera letra de cada palabra en mayúscula (resto en minúsculas por palabra).
+ * Útil cuando los datos vienen en mayúsculas de catálogo.
+ */
+export function fmtTituloPalabras(s: string): string {
+  return s
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toLocaleUpperCase("es") + w.slice(1).toLocaleLowerCase("es"))
+    .join(" ");
+}
+
+/**
  * Porcentaje `numerador / denominador` con un decimal (es-AR).
  * Denominador ≤ 0 → "—"; numerador 0 → "0,0 %".
  */

@@ -22,6 +22,7 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas/TablaGastos";
+import BalanceMensualGastoHistoricoModal from "@/components/finanzas/BalanceMensualGastoHistoricoModal";
 import EditarMontoFinBalGastoMensualModal from "@/components/finanzas/EditarMontoFinBalGastoMensualModal";
 import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBalGastoMensualModal";
 import GastoUnicoBalanceModal from "@/components/finanzas/GastoUnicoBalanceModal";
@@ -138,6 +139,9 @@ export default function FinanzasBalanceGastosPageClient({
   const [filaPagar, setFilaPagar] = useState<BalanceGastoMensualFila | null>(null);
   const [eliminar, setEliminar] = useState<{ id: string; etiqueta: string } | null>(null);
   const [gastoUnicoOpen, setGastoUnicoOpen] = useState(false);
+  const [historicoOpen, setHistoricoOpen] = useState(false);
+  const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
+  const [historicoDescripcion, setHistoricoDescripcion] = useState("");
 
   const estadoFiltros = useMemo(
     () => ({
@@ -472,6 +476,13 @@ export default function FinanzasBalanceGastosPageClient({
               etiqueta: `${f.gastoNombre} · ${f.proveedorNombre}`,
             })
           }
+          onVerHistorico={(f) => {
+            setHistoricoGastoFinalId(f.gastoFinalId);
+            setHistoricoDescripcion(
+              `${f.gastoNombre} — ${f.proveedorNombre} · ${f.sucursalNombre}`,
+            );
+            setHistoricoOpen(true);
+          }}
         />
       </ClassicFilteredTableLayout>
 
@@ -505,6 +516,20 @@ export default function FinanzasBalanceGastosPageClient({
         mes={mes}
         anio={anio}
         onSuccess={() => router.refresh()}
+      />
+
+      <BalanceMensualGastoHistoricoModal
+        key={historicoGastoFinalId ?? "sin-gasto"}
+        open={historicoOpen}
+        onOpenChange={(open) => {
+          setHistoricoOpen(open);
+          if (!open) {
+            setHistoricoGastoFinalId(null);
+            setHistoricoDescripcion("");
+          }
+        }}
+        gastoFinalId={historicoGastoFinalId}
+        descripcion={historicoDescripcion}
       />
     </div>
   );

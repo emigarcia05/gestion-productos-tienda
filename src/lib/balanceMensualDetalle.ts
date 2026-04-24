@@ -12,6 +12,8 @@ export type BalanceMensualColumnaDetalle =
   | { ambito: "sucursal"; nombre: string };
 
 export interface BalanceMensualFilaDetalleGasto {
+  imputacionId: string;
+  gastoFinalId: string;
   gastoNombre: string;
   proveedorNombre: string;
   sucursalNombre: string;
@@ -107,6 +109,13 @@ export interface BalanceMensualRubroAgrupado {
   esRepartoPool: boolean;
 }
 
+/** Selección de rubro dentro de una sección por tipo (modal 1 → 2). */
+export type ElegirRubroBalancePayload = {
+  rubro: BalanceMensualRubroAgrupado;
+  tipoGastoNombre: string | null;
+  etiquetaTipo: string;
+};
+
 /** Rubros con montos coherentes con la celda del balance (global o sucursal × variable/fijo). */
 export function agruparRubrosCostoMensual(
   filas: BalanceGastoMensualFila[],
@@ -168,14 +177,214 @@ export function agruparRubrosCostoMensual(
   return filasOut;
 }
 
+/** Sección por tipo de gasto con rubros (modal 1 del balance mensual). */
+export interface BalanceMensualSeccionTipoRubros {
+  /** `null` solo en el bloque de reparto de centros de costo (sucursal). */
+  tipoGastoNombre: string | null;
+  etiquetaTipo: string;
+  rubros: BalanceMensualRubroAgrupado[];
+}
+
+export function agruparTiposYRubrosCostoMensual(
+  filas: BalanceGastoMensualFila[],
+  sucursalesGeneranBalance: { id: string; nombre: string }[],
+  columna: BalanceMensualColumnaDetalle,
+  tipoCosto: "variables" | "fijos",
+): BalanceMensualSeccionTipoRubros[] {
+  const secciones: BalanceMensualSeccionTipoRubros[] = [];
+  const tiposOrden: string[] = [];
+  const mapaTipoRubro = new Map<string, Map<string, number>>();
+
+  function acumular(tipo: string, rubro: string, m: number) {
+    if (!mapaTipoRubro.has(tipo)) {
+      mapaTipoRubro.set(tipo, new Map());
+      tiposOrden.push(tipo);
+    }
+    const mr = mapaTipoRubro.get(tipo)!;
+    mr.set(rubro, (mr.get(rubro) ?? 0) + m);
+  }
+
+  if (columna.ambito === "global") {
+    for (const f of filas) {
+      const m = montoTipo(f, tipoCosto);
+      if (m <= 0) continue;
+      const r = f.rubroNombre.trim() || "Sin rubro";
+      acumular(f.tipoGastoNombre, r, m);
+    }
+  } else {
+    const nombre = columna.nombre;
+    const ctx = contextoRepartoBalanceMensual(filas, sucursalesGeneranBalance);
+    const idx = ctx.sucursalesOrdenadas.indexOf(nombre);
+    if (idx < 0) return [];
+
+    for (const f of filas) {
+      const m = montoTipo(f, tipoCosto);
+      if (m <= 0) continue;
+      if (f.sucursalGeneraBalance && f.sucursalNombre === nombre) {
+        const r = f.rubroNombre.trim() || "Sin rubro";
+        acumular(f.tipoGastoNombre, r, m);
+      }
+    }
+  }
+
+  tiposOrden.sort((a, b) => a.localeCompare(b, "es"));
+  for (const tipo of tiposOrden) {
+    const mr = mapaTipoRubro.get(tipo)!;
+    const rubros: BalanceMensualRubroAgrupado[] = [];
+    for (const [clave, monto] of mr) {
+      if (monto <= 0) continue;
+      rubros.push({
+        clave,
+        etiqueta: clave,
+        monto,
+        esRepartoPool: false,
+      });
+    }
+    rubros.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
+    secciones.push({
+      tipoGastoNombre: tipo,
+      etiquetaTipo: tipo,
+      rubros,
+    });
+  }
+
+  if (columna.ambito === "sucursal") {
+    const ctx = contextoRepartoBalanceMensual(filas, sucursalesGeneranBalance);
+    const idx = ctx.sucursalesOrdenadas.indexOf(columna.nombre);
+    if (idx >= 0) {
+      const poolPart =
+        tipoCosto === "variables"
+          ? ctx.repartoPoolCv[idx] ?? 0
+          : ctx.repartoPoolCf[idx] ?? 0;
+      if (poolPart > 0) {
+        secciones.push({
+          tipoGastoNombre: null,
+          etiquetaTipo: "Reparto entre sucursales",
+          rubros: [
+            {
+              clave: BALANCE_MENSUAL_RUBRO_REPARTO_CC,
+              etiqueta: "Centros de costo (reparto entre sucursales)",
+              monto: poolPart,
+              esRepartoPool: true,
+            },
+          ],
+        });
+      }
+    }
+  }
+
+  return secciones;
+}
+
+/**
+ * Total del tipo de gasto en la celda del balance (para % sobre tipo).
+ * En sucursal incluye la parte proporcional del pool de centros de costo.
+ */
+export function totalMontoTipoEnCelda(
+  filas: BalanceGastoMensualFila[],
+  sucursalesGeneranBalance: { id: string; nombre: string }[],
+  columna: BalanceMensualColumnaDetalle,
+  tipoCosto: "variables" | "fijos",
+  tipoGastoNombre: string,
+): number {
+  if (columna.ambito === "global") {
+    let t = 0;
+    for (const f of filas) {
+      if (f.tipoGastoNombre !== tipoGastoNombre) continue;
+      const m = montoTipo(f, tipoCosto);
+      if (m > 0) t += m;
+    }
+    return t;
+  }
+
+  const ctx = contextoRepartoBalanceMensual(filas, sucursalesGeneranBalance);
+  const nombre = columna.nombre;
+  const idx = ctx.sucursalesOrdenadas.indexOf(nombre);
+  if (idx < 0) return 0;
+
+  const poolTotal = tipoCosto === "variables" ? ctx.poolCvTotal : ctx.poolCfTotal;
+  const repartoPart =
+    tipoCosto === "variables"
+      ? ctx.repartoPoolCv[idx] ?? 0
+      : ctx.repartoPoolCf[idx] ?? 0;
+  const factor = poolTotal > 0 ? repartoPart / poolTotal : 0;
+
+  let direct = 0;
+  for (const f of filas) {
+    if (f.tipoGastoNombre !== tipoGastoNombre) continue;
+    const m = montoTipo(f, tipoCosto);
+    if (m <= 0) continue;
+    if (f.sucursalGeneraBalance && f.sucursalNombre === nombre) direct += m;
+  }
+
+  let poolTipo = 0;
+  for (const f of filas) {
+    if (f.tipoGastoNombre !== tipoGastoNombre) continue;
+    const m = montoTipo(f, tipoCosto);
+    if (m <= 0) continue;
+    if (f.sucursalCentroCosto && !f.sucursalGeneraBalance) poolTipo += m;
+  }
+
+  return direct + poolTipo * factor;
+}
+
+export interface BalanceMensualGastoAgregado {
+  gastoNombre: string;
+  monto: number;
+}
+
+/** Gastos agregados por nombre para un rubro (y tipo, salvo reparto CC). */
+export function listarGastosAgregadosPorRubroTipo(
+  filas: BalanceGastoMensualFila[],
+  columna: BalanceMensualColumnaDetalle,
+  tipoCosto: "variables" | "fijos",
+  rubroClave: string,
+  tipoGastoNombre: string | null,
+): BalanceMensualGastoAgregado[] {
+  const lineas = listarGastosDetalleRubro(filas, columna, tipoCosto, rubroClave, {
+    tipoGastoNombre,
+  });
+  const mapa = new Map<string, number>();
+  for (const L of lineas) {
+    mapa.set(L.gastoNombre, (mapa.get(L.gastoNombre) ?? 0) + L.monto);
+  }
+  const out: BalanceMensualGastoAgregado[] = [];
+  for (const [gastoNombre, monto] of mapa) {
+    if (monto <= 0) continue;
+    out.push({ gastoNombre, monto });
+  }
+  out.sort((a, b) => a.gastoNombre.localeCompare(b.gastoNombre, "es"));
+  return out;
+}
+
+export type ListarGastosDetalleRubroFiltros = {
+  tipoGastoNombre?: string | null;
+  gastoNombre?: string | null;
+};
+
 /** Líneas de gasto para un rubro (o listado del pool CC para la clave sintética). */
 export function listarGastosDetalleRubro(
   filas: BalanceGastoMensualFila[],
   columna: BalanceMensualColumnaDetalle,
   tipo: "variables" | "fijos",
   rubroClave: string,
+  filtros?: ListarGastosDetalleRubroFiltros,
 ): BalanceMensualFilaDetalleGasto[] {
+  const tipoGastoNombre = filtros?.tipoGastoNombre;
+  const gastoNombre = filtros?.gastoNombre;
+
   const out: BalanceMensualFilaDetalleGasto[] = [];
+
+  const pasaTipo = (f: BalanceGastoMensualFila) => {
+    if (rubroClave === BALANCE_MENSUAL_RUBRO_REPARTO_CC) return true;
+    if (tipoGastoNombre === undefined || tipoGastoNombre === null) return true;
+    return f.tipoGastoNombre === tipoGastoNombre;
+  };
+
+  const pasaGasto = (f: BalanceGastoMensualFila) => {
+    if (gastoNombre === undefined || gastoNombre === null) return true;
+    return f.gastoNombre === gastoNombre;
+  };
 
   if (rubroClave === BALANCE_MENSUAL_RUBRO_REPARTO_CC) {
     if (columna.ambito !== "sucursal") return [];
@@ -183,7 +392,10 @@ export function listarGastosDetalleRubro(
       if (!(f.sucursalCentroCosto && !f.sucursalGeneraBalance)) continue;
       const m = montoTipo(f, tipo);
       if (m <= 0) continue;
+      if (!pasaGasto(f)) continue;
       out.push({
+        imputacionId: f.id,
+        gastoFinalId: f.gastoFinalId,
         gastoNombre: f.gastoNombre,
         proveedorNombre: f.proveedorNombre,
         sucursalNombre: f.sucursalNombre,
@@ -205,9 +417,13 @@ export function listarGastosDetalleRubro(
     for (const f of filas) {
       const r = f.rubroNombre.trim() || "Sin rubro";
       if (r !== rubroClave) continue;
+      if (!pasaTipo(f)) continue;
+      if (!pasaGasto(f)) continue;
       const m = montoTipo(f, tipo);
       if (m <= 0) continue;
       out.push({
+        imputacionId: f.id,
+        gastoFinalId: f.gastoFinalId,
         gastoNombre: f.gastoNombre,
         proveedorNombre: f.proveedorNombre,
         sucursalNombre: f.sucursalNombre,
@@ -222,9 +438,13 @@ export function listarGastosDetalleRubro(
       if (!f.sucursalGeneraBalance || f.sucursalNombre !== nombre) continue;
       const r = f.rubroNombre.trim() || "Sin rubro";
       if (r !== rubroClave) continue;
+      if (!pasaTipo(f)) continue;
+      if (!pasaGasto(f)) continue;
       const m = montoTipo(f, tipo);
       if (m <= 0) continue;
       out.push({
+        imputacionId: f.id,
+        gastoFinalId: f.gastoFinalId,
         gastoNombre: f.gastoNombre,
         proveedorNombre: f.proveedorNombre,
         sucursalNombre: f.sucursalNombre,

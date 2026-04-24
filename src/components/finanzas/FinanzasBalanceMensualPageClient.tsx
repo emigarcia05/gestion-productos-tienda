@@ -29,15 +29,21 @@ import EditarVentasBalanceMensualModal, {
   type EditarVentasBalanceMensualContext,
 } from "@/components/finanzas/EditarVentasBalanceMensualModal";
 import BalanceMensualDetallePorRubroModal from "@/components/finanzas/BalanceMensualDetallePorRubroModal";
+import BalanceMensualDetalleGastosPorRubroModal from "@/components/finanzas/BalanceMensualDetalleGastosPorRubroModal";
 import BalanceMensualDetalleGastosRubroModal from "@/components/finanzas/BalanceMensualDetalleGastosRubroModal";
+import BalanceMensualGastoHistoricoModal from "@/components/finanzas/BalanceMensualGastoHistoricoModal";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
 import {
-  agruparRubrosCostoMensual,
+  agruparTiposYRubrosCostoMensual,
   BALANCE_MENSUAL_RUBRO_REPARTO_CC,
+  listarGastosAgregadosPorRubroTipo,
   listarGastosDetalleRubro,
+  totalMontoTipoEnCelda,
   type BalanceMensualColumnaDetalle,
-  type BalanceMensualRubroAgrupado,
+  type BalanceMensualGastoAgregado,
+  type ElegirRubroBalancePayload,
 } from "@/lib/balanceMensualDetalle";
+import { fmtTituloPalabras } from "@/lib/format";
 
 const ANIO_FILTRO_MIN = 2026;
 const ANIO_FILTRO_MAX = 2046;
@@ -270,75 +276,69 @@ function TablaBalanceMensualAlineada({
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
                       {esFilaVentas ? (
-                        <div className="grid w-full grid-cols-[1fr_2.25rem] items-center gap-x-1">
-                          <span
-                            className={cn(
-                              "min-w-0 text-right",
-                              negritaValor ? "font-bold" : "font-normal"
-                            )}
-                          >
-                            {txt}
-                          </span>
-                          <div className="flex justify-end">
-                            {mostrarEditarVentas && sid ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                                aria-label={`Editar ventas — ${c.titulo}`}
-                                onClick={() =>
-                                  onEditarVentas({
-                                    sucursalId: sid,
-                                    nombreSucursal: c.titulo,
-                                    mes,
-                                    anio,
-                                    ventaActual: c.bloque.ventas,
-                                  })
-                                }
-                              >
-                                <Pencil className="h-4 w-4" aria-hidden />
-                              </Button>
-                            ) : (
-                              <span className="inline-block h-8 w-8 shrink-0" aria-hidden />
-                            )}
-                          </div>
-                        </div>
-                      ) : fila.tipo === "monto" &&
-                        (fila.id === "cv" || fila.id === "cf") &&
-                        onAbrirDetalleCostos ? (
-                        <div className="grid w-full grid-cols-[1fr_2.25rem] items-center gap-x-1">
-                          <span
-                            className={cn(
-                              "min-w-0 text-right",
-                              negritaValor ? "font-bold" : "font-normal"
-                            )}
-                          >
-                            {txt}
-                          </span>
-                          <div className="flex justify-end">
+                        <div className="flex w-full items-center justify-end gap-1">
+                          {mostrarEditarVentas && sid ? (
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                              aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                              aria-label={`Editar ventas — ${c.titulo}`}
                               onClick={() =>
-                                onAbrirDetalleCostos({
-                                  tipo: fila.id === "cv" ? "variables" : "fijos",
-                                  columna:
-                                    c.key === "global"
-                                      ? { ambito: "global" }
-                                      : { ambito: "sucursal", nombre: c.titulo },
-                                  etiquetaColumna: c.titulo,
-                                  totalCvCelda: c.bloque.costosVariables,
-                                  totalCfCelda: c.bloque.costosFijos,
+                                onEditarVentas({
+                                  sucursalId: sid,
+                                  nombreSucursal: c.titulo,
+                                  mes,
+                                  anio,
+                                  ventaActual: c.bloque.ventas,
                                 })
                               }
                             >
-                              <PanelRightOpen className="h-4 w-4" aria-hidden />
+                              <Pencil className="h-4 w-4" aria-hidden />
                             </Button>
-                          </div>
+                          ) : null}
+                          <span
+                            className={cn(
+                              "min-w-0",
+                              negritaValor ? "font-bold" : "font-normal"
+                            )}
+                          >
+                            {txt}
+                          </span>
+                        </div>
+                      ) : fila.tipo === "monto" &&
+                        (fila.id === "cv" || fila.id === "cf") &&
+                        onAbrirDetalleCostos ? (
+                        <div className="flex w-full items-center justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                            aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                            onClick={() =>
+                              onAbrirDetalleCostos({
+                                tipo: fila.id === "cv" ? "variables" : "fijos",
+                                columna:
+                                  c.key === "global"
+                                    ? { ambito: "global" }
+                                    : { ambito: "sucursal", nombre: c.titulo },
+                                etiquetaColumna: c.titulo,
+                                totalCvCelda: c.bloque.costosVariables,
+                                totalCfCelda: c.bloque.costosFijos,
+                              })
+                            }
+                          >
+                            <PanelRightOpen className="h-4 w-4" aria-hidden />
+                          </Button>
+                          <span
+                            className={cn(
+                              "min-w-0",
+                              negritaValor ? "font-bold" : "font-normal"
+                            )}
+                          >
+                            {txt}
+                          </span>
                         </div>
                       ) : (
                         <div className="flex justify-end">
@@ -376,9 +376,17 @@ type DetalleRubrosModalCtx = {
   totalCfCelda: number;
 };
 
-type DetalleGastosModalCtx = DetalleRubrosModalCtx & {
+type DetalleGastosPorRubroModalCtx = DetalleRubrosModalCtx & {
+  tipoGastoNombre: string | null;
+  etiquetaTipo: string;
   rubroClave: string;
   tituloRubro: string;
+  totalRubroSeccion: number;
+};
+
+type DetalleLineasGastoModalCtx = DetalleGastosPorRubroModalCtx & {
+  gastoNombre: string;
+  totalGastoAgregado: number;
 };
 
 export default function FinanzasBalanceMensualPageClient({
@@ -395,12 +403,19 @@ export default function FinanzasBalanceMensualPageClient({
   const [ventasModalCtx, setVentasModalCtx] = useState<EditarVentasBalanceMensualContext | null>(null);
   const [detalleRubrosOpen, setDetalleRubrosOpen] = useState(false);
   const [detalleRubrosCtx, setDetalleRubrosCtx] = useState<DetalleRubrosModalCtx | null>(null);
-  const [detalleGastosOpen, setDetalleGastosOpen] = useState(false);
-  const [detalleGastosCtx, setDetalleGastosCtx] = useState<DetalleGastosModalCtx | null>(null);
+  const [detalleGastosPorRubroOpen, setDetalleGastosPorRubroOpen] = useState(false);
+  const [detalleGastosPorRubroCtx, setDetalleGastosPorRubroCtx] =
+    useState<DetalleGastosPorRubroModalCtx | null>(null);
+  const [detalleLineasGastoOpen, setDetalleLineasGastoOpen] = useState(false);
+  const [detalleLineasGastoCtx, setDetalleLineasGastoCtx] =
+    useState<DetalleLineasGastoModalCtx | null>(null);
+  const [historicoOpen, setHistoricoOpen] = useState(false);
+  const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
+  const [historicoDescripcion, setHistoricoDescripcion] = useState("");
 
-  const rubrosDetalle = useMemo(() => {
+  const seccionesTiposRubros = useMemo(() => {
     if (!detalleRubrosCtx) return [];
-    return agruparRubrosCostoMensual(
+    return agruparTiposYRubrosCostoMensual(
       filas,
       sucursalesGeneranBalance,
       detalleRubrosCtx.columna,
@@ -408,15 +423,30 @@ export default function FinanzasBalanceMensualPageClient({
     );
   }, [detalleRubrosCtx, filas, sucursalesGeneranBalance]);
 
-  const filasGastosDetalle = useMemo(() => {
-    if (!detalleGastosCtx) return [];
+  const gastosAgregadosPorRubro = useMemo(() => {
+    if (!detalleGastosPorRubroCtx) return [];
+    return listarGastosAgregadosPorRubroTipo(
+      filas,
+      detalleGastosPorRubroCtx.columna,
+      detalleGastosPorRubroCtx.tipo,
+      detalleGastosPorRubroCtx.rubroClave,
+      detalleGastosPorRubroCtx.tipoGastoNombre,
+    );
+  }, [detalleGastosPorRubroCtx, filas]);
+
+  const filasLineasGastoDetalle = useMemo(() => {
+    if (!detalleLineasGastoCtx) return [];
     return listarGastosDetalleRubro(
       filas,
-      detalleGastosCtx.columna,
-      detalleGastosCtx.tipo,
-      detalleGastosCtx.rubroClave,
+      detalleLineasGastoCtx.columna,
+      detalleLineasGastoCtx.tipo,
+      detalleLineasGastoCtx.rubroClave,
+      {
+        tipoGastoNombre: detalleLineasGastoCtx.tipoGastoNombre,
+        gastoNombre: detalleLineasGastoCtx.gastoNombre,
+      },
     );
-  }, [detalleGastosCtx, filas]);
+  }, [detalleLineasGastoCtx, filas]);
 
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
     const q = new URLSearchParams();
@@ -531,8 +561,8 @@ export default function FinanzasBalanceMensualPageClient({
         titulo={
           detalleRubrosCtx
             ? detalleRubrosCtx.tipo === "variables"
-              ? "Costo variable por rubro"
-              : "Costo fijo por rubro"
+              ? "Costo variable por tipo y rubro"
+              : "Costo fijo por tipo y rubro"
             : "Detalle por rubro"
         }
         subtitulo={
@@ -543,40 +573,105 @@ export default function FinanzasBalanceMensualPageClient({
         tipo={detalleRubrosCtx?.tipo ?? "variables"}
         totalCvCelda={detalleRubrosCtx?.totalCvCelda ?? 0}
         totalCfCelda={detalleRubrosCtx?.totalCfCelda ?? 0}
-        rubros={rubrosDetalle}
-        onElegirRubro={(r: BalanceMensualRubroAgrupado) => {
+        secciones={seccionesTiposRubros}
+        onElegirRubro={(payload: ElegirRubroBalancePayload) => {
           if (!detalleRubrosCtx) return;
-          setDetalleGastosCtx({
+          setDetalleGastosPorRubroCtx({
             ...detalleRubrosCtx,
-            rubroClave: r.clave,
-            tituloRubro: r.etiqueta,
+            tipoGastoNombre: payload.tipoGastoNombre,
+            etiquetaTipo: payload.etiquetaTipo,
+            rubroClave: payload.rubro.clave,
+            tituloRubro: payload.rubro.etiqueta,
+            totalRubroSeccion: payload.rubro.monto,
           });
-          setDetalleGastosOpen(true);
+          setDetalleGastosPorRubroOpen(true);
+        }}
+      />
+      <BalanceMensualDetalleGastosPorRubroModal
+        open={detalleGastosPorRubroOpen}
+        onOpenChange={(open) => {
+          setDetalleGastosPorRubroOpen(open);
+          if (!open) setDetalleGastosPorRubroCtx(null);
+        }}
+        titulo="Gastos por rubro"
+        subtitulo={
+          detalleGastosPorRubroCtx
+            ? `${fmtTituloPalabras(detalleGastosPorRubroCtx.tituloRubro.toLowerCase())} · ${fmtTituloPalabras(
+                detalleGastosPorRubroCtx.etiquetaTipo.toLowerCase(),
+              )} · ${
+                detalleGastosPorRubroCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
+              } · ${detalleGastosPorRubroCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+            : ""
+        }
+        tipo={detalleGastosPorRubroCtx?.tipo ?? "variables"}
+        totalCvCelda={detalleGastosPorRubroCtx?.totalCvCelda ?? 0}
+        totalCfCelda={detalleGastosPorRubroCtx?.totalCfCelda ?? 0}
+        totalRubroSeccion={detalleGastosPorRubroCtx?.totalRubroSeccion ?? 0}
+        gastos={gastosAgregadosPorRubro}
+        onElegirGasto={(g: BalanceMensualGastoAgregado) => {
+          if (!detalleGastosPorRubroCtx) return;
+          setDetalleLineasGastoCtx({
+            ...detalleGastosPorRubroCtx,
+            gastoNombre: g.gastoNombre,
+            totalGastoAgregado: g.monto,
+          });
+          setDetalleLineasGastoOpen(true);
         }}
       />
       <BalanceMensualDetalleGastosRubroModal
-        open={detalleGastosOpen}
+        open={detalleLineasGastoOpen}
         onOpenChange={(open) => {
-          setDetalleGastosOpen(open);
-          if (!open) setDetalleGastosCtx(null);
+          setDetalleLineasGastoOpen(open);
+          if (!open) setDetalleLineasGastoCtx(null);
         }}
-        titulo={detalleGastosCtx?.tituloRubro ?? "Detalle de gastos"}
+        titulo={detalleLineasGastoCtx?.gastoNombre ?? "Líneas de gasto"}
         subtitulo={
-          detalleGastosCtx
-            ? `${
-                detalleGastosCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
-              } · ${detalleGastosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+          detalleLineasGastoCtx
+            ? `${fmtTituloPalabras(detalleLineasGastoCtx.tituloRubro.toLowerCase())} · ${fmtTituloPalabras(
+                detalleLineasGastoCtx.etiquetaTipo.toLowerCase(),
+              )} · ${
+                detalleLineasGastoCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
+              } · ${detalleLineasGastoCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
             : ""
         }
-        tipo={detalleGastosCtx?.tipo ?? "variables"}
-        totalCvCelda={detalleGastosCtx?.totalCvCelda ?? 0}
-        totalCfCelda={detalleGastosCtx?.totalCfCelda ?? 0}
-        filas={filasGastosDetalle}
+        tipo={detalleLineasGastoCtx?.tipo ?? "variables"}
+        totalGastoAgregado={detalleLineasGastoCtx?.totalGastoAgregado ?? 0}
+        totalRubroSeccion={detalleLineasGastoCtx?.totalRubroSeccion ?? 0}
+        totalPorTipo={(tipoNombre: string) =>
+          detalleLineasGastoCtx
+            ? totalMontoTipoEnCelda(
+                filas,
+                sucursalesGeneranBalance,
+                detalleLineasGastoCtx.columna,
+                detalleLineasGastoCtx.tipo,
+                tipoNombre,
+              )
+            : 0
+        }
+        filas={filasLineasGastoDetalle}
         notaInformativa={
-          detalleGastosCtx?.rubroClave === BALANCE_MENSUAL_RUBRO_REPARTO_CC
+          detalleLineasGastoCtx?.rubroClave === BALANCE_MENSUAL_RUBRO_REPARTO_CC
             ? "Los importes son el total del mes imputado a cada centro de costo (sin balance). En la tabla del balance, ese total se reparte en partes iguales entre las sucursales que generan balance."
             : null
         }
+        onAbrirHistorico={({ gastoFinalId, etiqueta }) => {
+          setHistoricoGastoFinalId(gastoFinalId);
+          setHistoricoDescripcion(etiqueta);
+          setHistoricoOpen(true);
+        }}
+      />
+      <BalanceMensualGastoHistoricoModal
+        key={historicoGastoFinalId ?? "sin-gasto"}
+        open={historicoOpen}
+        onOpenChange={(open) => {
+          setHistoricoOpen(open);
+          if (!open) {
+            setHistoricoGastoFinalId(null);
+            setHistoricoDescripcion("");
+          }
+        }}
+        gastoFinalId={historicoGastoFinalId}
+        descripcion={historicoDescripcion}
       />
     </div>
   );

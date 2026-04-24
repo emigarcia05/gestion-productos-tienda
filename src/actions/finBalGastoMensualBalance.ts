@@ -9,6 +9,7 @@ import {
   crearImputacionGastoUnicoBalanceSchema,
   editarMontoFinBalGastoMensualSchema,
   eliminarFinBalGastoMensualSchema,
+  historicoMontosGastoFinalBalanceSchema,
   listarGastosFinalesNoMensualesParamsSchema,
   obtenerMontoMesAnteriorSchema,
   registrarPagoFinBalGastoMensualSchema,
@@ -20,9 +21,11 @@ import {
   crearImputacionGastoUnicoBalance,
   eliminarFinBalGastoMensual,
   listarGastosFinalesNoMensualesConEstadoPeriodo,
+  listarHistoricoMontosGastoFinalBalance,
   mesAnioCalendarioArgentina,
   obtenerMontoImputacionMesAnterior,
   type FinBalGastoFinalNoMensualListItem,
+  type HistoricoMontoGastoFinalBalanceItem,
 } from "@/services/finBalGastoMensualBalance.service";
 
 function revalidateGastosPaths(): void {
@@ -164,4 +167,20 @@ export async function obtenerMontoMesAnteriorFinBalGastoMensualAction(
 
   const monto = await obtenerMontoImputacionMesAnterior(parsed.data);
   return { ok: true, data: { monto } };
+}
+
+/** Serie mensual de imputaciones de un gasto final (balance mensual · gráfico). */
+export async function listarHistoricoMontosGastoFinalBalanceAction(
+  raw: unknown,
+): Promise<ActionResult<HistoricoMontoGastoFinalBalanceItem[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  const parsed = historicoMontosGastoFinalBalanceSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const data = await listarHistoricoMontosGastoFinalBalance(parsed.data.gastoFinalId);
+  return { ok: true, data };
 }

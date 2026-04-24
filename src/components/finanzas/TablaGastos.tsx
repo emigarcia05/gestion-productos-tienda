@@ -18,7 +18,7 @@ import {
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
-import { Banknote, Pencil, Trash2 } from "lucide-react";
+import { Banknote, BarChart2, Pencil, Trash2 } from "lucide-react";
 import { type ReactNode } from "react";
 
 export type { BalanceGastoMensualFila };
@@ -31,6 +31,8 @@ interface Props {
   onEditarMonto?: (fila: BalanceGastoMensualFila) => void;
   onPagar?: (fila: BalanceGastoMensualFila) => void;
   onEliminar?: (fila: BalanceGastoMensualFila) => void;
+  /** Abre el histórico mensual del gasto final (mismo modal que balance mensual). */
+  onVerHistorico?: (fila: BalanceGastoMensualFila) => void;
 }
 
 const TH_NUM = "text-right whitespace-nowrap";
@@ -41,9 +43,9 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** Pesos FECHA…DEVENGADO (sin ACCIONES): FECHA, SUCURSAL, TIPO, PROVEEDOR, RUBRO, GASTO, MONTO, PAGADO, DEVENGADO. Suman 86 (con editor + ACCIONES 14 → 100%). */
-const COL_WIDTHS_DATA_PCT = [8, 8, 8, 15, 12, 14, 7, 7, 7] as const;
-/** FECHA…DEVENGADO + ACCIONES; suma 100. */
+/** Pesos FECHA…PAGADO (sin ACCIONES): 8 columnas. Suman 86 (con editor + ACCIONES 14 → 100%). */
+const COL_WIDTHS_DATA_PCT = [9, 9, 9, 15, 12, 14, 9, 9] as const;
+/** FECHA…PAGADO + ACCIONES; suma 100. */
 const COL_WIDTHS_PCT_CON_ACCIONES: readonly number[] = [...COL_WIDTHS_DATA_PCT, 14];
 /** Sin ACCIONES: mismos pesos relativos que {@link COL_WIDTHS_DATA_PCT}, escalados a suma 100%. */
 const COL_WIDTHS_PCT_SIN_ACCIONES: readonly number[] = COL_WIDTHS_DATA_PCT.map(
@@ -91,10 +93,10 @@ export default function TablaGastos({
   onEditarMonto,
   onPagar,
   onEliminar,
+  onVerHistorico,
 }: Props) {
   const totalMonto = filas.reduce((acc, fila) => acc + fila.monto, 0);
   const totalPagado = filas.reduce((acc, fila) => acc + fila.pagado, 0);
-  const totalPendiente = filas.reduce((acc, fila) => acc + fila.montoDevengadoPendiente, 0);
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
   const anchosFullPct = mostrarAcciones ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
@@ -143,11 +145,28 @@ export default function TablaGastos({
             ) : null}
           </div>
         </TableCell>
-        <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>{celdaMonto(f.monto)}</TableCell>
-        <TableCell className={cn(TD_NUM, CELL_MIN)}>{celdaMonto(f.pagado)}</TableCell>
         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-          {celdaMonto(f.montoDevengadoPendiente)}
+          <div className="flex w-full items-center justify-end gap-1">
+            {onVerHistorico ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                className={cn(
+                  TABLE_ROW_ICON_BUTTON_CLASS,
+                  "h-7 w-7 shrink-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                )}
+                title="Ver evolución mensual del gasto"
+                aria-label={`Ver evolución mensual — ${f.gastoNombre}`}
+                onClick={() => onVerHistorico(f)}
+              >
+                <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              </Button>
+            ) : null}
+            <span className="min-w-0">{celdaMonto(f.monto)}</span>
+          </div>
         </TableCell>
+        <TableCell className={cn(TD_NUM, CELL_MIN)}>{celdaMonto(f.pagado)}</TableCell>
       </>
     );
   }
@@ -197,7 +216,7 @@ export default function TablaGastos({
     );
   }
 
-  const colSpanVacio = mostrarAcciones ? 10 : 9;
+  const colSpanVacio = mostrarAcciones ? 9 : 8;
 
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
@@ -219,12 +238,6 @@ export default function TablaGastos({
                   <TableHead className={CELL_MIN}>GASTO</TableHead>
                   <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                   <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
-                  <TableHead
-                    className={cn(TH_NUM, CELL_MIN)}
-                    title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
-                  >
-                    DEVENGADO
-                  </TableHead>
                   {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
                 </TableRow>
               </TableHeader>
@@ -264,16 +277,6 @@ export default function TablaGastos({
                   <span className="text-muted-foreground">—</span>
                 ) : (
                   <>${fmtPrecio(totalPagado)}</>
-                )}
-              </TarjetaTotalGasto>
-              <TarjetaTotalGasto
-                etiqueta="DEVENGADO"
-                title="Devengado acumulado hasta hoy menos importe ya pagado (pendiente sobre el devengado)."
-              >
-                {totalPendiente === 0 ? (
-                  <span className="text-muted-foreground">—</span>
-                ) : (
-                  <>${fmtPrecio(totalPendiente)}</>
                 )}
               </TarjetaTotalGasto>
             </div>

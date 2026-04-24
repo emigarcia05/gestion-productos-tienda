@@ -40,6 +40,13 @@ export type ListarGastosFinalesNoMensualesParams = z.infer<
   typeof listarGastosFinalesNoMensualesParamsSchema
 >;
 
+export const historicoMontosGastoFinalBalanceSchema = z.object({
+  gastoFinalId: prismaCuidSchema,
+});
+export type HistoricoMontosGastoFinalBalanceInput = z.infer<
+  typeof historicoMontosGastoFinalBalanceSchema
+>;
+
 export const crearImputacionGastoUnicoBalanceSchema = z
   .object({
     gastoFinalId: prismaCuidSchema,

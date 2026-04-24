@@ -313,7 +313,7 @@
     min-width: 0;
     overflow: auto;
     /* Evita desalinear el `<colgroup>` del cuerpo vs la tabla de totales: sin esto, la barra vertical
-       consume ancho solo en el scroll y la fila TOTAL queda corrida respecto a MONTO/PAGADO/DEVENGADO. */
+       consume ancho solo en el scroll y la fila TOTAL queda corrida respecto a MONTO/PAGADO. */
     scrollbar-gutter: stable;
   }
   .contenedor-tabla-gestion--pie-fijo-pie {
