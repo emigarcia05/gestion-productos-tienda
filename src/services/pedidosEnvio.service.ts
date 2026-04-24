@@ -461,12 +461,13 @@ export interface ProveedorParaEnvio {
   whatsapp: string | null;
 }
 
-/** Fila de la tabla Generar Pedido (cantidad y descripción). */
+/** Fila de la tabla Generar Pedido (cantidad, proveedor y descripción). */
 export interface ItemTablaEnviarPedido {
   cantPedir: number;
   descripcion: string;
   tipoPedido: string;
   sucursal: string;
+  proveedor: string;
 }
 
 /**
@@ -523,23 +524,33 @@ export async function getItemsTablaEnviarPedido(params: {
       descripcionTienda: true,
       cantPedir: true,
       sucursal: { select: { codigo: true, nombre: true } },
+      proveedor: { select: { nombre: true, prefijo: true } },
     },
   });
 
-  const items: ItemTablaEnviarPedido[] = rows.map((i) => ({
-    cantPedir: Math.max(0, Number(i.cantPedir) || 0),
-    tipoPedido: i.tipoPedido,
-    sucursal:
-      (i.sucursal?.codigo &&
-      (SUCURSAL_LABEL_PEDIDO as Partial<Record<string, string>>)[i.sucursal.codigo]
-        ? (SUCURSAL_LABEL_PEDIDO as Partial<Record<string, string>>)[i.sucursal.codigo]
-        : i.sucursal?.nombre?.trim()) ||
-      "",
-    descripcion:
-      (i.descripcionProveedor ?? "").trim() ||
-      (i.tintometricoDescripcion ?? "").trim() ||
-      (i.descripcionTienda ?? "").trim(),
-  }));
+  const items: ItemTablaEnviarPedido[] = rows.map((i) => {
+    const pref = (i.proveedor?.prefijo ?? "").trim();
+    const nom = (i.proveedor?.nombre ?? "").trim();
+    const proveedorEtiqueta =
+      pref.length > 0
+        ? `[${pref}] ${nom}`.trim().toUpperCase()
+        : nom.toUpperCase();
+    return {
+      cantPedir: Math.max(0, Number(i.cantPedir) || 0),
+      tipoPedido: i.tipoPedido,
+      sucursal:
+        (i.sucursal?.codigo &&
+        (SUCURSAL_LABEL_PEDIDO as Partial<Record<string, string>>)[i.sucursal.codigo]
+          ? (SUCURSAL_LABEL_PEDIDO as Partial<Record<string, string>>)[i.sucursal.codigo]
+          : i.sucursal?.nombre?.trim()) ||
+        "",
+      proveedor: proveedorEtiqueta,
+      descripcion:
+        (i.descripcionProveedor ?? "").trim() ||
+        (i.tintometricoDescripcion ?? "").trim() ||
+        (i.descripcionTienda ?? "").trim(),
+    };
+  });
 
   return { items };
 }

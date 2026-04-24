@@ -46,19 +46,25 @@ export default function TiendaCalcTintometricoPageClient({
     [proveedores]
   );
 
-  /** Lista general (tienda): px. compra × coef. tintométrico del proveedor, redondeo a centenas. */
-  const pxListaGeneral = useMemo(() => {
+  /**
+   * Lista general: px. compra × coef. (si hay proveedor), redondeo a centenas.
+   * Lista mayorista: 30 % menos que la general (70 % del valor general en pesos enteros).
+   */
+  const { pxListaGeneral, pxListaMayorista } = useMemo(() => {
     const base = Math.round(montoArNormalizedStringToPesosNumber(pxCompraNorm));
-    if (!proveedorId) {
-      return montoArPesosEnterosToDisplay(roundToNearestHundred(base));
-    }
-    const coef =
-      proveedoresConCoefMayorAUno.find((p) => p.id === proveedorId)?.coeficienteTintometrico ?? 1;
-    return montoArPesosEnterosToDisplay(roundToNearestHundred(base * coef));
+    const generalPesos = proveedorId
+      ? roundToNearestHundred(
+          base *
+            (proveedoresConCoefMayorAUno.find((p) => p.id === proveedorId)?.coeficienteTintometrico ??
+              1),
+        )
+      : roundToNearestHundred(base);
+    const mayoristaPesos = Math.round(generalPesos * 0.7);
+    return {
+      pxListaGeneral: montoArPesosEnterosToDisplay(generalPesos),
+      pxListaMayorista: montoArPesosEnterosToDisplay(mayoristaPesos),
+    };
   }, [pxCompraNorm, proveedorId, proveedoresConCoefMayorAUno]);
-
-  /** Lista mayorista: fórmula de negocio pendiente; marcador hasta definir cálculo. */
-  const pxListaMayorista = "—";
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
@@ -129,7 +135,7 @@ export default function TiendaCalcTintometricoPageClient({
               <span className="text-xs font-semibold uppercase text-foreground">
                 Tienda - Px Lista Mayorista
               </span>
-              <div className="flex h-10 items-center justify-center rounded-md border border-border bg-muted/30 px-3 text-sm tabular-nums text-muted-foreground">
+              <div className="flex h-10 items-center justify-center rounded-md border border-border bg-background px-3 text-sm tabular-nums text-foreground">
                 {pxListaMayorista}
               </div>
             </div>

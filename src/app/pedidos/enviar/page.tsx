@@ -111,16 +111,17 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
               <Table variant="compact" scrollX={false}>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[15%]">TIPO PEDIDO</TableHead>
-                    <TableHead className="w-[15%]">SUCURSAL</TableHead>
-                    <TableHead className="w-[60%] min-w-0">DESCRIPCIÓN</TableHead>
+                    <TableHead className="w-[12%]">TIPO PEDIDO</TableHead>
+                    <TableHead className="w-[12%]">SUCURSAL</TableHead>
+                    <TableHead className="w-[18%] min-w-0">PROVEEDOR</TableHead>
+                    <TableHead className="w-[48%] min-w-0">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PEDIR</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {itemsTabla.length === 0 ? (
                     <EmptyTableRow
-                      colSpan={4}
+                      colSpan={5}
                       message={
                         hayFiltroActivo ? MENSAJE_SIN_ITEMS_FILTRADO : MENSAJE_SIN_ITEMS_GLOBAL
                       }
@@ -131,13 +132,18 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                         key={idx}
                         className={cn("hover:bg-transparent", idx % 2 === 1 && "bg-muted/30")}
                       >
-                        <TableCell className="celda-datos w-[15%] text-center">
+                        <TableCell className="celda-datos w-[12%] text-center">
                           {item.tipoPedido || ""}
                         </TableCell>
-                        <TableCell className="celda-datos w-[15%] text-center">
+                        <TableCell className="celda-datos w-[12%] text-center">
                           {(item.sucursal || "").toUpperCase()}
                         </TableCell>
-                        <TableCell className="celda-datos w-[60%] min-w-0 text-foreground">
+                        <TableCell className="celda-datos w-[18%] min-w-0 text-center text-xs">
+                          <span className="line-clamp-2" title={item.proveedor || undefined}>
+                            {item.proveedor || ""}
+                          </span>
+                        </TableCell>
+                        <TableCell className="celda-datos w-[48%] min-w-0 text-foreground">
                           {item.descripcion || ""}
                         </TableCell>
                         <TableCell className="celda-datos celda-numero text-right w-[10%]">

@@ -112,12 +112,13 @@ export async function getEnviarPedidoData() {
   return { proveedores };
 }
 
-/** Ítem de la tabla Generar Pedido: cant_pedir y descripción (descripcion_tienda o descripcion_proveedor). */
+/** Ítem de la tabla Generar Pedido: cant_pedir, proveedor y descripción (descripcion_tienda o descripcion_proveedor). */
 export type EnviarPedidoTablaItem = {
   cantPedir: number;
   descripcion: string;
   tipoPedido: string;
   sucursal: string;
+  proveedor: string;
 };
 
 /**
