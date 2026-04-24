@@ -56,6 +56,46 @@ function fmtPorcentaje(p: number | null) {
   return `${p.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
 }
 
+function filaBalance({
+  label,
+  sublabel,
+  detalle,
+  value,
+  valueClassName,
+  className,
+}: {
+  label: ReactNode;
+  sublabel?: ReactNode;
+  /** Texto auxiliar bajo el sublabel (ej. ratio de margen). */
+  detalle?: ReactNode;
+  value: string;
+  valueClassName?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-start justify-between gap-4 border-b border-border/60 py-2.5 last:border-b-0",
+        className
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-normal leading-snug text-foreground">{label}</div>
+        {sublabel ? <div className="mt-0.5 text-xs font-normal leading-snug text-muted-foreground">{sublabel}</div> : null}
+        {detalle ? <div className="mt-1.5 text-xs font-normal leading-snug text-muted-foreground">{detalle}</div> : null}
+      </div>
+      <div
+        className={cn(
+          "shrink-0 pt-0.5 text-right text-sm tabular-nums tracking-tight text-foreground",
+          valueClassName ?? "font-normal"
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function BloqueContable({
   titulo,
   b,
@@ -66,40 +106,43 @@ function BloqueContable({
   headerEnd?: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <h2 className="min-w-0 flex-1 text-sm font-semibold uppercase tracking-wide text-foreground">
+    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/25 px-4 py-3">
+        <h2 className="min-w-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           {titulo}
         </h2>
-        {headerEnd ? <div className="shrink-0 pt-0.5">{headerEnd}</div> : null}
+        {headerEnd ? <div className="shrink-0">{headerEnd}</div> : null}
       </div>
-      <dl className="mt-3 space-y-2 text-sm">
-        <div className="flex justify-between gap-4 border-b border-border/60 pb-2">
-          <dt className="text-muted-foreground">Ventas</dt>
-          <dd className="tabular-nums font-medium text-foreground">{fmtMonto(b.ventas)}</dd>
-        </div>
-        <div className="flex justify-between gap-4 border-b border-border/60 pb-2">
-          <dt className="text-muted-foreground">− Costos variables</dt>
-          <dd className="tabular-nums text-foreground">{fmtMonto(b.costosVariables)}</dd>
-        </div>
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2">
-          <dt className="font-medium text-foreground">= Resultado operativo</dt>
-          <dd className="flex flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5 text-right">
-            <span className="tabular-nums font-semibold text-foreground">{fmtMonto(b.resultadoOperativo)}</span>
-            <span className="text-xs text-muted-foreground">
-              Margen contribución / ventas: {fmtPorcentaje(b.margenContribucionPct)}
-            </span>
-          </dd>
-        </div>
-        <div className="flex justify-between gap-4 border-b border-border/60 pb-2">
-          <dt className="text-muted-foreground">− Costos fijos</dt>
-          <dd className="tabular-nums text-foreground">{fmtMonto(b.costosFijos)}</dd>
-        </div>
-        <div className="flex justify-between gap-4 pt-1">
-          <dt className="font-medium text-foreground">= Resultado ejercicio</dt>
-          <dd className="tabular-nums font-semibold text-foreground">{fmtMonto(b.resultadoEjercicio)}</dd>
-        </div>
-      </dl>
+      <div className="px-4 pb-1 pt-0.5">
+        {filaBalance({
+          label: "Ventas",
+          value: fmtMonto(b.ventas),
+          valueClassName: "font-bold",
+          className: "bg-muted/15",
+        })}
+        {filaBalance({
+          label: <span className="text-muted-foreground">− Costos variables</span>,
+          value: fmtMonto(b.costosVariables),
+        })}
+        {filaBalance({
+          label: "Resultado operativo",
+          sublabel: "(Ventas − Costos variables)",
+          detalle: <>Margen contribución / ventas: {fmtPorcentaje(b.margenContribucionPct)}</>,
+          value: fmtMonto(b.resultadoOperativo),
+          className: "border-border/80 bg-muted/10",
+        })}
+        {filaBalance({
+          label: <span className="text-muted-foreground">− Costos fijos</span>,
+          value: fmtMonto(b.costosFijos),
+        })}
+        {filaBalance({
+          label: "Resultado ejercicio",
+          sublabel: "(Resultado operativo − Costos fijos)",
+          value: fmtMonto(b.resultadoEjercicio),
+          valueClassName: "font-bold",
+          className: "border-t border-border/80 bg-muted/15",
+        })}
+      </div>
     </section>
   );
 }
