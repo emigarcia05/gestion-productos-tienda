@@ -13,6 +13,8 @@ export interface BalanceMensualBloque {
 export interface BalanceMensualSucursalBloque {
   /** `sucursalNombre` en MAYÚSCULAS (como en imputaciones). */
   nombre: string;
+  /** `global_sucursales.id` si la sucursal está en el listado con `genera_balance` (vacío si solo aparece por imputaciones huérfanas). */
+  sucursalId: string;
   bloque: BalanceMensualBloque;
 }
 
@@ -77,19 +79,26 @@ function repartoIgualEnteros(total: number, cantidad: number): number[] {
  *
  * Clasificación costos: tipo contiene `VARIABLE` → variable; `FIJO` → fijo; si no, **fijo**.
  *
- * **Ventas:** por ahora 0 (pendiente fuente contable).
+ * **Ventas:** montos cargados en `fin_bal_vtas` por sucursal / mes / año (`ventasPorSucursalNombre`).
+ * El bloque **Global** usa la suma de esas ventas (solo sucursales que generan balance en el periodo).
  */
-export function resumenBalanceMensualDesdeFilas(filas: BalanceGastoMensualFila[]): BalanceMensualResumen {
+export function resumenBalanceMensualDesdeFilas(
+  filas: BalanceGastoMensualFila[],
+  ventasPorSucursalNombre: Record<string, number>,
+  sucursalesGeneranBalance: { id: string; nombre: string }[]
+): BalanceMensualResumen {
   let gCv = 0;
   let gCf = 0;
   let poolCv = 0;
   let poolCf = 0;
 
-  const nombresQueGeneran = new Set<string>();
+  const byNombreFromDb = new Map(sucursalesGeneranBalance.map((s) => [s.nombre, s.id] as const));
+  const nombresSet = new Set<string>();
+  for (const s of sucursalesGeneranBalance) nombresSet.add(s.nombre);
   for (const f of filas) {
-    if (f.sucursalGeneraBalance) nombresQueGeneran.add(f.sucursalNombre);
+    if (f.sucursalGeneraBalance) nombresSet.add(f.sucursalNombre);
   }
-  const sucursalesOrdenadas = [...nombresQueGeneran].sort((a, b) => a.localeCompare(b, "es"));
+  const sucursalesOrdenadas = [...nombresSet].sort((a, b) => a.localeCompare(b, "es"));
 
   const directCv: Record<string, number> = Object.fromEntries(
     sucursalesOrdenadas.map((n) => [n, 0])
@@ -121,14 +130,19 @@ export function resumenBalanceMensualDesdeFilas(filas: BalanceGastoMensualFila[]
   const addCf = n > 0 ? repartoIgualEnteros(poolCf, n) : [];
 
   const sucursales: BalanceMensualSucursalBloque[] = sucursalesOrdenadas.map((nombre, i) => {
+    const v = ventasPorSucursalNombre[nombre] ?? 0;
     const cv = (directCv[nombre] ?? 0) + (addCv[i] ?? 0);
     const cf = (directCf[nombre] ?? 0) + (addCf[i] ?? 0);
-    return { nombre, bloque: construirBloque(0, cv, cf) };
+    return {
+      nombre,
+      sucursalId: byNombreFromDb.get(nombre) ?? "",
+      bloque: construirBloque(v, cv, cf),
+    };
   });
 
-  const ventas = 0;
+  const ventasGlobal = sucursales.reduce((acc, s) => acc + s.bloque.ventas, 0);
   return {
-    global: construirBloque(ventas, gCv, gCf),
+    global: construirBloque(ventasGlobal, gCv, gCf),
     sucursales,
   };
 }

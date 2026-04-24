@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Pencil } from "lucide-react";
 import FilterBar, {
   FILTER_SELECT_WRAPPER_CLASS,
   FilaFiltrosDesplegables,
@@ -17,6 +19,10 @@ import {
 import { fmtPrecio } from "@/lib/format";
 import type { BalanceMensualBloque, BalanceMensualResumen } from "@/lib/balanceMensual";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import EditarVentasBalanceMensualModal, {
+  type EditarVentasBalanceMensualContext,
+} from "@/components/finanzas/EditarVentasBalanceMensualModal";
 
 const ANIO_FILTRO_MIN = 2026;
 const ANIO_FILTRO_MAX = 2046;
@@ -52,18 +58,22 @@ function fmtPorcentaje(p: number | null) {
 
 function BloqueContable({
   titulo,
-  descripcion,
   b,
+  headerEnd,
 }: {
   titulo: string;
-  descripcion: string;
   b: BalanceMensualBloque;
+  headerEnd?: ReactNode;
 }) {
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">{titulo}</h2>
-      <p className="mt-1 text-xs text-muted-foreground">{descripcion}</p>
-      <dl className="mt-4 space-y-2 text-sm">
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="min-w-0 flex-1 text-sm font-semibold uppercase tracking-wide text-foreground">
+          {titulo}
+        </h2>
+        {headerEnd ? <div className="shrink-0 pt-0.5">{headerEnd}</div> : null}
+      </div>
+      <dl className="mt-3 space-y-2 text-sm">
         <div className="flex justify-between gap-4 border-b border-border/60 pb-2">
           <dt className="text-muted-foreground">Ventas</dt>
           <dd className="tabular-nums font-medium text-foreground">{fmtMonto(b.ventas)}</dd>
@@ -98,11 +108,19 @@ interface Props {
   mes: number;
   anio: number;
   resumen: BalanceMensualResumen;
+  puedeEditarVentas: boolean;
 }
 
-export default function FinanzasBalanceMensualPageClient({ mes, anio, resumen }: Props) {
+export default function FinanzasBalanceMensualPageClient({
+  mes,
+  anio,
+  resumen,
+  puedeEditarVentas,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const [ventasModalOpen, setVentasModalOpen] = useState(false);
+  const [ventasModalCtx, setVentasModalCtx] = useState<EditarVentasBalanceMensualContext | null>(null);
 
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
     const q = new URLSearchParams();
@@ -169,16 +187,6 @@ export default function FinanzasBalanceMensualPageClient({ mes, anio, resumen }:
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-4">
-          <p className="text-xs text-muted-foreground">
-            Periodo <span className="font-medium text-foreground">{mes}/{anio}</span>. Costos según
-            imputaciones de <strong className="font-medium text-foreground">Balance · Gastos</strong>{" "}
-            (monto del mes). Ventas aún no integradas (0). Las tarjetas por sucursal corresponden a
-            sucursales con <strong className="font-medium text-foreground">genera_balance</strong> en la tabla{" "}
-            <span className="font-mono text-[11px] text-foreground/90">global_sucursales</span>. Los gastos
-            imputados a sucursales con <strong className="font-medium text-foreground">centro_costo</strong>{" "}
-            y sin generar balance se reparten en partes <strong className="font-medium text-foreground">iguales</strong>{" "}
-            entre todas las que sí generan balance.
-          </p>
           {resumen.sucursales.length === 0 ? (
             <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-100">
               No hay sucursales con <strong>genera_balance</strong> activo: solo se muestra el bloque
@@ -186,22 +194,49 @@ export default function FinanzasBalanceMensualPageClient({ mes, anio, resumen }:
             </p>
           ) : null}
           <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3")}>
-            <BloqueContable
-              titulo="Global"
-              descripcion="Todas las ventas y gastos del periodo, sin reparto entre sucursales."
-              b={resumen.global}
-            />
-            {resumen.sucursales.map(({ nombre, bloque }) => (
+            <BloqueContable titulo="Global" b={resumen.global} />
+            {resumen.sucursales.map(({ nombre, sucursalId, bloque }) => (
               <BloqueContable
                 key={nombre}
                 titulo={nombre}
-                descripcion="Imputaciones a esta sucursal más la parte igualitaria de centros de costo sin balance."
                 b={bloque}
+                headerEnd={
+                  puedeEditarVentas && sucursalId ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      aria-label={`Editar ventas — ${nombre}`}
+                      onClick={() => {
+                        setVentasModalCtx({
+                          sucursalId,
+                          nombreSucursal: nombre,
+                          mes,
+                          anio,
+                          ventaActual: bloque.ventas,
+                        });
+                        setVentasModalOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" aria-hidden />
+                    </Button>
+                  ) : null
+                }
               />
             ))}
           </div>
         </div>
       </ClassicFilteredTableLayout>
+      <EditarVentasBalanceMensualModal
+        open={ventasModalOpen}
+        onOpenChange={(open) => {
+          setVentasModalOpen(open);
+          if (!open) setVentasModalCtx(null);
+        }}
+        ctx={ventasModalCtx}
+        onSuccess={() => router.refresh()}
+      />
     </div>
   );
 }

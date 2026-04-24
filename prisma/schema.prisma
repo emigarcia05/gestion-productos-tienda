@@ -109,6 +109,7 @@ model Sucursal {
   pedidosHistoria     PedidoHistoria[]
   movimientosFinanzas MovimientoFinanzas[]
   finBalGastoFinal    FinBalGastoFinal[]
+  finBalVtas          FinBalVtas[]
   // Tabla única de pedidos: prod_ped_merc
 
   @@map("global_sucursales")
@@ -286,6 +287,31 @@ model FinBalGastoMensual {
   @@unique([gastoFinalId, mes, anio], map: "fin_bal_gasto_mensual_gasto_mes_anio_ux")
   @@index([anio, mes])
   @@map("fin_bal_gasto_mensual")
+}
+
+/**
+ * Cargas de ventas para balance (`fin_bal_vtas`).
+ * La sucursal debe existir en `global_sucursales` con `genera_balance = true` (validado en servicio).
+ * `mes` / `anio`: periodo calendario (1–12 / año) al que aplica el monto.
+ */
+model FinBalVtas {
+  id          String   @id @default(cuid())
+  sucursalId  String   @map("sucursal_id")
+  /** Mes calendario 1–12. */
+  mes         Int
+  /** Año calendario (columna física `anio`). */
+  anio        Int      @map("anio")
+  /** Monto entero cargado desde la UI (pesos u otra unidad de negocio). */
+  monto       Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+
+  @@unique([sucursalId, mes, anio], map: "fin_bal_vtas_sucursal_mes_anio_ux")
+  @@index([sucursalId])
+  @@index([anio, mes])
+  @@map("fin_bal_vtas")
 }
 
 model ListaPrecioProveedor {

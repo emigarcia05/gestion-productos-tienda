@@ -3,11 +3,15 @@ import FinanzasBalanceMensualPageClient from "@/components/finanzas/FinanzasBala
 import { resumenBalanceMensualDesdeFilas } from "@/lib/balanceMensual";
 import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getRol } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
 import {
   listarImputacionesMensualesBalance,
   mesAnioCalendarioArgentina,
 } from "@/services/finBalGastoMensualBalance.service";
+import {
+  listarFinBalVtasPorMesAnio,
+  listarSucursalesGeneraBalanceParaVtas,
+} from "@/services/finBalVtas.service";
 
 export const dynamic = "force-dynamic";
 
@@ -55,8 +59,24 @@ export default async function BalanceMensualPage({ searchParams }: Props) {
   }
 
   const { mes, anio } = parsed.data;
-  const filas = await listarImputacionesMensualesBalance({ mes, anio });
-  const resumen = resumenBalanceMensualDesdeFilas(filas);
+  const [filas, sucursalesBalance, vtasMes] = await Promise.all([
+    listarImputacionesMensualesBalance({ mes, anio }),
+    listarSucursalesGeneraBalanceParaVtas(),
+    listarFinBalVtasPorMesAnio(mes, anio),
+  ]);
+  const ventasPorSucursalNombre: Record<string, number> = {};
+  for (const v of vtasMes) {
+    ventasPorSucursalNombre[v.sucursal.nombre] = v.monto;
+  }
+  const resumen = resumenBalanceMensualDesdeFilas(filas, ventasPorSucursalNombre, sucursalesBalance);
+  const puedeEditarVentas = await esEditor();
 
-  return <FinanzasBalanceMensualPageClient mes={mes} anio={anio} resumen={resumen} />;
+  return (
+    <FinanzasBalanceMensualPageClient
+      mes={mes}
+      anio={anio}
+      resumen={resumen}
+      puedeEditarVentas={puedeEditarVentas}
+    />
+  );
 }
