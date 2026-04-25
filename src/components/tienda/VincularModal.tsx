@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, ArrowRightLeft } from "lucide-react";
+import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -22,7 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
-import { convertirEnProveedor } from "@/actions/tienda";
 import { calcPxCompraFinal, calcMargenSinIvaPct } from "@/lib/calculos";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
@@ -110,7 +108,6 @@ export default function VincularModal({
   open: openProp,
   onOpenChange,
 }: Props) {
-  const router = useRouter();
   const [openInterno, setOpenInterno] = useState(false);
   const open = openProp !== undefined ? openProp : openInterno;
   const setOpen = onOpenChange !== undefined ? onOpenChange : setOpenInterno;
@@ -170,20 +167,6 @@ export default function VincularModal({
         setVinculados((prev) => prev.filter((p) => p.id !== producto.id));
         setCantidad((c) => Math.max(0, c - 1));
         toast.success(`Desvinculado: ${producto.codigoExterno}`);
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
-
-  function handleConvertir(producto: ProductoConProveedor) {
-    startTransition(async () => {
-      const res = await convertirEnProveedor(itemTiendaId, producto.id);
-      if (res.ok) {
-        const refreshed = await getVinculos(itemTiendaId);
-        if (refreshed.success) setVinculados(refreshed.data);
-        router.refresh();
-        toast.success(`Proveedor principal actualizado a "${producto.proveedor.nombre}"`);
       } else {
         toast.error(res.error);
       }
@@ -319,22 +302,13 @@ export default function VincularModal({
                       const margenPct = calcMargenSinIvaPct(precioListaTienda, px, porcIva);
                       return (
                         <TableRow key={p.id}>
-                          <TableCell className="celda-datos">
+                          <TableCell className="celda-datos text-center">
                             {oficial ? (
                               <span className="sr-only">Proveedor oficial actual</span>
                             ) : (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 gap-1 px-1.5 text-[0.6875rem] font-semibold shrink-0"
-                                disabled={isPending}
-                                title="Marcar Como Proveedor Oficial Del Ítem"
-                                onClick={() => handleConvertir(p)}
-                              >
-                                <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                Oficial
-                              </Button>
+                              <span className="text-muted-foreground" aria-hidden>
+                                —
+                              </span>
                             )}
                           </TableCell>
                           <TableCell className="celda-datos celda-mono whitespace-nowrap">

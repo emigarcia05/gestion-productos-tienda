@@ -4,6 +4,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
+import { Button } from "@/components/ui/button";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -49,7 +50,11 @@ export default async function TiendaPage({ searchParams }: Props) {
   const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
-  const actions = undefined;
+  const actions = (
+    <Button type="button" className="h-10 px-4">
+      Cambiar A Prov. Menor Costo
+    </Button>
+  );
 
   const filters = (
     <FiltrosTienda

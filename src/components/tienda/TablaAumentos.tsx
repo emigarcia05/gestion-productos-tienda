@@ -29,11 +29,9 @@ import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
 function exportarXLS(items: ItemAumento[]) {
   import("xlsx").then((XLSX) => {
     const filas = items.map((i) => ({
-      "CODIGO":           i.codItem,
-      "CODIGO EXTERNO":   i.codigoExterno,
-      "PROVEEDOR":        i.proveedorNombre ?? i.proveedorDux ?? "",
+      "CODIGO": i.codItem,
       // "COSTO" del Excel debe provenir de la fórmula oficial en prod_precios_provee (px_compra_final).
-      "COSTO":            parseFloat(i.pxCompraFinal.toFixed(2)),
+      "COSTO": parseFloat(i.pxCompraFinal.toFixed(2)),
     }));
 
     const hoja   = XLSX.utils.json_to_sheet(filas);
@@ -43,8 +41,6 @@ function exportarXLS(items: ItemAumento[]) {
     // Ancho de columnas
     hoja["!cols"] = [
       { wch: 14 },
-      { wch: 18 },
-      { wch: 30 },
       { wch: 12 },
     ];
 

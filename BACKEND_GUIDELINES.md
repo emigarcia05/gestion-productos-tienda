@@ -102,6 +102,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 
 - En listados/exportaciones donde el "costo" represente el valor final calculado para el proveedor (ej. **Control Aumentos**), usar como fuente **`px_compra_final`** de `prod_precios_provee` (campo `pxCompraFinal` en Prisma).
 - Evitar exportar un costo derivado de la tabla de tienda (`costo_compra`/`costoTienda`) si existe una columna final calculada en `prod_precios_provee`.
+- **Control Aumentos (Excel)**: el archivo de exportación se limita a las columnas **`CODIGO`** y **`COSTO`**; no incluir columnas auxiliares (por ejemplo proveedor o código externo) mientras no exista un nuevo requerimiento funcional.
 
 ### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
 
@@ -816,7 +817,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
-- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` valida IDs con Zod antes de Prisma.
+- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` valida IDs con Zod antes de Prisma; la UI del modal **Vínculos Con Proveedores** (`VincularModal`) ya no invoca esta Action (2026-04), pero se mantiene en `tienda.ts` por si se reexpone u otro flujo la consume.
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
 - **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.
 - **`pedidos.ts`**: `generarPdfEnviarPedidoAction` y `syncPedidoUrgenteEnvioAction` usan esquemas Zod dedicados; permisos de pedidos al inicio.
