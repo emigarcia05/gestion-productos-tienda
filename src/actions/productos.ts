@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { editarProductoSchema, aplicarCampoMasivoSchema } from "@/lib/validations/productos";
 
@@ -15,7 +16,10 @@ export interface CamposEditables {
 }
 
 export async function editarProducto(id: string, campos: CamposEditables): Promise<ActionResult> {
-  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
+    return { ok: false, error: "Sin permisos para editar productos de lista." };
+  }
   const parsed = editarProductoSchema.safeParse({ id, campos });
   if (!parsed.success) {
     const msg = parsed.error.flatten().formErrors[0] ?? parsed.error.message;
@@ -33,7 +37,10 @@ export async function aplicarCampoMasivo(
   valor: number | boolean,
   q?: string
 ): Promise<ActionResult<{ afectados: number }>> {
-  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
+    return { ok: false, error: "Sin permisos para edición masiva." };
+  }
   const parsed = aplicarCampoMasivoSchema.safeParse({ proveedorId, campo, valor, q });
   if (!parsed.success) {
     const msg = parsed.error.flatten().formErrors[0] ?? parsed.error.message;

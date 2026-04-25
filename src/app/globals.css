@@ -187,6 +187,8 @@
   --altura-paneles-aumentos: 36vh;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /** Sombra de la tarjeta que envuelve la tabla principal (p. ej. Comp. Proveedores, Generar Pedido, Pedido Urgente). Evitar `shadow-[0_4px_12px_rgba(...)]` en JSX. */
+  --card-tabla-envoltorio-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
   /* Encabezado global: altura mínima = (~2 líneas de texto) + padding; si el título lo requiere, el th puede crecer (sin tope). */
@@ -607,6 +609,15 @@
   /* Sidebar: sombra desde variable (SSOT en :root --sidebar-shadow). */
   .sidebar-container {
     box-shadow: var(--sidebar-shadow);
+  }
+
+  /**
+   * Tarjeta envoltorio de tabla (shadcn Card + overrides compactos).
+   * Combinar con `cn("card-tabla-envoltorio", "flex-1")` cuando la card deba crecer en flex.
+   */
+  .card-tabla-envoltorio {
+    @apply min-h-0 flex flex-col rounded-xl border border-border bg-card text-card-foreground overflow-hidden gap-0 py-0 transition-shadow duration-150;
+    box-shadow: var(--card-tabla-envoltorio-shadow);
   }
 
   /* Toaster (sonner): tokens configurados vía clase, sin style inline en el componente. */

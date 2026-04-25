@@ -17,6 +17,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - **Excepción acordada**: la pantalla **Balance mensual** (`FinanzasBalanceMensualPageClient`) usa **hex fijos de informe** en el encabezado de la grilla (`#0072BB` + texto blanco) y en las filas de **resultado operativo / resultado ejercicio** (fondo `#a9d6f1`, texto `#063652`). No extrapolar este patrón a otras pantallas sin actualizar esta guía. Detalle en la subsección **Balance mensual** bajo `ClassicFilteredTableLayout`.  
    - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
    - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
+   - **Tarjeta envoltorio de tabla** (grilla principal bajo filtros: Comp. Proveedores, `/pedidos/enviar`, Pedido Urgente, Pedido Tintométrico): clase global **`card-tabla-envoltorio`** en el **`Card`** de shadcn; la sombra sale de **`--card-tabla-envoltorio-shadow`** en **`globals.css`**. Si la card debe crecer en un flex column (p. ej. proveedores), usar **`className={cn("card-tabla-envoltorio", "flex-1")}`**. **No** repetir utilidades largas ni **`shadow-[0_4px_12px_rgba(0,0,0,0.05)]`** (valor mágico duplicado).
 
 3. **Texto en mayúscula inicial (title case)**  
    - **Títulos de modales** y **textos de botones**: cada palabra con primera letra en mayúscula. Ejemplos: "Importar Lista De Precios", "Nueva Importación".  
@@ -76,6 +77,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 | `border-slate-200` | `border-border` |
 | `emerald-*`, `amber-*`, `blue-*` (éxito / aviso / “info”) | `@/lib/ui-classes` o `text-primary`, `bg-accent`, `text-accent2`, etc. |
 | `` className={`${a} ${b}`} `` | `className={cn(a, b)}` |
+| `shadow-[0_4px_12px_rgba(0,0,0,0.05)]` en `Card` de tabla | `className={cn("card-tabla-envoltorio", …)}` + variable **`--card-tabla-envoltorio-shadow`** |
 
 ---
 
@@ -123,7 +125,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - **Pedido Tintométrico** (`/pedidos/tintometrico`): al guardar ítems, el backend arma `cod_ext` con **`buildCodExtTintometrico(codTienda, codTintometrico)`** para que no se pisen filas con la misma base y distinto COD.; al borrar, enviar el **`codExt`** de la fila (no solo `cod_tienda`).
   - **Px. Vta. Sugeridos** (`/gestion-productos/proveedores/sugeridos`): la grilla lista ítems que coinciden con filtros y con **`habilitado = true`** (no exige `px_vta_sugerido` no nulo). La columna de encabezado es **`DESCRIPCIÓN`** y muestra descripción efectiva por `cod_ext`: primero **`descripcion_tienda`** (si existe en `prod_precios_tienda`), y como fallback **`descripcion_proveedor`** (`prod_precios_provee`). Si **`px_vta_sugerido`** viene nulo, la celda se muestra vacía (sin `$0`). En el payload de lectura (`getListaPreciosConOpcionesAction`), el campo **`pxVtaSugerido`** debe enviarse siempre para evitar celdas vacías por ausencia de mapeo.
    - **Página `/pedidos/enviar` (tabla previa)**: sin filtros en URL muestra **todos** los ítems con `cant_pedir > 0` (`getItemsTablaEnviarPedido`); cada filtro activo (**SUCURSAL**, **PROVEEDOR**, **TIPO**, `q`) **reduce** la grilla. Vacío sin filtros: *«No hay ítems con cantidad a pedir.»*; vacío con algún filtro: *«No hay ítems para generar el pedido con los filtros seleccionados.»*
-- **Tabla `/pedidos/enviar` (columnas, orden):** **TIPO PEDIDO** (**15%**, valor de `prod_ped_merc.tipo_de_pedido`), **SUCURSAL** (**15%**, valor visible siempre en MAYÚSCULA), **DESCRIPCIÓN** (**60%**), **CANT. PEDIR** (**10%**).
+- **Tabla `/pedidos/enviar` (columnas, orden):** **TIPO PEDIDO** (**12%**, `prod_ped_merc.tipo_de_pedido`), **SUCURSAL** (**12%**, texto en MAYÚSCULAS), **PROVEEDOR** (**18%**), **DESCRIPCIÓN** (**48%**), **CANT. PEDIR** (**10%**). Envoltorio: **`Card`** con **`className="card-tabla-envoltorio"`** (o **`cn(..., "flex-1")`** si aplica).
 - En la barra de filtros de **Generar Pedido**, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `TIPO DE PEDIDO`.
 - En `Pedido Reposición`, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `MARCA` → `RUBRO` → `CONFIGURADO` (sin `SUB-RUBRO`).
   - **Modal `ConfigurarReposicionModal`** (`src/components/pedidos/ConfigurarReposicionModal.tsx`): al abrir un ítem **sin** regla guardada (`idReposicion` y `formaPedir` vacíos), **PUNTO REPOSIC.** y la columna de cantidad (CANT. MAX. / CANT. FIJA) usan estado **string** (`puntoInput`, `cantInput`) para mostrar **vacío** en lugar de `0`. Tras elegir **FORMA PEDIR**, el tercer campo solo aparece cuando **PUNTO REPOSIC.** tiene un entero válido **≥ 0** (el **0** habilita la columna de cantidad). **Cantidad reposición** sigue exigiendo entero **≥ 1** al guardar; vacío o **0** no son válidos. Al editar una regla existente, se precargan los valores del servidor como texto. Helpers locales: `parsePuntoReposicionInput`, `parseCantReposicionInput`. La tabla bajo **Agregar esta configuración a estos productos** está **siempre** visible: primera fila = producto con el que se abrió el modal (`item.descripcionTienda`), sin botón quitar (celda **—**); filas siguientes = `productosAdicionales` con acción quitar.
@@ -241,6 +243,8 @@ import SectionHeader from "@/components/SectionHeader";
 | Clase / variable | Uso |
 |------------------|-----|
 | `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. |
+| `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar (Comp. Proveedores, Generar Pedido, Pedido Urgente, Pedido Tintométrico): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. No duplicar la misma cadena de utilidades Tailwind en cada página. |
+| `--card-tabla-envoltorio-shadow` | **`:root`**: sombra suave de la tarjeta-tabla (antes repetida como `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`). |
 | `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
@@ -741,7 +745,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 
 Antes de dar por terminada una tarea de frontend:
 
-- [ ] No hay estilos inline ni clases hardcodeadas (`bg-white`, `text-slate-400`, `emerald-*`, `amber-*`, etc.); se usan tokens (`bg-card`, `text-muted-foreground`, `primary`/`accent2`) o `@/lib/ui-classes`. Excepción aceptable: anchos dinámicos (p. ej. barra de progreso `%`) o el patrón documentado `style={{ height: "auto" }}` en modales con tabla.
+- [ ] No hay estilos inline ni clases hardcodeadas (`bg-white`, `text-slate-400`, `emerald-*`, `amber-*`, etc.); se usan tokens (`bg-card`, `text-muted-foreground`, `primary`/`accent2`) o `@/lib/ui-classes`. Excepción aceptable: anchos dinámicos (p. ej. barra de progreso `%`) o el patrón documentado `style={{ height: "auto" }}` en modales con tabla. **`Card`** que envuelve la tabla principal: **`card-tabla-envoltorio`**, no sombras arbitrarias **`shadow-[0_4px_12px_rgba(...)]`** ni la cadena larga de utilidades duplicada.
 - [ ] Las clases condicionales o combinadas usan `cn(...)`.
 - [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique; encabezado fijo (al hacer scroll los encabezados no desaparecen).
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`.
@@ -771,6 +775,7 @@ Antes de dar por terminada una tarea de frontend:
 - **ui/tooltip.tsx**, **ui/dialog.tsx**, **ui/sonner.tsx**: tokens (border-border, bg-popover, bg-background) y configuración del toaster vía clase global `.toaster` (sin `style` inline).
 - **Modales y listados**: ImportarModal, ImportarListaPreciosModal, TablaProductosFiltrada, AppModal con `bg-card`, `text-muted-foreground`, `bg-muted` y `cn()` en todos los classNames combinados.
 - **Páginas (src/app/)**: `app/importar/page.tsx`, `app/proveedores/page.tsx`, `app/pedidos/urgente/page.tsx`, `app/proveedores/gestion/page.tsx`, `app/tienda/page.tsx`, `app/stock/page.tsx` — Separator `bg-border`; Card `border-border bg-card`; tablas con 100 ítems por página y barra de paginación al pie cuando hay más de una página (`PaginacionTabla` o `PaginacionClient`).
+- **Tarjeta envoltorio de tabla (2026-04-24)**: clase **`.card-tabla-envoltorio`** + variable **`--card-tabla-envoltorio-shadow`** en `globals.css`; sustituida la cadena repetida de utilidades y **`shadow-[0_4px_12px_rgba(0,0,0,0.05)]`** en `proveedores/page.tsx`, `pedidos/enviar/page.tsx`, `PedidoUrgentePageClient.tsx`, `PedidoTintometricoPageClient.tsx`.
 - **Componentes con `cn()`**: TablaAumentos, SyncButton, SyncDuxHeaderButton, UploadZone, ProveedorAlternativoRow, ImportarModal, ImportarListaPreciosModal (botones SÍ/NO y zona drag), FiltrosComparacionCategorias, SugeridosTablaConFiltros, ListaPreciosTablaConFiltros — todas las combinaciones de clase pasan por `cn()`.
 - **Control Aumentos — zebra y filtros (2026-04)**: `TablaAumentos.tsx` elimina `bg-blue-50/50` en filas alternadas y usa token `bg-muted/40`; además centraliza clases repetidas de filas en constantes/helper (`getAumentosRowBackgroundClass`) y normaliza textos de filtros en MAYÚSCULAS (`BUSCAR POR DESCRIPCIÓN O CÓDIGO...`, contador `CON VARIACIÓN`).
 - **Encabezados de tabla abreviados (2026-03):** para convivir con el header global de 2 líneas y recorte, se acortan labels largos en columnas angostas (`PROD. PROVISTOS`, `COL. ARCHIVO`, `DESC. PROVEEDOR`, `PX. VTA. SUG.`, `CANT. URG.`, `PX. FINAL`, `MARGEN`, `CANT. PED.`, `CANT. REC.`).
@@ -784,7 +789,7 @@ Antes de dar por terminada una tarea de frontend:
 
 ### Auditoría cerrada
 
-No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` en `src/`. No quedan `className={\`...\`}` en componentes. Estados de éxito/advertencia no deben usar paletas genéricas (`emerald-*`, `amber-*`, `blue-*`): usar `@/lib/ui-classes` y tokens de tema. Anchos de `<col>` en tablas fijas: preferir `className="w-[x%]"` en lugar de `style` salvo casos dinámicos. Nuevas pantallas o filtros deben seguir esta guía y el checklist de PR.
+No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` en `src/`. No quedan `className={\`...\`}` en componentes. Estados de éxito/advertencia no deben usar paletas genéricas (`emerald-*`, `amber-*`, `blue-*`): usar `@/lib/ui-classes` y tokens de tema. Anchos de `<col>` en tablas fijas: preferir `className="w-[x%]"` en lugar de `style` salvo casos dinámicos. Las tarjetas que envuelven la tabla principal en páginas estándar usan **`card-tabla-envoltorio`** (sin **`shadow-[0_4px_12px_rgba(...)]`** duplicado). Nuevas pantallas o filtros deben seguir esta guía y el checklist de PR.
 
 ---
 
@@ -803,6 +808,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-04-23): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); **Mes** = 12 meses; **Año** = 2026…2046; entrada sin query **`redirect`** a mes/año **hoy AR**; rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
 
 *Última actualización (2026-04-24): **Balance mensual** — tabla única alineada, cabecera `#0072BB`, filas resultado `#a9d6f1` / `#063652`, edición de ventas por sucursal; excepción de color en “Guía para IA” §2; detalle bajo **`ClassicFilteredTableLayout`**; backend **`BACKEND_GUIDELINES` §2.5f**.*
+
+*Última actualización (2026-04-24): **`card-tabla-envoltorio`** — token de sombra **`--card-tabla-envoltorio-shadow`**; Guía para IA §2; catálogo §2; checklist PR §4; auditoría cerrada; columnas documentadas de **`/pedidos/enviar`** alineadas al código (incluye **PROVEEDOR**).*
 
 *Última actualización (2026-04-21): **Proveedores** — `ProveedorForm`: prefijo **opcional** (sin `required` HTML); **PROVEEDOR MERCADERÍA** sigue siendo SI/NO obligatorio vía Zod. **Filtros Tienda** (`FiltrosTienda.tsx`): opciones de proveedor con `key={p.id}`; si no hay prefijo, solo se muestra el nombre (sin corchetes vacíos). **Calc. Tintométrico** (`TiendaCalcTintometricoPageClient.tsx`): valor del `Select` = `id` del proveedor (no prefijo); etiqueta `[prefijo]` o `[codigoUnico]` si falta prefijo. **Vincular / Seleccionar producto** (`VincularModal` + `SeleccionarProductoModal`): exclusión de duplicados por **`idsProveedoresYaVinculados`** (`proveedorId`), no por prefijo.*
 

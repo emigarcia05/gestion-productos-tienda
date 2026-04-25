@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getRol } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
+import { prismaCuidSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
@@ -11,31 +12,34 @@ import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
 
 const getPedidoHistoriaDetalleSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
 });
 
 const actualizarCantRecibidaSchema = z.object({
-  pedidoHistoriaItemId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaItemId: prismaCuidSchema,
   cantRecibida: z.coerce.number().int().min(0, "Cant. inválida."),
 });
 
 const agregarItemSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
   codTienda: z.string().min(1, "Cod. tienda inválido."),
   cantRecibida: z.coerce.number().int().min(0, "Cant. inválida."),
 });
 
 const marcarRegistradoSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
   totalPedido: z.coerce.number().positive("Total inválido."),
 });
 
 const guardarRecepcionSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
   items: z
     .array(
       z.object({
-        id: z.string().min(1).optional(),
+        id: z.preprocess(
+          (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+          prismaCuidSchema.optional()
+        ),
         codTienda: z.string().min(1, "Cod. tienda inválido."),
         cantPedida: z.coerce.number().int().min(0, "Cant. pedida inválida."),
         cantRecibida: z.coerce.number().int().min(0, "Cant. recibida inválida").nullable(),
@@ -45,15 +49,15 @@ const guardarRecepcionSchema = z.object({
 });
 
 const reabrirRecepcionSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
 });
 
 const eliminarPedidoHistoriaSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
 });
 
 const descargarPdfPedidoHistoriaSchema = z.object({
-  pedidoHistoriaId: z.string().min(1, "ID inválido."),
+  pedidoHistoriaId: prismaCuidSchema,
 });
 
 const listarPedidosHistoriaSchema = z.object({
@@ -76,7 +80,7 @@ export async function getPedidoHistoriaDetalleAction(
   }
 
   const parsed = getPedidoHistoriaDetalleSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "ID inválido." };
+  if (!parsed.success) return { ok: false, error: "ID de pedido inválido." };
 
   const res = await pedidosHistoriaService.getPedidoHistoriaDetalle({
     pedidoHistoriaId: parsed.data.pedidoHistoriaId,
@@ -128,7 +132,7 @@ export async function descargarPdfPedidoHistoriaAction(
   }
 
   const parsed = descargarPdfPedidoHistoriaSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "ID inválido." };
+  if (!parsed.success) return { ok: false, error: "ID de pedido inválido." };
 
   const res = await pedidosHistoriaService.getPedidoHistoriaPdfPayload({
     pedidoHistoriaId: parsed.data.pedidoHistoriaId,
@@ -166,6 +170,9 @@ export async function actualizarPedidoHistoriaItemCantRecibidaAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede modificar recepciones." };
+  }
 
   const parsed = actualizarCantRecibidaSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -187,6 +194,9 @@ export async function agregarPedidoHistoriaItemAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede modificar recepciones." };
   }
 
   const parsed = agregarItemSchema.safeParse(params);
@@ -211,6 +221,9 @@ export async function marcarPedidoHistoriaRegistradoAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede registrar recepciones." };
+  }
 
   const parsed = marcarRegistradoSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -231,6 +244,9 @@ export async function guardarRecepcionPedidoHistoriaAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede guardar recepciones." };
   }
 
   const parsed = guardarRecepcionSchema.safeParse(params);
@@ -253,6 +269,9 @@ export async function reabrirPedidoHistoriaRecepcionAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede reabrir recepciones." };
+  }
 
   const parsed = reabrirRecepcionSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -272,6 +291,9 @@ export async function eliminarPedidoHistoriaAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede eliminar pedidos del historial." };
   }
 
   const parsed = eliminarPedidoHistoriaSchema.safeParse(params);

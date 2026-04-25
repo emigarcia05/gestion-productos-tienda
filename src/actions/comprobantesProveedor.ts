@@ -1,6 +1,7 @@
 "use server";
 
-import { esEditor } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
+import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
   sincronizarComprobantesProveedorDesdeDux,
@@ -14,6 +15,10 @@ import {
 export async function sincronizarComprobantesProveedorDesdeDuxAction(): Promise<
   ActionResult<SyncComprobantesProveedorDuxResult>
 > {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
 
   const result = await sincronizarComprobantesProveedorDesdeDux();

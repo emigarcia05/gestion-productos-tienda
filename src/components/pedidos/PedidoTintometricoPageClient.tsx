@@ -287,7 +287,7 @@ export default function PedidoTintometricoPageClient({
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">
-        <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <Card className={cn("card-tabla-envoltorio")}>
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
               <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">

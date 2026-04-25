@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
       {/* Card con tabla */}
       <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-3 flex flex-col">
-        <Card className="flex-1 min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <Card className={cn("card-tabla-envoltorio", "flex-1")}>
           <CardContent className="flex-1 min-h-0 p-0">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
               {esEditor ? (

@@ -13,6 +13,7 @@ import CantidadPedidoUrgenteModal, {
 } from "@/components/pedidos/CantidadPedidoUrgenteModal";
 import { toast } from "sonner";
 import { upsertPedidoUrgenteMercaderiaItemAction } from "@/actions/pedidos";
+import { cn } from "@/lib/utils";
 
 interface Props {
   filters: React.ReactNode;
@@ -172,7 +173,7 @@ export default function PedidoUrgentePageClient({
       filters={filters}
     >
       <div className="flex flex-col h-full min-h-0 gap-0.5">
-        <Card className="min-h-0 flex flex-col rounded-xl border-border bg-card overflow-hidden gap-0 py-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <Card className={cn("card-tabla-envoltorio")}>
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
               <TablaPedidoUrgente

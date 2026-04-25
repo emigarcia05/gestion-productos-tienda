@@ -34,6 +34,27 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 ### 1.2.1 Activación de modo editor (`sesion.ts`)
 
 - Entrada **`clave`**: validar con Zod (`z.string().min(1).max(500)`) antes de comparar con `EDITOR_PASSWORD`. Evita payloads anómalos y documenta el contrato.
+- **`volverModoSimple()`**: no exige rol previo; destruye la cookie de sesión (equivale a salir del modo editor). No hay payload que validar con Zod.
+
+### 1.2.2 Checklist de seguridad por Server Action (obligatorio)
+
+Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
+
+1. **Autorización primero**: antes de parsear o tocar servicios, resolver `getRol()` y/o `esEditor()` y aplicar `puede(rol, PERMISOS.*)` según el módulo. Nunca confiar solo en que la página esté protegida en layout: las Actions son invocables directamente.
+2. **Payload como `unknown` cuando venga del cliente**: usar `.safeParse()` de Zod; mensajes de error genéricos o el primer error de `flatten()` hacia `ActionResult`.
+3. **IDs de Prisma**: `cuid` → `prismaCuidSchema`; UUID → `uuidSchema` o esquemas en `@/lib/validations/*`; no aceptar strings arbitrarios largos donde el modelo sea CUID.
+4. **Delegación**: mutaciones y lecturas complejas en `src/services/`; la Action solo orquesta, revalida rutas y devuelve `ActionResult` / tipos acordados.
+5. **Sin fugas en errores**: no exponer stack traces ni SQL al cliente; `{ ok: false, error: string }` controlado.
+
+### 1.2.3 Gate doble: módulo + editor (mutaciones críticas)
+
+- **Historial de pedidos — mutaciones** (`pedidosHistoria.ts`): tras `puede(rol, PERMISOS.pedidos.acceso)`, exigir **`await esEditor()`** en: actualizar cantidad recibida, agregar ítem, marcar registrado, guardar recepción, reabrir recepción, eliminar cabecera. Rol `simple` puede listar, ver detalle y descargar PDF con solo `pedidos.acceso`.
+- **Integraciones DUX / compras** (`comprobantesProveedor.ts`, `duxCompras.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo (misma sensibilidad que otras escrituras financieras).
+- **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
+
+### 1.2.4 Acciones mock o legacy (`productos.ts`)
+
+- `editarProducto` / `aplicarCampoMasivo`: permiso alineado a lista de precios — `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)` (matriz actual: solo `editor`). Evita usar solo `esEditor()` sin anclar al permiso de producto del módulo.
 
 ### 1.3 Integridad de datos
 
