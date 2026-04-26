@@ -107,7 +107,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 ### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
 
 - En `getTiendaPageData` (listado “Comp. Proveedores”), cuando hay mejora por un proveedor **no-oficial**:
-  - el “mejor proveedor” se define por el menor `px_compra_final` entre proveedores no-oficiales;
+  - el “mejor proveedor” se define por el menor `px_compra_final` entre proveedores no-oficiales **con `habilitado = true`** en `prod_precios_provee`;
   - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);
   - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
 
@@ -817,7 +817,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
-- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` valida IDs con Zod antes de Prisma; la UI del modal **Vínculos Con Proveedores** (`VincularModal`) ya no invoca esta Action (2026-04), pero se mantiene en `tienda.ts` por si se reexpone u otro flujo la consume.
+- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` valida IDs con Zod antes de Prisma; la UI del modal **Vínculos Con Proveedores** (`VincularModal`) ya no invoca esta Action (2026-04), pero se mantiene en `tienda.ts` por si se reexpone u otro flujo la consume. `cambiarAProveedorMenorCostoAction` (masiva) exige `esEditor()`, recibe IDs validados con Zod, selecciona candidato no oficial con **menor costo y `habilitado = true`**, actualiza `costo_compra` + `cod_ext` + `proveedor` en `prod_precios_tienda` y devuelve payload para exportar **Act. Proveedor** / **Act. Margen**.
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
 - **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.
 - **`pedidos.ts`**: `generarPdfEnviarPedidoAction` y `syncPedidoUrgenteEnvioAction` usan esquemas Zod dedicados; permisos de pedidos al inicio.

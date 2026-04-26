@@ -50,25 +50,47 @@ function fmtDifPctEnteroMinus(n: number): string {
 
 export default function TablaTienda({
   items,
-  setMejorPrecio,
   rol,
   sinFiltros = false,
+  selectedIds,
+  onToggleSelected,
+  onToggleAllVisible,
+  canBulkSelect = false,
 }: {
   items: ItemTienda[];
-  setMejorPrecio: Set<string>;
   rol: Rol;
   sinFiltros?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelected?: (id: string, checked: boolean) => void;
+  onToggleAllVisible?: (checked: boolean) => void;
+  canBulkSelect?: boolean;
 }) {
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const puedeVincular = puede(rol, col.vinculos);
-  const COLUMNS = 6;
+  const COLUMNS = canBulkSelect ? 7 : 6;
+  const allVisibleSelected =
+    canBulkSelect &&
+    items.length > 0 &&
+    items.every((item) => selectedIds?.has(item.id));
 
   return (
     <>
       <Table variant="compact" scrollX={false} className="tabla-tienda-listado">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            {canBulkSelect ? (
+              <TableHead className="w-[5%]">
+                <input
+                  type="checkbox"
+                  checked={!!allVisibleSelected}
+                  onChange={(e) => onToggleAllVisible?.(e.currentTarget.checked)}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  aria-label="Seleccionar Todos"
+                  className="h-4 w-4 cursor-pointer accent-primary"
+                />
+              </TableHead>
+            ) : null}
             <TableHead>COD. TIENDA</TableHead>
             <TableHead>DESCRIPCIÓN</TableHead>
             <TableHead>PX. COMPRA FINAL</TableHead>
@@ -102,6 +124,18 @@ export default function TablaTienda({
                   onDoubleClick={() => puedeVincular && setModalAbierto(item.id)}
                   className={puedeVincular ? "cursor-pointer" : ""}
                 >
+                  {canBulkSelect ? (
+                    <TableCell className="celda-datos">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedIds?.has(item.id)}
+                        onChange={(e) => onToggleSelected?.(item.id, e.currentTarget.checked)}
+                        onDoubleClick={(e) => e.stopPropagation()}
+                        aria-label={`Seleccionar ${item.codItem}`}
+                        className="h-4 w-4 cursor-pointer accent-primary"
+                      />
+                    </TableCell>
+                  ) : null}
                   <TableCell className="celda-datos celda-mono whitespace-nowrap">
                     {item.codItem}
                   </TableCell>

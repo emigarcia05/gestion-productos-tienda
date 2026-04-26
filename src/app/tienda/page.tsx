@@ -1,11 +1,6 @@
 import { redirect } from "next/navigation";
 import { getTiendaPageData } from "@/actions/tienda";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import TablaTienda from "@/components/tienda/TablaTienda";
-import FiltrosTienda from "@/components/tienda/FiltrosTienda";
-import { Button } from "@/components/ui/button";
-import { PAGE_SIZE } from "@/lib/pagination";
+import CompProveedoresPageClient from "@/components/tienda/CompProveedoresPageClient";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -37,7 +32,7 @@ export default async function TiendaPage({ searchParams }: Props) {
     pagina = "1",
   } = await searchParams;
 
-  const { items, total, totalPaginas, proveedores, marcas, rubros, subRubros, setMejorPrecio } =
+  const { items, total, totalPaginas, proveedores, marcas, rubros, subRubros } =
     await getTiendaPageData({
       q,
       rubro,
@@ -50,54 +45,24 @@ export default async function TiendaPage({ searchParams }: Props) {
   const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
-  const actions = (
-    <Button type="button" className="h-10 px-4">
-      Cambiar A Prov. Menor Costo
-    </Button>
-  );
-
-  const filters = (
-    <FiltrosTienda
-      marcas={marcas.map((m) => m.marca!)}
-      rubros={rubros.map((r) => r.rubro!)}
-      subRubros={subRubros.map((s) => s.subRubro!)}
-      proveedores={proveedores}
-      totalItems={total}
-      qActual={q}
-      marcaActual={marca}
-      rubroActual={rubro}
-      subRubroActual={subRubro}
-      proveedorActual={proveedor}
-      mejorPrecioActual={mejorPrecio}
-    />
-  );
-
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gris">
-      <ClassicFilteredTableLayout
-        title="Lista Tienda"
-        subtitle="Comp. Proveedores"
-        actions={actions}
-        filters={filters}
-      >
-        <div className="flex flex-col h-full min-h-0 gap-0.5">
-          <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <TablaTienda items={items} setMejorPrecio={setMejorPrecio} rol={rol} sinFiltros={!hasFiltros} />
-          </div>
-          {hasFiltros && totalPaginas > 1 && (
-            <div className="flex justify-end pt-2 shrink-0">
-              <PaginacionTabla
-                basePath="/gestion-productos/tienda/comp-proveedores"
-                params={{ q, rubro, subRubro, marca, proveedor, mejorPrecio }}
-                paginaActual={paginaNum}
-                totalPaginas={totalPaginas}
-                total={total}
-                pageSize={PAGE_SIZE}
-              />
-            </div>
-          )}
-        </div>
-      </ClassicFilteredTableLayout>
-    </div>
+    <CompProveedoresPageClient
+      items={items}
+      total={total}
+      totalPaginas={totalPaginas}
+      proveedores={proveedores}
+      marcas={marcas}
+      rubros={rubros}
+      subRubros={subRubros}
+      rol={rol}
+      hasFiltros={hasFiltros}
+      q={q}
+      rubro={rubro}
+      subRubro={subRubro}
+      marca={marca}
+      proveedor={proveedor}
+      mejorPrecio={mejorPrecio}
+      paginaNum={paginaNum}
+    />
   );
 }

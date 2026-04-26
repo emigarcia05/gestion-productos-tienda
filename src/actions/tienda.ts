@@ -367,6 +367,25 @@ export interface ControlAumentosData {
   individual:  ItemAumento[];
 }
 
+export interface ActProveedorExcelRow {
+  codigoTienda: string;
+  codigoExterno: string;
+  proveedor: string;
+  costo: number;
+}
+
+export interface ActMargenExcelRow {
+  codigoTienda: string;
+  margen: number;
+}
+
+export interface CambiarProvMenorCostoResult {
+  proveedorRows: ActProveedorExcelRow[];
+  margenRows: ActMargenExcelRow[];
+  actualizados: number;
+  omitidos: number;
+}
+
 export async function getControlAumentos(): Promise<ControlAumentosData> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.controlAumentos)) {
@@ -411,4 +430,192 @@ export async function convertirEnProveedor(
   });
   revalidatePath("/tienda");
   return { ok: true, data: undefined };
+}
+
+const cambiarProvMenorCostoSchema = z.object({
+  itemTiendaIds: z.array(z.string().min(1).max(128)).min(1).max(500),
+});
+
+function normalizarProveedor(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function esProveedorOficial(
+  oficialTexto: string,
+  proveedor: { nombre: string | null; prefijo: string | null } | null
+): boolean {
+  if (!oficialTexto) return false;
+  const nombre = normalizarProveedor(proveedor?.nombre);
+  const prefijo = normalizarProveedor(proveedor?.prefijo);
+  return oficialTexto === nombre || oficialTexto === prefijo;
+}
+
+export async function cambiarAProveedorMenorCostoAction(
+  raw: unknown
+): Promise<ActionResult<CambiarProvMenorCostoResult>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return { ok: false, error: "Sin acceso a tienda." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = cambiarProvMenorCostoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Productos seleccionados inválidos." };
+  }
+
+  const ids = Array.from(new Set(parsed.data.itemTiendaIds));
+  if (ids.length === 0) {
+    return { ok: false, error: "No hay productos seleccionados." };
+  }
+
+  const itemsTienda = await prisma.listaPrecioTienda.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      codTienda: true,
+      proveedor: true,
+      codExt: true,
+      costoCompra: true,
+      pxListaTienda: true,
+      porcIva: true,
+    },
+  });
+
+  if (itemsTienda.length === 0) {
+    return { ok: false, error: "No se encontraron productos para actualizar." };
+  }
+
+  const vinculados = await prisma.listaPrecioProveedor.findMany({
+    where: {
+      idListaPrecioTienda: { in: itemsTienda.map((i) => i.id) },
+      habilitado: true,
+    },
+    select: {
+      idListaPrecioTienda: true,
+      codExt: true,
+      pxCompraFinal: true,
+      pxListaProveedor: true,
+      dtoProveedor: true,
+      dtoMarca: true,
+      dtoRubro: true,
+      dtoCantidad: true,
+      dtoFinanciero: true,
+      cxTransporte: true,
+      proveedor: { select: { nombre: true, prefijo: true } },
+    },
+  });
+
+  const vinculadosPorItem = new Map<string, typeof vinculados>();
+  for (const v of vinculados) {
+    if (!v.idListaPrecioTienda) continue;
+    const lista = vinculadosPorItem.get(v.idListaPrecioTienda) ?? [];
+    lista.push(v);
+    vinculadosPorItem.set(v.idListaPrecioTienda, lista);
+  }
+
+  const updates: Array<{
+    itemId: string;
+    codigoTienda: string;
+    codigoExterno: string;
+    proveedor: string;
+    costo: number;
+    margen: number;
+  }> = [];
+
+  for (const item of itemsTienda) {
+    const oficialTexto = normalizarProveedor(item.proveedor);
+    const candidatos = (vinculadosPorItem.get(item.id) ?? [])
+      .filter((v) => !esProveedorOficial(oficialTexto, v.proveedor))
+      .map((v) => {
+        const costo =
+          v.pxCompraFinal != null
+            ? Number(v.pxCompraFinal)
+            : calcPxCompraFinal(
+                Number(v.pxListaProveedor),
+                v.dtoRubro,
+                v.dtoCantidad,
+                v.cxTransporte,
+                v.dtoProveedor,
+                v.dtoMarca,
+                v.dtoFinanciero
+              );
+        return { vinculo: v, costo };
+      })
+      .filter((c) => Number.isFinite(c.costo) && c.costo > 0);
+
+    if (candidatos.length === 0) continue;
+
+    candidatos.sort((a, b) => a.costo - b.costo);
+    const mejor = candidatos[0];
+    const costoActual = Number(item.costoCompra);
+    if (!(mejor.costo < costoActual)) continue;
+
+    const proveedorNombre = mejor.vinculo.proveedor?.nombre?.trim() ?? "";
+    const proveedorPrefijo = mejor.vinculo.proveedor?.prefijo?.trim() ?? "";
+    const proveedorTexto = proveedorNombre || proveedorPrefijo;
+    if (!proveedorTexto) continue;
+
+    const margen = calcMargenSinIvaPct(
+      Number(item.pxListaTienda),
+      mejor.costo,
+      Number(item.porcIva ?? 21)
+    );
+    if (margen == null) continue;
+
+    updates.push({
+      itemId: item.id,
+      codigoTienda: item.codTienda,
+      codigoExterno: mejor.vinculo.codExt,
+      proveedor: proveedorTexto,
+      costo: mejor.costo,
+      margen,
+    });
+  }
+
+  if (updates.length === 0) {
+    return {
+      ok: true,
+      data: {
+        proveedorRows: [],
+        margenRows: [],
+        actualizados: 0,
+        omitidos: itemsTienda.length,
+      },
+    };
+  }
+
+  await prisma.$transaction(
+    updates.map((u) =>
+      prisma.listaPrecioTienda.update({
+        where: { id: u.itemId },
+        data: {
+          codExt: u.codigoExterno,
+          proveedor: u.proveedor,
+          costoCompra: u.costo,
+        },
+      })
+    )
+  );
+
+  revalidatePath("/tienda");
+  revalidatePath("/gestion-productos/tienda/comp-proveedores");
+
+  return {
+    ok: true,
+    data: {
+      proveedorRows: updates.map((u) => ({
+        codigoTienda: u.codigoTienda,
+        codigoExterno: u.codigoExterno,
+        proveedor: u.proveedor,
+        costo: u.costo,
+      })),
+      margenRows: updates.map((u) => ({
+        codigoTienda: u.codigoTienda,
+        margen: u.margen,
+      })),
+      actualizados: updates.length,
+      omitidos: itemsTienda.length - updates.length,
+    },
+  };
 }
