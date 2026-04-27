@@ -14,6 +14,7 @@ import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import { calcMargenSinIvaPct } from "@/lib/calculos";
+import { Check } from "lucide-react";
 
 interface ItemTienda {
   id: string;
@@ -34,19 +35,10 @@ interface ItemTienda {
   habilitado: boolean;
   _count: { productos: number };
   mejorProveedorNoOficialPrefijo: string | null;
-  difMejorPrecioPctEntero: number | null;
 }
 
 const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
 const MENSAJE_SIN_RESULTADOS = "No se encontraron items.";
-
-/** DIF.: porcentaje renderizado como reducción con signo "-" (ej. -12%). */
-function fmtDifPctEnteroMinus(n: number): string {
-  const entero = Math.round(n);
-  if (entero > 0) return `-${entero}%`;
-  if (entero < 0) return `${entero}%`;
-  return "0%";
-}
 
 export default function TablaTienda({
   items,
@@ -68,7 +60,7 @@ export default function TablaTienda({
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const puedeVincular = puede(rol, col.vinculos);
-  const COLUMNS = canBulkSelect ? 7 : 6;
+  const COLUMNS = canBulkSelect ? 6 : 5;
   const allVisibleSelected =
     canBulkSelect &&
     items.length > 0 &&
@@ -80,28 +72,26 @@ export default function TablaTienda({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             {canBulkSelect ? (
-              <TableHead className="w-[5%]">
-                <input
-                  type="checkbox"
-                  checked={!!allVisibleSelected}
-                  onChange={(e) => onToggleAllVisible?.(e.currentTarget.checked)}
+              <TableHead className="w-[5%] text-center">
+                <button
+                  type="button"
+                  onClick={() => onToggleAllVisible?.(!allVisibleSelected)}
                   onDoubleClick={(e) => e.stopPropagation()}
-                  aria-label="Seleccionar Todos"
-                  className="tabla-check-toggle"
-                />
+                  aria-label={allVisibleSelected ? "Deseleccionar Todos" : "Seleccionar Todos"}
+                  className="inline-flex h-full w-full items-center justify-center"
+                >
+                  <Check className="h-4 w-4" aria-hidden />
+                </button>
               </TableHead>
             ) : null}
-            <TableHead>COD. TIENDA</TableHead>
-            <TableHead>DESCRIPCIÓN</TableHead>
-            <TableHead>PX. COMPRA FINAL</TableHead>
-            <TableHead className="tabla-bloque-secundario-head">
-              MARGEN S/ IVA
-            </TableHead>
-            <TableHead className="tabla-bloque-secundario-head-divider">
+            <TableHead className="w-[10%]">CÓDIGO</TableHead>
+            <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
+            <TableHead className="w-[10%]">PX. COMPRA FINAL</TableHead>
+            <TableHead className="w-[10%] tabla-bloque-secundario-head-divider">
               MEJOR PROV.
             </TableHead>
-            <TableHead className="tabla-bloque-secundario-head">
-              DIF.
+            <TableHead className="w-[10%] tabla-bloque-secundario-head">
+              MARGEN S/ IVA
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -145,14 +135,11 @@ export default function TablaTienda({
                   <TableCell className="celda-datos celda-numero celda-destacado">
                     ${fmtPrecio(item.costo)}
                   </TableCell>
-                  <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell">
-                    {margenSinIvaPct != null ? fmtPctEntero(margenSinIvaPct) : ""}
-                  </TableCell>
                   <TableCell className="celda-datos celda-mono tabla-bloque-secundario-cell-divider">
                     {item.mejorProveedorNoOficialPrefijo ?? ""}
                   </TableCell>
                   <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell">
-                    {item.difMejorPrecioPctEntero != null ? fmtDifPctEnteroMinus(item.difMejorPrecioPctEntero) : ""}
+                    {margenSinIvaPct != null ? fmtPctEntero(margenSinIvaPct) : ""}
                   </TableCell>
                 </TableRow>
               );
