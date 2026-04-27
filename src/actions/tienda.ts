@@ -6,7 +6,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { z } from "zod";
 import type { ActionResult } from "@/lib/types";
 import { filtroTexto } from "@/lib/busqueda";
-import { calcPxCompraFinal } from "@/lib/calculos";
+import { calcMargenSinIvaPct, calcPxCompraFinal } from "@/lib/calculos";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -478,7 +478,6 @@ export async function cambiarAProveedorMenorCostoAction(
       codExt: true,
       costoCompra: true,
       pxListaTienda: true,
-      porcIva: true,
     },
   });
 
@@ -559,7 +558,7 @@ export async function cambiarAProveedorMenorCostoAction(
     const margen = calcMargenSinIvaPct(
       Number(item.pxListaTienda),
       mejor.costo,
-      Number(item.porcIva ?? 21)
+      21
     );
     if (margen == null) continue;
 
