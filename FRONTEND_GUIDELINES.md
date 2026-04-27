@@ -655,7 +655,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 - **Jerarquía canónica de URLs (2026-03):** para el área **Gestión Productos** usar siempre prefijo **`/gestion-productos`** con estructura **área/módulo/submódulo**:
   - Proveedores: `/gestion-productos/proveedores`, `/gestion-productos/proveedores/lista-precios`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/proveedores/comparacion-categorias`, `/gestion-productos/proveedores/lista`.
   - Tienda: `/gestion-productos/tienda/comp-proveedores`, `/gestion-productos/tienda/control-aumento`, `/gestion-productos/tienda/control-stock`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`.
-  - **Comp. Proveedores** (`src/app/tienda/page.tsx`, URL canónica **`/gestion-productos/tienda/comp-proveedores`**): cabecera **`ClassicFilteredTableLayout`** con acción **Cambiar A Prov. Menor Costo**; requiere selección múltiple en la grilla (`TablaTienda`, checkbox por fila + seleccionar todos visibles). Al ejecutar, actualiza ítems seleccionados y exporta dos Excel: **Act. Proveedor** (`CODIGO TIENDA`, `CODIGO EXTERNO`, `PROVEEDOR`, `COSTO`) y **Act. Margen** (`CODIGO TIENDA`, `MARGEN`).
+  - **Comp. Proveedores** (`src/app/tienda/page.tsx`, URL canónica **`/gestion-productos/tienda/comp-proveedores`**): cabecera **`ClassicFilteredTableLayout`** con acción **Cambiar A Prov. Menor Costo**; requiere selección múltiple en la grilla (`TablaTienda`, checkbox por fila + seleccionar todos visibles). Al ejecutar, actualiza ítems seleccionados y exporta dos Excel: **Act. Proveedor** (`CODIGO`, `CODIGO EXTERNO`, `PROVEEDOR`, `COSTO`) y **Act. Margen** (`CODIGO`, `PORC UTILIDAD`).
   - Pedidos: `/gestion-productos/pedidos`, `/gestion-productos/pedidos/generar-pedido`, `/gestion-productos/pedidos/urgente`, `/gestion-productos/pedidos/tintometrico`, `/gestion-productos/pedidos/reposicion`, `/gestion-productos/pedidos/historial`.
   - Compatibilidad: mantener redirecciones de rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) hacia las rutas canónicas.
 
@@ -813,7 +813,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-04-24): **`card-tabla-envoltorio`** — token de sombra **`--card-tabla-envoltorio-shadow`**; Guía para IA §2; catálogo §2; checklist PR §4; auditoría cerrada; columnas documentadas de **`/pedidos/enviar`** alineadas al código (incluye **PROVEEDOR**).*
 
-*Última actualización (2026-04-25): **Comp. Proveedores** — botón cabecera **Cambiar A Prov. Menor Costo** operativo para selección múltiple (checkbox por fila) y exportación de dos Excel: **Act. Proveedor** (`CODIGO TIENDA`, `CODIGO EXTERNO`, `PROVEEDOR`, `COSTO`) y **Act. Margen** (`CODIGO TIENDA`, `MARGEN`).*
+*Última actualización (2026-04-27): **Comp. Proveedores** — encabezados de export Excel ajustados: **Act. Proveedor** usa `CODIGO` (antes `CODIGO TIENDA`), y **Act. Margen** usa `CODIGO` + `PORC UTILIDAD` (antes `CODIGO TIENDA` + `MARGEN`).*
 
 *Última actualización (2026-04-24): **`VincularModal`** — columna **OFICIAL** sin botón “Marcar como proveedor oficial”; detalle en § Tienda — Modal Vínculos.*
 

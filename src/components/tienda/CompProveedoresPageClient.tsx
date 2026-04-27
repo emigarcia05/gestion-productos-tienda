@@ -63,7 +63,7 @@ function exportarActProveedorExcel(
 ) {
   import("xlsx").then((XLSX) => {
     const data = rows.map((r) => ({
-      "CODIGO TIENDA": r.codigoTienda,
+      CODIGO: r.codigoTienda,
       "CODIGO EXTERNO": r.codigoExterno,
       "PROVEEDOR": r.proveedor,
       "COSTO": Number(r.costo.toFixed(2)),
@@ -85,8 +85,8 @@ function exportarActMargenExcel(
 ) {
   import("xlsx").then((XLSX) => {
     const data = rows.map((r) => ({
-      "CODIGO TIENDA": r.codigoTienda,
-      "MARGEN": Number(r.margen.toFixed(2)),
+      CODIGO: r.codigoTienda,
+      "PORC UTILIDAD": Number(r.margen.toFixed(2)),
     }));
     const hoja = XLSX.utils.json_to_sheet(data);
     hoja["!cols"] = [{ wch: 16 }, { wch: 12 }];
