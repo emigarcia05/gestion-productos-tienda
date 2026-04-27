@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -179,8 +180,17 @@ export default function CompProveedoresPageClient({
       className="h-10 px-4"
       onClick={handleCambiarMenorCosto}
       disabled={isPending || selectedCount === 0}
-      title="Cambiar A Prov. Menor Costo"
+      aria-busy={isPending}
+      aria-label={
+        selectedCount === 0
+          ? "Seleccioná al menos un producto con el tilde de la grilla"
+          : "Aplicar proveedor con menor costo a los ítems seleccionados y descargar Act. Proveedor y Act. Margen"
+      }
+      title="Actualiza costo y proveedor según el vínculo habilitado de menor costo; descarga dos Excel (Act. Proveedor, Act. Margen)."
     >
+      {isPending ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+      ) : null}
       Cambiar A Prov. Menor Costo
     </Button>
   ) : undefined;
