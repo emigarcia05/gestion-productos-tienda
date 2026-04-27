@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getProveedores } from "@/actions/proveedores";
+import { getProveedoresMercaderia } from "@/actions/proveedores";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { prisma } from "@/lib/prisma";
@@ -13,7 +13,7 @@ export default async function ListaPreciosPage() {
   if (!puede(rol, PERMISOS.proveedores.listaPrecios)) redirect("/gestion-productos/proveedores/sugeridos");
 
   const [proveedores, marcasRows, rubrosRows] = await Promise.all([
-    getProveedores(),
+    getProveedoresMercaderia(),
     prisma.marca.findMany({
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true },

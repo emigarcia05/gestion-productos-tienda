@@ -8,7 +8,7 @@ import type { ServiceResult } from "@/types";
 import type { ProductoCompleto } from "@/types";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
-import { getProveedores as getProveedoresFromProveedores } from "@/actions/proveedores";
+import { getProveedoresMercaderia as getProveedoresFromProveedores } from "@/actions/proveedores";
 import { uuidSchema } from "@/lib/validations/common";
 import { z } from "zod";
 

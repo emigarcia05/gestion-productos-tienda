@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getArbolCategorias } from "@/services/categoriasComparacion.service";
-import { getProveedores } from "@/actions/proveedores";
+import { getProveedoresMercaderia } from "@/actions/proveedores";
 import ComparacionCategoriasClient from "@/components/proveedores/ComparacionCategoriasClient";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function ComparacionCategoriasPage({ searchParams }: Props)
 
   const [arbol, listaProveedores] = await Promise.all([
     getArbolCategorias(),
-    getProveedores(),
+    getProveedoresMercaderia(),
   ]);
 
   const proveedores = listaProveedores.map((p) => ({ id: p.id, nombre: p.nombre }));

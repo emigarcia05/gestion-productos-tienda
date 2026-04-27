@@ -22,6 +22,7 @@ export type SucursalTintometrica = {
 export async function getProveedoresTintometricos(): Promise<ProveedorTintometrico[]> {
   const where: Prisma.ProveedorWhereInput = {
     id: { in: [...PROVEEDORES_TINTOMETRICOS_IDS] },
+    proveedorMercaderia: true,
   };
 
   const rows = await prisma.proveedor.findMany({

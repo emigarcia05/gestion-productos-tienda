@@ -114,6 +114,7 @@ export async function getListaPreciosConTiendaFiltrada(
   if (!tieneFiltro) return { filas: [], total: 0, totalPaginas: 0 };
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
+  andParts.push({ proveedor: { proveedorMercaderia: true } });
   if (prov) andParts.push({ idProveedor: prov });
   if (marca) andParts.push({ marca: marca });
   if (rubro) andParts.push({ rubro: rubro });
@@ -700,7 +701,10 @@ export async function getProveedoresParaPedidoUrgente(): Promise<
   { id: string; nombre: string; prefijo: string }[]
 > {
   const list = await prisma.proveedor.findMany({
-    where: { listaPrecios: { some: { habilitado: true } } },
+    where: {
+      proveedorMercaderia: true,
+      listaPrecios: { some: { habilitado: true } },
+    },
     select: { id: true, nombre: true, prefijo: true },
     orderBy: { prefijo: "asc" },
   });

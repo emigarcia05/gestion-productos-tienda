@@ -16,6 +16,7 @@ import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 async function getTiendaEmptyWithOpciones() {
   const [proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.proveedor.findMany({
+      where: { proveedorMercaderia: true },
       select: { id: true, nombre: true, prefijo: true, codigoUnico: true, coeficienteTintometrico: true },
     }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
@@ -100,6 +101,7 @@ export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
   if (!puede(rol, PERMISOS.tienda.tintoLts)) return [];
 
   const proveedores = await prisma.proveedor.findMany({
+    where: { proveedorMercaderia: true },
     select: {
       id: true,
       nombre: true,
@@ -206,6 +208,7 @@ export async function getTiendaPageData(params: {
     }),
     prisma.listaPrecioTienda.count({ where }),
     prisma.proveedor.findMany({
+      where: { proveedorMercaderia: true },
       select: { id: true, nombre: true, prefijo: true, codigoUnico: true, coeficienteTintometrico: true },
     }),
     prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: whereRubros, orderBy: { rubro: "asc" } }),

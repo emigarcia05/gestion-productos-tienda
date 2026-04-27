@@ -66,7 +66,7 @@ export async function getProveedoresPageData(params: {
   }
   const parsedParams = proveedoresPageParamsSchema.safeParse(params);
   const { q = "", proveedor = "" } = parsedParams.success ? parsedParams.data : {};
-  const proveedores = await proveedorService.getProveedores();
+  const proveedores = await proveedorService.getProveedoresMercaderia();
   const sinFiltros = !q && !proveedor;
   if (sinFiltros) {
     return { proveedores, productos: [], total: 0, totalPaginas: 0 };
