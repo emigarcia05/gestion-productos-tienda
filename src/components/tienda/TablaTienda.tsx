@@ -84,7 +84,7 @@ export default function TablaTienda({
                 </button>
               </TableHead>
             ) : null}
-            <TableHead className="w-[10%]">CÓDIGO</TableHead>
+            <TableHead className="w-[10%]">COD. TIENDA</TableHead>
             <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
             <TableHead className="w-[10%]">PX. COMPRA FINAL</TableHead>
             <TableHead className="w-[10%] tabla-bloque-secundario-head-divider">
