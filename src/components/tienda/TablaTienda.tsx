@@ -15,6 +15,7 @@ import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import { calcMargenSinIvaPct } from "@/lib/calculos";
 import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ItemTienda {
   id: string;
@@ -68,7 +69,11 @@ export default function TablaTienda({
 
   return (
     <>
-      <Table variant="compact" scrollX={false} className="tabla-tienda-listado">
+      <Table
+        variant="compact"
+        scrollX={false}
+        className={cn("tabla-tienda-listado", canBulkSelect && "tabla-tienda-listado--with-select")}
+      >
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             {canBulkSelect ? (

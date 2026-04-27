@@ -932,7 +932,7 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
-/* Tabla Tienda / Comp. Proveedores: Cod. 10%, Desc. 50%, Px. Compra Final 10%, Margen s/ IVA 10%, Mejor Prov. 10%, DIF. 10%. */
+/* Tabla Tienda / Comp. Proveedores: base sin tilde + variante con tilde de selección al inicio. */
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
@@ -940,15 +940,27 @@
 .tabla-tienda-listado thead th:nth-child(1),
 .tabla-tienda-listado tbody td:nth-child(1) { width: 10%; }
 .tabla-tienda-listado thead th:nth-child(2),
-.tabla-tienda-listado tbody td:nth-child(2) { width: 50%; }
+.tabla-tienda-listado tbody td:nth-child(2) { width: 55%; }
 .tabla-tienda-listado thead th:nth-child(3),
 .tabla-tienda-listado tbody td:nth-child(3) { width: 10%; }
 .tabla-tienda-listado thead th:nth-child(4),
 .tabla-tienda-listado tbody td:nth-child(4) { width: 10%; }
 .tabla-tienda-listado thead th:nth-child(5),
 .tabla-tienda-listado tbody td:nth-child(5) { width: 10%; }
-.tabla-tienda-listado thead th:nth-child(6),
-.tabla-tienda-listado tbody td:nth-child(6) { width: 10%; }
+
+/* Con selección: TILDE 5% + COD. TIENDA 10% + DESCRIPCIÓN 55% + PX. COMPRA FINAL 10% + MEJOR PROV. 10% + MARGEN S/ IVA 10%. */
+.tabla-tienda-listado--with-select thead th:nth-child(1),
+.tabla-tienda-listado--with-select tbody td:nth-child(1) { width: 5%; }
+.tabla-tienda-listado--with-select thead th:nth-child(2),
+.tabla-tienda-listado--with-select tbody td:nth-child(2) { width: 10%; }
+.tabla-tienda-listado--with-select thead th:nth-child(3),
+.tabla-tienda-listado--with-select tbody td:nth-child(3) { width: 55%; }
+.tabla-tienda-listado--with-select thead th:nth-child(4),
+.tabla-tienda-listado--with-select tbody td:nth-child(4) { width: 10%; }
+.tabla-tienda-listado--with-select thead th:nth-child(5),
+.tabla-tienda-listado--with-select tbody td:nth-child(5) { width: 10%; }
+.tabla-tienda-listado--with-select thead th:nth-child(6),
+.tabla-tienda-listado--with-select tbody td:nth-child(6) { width: 10%; }
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */
 .card-contenedor-tabla {
