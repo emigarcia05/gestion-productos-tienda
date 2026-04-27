@@ -87,15 +87,15 @@ export default function TablaTienda({
                   onChange={(e) => onToggleAllVisible?.(e.currentTarget.checked)}
                   onDoubleClick={(e) => e.stopPropagation()}
                   aria-label="Seleccionar Todos"
-                  className="h-4 w-4 cursor-pointer accent-primary"
+                  className="tabla-check-toggle"
                 />
               </TableHead>
             ) : null}
             <TableHead>COD. TIENDA</TableHead>
             <TableHead>DESCRIPCIÓN</TableHead>
             <TableHead>PX. COMPRA FINAL</TableHead>
-            <TableHead className="tabla-bloque-secundario-head-divider">
-              MARGEN
+            <TableHead className="tabla-bloque-secundario-head">
+              MARGEN S/ IVA
             </TableHead>
             <TableHead className="tabla-bloque-secundario-head-divider">
               MEJOR PROV.
@@ -132,7 +132,7 @@ export default function TablaTienda({
                         onChange={(e) => onToggleSelected?.(item.id, e.currentTarget.checked)}
                         onDoubleClick={(e) => e.stopPropagation()}
                         aria-label={`Seleccionar ${item.codItem}`}
-                        className="h-4 w-4 cursor-pointer accent-primary"
+                        className="tabla-check-toggle"
                       />
                     </TableCell>
                   ) : null}
@@ -145,7 +145,7 @@ export default function TablaTienda({
                   <TableCell className="celda-datos celda-numero celda-destacado">
                     ${fmtPrecio(item.costo)}
                   </TableCell>
-                  <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell-divider">
+                  <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell">
                     {margenSinIvaPct != null ? fmtPctEntero(margenSinIvaPct) : ""}
                   </TableCell>
                   <TableCell className="celda-datos celda-mono tabla-bloque-secundario-cell-divider">
