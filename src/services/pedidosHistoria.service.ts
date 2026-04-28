@@ -134,15 +134,51 @@ export async function crearPedidoHistoriaSnapshot(params: {
         tipoPedido: { in: tipos },
         cantPedir: { gt: 0 },
       },
-      select: { codTienda: true, cantPedir: true },
+      select: { idProveedor: true, codExt: true, codTienda: true, cantPedir: true },
       orderBy: { codTienda: "asc" },
     });
+
+    const paresProveedorCodExt = [
+      ...new Set(
+        snapshotItems
+          .map((row) => `${row.idProveedor}:${(row.codExt ?? "").trim()}`)
+          .filter((k) => !k.endsWith(":"))
+      ),
+    ];
+
+    const codTiendaPorParProveedorCodExt = new Map<string, string>();
+    if (paresProveedorCodExt.length > 0) {
+      const links = await prisma.listaPrecioProveedor.findMany({
+        where: {
+          OR: paresProveedorCodExt.map((key) => {
+            const [idProveedor, codExt] = key.split(":");
+            return { idProveedor, codExt };
+          }),
+        },
+        select: {
+          idProveedor: true,
+          codExt: true,
+          listaPrecioTienda: { select: { codTienda: true } },
+        },
+      });
+      for (const link of links) {
+        const cod = (link.listaPrecioTienda?.codTienda ?? "").trim();
+        if (!cod) continue;
+        codTiendaPorParProveedorCodExt.set(
+          `${link.idProveedor}:${(link.codExt ?? "").trim()}`,
+          cod
+        );
+      }
+    }
 
     // Si por algún motivo hay más de un registro que termine con el mismo cod_tienda,
     // consolidamos para respetar UNIQUE(pedido_historia_id, cod_tienda).
     const cantPorCodTienda = new Map<string, number>();
     for (const row of snapshotItems) {
-      const codTienda = normalizeCodTienda(row.codTienda);
+      const parKey = `${row.idProveedor}:${(row.codExt ?? "").trim()}`;
+      const codTienda = normalizeCodTienda(
+        codTiendaPorParProveedorCodExt.get(parKey) ?? row.codTienda
+      );
       const cant = Math.max(0, Number(row.cantPedir) || 0);
       cantPorCodTienda.set(codTienda, (cantPorCodTienda.get(codTienda) ?? 0) + cant);
     }

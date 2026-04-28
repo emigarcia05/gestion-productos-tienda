@@ -622,6 +622,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
    - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar `prod_ped_merc` (cuando corresponda).
    - Crea `PedidoHistoria` con `estado = "PENDIENTE"`.
    - Lee `ItemPedidoEnvio` filtrando por `idProveedor`, `sucursalId`, `tipoPedido IN tipos` y `cant_pedir > 0`.
+   - Resolución de `cod_tienda`: priorizar siempre la vinculación real `listaPrecioProveedor -> listaPrecioTienda` (por par `idProveedor + codExt`) antes del `codTienda` persistido en `prod_ped_merc`; usar fallback solo si no existe vínculo.
    - Inserta `PedidoHistoriaItem` consolidando por `cod_tienda` (para respetar UNIQUE por `cod_tienda`).
    - Inserta cada ítem con `cant_recibida = NULL` hasta que en recepción se guarde la cantidad recibida.
 
@@ -872,6 +873,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `prisma/migrations/20260319091000_update_px_compra_final_sum_discounts/migration.sql` | `px_compra_final` pasa a descuentos acumulados (sumados): `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero` (capado 0-100), manteniendo `cx_transporte` como factor porcentual final. |
 | `scripts/verify-pedidos-reposicion.ts` | Esquema esperado actualizado: `sucursal_id` y columnas actuales `reposicion_*`, `urgente_*`, `tintometrico_*`. |
 | `src/services/pedidosEnvio.service.ts` | Regla de fallback en vinculación por `cod_ext`: si no existe vínculo a tienda, `cod_tienda = "1503"`; si falta código proveedor, `cod_proveedor = ""` (vacío). |
+| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaUrgenteItem`: para persistir `cod_tienda` y `descripcion_tienda` usar la relación `listaPrecioProveedor.listaPrecioTienda` (vinculación explícita) y no lookup directo por `cod_ext` en `prod_precios_tienda`; esto evita descripciones erróneas en historial cuando el producto vinculado no coincide con el cod_ext oficial. |
 | `prisma/migrations/20260317223000_sync_cant_pedir_por_tipo_pedido/migration.sql` | Regla de negocio a nivel BD: `cant_pedir` se sincroniza automáticamente por `tipo_de_pedido` (`TINTOMETRICO -> tintometrio_cant_pedir`, `URGENTE -> urgente_cant_pedir`, `REPOSICION -> reposicion_cant_pedir`) con trigger `BEFORE INSERT OR UPDATE`. |
 | `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` según forma y stock (versión inicial; ver migración canonical). |
 | `prisma/migrations/20260330120000_reposicion_forma_pedido_canonical/migration.sql` | `reposicion_forma_pedido` solo admite **`CANT_FIJA`** o **`CANT_MAXIMA`** (normaliza legados `CANT. FIJA` / `CANT. MAX.`). Trigger: `CANT_FIJA` => `reposicion_cant_pedir = reposicion_cant_conf`; `CANT_MAXIMA` => `GREATEST(0, reposicion_cant_conf - stock sucursal)`; luego `cant_pedir` para `REPOSICION`. |

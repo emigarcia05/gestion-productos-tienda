@@ -184,15 +184,13 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
         codExt: true,
         codProdProveedor: true,
         descripcionProveedor: true,
+        listaPrecioTienda: {
+          select: { codTienda: true, descripcionTienda: true },
+        },
       },
     });
 
     if (!item) return { ok: false, error: "Producto no encontrado." };
-
-    const tienda = await prisma.listaPrecioTienda.findUnique({
-      where: { codExt: item.codExt },
-      select: { codTienda: true, descripcionTienda: true },
-    });
 
     if (cantNorm <= 0) {
       await prisma.itemPedidoEnvio.deleteMany({
@@ -218,9 +216,9 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
 
     const dataBase = {
       codProveedor: (item.codProdProveedor ?? "").trim(),
-      codTienda: tienda?.codTienda?.trim() || COD_TIENDA_FALLBACK,
+      codTienda: item.listaPrecioTienda?.codTienda?.trim() || COD_TIENDA_FALLBACK,
       descripcionProveedor: item.descripcionProveedor,
-      descripcionTienda: tienda?.descripcionTienda?.trim() || null,
+      descripcionTienda: item.listaPrecioTienda?.descripcionTienda?.trim() || null,
       cantPedir: cantNorm,
       urgenteCantPedir: cantNorm,
     };
