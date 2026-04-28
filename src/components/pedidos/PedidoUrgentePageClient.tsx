@@ -278,29 +278,22 @@ export default function PedidoUrgentePageClient({
             actions={
               <div className="flex w-full justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setModalSugerenciaOpen(false)}>
-                  Continuar Con Este Proveedor
+                  Cancelar
                 </Button>
                 <Button type="button" onClick={confirmarPedirProveedorSugerido}>
-                  Pedir A Ese Proveedor
+                  Continuar Con Proveedor Actual
                 </Button>
               </div>
             }
           >
-            <div className="flex flex-col gap-2 text-sm text-foreground">
-              <p>
-                Este producto es ofrecido por{" "}
-                <span className="font-semibold">{sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}</span>{" "}
-                a un costo menor.
-              </p>
-              <p className="text-muted-foreground">
-                Costo sugerido:{" "}
-                {sugerenciaProveedorMenorCosto
-                  ? `$${sugerenciaProveedorMenorCosto.costo.toLocaleString("es-AR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}`
-                  : "—"}
-              </p>
+            <div className="flex flex-col gap-4 text-sm text-foreground">
+              <p>Este producto es ofrecido a menor costo por:</p>
+              <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
+                <span className="font-semibold">{sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}</span>
+                <Button type="button" size="sm" onClick={confirmarPedirProveedorSugerido}>
+                  Pedir A Este Proveedor
+                </Button>
+              </div>
             </div>
           </AppModal>
         </Dialog>
