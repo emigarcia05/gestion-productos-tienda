@@ -191,7 +191,7 @@
   --card-tabla-envoltorio-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
-  /* Encabezado global: altura mínima = (~2 líneas de texto) + padding; si el título lo requiere, el th puede crecer (sin tope). */
+  /* Encabezado global: altura fija para 2 líneas de texto (se aplica siempre, aunque el título use 1 línea). */
   --tabla-thead-lines: 2;
   --tabla-thead-line-height: 1.15;
   --tabla-thead-padding-y: 0.2rem;
@@ -665,10 +665,11 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  /* Padding corto + altura mínima (~2 líneas); sin height/max-height fijos para permitir más líneas si el texto lo pide. */
+  /* Altura fija global equivalente a 2 líneas (misma altura en todas las tablas). */
   padding: var(--tabla-thead-padding-y) var(--tabla-body-cell-padding-x) !important;
-  height: auto !important;
+  height: var(--tabla-thead-height) !important;
   min-height: var(--tabla-thead-height) !important;
+  max-height: var(--tabla-thead-height) !important;
   font-size: 0.75rem !important;
   font-weight: 400;
   text-align: center;

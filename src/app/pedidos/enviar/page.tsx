@@ -20,7 +20,6 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +27,7 @@ export const dynamic = "force-dynamic";
 const MENSAJE_SIN_ITEMS_GLOBAL = "No hay ítems con cantidad a pedir.";
 const MENSAJE_SIN_ITEMS_FILTRADO =
   "No hay ítems para generar el pedido con los filtros seleccionados.";
+const COL_WIDTHS_PCT = [12, 12, 18, 48, 10] as const;
 
 interface Props {
   searchParams: Promise<{
@@ -104,18 +104,27 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
       actions={actions}
       filters={filters}
     >
-      <div className="flex flex-col h-full min-h-0 gap-0.5">
+      <div className="flex h-full min-h-0 flex-col gap-0">
         <Card className="card-tabla-envoltorio">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-              <Table variant="compact" scrollX={false}>
+              <Table
+                variant="compact"
+                scrollX={false}
+                className="tabla-gestion-compacta w-full table-fixed"
+              >
+                <colgroup>
+                  {COL_WIDTHS_PCT.map((pct, i) => (
+                    <col key={i} style={{ width: `${pct}%` }} />
+                  ))}
+                </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[12%]">TIPO PEDIDO</TableHead>
-                    <TableHead className="w-[12%]">SUCURSAL</TableHead>
-                    <TableHead className="w-[18%] min-w-0">PROVEEDOR</TableHead>
-                    <TableHead className="w-[48%] min-w-0">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[10%]">CANT. PEDIR</TableHead>
+                    <TableHead>TIPO PEDIDO</TableHead>
+                    <TableHead>SUCURSAL</TableHead>
+                    <TableHead className="min-w-0">PROVEEDOR</TableHead>
+                    <TableHead className="min-w-0">DESCRIPCIÓN</TableHead>
+                    <TableHead>CANT. PEDIR</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -128,25 +137,22 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
                     />
                   ) : (
                     itemsTabla.map((item, idx) => (
-                      <TableRow
-                        key={idx}
-                        className={cn("hover:bg-transparent", idx % 2 === 1 && "bg-muted/30")}
-                      >
-                        <TableCell className="celda-datos w-[12%] text-center">
+                      <TableRow key={idx}>
+                        <TableCell className="celda-datos text-center">
                           {item.tipoPedido || ""}
                         </TableCell>
-                        <TableCell className="celda-datos w-[12%] text-center">
+                        <TableCell className="celda-datos text-center">
                           {(item.sucursal || "").toUpperCase()}
                         </TableCell>
-                        <TableCell className="celda-datos w-[18%] min-w-0 text-center text-xs">
+                        <TableCell className="celda-datos min-w-0 text-center text-xs">
                           <span className="line-clamp-2" title={item.proveedor || undefined}>
                             {item.proveedor || ""}
                           </span>
                         </TableCell>
-                        <TableCell className="celda-datos w-[48%] min-w-0 text-foreground">
+                        <TableCell className="celda-datos min-w-0 text-foreground">
                           {item.descripcion || ""}
                         </TableCell>
-                        <TableCell className="celda-datos celda-numero text-right w-[10%]">
+                        <TableCell className="celda-datos celda-numero text-right">
                           {item.cantPedir.toLocaleString("es-AR")}
                         </TableCell>
                       </TableRow>

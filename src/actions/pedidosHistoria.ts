@@ -170,9 +170,6 @@ export async function actualizarPedidoHistoriaItemCantRecibidaAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede modificar recepciones." };
-  }
 
   const parsed = actualizarCantRecibidaSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -194,9 +191,6 @@ export async function agregarPedidoHistoriaItemAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede modificar recepciones." };
   }
 
   const parsed = agregarItemSchema.safeParse(params);
@@ -221,9 +215,6 @@ export async function marcarPedidoHistoriaRegistradoAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede registrar recepciones." };
-  }
 
   const parsed = marcarRegistradoSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -245,9 +236,6 @@ export async function guardarRecepcionPedidoHistoriaAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede guardar recepciones." };
-  }
 
   const parsed = guardarRecepcionSchema.safeParse(params);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -268,9 +256,6 @@ export async function reabrirPedidoHistoriaRecepcionAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede reabrir recepciones." };
   }
 
   const parsed = reabrirRecepcionSchema.safeParse(params);

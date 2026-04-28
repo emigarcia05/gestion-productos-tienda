@@ -13,6 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  EmptyTableRow,
+} from "@/components/ui/table";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import { fmtPrecio } from "@/lib/format";
 import {
@@ -238,31 +247,43 @@ export default function FinBalVtasPageClient({
           <div className="border-b border-border bg-muted/50 px-4 py-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide">Registros</h2>
           </div>
-          {filas.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No hay cargas registradas.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="px-4 py-2 font-medium">Periodo</th>
-                    <th className="px-4 py-2 font-medium">Sucursal</th>
-                    <th className="px-4 py-2 font-medium">Monto</th>
-                    <th className="px-4 py-2 font-medium">Alta</th>
-                    {esEditor && <th className="px-4 py-2 font-medium w-28" />}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filas.map((f) => (
-                    <tr key={f.id} className="border-b border-border/70 last:border-0">
-                      <td className="px-4 py-2 font-medium">
+          <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
+            <Table variant="compact" scrollX={false} className="tabla-gestion-compacta w-full table-fixed">
+              <colgroup>
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: esEditor ? "24%" : "36%" }} />
+                {esEditor ? <col style={{ width: "12%" }} /> : null}
+              </colgroup>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>PERIODO</TableHead>
+                  <TableHead>SUCURSAL</TableHead>
+                  <TableHead>MONTO</TableHead>
+                  <TableHead>ALTA</TableHead>
+                  {esEditor ? <TableHead>ACCIONES</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filas.length === 0 ? (
+                  <EmptyTableRow
+                    colSpan={esEditor ? 5 : 4}
+                    message="No hay cargas registradas."
+                  />
+                ) : (
+                  filas.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="celda-datos font-medium">
                         {etiquetaMes(f.mes)} {f.anio}
-                      </td>
-                      <td className="px-4 py-2">{f.sucursal.nombre}</td>
-                      <td className="px-4 py-2 tabular-nums">{fmtMontoEntero(f.monto)}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{fmtFecha(f.createdAt)}</td>
-                      {esEditor && (
-                        <td className="px-4 py-2">
+                      </TableCell>
+                      <TableCell className="celda-datos">{f.sucursal.nombre}</TableCell>
+                      <TableCell className="celda-datos tabular-nums">{fmtMontoEntero(f.monto)}</TableCell>
+                      <TableCell className="celda-datos text-muted-foreground">
+                        {fmtFecha(f.createdAt)}
+                      </TableCell>
+                      {esEditor ? (
+                        <TableCell className="celda-datos">
                           <Button
                             type="button"
                             variant="outline"
@@ -272,14 +293,14 @@ export default function FinBalVtasPageClient({
                           >
                             Eliminar
                           </Button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </section>
       </div>
     </ClassicFilteredTableLayout>
