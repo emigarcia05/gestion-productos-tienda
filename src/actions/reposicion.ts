@@ -16,7 +16,6 @@ import {
   reposicionFormaPedidoSchema,
   sucursalReposicionSchema,
 } from "@/lib/validations/reposicion";
-import { prismaCuidSchema } from "@/lib/validations/common";
 
 export type SucursalReposicion = "guaymallen" | "maipu";
 
@@ -125,24 +124,27 @@ export async function getReposicionData(
   };
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_ext que tengan configuración REPOSICION en prod_ped_merc para esta sucursal.
-  const codExtConfigurados =
+  // Filtro "CONFIGURADO = SÍ": reduce lista_tienda a cod_tienda con regla REPOSICION para esta sucursal.
+  const codTiendaConfigurados =
     configurado === "si"
       ? await prisma.itemPedidoEnvio.findMany({
           where: { sucursal: { codigo: sucursal }, tipoPedido: "REPOSICION" },
-          select: { codExt: true },
-          distinct: ["codExt"],
+          select: { codTienda: true },
+          distinct: ["codTienda"],
         })
       : null;
-  const codExtList = codExtConfigurados?.map((r) => r.codExt) ?? [];
+  const codTiendaList =
+    codTiendaConfigurados
+      ?.map((r) => (r.codTienda ?? "").trim())
+      .filter((v) => v.length > 0) ?? [];
 
   const baseParts = baseWhere(sucursal, paramsNorm);
   const whereItems: Prisma.ListaPrecioTiendaWhereInput = (() => {
     const parts = [...baseParts];
     if (configurado === "si") {
       // Si no hay configurados, devolvemos vacío rápido.
-      if (codExtList.length === 0) return { codExt: { in: ["__none__"] } };
-      parts.push({ codExt: { in: codExtList } });
+      if (codTiendaList.length === 0) return { codTienda: { in: ["__none__"] } };
+      parts.push({ codTienda: { in: codTiendaList } });
     }
     return parts.length > 0 ? { AND: parts } : {};
   })();
@@ -156,8 +158,8 @@ export async function getReposicionData(
     } as Prisma.ListaPrecioTiendaWhereInput;
     const extra = [];
     if (configurado === "si") {
-      if (codExtList.length === 0) return { codExt: { in: ["__none__"] } };
-      extra.push({ codExt: { in: codExtList } });
+      if (codTiendaList.length === 0) return { codTienda: { in: ["__none__"] } };
+      extra.push({ codTienda: { in: codTiendaList } });
     }
     return parts.length > 0
       ? { AND: [...parts, ...extra, notNull] }
@@ -205,33 +207,34 @@ export async function getReposicionData(
       }),
     ]);
 
-  const pairs = rows
-    .filter((r) => r.listaPreciosProveedores[0])
-    .map((r) => ({
-      idProveedor: r.listaPreciosProveedores[0].idProveedor,
-      codExt: r.codExt,
-    }));
+  const codTiendasRows = rows.map((r) => r.codTienda.trim()).filter(Boolean);
   const reglasMap = new Map<
     string,
     {
       id: string;
+      idProveedor: string;
+      nombreProveedor: string | null;
+      codExt: string;
       formaPedir: FormaPedirReposicionOption;
       puntoReposicion: number;
       cant: number;
       cantPedir: number;
     }
   >();
-  if (pairs.length > 0) {
+  if (codTiendasRows.length > 0) {
     const reglas = await prisma.itemPedidoEnvio.findMany({
       where: {
         sucursal: { codigo: sucursal },
         tipoPedido: "REPOSICION",
-        OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+        codTienda: { in: codTiendasRows },
       },
+      orderBy: [{ updatedAt: "desc" }],
       select: {
         id: true,
         idProveedor: true,
+        proveedor: { select: { nombre: true } },
         codExt: true,
+        codTienda: true,
         reposicionFormaPedido: true,
         reposicionPuntoPedido: true,
         reposicionCantConf: true,
@@ -239,8 +242,14 @@ export async function getReposicionData(
       },
     });
     for (const r of reglas) {
-      reglasMap.set(`${r.idProveedor}:${r.codExt}`, {
+      if (!r.codTienda?.trim()) continue;
+      const key = r.codTienda.trim();
+      if (reglasMap.has(key)) continue;
+      reglasMap.set(key, {
         id: r.id,
+        idProveedor: r.idProveedor,
+        nombreProveedor: r.proveedor?.nombre ?? null,
+        codExt: r.codExt,
         formaPedir: (r.reposicionFormaPedido as FormaPedirReposicionOption) ?? "",
         puntoReposicion: Math.max(0, Math.floor(Number(r.reposicionPuntoPedido ?? 0))),
         cant: Math.max(0, Math.floor(Number(r.reposicionCantConf ?? 0))),
@@ -253,10 +262,9 @@ export async function getReposicionData(
 
   const items: ItemReposicion[] = rows.map((r) => {
     const prov = r.listaPreciosProveedores[0];
-    const idProveedor = prov?.idProveedor ?? null;
-    const nombreProveedor = prov?.proveedor?.nombre ?? null;
-    const key = idProveedor ? `${idProveedor}:${r.codExt}` : "";
-    const regla = key ? reglasMap.get(key) : null;
+    const regla = reglasMap.get(r.codTienda.trim()) ?? null;
+    const idProveedor = regla?.idProveedor ?? prov?.idProveedor ?? null;
+    const nombreProveedor = regla?.nombreProveedor ?? prov?.proveedor?.nombre ?? null;
     const stock = Number(r[stockField] ?? 0);
     const forma = regla?.formaPedir ?? "";
     const punto = regla?.puntoReposicion ?? 0;
@@ -297,7 +305,6 @@ export interface ItemSelectorReposicion {
   codExt: string;
   codTienda: string;
   descripcionTienda: string | null;
-  idProveedor: string;
 }
 
 const SELECTOR_LIMIT = 300;
@@ -326,28 +333,17 @@ export async function getProductosReposicionSelector(
     where,
     orderBy: { descripcionTienda: "asc" },
     take: SELECTOR_LIMIT,
-    include: {
-      listaPreciosProveedores: {
-        take: 1,
-        orderBy: { idProveedor: "asc" },
-        select: { idProveedor: true },
-      },
-    },
   });
 
-  return rows
-    .filter((r) => r.listaPreciosProveedores[0])
-    .map((r) => ({
+  return rows.map((r) => ({
       idListaTienda: r.id,
       codExt: r.codExt,
       codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,
-      idProveedor: r.listaPreciosProveedores[0].idProveedor,
     }));
 }
 
 const upsertReglaSchema = z.object({
-  idProveedor: prismaCuidSchema,
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   codTienda: z.string().min(1, "Código tienda requerido"),
   formaPedir: reposicionFormaPedidoSchema,
@@ -356,7 +352,8 @@ const upsertReglaSchema = z.object({
 });
 
 /**
- * Crea o actualiza la regla de reposición para (proveedor, sucursal, cod_ext).
+ * Crea o actualiza la regla de reposición para (sucursal, cod_tienda),
+ * resolviendo proveedor/cod_ext vigentes desde `prod_precios_tienda`.
  * Validación estricta: no guarda nada si falta Forma/Punto/Cant.
  */
 export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchema>): Promise<ActionResult<void>> {
@@ -370,7 +367,7 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
     const first = Object.values(msg).flat().find(Boolean);
     return { ok: false, error: (first as string) ?? "Datos inválidos." };
   }
-  const { idProveedor, sucursalCodigo, codTienda, formaPedir, puntoReposicion, cant } =
+  const { sucursalCodigo, codTienda, formaPedir, puntoReposicion, cant } =
     parsed.data;
   if (!(await sucursalPedidoHabilitada(sucursalCodigo))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
@@ -379,7 +376,6 @@ export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchem
   try {
     const result = await upsertPedidoMercaderiaReposicionConfig({
       sucursal: sucursalCodigo,
-      idProveedor,
       codTienda,
       formaPedir,
       puntoReposicion,

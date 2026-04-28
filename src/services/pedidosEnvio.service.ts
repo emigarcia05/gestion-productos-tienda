@@ -53,17 +53,15 @@ async function getSucursalIdByCodigo(codigo: SucursalPedidoEnvio): Promise<strin
 
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
   sucursal: SucursalPedidoEnvio;
-  idProveedor: string;
   codTienda: string;
   formaPedir: "CANT_MAXIMA" | "CANT_FIJA";
   puntoReposicion: number;
   cantConf: number;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { sucursal, idProveedor, codTienda, formaPedir, puntoReposicion, cantConf } = params;
+  const { sucursal, codTienda, formaPedir, puntoReposicion, cantConf } = params;
 
   const punto = Math.max(0, Math.floor(Number(puntoReposicion) || 0));
   const cant = Math.max(0, Math.floor(Number(cantConf) || 0));
-  if (!idProveedor.trim()) return { ok: false, error: "Proveedor requerido." };
   if (!codTienda.trim()) return { ok: false, error: "Código tienda requerido." };
   if (!formaPedir) return { ok: false, error: "Seleccioná Forma Pedir." };
   if (punto < 0) return { ok: false, error: "Punto reposición inválido." };
@@ -76,6 +74,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       select: {
         codExt: true,
         codTienda: true,
+        proveedor: true,
         descripcionTienda: true,
         stockMaipu: true,
         stockGuaymallen: true,
@@ -97,14 +96,29 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       return { ok: false, error: "El producto no tiene cod_ext en prod_precios_tienda." };
     }
 
-    const provRow = await prisma.listaPrecioProveedor.findFirst({
-      where: { idProveedor: idProveedor.trim(), codExt: codExtResuelto },
+    const proveedorTiendaNorm = (tienda.proveedor ?? "").trim().toUpperCase();
+    const provRows = await prisma.listaPrecioProveedor.findMany({
+      where: { codExt: codExtResuelto },
       select: {
+        idProveedor: true,
         codProdProveedor: true,
         descripcionProveedor: true,
+        proveedor: { select: { prefijo: true, nombre: true } },
       },
+      orderBy: [{ idProveedor: "asc" }],
     });
-    if (!provRow) return { ok: false, error: "No se encontró el ítem en prod_precios_provee." };
+    if (provRows.length === 0) {
+      return { ok: false, error: "No se encontró el ítem en prod_precios_provee." };
+    }
+    const provRow =
+      provRows.find((r) => {
+        const pref = (r.proveedor.prefijo ?? "").trim().toUpperCase();
+        const nom = (r.proveedor.nombre ?? "").trim().toUpperCase();
+        return (
+          proveedorTiendaNorm.length > 0 &&
+          (pref === proveedorTiendaNorm || nom === proveedorTiendaNorm)
+        );
+      }) ?? provRows[0]!;
 
     const stock =
       sucursal === "maipu"
@@ -121,15 +135,17 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
           : Math.max(0, cant - stock)
         : 0;
 
-    const existing = await prisma.itemPedidoEnvio.findFirst({
+    const existingByCodTienda = await prisma.itemPedidoEnvio.findMany({
       where: {
-        idProveedor: idProveedor.trim(),
         tipoPedido: TIPO_REPOSICION,
         sucursalId,
-        codExt: codExtResuelto,
+        codTienda: codTienda.trim(),
       },
-      select: { id: true },
+      select: { id: true, idProveedor: true, codExt: true },
     });
+    const existingCurrent = existingByCodTienda.find(
+      (r) => r.idProveedor === provRow.idProveedor && r.codExt === codExtResuelto
+    );
 
     const dataBase = {
       codProveedor: (provRow.codProdProveedor ?? "").trim(),
@@ -143,20 +159,28 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       reposicionCantPedir: cantPedir,
     };
 
-    if (existing) {
+    if (existingCurrent) {
       await prisma.itemPedidoEnvio.update({
-        where: { id: existing.id },
+        where: { id: existingCurrent.id },
         data: dataBase,
       });
     } else {
       await prisma.itemPedidoEnvio.create({
         data: {
-          idProveedor: idProveedor.trim(),
+          idProveedor: provRow.idProveedor,
           tipoPedido: TIPO_REPOSICION,
           sucursalId,
           codExt: codExtResuelto,
           ...dataBase,
         },
+      });
+    }
+    const idsLegacy = existingByCodTienda
+      .filter((r) => !existingCurrent || r.id !== existingCurrent.id)
+      .map((r) => r.id);
+    if (idsLegacy.length > 0) {
+      await prisma.itemPedidoEnvio.deleteMany({
+        where: { id: { in: idsLegacy } },
       });
     }
 

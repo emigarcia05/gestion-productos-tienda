@@ -135,10 +135,6 @@ export default function ConfigurarReposicionModal({
   };
 
   const handleGuardar = async () => {
-    if (!item.idProveedor) {
-      toast.error("Este producto no tiene proveedor asignado.");
-      return;
-    }
     if (!formaPedir) {
       toast.error("Seleccioná Forma Pedir.");
       return;
@@ -156,16 +152,14 @@ export default function ConfigurarReposicionModal({
 
     setGuardando(true);
     try {
-      const todos: { idProveedor: string; codTienda: string }[] = [
-        { idProveedor: item.idProveedor, codTienda: item.codTienda },
+      const todos: { codTienda: string }[] = [
+        { codTienda: item.codTienda },
         ...productosAdicionales.map((p) => ({
-          idProveedor: p.idProveedor,
           codTienda: p.codTienda,
         })),
       ];
       for (const t of todos) {
         const res = await upsertReglaReposicion({
-          idProveedor: t.idProveedor,
           sucursalCodigo: sucursal,
           codTienda: t.codTienda,
           formaPedir: formaPedir as "CANT_MAXIMA" | "CANT_FIJA",

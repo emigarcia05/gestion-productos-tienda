@@ -841,7 +841,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 | Archivo / Área | Cambio |
 |----------------|--------|
-| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: corrección de validación para `reposicion_punto_pedido`; ahora admite `0` (solo rechaza `< 0`), alineado con Action/UI y regla de negocio de reposición. |
+| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: corrección de validación para `reposicion_punto_pedido`; ahora admite `0` (solo rechaza `< 0`), alineado con Action/UI y regla de negocio de reposición. Además, la persistencia de REPOSICIÓN se resuelve por `cod_tienda` (no por `id_proveedor` enviado por cliente): se busca `prod_precios_tienda.cod_tienda` → `cod_ext` + `proveedor` vigentes y con eso se determina el proveedor actual; al guardar, se eliminan filas legacy de `prod_ped_merc` `REPOSICION` para la misma `sucursal + cod_tienda` que hayan quedado con proveedor/cod_ext anteriores. |
 | `src/actions/syncListaPrecioTienda.ts` | Comprobación `esEditor()` al inicio; si no hay permiso, se devuelve resultado vacío con `errores: ["Sin permisos de editor."]`. |
 | `src/actions/importar.ts` | `importarProductos` e `importarListaPreciosProveedor` devuelven `ImportActionResult` (éxito con `data` o error con `error`) en lugar de lanzar; try/catch en importar lista para devolver error controlado. |
 | `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: validación con `idsUuidSchema` y `actualizacionMasivaListaPreciosSchema` antes de llamar al servicio. |
