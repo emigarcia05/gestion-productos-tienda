@@ -39,6 +39,8 @@ export type PedidoFilterValor = "urgente" | "reposicion" | "";
 
 const COLUMNS = 8;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
+const COL_WIDTHS_PCT = [5, 7, 10, 50, 7, 7, 7, 7] as const;
+const CELL_MIN = "min-w-0";
 
 interface Props {
   productos: ProductoPedidoUrgente[];
@@ -78,37 +80,48 @@ export default function TablaPedidoUrgente({
   const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 
   return (
-    <div className="contenedor-tabla-gestion no-scroll-x">
-      <Table variant="compact" scrollX={false} className="min-w-full">
+      <Table
+        variant="compact"
+        scrollX={false}
+        className="tabla-gestion-compacta w-full table-fixed"
+      >
+        <colgroup>
+          {COL_WIDTHS_PCT.map((pct, i) => (
+            <col key={i} style={{ width: `${pct}%` }} />
+          ))}
+        </colgroup>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="text-center w-[5%]" aria-label="Seleccionar">
+            <TableHead className={cn(CELL_MIN, "text-center")} aria-label="Seleccionar">
               <div className="flex items-center justify-center w-full">
                 <Check className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
-            <TableHead className="text-center w-[7%]">
+            <TableHead className={cn(CELL_MIN, "text-center")}>
               PRIORIDAD
             </TableHead>
-            <TableHead className="text-center w-[10%]">
+            <TableHead className={cn(CELL_MIN, "text-center")}>
               PROVEEDOR
             </TableHead>
-            <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
-            <TableHead className="text-center w-[7%]">
+            <TableHead className={CELL_MIN}>DESCRIPCIÓN</TableHead>
+            <TableHead className={cn(CELL_MIN, "text-center")}>
               CANT. PED.
             </TableHead>
-            <TableHead className="text-center w-[7%]" aria-label="Eliminar">
+            <TableHead className={cn(CELL_MIN, "text-center")} aria-label="Eliminar">
               <div className="flex items-center justify-center w-full">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </div>
             </TableHead>
             <TableHead
-              className="text-center w-[7%] tabla-bloque-secundario-head-divider"
+              className={cn(
+                CELL_MIN,
+                "text-center tabla-bloque-secundario-head-divider"
+              )}
             >
               CONF. REPO.
             </TableHead>
             <TableHead
-              className="text-center w-[7%] tabla-bloque-secundario-head"
+              className={cn(CELL_MIN, "text-center tabla-bloque-secundario-head")}
             >
               CANT. REPO.
             </TableHead>
@@ -198,6 +211,5 @@ export default function TablaPedidoUrgente({
           )}
         </TableBody>
       </Table>
-    </div>
   );
 }
