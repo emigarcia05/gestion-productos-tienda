@@ -71,14 +71,12 @@ export default function ReposicionPageClient({
       }
       filters={filters}
     >
-      <div className="flex flex-col h-full min-h-0 gap-0.5">
-        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-          <TablaReposicion
-            data={data}
-            sucursalActual={sucursalValida}
-            onFiltradosCountChange={setTotalFiltrados}
-          />
-        </div>
+      <div className="flex h-full min-h-0 flex-col gap-0">
+        <TablaReposicion
+          data={data}
+          sucursalActual={sucursalValida}
+          onFiltradosCountChange={setTotalFiltrados}
+        />
         {tieneSucursal && data.totalPaginas > 1 && (
           <div className="flex justify-end pt-2 shrink-0">
             <PaginacionTabla

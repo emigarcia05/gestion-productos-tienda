@@ -29,6 +29,9 @@ import { deleteReglaReposicion } from "@/actions/reposicion";
 import ConfigurarReposicionModal from "./ConfigurarReposicionModal";
 import { fmtCelda } from "@/lib/format";
 
+const COL_WIDTHS_PCT = [50, 12, 8, 8, 8, 7, 7] as const;
+const CELL_MIN = "min-w-0";
+
 function formaPedirLabel(formaPedir: string): string {
   if (formaPedir === "CANT_MAXIMA") return "CANT. MAX.";
   if (formaPedir === "CANT_FIJA") return "CANT. FIJA";
@@ -82,34 +85,37 @@ export default function TablaReposicion({
           message="Seleccioná una sucursal para ver los ítems."
         />
       ) : (
-        <Table variant="compact" className="table-fixed">
+        <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">
+          <colgroup>
+            {COL_WIDTHS_PCT.map((pct, i) => (
+              <col key={i} style={{ width: `${pct}%` }} />
+            ))}
+          </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {/* Información principal */}
-              <TableHead className="px-3 py-2 text-xs w-[50%]">
+              <TableHead className={CELL_MIN}>
                 DESCRIPCIÓN
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs w-[12%]">
+              <TableHead className={CELL_MIN}>
                 FORMA PEDIR
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs w-[8%]">
+              <TableHead className={CELL_MIN}>
                 PUNTO REPOSIC.
               </TableHead>
-              <TableHead className="px-3 py-2 text-xs w-[8%]">
+              <TableHead className={CELL_MIN}>
                 CANT. REPOSIC.
               </TableHead>
-              <TableHead
-                className="px-1 py-2 text-xs text-center bg-muted/30 text-foreground w-[8%]"
-              >
+              <TableHead className={cn(CELL_MIN, "text-center")} aria-label="Eliminar">
                 <div className="flex items-center justify-center w-full">
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </div>
               </TableHead>
               {/* Información secundaria */}
-              <TableHead className="tabla-bloque-secundario-head-divider w-[7%]">
+              <TableHead className={cn(CELL_MIN, "tabla-bloque-secundario-head-divider")}>
                 STOCK
               </TableHead>
-              <TableHead className="tabla-bloque-secundario-head w-[7%]">
+              <TableHead className={cn(CELL_MIN, "tabla-bloque-secundario-head")}>
                 CANT. A PEDIR
               </TableHead>
             </TableRow>
@@ -154,19 +160,19 @@ export default function TablaReposicion({
                   }}
                 >
                   {/* Principal */}
-                  <TableCell className="px-3 py-2 text-xs">
+                  <TableCell className="celda-datos">
                     {fmtCelda(item.descripcionTienda)}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs">
+                  <TableCell className="celda-datos">
                     {item.formaPedir ? formaPedirLabel(item.formaPedir) : fmtCelda(null)}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                  <TableCell className="celda-datos tabular-nums">
                     {puntoVal === "" ? "" : puntoVal}
                   </TableCell>
-                  <TableCell className="px-3 py-2 text-xs tabular-nums">
+                  <TableCell className="celda-datos tabular-nums">
                     {cantVal === "" ? "" : cantVal}
                   </TableCell>
-                  <TableCell className="px-1 py-2 text-xs text-center bg-muted/30">
+                  <TableCell className="celda-datos text-center">
                     {item.idReposicion ? (
                       <Button
                         type="button"

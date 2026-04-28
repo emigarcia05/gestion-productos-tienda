@@ -86,7 +86,7 @@ function exportarActMargenExcel(
   import("xlsx").then((XLSX) => {
     const data = rows.map((r) => ({
       CODIGO: r.codigoTienda,
-      "PORC UTILIDAD": Number(r.margen.toFixed(2)),
+      IMPORTE: Number(r.margen.toFixed(2)),
     }));
     const hoja = XLSX.utils.json_to_sheet(data);
     hoja["!cols"] = [{ wch: 16 }, { wch: 12 }];

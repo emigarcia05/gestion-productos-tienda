@@ -221,7 +221,7 @@ export default function PedidoUrgentePageClient({
       actions={actions}
       filters={filters}
     >
-      <div className="flex flex-col h-full min-h-0 gap-0.5">
+      <div className="flex h-full min-h-0 flex-col gap-0">
         <Card className={cn("card-tabla-envoltorio")}>
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
@@ -239,32 +239,25 @@ export default function PedidoUrgentePageClient({
                 onRowDeleteClick={borrarCantidad}
               />
             </div>
-            {!sinFiltros && sucursalValida && (
-              <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
-                <span className="text-sm text-muted-foreground tabular-nums">
-                  {total === 0
-                    ? "Mostrando 0 de 0"
-                    : `Mostrando ${productos.length.toLocaleString()} de ${total.toLocaleString()}`}
-                </span>
-                {totalPaginas > 1 && (
-                  <PaginacionTabla
-                    basePath="/gestion-productos/pedidos/urgente"
-                    params={{
-                      sucursal: sucursalValida,
-                      proveedor,
-                      q,
-                      pedido: pedidoValida,
-                    }}
-                    paginaActual={paginaNum}
-                    totalPaginas={totalPaginas}
-                    total={total}
-                    pageSize={PAGE_SIZE}
-                  />
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
+        {!sinFiltros && sucursalValida && totalPaginas > 1 ? (
+          <div className="flex justify-end pt-2 shrink-0">
+            <PaginacionTabla
+              basePath="/gestion-productos/pedidos/urgente"
+              params={{
+                sucursal: sucursalValida,
+                proveedor,
+                q,
+                pedido: pedidoValida,
+              }}
+              paginaActual={paginaNum}
+              totalPaginas={totalPaginas}
+              total={total}
+              pageSize={PAGE_SIZE}
+            />
+          </div>
+        ) : null}
         <CantidadPedidoUrgenteModal
           open={modalOpen}
           onOpenChange={setModalOpen}

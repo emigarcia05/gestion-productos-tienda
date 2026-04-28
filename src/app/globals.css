@@ -192,13 +192,11 @@
 
   /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
   /* Encabezado global: altura fija para 2 líneas de texto (se aplica siempre, aunque el título use 1 línea). */
+  /* Valor de referencia tomado de Comp. Proveedores: 2.125rem. */
   --tabla-thead-lines: 2;
   --tabla-thead-line-height: 1.15;
   --tabla-thead-padding-y: 0.2rem;
-  --tabla-thead-height: calc(
-    (0.75rem * var(--tabla-thead-line-height) * var(--tabla-thead-lines)) +
-      (var(--tabla-thead-padding-y) * 2)
-  );
+  --tabla-thead-height: 2.125rem;
   /* Fila cuerpo compacta: ~py-0.5 + texto 0.75rem leading-tight + inputs/botones ~1.75rem (h-7). */
   --tabla-body-row-min-height: 2rem;
   --tabla-body-cell-padding-y: 0.125rem;

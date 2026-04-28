@@ -286,18 +286,25 @@ export default function PedidoTintometricoPageClient({
       }
       filters={filters}
     >
-      <div className="flex flex-col h-full min-h-0 gap-0.5">
+      <div className="flex h-full min-h-0 flex-col gap-0">
         <Card className={cn("card-tabla-envoltorio")}>
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
               <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">
+                <colgroup>
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "8%" }} />
+                  <col style={{ width: "64%" }} />
+                  <col style={{ width: "8%" }} />
+                </colgroup>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[10%]">PROVEEDOR</TableHead>
-                    <TableHead className="w-[10%]">SUCURSAL</TableHead>
-                    <TableHead className="w-[8%] text-right">CANT.</TableHead>
-                    <TableHead className="w-[64%]">DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[8%] text-right">
+                    <TableHead>PROVEEDOR</TableHead>
+                    <TableHead>SUCURSAL</TableHead>
+                    <TableHead className="text-right">CANT.</TableHead>
+                    <TableHead>DESCRIPCIÓN</TableHead>
+                    <TableHead className="text-right">
                       <Trash2 className="h-4 w-4 mx-auto" />
                     </TableHead>
                   </TableRow>
