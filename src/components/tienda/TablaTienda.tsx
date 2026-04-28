@@ -13,7 +13,6 @@ import {
 import VincularModal from "./VincularModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
-import { calcMargenSinIvaPct } from "@/lib/calculos";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +35,7 @@ interface ItemTienda {
   habilitado: boolean;
   _count: { productos: number };
   mejorProveedorNoOficialPrefijo: string | null;
+  difMejorPrecioPctEntero: number | null;
 }
 
 const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
@@ -96,7 +96,7 @@ export default function TablaTienda({
               MEJOR PROV.
             </TableHead>
             <TableHead className="w-[10%] tabla-bloque-secundario-head">
-              MARGEN S/ IVA
+              VARIACIÓN
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -108,11 +108,6 @@ export default function TablaTienda({
             />
           ) : (
             items.map((item) => {
-              const margenSinIvaPct = calcMargenSinIvaPct(
-                item.precioLista,
-                item.costo,
-                item.porcIva
-              );
               return (
                 <TableRow
                   key={item.id}
@@ -144,7 +139,7 @@ export default function TablaTienda({
                     {item.mejorProveedorNoOficialPrefijo ?? ""}
                   </TableCell>
                   <TableCell className="celda-datos celda-numero tabla-bloque-secundario-cell">
-                    {margenSinIvaPct != null ? fmtPctEntero(margenSinIvaPct) : ""}
+                    {item.difMejorPrecioPctEntero != null ? fmtPctEntero(item.difMejorPrecioPctEntero) : ""}
                   </TableCell>
                 </TableRow>
               );

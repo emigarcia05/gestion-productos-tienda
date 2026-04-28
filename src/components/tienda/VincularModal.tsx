@@ -161,6 +161,12 @@ export default function VincularModal({
   }
 
   function handleDesvincular(producto: ProductoConProveedor) {
+    if (vinculados.length >= 2 && esOficial(producto)) {
+      toast.error(
+        "No se puede desvincular el proveedor oficial. Primero cambiá el oficial y luego eliminá esta vinculación."
+      );
+      return;
+    }
     startTransition(async () => {
       const res = await desvincularProducto(itemTiendaId, producto.id);
       if (res.ok) {
@@ -300,6 +306,8 @@ export default function VincularModal({
                     {filasOrdenadas.map(({ producto: p, px }) => {
                       const oficial = esOficial(p);
                       const margenPct = calcMargenSinIvaPct(precioListaTienda, px, porcIva);
+                      const bloquearEliminarOficial =
+                        oficial && filasOrdenadas.length >= 2;
                       return (
                         <TableRow key={p.id}>
                           <TableCell className="celda-datos text-center">
@@ -330,12 +338,16 @@ export default function VincularModal({
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={() => handleDesvincular(p)}
-                                disabled={isPending}
+                                disabled={isPending || bloquearEliminarOficial}
                                 className={cn(
                                   TABLE_ROW_ICON_BUTTON_CLASS,
                                   TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
                                 )}
-                                title="Desvincular"
+                                title={
+                                  bloquearEliminarOficial
+                                    ? "No se puede desvincular el proveedor oficial mientras exista un alternativo."
+                                    : "Desvincular"
+                                }
                                 aria-label={`Desvincular ${p.proveedor.prefijo}`}
                               >
                                 <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />

@@ -417,22 +417,11 @@ export async function convertirEnProveedor(
   if (!parsed.success) {
     return { ok: false, error: "IDs inválidos." };
   }
-  const itemProveedor = await prisma.listaPrecioProveedor.findUnique({
-    where: { id: parsed.data.productoProveedorId },
-    include: { proveedor: { select: { nombre: true, prefijo: true } } },
-  });
-  if (!itemProveedor || itemProveedor.idListaPrecioTienda !== parsed.data.itemTiendaId) {
-    return { ok: false, error: "Producto no encontrado o no está vinculado a este ítem." };
-  }
-  await prisma.listaPrecioTienda.update({
-    where: { id: parsed.data.itemTiendaId },
-    data: {
-      codExt: itemProveedor.codExt,
-      proveedor: itemProveedor.proveedor.nombre ?? itemProveedor.proveedor.prefijo,
-    },
-  });
-  revalidatePath("/tienda");
-  return { ok: true, data: undefined };
+  return {
+    ok: false,
+    error:
+      "La modificación de proveedor en base de datos está deshabilitada. Usá la exportación Excel para gestionar cambios.",
+  };
 }
 
 const cambiarProvMenorCostoSchema = z.object({
@@ -586,22 +575,6 @@ export async function cambiarAProveedorMenorCostoAction(
       },
     };
   }
-
-  await prisma.$transaction(
-    updates.map((u) =>
-      prisma.listaPrecioTienda.update({
-        where: { id: u.itemId },
-        data: {
-          codExt: u.codigoExterno,
-          proveedor: u.proveedor,
-          costoCompra: u.costo,
-        },
-      })
-    )
-  );
-
-  revalidatePath("/tienda");
-  revalidatePath("/gestion-productos/tienda/comp-proveedores");
 
   return {
     ok: true,

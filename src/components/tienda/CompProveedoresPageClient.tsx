@@ -160,7 +160,7 @@ export default function CompProveedoresPageClient({
       }
       const { proveedorRows, margenRows, actualizados, omitidos } = res.data;
       if (actualizados === 0) {
-        toast.error("No hubo actualizaciones: no se encontró un proveedor habilitado con menor costo.");
+        toast.error("No hay filas para exportar: no se encontró un proveedor habilitado con menor costo.");
         return;
       }
 
@@ -169,8 +169,9 @@ export default function CompProveedoresPageClient({
 
       const resumenOmitidos =
         omitidos > 0 ? ` Se omitieron ${omitidos.toLocaleString()} ítem(s).` : "";
-      toast.success(`Actualizados ${actualizados.toLocaleString()} ítem(s).${resumenOmitidos}`);
-      setTimeout(() => window.location.reload(), 1500);
+      toast.success(
+        `Exportados ${actualizados.toLocaleString()} ítem(s) (sin modificar base de datos).${resumenOmitidos}`
+      );
     });
   }
 
@@ -184,14 +185,14 @@ export default function CompProveedoresPageClient({
       aria-label={
         selectedCount === 0
           ? "Seleccioná al menos un producto con el tilde de la grilla"
-          : "Aplicar proveedor con menor costo a los ítems seleccionados y descargar Act. Proveedor y Act. Margen"
+          : "Exportar proveedor con menor costo de los ítems seleccionados en Act. Proveedor y Act. Margen"
       }
-      title="Actualiza costo y proveedor según el vínculo habilitado de menor costo; descarga dos Excel (Act. Proveedor, Act. Margen)."
+      title="Solo exporta dos Excel (Act. Proveedor y Act. Margen) según el vínculo habilitado de menor costo; no modifica base de datos."
     >
       {isPending ? (
         <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
       ) : null}
-      Cambiar A Prov. Menor Costo
+      Exportar Prov. Menor Costo
     </Button>
   ) : undefined;
 

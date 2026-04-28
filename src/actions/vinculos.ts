@@ -92,13 +92,49 @@ export async function vincularProducto(
 }
 
 export async function desvincularProducto(
-  _itemTiendaId: string,
+  itemTiendaId: string,
   productoProveedorId: string
 ): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return { ok: false, error: "Sin acceso a tienda." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const parsedItem = uuidSchema.safeParse(itemTiendaId);
   const parsed = uuidSchema.safeParse(productoProveedorId);
-  if (!parsed.success) return { ok: false, error: "ID de producto inválido." };
+  if (!parsedItem.success || !parsed.success) return { ok: false, error: "ID de producto inválido." };
   const { prisma } = await import("@/lib/prisma");
+  const itemTienda = await prisma.listaPrecioTienda.findUnique({
+    where: { id: parsedItem.data },
+    select: { id: true, proveedor: true },
+  });
+  if (!itemTienda) return { ok: false, error: "Ítem tienda no encontrado." };
+  const producto = await prisma.listaPrecioProveedor.findUnique({
+    where: { id: parsed.data },
+    select: {
+      id: true,
+      idListaPrecioTienda: true,
+      proveedor: { select: { nombre: true, prefijo: true } },
+    },
+  });
+  if (!producto || producto.idListaPrecioTienda !== itemTienda.id) {
+    return { ok: false, error: "Producto no encontrado o no vinculado a este ítem." };
+  }
+  const totalVinculados = await prisma.listaPrecioProveedor.count({
+    where: { idListaPrecioTienda: itemTienda.id },
+  });
+  const oficialTxt = (itemTienda.proveedor ?? "").trim().toLowerCase();
+  const esOficial =
+    oficialTxt.length > 0 &&
+    (oficialTxt === (producto.proveedor.nombre ?? "").trim().toLowerCase() ||
+      oficialTxt === (producto.proveedor.prefijo ?? "").trim().toLowerCase());
+  if (totalVinculados >= 2 && esOficial) {
+    return {
+      ok: false,
+      error:
+        "No se puede desvincular el proveedor oficial mientras exista un alternativo. Primero cambiá el oficial y luego eliminá la vinculación.",
+    };
+  }
   await prisma.listaPrecioProveedor.update({
     where: { id: parsed.data },
     data: { idListaPrecioTienda: null },
