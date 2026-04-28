@@ -606,6 +606,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 #### Pedido Urgente — listado
 
 - **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar. El parámetro `pedido` soporta `cualquier`, `urgente` y `reposicion`: filtra por pares (`id_proveedor`, `cod_ext`) presentes en `prod_ped_merc` para la sucursal, con umbrales `cant_pedir > 0`, `urgente_cant_pedir > 0` o `reposicion_cant_pedir > 0` respectivamente.
+- **Comparación por menor costo en doble click (Pedido Urgente):** `getListaPreciosParaPedidoUrgente` expone por fila `estaVinculadoTienda` + `sugerenciaProveedorMenorCosto` cuando, para el mismo `id_lista_precios_tienda`, existe otro `prod_precios_provee` habilitado con costo menor (costo = `px_compra_final` o fallback `calcPxCompraFinal`). Esto habilita en frontend el cartel de desvío a proveedor más barato antes del modal de cantidad.
 
 ### 2.6 Servicio `pedidosHistoria.service.ts`
 

@@ -33,6 +33,12 @@ export interface ProductoPedidoUrgente {
   confReposicion: boolean;
   /** cant_pedir_reposicion desde prod_ped_merc (0 si no hay). */
   cantReposicion: number;
+  estaVinculadoTienda: boolean;
+  sugerenciaProveedorMenorCosto: {
+    listaPrecioProveedorId: string;
+    proveedorNombre: string;
+    costo: number;
+  } | null;
 }
 
 export type PedidoFilterValor = "urgente" | "reposicion" | "";

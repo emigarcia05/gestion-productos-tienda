@@ -6,6 +6,9 @@ import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolba
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
+import { Button } from "@/components/ui/button";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { ProductoPedidoUrgente } from "@/components/pedidos/TablaPedidoUrgente";
 import CantidadPedidoUrgenteModal, {
@@ -33,6 +36,13 @@ interface Props {
 const MENSAJE_SIN_FILTROS =
   "Seleccioná una sucursal para ver los productos.";
 
+interface SugerenciaProveedorMenorCosto {
+  listaPrecioProveedorId: string;
+  proveedorNombre: string;
+  costo: number;
+  descripcion: string;
+}
+
 export default function PedidoUrgentePageClient({
   filters,
   productos,
@@ -51,6 +61,9 @@ export default function PedidoUrgentePageClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<ProductoPedidoUrgenteModal | null>(null);
+  const [modalSugerenciaOpen, setModalSugerenciaOpen] = useState(false);
+  const [sugerenciaProveedorMenorCosto, setSugerenciaProveedorMenorCosto] =
+    useState<SugerenciaProveedorMenorCosto | null>(null);
 
   useEffect(() => {
     if (productos.length === 0) return;
@@ -105,12 +118,48 @@ export default function PedidoUrgentePageClient({
     />
   );
 
-  function abrirModalCantidad(prod: ProductoPedidoUrgente) {
+  function abrirModalCantidadDirecto(
+    prod: ProductoPedidoUrgente,
+    listaPrecioProveedorIdOverride?: string
+  ) {
     setProductoSeleccionado({
-      id: prod.id,
+      id: listaPrecioProveedorIdOverride ?? prod.id,
       descripcion: prod.descripcion,
     });
     setModalOpen(true);
+  }
+
+  function abrirModalCantidad(prod: ProductoPedidoUrgente) {
+    const sugerencia = prod.sugerenciaProveedorMenorCosto;
+    if (prod.estaVinculadoTienda && sugerencia) {
+      setSugerenciaProveedorMenorCosto({
+        listaPrecioProveedorId: sugerencia.listaPrecioProveedorId,
+        proveedorNombre: sugerencia.proveedorNombre,
+        costo: sugerencia.costo,
+        descripcion: prod.descripcion,
+      });
+      setModalSugerenciaOpen(true);
+      return;
+    }
+    abrirModalCantidadDirecto(prod);
+  }
+
+  function confirmarPedirProveedorSugerido() {
+    if (!sugerenciaProveedorMenorCosto) return;
+    const fakeProd: ProductoPedidoUrgente = {
+      id: sugerenciaProveedorMenorCosto.listaPrecioProveedorId,
+      codExt: "",
+      prefijo: "",
+      descripcion: sugerenciaProveedorMenorCosto.descripcion,
+      pxCompraFinal: sugerenciaProveedorMenorCosto.costo,
+      cantPedidaUrgente: 0,
+      confReposicion: false,
+      cantReposicion: 0,
+      estaVinculadoTienda: true,
+      sugerenciaProveedorMenorCosto: null,
+    };
+    setModalSugerenciaOpen(false);
+    abrirModalCantidadDirecto(fakeProd, sugerenciaProveedorMenorCosto.listaPrecioProveedorId);
   }
 
   async function borrarCantidad(prod: ProductoPedidoUrgente) {
@@ -222,6 +271,39 @@ export default function PedidoUrgentePageClient({
           producto={productoSeleccionado}
           onConfirmar={confirmarCantidad}
         />
+        <Dialog open={modalSugerenciaOpen} onOpenChange={setModalSugerenciaOpen}>
+          <AppModal
+            title="Proveedor Con Menor Costo"
+            size="md"
+            actions={
+              <div className="flex w-full justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setModalSugerenciaOpen(false)}>
+                  Continuar Con Este Proveedor
+                </Button>
+                <Button type="button" onClick={confirmarPedirProveedorSugerido}>
+                  Pedir A Ese Proveedor
+                </Button>
+              </div>
+            }
+          >
+            <div className="flex flex-col gap-2 text-sm text-foreground">
+              <p>
+                Este producto es ofrecido por{" "}
+                <span className="font-semibold">{sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}</span>{" "}
+                a un costo menor.
+              </p>
+              <p className="text-muted-foreground">
+                Costo sugerido:{" "}
+                {sugerenciaProveedorMenorCosto
+                  ? `$${sugerenciaProveedorMenorCosto.costo.toLocaleString("es-AR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  : "—"}
+              </p>
+            </div>
+          </AppModal>
+        </Dialog>
       </div>
     </ClassicFilteredTableLayout>
   );
