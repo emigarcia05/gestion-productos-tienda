@@ -336,16 +336,16 @@ export default function PedidoTintometricoPageClient({
                       const suc = sucursalPorCodigo.get(i.sucursalCodigo);
                       return (
                         <TableRow key={i.key}>
-                          <TableCell className="celda-datos text-xs">
+                          <TableCell className="celda-datos">
                             {(prov?.prefijo ?? "").trim()}
                           </TableCell>
-                          <TableCell className="celda-datos text-xs">
+                          <TableCell className="celda-datos">
                             {(suc?.nombre ?? "").trim()}
                           </TableCell>
-                          <TableCell className="celda-datos text-xs text-right tabular-nums">
+                          <TableCell className="celda-datos text-right tabular-nums">
                             {i.cantidad.toLocaleString()}
                           </TableCell>
-                          <TableCell className="celda-datos text-xs">
+                          <TableCell className="celda-datos">
                             {i.descripcion}
                           </TableCell>
                           <TableCell className="celda-datos text-right">

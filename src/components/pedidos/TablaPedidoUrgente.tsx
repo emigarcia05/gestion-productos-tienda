@@ -161,10 +161,10 @@ export default function TablaPedidoUrgente({
                     </button>
                   </div>
                 </TableCell>
-                <TableCell className="celda-datos text-center tabular-nums font-semibold">
+                <TableCell className="celda-datos text-center tabular-nums">
                   {ordenCompraPorId[prod.id] ?? ""}
                 </TableCell>
-                <TableCell className="celda-datos celda-mono font-mono text-sm">
+                <TableCell className="celda-datos">
                   {prod.prefijo}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
