@@ -14,7 +14,6 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import type { SucursalPedido } from "@/lib/pedidos";
 import {
@@ -286,94 +285,90 @@ export default function PedidoTintometricoPageClient({
       }
       filters={filters}
     >
-      <div className="flex h-full min-h-0 flex-col gap-0">
-        <Card className={cn("card-tabla-envoltorio")}>
-          <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
-            <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-              <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">
-                <colgroup>
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "8%" }} />
-                  <col style={{ width: "64%" }} />
-                  <col style={{ width: "8%" }} />
-                </colgroup>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>PROVEEDOR</TableHead>
-                    <TableHead>SUCURSAL</TableHead>
-                    <TableHead className="text-right">CANT.</TableHead>
-                    <TableHead>DESCRIPCIÓN</TableHead>
-                    <TableHead className="text-right">
-                      <Trash2 className="h-4 w-4 mx-auto" />
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {itemsFiltrados.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className={cn(
-                          tableEmptyStateContainerVariants({
-                            placement: "tableCellTall",
-                            textSize: "sm",
-                          })
-                        )}
-                      >
-                        <span
-                          className={tableEmptyStateMessageVariants({
-                            maxWidth: "full",
-                          })}
+      <div className="flex h-full min-h-0 flex-col gap-0.5">
+        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+          <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">
+            <colgroup>
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "64%" }} />
+              <col style={{ width: "8%" }} />
+            </colgroup>
+            <TableHeader>
+              <TableRow>
+                <TableHead>PROVEEDOR</TableHead>
+                <TableHead>SUCURSAL</TableHead>
+                <TableHead className="text-right">CANT.</TableHead>
+                <TableHead>DESCRIPCIÓN</TableHead>
+                <TableHead className="text-right">
+                  <Trash2 className="h-4 w-4 mx-auto" />
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {itemsFiltrados.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className={cn(
+                      tableEmptyStateContainerVariants({
+                        placement: "tableCellTall",
+                        textSize: "sm",
+                      })
+                    )}
+                  >
+                    <span
+                      className={tableEmptyStateMessageVariants({
+                        maxWidth: "full",
+                      })}
+                    >
+                      Sin Ítems. Presioná “+” Para Agregar.
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                itemsFiltrados.map((i) => {
+                  const prov = proveedoresById.get(i.proveedorId);
+                  const suc = sucursalPorCodigo.get(i.sucursalCodigo);
+                  return (
+                    <TableRow key={i.key}>
+                      <TableCell className="celda-datos">
+                        {(prov?.prefijo ?? "").trim()}
+                      </TableCell>
+                      <TableCell className="celda-datos">
+                        {(suc?.nombre ?? "").trim()}
+                      </TableCell>
+                      <TableCell className="celda-datos text-right tabular-nums">
+                        {i.cantidad.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="celda-datos">
+                        {i.descripcion}
+                      </TableCell>
+                      <TableCell className="celda-datos text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-xs"
+                          onClick={() => borrarItem(i)}
+                          disabled={deletingKey === i.key}
+                          className={cn(
+                            TABLE_ROW_ICON_BUTTON_CLASS,
+                            TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
+                          )}
+                          aria-label="Borrar Ítem"
+                          title="Borrar Ítem"
                         >
-                          Sin Ítems. Presioná “+” Para Agregar.
-                        </span>
+                          <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    itemsFiltrados.map((i) => {
-                      const prov = proveedoresById.get(i.proveedorId);
-                      const suc = sucursalPorCodigo.get(i.sucursalCodigo);
-                      return (
-                        <TableRow key={i.key}>
-                          <TableCell className="celda-datos">
-                            {(prov?.prefijo ?? "").trim()}
-                          </TableCell>
-                          <TableCell className="celda-datos">
-                            {(suc?.nombre ?? "").trim()}
-                          </TableCell>
-                          <TableCell className="celda-datos text-right tabular-nums">
-                            {i.cantidad.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="celda-datos">
-                            {i.descripcion}
-                          </TableCell>
-                          <TableCell className="celda-datos text-right">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-xs"
-                              onClick={() => borrarItem(i)}
-                              disabled={deletingKey === i.key}
-                              className={cn(
-                                TABLE_ROW_ICON_BUTTON_CLASS,
-                                TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                              )}
-                              aria-label="Borrar Ítem"
-                              title="Borrar Ítem"
-                            >
-                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
         <NuevoItemTintometricoModal
           open={modalOpen}

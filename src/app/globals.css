@@ -617,6 +617,14 @@
     @apply min-h-0 flex flex-col rounded-xl border border-border bg-card text-card-foreground overflow-hidden gap-0 py-0 transition-shadow duration-150;
     box-shadow: var(--card-tabla-envoltorio-shadow);
   }
+  /* Override explícito de Card base (`gap-6 py-6 border-card-border`) para mantener
+   * el cascarón de tabla sin padding ni separación vertical extra. */
+  [data-slot="card"].card-tabla-envoltorio {
+    gap: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-color: var(--border) !important;
+  }
 
   /* Toaster (sonner): tokens configurados vía clase, sin style inline en el componente. */
   .toaster {

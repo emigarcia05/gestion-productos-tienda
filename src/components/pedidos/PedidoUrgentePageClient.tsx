@@ -5,7 +5,6 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import TablaPedidoUrgente from "@/components/pedidos/TablaPedidoUrgente";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -221,26 +220,22 @@ export default function PedidoUrgentePageClient({
       actions={actions}
       filters={filters}
     >
-      <div className="flex h-full min-h-0 flex-col gap-0">
-        <Card className={cn("card-tabla-envoltorio")}>
-          <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
-            <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-              <TablaPedidoUrgente
-                productos={productos}
-                sucursal={sucursalValida}
-                sinFiltros={sinFiltros}
-                mensajeSinSucursal={MENSAJE_SIN_FILTROS}
-                cantPorId={cantPorId}
-                setCantPorId={setCantPorId}
-                selectedForCompra={selectedForCompra}
-                ordenCompraPorId={ordenCompraPorId}
-                onToggleSelectCompra={toggleSeleccionCompra}
-                onRowDoubleClick={abrirModalCantidad}
-                onRowDeleteClick={borrarCantidad}
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex h-full min-h-0 flex-col gap-0.5">
+        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+          <TablaPedidoUrgente
+            productos={productos}
+            sucursal={sucursalValida}
+            sinFiltros={sinFiltros}
+            mensajeSinSucursal={MENSAJE_SIN_FILTROS}
+            cantPorId={cantPorId}
+            setCantPorId={setCantPorId}
+            selectedForCompra={selectedForCompra}
+            ordenCompraPorId={ordenCompraPorId}
+            onToggleSelectCompra={toggleSeleccionCompra}
+            onRowDoubleClick={abrirModalCantidad}
+            onRowDeleteClick={borrarCantidad}
+          />
+        </div>
         {!sinFiltros && sucursalValida && totalPaginas > 1 ? (
           <div className="flex justify-end pt-2 shrink-0">
             <PaginacionTabla
