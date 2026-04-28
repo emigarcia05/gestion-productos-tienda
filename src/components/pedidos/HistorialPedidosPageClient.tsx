@@ -80,6 +80,7 @@ export default function HistorialPedidosPageClient({
   const [descargandoPdfId, setDescargandoPdfId] = useState<string | null>(null);
 
   const showingEmpty = items.length === 0;
+  const COL_WIDTHS_PCT = [18, 28, 18, 14, 22] as const;
 
   const title = "Pedido Mercadería";
   const subtitle = "Historial Pedidos";
@@ -140,19 +141,28 @@ export default function HistorialPedidosPageClient({
         total={total}
       />
     }>
-      <div className="flex flex-col h-full min-h-0 gap-2">
-        <Card className="min-h-0 flex flex-col gap-0 overflow-hidden rounded-xl border border-border/80 bg-card py-0 shadow-sm">
+      <div className="flex h-full min-h-0 flex-col gap-0">
+        <Card className="card-tabla-envoltorio">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
             <div className="flex flex-col flex-1 min-h-0">
               <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-                <Table variant="compact" scrollX={false} className="min-w-full">
+                <Table
+                  variant="compact"
+                  scrollX={false}
+                  className="tabla-gestion-compacta w-full table-fixed"
+                >
+                  <colgroup>
+                    {COL_WIDTHS_PCT.map((pct, i) => (
+                      <col key={i} style={{ width: `${pct}%` }} />
+                    ))}
+                  </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[18%]">FECHA</TableHead>
-                      <TableHead className="w-[28%]">PROVEEDOR</TableHead>
-                      <TableHead className="w-[18%]">SUCURSAL</TableHead>
-                      <TableHead className="w-[14%]">ESTADO</TableHead>
-                      <TableHead className="w-[22%] tabla-bloque-secundario-head-divider">
+                      <TableHead>FECHA</TableHead>
+                      <TableHead>PROVEEDOR</TableHead>
+                      <TableHead>SUCURSAL</TableHead>
+                      <TableHead>ESTADO</TableHead>
+                      <TableHead className="tabla-bloque-secundario-head-divider">
                         ACCIONES
                       </TableHead>
                     </TableRow>
@@ -164,14 +174,11 @@ export default function HistorialPedidosPageClient({
                         message="No se encontraron pedidos."
                       />
                     ) : (
-                      items.map((it, idx) => {
+                      items.map((it) => {
                         const fecha = parseDate(it.generadoAt);
                         const fechaStr = fecha ? formatDdMmHhMmArgentina(fecha) : "";
                         return (
-                          <TableRow
-                            key={it.id}
-                            className={cn(idx % 2 === 1 && "bg-muted/30")}
-                          >
+                          <TableRow key={it.id}>
                             <TableCell className="celda-datos tabular-nums">
                               {fechaStr}
                             </TableCell>
@@ -257,31 +264,26 @@ export default function HistorialPedidosPageClient({
                 </Table>
               </div>
 
-              {!showingEmpty && totalPaginas > 1 && (
-                <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
-                  <span className="text-sm text-muted-foreground tabular-nums">
-                    {total === 0
-                      ? "Mostrando 0 de 0"
-                      : `Mostrando ${items.length.toLocaleString("es-AR")} de ${total.toLocaleString("es-AR")}`}
-                  </span>
-                  <PaginacionTabla
-                    basePath="/gestion-productos/pedidos/historial"
-                    params={{
-                      proveedor: proveedorId,
-                      sucursal: sucursalCodigo,
-                      estado: estado as string,
-                      q,
-                    }}
-                    paginaActual={paginaNum}
-                    totalPaginas={totalPaginas}
-                    total={total}
-                    pageSize={PAGE_SIZE}
-                  />
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
+        {!showingEmpty && totalPaginas > 1 ? (
+          <div className="flex justify-end pt-2 shrink-0">
+            <PaginacionTabla
+              basePath="/gestion-productos/pedidos/historial"
+              params={{
+                proveedor: proveedorId,
+                sucursal: sucursalCodigo,
+                estado: estado as string,
+                q,
+              }}
+              paginaActual={paginaNum}
+              totalPaginas={totalPaginas}
+              total={total}
+              pageSize={PAGE_SIZE}
+            />
+          </div>
+        ) : null}
         <PedidoHistoriaDetalleModal
           open={recepcionOpen}
           onOpenChange={(v) => {
