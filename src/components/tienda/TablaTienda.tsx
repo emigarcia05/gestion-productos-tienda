@@ -83,9 +83,9 @@ export default function TablaTienda({
                   onClick={() => onToggleAllVisible?.(!allVisibleSelected)}
                   onDoubleClick={(e) => e.stopPropagation()}
                   aria-label={allVisibleSelected ? "Deseleccionar Todos" : "Seleccionar Todos"}
-                  className="inline-flex h-full w-full items-center justify-center"
+                  className="tabla-head-toggle"
                 >
-                  <Check className="h-4 w-4" aria-hidden />
+                  <Check className="h-4 w-4" strokeWidth={2.75} aria-hidden />
                 </button>
               </TableHead>
             ) : null}
