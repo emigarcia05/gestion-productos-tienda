@@ -659,6 +659,7 @@ export async function getItemsYProveedorParaEnviar(
       orderBy: [{ codExt: "asc" }],
       select: {
         id: true,
+        idProveedor: true,
         tipoPedido: true,
         codExt: true,
         codProveedor: true,

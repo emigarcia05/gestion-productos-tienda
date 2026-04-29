@@ -676,6 +676,7 @@ export async function getListaPreciosParaPedidoUrgente(
       where,
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
+        listaPrecioTienda: { select: { codTienda: true } },
       },
       orderBy: { codExt: "asc" },
       skip,
