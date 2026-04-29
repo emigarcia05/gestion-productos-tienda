@@ -195,6 +195,7 @@ export async function syncListaPrecioTiendaFromDux(
                   stockeable: row.stockeable,
                 },
                 update: {
+                  codExt: row.codExt,
                   codTienda: row.codTienda,
                   rubro: row.rubro,
                   subRubro: row.subRubro,
