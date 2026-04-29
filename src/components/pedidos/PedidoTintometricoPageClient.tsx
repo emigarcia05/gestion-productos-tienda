@@ -51,6 +51,8 @@ import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
 
 type ItemTintometrico = {
   key: string;
+  /** Presente cuando la fila viene de BD (`prod_ped_merc_2` / `prod_ped_merc`). */
+  id?: string;
   sucursalCodigo: string;
   proveedorId: string;
   codExt: string;
@@ -58,6 +60,12 @@ type ItemTintometrico = {
   cantidad: number;
   descripcion: string;
 };
+
+function claveItemTintometrico(
+  i: Pick<ItemTintometrico, "id" | "proveedorId" | "sucursalCodigo" | "codExt">
+): string {
+  return i.id ?? `${i.proveedorId}:TINTOMETRICO:${i.sucursalCodigo}:${i.codExt}`;
+}
 
 const MODAL_PARAM = "nuevo-item-tintometrico";
 
@@ -69,6 +77,7 @@ export default function PedidoTintometricoPageClient({
   proveedores: ProveedorTintometrico[];
   sucursales: SucursalTintometrica[];
   initialItems: Array<{
+    id: string;
     sucursalCodigo: string;
     proveedorId: string;
     codExt: string;
@@ -83,7 +92,7 @@ export default function PedidoTintometricoPageClient({
   const [items, setItems] = useState<ItemTintometrico[]>(
     initialItems.map((i) => ({
       ...i,
-      key: `${i.proveedorId}:TINTOMETRICO:${i.sucursalCodigo}:${i.codExt}`,
+      key: claveItemTintometrico(i),
     }))
   );
 
@@ -91,7 +100,7 @@ export default function PedidoTintometricoPageClient({
     setItems(
       initialItems.map((i) => ({
         ...i,
-        key: `${i.proveedorId}:TINTOMETRICO:${i.sucursalCodigo}:${i.codExt}`,
+        key: claveItemTintometrico(i),
       }))
     );
   }, [initialItems]);
@@ -151,7 +160,12 @@ export default function PedidoTintometricoPageClient({
       descripcionBase && codigo
         ? `${descripcionBase} - COD. ${codigo}`.toUpperCase()
         : (descripcionBase || "").toUpperCase();
-    const key = `${draft.proveedorId}:TINTOMETRICO:${draft.sucursalCodigo}:${codExt}`;
+    const key = claveItemTintometrico({
+      id: undefined,
+      proveedorId: draft.proveedorId,
+      sucursalCodigo: draft.sucursalCodigo,
+      codExt,
+    });
 
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.key === key);
@@ -173,11 +187,13 @@ export default function PedidoTintometricoPageClient({
 
   async function borrarItem(item: ItemTintometrico) {
     setDeletingKey(item.key);
-    const res = await deletePedidoTintometricoItemAction({
-      sucursalCodigo: item.sucursalCodigo as "guaymallen" | "maipu",
-      proveedorId: item.proveedorId,
-      codExt: item.codExt,
-    });
+    const res = item.id
+      ? await deletePedidoTintometricoItemAction({ id: item.id })
+      : await deletePedidoTintometricoItemAction({
+          sucursalCodigo: item.sucursalCodigo as "guaymallen" | "maipu",
+          proveedorId: item.proveedorId,
+          codExt: item.codExt,
+        });
     setDeletingKey(null);
     if (!res.ok) {
       toast.error(res.error ?? "Error al borrar el ítem.");

@@ -408,11 +408,20 @@ export async function upsertPedidoTintometricoItemsAction(
   return { ok: true, data: { actualizados } };
 }
 
-const deleteTintometricoItemSchema = z.object({
+const deleteTintometricoItemByIdSchema = z.object({
+  id: z.string().uuid("ID inválido."),
+});
+
+const deleteTintometricoItemLegacySchema = z.object({
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   proveedorId: z.string().min(1, "Proveedor inválido."),
   codExt: z.string().min(1, "Cod. ext. requerido."),
 });
+
+const deleteTintometricoItemSchema = z.union([
+  deleteTintometricoItemByIdSchema,
+  deleteTintometricoItemLegacySchema,
+]);
 
 export async function deletePedidoTintometricoItemAction(
   raw: z.infer<typeof deleteTintometricoItemSchema>
@@ -426,11 +435,16 @@ export async function deletePedidoTintometricoItemAction(
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos para borrar el ítem." };
   }
-  if (!(await sucursalPedidoHabilitada(parsed.data.sucursalCodigo))) {
-    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  if ("sucursalCodigo" in parsed.data) {
+    if (!(await sucursalPedidoHabilitada(parsed.data.sucursalCodigo))) {
+      return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+    }
   }
 
-  const result = await deletePedidoTintometricoItem(parsed.data);
+  const result =
+    "id" in parsed.data
+      ? await deletePedidoTintometricoItem({ id: parsed.data.id })
+      : await deletePedidoTintometricoItem(parsed.data);
   if (!result.ok) {
     return { ok: false, error: result.error };
   }
