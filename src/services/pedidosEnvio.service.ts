@@ -14,6 +14,17 @@ const TIPO_REPOSICION = "REPOSICION";
 const TIPO_TINTOMETRICO = "TINTOMETRICO";
 const COD_TIENDA_FALLBACK = "1503";
 
+/**
+ * En `REPOSICION` no se persiste el cod_ext comercial de negocio; la clave lógica es `cod_tienda`.
+ * El unique de BD `(id_proveedor, tipo, sucursal, cod_ext)` exige un valor distinguible por fila:
+ * usamos un surrogado estable (no confundir con `prod_precios_tienda.cod_ext`).
+ */
+const REPOSICION_COD_EXT_PREFIX = "REPO_TIENDA:";
+
+function codExtSurrogateReposicion(codTienda: string): string {
+  return `${REPOSICION_COD_EXT_PREFIX}${codTienda.trim()}`;
+}
+
 export type SucursalPedidoEnvio = "guaymallen" | "maipu";
 
 export interface ItemPedidoUrgentePayload {
@@ -143,9 +154,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       },
       select: { id: true, idProveedor: true, codExt: true },
     });
-    const existingCurrent = existingByCodTienda.find(
-      (r) => r.idProveedor === provRow.idProveedor && r.codExt === codExtResuelto
-    );
+    const existingCurrent = existingByCodTienda[0] ?? null;
 
     const dataBase = {
       codProveedor: (provRow.codProdProveedor ?? "").trim(),
@@ -159,10 +168,16 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       reposicionCantPedir: cantPedir,
     };
 
+    const codExtFila = codExtSurrogateReposicion(tienda.codTienda);
+
     if (existingCurrent) {
       await prisma.itemPedidoEnvio.update({
         where: { id: existingCurrent.id },
-        data: dataBase,
+        data: {
+          ...dataBase,
+          idProveedor: provRow.idProveedor,
+          codExt: codExtFila,
+        },
       });
     } else {
       await prisma.itemPedidoEnvio.create({
@@ -170,7 +185,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
           idProveedor: provRow.idProveedor,
           tipoPedido: TIPO_REPOSICION,
           sucursalId,
-          codExt: codExtResuelto,
+          codExt: codExtFila,
           ...dataBase,
         },
       });
@@ -629,7 +644,6 @@ export async function getItemsYProveedorParaEnviar(
   const [rawRows, proveedor] = await Promise.all([
     prisma.itemPedidoEnvio.findMany({
       where: {
-        idProveedor: pid,
         sucursalId: sucursalRow.id,
         tipoPedido: { in: tipos },
         cantPedir: { gt: 0 },
@@ -662,18 +676,134 @@ export async function getItemsYProveedorParaEnviar(
     }),
   ]);
 
-  const rows: ItemPedidoEnvioRowParaEnviar[] = rawRows.map((i) => ({
-    id: i.id,
-    tipoPedido: i.tipoPedido,
-    codExt: (i.codExt ?? "").trim(),
-    codProveedor: i.codProveedor,
-    tintometricoDescripcion: i.tintometricoDescripcion,
-    descripcionProveedor: i.descripcionProveedor,
-    descripcionTienda: i.descripcionTienda,
-    cantPedir: i.cantPedir,
-    codTienda: i.codTienda?.trim() ?? null,
-    reposicionCantConf: i.reposicionCantConf,
-  }));
+  const reposicionRows = rawRows.filter((r) => r.tipoPedido === TIPO_REPOSICION);
+  const codTiendasReposicion = Array.from(
+    new Set(
+      reposicionRows
+        .map((r) => (r.codTienda ?? "").trim())
+        .filter((v) => v.length > 0)
+    )
+  );
+
+  const reposicionResolucionByCodTienda = new Map<
+    string,
+    {
+      idProveedor: string;
+      codExt: string;
+      codProveedor: string;
+      descripcionProveedor: string;
+      descripcionTienda: string | null;
+    }
+  >();
+
+  if (codTiendasReposicion.length > 0) {
+    const tiendas = await prisma.listaPrecioTienda.findMany({
+      where: { codTienda: { in: codTiendasReposicion } },
+      select: {
+        codTienda: true,
+        codExt: true,
+        proveedor: true,
+        descripcionTienda: true,
+      },
+    });
+    const tiendaByCodTienda = new Map<string, (typeof tiendas)[number]>();
+    const codExts = new Set<string>();
+    for (const t of tiendas) {
+      const codTienda = (t.codTienda ?? "").trim();
+      const codExt = (t.codExt ?? "").trim();
+      if (!codTienda || !codExt) continue;
+      if (!tiendaByCodTienda.has(codTienda)) tiendaByCodTienda.set(codTienda, t);
+      codExts.add(codExt);
+    }
+
+    const proveedorRows =
+      codExts.size > 0
+        ? await prisma.listaPrecioProveedor.findMany({
+            where: { codExt: { in: Array.from(codExts) } },
+            select: {
+              codExt: true,
+              idProveedor: true,
+              codProdProveedor: true,
+              descripcionProveedor: true,
+              proveedor: { select: { prefijo: true, nombre: true } },
+            },
+            orderBy: [{ codExt: "asc" }, { idProveedor: "asc" }],
+          })
+        : [];
+    const proveedorRowsByCodExt = new Map<string, typeof proveedorRows>();
+    for (const row of proveedorRows) {
+      const codExt = (row.codExt ?? "").trim();
+      if (!codExt) continue;
+      const list = proveedorRowsByCodExt.get(codExt) ?? [];
+      list.push(row);
+      proveedorRowsByCodExt.set(codExt, list);
+    }
+
+    for (const codTienda of codTiendasReposicion) {
+      const tienda = tiendaByCodTienda.get(codTienda);
+      if (!tienda) continue;
+      const proveedorTiendaNorm = (tienda.proveedor ?? "").trim().toUpperCase();
+      const codExt = (tienda.codExt ?? "").trim();
+      const candidates = proveedorRowsByCodExt.get(codExt) ?? [];
+      if (candidates.length === 0) continue;
+      const selected =
+        candidates.find((r) => {
+          const pref = (r.proveedor.prefijo ?? "").trim().toUpperCase();
+          const nom = (r.proveedor.nombre ?? "").trim().toUpperCase();
+          return (
+            proveedorTiendaNorm.length > 0 &&
+            (pref === proveedorTiendaNorm || nom === proveedorTiendaNorm)
+          );
+        }) ?? candidates[0]!;
+      reposicionResolucionByCodTienda.set(codTienda, {
+        idProveedor: selected.idProveedor.trim(),
+        codExt,
+        codProveedor: (selected.codProdProveedor ?? "").trim(),
+        descripcionProveedor: (selected.descripcionProveedor ?? "").trim(),
+        descripcionTienda: tienda.descripcionTienda?.trim() || null,
+      });
+    }
+  }
+
+  const rows: ItemPedidoEnvioRowParaEnviar[] = rawRows
+    .flatMap((i) => {
+      if (i.tipoPedido === TIPO_REPOSICION) {
+        const codTienda = (i.codTienda ?? "").trim();
+        if (!codTienda) return [];
+        const resolved = reposicionResolucionByCodTienda.get(codTienda);
+        if (!resolved || resolved.idProveedor !== pid) return [];
+        return [
+          {
+            id: i.id,
+            tipoPedido: i.tipoPedido,
+            codExt: resolved.codExt,
+            codProveedor: resolved.codProveedor,
+            tintometricoDescripcion: i.tintometricoDescripcion,
+            descripcionProveedor: resolved.descripcionProveedor || i.descripcionProveedor,
+            descripcionTienda: resolved.descripcionTienda ?? i.descripcionTienda,
+            cantPedir: i.cantPedir,
+            codTienda,
+            reposicionCantConf: i.reposicionCantConf,
+          },
+        ];
+      }
+      if (i.idProveedor !== pid) return [];
+      return [
+        {
+          id: i.id,
+          tipoPedido: i.tipoPedido,
+          codExt: (i.codExt ?? "").trim(),
+          codProveedor: i.codProveedor,
+          tintometricoDescripcion: i.tintometricoDescripcion,
+          descripcionProveedor: i.descripcionProveedor,
+          descripcionTienda: i.descripcionTienda,
+          cantPedir: i.cantPedir,
+          codTienda: i.codTienda?.trim() ?? null,
+          reposicionCantConf: i.reposicionCantConf,
+        },
+      ];
+    })
+    .sort((a, b) => a.codExt.localeCompare(b.codExt));
 
   const itemsPdf: ItemPedidoParaPdf[] = rows.map((i) => ({
     codExt: i.codExt,

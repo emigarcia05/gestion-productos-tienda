@@ -121,104 +121,46 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (ct && !tiendaPorCodTienda.has(ct)) tiendaPorCodTienda.set(ct, t);
   }
 
-  const codExts = [
-    ...new Set(
-      filasConTienda
-        .map((f) => {
-          const row = tiendaPorCodTienda.get(f.codTienda!.trim());
-          return row ? normCodExt(row.codExt) : "";
-        })
-        .filter(Boolean)
-    ),
-  ];
-
-  if (codExts.length === 0) {
-    return { items: [], tieneSobreStock: false };
-  }
-
   const stockFieldOtra = getStockFieldBySucursal(otraCodigo);
-
-  const primaryByCodExt = new Map<string, string>();
-  const lpp = await prisma.listaPrecioProveedor.findMany({
-    where: { codExt: { in: codExts } },
-    select: { codExt: true, idProveedor: true },
-    orderBy: [{ codExt: "asc" }, { idProveedor: "asc" }],
-  });
-  for (const r of lpp) {
-    const k = normCodExt(r.codExt);
-    if (k && !primaryByCodExt.has(k)) {
-      primaryByCodExt.set(k, r.idProveedor.trim());
-    }
-  }
-
   const otherRowsAll = await prisma.itemPedidoEnvio.findMany({
     where: {
       sucursalId: otraSucursalRow.id,
       tipoPedido: "REPOSICION",
-      codExt: { in: codExts },
+      codTienda: { in: codTiendas },
     },
     select: {
-      codExt: true,
+      codTienda: true,
       idProveedor: true,
       reposicionCantConf: true,
     },
   });
 
-  const otherListByCodExt = new Map<
+  const otherListByCodTienda = new Map<
     string,
     { idProveedor: string; reposicionCantConf: number | null }[]
   >();
 
-  function appendOtra(cx: string, prov: string, conf: number | null) {
-    const k = normCodExt(cx);
+  function appendOtra(codTienda: string, prov: string, conf: number | null) {
+    const k = (codTienda ?? "").trim();
     if (!k) return;
-    const list = otherListByCodExt.get(k) ?? [];
+    const list = otherListByCodTienda.get(k) ?? [];
     const p = prov.trim();
     if (!list.some((x) => x.idProveedor === p)) {
       list.push({ idProveedor: p, reposicionCantConf: conf });
-      otherListByCodExt.set(k, list);
+      otherListByCodTienda.set(k, list);
     }
   }
 
   for (const r of otherRowsAll) {
-    appendOtra(r.codExt, r.idProveedor, r.reposicionCantConf);
-  }
-
-  const needPrimary = codExts.filter((cx) => {
-    const list = otherListByCodExt.get(cx);
-    return !list || list.length === 0;
-  });
-  const orCond = needPrimary
-    .map((cx) => {
-      const prov = primaryByCodExt.get(cx);
-      return prov ? { codExt: cx, idProveedor: prov } : null;
-    })
-    .filter((x): x is { codExt: string; idProveedor: string } => x != null);
-
-  if (orCond.length > 0) {
-    const extra = await prisma.itemPedidoEnvio.findMany({
-      where: {
-        sucursalId: otraSucursalRow.id,
-        tipoPedido: "REPOSICION",
-        OR: orCond,
-      },
-      select: {
-        codExt: true,
-        idProveedor: true,
-        reposicionCantConf: true,
-      },
-    });
-    for (const r of extra) {
-      appendOtra(r.codExt, r.idProveedor, r.reposicionCantConf);
-    }
+    appendOtra(r.codTienda ?? "", r.idProveedor, r.reposicionCantConf);
   }
 
   function resolverTopeOtraSucursal(
-    codExt: string,
+    codTienda: string,
     reposicionCantPedido: number | null | undefined
   ): number | null | undefined {
-    const k = normCodExt(codExt);
-    const list = otherListByCodExt.get(k);
+    const k = (codTienda ?? "").trim();
+    const list = otherListByCodTienda.get(k);
     if (list && list.length > 0) {
       const mismoProv = list.find((x) => x.idProveedor === proveedorPedido);
       if (mismoProv) return mismoProv.reposicionCantConf;
@@ -242,14 +184,15 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     const topePedidoRow =
       fila.tipoPedido === "REPOSICION" ? fila.reposicionCantConf : null;
 
-    const listOtra = otherListByCodExt.get(cx);
+    const codTienda = fila.codTienda!.trim();
+    const listOtra = otherListByCodTienda.get(codTienda);
     const debeEvaluarOtra =
       (listOtra?.length ?? 0) > 0 || Number(topePedidoRow ?? 0) > 0;
 
     if (!debeEvaluarOtra) continue;
 
     const stockOtra = Number(tienda[stockFieldOtra] ?? 0);
-    const topeParaOtra = resolverTopeOtraSucursal(cx, topePedidoRow);
+    const topeParaOtra = resolverTopeOtraSucursal(codTienda, topePedidoRow);
     const ext = evaluarSobrestockEnValores(stockOtra, topeParaOtra);
     if (!ext) continue;
 

@@ -594,40 +594,60 @@ export async function getListaPreciosParaPedidoUrgente(
   if (prov) andParts.push({ idProveedor: prov });
 
   if (pedidoTipo) {
-    const wherePedidoMercaderia: Prisma.ItemPedidoEnvioWhereInput =
-      pedidoTipo === "cualquier"
-        ? { cantPedir: { gt: 0 } }
-        : pedidoTipo === "urgente"
-          ? { tipoPedido: "URGENTE", urgenteCantPedir: { gt: 0 } }
-          : { tipoPedido: "REPOSICION", reposicionCantPedir: { gt: 0 } };
+    if (pedidoTipo === "reposicion") {
+      const filasRepo = await prisma.itemPedidoEnvio.findMany({
+        where: {
+          sucursal: { codigo: sucursalTrim },
+          tipoPedido: "REPOSICION",
+          reposicionCantPedir: { gt: 0 },
+        },
+        select: { codTienda: true },
+      });
+      const codTiendas = Array.from(
+        new Set(
+          filasRepo
+            .map((r) => (r.codTienda ?? "").trim())
+            .filter((v) => v.length > 0)
+        )
+      );
+      if (codTiendas.length === 0) {
+        return { items: [], total: 0, totalPaginas: 0 };
+      }
+      andParts.push({ listaPrecioTienda: { codTienda: { in: codTiendas } } });
+    } else {
+      const wherePedidoMercaderia: Prisma.ItemPedidoEnvioWhereInput =
+        pedidoTipo === "cualquier"
+          ? { cantPedir: { gt: 0 } }
+          : { tipoPedido: "URGENTE", urgenteCantPedir: { gt: 0 } };
 
-    const filasMercaderia = await prisma.itemPedidoEnvio.findMany({
-      where: {
-        sucursal: { codigo: sucursalTrim },
-        ...(prov ? { idProveedor: prov } : {}),
-        ...wherePedidoMercaderia,
-      },
-      select: {
-        idProveedor: true,
-        codExt: true,
-      },
-    });
+      const filasMercaderia = await prisma.itemPedidoEnvio.findMany({
+        where: {
+          sucursal: { codigo: sucursalTrim },
+          ...(prov ? { idProveedor: prov } : {}),
+          ...wherePedidoMercaderia,
+        },
+        select: {
+          idProveedor: true,
+          codExt: true,
+        },
+      });
 
-    const pairSet = new Set<string>();
-    const pairs: { idProveedor: string; codExt: string }[] = [];
-    for (const row of filasMercaderia) {
-      const key = `${row.idProveedor}:${row.codExt}`;
-      if (pairSet.has(key)) continue;
-      pairSet.add(key);
-      pairs.push({ idProveedor: row.idProveedor, codExt: row.codExt });
+      const pairSet = new Set<string>();
+      const pairs: { idProveedor: string; codExt: string }[] = [];
+      for (const row of filasMercaderia) {
+        const key = `${row.idProveedor}:${row.codExt}`;
+        if (pairSet.has(key)) continue;
+        pairSet.add(key);
+        pairs.push({ idProveedor: row.idProveedor, codExt: row.codExt });
+      }
+
+      if (pairs.length === 0) {
+        return { items: [], total: 0, totalPaginas: 0 };
+      }
+      andParts.push({
+        OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+      });
     }
-
-    if (pairs.length === 0) {
-      return { items: [], total: 0, totalPaginas: 0 };
-    }
-    andParts.push({
-      OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
-    });
   }
 
   if (busqueda.length >= 3) {
@@ -727,11 +747,18 @@ export async function getListaPreciosParaPedidoUrgente(
       where: {
         sucursal: { codigo: sucursalTrim },
         tipoPedido: { in: ["URGENTE", "REPOSICION"] },
-        OR: pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+        OR: [
+          ...pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
+          ...filas
+            .map((f) => f.listaPrecioTienda?.codTienda?.trim() ?? "")
+            .filter(Boolean)
+            .map((codTienda) => ({ tipoPedido: "REPOSICION", codTienda })),
+        ],
       },
       select: {
         idProveedor: true,
         codExt: true,
+        codTienda: true,
         tipoPedido: true,
         urgenteCantPedir: true,
         reposicionCantPedir: true,
@@ -745,8 +772,10 @@ export async function getListaPreciosParaPedidoUrgente(
         mercaderiaMapUrgente.set(key, Math.max(0, Number(r.urgenteCantPedir ?? 0)));
       }
       if (r.tipoPedido === "REPOSICION") {
-        mercaderiaRepoSet.add(key);
-        mercaderiaMapRepo.set(key, Math.max(0, Number(r.reposicionCantConf ?? 0)));
+        const repoKey = (r.codTienda ?? "").trim();
+        if (!repoKey) continue;
+        mercaderiaRepoSet.add(repoKey);
+        mercaderiaMapRepo.set(repoKey, Math.max(0, Number(r.reposicionCantConf ?? 0)));
       }
     }
   }
@@ -796,8 +825,8 @@ export async function getListaPreciosParaPedidoUrgente(
       descripcion: (descTienda?.trim() && descTienda) || f.descripcionProveedor,
       pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
       cantPedidaUrgente: cantUrgente,
-      confReposicion: mercaderiaRepoSet.has(key),
-      cantReposicion: mercaderiaMapRepo.get(key) ?? 0,
+      confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
+      cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
       estaVinculadoTienda: tiendaId != null,
       sugerenciaProveedorMenorCosto:
         mejorAlternativa && nombreProveedorAlt
