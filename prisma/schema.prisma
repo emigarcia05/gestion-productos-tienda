@@ -106,6 +106,7 @@ model Sucursal {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   itemsPedidoEnvio     ItemPedidoEnvio[]
+  itemsProdPedMerc2    ProdPedMerc2[]
   pedidosHistoria     PedidoHistoria[]
   movimientosFinanzas MovimientoFinanzas[]
   finBalGastoFinal    FinBalGastoFinal[]
@@ -488,6 +489,33 @@ model ItemPedidoEnvio {
 
   @@unique([idProveedor, tipoPedido, sucursalId, codExt], map: "prod_ped_merc_item_unique")
   @@map("prod_ped_merc")
+}
+
+/**
+ * Evolución de pedidos mercadería: tabla `prod_ped_merc_2` (columnas acordadas).
+ * `tipo_de_pedido`: REPOSICION | URGENTE | TINTOMETRICO (CHECK en migración SQL).
+ */
+model ProdPedMerc2 {
+  id                       String  @id @default(uuid())
+  tipoDePedido             String  @map("tipo_de_pedido")
+  sucursalId               String  @map("sucursal_id")
+  urgenteCodExt            String? @map("urgente_cod_ext")
+  urgenteCantPedir         Int     @default(0) @map("urgente_cant_pedir")
+  tintometricoDescripcion  String? @map("tintometrico_descripcion")
+  tintometrioCantPedir     Int     @default(0) @map("tintometrio_cant_pedir")
+  /** `id` de `global_proveedores` para filas tintométricas (texto / cuid). */
+  tintometricoProveedor    String? @map("tintometrico_proveedor")
+  reposicionFormaPedido    String? @map("reposicion_forma_pedido")
+  reposicionPuntoPedido    Int?    @map("reposicion_punto_pedido")
+  reposicionCantConf       Int?    @map("reposicion_cant_conf")
+  /** Código tienda (`prod_precios_tienda.cod_tienda`) para reglas / filas de tipo REPOSICION. */
+  reposicionCodTienda      String? @map("reposicion_cod_tienda")
+
+  sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+
+  @@index([sucursalId, tipoDePedido], map: "prod_ped_merc_2_sucursal_tipo_idx")
+  @@index([reposicionCodTienda], map: "prod_ped_merc_2_reposicion_cod_tienda_idx")
+  @@map("prod_ped_merc_2")
 }
 
 // ─── Historial de pedidos (cabecera + items editables) ────────────────

@@ -571,6 +571,14 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 - Upsert (`upsertPedidoTintometricoItems`): `cod_ext = buildCodExtTintometrico(codTienda, codTintometrico)` → `TINT-{codTienda}-{códigoNormalizado}` (`src/lib/pedidosTintometrico.ts`).
 - Borrado (`deletePedidoTintometricoItem`): filtrar por **`cod_ext` persistido** (no reconstruir solo desde `cod_tienda`).
 
+#### `prod_ped_merc_2` (evolución — modelo `ProdPedMerc2`)
+
+- **Migraciones**: `20260429183000_add_prod_ped_merc_2` (crear tabla); `20260429200000_copy_prod_ped_merc_to_prod_ped_merc_2` (copia datos desde `prod_ped_merc`: `id`, `tipo_de_pedido`, `sucursal_id`, `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`; solo filas con `tipo_de_pedido` en `REPOSICION` \| `URGENTE` \| `TINTOMETRICO`; `ON CONFLICT (id) DO UPDATE` para re-ejecución idempotente).
+- **Propósito**: tabla nueva en la misma base (no reemplaza aún `prod_ped_merc`); columnas reducidas para migrar lógica después.
+- **Columnas**: `id` (TEXT, default `gen_random_uuid()::text`), `tipo_de_pedido` (CHECK: `REPOSICION` \| `URGENTE` \| `TINTOMETRICO`), `sucursal_id` → FK `global_sucursales.id` (`ON DELETE RESTRICT`), `urgente_cod_ext`, `urgente_cant_pedir`, `tintometrico_descripcion`, `tintometrio_cant_pedir`, **`tintometrico_proveedor`** (TEXT nullable; `id` en `global_proveedores`; migración `20260429220000_add_prod_ped_merc_2_tintometrico_proveedor` + backfill desde `prod_ped_merc.id_proveedor` para `TINTOMETRICO`), `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`, **`reposicion_cod_tienda`** (TEXT nullable; código tienda para reposición; migración `20260429210000_add_prod_ped_merc_2_reposicion_cod_tienda` + backfill desde `prod_ped_merc.cod_tienda` para filas `REPOSICION` con mismo `id`).
+- **Índices**: `(sucursal_id, tipo_de_pedido)`; `(reposicion_cod_tienda)`.
+- **Prisma**: `ProdPedMerc2` → `@@map("prod_ped_merc_2")`; relación inversa en `Sucursal.itemsProdPedMerc2`. **Lectura en app**: la tabla previa **Generar Pedido** (`getItemsTablaEnviarPedido` en `pedidosEnvio.service.ts`) arma filas desde `prod_ped_merc_2` con resolución de proveedor/descripción/cantidad por tipo (incluye `habilitado = true` en `prod_precios_provee` para cruces por `cod_ext`; reposición: misma regla de stock que `upsertPedidoMercaderiaReposicionConfig`, `stock <= punto`).
+
 #### `comprobarItemsParaGenerarPedidoAction`
 
 - **Uso**: modal **Generar Pedido** (debounce en cliente ~320 ms) para saber si hay ítems antes de habilitar el botón.
