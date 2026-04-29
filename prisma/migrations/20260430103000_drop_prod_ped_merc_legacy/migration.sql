@@ -1,5 +1,5 @@
 -- Elimina la tabla legada `prod_ped_merc` y las funciones/triggers que la sincronizaban.
--- El canónico de pedidos de mercadería es `prod_ped_merc_2` (`ProdPedMerc2`).
+-- El canónico queda en `prod_ped_merc_2` hasta `20260430120000_rename_prod_ped_merc_2_to_prod_ped_merc` → `prod_ped_merc`.
 
 -- Trigger en `prod_precios_tienda` (nombres posibles según migraciones previas).
 DROP TRIGGER IF EXISTS trg_sync_reposicion_on_precios_tienda_stock ON "prod_precios_tienda";

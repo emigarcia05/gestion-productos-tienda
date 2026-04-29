@@ -548,11 +548,11 @@ export interface PedidoUrgenteItem {
   descripcion: string;
   /** px_compra_final desde prod_precios_provee para lógica de opción de compra. */
   pxCompraFinal: number | null;
-  /** Cantidad pedida (URGENTE): `prod_ped_merc_2.urgente_cant_pedir`. */
+  /** Cantidad pedida (URGENTE): `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
-  /** true si hay regla REPOSICIÓN en `prod_ped_merc_2` para el `cod_tienda`. */
+  /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda`. */
   confReposicion: boolean;
-  /** `reposicion_cant_conf` desde `prod_ped_merc_2` (reposición). */
+  /** `reposicion_cant_conf` desde `prod_ped_merc` (reposición). */
   cantReposicion: number;
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
   estaVinculadoTienda: boolean;
@@ -651,7 +651,7 @@ async function mercaderiaMapsDesdeMerc2(
 }
 
 /**
- * Filas URGENTE desde `prod_ped_merc_2` (`urgente_cod_ext`, `urgente_cant_pedir`).
+ * Filas URGENTE desde `prod_ped_merc` (`urgente_cod_ext`, `urgente_cant_pedir`).
  * Proveedor y precios vía `prod_precios_provee` por `cod_ext`; descripción: tienda o proveedor.
  */
 async function getListaPedidoUrgenteDesdeMerc2(

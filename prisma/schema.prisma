@@ -454,8 +454,8 @@ model ImportProgress {
 }
 
 /**
- * Evolución de pedidos mercadería: tabla `prod_ped_merc_2` (columnas acordadas).
- * `tipo_de_pedido`: REPOSICION | URGENTE | TINTOMETRICO (CHECK en migración SQL).
+ * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO). Tabla física `prod_ped_merc`.
+ * `tipo_de_pedido`: CHECK en migraciones SQL.
  */
 model ProdPedMerc2 {
   id                       String  @id @default(uuid())
@@ -477,9 +477,9 @@ model ProdPedMerc2 {
 
   sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
 
-  @@index([sucursalId, tipoDePedido], map: "prod_ped_merc_2_sucursal_tipo_idx")
-  @@index([reposicionCodTienda], map: "prod_ped_merc_2_reposicion_cod_tienda_idx")
-  @@map("prod_ped_merc_2")
+  @@index([sucursalId, tipoDePedido], map: "prod_ped_merc_sucursal_tipo_idx")
+  @@index([reposicionCodTienda], map: "prod_ped_merc_reposicion_cod_tienda_idx")
+  @@map("prod_ped_merc")
 }
 
 // ─── Historial de pedidos (cabecera + items editables) ────────────────

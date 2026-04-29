@@ -1,5 +1,5 @@
 /**
- * Pedidos de mercadería: lectura/escritura en `prod_ped_merc_2` (urgente, tintométrico, reposición).
+ * Pedidos de mercadería: lectura/escritura en `prod_ped_merc` (urgente, tintométrico, reposición).
  * Resolución de proveedor y textos vía `prod_precios_tienda` / `prod_precios_provee` según tipo.
  */
 
@@ -31,7 +31,7 @@ export interface ItemPedidoTintometricoPayload {
 }
 
 export interface ItemPedidoTintometricoPersistido {
-  /** Id en `prod_ped_merc_2`. */
+  /** Id en `prod_ped_merc`. */
   id: string;
   sucursalCodigo: SucursalPedidoEnvio;
   proveedorId: string;
@@ -52,7 +52,7 @@ async function getSucursalIdByCodigo(codigo: SucursalPedidoEnvio): Promise<strin
   return sucursal.id;
 }
 
-/** Persiste reposición solo en `prod_ped_merc_2`. */
+/** Persiste reposición solo en `prod_ped_merc`. */
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
   sucursal: SucursalPedidoEnvio;
   codTienda: string;
@@ -167,7 +167,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
   }
 }
 
-/** Persiste URGENTE en `prod_ped_merc_2`. */
+/** Persiste URGENTE en `prod_ped_merc`. */
 export async function upsertPedidoMercaderiaUrgenteItem(params: {
   sucursal: SucursalPedidoEnvio;
   listaPrecioProveedorId: string;
@@ -231,7 +231,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
 
 /**
  * Reemplaza todos los ítems de tipo URGENTE para la sucursal dada por el conjunto
- * (id lista precio, cantidad). Persiste en `prod_ped_merc_2`.
+ * (id lista precio, cantidad). Persiste en `prod_ped_merc`.
  */
 export async function syncPedidoUrgenteEnvio(
   sucursal: SucursalPedidoEnvio,
@@ -518,7 +518,7 @@ function pickListaPrecioProveedorUrgente(
 
 /**
  * Ítems con cantidad a pedir > 0 para la tabla **Generar Pedido**.
- * Fuente: `prod_ped_merc_2` (`ProdPedMerc2`). Sin filtros en URL: todos los tipos y sucursales;
+ * Fuente: `prod_ped_merc` (`ProdPedMerc2`). Sin filtros en URL: todos los tipos y sucursales;
  * cada filtro activo reduce el resultado (post-resolución para proveedor y texto `q`).
  */
 export async function getItemsTablaEnviarPedido(params: {
@@ -735,7 +735,7 @@ export async function getItemsTablaEnviarPedido(params: {
 }
 
 /**
- * Fila desde `prod_ped_merc_2` para PDF y sobrestock (`id` = fila merc2).
+ * Fila desde `prod_ped_merc` para PDF y sobrestock (`id` = PK de la fila).
  */
 export interface ItemPedidoEnvioRowParaEnviar {
   id: string;
@@ -756,7 +756,7 @@ export interface AjusteCantPedirSobreStockInput {
 }
 
 /**
- * Obtiene ítems de `prod_ped_merc_2` para el proveedor, sucursal y tipos dados,
+ * Obtiene ítems de `prod_ped_merc` para el proveedor, sucursal y tipos dados,
  * y los datos del proveedor (para PDF y WhatsApp).
  * Incluye `rows` para reutilizar en `getSobreStockOtraSucursalParaPedidoEnviar` (mismas filas que el PDF).
  */

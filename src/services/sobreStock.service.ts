@@ -19,7 +19,7 @@ export interface SobreStockReposicionItem {
   /** Tope de reposición en esa sucursal; `null` si no hay configuración (> 0) en la fila analizada. */
   topeReposicion: number | null;
   sobreStock: number;
-  /** Cantidad a pedir en la sucursal que genera el pedido (fila `prod_ped_merc_2`). */
+  /** Cantidad a pedir en la sucursal que genera el pedido (fila `prod_ped_merc`). */
   cantPedir: number;
   /** Sucursal donde se midió el excedente (en este flujo siempre la otra tienda). */
   sucursalCodigoSobrestock: SucursalPedidoEnvio;

@@ -27,11 +27,11 @@ export interface ProductoPedidoUrgente {
   descripcion: string;
   /** px_compra_final desde prod_precios_provee (null si no está disponible). */
   pxCompraFinal: number | null;
-  /** Cantidad pedida (URGENTE) desde `prod_ped_merc_2.urgente_cant_pedir`. */
+  /** Cantidad pedida (URGENTE) desde `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
-  /** true si hay regla REPOSICIÓN en `prod_ped_merc_2` para el `cod_tienda` del ítem. */
+  /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda` del ítem. */
   confReposicion: boolean;
-  /** `reposicion_cant_conf` en `prod_ped_merc_2` (0 si no hay). */
+  /** `reposicion_cant_conf` en `prod_ped_merc` (0 si no hay). */
   cantReposicion: number;
   estaVinculadoTienda: boolean;
   sugerenciaProveedorMenorCosto: {
