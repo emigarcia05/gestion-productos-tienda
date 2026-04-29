@@ -36,7 +36,10 @@ const MENSAJE_SIN_FILTROS =
   "Seleccioná una sucursal para ver los productos.";
 
 interface SugerenciaProveedorMenorCosto {
-  listaPrecioProveedorId: string;
+  /** `prod_precios_provee.id` del proveedor más barato (sugerencia). */
+  listaPrecioProveedorIdMenorCosto: string;
+  /** `prod_precios_provee.id` de la fila sobre la que el usuario hizo doble clic (proveedor actual / más caro). */
+  listaPrecioProveedorIdOriginal: string;
   proveedorNombre: string;
   costo: number;
   descripcion: string;
@@ -101,7 +104,8 @@ export default function PedidoUrgentePageClient({
     const sugerencia = prod.sugerenciaProveedorMenorCosto;
     if (prod.estaVinculadoTienda && sugerencia) {
       setSugerenciaProveedorMenorCosto({
-        listaPrecioProveedorId: sugerencia.listaPrecioProveedorId,
+        listaPrecioProveedorIdMenorCosto: sugerencia.listaPrecioProveedorId,
+        listaPrecioProveedorIdOriginal: prod.id,
         proveedorNombre: sugerencia.proveedorNombre,
         costo: sugerencia.costo,
         descripcion: prod.descripcion,
@@ -112,14 +116,16 @@ export default function PedidoUrgentePageClient({
     abrirModalCantidadDirecto(prod);
   }
 
-  function confirmarPedirProveedorSugerido() {
+  /** Abre cantidad para el proveedor sugerido (menor costo). */
+  function pedirAlProveedorMenorCostoSugerido() {
     if (!sugerenciaProveedorMenorCosto) return;
+    const s = sugerenciaProveedorMenorCosto;
     const fakeProd: ProductoPedidoUrgente = {
-      id: sugerenciaProveedorMenorCosto.listaPrecioProveedorId,
+      id: s.listaPrecioProveedorIdMenorCosto,
       codExt: "",
       prefijo: "",
-      descripcion: sugerenciaProveedorMenorCosto.descripcion,
-      pxCompraFinal: sugerenciaProveedorMenorCosto.costo,
+      descripcion: s.descripcion,
+      pxCompraFinal: s.costo,
       cantPedidaUrgente: 0,
       confReposicion: false,
       cantReposicion: 0,
@@ -127,7 +133,33 @@ export default function PedidoUrgentePageClient({
       sugerenciaProveedorMenorCosto: null,
     };
     setModalSugerenciaOpen(false);
-    abrirModalCantidadDirecto(fakeProd, sugerenciaProveedorMenorCosto.listaPrecioProveedorId);
+    abrirModalCantidadDirecto(fakeProd, s.listaPrecioProveedorIdMenorCosto);
+  }
+
+  /** Mantiene la fila que el usuario eligió (proveedor más caro / actual). */
+  function continuarConProveedorActual() {
+    if (!sugerenciaProveedorMenorCosto) return;
+    const origId = sugerenciaProveedorMenorCosto.listaPrecioProveedorIdOriginal;
+    setModalSugerenciaOpen(false);
+    const prodOriginal = productos.find((p) => p.id === origId);
+    if (prodOriginal) {
+      abrirModalCantidadDirecto(prodOriginal);
+      return;
+    }
+    const s = sugerenciaProveedorMenorCosto;
+    const fakeProd: ProductoPedidoUrgente = {
+      id: origId,
+      codExt: "",
+      prefijo: "",
+      descripcion: s.descripcion,
+      pxCompraFinal: null,
+      cantPedidaUrgente: 0,
+      confReposicion: false,
+      cantReposicion: 0,
+      estaVinculadoTienda: true,
+      sugerenciaProveedorMenorCosto: null,
+    };
+    abrirModalCantidadDirecto(fakeProd);
   }
 
   async function borrarCantidad(prod: ProductoPedidoUrgente) {
@@ -226,7 +258,7 @@ export default function PedidoUrgentePageClient({
                 <Button type="button" variant="outline" onClick={() => setModalSugerenciaOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="button" onClick={confirmarPedirProveedorSugerido}>
+                <Button type="button" onClick={continuarConProveedorActual}>
                   Continuar Con Proveedor Actual
                 </Button>
               </div>
@@ -236,7 +268,7 @@ export default function PedidoUrgentePageClient({
               <p>Este producto es ofrecido a menor costo por:</p>
               <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
                 <span className="font-semibold">{sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}</span>
-                <Button type="button" size="sm" onClick={confirmarPedirProveedorSugerido}>
+                <Button type="button" size="sm" onClick={pedirAlProveedorMenorCostoSugerido}>
                   Pedir A Este Proveedor
                 </Button>
               </div>
