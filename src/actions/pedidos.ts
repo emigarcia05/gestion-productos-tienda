@@ -579,10 +579,10 @@ export async function generarPdfEnviarPedidoAction(params: {
     // URGENTE/TINTOMETRICO para la sucursal configurada.
     const tiposBorrar = tipos.filter((t) => t === "URGENTE" || t === "TINTOMETRICO");
     if (sucursalRow?.id && tiposBorrar.length > 0) {
-      await prisma.itemPedidoEnvio.deleteMany({
+      await prisma.prodPedMerc2.deleteMany({
         where: {
           sucursalId: sucursalRow.id,
-          tipoPedido: { in: tiposBorrar },
+          tipoDePedido: { in: tiposBorrar },
         },
       });
     }

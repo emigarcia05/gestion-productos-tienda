@@ -129,37 +129,26 @@ export async function getReposicionData(
   };
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
-  // Filtro "CONFIGURADO = SÍ": cod_tienda con regla REPOSICION en merc_2 y/o legado `prod_ped_merc`.
-  const [codTiendaMerc2, codTiendaLegacy] =
+  const codTiendaMerc2 =
     configurado === "si"
-      ? await Promise.all([
-          prisma.prodPedMerc2.findMany({
-            where: {
-              sucursal: { codigo: sucursal },
-              tipoDePedido: "REPOSICION",
-              reposicionCodTienda: { not: null },
-            },
-            select: { reposicionCodTienda: true },
-            distinct: ["reposicionCodTienda"],
-          }),
-          prisma.itemPedidoEnvio.findMany({
-            where: { sucursal: { codigo: sucursal }, tipoPedido: "REPOSICION" },
-            select: { codTienda: true },
-            distinct: ["codTienda"],
-          }),
-        ])
-      : [[], []];
+      ? await prisma.prodPedMerc2.findMany({
+          where: {
+            sucursal: { codigo: sucursal },
+            tipoDePedido: "REPOSICION",
+            reposicionCodTienda: { not: null },
+          },
+          select: { reposicionCodTienda: true },
+          distinct: ["reposicionCodTienda"],
+        })
+      : [];
   const codTiendaList =
     configurado === "si"
       ? [
-          ...new Set([
-            ...codTiendaMerc2
+          ...new Set(
+            codTiendaMerc2
               .map((r) => (r.reposicionCodTienda ?? "").trim())
-              .filter((v) => v.length > 0),
-            ...codTiendaLegacy
-              .map((r) => (r.codTienda ?? "").trim())
-              .filter((v) => v.length > 0),
-          ]),
+              .filter((v) => v.length > 0)
+          ),
         ]
       : [];
 
@@ -275,41 +264,6 @@ export async function getReposicionData(
       });
     }
 
-    const faltanCodTienda = codTiendasRows.filter((c) => !reglasMap.has(c));
-    if (faltanCodTienda.length > 0) {
-      const reglasLegacy = await prisma.itemPedidoEnvio.findMany({
-        where: {
-          sucursal: { codigo: sucursal },
-          tipoPedido: "REPOSICION",
-          codTienda: { in: faltanCodTienda },
-        },
-        orderBy: [{ updatedAt: "desc" }],
-        select: {
-          id: true,
-          idProveedor: true,
-          proveedor: { select: { nombre: true } },
-          codExt: true,
-          codTienda: true,
-          reposicionFormaPedido: true,
-          reposicionPuntoPedido: true,
-          reposicionCantConf: true,
-        },
-      });
-      for (const r of reglasLegacy) {
-        if (!r.codTienda?.trim()) continue;
-        const key = r.codTienda.trim();
-        if (reglasMap.has(key)) continue;
-        reglasMap.set(key, {
-          id: r.id,
-          idProveedor: r.idProveedor,
-          nombreProveedor: r.proveedor?.nombre ?? null,
-          codExt: r.codExt,
-          formaPedir: (r.reposicionFormaPedido as FormaPedirReposicionOption) ?? "",
-          puntoReposicion: Math.max(0, Math.floor(Number(r.reposicionPuntoPedido ?? 0))),
-          cant: Math.max(0, Math.floor(Number(r.reposicionCantConf ?? 0))),
-        });
-      }
-    }
   }
 
   const stockField = sucursal === "maipu" ? "stockMaipu" : "stockGuaymallen";
@@ -467,14 +421,9 @@ export async function deleteReglaReposicion(raw: z.infer<typeof deleteReglaSchem
     return { ok: false, error: "ID inválido." };
   }
   try {
-    await prisma.$transaction([
-      prisma.prodPedMerc2.deleteMany({
-        where: { id: parsed.data.id, tipoDePedido: "REPOSICION" },
-      }),
-      prisma.itemPedidoEnvio.deleteMany({
-        where: { id: parsed.data.id, tipoPedido: "REPOSICION" },
-      }),
-    ]);
+    await prisma.prodPedMerc2.deleteMany({
+      where: { id: parsed.data.id, tipoDePedido: "REPOSICION" },
+    });
     revalidatePath("/pedidos/reposicion");
     return { ok: true, data: undefined };
   } catch (e: unknown) {

@@ -548,11 +548,11 @@ export interface PedidoUrgenteItem {
   descripcion: string;
   /** px_compra_final desde prod_precios_provee para lógica de opción de compra. */
   pxCompraFinal: number | null;
-  /** Cantidad pedida (URGENTE): `prod_ped_merc_2.urgente_cant_pedir` o legado `prod_ped_merc`. */
+  /** Cantidad pedida (URGENTE): `prod_ped_merc_2.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
-  /** true si existe el cod_ext en prod_ped_merc con tipo_de_pedido = REPOSICION. */
+  /** true si hay regla REPOSICIÓN en `prod_ped_merc_2` para el `cod_tienda`. */
   confReposicion: boolean;
-  /** cant_pedir_reposicion desde prod_ped_merc. */
+  /** `reposicion_cant_conf` desde `prod_ped_merc_2` (reposición). */
   cantReposicion: number;
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
   estaVinculadoTienda: boolean;
@@ -565,6 +565,89 @@ export interface PedidoUrgenteItem {
     proveedorNombre: string;
     costo: number;
   } | null;
+}
+
+async function mercaderiaMapsDesdeMerc2(
+  sucursalTrim: string,
+  pairs: Array<{ idProveedor: string; codExt: string }>,
+  codTiendasDesdeFilas: string[]
+): Promise<{
+  mercaderiaMapUrgente: Map<string, number>;
+  mercaderiaRepoSet: Set<string>;
+  mercaderiaMapRepo: Map<string, number>;
+}> {
+  const mercaderiaMapUrgente = new Map<string, number>();
+  const mercaderiaRepoSet = new Set<string>();
+  const mercaderiaMapRepo = new Map<string, number>();
+
+  const suc = await prisma.sucursal.findUnique({
+    where: { codigo: sucursalTrim },
+    select: { id: true },
+  });
+  if (!suc) {
+    return { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo };
+  }
+
+  const codExts = [...new Set(pairs.map((p) => (p.codExt ?? "").trim()).filter(Boolean))];
+  const codTiendas = [...new Set(codTiendasDesdeFilas.map((c) => c.trim()).filter(Boolean))];
+
+  const orParts: Prisma.ProdPedMerc2WhereInput[] = [];
+  if (codExts.length > 0) {
+    orParts.push({
+      tipoDePedido: TIPO_URGENTE_MERC2,
+      urgenteCodExt: { in: codExts },
+    });
+  }
+  if (codTiendas.length > 0) {
+    orParts.push({
+      tipoDePedido: "REPOSICION",
+      reposicionCodTienda: { in: codTiendas },
+    });
+  }
+
+  if (orParts.length === 0) {
+    return { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo };
+  }
+
+  const rows = await prisma.prodPedMerc2.findMany({
+    where: {
+      sucursalId: suc.id,
+      OR: orParts,
+    },
+    select: {
+      tipoDePedido: true,
+      urgenteCodExt: true,
+      urgenteCantPedir: true,
+      reposicionCodTienda: true,
+      reposicionCantConf: true,
+    },
+  });
+
+  const cantUrgentePorCodExt = new Map<string, number>();
+  for (const r of rows) {
+    if (r.tipoDePedido === TIPO_URGENTE_MERC2 && r.urgenteCodExt?.trim()) {
+      cantUrgentePorCodExt.set(
+        r.urgenteCodExt.trim(),
+        Math.max(0, Number(r.urgenteCantPedir ?? 0))
+      );
+    }
+    if (r.tipoDePedido === "REPOSICION") {
+      const k = (r.reposicionCodTienda ?? "").trim();
+      if (!k) continue;
+      mercaderiaRepoSet.add(k);
+      mercaderiaMapRepo.set(k, Math.max(0, Number(r.reposicionCantConf ?? 0)));
+    }
+  }
+
+  for (const p of pairs) {
+    const ce = (p.codExt ?? "").trim();
+    const u = cantUrgentePorCodExt.get(ce);
+    if (u != null) {
+      mercaderiaMapUrgente.set(`${p.idProveedor}:${p.codExt}`, u);
+    }
+  }
+
+  return { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo };
 }
 
 /**
@@ -762,47 +845,20 @@ async function getListaPedidoUrgenteDesdeMerc2(
     idProveedor: x.f.idProveedor,
     codExt: x.f.codExt,
   }));
-  const mercaderiaMapUrgente = new Map<string, number>();
-  const mercaderiaRepoSet = new Set<string>();
-  const mercaderiaMapRepo = new Map<string, number>();
-
-  if (pairs.length > 0) {
-    const rows = await prisma.itemPedidoEnvio.findMany({
-      where: {
-        sucursal: { codigo: sucursalTrim },
-        tipoPedido: { in: ["URGENTE", "REPOSICION"] },
-        OR: [
-          ...pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
-          ...filasResueltas
+  const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
+    pairs.length > 0
+      ? await mercaderiaMapsDesdeMerc2(
+          sucursalTrim,
+          pairs,
+          filasResueltas
             .map((x) => x.f.listaPrecioTienda?.codTienda?.trim() ?? "")
             .filter(Boolean)
-            .map((codTienda) => ({ tipoPedido: "REPOSICION" as const, codTienda })),
-        ],
-      },
-      select: {
-        idProveedor: true,
-        codExt: true,
-        codTienda: true,
-        tipoPedido: true,
-        urgenteCantPedir: true,
-        reposicionCantPedir: true,
-        reposicionCantConf: true,
-      },
-    });
-
-    for (const r of rows) {
-      const key = `${r.idProveedor}:${r.codExt}`;
-      if (r.tipoPedido === "URGENTE") {
-        mercaderiaMapUrgente.set(key, Math.max(0, Number(r.urgenteCantPedir ?? 0)));
-      }
-      if (r.tipoPedido === "REPOSICION") {
-        const repoKey = (r.codTienda ?? "").trim();
-        if (!repoKey) continue;
-        mercaderiaRepoSet.add(repoKey);
-        mercaderiaMapRepo.set(repoKey, Math.max(0, Number(r.reposicionCantConf ?? 0)));
-      }
-    }
-  }
+        )
+      : {
+          mercaderiaMapUrgente: new Map<string, number>(),
+          mercaderiaRepoSet: new Set<string>(),
+          mercaderiaMapRepo: new Map<string, number>(),
+        };
 
   const items: PedidoUrgenteItem[] = filasResueltas.map(({ f, cantUrgente }) => {
     const key = `${f.idProveedor}:${f.codExt}`;
@@ -905,18 +961,26 @@ export async function getListaPreciosParaPedidoUrgente(
 
   if (pedidoTipo) {
     if (pedidoTipo === "reposicion") {
-      const filasRepo = await prisma.itemPedidoEnvio.findMany({
+      const filasRepo = await prisma.prodPedMerc2.findMany({
         where: {
           sucursal: { codigo: sucursalTrim },
-          tipoPedido: "REPOSICION",
-          reposicionCantPedir: { gt: 0 },
+          tipoDePedido: "REPOSICION",
+          OR: [
+            { reposicionCantPedir: { gt: 0 } },
+            {
+              AND: [
+                { reposicionCantPedir: null },
+                { reposicionCantConf: { gt: 0 } },
+              ],
+            },
+          ],
         },
-        select: { codTienda: true },
+        select: { reposicionCodTienda: true },
       });
       const codTiendas = Array.from(
         new Set(
           filasRepo
-            .map((r) => (r.codTienda ?? "").trim())
+            .map((r) => (r.reposicionCodTienda ?? "").trim())
             .filter((v) => v.length > 0)
         )
       );
@@ -1014,47 +1078,20 @@ export async function getListaPreciosParaPedidoUrgente(
   }
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
-  const mercaderiaMapUrgente = new Map<string, number>();
-  const mercaderiaRepoSet = new Set<string>();
-  const mercaderiaMapRepo = new Map<string, number>();
-
-  if (pairs.length > 0) {
-    const rows = await prisma.itemPedidoEnvio.findMany({
-      where: {
-        sucursal: { codigo: sucursalTrim },
-        tipoPedido: { in: ["URGENTE", "REPOSICION"] },
-        OR: [
-          ...pairs.map((p) => ({ idProveedor: p.idProveedor, codExt: p.codExt })),
-          ...filas
+  const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
+    pairs.length > 0
+      ? await mercaderiaMapsDesdeMerc2(
+          sucursalTrim,
+          pairs,
+          filas
             .map((f) => f.listaPrecioTienda?.codTienda?.trim() ?? "")
             .filter(Boolean)
-            .map((codTienda) => ({ tipoPedido: "REPOSICION", codTienda })),
-        ],
-      },
-      select: {
-        idProveedor: true,
-        codExt: true,
-        codTienda: true,
-        tipoPedido: true,
-        urgenteCantPedir: true,
-        reposicionCantPedir: true,
-        reposicionCantConf: true,
-      },
-    });
-
-    for (const r of rows) {
-      const key = `${r.idProveedor}:${r.codExt}`;
-      if (r.tipoPedido === "URGENTE") {
-        mercaderiaMapUrgente.set(key, Math.max(0, Number(r.urgenteCantPedir ?? 0)));
-      }
-      if (r.tipoPedido === "REPOSICION") {
-        const repoKey = (r.codTienda ?? "").trim();
-        if (!repoKey) continue;
-        mercaderiaRepoSet.add(repoKey);
-        mercaderiaMapRepo.set(repoKey, Math.max(0, Number(r.reposicionCantConf ?? 0)));
-      }
-    }
-  }
+        )
+      : {
+          mercaderiaMapUrgente: new Map<string, number>(),
+          mercaderiaRepoSet: new Set<string>(),
+          mercaderiaMapRepo: new Map<string, number>(),
+        };
 
   const items: PedidoUrgenteItem[] = filas.map((f) => {
     const key = `${f.idProveedor}:${f.codExt}`;

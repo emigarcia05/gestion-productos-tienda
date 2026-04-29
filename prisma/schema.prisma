@@ -508,6 +508,8 @@ model ProdPedMerc2 {
   reposicionFormaPedido    String? @map("reposicion_forma_pedido")
   reposicionPuntoPedido    Int?    @map("reposicion_punto_pedido")
   reposicionCantConf       Int?    @map("reposicion_cant_conf")
+  /** Cantidad a pedir (reposición); manual vía sobrestock o al persistir la regla. */
+  reposicionCantPedir     Int?    @map("reposicion_cant_pedir")
   /** Código tienda (`prod_precios_tienda.cod_tienda`) para reglas / filas de tipo REPOSICION. */
   reposicionCodTienda      String? @map("reposicion_cod_tienda")
 

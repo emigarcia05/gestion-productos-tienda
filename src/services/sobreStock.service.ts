@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import type {
-  ItemPedidoEnvioRowParaEnviar,
-  SucursalPedidoEnvio,
+import {
+  pickListaPrecioProveedorPorCodExtYTienda,
+  type ItemPedidoEnvioRowParaEnviar,
+  type LpRowPick,
+  type SucursalPedidoEnvio,
 } from "@/services/pedidosEnvio.service";
 
 export type OrigenDeteccionSobrestock = "LOCAL" | "OTRA_SUCURSAL";
@@ -17,7 +19,7 @@ export interface SobreStockReposicionItem {
   /** Tope de reposición en esa sucursal; `null` si no hay configuración (> 0) en la fila analizada. */
   topeReposicion: number | null;
   sobreStock: number;
-  /** Cantidad a pedir en la sucursal que genera el pedido (línea `ItemPedidoEnvio` del pedido). */
+  /** Cantidad a pedir en la sucursal que genera el pedido (fila `prod_ped_merc_2`). */
   cantPedir: number;
   /** Sucursal donde se midió el excedente (en este flujo siempre la otra tienda). */
   sucursalCodigoSobrestock: SucursalPedidoEnvio;
@@ -103,8 +105,10 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
   const tiendas = await prisma.listaPrecioTienda.findMany({
     where: { codTienda: { in: codTiendas } },
     select: {
+      id: true,
       codExt: true,
       codTienda: true,
+      proveedor: true,
       descripcionTienda: true,
       stockMaipu: true,
       stockGuaymallen: true,
@@ -116,21 +120,47 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     string,
     (typeof tiendas)[number]
   >();
+  const codExtsParaLp = new Set<string>();
   for (const t of tiendas) {
     const ct = (t.codTienda ?? "").trim();
     if (ct && !tiendaPorCodTienda.has(ct)) tiendaPorCodTienda.set(ct, t);
+    const ce = (t.codExt ?? "").trim();
+    if (ce) codExtsParaLp.add(ce);
+  }
+
+  const lpRowsOtra =
+    codExtsParaLp.size > 0
+      ? await prisma.listaPrecioProveedor.findMany({
+          where: { codExt: { in: Array.from(codExtsParaLp) }, habilitado: true },
+          select: {
+            codExt: true,
+            idProveedor: true,
+            descripcionProveedor: true,
+            idListaPrecioTienda: true,
+            proveedor: { select: { prefijo: true, nombre: true } },
+          },
+          orderBy: [{ idProveedor: "asc" }],
+        })
+      : [];
+
+  const lpPorCodExtOtra = new Map<string, LpRowPick[]>();
+  for (const row of lpRowsOtra) {
+    const k = (row.codExt ?? "").trim();
+    if (!k) continue;
+    const arr = lpPorCodExtOtra.get(k) ?? [];
+    arr.push(row as LpRowPick);
+    lpPorCodExtOtra.set(k, arr);
   }
 
   const stockFieldOtra = getStockFieldBySucursal(otraCodigo);
-  const otherRowsAll = await prisma.itemPedidoEnvio.findMany({
+  const otherMerc2 = await prisma.prodPedMerc2.findMany({
     where: {
       sucursalId: otraSucursalRow.id,
-      tipoPedido: "REPOSICION",
-      codTienda: { in: codTiendas },
+      tipoDePedido: "REPOSICION",
+      reposicionCodTienda: { in: codTiendas },
     },
     select: {
-      codTienda: true,
-      idProveedor: true,
+      reposicionCodTienda: true,
       reposicionCantConf: true,
     },
   });
@@ -151,8 +181,16 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     }
   }
 
-  for (const r of otherRowsAll) {
-    appendOtra(r.codTienda ?? "", r.idProveedor, r.reposicionCantConf);
+  for (const r of otherMerc2) {
+    const codT = (r.reposicionCodTienda ?? "").trim();
+    if (!codT) continue;
+    const tienda = tiendaPorCodTienda.get(codT);
+    if (!tienda) continue;
+    const codExtT = (tienda.codExt ?? "").trim();
+    const listaLp = codExtT ? lpPorCodExtOtra.get(codExtT) ?? [] : [];
+    const provRow = pickListaPrecioProveedorPorCodExtYTienda(listaLp, tienda);
+    if (!provRow) continue;
+    appendOtra(codT, provRow.idProveedor, r.reposicionCantConf);
   }
 
   function resolverTopeOtraSucursal(

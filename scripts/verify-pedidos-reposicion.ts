@@ -1,5 +1,5 @@
 /**
- * Verifica que la tabla prod_ped_merc en Neon coincida con el modelo Prisma.
+ * Verifica que la tabla prod_ped_merc_2 en Neon coincida con el modelo Prisma.
  * Ejecutar: npm run db:verify-mercaderia (o el script equivalente)
  *
  * - Si la tabla no existe o las columnas no coinciden, Prisma lanzará error.
@@ -17,45 +17,39 @@ if (!process.env.DATABASE_URL) {
 }
 
 const ESQUEMA_ESPERADO = {
-  tabla: "prod_ped_merc",
+  tabla: "prod_ped_merc_2",
   columnas: [
     "id",
-    "id_proveedor",
-    "sucursal_id",
-    "cod_ext",
-    "cant_pedir",
-    "cod_proveedor",
-    "cod_tienda",
-    "descripcion_proveedor",
-    "descripcion_tienda",
     "tipo_de_pedido",
+    "sucursal_id",
+    "urgente_cod_ext",
+    "urgente_cant_pedir",
+    "tintometrico_descripcion",
+    "tintometrio_cant_pedir",
+    "tintometrico_proveedor",
     "reposicion_forma_pedido",
     "reposicion_punto_pedido",
     "reposicion_cant_conf",
     "reposicion_cant_pedir",
-    "urgente_cant_pedir",
-    "tintometrio_cant_pedir",
-    "tintometrico_descripcion",
-    "created_at",
-    "updated_at",
+    "reposicion_cod_tienda",
   ],
 };
 
 async function main() {
   const { prisma } = await import("../src/lib/prisma");
 
-  console.log("Verificando tabla prod_ped_merc vs esquema Prisma...\n");
+  console.log("Verificando tabla prod_ped_merc_2 vs esquema Prisma...\n");
   console.log("Esquema esperado (backend):");
   console.log("  Tabla:", ESQUEMA_ESPERADO.tabla);
   console.log("  Columnas:", ESQUEMA_ESPERADO.columnas.join(", "));
   console.log("");
 
   try {
-    const count = await prisma.itemPedidoEnvio.count();
-    const sample = await prisma.itemPedidoEnvio.findMany({ take: 1 });
+    const count = await prisma.prodPedMerc2.count();
+    const sample = await prisma.prodPedMerc2.findMany({ take: 1 });
 
     console.log("✓ Conexión OK. Prisma puede leer la tabla.");
-    console.log("  Filas en prod_ped_merc:", count);
+    console.log("  Filas en prod_ped_merc_2:", count);
     if (sample.length > 0) {
       console.log("  Ejemplo de fila (campos):", Object.keys(sample[0]).join(", "));
     } else {
@@ -65,7 +59,7 @@ async function main() {
     await prisma.$disconnect();
     process.exit(0);
   } catch (err) {
-    console.error("✗ Error al leer prod_ped_merc:", err);
+    console.error("✗ Error al leer prod_ped_merc_2:", err);
     await prisma.$disconnect();
     process.exit(1);
   }
