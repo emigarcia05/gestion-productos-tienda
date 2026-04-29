@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import SincronizarComprobantesProveedorDuxButton from "@/components/finanzas/SincronizarComprobantesProveedorDuxButton";
 import TablaTesoreriaCajas, { type TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaModal";
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
@@ -161,17 +160,14 @@ export default function FinanzasTesoreriaPageClient({
         }
         actions={
           esEditor ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <SincronizarComprobantesProveedorDuxButton />
-              <Button
-                type="button"
-                onClick={() => setOpenNuevaCaja(true)}
-                className="h-10 px-4 gap-2"
-              >
-                <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                Nueva Caja
-              </Button>
-            </div>
+            <Button
+              type="button"
+              onClick={() => setOpenNuevaCaja(true)}
+              className="h-10 px-4 gap-2"
+            >
+              <Plus className="h-4 w-4 shrink-0" aria-hidden />
+              Nueva Caja
+            </Button>
           ) : undefined
         }
       >

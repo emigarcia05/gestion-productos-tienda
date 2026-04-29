@@ -902,7 +902,12 @@
   overflow-wrap: anywhere;
   word-break: break-word;
   line-height: 1.2 !important;
-  vertical-align: top;
+  vertical-align: middle;
+  text-align: center;
+}
+.tabla-gestion-compacta.tabla-deuda-proveedores tfoot td.celda-proveedor-deuda {
+  vertical-align: middle;
+  text-align: center;
 }
 /* Modal vínculos (Tienda): conserva ancho y densidad de celdas; encabezado usa la misma regla global. */
 .tabla-gestion-compacta.tabla-vinculos-modal {

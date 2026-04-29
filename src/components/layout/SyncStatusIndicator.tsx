@@ -9,6 +9,7 @@ import { sincronizarComprobantesProveedorDesdeDuxAction } from "@/actions/compro
 import AppModal from "@/components/shared/AppModal";
 import DuxSyncStyleButton from "@/components/shared/DuxSyncStyleButton";
 import MensajeProceso from "@/components/shared/MensajeProceso";
+import { useSyncComprasProveedorDuxStatusPoll } from "@/hooks/useSyncComprasProveedorDuxStatusPoll";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 
@@ -50,6 +51,8 @@ export default function SyncStatusIndicator() {
   const [cancelSyncModalOpen, setCancelSyncModalOpen] = useState(false);
   const [cancelSyncPending, setCancelSyncPending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const comprasProgreso = useSyncComprasProveedorDuxStatusPoll(comprasSyncing);
 
   useEffect(() => {
     function fetchStatus() {
@@ -191,7 +194,15 @@ export default function SyncStatusIndicator() {
 
   if (comprasSyncing) {
     return (
-      <MensajeProceso variant="sidebar" mensaje="SINCRONIZANDO COMPRAS" detalle="…" />
+      <MensajeProceso
+        variant="sidebar"
+        mensaje="SINCRONIZANDO COMPRAS"
+        detalle={
+          comprasProgreso.total > 0
+            ? { procesados: comprasProgreso.processed, total: comprasProgreso.total }
+            : "…"
+        }
+      />
     );
   }
 

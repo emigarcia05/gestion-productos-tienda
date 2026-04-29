@@ -2,6 +2,12 @@ import { Prisma } from "@prisma/client";
 import { fetchComprasPagesAcumulado } from "@/lib/duxComprasApi";
 import type { CompraDux } from "@/lib/duxComprasApi";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import {
+  setSyncComprasProveedorDuxErrorInDb,
+  setSyncComprasProveedorDuxProgressInDb,
+  setSyncComprasProveedorDuxSuccessInDb,
+  startSyncComprasProveedorDuxInDb,
+} from "@/lib/syncComprasProveedorDuxStatusDb";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
 
@@ -228,6 +234,7 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
     return { success: false, error: "ID empresa DUX inválido." };
   }
 
+  let comprasSyncEnCurso = false;
   try {
     const fechaDesde = fechaArgentinaMenosDiasComoDux(DIAS_VENTANA_COMPRAS_DUX);
     const fechaHasta = fechaArgentinaMasDiasComoDux(1);
@@ -261,6 +268,11 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
     let upserts = 0;
     let omitidos = 0;
     const detalleSucursal: SyncComprobantesProveedorDuxResult["detalleSucursal"] = [];
+
+    const totalSucursales = sucursalIdDux.length;
+    await startSyncComprasProveedorDuxInDb(totalSucursales);
+    comprasSyncEnCurso = true;
+    await setSyncComprasProveedorDuxProgressInDb(0, totalSucursales);
 
     for (let i = 0; i < sucursalIdDux.length; i++) {
       const idSucursal = sucursalIdDux[i];
@@ -308,12 +320,17 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
           error: msg,
         });
       }
+
+      await setSyncComprasProveedorDuxProgressInDb(i + 1, totalSucursales);
     }
 
     const purga = await prisma.comprobanteProveedor.deleteMany({
       where: { fechaComp: { lte: limite } },
     });
     const eliminadosAntiguos = purga.count;
+
+    await setSyncComprasProveedorDuxSuccessInDb(totalSucursales, totalSucursales);
+    comprasSyncEnCurso = false;
 
     return {
       success: true,
@@ -329,6 +346,13 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error al sincronizar comprobantes.";
+    if (comprasSyncEnCurso) {
+      try {
+        await setSyncComprasProveedorDuxErrorInDb(msg);
+      } catch {
+        // Evita enmascarar el error original si falla el update de estado.
+      }
+    }
     return { success: false, error: msg };
   }
 }

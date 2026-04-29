@@ -77,7 +77,7 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
           <Table variant="compact" scrollX={false} className="tabla-deuda-proveedores">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="min-w-[12rem]">PROVEEDOR</TableHead>
+                <TableHead className="min-w-[12rem] text-center align-middle">PROVEEDOR</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[7.5rem]")}>DEUDA TOTAL</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[7rem]")}>VENCIDA</TableHead>
                 <TableHead className={cn(TH_NUM, "min-w-[6rem]")}>5 DÍAS</TableHead>
@@ -96,7 +96,7 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
                 filas.map((f) => (
                   <TableRow key={f.nombre}>
                     <TableCell
-                      className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] font-medium"
+                      className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] text-center align-middle font-medium"
                       title={f.nombre}
                     >
                       {f.nombre}
@@ -114,7 +114,7 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
             {totales ? (
               <TableFooter>
                 <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-border">
-                  <TableCell className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] text-left font-bold uppercase">
+                  <TableCell className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] text-center align-middle font-bold uppercase">
                     TOTAL
                   </TableCell>
                   <TableCell className={cn(TD_NUM, "font-bold")}>
