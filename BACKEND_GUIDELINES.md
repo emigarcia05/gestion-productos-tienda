@@ -81,7 +81,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 
 - **Columna** `prod_precios_tienda.stockeable` (`BOOLEAN NOT NULL`; migración `20260413120000_add_stockeable_prod_precios_tienda`: default `true` en filas existentes hasta la próxima sync).
 - **Regla DUX**: En `src/lib/duxApi.ts`, `ItemDux.stockeable` se calcula **exclusivamente** con `ctd_disponible` por depósito. Debe existir la entrada de **Guaymallén** (`ID_STOCK_GUAYMALLEN`) y **Maipú** (`ID_STOCK_MAIPU`) y en **ambas** `ctd_disponible` debe ser **no nulo** (un `0` numérico o string numérico cuenta como informado). Si **cualquier** sucursal tiene `ctd_disponible` JSON `null` o falta la fila del depósito, `stockeable` es `false`. Los enteros `stock_maipu` / `stock_guaymallen` siguen tomándose de `stock_real` como hasta ahora.
-- **Sync**: `syncListaPrecioTienda.service.ts` incluye `stockeable` en create/update del upsert.
+- **Sync**: `syncListaPrecioTienda.service.ts` incluye `stockeable` en create/update del upsert. Desde 2026-05, el upsert de `prod_precios_tienda` se resuelve por **`cod_tienda`** (clave de negocio estable), no por `cod_ext` (dato mutable por cambios de proveedor).
 - **Uso en negocio**: `getControlStock` restringe a `stockeable: true`; `getSobreStockOtraSucursalParaPedidoEnviar` no evalúa sobrestock para ítems con `stockeable: false`; `upsertPedidoMercaderiaReposicionConfig` rechaza configurar reposición por stock si el ítem no es stockeable. `getTiendaPageData` expone `stockeable` en `ItemTiendaParaTabla`.
 
 ### 1.6 Listados de solo lectura (catálogos)
@@ -823,6 +823,7 @@ Antes de entregar código nuevo o modificado, verificar:
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
 - **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` conserva validación Zod pero devuelve error funcional (cambio manual de proveedor en BD deshabilitado). `cambiarAProveedorMenorCostoAction` (masiva) exige `esEditor()`, recibe IDs validados con Zod, selecciona candidato no oficial con **menor costo y `habilitado = true`** y devuelve solo payload para exportar **Act. Proveedor** / **Act. Margen**; **no** actualiza `prod_precios_tienda`.
+- **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`; si DUX cambia `cod_ext`/`proveedor` para el mismo `cod_tienda`, la misma fila se actualiza (no se crea otra por `cod_ext`).
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
 - **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.
 - **`pedidos.ts`**: `generarPdfEnviarPedidoAction` y `syncPedidoUrgenteEnvioAction` usan esquemas Zod dedicados; permisos de pedidos al inicio.

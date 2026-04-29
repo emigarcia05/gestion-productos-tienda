@@ -414,8 +414,8 @@ model Marca {
 // Alimentada solo por API externa (tabla prod_precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
   id              String   @id @default(uuid())
-  codExt          String   @unique @map("cod_ext")
-  codTienda       String   @map("cod_tienda")
+  codExt          String   @map("cod_ext") // mutable: puede variar por cambio de proveedor en DUX
+  codTienda       String   @unique @map("cod_tienda") // clave de negocio estable para sync/upsert
   rubro           String?
   subRubro        String?  @map("sub_rubro")
   marca           String?  // texto tal cual viene de la API DUX (se mantiene para trazabilidad)

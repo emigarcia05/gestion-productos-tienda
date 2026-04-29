@@ -1,7 +1,7 @@
 /**
  * Sincronización de lista_precios_tienda desde la API DUX ERP.
  * Fase 1: bucle paginado (50 ítems por petición) acumulando todos en memoria.
- * Fase 2: bulk upsert en Neon por chunks de 500 (cod_ext como conflicto) para evitar timeout.
+ * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda como conflicto) para evitar timeout.
  */
 
 import { Prisma } from "@prisma/client";
@@ -85,7 +85,7 @@ export interface SyncProgressCallback {
 /**
  * Sincroniza productos desde la API DUX hacia lista_precios_tienda.
  * 1) Acumula todos los productos en memoria (array) recorriendo la API de 50 en 50.
- * 2) Al finalizar el bucle, persiste en Neon por chunks de 500 (ON CONFLICT cod_ext DO UPDATE).
+ * 2) Al finalizar el bucle, persiste en Neon por chunks de 500 (ON CONFLICT cod_tienda DO UPDATE).
  * totalProcesados = largo del array acumulado.
  */
 export async function syncListaPrecioTiendaFromDux(
@@ -121,7 +121,7 @@ export async function syncListaPrecioTiendaFromDux(
     if (total > 0 && totalApi === 0) totalApi = total;
     if (results.length === 0) break;
 
-    const batch = results.map(itemDuxToRecord).filter((r) => r.codExt);
+    const batch = results.map(itemDuxToRecord).filter((r) => r.codTienda);
     todosLosProductos.push(...batch);
 
     const procesadosHastaAhora = todosLosProductos.length;
@@ -141,7 +141,7 @@ export async function syncListaPrecioTiendaFromDux(
   const totalSincronizados = todosLosProductos.length;
 
   // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
-  // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codExt (último gana).
+  // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codTienda (último gana).
   // Marcas: se resuelve el texto de la API a la tabla prod_marcas y se asigna idMarca.
   if (totalSincronizados > 0) {
     await assertListaPrecioTiendaSyncNotCancelled();
@@ -149,9 +149,9 @@ export async function syncListaPrecioTiendaFromDux(
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
       await assertListaPrecioTiendaSyncNotCancelled();
       const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
-      const byCodExt = new Map<string, RecordTienda>();
-      for (const row of chunkRaw) byCodExt.set(row.codExt, row);
-      const chunk = Array.from(byCodExt.values());
+      const byCodTienda = new Map<string, RecordTienda>();
+      for (const row of chunkRaw) byCodTienda.set(row.codTienda, row);
+      const chunk = Array.from(byCodTienda.values());
       try {
         await prisma.$transaction(
           async (tx) => {
@@ -175,7 +175,7 @@ export async function syncListaPrecioTiendaFromDux(
               const nombreMarca = row.marca?.trim();
               const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
               await tx.listaPrecioTienda.upsert({
-                where: { codExt: row.codExt },
+                where: { codTienda: row.codTienda },
                 create: {
                   codExt: row.codExt,
                   codTienda: row.codTienda,
