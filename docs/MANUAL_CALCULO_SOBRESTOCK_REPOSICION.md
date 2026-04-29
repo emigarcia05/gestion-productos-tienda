@@ -18,7 +18,7 @@ Documento orientado a **desarrollo** y revisión funcional. Describe cómo el ba
 | Concepto | Origen | Notas |
 |----------|--------|--------|
 | Stock de la otra sucursal | `prod_precios_tienda` (`ListaPrecioTienda`) | `stock_maipu` / `stock_guaymallen` según la sucursal **donde se mide** el excedente (siempre la otra respecto a quien pide). Si `stockeable` es `false`, el flujo de sobrestock **no** incluye esa línea (DUX: `ctd_disponible` nulo en algún depósito en la sync de ítems). |
-| Tope / configuración | `prod_ped_merc` (`ItemPedidoEnvio`) en la **otra** sucursal | Filas `tipo_de_pedido` **REPOSICIÓN**, mismo `cod_ext` (sin exigir el mismo `id_proveedor` que el pedido). |
+| Tope / configuración | `prod_ped_merc_2` (`ProdPedMerc2`) en la **otra** sucursal | Filas `tipo_de_pedido` **REPOSICIÓN** con `reposicion_cod_tienda` igual al `cod_tienda` de la línea; resolución de proveedor vía `prod_precios_tienda` + LP habilitada (ver `getSobreStockOtraSucursalParaPedidoEnviar`). |
 | Cantidad a pedir | Línea del pedido que genera | `cant_pedir` de la sucursal que ordena. |
 | `cod_ext` del producto | `prod_precios_tienda` | Se obtiene desde `cod_tienda` de la línea. |
 
@@ -47,7 +47,7 @@ Si no queda ninguna fila elegible, `tieneSobreStock: false` e `items: []`.
 Para cada línea elegible:
 
 1. **Stock medido:** el de la **otra** sucursal en `prod_precios_tienda` (mismo registro que aportó `cod_ext`).
-2. **Tope en la otra sucursal:** filas REPOSICIÓN en la otra tienda con ese `cod_ext`; prioridad: mismo `id_proveedor` que el pedido → fila con `reposicion_cant_conf > 0` → primera fila. Si no hay ninguna en la otra pero la **línea del pedido** es REPOSICIÓN con `reposicion_cant_conf > 0`, se usa ese tope como referencia contra el stock de la otra tienda.
+2. **Tope en la otra sucursal:** filas REPOSICIÓN en la otra tienda con el mismo **`cod_tienda`** (clave `reposicion_cod_tienda` en `prod_ped_merc_2`); prioridad: mismo `id_proveedor` que el pedido → fila con `reposicion_cant_conf > 0` → primera fila. Si no hay ninguna en la otra pero la **línea del pedido** es REPOSICIÓN con `reposicion_cant_conf > 0`, se usa ese tope como referencia contra el stock de la otra tienda.
 3. **¿Evaluar?** Solo si hay “ancla”: alguna fila REPOSICIÓN en la otra con contexto útil **o** `reposicion_cant_conf > 0` en la línea del pedido (cuando es REPOSICIÓN).
 4. **Reglas A y B** (`evaluarSobrestockEnValores`):
    - **A:** si tope &gt; 0, hay sobrestock si `stock > tope`; exceso = `stock - tope`.
@@ -67,7 +67,7 @@ La action `getSobreStockReposicionParaModalAction` devuelve:
   data: {
     tieneSobreStock: boolean;
     items: Array<{
-      idItemPedidoEnvio: string;
+      idItemPedidoEnvio: string; // id de fila en `prod_ped_merc_2` (nombre histórico en API)
       codExt: string;
       codTienda: string | null;
       descripcionProveedor: string;

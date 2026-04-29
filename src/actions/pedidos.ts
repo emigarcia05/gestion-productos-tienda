@@ -575,7 +575,7 @@ export async function generarPdfEnviarPedidoAction(params: {
 
     const sentViaWhatsApp = false;
 
-    // Al "enviar" (generar y devolver el PDF), limpiar prod_ped_merc de los tipos
+    // Al "enviar" (generar y devolver el PDF), limpiar `prod_ped_merc_2` de los tipos
     // URGENTE/TINTOMETRICO para la sucursal configurada.
     const tiposBorrar = tipos.filter((t) => t === "URGENTE" || t === "TINTOMETRICO");
     if (sucursalRow?.id && tiposBorrar.length > 0) {

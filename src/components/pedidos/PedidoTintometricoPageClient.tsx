@@ -51,7 +51,7 @@ import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
 
 type ItemTintometrico = {
   key: string;
-  /** Presente cuando la fila viene de BD (`prod_ped_merc_2` / `prod_ped_merc`). */
+  /** Presente cuando la fila viene de BD (`prod_ped_merc_2`). */
   id?: string;
   sucursalCodigo: string;
   proveedorId: string;

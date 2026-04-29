@@ -29,9 +29,9 @@ export interface ProductoPedidoUrgente {
   pxCompraFinal: number | null;
   /** Cantidad pedida (URGENTE) desde `prod_ped_merc_2.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
-  /** true si existe el cod_ext en prod_ped_merc con tipo_de_pedido = REPOSICION. */
+  /** true si hay regla REPOSICIÓN en `prod_ped_merc_2` para el `cod_tienda` del ítem. */
   confReposicion: boolean;
-  /** cant_pedir_reposicion desde prod_ped_merc (0 si no hay). */
+  /** `reposicion_cant_conf` en `prod_ped_merc_2` (0 si no hay). */
   cantReposicion: number;
   estaVinculadoTienda: boolean;
   sugerenciaProveedorMenorCosto: {

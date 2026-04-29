@@ -47,11 +47,9 @@ model Proveedor {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   listaPrecios         ListaPrecioProveedor[]
-  itemsPedidoEnvio     ItemPedidoEnvio[]
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
   finBalGastoFinal   FinBalGastoFinal[]
-  // Tabla única de pedidos: prod_ped_merc
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -105,13 +103,11 @@ model Sucursal {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  itemsPedidoEnvio     ItemPedidoEnvio[]
   itemsProdPedMerc2    ProdPedMerc2[]
   pedidosHistoria     PedidoHistoria[]
   movimientosFinanzas MovimientoFinanzas[]
   finBalGastoFinal    FinBalGastoFinal[]
   finBalVtas          FinBalVtas[]
-  // Tabla única de pedidos: prod_ped_merc
 
   @@map("global_sucursales")
 }
@@ -455,40 +451,6 @@ model ImportProgress {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("import_progress")
-}
-
-// ─── Enviar Pedido: ítems a enviar.
-// Origen: global_proveedores (id/nombre/prefijo), prod_precios_provee (cod_prod_proveedor, descripcion_proveedor, cod_ext),
-//         prod_precios_tienda (cod_tienda, cod_ext, descripcion_tienda; vacío si no existe vínculo).
-model ItemPedidoEnvio {
-  id                     String   @id @default(uuid())
-  idProveedor            String   @map("id_proveedor")
-  tipoPedido             String   @map("tipo_de_pedido") // URGENTE | TINTOMETRICO | REPOSICION
-  sucursalId             String   @map("sucursal_id") // FK a global_sucursales.id
-  codExt                 String   @map("cod_ext")
-  codProveedor           String   @map("cod_proveedor") // cod_prod_proveedor
-  codTienda              String?  @map("cod_tienda") // prod_precios_tienda.cod_tienda; vacío si no existe
-  descripcionProveedor   String   @map("descripcion_proveedor")
-  descripcionTienda      String?  @map("descripcion_tienda") // prod_precios_tienda; vacío si no existe
-  cantPedir              Int      @map("cant_pedir") @default(0)
-  // Reposición (prefijo reposicion_*)
-  reposicionFormaPedido  String? @map("reposicion_forma_pedido") // Solo: CANT_MAXIMA | CANT_FIJA (canónico en BD y trigger)
-  reposicionPuntoPedido  Int?    @map("reposicion_punto_pedido")
-  reposicionCantConf     Int?    @map("reposicion_cant_conf") @default(0)
-  reposicionCantPedir    Int?    @map("reposicion_cant_pedir") @default(0)
-  // Urgente (prefijo urgente_*)
-  urgenteCantPedir       Int?    @map("urgente_cant_pedir") @default(0)
-  // Tintométrico (prefijo tintometrico_*)
-  tintometrioCantPedir   Int?    @map("tintometrio_cant_pedir") @default(0)
-  tintometricoDescripcion String? @map("tintometrico_descripcion")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
-
-  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
-  sucursal  Sucursal  @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
-
-  @@unique([idProveedor, tipoPedido, sucursalId, codExt], map: "prod_ped_merc_item_unique")
-  @@map("prod_ped_merc")
 }
 
 /**

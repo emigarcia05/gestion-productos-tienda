@@ -32,7 +32,7 @@ export interface ItemReposicion {
   stock: number;
   idProveedor: string | null;
   nombreProveedor: string | null;
-  /** Preferente: id en `prod_ped_merc_2` (REPOSICION); si solo hay legado, id en `prod_ped_merc`. */
+  /** Id de fila `prod_ped_merc_2` (tipo REPOSICION). */
   idReposicion: string | null;
   formaPedir: FormaPedirReposicionOption;
   puntoReposicion: number;
@@ -93,7 +93,7 @@ function baseWhere(
 
 /**
  * Datos para Pedido Reposición: lista_tienda filtrada por sucursal (stock), marca, rubro, sub-rubro, descripción.
- * Cada ítem incluye la configuración REPOSICION desde `prod_ped_merc_2` (si existe; si no, desde `prod_ped_merc`).
+ * Cada ítem incluye la configuración REPOSICION desde `prod_ped_merc_2`.
  * **CANT. A PEDIR** se recalcula con la misma regla que Generar Pedido / `upsertPedidoMercaderiaReposicionConfig`.
  */
 export async function getReposicionData(

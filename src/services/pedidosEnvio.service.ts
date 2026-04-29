@@ -386,7 +386,7 @@ export async function deletePedidoTintometricoItem(
     | {
         sucursalCodigo: SucursalPedidoEnvio;
         proveedorId: string;
-        /** Valor persistido en `prod_ped_merc.cod_ext` (incluye base + código fórmula). */
+        /** Valor persistido en `urgente_cod_ext` (tintométrico: base + código fórmula). */
         codExt: string;
       }
 ): Promise<{ ok: true } | { ok: false; error: string }> {

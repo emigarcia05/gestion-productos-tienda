@@ -21,7 +21,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Escrituras con dos niveles**: Si el módulo da **acceso de lectura** a `simple` y `editor` (`PERMISOS.*.acceso` con ambos `true`) pero la operación es **crítica** (p. ej. borrado o registro en sistemas externos), exigir además **`esEditor()`** tras el chequeo de `puede(rol, PERMISOS.*)`. Excepción documentada: en **historial de pedidos**, el flujo de **recepción** (guardar/corregir/marcar/reabrir/agregar ítems) está habilitado para `simple` y `editor`.
 - **Importar** (`PERMISOS.importar.acceso`, solo editor en la matriz actual): comprobar **`puede(rol, PERMISOS.importar.acceso)`** y **`esEditor()`**, más validación Zod del payload (`@/lib/validations/importar.ts`).
 - **Helpers**: `esEditor()` para “solo editor”; para permisos granulares usar `getRol()` y `puede(rol, PERMISOS.modulo.accion)` desde `@/lib/permisos`.
-- **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ListaPrecioTienda`, `ListaPrecioProveedor`, `ItemPedidoEnvio`). Validar con `prismaCuidSchema` (`@/lib/validations/common`), `uuidSchema` o `z.string().min(1).max(128)` según el modelo; **no** mezclar `.uuid()` en IDs que sean `cuid`.
+- **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ListaPrecioTienda`, `ListaPrecioProveedor`, `ProdPedMerc2`). Validar con `prismaCuidSchema` (`@/lib/validations/common`), `uuidSchema` o `z.string().min(1).max(128)` según el modelo; **no** mezclar `.uuid()` en IDs que sean `cuid`.
 - **Lecturas con datos sensibles** (precios, vínculos, catálogos):
   - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas (no controla si el campo se expone).
   - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` y `getProveedoresNoMercaderia` su complemento (`= false`). Ambos reutilizan el índice `global_proveedores_proveedor_mercaderia_idx` (ver §1.11c).
@@ -561,21 +561,15 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
 - Si **`getItemsYProveedorParaEnviar`** devuelve **0 ítems** para la combinación proveedor + sucursal + tipos, la Action responde **`{ ok: false, error: "No hay ítems para generar el pedido con la selección indicada." }`** **antes** de crear historial o borrar filas URGENTE/TINTOMÉTRICO (evita PDF vacío y borrados masivos indebidos).
-- La misma llamada devuelve **`rows`** (filas crudas de `prod_ped_merc`) e **`items`** (forma PDF). El chequeo de sobrestock en la **otra sucursal** usa **`rows` completas** (mismas que el PDF) en **`getSobreStockOtraSucursalParaPedidoEnviar`**: solo entran líneas con **`cod_tienda`**; `id_proveedor` en la query de envío va siempre **`.trim()`**.
+- La misma llamada devuelve **`rows`** (filas resueltas desde `prod_ped_merc_2`) e **`items`** (forma PDF). El chequeo de sobrestock en la **otra sucursal** usa **`rows` completas** (mismas que el PDF) en **`getSobreStockOtraSucursalParaPedidoEnviar`**: solo entran líneas con **`cod_tienda`**; el proveedor se resuelve por tipo (LP / tintométrico / reposición) y va siempre **`.trim()`** donde aplique.
 - Tras éxito, **`revalidatePath`** incluye también **`/pedidos/reposicion`**.
 
-#### `prod_ped_merc` — ítems `TINTOMETRICO` (`cod_ext`)
+#### `prod_ped_merc_2` — modelo `ProdPedMerc2` (canónico)
 
-- La clave única `@@unique([idProveedor, tipoPedido, sucursalId, codExt])` implica que **`cod_ext` debe distinguir cada línea lógica**.
-- No alcanza con `TINT-{cod_tienda}`: pueden coexistir varias líneas con el **mismo** `cod_tienda` (misma base) y **distinto** código de fórmula (COD.).
-- Upsert (`upsertPedidoTintometricoItems`): `cod_ext = buildCodExtTintometrico(codTienda, codTintometrico)` → `TINT-{codTienda}-{códigoNormalizado}` (`src/lib/pedidosTintometrico.ts`).
-- Borrado (`deletePedidoTintometricoItem`): filtrar por **`cod_ext` persistido** (no reconstruir solo desde `cod_tienda`).
-
-#### `prod_ped_merc_2` (evolución — modelo `ProdPedMerc2`)
-
-- **Migraciones**: `20260429183000_add_prod_ped_merc_2` (crear tabla); `20260429200000_copy_prod_ped_merc_to_prod_ped_merc_2` (copia datos desde `prod_ped_merc`: `id`, `tipo_de_pedido`, `sucursal_id`, `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`; solo filas con `tipo_de_pedido` en `REPOSICION` \| `URGENTE` \| `TINTOMETRICO`; `ON CONFLICT (id) DO UPDATE` para re-ejecución idempotente).
-- **Propósito**: tabla nueva en la misma base (no reemplaza aún `prod_ped_merc`); columnas reducidas para migrar lógica después.
-- **Columnas**: `id` (TEXT, default `gen_random_uuid()::text`), `tipo_de_pedido` (CHECK: `REPOSICION` \| `URGENTE` \| `TINTOMETRICO`), `sucursal_id` → FK `global_sucursales.id` (`ON DELETE RESTRICT`), `urgente_cod_ext`, `urgente_cant_pedir`, `tintometrico_descripcion`, `tintometrio_cant_pedir`, **`tintometrico_proveedor`** (TEXT nullable; `id` en `global_proveedores`; migración `20260429220000_add_prod_ped_merc_2_tintometrico_proveedor` + backfill desde `prod_ped_merc.id_proveedor` para `TINTOMETRICO`), `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`, **`reposicion_cod_tienda`** (TEXT nullable; código tienda para reposición; migración `20260429210000_add_prod_ped_merc_2_reposicion_cod_tienda` + backfill desde `prod_ped_merc.cod_tienda` para filas `REPOSICION` con mismo `id`).
+- **Tintométrico**: varias líneas pueden compartir `cod_tienda` y diferir por código de fórmula. El correlato con `cod_ext` de la era legada vive en **`urgente_cod_ext`** (`buildCodExtTintometrico` en `src/lib/pedidosTintometrico.ts`). Borrado: `deletePedidoTintometricoItem` por `id` o por `(sucursal, proveedor, cod_ext persistido)`.
+- **Migraciones**: `20260429183000_add_prod_ped_merc_2` (crear tabla); `20260429200000_copy_prod_ped_merc_to_prod_ped_merc_2` (copia inicial desde la tabla legada `prod_ped_merc` antes de su retiro; `ON CONFLICT (id) DO UPDATE` idempotente).
+- **Propósito**: única tabla de ítems de pedido de mercadería en runtime (`REPOSICION` \| `URGENTE` \| `TINTOMETRICO`). La tabla `prod_ped_merc` se elimina con `20260430103000_drop_prod_ped_merc_legacy`.
+- **Columnas**: `id` (TEXT, default `gen_random_uuid()::text`), `tipo_de_pedido` (CHECK: `REPOSICION` \| `URGENTE` \| `TINTOMETRICO`), `sucursal_id` → FK `global_sucursales.id` (`ON DELETE RESTRICT`), `urgente_cod_ext`, `urgente_cant_pedir`, `tintometrico_descripcion`, `tintometrio_cant_pedir`, **`tintometrico_proveedor`**, `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`, **`reposicion_cant_pedir`**, **`reposicion_cod_tienda`**. (Migraciones previas hicieron backfill desde la tabla legada `prod_ped_merc` antes de `20260430103000_drop_prod_ped_merc_legacy`.)
 - **Índices**: `(sucursal_id, tipo_de_pedido)`; `(reposicion_cod_tienda)`.
 - **Prisma**: `ProdPedMerc2` → `@@map("prod_ped_merc_2")`; relación inversa en `Sucursal.itemsProdPedMerc2`. **Lectura en app**: la tabla previa **Generar Pedido** (`getItemsTablaEnviarPedido` en `pedidosEnvio.service.ts`) arma filas desde `prod_ped_merc_2` con resolución de proveedor/descripción/cantidad por tipo (incluye `habilitado = true` en `prod_precios_provee` para cruces por `cod_ext`; reposición: misma regla de stock que `upsertPedidoMercaderiaReposicionConfig`, `stock <= punto`).
 
@@ -600,7 +594,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 #### `generarPdfEnviarPedidoAction` (sobrestock otra sucursal, obligatorio)
 
 - **Param opcional**: `confirmarSobreStock?: boolean` (default false).
-- **Param opcional**: `ajustesSobreStock?: { idItemPedidoEnvio: string; cantPedir: number }[]`.
+- **Param opcional**: `ajustesSobreStock?: { idItemPedidoEnvio: string; cantPedir: number }[]` (el campo `idItemPedidoEnvio` es el **`id` de `prod_ped_merc_2`**; nombre histórico en API).
 - **Regla** (antes de `crearPedidoHistoriaSnapshot` y de cualquier persistencia de historial):
   - Si `getSobreStockOtraSucursalParaPedidoEnviar` devuelve al menos un ítem y `confirmarSobreStock` es false, la Action responde `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }`.
   - Con `confirmarSobreStock === true`, se omite ese bloqueo y continúa el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO). La UI debe mostrar el modal y reintentar solo con confirmación explícita del usuario.
@@ -608,12 +602,12 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 
-- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems `prod_ped_merc` con **`cant_pedir > 0`**. Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
+- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems desde **`prod_ped_merc_2`** con cantidad a pedir resuelta **`> 0`** por tipo (incluye `reposicion_cant_pedir` o fórmula de stock). Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
 - **`getEnviarPedidoTablaData`**: delega en **`getItemsTablaEnviarPedido`** pasando lo que venga de la URL (vacío = sin acotar).
 
 #### Pedido Urgente — listado
 
-- **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar. El parámetro `pedido` soporta `cualquier`, `urgente` y `reposicion`: para `urgente/cualquier` filtra por pares (`id_proveedor`, `cod_ext`) y para `reposicion` filtra por `cod_tienda` configurado en `prod_ped_merc` (sin depender de `cod_ext` persistido).
+- **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar. El parámetro `pedido` soporta `cualquier`, `urgente` y `reposicion`: para `urgente/cualquier` filtra por pares (`id_proveedor`, `cod_ext`) y para `reposicion` filtra por `cod_tienda` configurado en **`prod_ped_merc_2`** (`reposicion_cod_tienda`).
 - **Comparación por menor costo en doble click (Pedido Urgente):** `getListaPreciosParaPedidoUrgente` expone por fila `estaVinculadoTienda` + `sugerenciaProveedorMenorCosto` cuando, para el mismo `id_lista_precios_tienda`, existe otro `prod_precios_provee` habilitado con costo menor (costo = `px_compra_final` o fallback `calcPxCompraFinal`). Esto habilita en frontend el cartel de desvío a proveedor más barato antes del modal de cantidad.
 
 ### 2.6 Servicio `pedidosHistoria.service.ts`
@@ -627,10 +621,10 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
 2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`
-   - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar `prod_ped_merc` (cuando corresponda).
+   - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar **`prod_ped_merc_2`** (URGENTE/TINTOMÉTRICO cuando corresponda).
    - Crea `PedidoHistoria` con `estado = "PENDIENTE"`.
-   - Lee `ItemPedidoEnvio` filtrando por `idProveedor`, `sucursalId`, `tipoPedido IN tipos` y `cant_pedir > 0`.
-   - Resolución de `cod_tienda`: priorizar siempre la vinculación real `listaPrecioProveedor -> listaPrecioTienda` (por par `idProveedor + codExt`) antes del `codTienda` persistido en `prod_ped_merc`; usar fallback solo si no existe vínculo.
+   - Reutiliza **`getItemsYProveedorParaEnviar`** (mismas filas que el PDF): datos desde **`prod_ped_merc_2`** con proveedor y cantidades ya resueltas.
+   - Consolidación por `cod_tienda` para `PedidoHistoriaItem` (fallback `1503` si falta código en alguna línea).
    - Inserta `PedidoHistoriaItem` consolidando por `cod_tienda` (para respetar UNIQUE por `cod_tienda`).
    - Inserta cada ítem con `cant_recibida = NULL` hasta que en recepción se guarde la cantidad recibida.
 
@@ -843,15 +837,15 @@ Antes de entregar código nuevo o modificado, verificar:
 - Estandarizar respuestas de error: no `throw`, sí `ActionResult` con `error`.
 - Documentar uso de `getRol()` + `puede()` para permisos granulares.
 - PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden; las filas van **ordenadas alfabéticamente** por el texto de **DESCRIPCION** (`localeCompare` `es`, `sensitivity: "base"`). Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`). El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`. Opción **`fechaDocumento`** en `generarPdfPedido`: al **volver a descargar** desde historial (`descargarPdfPedidoHistoriaAction`) usar `generado_at` del snapshot para encabezado y nombre de archivo, no la fecha actual. En celdas `COD.` y `DESCRIPCION`, el texto debe hacer wrap en múltiples líneas dentro de la columna y **no** truncarse con `...`.
-- Al ejecutar el botón de **Generar Pedido** (server action `generarPdfEnviarPedidoAction`), limpiar de `prod_ped_merc` (ítems `tipo_de_pedido` `URGENTE` y/o `TINTOMETRICO`) para la `sucursal` enviada, y revalidar las rutas afectadas (`/pedidos/enviar`, `/pedidos/urgente`, `/pedidos/tintometrico`).
+- Al ejecutar el botón de **Generar Pedido** (server action `generarPdfEnviarPedidoAction`), limpiar **`prod_ped_merc_2`** (tipos `URGENTE` y/o `TINTOMETRICO`) para la `sucursal` enviada, y revalidar las rutas afectadas (`/pedidos/enviar`, `/pedidos/urgente`, `/pedidos/tintometrico`).
 
 ### 5.4 Cambios aplicados en esta auditoría
 
 | Archivo / Área | Cambio |
 |----------------|--------|
 | `src/services/pedidosEnvio.service.ts`, `src/services/sobreStock.service.ts`, `src/services/listaPrecios.service.ts` | **Circuito REPOSICIÓN por `cod_tienda` (2026-04-28):** no se persiste el `cod_ext` **comercial** de catálogo en reposición; la clave de negocio es `cod_tienda`. Por el unique de BD `(id_proveedor, tipo, sucursal, cod_ext)`, cada fila guarda un **surrogado** estable `REPO_TIENDA:{cod_tienda}` (no es el `cod_ext` de `prod_precios_tienda`). La resolución para PDF/envío usa `cod_tienda` → catálogo vigente. `getItemsYProveedorParaEnviar` recompone filas REPOSICIÓN con proveedor/código vigentes, `getSobreStockOtraSucursalParaPedidoEnviar` usa topes por `cod_tienda`, y `getListaPreciosParaPedidoUrgente` filtra reposición por `cod_tienda`. Migración `20260429120000_reposicion_cod_ext_surrogate`: dedupe + normalización de filas ya existentes. |
-| `prisma/migrations/20260429001000_reposicion_sync_por_cod_tienda/migration.sql` | Se redefine `sync_pedidos_mercaderia_cant_pedir` y el trigger `trg_sync_reposicion_on_precios_tienda_stock` para que REPOSICIÓN recalcule por `cod_tienda` (no por `cod_ext`) tanto en `BEFORE INSERT/UPDATE` de `prod_ped_merc` como en cambios de stock en `prod_precios_tienda`. Incluye recálculo masivo post-migración (`UPDATE ... SET reposicion_cant_pedir = reposicion_cant_pedir`). |
-| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: corrección de validación para `reposicion_punto_pedido`; ahora admite `0` (solo rechaza `< 0`), alineado con Action/UI y regla de negocio de reposición. Además, la persistencia de REPOSICIÓN se resuelve por `cod_tienda` (no por `id_proveedor` enviado por cliente): se busca `prod_precios_tienda.cod_tienda` → `cod_ext` + `proveedor` vigentes y con eso se determina el proveedor actual; al guardar, se eliminan filas legacy de `prod_ped_merc` `REPOSICION` para la misma `sucursal + cod_tienda` que hayan quedado con proveedor/cod_ext anteriores. |
+| `prisma/migrations/20260429001000_reposicion_sync_por_cod_tienda/migration.sql` | (Histórico: aplicaba sobre la tabla legada `prod_ped_merc`.) Se redefine `sync_pedidos_mercaderia_cant_pedir` y el trigger `trg_sync_reposicion_on_precios_tienda_stock` para que REPOSICIÓN recalcule por `cod_tienda` (no por `cod_ext`) en `BEFORE INSERT/UPDATE` de pedidos mercadería y en cambios de stock en `prod_precios_tienda`. Tras `20260430103000_drop_prod_ped_merc_legacy` la función/trigger asociados a la tabla legada se eliminan; la lógica equivalente en runtime usa **`prod_ped_merc_2`**. |
+| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: validación de `reposicion_punto_pedido` admite `0` (solo rechaza `< 0`). Persistencia REPOSICIÓN por `cod_tienda`: `prod_precios_tienda.cod_tienda` → `cod_ext` + proveedor vigentes; al guardar se eliminan otras filas **`prod_ped_merc_2`** `REPOSICION` para la misma `sucursal + cod_tienda` con proveedor/cod_ext obsoletos. |
 | `src/actions/syncListaPrecioTienda.ts` | Comprobación `esEditor()` al inicio; si no hay permiso, se devuelve resultado vacío con `errores: ["Sin permisos de editor."]`. |
 | `src/actions/importar.ts` | `importarProductos` e `importarListaPreciosProveedor` devuelven `ImportActionResult` (éxito con `data` o error con `error`) en lugar de lanzar; try/catch en importar lista para devolver error controlado. |
 | `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: validación con `idsUuidSchema` y `actualizacionMasivaListaPreciosSchema` antes de llamar al servicio. |
@@ -871,13 +865,13 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ---
 
-### 5.5 Migración de sucursal texto a relación por ID (prod_ped_merc)
+### 5.5 Histórico: sucursal por ID en pedidos mercadería (antes `prod_ped_merc`)
 
 | Archivo / Área | Cambio |
 |----------------|--------|
-| `prisma/schema.prisma` | `ItemPedidoEnvio`: reemplazo de `sucursalCodigo @map("sucursal")` por `sucursalId @map("sucursal_id")` y relación `Sucursal` por `id` (ya no por `codigo`). |
+| `prisma/schema.prisma` | Hoy el modelo canónico es **`ProdPedMerc2`** (`prod_ped_merc_2`). La tabla legada `prod_ped_merc` y el modelo `ItemPedidoEnvio` se retiran con `20260430103000_drop_prod_ped_merc_legacy`. |
 | `prisma/migrations/20260317213000_migrate_prod_ped_merc_sucursal_to_fk_id/migration.sql` | Migración de datos y esquema: crea `sucursal_id`, migra datos desde `sucursal` por join a `sucursales.codigo` (hoy `global_sucursales.codigo`), elimina `sucursal`, crea FK a `sucursales.id` (hoy `global_sucursales.id`) e índice único nuevo por `sucursal_id`. |
-| `src/services/pedidosEnvio.service.ts` | Todas las lecturas/escrituras en `itemPedidoEnvio` pasan a filtrar/persistir por `sucursalId`; helper central para resolver `codigo -> id` sin romper contratos de frontend. |
+| `src/services/pedidosEnvio.service.ts` | Lecturas/escrituras en **`prodPedMerc2`** por `sucursalId`; helper para resolver `codigo -> id` sin romper contratos de frontend (p. ej. `idItemPedidoEnvio` en payloads = id de fila en `prod_ped_merc_2`). |
 | `src/actions/reposicion.ts` | Consultas de configuración REPOSICIÓN pasan de `where.sucursalCodigo` a `where.sucursal.codigo` para mantener filtros por código en UI con relación en BD. |
 | `src/services/listaPrecios.service.ts` | Consulta de estado URGENTE/REPOSICIÓN pasa de `sucursalCodigo` a relación `sucursal.codigo`. |
 | `prisma/migrations/20260319091000_update_px_compra_final_sum_discounts/migration.sql` | `px_compra_final` pasa a descuentos acumulados (sumados): `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero` (capado 0-100), manteniendo `cx_transporte` como factor porcentual final. |
