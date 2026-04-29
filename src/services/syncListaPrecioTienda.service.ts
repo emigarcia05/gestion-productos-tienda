@@ -2,6 +2,7 @@
  * Sincronización de lista_precios_tienda desde la API DUX ERP.
  * Fase 1: bucle paginado (50 ítems por petición) acumulando todos en memoria.
  * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda como conflicto) para evitar timeout.
+ * Fase 3: limpieza de filas locales cuyo cod_tienda ya no llega desde DUX.
  */
 
 import { Prisma } from "@prisma/client";
@@ -36,6 +37,7 @@ const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 
 /** Tamaño de cada chunk al persistir en Neon (evitar timeout). */
 const CHUNK_PERSIST_SIZE = 500;
+const CHUNK_DELETE_SIZE = 500;
 
 /** Timeout (ms) de la transacción interactiva por chunk (500 upserts pueden superar 5s por defecto). */
 const TRANSACTION_TIMEOUT_MS = 60_000;
@@ -86,6 +88,7 @@ export interface SyncProgressCallback {
  * Sincroniza productos desde la API DUX hacia lista_precios_tienda.
  * 1) Acumula todos los productos en memoria (array) recorriendo la API de 50 en 50.
  * 2) Al finalizar el bucle, persiste en Neon por chunks de 500 (ON CONFLICT cod_tienda DO UPDATE).
+ * 3) Elimina de prod_precios_tienda los cod_tienda ausentes en la última sync.
  * totalProcesados = largo del array acumulado.
  */
 export async function syncListaPrecioTiendaFromDux(
@@ -224,6 +227,32 @@ export async function syncListaPrecioTiendaFromDux(
         console.error(`Error persistiendo chunk en offset ${i}:`, msg, stack);
       }
     }
+  }
+
+  // ─── Fase 3: limpieza de cod_tienda ausentes en DUX ───────────────────────
+  await assertListaPrecioTiendaSyncNotCancelled();
+  try {
+    const codTiendasRecibidos = new Set(
+      todosLosProductos
+        .map((r) => r.codTienda.trim())
+        .filter((v) => v.length > 0)
+    );
+    const existentes = await prisma.listaPrecioTienda.findMany({
+      select: { id: true, codTienda: true },
+    });
+    const idsParaEliminar = existentes
+      .filter((r) => !codTiendasRecibidos.has((r.codTienda ?? "").trim()))
+      .map((r) => r.id);
+    for (let i = 0; i < idsParaEliminar.length; i += CHUNK_DELETE_SIZE) {
+      const chunkIds = idsParaEliminar.slice(i, i + CHUNK_DELETE_SIZE);
+      await prisma.listaPrecioTienda.deleteMany({
+        where: { id: { in: chunkIds } },
+      });
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
+    console.error("Error en limpieza de cod_tienda ausentes:", msg);
   }
 
   // Vinculación automática por cod_ext: prod_precios_provee.id_lista_precios_tienda = prod_precios_tienda.id donde cod_ext coincide
