@@ -63,6 +63,8 @@ interface Props {
   gastoMensualInicial?: boolean;
   /** En edición: valor persistido (1–28). En alta se ignora. */
   diaDevengadoInicial?: number;
+  /** En edición: días de vencimiento persistidos. */
+  vencimientoInicial?: number;
   /** En edición: comentarios persistidos (`fin_bal_gasto_final.comentarios`). */
   comentariosInicial?: string | null;
   onSuccess?: () => void;
@@ -86,16 +88,19 @@ export default function CrearEditarFinBalGastoFinalModal({
   sucursalIdInicial = "",
   gastoMensualInicial = false,
   diaDevengadoInicial = 1,
+  vencimientoInicial = 30,
   comentariosInicial = null,
   onSuccess,
 }: Props) {
   const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
+  const normalizarPlazoPago = (value: number) => Math.max(1, Math.min(30, Math.trunc(value)));
 
   const [sucursalId, setSucursalId] = useState("");
   const [proveedorId, setProveedorId] = useState("");
   const [gastoMensual, setGastoMensual] = useState(false);
   const [diaDevengado, setDiaDevengado] = useState(1);
   const [comentarios, setComentarios] = useState("");
+  const [vencimiento, setVencimiento] = useState(30);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -112,6 +117,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           ? 1
           : diaDevengadoFinBalDesdeCalendarioArgentina()
     );
+    setVencimiento(esEdicion ? normalizarPlazoPago(vencimientoInicial) : 30);
     setComentarios(
       esEdicion ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
     );
@@ -122,6 +128,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     proveedorIdInicial,
     gastoMensualInicial,
     diaDevengadoInicial,
+    vencimientoInicial,
     comentariosInicial,
   ]);
 
@@ -159,6 +166,7 @@ export default function CrearEditarFinBalGastoFinalModal({
       sucursalId !== sucursalIdInicial ||
       gastoMensual !== gastoMensualInicial ||
       diaDevengado !== diaDevengadoInicial ||
+      vencimiento !== vencimientoInicial ||
       comentarios !== comIni
     );
   }, [
@@ -171,6 +179,8 @@ export default function CrearEditarFinBalGastoFinalModal({
     gastoMensualInicial,
     diaDevengado,
     diaDevengadoInicial,
+    vencimiento,
+    vencimientoInicial,
     comentarios,
     comentariosInicial,
   ]);
@@ -178,6 +188,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
     if (!sucursalId || !proveedorId) return true;
+    if (!Number.isInteger(vencimiento) || vencimiento < 1 || vencimiento > 30) return true;
     if (modo === "editar" && (!id || !hasChanges)) return true;
     if (comentarioObligatorioPorTripla && comentariosNorm === "") return true;
     if (comentarioChocaConOtro) return true;
@@ -192,6 +203,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     comentarioObligatorioPorTripla,
     comentariosNorm,
     comentarioChocaConOtro,
+    vencimiento,
   ]);
 
   useEffect(() => {
@@ -217,6 +229,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           sucursalId,
           gastoMensual,
           diaDevengado,
+          vencimiento,
           comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
@@ -231,6 +244,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           sucursalId,
           gastoMensual,
           diaDevengado,
+          vencimiento,
           comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
@@ -376,6 +390,29 @@ export default function CrearEditarFinBalGastoFinalModal({
                 ). Si el día es mayor a 28, se guarda 28 (límite del modelo).
               </p>
             ) : null}
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              PLAZO DE PAGO
+            </span>
+            <input
+              type="number"
+              min={1}
+              max={30}
+              step={1}
+              value={vencimiento}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                setVencimiento(Number.isFinite(value) ? normalizarPlazoPago(value) : 1);
+              }}
+              disabled={saving}
+              className={SELECT_TRIGGER_FILTER_CLASS}
+              placeholder="DÍAS"
+            />
+            <p className="text-xs text-muted-foreground">
+              Días hasta el pago del gasto (obligatorio: 1 a 30).
+            </p>
           </label>
 
           <label className="flex flex-col gap-1">

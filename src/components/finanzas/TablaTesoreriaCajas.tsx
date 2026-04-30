@@ -37,7 +37,7 @@ export interface TesoreriaCajaFila {
 interface Props {
   filas: TesoreriaCajaFila[];
   esEditor?: boolean;
-  /** Caja tipo CHEQUE: un clic abre el detalle de cheques (no confunde con doble clic de monto). */
+  /** Caja tipo CHEQUE: doble clic abre el detalle de cheques. */
   onChequeRowClick?: (fila: TesoreriaCajaFila) => void;
   onRowDoubleClick?: (fila: TesoreriaCajaFila) => void;
   onEditDataClick?: (fila: TesoreriaCajaFila) => void;
@@ -202,7 +202,7 @@ export default function TablaTesoreriaCajas({
 
                     const puedeEditarMontoDblClick =
                       onRowDoubleClick != null && f.tipoCaja !== "CHEQUE";
-                    const abrirListaCheques =
+                    const abrirListaChequesDblClick =
                       f.tipoCaja === "CHEQUE" && onChequeRowClick
                         ? () => onChequeRowClick(f)
                         : undefined;
@@ -210,19 +210,20 @@ export default function TablaTesoreriaCajas({
                     return (
                       <TableRow
                         key={f.id}
-                        onClick={abrirListaCheques}
                         onDoubleClick={
-                          puedeEditarMontoDblClick ? () => onRowDoubleClick!(f) : undefined
+                          puedeEditarMontoDblClick
+                            ? () => onRowDoubleClick!(f)
+                            : abrirListaChequesDblClick
                         }
                         title={
-                          abrirListaCheques
-                            ? "Clic para ver los cheques de esta caja"
+                          abrirListaChequesDblClick
+                            ? "Doble clic para ver los cheques de esta caja"
                             : puedeEditarMontoDblClick
                               ? "Doble clic para actualizar el monto"
                               : undefined
                         }
                         className={cn(
-                          (puedeEditarMontoDblClick || abrirListaCheques) && "cursor-pointer"
+                          (puedeEditarMontoDblClick || abrirListaChequesDblClick) && "cursor-pointer"
                         )}
                       >
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={f.nombreCaja}>

@@ -86,6 +86,12 @@ const diaDevengadoSchema = z.coerce
   .min(1, "El día devengado debe ser entre 1 y 28.")
   .max(28, "El día devengado debe ser entre 1 y 28.");
 
+const vencimientoSchema = z.coerce
+  .number()
+  .int("El plazo de pago debe ser un número entero de días.")
+  .min(1, "El plazo de pago debe ser entre 1 y 30 días.")
+  .max(30, "El plazo de pago debe ser entre 1 y 30 días.");
+
 const comentariosFinBalGastoFinalSchema = z
   .string()
   .max(10000, "Los comentarios no pueden superar 10000 caracteres.")
@@ -103,6 +109,7 @@ export const crearFinBalGastoFinalSchema = z.object({
   sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
+  vencimiento: vencimientoSchema,
   comentarios: comentariosFinBalGastoFinalSchema,
 });
 export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSchema>;
@@ -113,6 +120,7 @@ export const editarFinBalGastoFinalSchema = z.object({
   sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema,
+  vencimiento: vencimientoSchema,
   comentarios: comentariosFinBalGastoFinalSchema,
 });
 export type EditarFinBalGastoFinalInput = z.infer<typeof editarFinBalGastoFinalSchema>;

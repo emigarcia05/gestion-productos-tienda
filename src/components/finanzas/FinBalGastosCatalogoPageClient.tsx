@@ -106,6 +106,7 @@ type ModalGastoFinalState =
       sucursalIdInicial?: string;
       gastoMensualInicial?: boolean;
       diaDevengadoInicial?: number;
+      vencimientoInicial?: number;
       comentariosInicial?: string | null;
     };
 
@@ -408,6 +409,7 @@ export default function FinBalGastosCatalogoPageClient({
                     sucursalNombre: a.sucursal.nombre,
                     gastoMensual: a.gastoMensual,
                     diaDevengado: a.diaDevengado,
+                    vencimiento: a.vencimiento,
                     comentarios: a.comentarios,
                   }}
                   selected={false}
@@ -421,6 +423,7 @@ export default function FinBalGastosCatalogoPageClient({
                       sucursalIdInicial: a.sucursalId,
                       gastoMensualInicial: a.gastoMensual,
                       diaDevengadoInicial: a.diaDevengado,
+                      vencimientoInicial: a.vencimiento,
                       comentariosInicial: a.comentarios,
                     })
                   }
@@ -500,6 +503,7 @@ export default function FinBalGastosCatalogoPageClient({
           sucursalIdInicial={gastoFinalModal.sucursalIdInicial}
           gastoMensualInicial={gastoFinalModal.gastoMensualInicial}
           diaDevengadoInicial={gastoFinalModal.diaDevengadoInicial}
+          vencimientoInicial={gastoFinalModal.vencimientoInicial}
           comentariosInicial={
             gastoFinalModal.modo === "editar" ? gastoFinalModal.comentariosInicial : undefined
           }
@@ -603,6 +607,7 @@ interface FilaCatalogoGastoFinalDetalle {
   sucursalNombre: string;
   gastoMensual: boolean;
   diaDevengado: number;
+  vencimiento: number;
   comentarios: string | null;
 }
 
@@ -658,7 +663,7 @@ function FilaCatalogo({
             </div>
             <div className="truncate text-xs font-normal text-muted-foreground">
               {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "GASTO ÚNICO"} · DÍA{" "}
-              {gastoFinalDetalle.diaDevengado}
+              {gastoFinalDetalle.diaDevengado} · VENCIMIENTO {gastoFinalDetalle.vencimiento} DÍAS
             </div>
             {gastoFinalComentarios ? (
               <div

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor, getRol } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { prismaCuidSchema } from "@/lib/validations/common";
@@ -276,9 +276,6 @@ export async function eliminarPedidoHistoriaAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede eliminar pedidos del historial." };
   }
 
   const parsed = eliminarPedidoHistoriaSchema.safeParse(params);

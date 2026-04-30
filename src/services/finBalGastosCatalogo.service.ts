@@ -57,6 +57,8 @@ export interface FinBalGastoFinalItem {
   gastoMensual: boolean;
   /** 1–28 */
   diaDevengado: number;
+  /** Días entre fecha de gasto (devengo) y fecha de pago. */
+  vencimiento: number;
   /** Texto libre (`fin_bal_gasto_final.comentarios`). */
   comentarios: string | null;
   proveedor: {
@@ -489,6 +491,7 @@ function mapFinBalGastoFinalRow(row: {
   sucursalId: string;
   gastoMensual: boolean;
   diaDevengado: number;
+  vencimiento: number;
   comentarios: string | null;
   proveedor: { id: string; nombre: string; prefijo: string | null };
   sucursal: { id: string; nombre: string };
@@ -500,6 +503,7 @@ function mapFinBalGastoFinalRow(row: {
     sucursalId: row.sucursalId,
     gastoMensual: row.gastoMensual,
     diaDevengado: row.diaDevengado,
+    vencimiento: row.vencimiento,
     comentarios: row.comentarios,
     proveedor: {
       id: row.proveedor.id,
@@ -600,6 +604,7 @@ export async function crearFinBalGastoFinal(
           input.gastoMensual === false
             ? diaDevengadoFinBalDesdeCalendarioArgentina()
             : input.diaDevengado,
+        vencimiento: input.vencimiento,
         comentarios: input.comentarios ?? null,
       },
       include: {
@@ -657,6 +662,7 @@ export async function editarFinBalGastoFinal(
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
         diaDevengado: diaDevengadoPersist,
+        vencimiento: input.vencimiento,
         comentarios: input.comentarios ?? null,
       },
       include: {

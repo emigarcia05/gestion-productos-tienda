@@ -10,6 +10,7 @@ import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaMod
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
 import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
 import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesoreriaModal";
+import ChequesCajaTesoreriaModal from "@/components/finanzas/ChequesCajaTesoreriaModal";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -40,6 +41,7 @@ export default function FinanzasTesoreriaPageClient({
   const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
+  const [cajaChequeSeleccionada, setCajaChequeSeleccionada] = useState<TesoreriaCajaFila | null>(null);
   const [filtroCaja, setFiltroCaja] = useState("");
   const [filtroTitular, setFiltroTitular] = useState("");
   const [filtroTipoCaja, setFiltroTipoCaja] = useState("");
@@ -175,6 +177,7 @@ export default function FinanzasTesoreriaPageClient({
           filas={filasFiltradas}
           esEditor={esEditor}
           onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
+          onChequeRowClick={(fila) => setCajaChequeSeleccionada(fila)}
           onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}
           onDeleteClick={esEditor ? (fila) => setCajaParaEliminar(fila) : undefined}
         />
@@ -206,6 +209,15 @@ export default function FinanzasTesoreriaPageClient({
           }}
           caja={cajaParaEliminar}
           onDeleted={() => router.refresh()}
+        />
+        <ChequesCajaTesoreriaModal
+          open={cajaChequeSeleccionada != null}
+          onOpenChange={(open) => {
+            if (!open) setCajaChequeSeleccionada(null);
+          }}
+          caja={cajaChequeSeleccionada}
+          esEditor={esEditor}
+          onChequesChanged={() => router.refresh()}
         />
       </ClassicFilteredTableLayout>
     </div>

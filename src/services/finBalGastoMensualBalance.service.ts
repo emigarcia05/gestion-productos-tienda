@@ -26,7 +26,7 @@ export interface BalanceGastoMensualFila {
   proveedorNombre: string;
   monto: number;
   pagado: number;
-  /** Mismo día del mes calendario siguiente al devengo (ej. 01/04/2026 → 01/05/2026). ISO `yyyy-mm-dd`. */
+  /** Fecha de pago = fecha de devengo + `vencimiento` días del catálogo. ISO `yyyy-mm-dd`. */
   fechaVencimientoIso: string;
   /** Si hoy (AR) ≥ fecha de vencimiento: pendiente de pago `max(0, monto - pagado)`; si no, 0. */
   montoVencido: number;
@@ -64,13 +64,17 @@ export function diasDesdeDevengoHastaHoy(isoDevengo: string, isoHoyArgentina: st
 }
 
 /**
- * Fecha en que el gasto **vence**: mismo día del mes calendario siguiente al devengo
- * (ej. devengo **01/04/2026** → vencimiento **01/05/2026**). ISO `yyyy-mm-dd` (mediodía UTC interno).
+ * Fecha en que el gasto **vence/paga**: `fecha_devengo + vencimientoDias`
+ * (ej. devengo **01/04/2026** + 30 días → **01/05/2026**). ISO `yyyy-mm-dd` (mediodía UTC interno).
  */
-export function fechaVencimientoGastoBalanceDesdeDevengoIso(isoDevengo: string): string {
+export function fechaVencimientoGastoBalanceDesdeDevengoIso(
+  isoDevengo: string,
+  vencimientoDias: number,
+): string {
   const [y, m, d] = isoDevengo.split("-").map(Number);
   const t = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-  t.setUTCMonth(t.getUTCMonth() + 1);
+  const dias = Math.max(0, Math.floor(vencimientoDias || 0));
+  t.setUTCDate(t.getUTCDate() + dias);
   const yy = t.getUTCFullYear();
   const mm = String(t.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(t.getUTCDate()).padStart(2, "0");
@@ -80,10 +84,14 @@ export function fechaVencimientoGastoBalanceDesdeDevengoIso(isoDevengo: string):
 function montoVencidoGastoBalance(params: {
   isoHoyArgentina: string;
   isoDevengo: string;
+  vencimientoDias: number;
   monto: number;
   pagado: number;
 }): number {
-  const isoVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(params.isoDevengo);
+  const isoVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
+    params.isoDevengo,
+    params.vencimientoDias
+  );
   if (params.isoHoyArgentina < isoVenc) return 0;
   return Math.max(0, params.monto - params.pagado);
 }
@@ -200,7 +208,7 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
 
 /**
  * Listado del mes: imputaciones con jerarquía de gasto, proveedor y sucursal.
- * `fechaVencimientoIso` / `montoVencido`: vence el mismo día del mes siguiente al devengo; si hoy (AR) ≥ esa fecha, `montoVencido = max(0, monto - pagado)`.
+ * `fechaVencimientoIso` / `montoVencido`: vence en `fecha_devengo + vencimiento`; si hoy (AR) ≥ esa fecha, `montoVencido = max(0, monto - pagado)`.
  */
 /** Años y meses que existen en `fin_bal_gasto_mensual` (al menos una fila). */
 export interface PeriodosImputacionesDisponibles {
@@ -267,10 +275,14 @@ export async function listarImputacionesMensualesBalance(params: {
     const gf = r.gastoFinal;
     const fechaDevengoIso = isoFechaDevengo(anio, mes, gf.diaDevengado);
     const montoActual = r.monto;
-    const fechaVencimientoIso = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    const fechaVencimientoIso = fechaVencimientoGastoBalanceDesdeDevengoIso(
+      fechaDevengoIso,
+      gf.vencimiento
+    );
     const montoVencido = montoVencidoGastoBalance({
       isoHoyArgentina: isoHoy,
       isoDevengo: fechaDevengoIso,
+      vencimientoDias: gf.vencimiento,
       monto: montoActual,
       pagado: r.pagado,
     });
@@ -351,6 +363,7 @@ export interface FinBalGastoFinalNoMensualListItem {
   proveedorNombre: string;
   sucursalNombre: string;
   diaDevengado: number;
+  vencimiento: number;
   gastoFinalComentarios: string | null;
   /** Si ya existe `fin_bal_gasto_mensual` para este gasto final y el periodo (mes, año). */
   yaImputadoEnPeriodo: boolean;
@@ -402,6 +415,7 @@ export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
       proveedorNombre: gf.proveedor.nombre.toUpperCase(),
       sucursalNombre: gf.sucursal.nombre.toUpperCase(),
       diaDevengado: gf.diaDevengado,
+      vencimiento: gf.vencimiento,
       gastoFinalComentarios: comRaw.length > 0 ? comRaw.toUpperCase() : null,
       yaImputadoEnPeriodo: ya.has(gf.id),
     };
@@ -521,7 +535,10 @@ export async function sumarPendienteGastosConFechaVencAnteriorA(
   for (const r of all) {
     const gf = r.gastoFinal;
     const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
-    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
+      fechaDevengoIso,
+      gf.vencimiento
+    );
     if (fechaVenc >= hoyCorte) continue;
     const pend = montoDevengadoPendienteHastaCorte({
       isoDevengo: fechaDevengoIso,
@@ -552,7 +569,10 @@ export async function listarVencimientosGastoFlujoEnRango(
   for (const r of all) {
     const gf = r.gastoFinal;
     const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
-    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
+      fechaDevengoIso,
+      gf.vencimiento
+    );
     if (fechaVenc < fechaDesde || fechaVenc > fechaHasta) continue;
     const montoPendVenc = montoDevengadoPendienteHastaCorte({
       isoDevengo: fechaDevengoIso,
@@ -609,7 +629,10 @@ export async function listarObligacionesGastoVencidasNoMercaderia(): Promise<{
     if (gf.proveedor.proveedorMercaderia) continue;
 
     const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
-    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(fechaDevengoIso);
+    const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
+      fechaDevengoIso,
+      gf.vencimiento
+    );
     if (fechaVenc >= hoyIso) continue;
 
     const pend = montoDevengadoPendienteHastaCorte({

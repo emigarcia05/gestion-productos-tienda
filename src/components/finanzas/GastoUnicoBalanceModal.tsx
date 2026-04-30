@@ -271,7 +271,7 @@ export default function GastoUnicoBalanceModal({
                             {it.tipoGastoNombre} · {it.proveedorNombre} · {it.sucursalNombre}
                           </div>
                           <div className="truncate text-[11px] text-muted-foreground">
-                            {it.rubroNombre} · Día {it.diaDevengado}
+                            {it.rubroNombre} · Día {it.diaDevengado} · Vencimiento {it.vencimiento} días
                           </div>
                           {it.gastoFinalComentarios ? (
                             <div
@@ -321,7 +321,8 @@ export default function GastoUnicoBalanceModal({
                   {seleccion.proveedorNombre} · {seleccion.sucursalNombre}
                 </div>
                 <div className="text-xs">
-                  {seleccion.tipoGastoNombre} · {seleccion.rubroNombre} · Día {seleccion.diaDevengado}
+                  {seleccion.tipoGastoNombre} · {seleccion.rubroNombre} · Día {seleccion.diaDevengado} · Vencimiento{" "}
+                  {seleccion.vencimiento} días
                 </div>
               </div>
               <label className="flex w-full flex-col gap-1">
