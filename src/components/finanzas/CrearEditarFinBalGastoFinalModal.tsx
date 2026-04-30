@@ -383,13 +383,6 @@ export default function CrearEditarFinBalGastoFinalModal({
                 ))}
               </SelectContent>
             </Select>
-            {modo === "crear" && !gastoMensual ? (
-              <p className="text-xs text-muted-foreground">
-                Gasto único: el día de devengo es el del calendario de hoy en Argentina (
-                {formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date()))}
-                ). Si el día es mayor a 28, se guarda 28 (límite del modelo).
-              </p>
-            ) : null}
           </label>
 
           <label className="flex flex-col gap-1">
