@@ -252,7 +252,10 @@ export async function listarImputacionesMensualesBalance(params: {
     orderBy: [{ createdAt: "asc" }],
     include: {
       gastoFinal: {
-        include: {
+        select: {
+          diaDevengado: true,
+          vencimiento: true,
+          comentarios: true,
           sucursal: { select: { nombre: true, generaBalance: true, centroCosto: true } },
           proveedor: { select: { nombre: true } },
           gasto: {
@@ -499,7 +502,9 @@ export async function crearImputacionGastoUnicoBalance(params: {
 
 const includeGastoFlujoGastoMensual = {
   gastoFinal: {
-    include: {
+    select: {
+      diaDevengado: true,
+      vencimiento: true,
       proveedor: { select: { nombre: true, proveedorMercaderia: true } },
       gasto: { select: { nombre: true } },
     },

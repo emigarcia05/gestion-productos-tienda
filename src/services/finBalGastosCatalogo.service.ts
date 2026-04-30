@@ -238,6 +238,7 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
           sucursalId: a.sucursalId,
           gastoMensual: a.gastoMensual,
           diaDevengado: a.diaDevengado,
+          vencimiento: a.vencimiento,
           comentarios: a.comentarios,
           proveedor: {
             id: a.proveedor.id,
