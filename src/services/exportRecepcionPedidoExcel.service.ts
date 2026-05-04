@@ -38,7 +38,7 @@ export interface ExportRecepcionPedidoExcelPayload {
 }
 
 const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
-const RANGO_DIAS_CONSULTA_COMPROBANTE_DUX = 5;
+const RANGO_DIAS_CONSULTA_COMPROBANTE_DUX = 15;
 const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
 const TOLERANCIA_TOTAL_EXPORTACION = 0.1; // diferencia máxima permitida contra total ingresado
 
@@ -58,6 +58,14 @@ function formatDuxDdMmYyyy(y: number, m: number, d: number): string {
 
 function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
   return `${pad2(d)}-${pad2(m)}-${y}`;
+}
+
+function sumarComprobante(baseComprobante: string, incremento: number): string {
+  if (!/^\d+$/.test(baseComprobante)) {
+    throw new Error("El comprobante DUX no es numérico.");
+  }
+  const inc = Math.max(0, Math.floor(incremento));
+  return (BigInt(baseComprobante) + BigInt(inc)).toString();
 }
 
 function sumarDiasYmd(
@@ -182,6 +190,8 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       where: { id: pedidoHistoriaId },
       select: {
         total: true,
+        estado: true,
+        recepcionNumero: true,
         proveedor: { select: { idProveedorDux: true, prefijo: true } },
         sucursal: { select: { deposito: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
@@ -233,12 +243,17 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       hastaUtc.getUTCDate()
     );
 
-    const { siguienteComprobante, totalImporte } =
+    const { ultimoComprobante, totalImporte } =
       await getSiguienteComprobanteDuxCompra({
         fechaDesde: fechaDesdeComprobante,
         fechaHasta: fechaHastaComprobante,
         idEmpresa: idEmpresaParsed.data,
       });
+    // Primera recepción (pedido pendiente): recepcionNumero todavía no fue incrementado.
+    // Correcciones (pedido recepcionado): ya se incrementa al guardar la corrección.
+    const recepcionOrdinal =
+      pedido.estado === "RECEPCIONADO" ? pedido.recepcionNumero : pedido.recepcionNumero + 1;
+    const comprobanteExport = sumarComprobante(ultimoComprobante, recepcionOrdinal);
 
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
@@ -262,7 +277,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it, index) => ({
       "TIPO COMPROBANTE": "Comprobante_Compra",
-      "COMPROBANTE": siguienteComprobante,
+      "COMPROBANTE": comprobanteExport,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
       "FECHA": fechaFacturaExcel,
       "FECHA IMPUTACION CONTABLE": fechaImputacionContableExcel,

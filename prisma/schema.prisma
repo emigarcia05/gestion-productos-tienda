@@ -489,6 +489,8 @@ model PedidoHistoria {
   id            String   @id @default(cuid())
   generadoAt    DateTime @default(now()) @map("generado_at")
   estado        String   @default("PENDIENTE") @map("estado") // PENDIENTE | RECEPCIONADO
+  /** Cantidad de recepciones efectivamente guardadas para este pedido (1 = primera recepción). */
+  recepcionNumero Int    @default(0) @map("recepcion_numero")
   registradoAt  DateTime? @map("registrado_at")
   total         Decimal? @db.Decimal(14, 2) @map("total")
   proveedorId   String   @map("proveedor_id")
