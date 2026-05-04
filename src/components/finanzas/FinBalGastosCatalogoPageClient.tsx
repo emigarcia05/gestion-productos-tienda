@@ -34,7 +34,8 @@ import type { ProveedorListItem } from "@/services/proveedor.service";
  *   [TIPOS]  →  [RUBROS]  →  [GASTOS]  →  [GASTO FINAL]  [PROVEEDORES]
  *
  * Las 4 primeras columnas son cascada: tipo → rubro → gasto (`fin_bal_cat_gasto`,
- * sin proveedor) → filas de `fin_bal_gasto_final` (gasto + proveedor + sucursal + flag mensual).
+ * sin proveedor) → filas de `fin_bal_gasto_final` (proveedor, sucursal, mensual o no,
+ * día devengado y plazo de pago en la UI de columna GASTO FINAL).
  * La columna **PROVEEDORES** es autónoma (no depende de la selección) y
  * permite gestionar el catálogo maestro de proveedores "no-mercadería"
  * (alta/edición/baja) sin salir del módulo — reutiliza el mismo
@@ -602,11 +603,12 @@ function CatalogoColumna({
   );
 }
 
-/** Layout de fila en columna GASTO FINAL (catálogo balance). */
+/** Layout de fila en columna GASTO FINAL (catálogo balance): 4 renglones + comentarios opcional. */
 interface FilaCatalogoGastoFinalDetalle {
   sucursalNombre: string;
   gastoMensual: boolean;
   diaDevengado: number;
+  /** Días hasta el pago (`fin_bal_gasto_final.plazo_pago_dias`). */
   vencimiento: number;
   comentarios: string | null;
 }
@@ -657,13 +659,24 @@ function FilaCatalogo({
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         {gastoFinalDetalle ? (
           <>
-            <div className="truncate text-sm font-medium text-foreground">{nombre}</div>
-            <div className="truncate text-xs text-foreground">
-              {gastoFinalDetalle.sucursalNombre}
+            <div className="min-w-0 truncate text-[11px] leading-tight">
+              <span className="font-semibold uppercase tracking-wide text-muted-foreground">
+                PROVEEDOR{" "}
+              </span>
+              <span className="font-medium text-foreground">{nombre}</span>
             </div>
-            <div className="truncate text-xs font-normal text-muted-foreground">
-              {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "GASTO ÚNICO"} · DÍA{" "}
-              {gastoFinalDetalle.diaDevengado} · VENCIMIENTO {gastoFinalDetalle.vencimiento} DÍAS
+            <div className="min-w-0 truncate text-[11px] leading-tight">
+              <span className="font-semibold uppercase tracking-wide text-muted-foreground">
+                SUCURSAL{" "}
+              </span>
+              <span className="text-foreground">{gastoFinalDetalle.sucursalNombre}</span>
+            </div>
+            <div className="truncate text-[11px] font-semibold uppercase tracking-wide text-foreground">
+              {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "NO MENSUAL"}
+            </div>
+            <div className="truncate text-[11px] leading-tight text-muted-foreground">
+              DÍA DEVENGADO: {gastoFinalDetalle.diaDevengado} - PLAZO PAGO:{" "}
+              {gastoFinalDetalle.vencimiento} días
             </div>
             {gastoFinalComentarios ? (
               <div

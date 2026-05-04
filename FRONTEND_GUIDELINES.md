@@ -815,6 +815,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-04-30): **GASTO FINAL** muestra campo **PLAZO DE PAGO** debajo de **DÍA DEVENGADO** en `CrearEditarFinBalGastoFinalModal`. Es obligatorio y solo acepta enteros del **1 al 30**. Se persiste en `fin_bal_gasto_final.plazo_pago_dias` y se usa para calcular vencimientos (`fechaDevengo + plazoPago`).*
 
+*Última actualización (2026-05-02): **`/finanzas/balance/gastos/catalogo`** — columna **GASTO FINAL**: cada fila muestra **cuatro** renglones — **PROVEEDOR** + nombre, **SUCURSAL** + nombre, **MENSUAL** o **NO MENSUAL**, **DÍA DEVENGADO: n - PLAZO PAGO: m días** (valor `vencimiento` / BD `plazo_pago_dias`); comentarios opcionales debajo.*
+
 *Última actualización (2026-05-04): **Pedido Tintométrico → Recepción**: al generar pedido, el snapshot de historial debe conservar `cod_tienda` real del ítem tintométrico (resuelto desde `cod_ext` tintométrico) para que en recepción se muestre la descripción de `prod_precios_tienda` y no caiga en genéricos como “PRODUCTO VARIOS”.*
 
 *Última actualización (2026-04-23): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); **Mes** = 12 meses; **Año** = 2026…2046; entrada sin query **`redirect`** a mes/año **hoy AR**; rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
