@@ -6,7 +6,10 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
-import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
+import {
+  buildCodExtTintometrico,
+  parseCodTiendaFromCodExtTintometrico,
+} from "@/lib/pedidosTintometrico";
 import { SUCURSAL_LABEL_PEDIDO } from "@/lib/pedidos";
 
 const TIPO_URGENTE = "URGENTE";
@@ -571,6 +574,7 @@ export async function getItemsTablaEnviarPedido(params: {
   });
 
   const codTiendasRepos = new Set<string>();
+  const codTiendasTintometrico = new Set<string>();
   const codExts = new Set<string>();
   const idsTintometricoProveedor = new Set<string>();
 
@@ -581,15 +585,23 @@ export async function getItemsTablaEnviarPedido(params: {
     if (r.tipoDePedido === TIPO_URGENTE && r.urgenteCodExt?.trim()) {
       codExts.add(r.urgenteCodExt.trim());
     }
+    if (r.tipoDePedido === TIPO_TINTOMETRICO && r.urgenteCodExt?.trim()) {
+      const codTiendaTint = parseCodTiendaFromCodExtTintometrico(r.urgenteCodExt);
+      if (codTiendaTint) codTiendasTintometrico.add(codTiendaTint);
+    }
     if (r.tipoDePedido === TIPO_TINTOMETRICO && r.tintometricoProveedor?.trim()) {
       idsTintometricoProveedor.add(r.tintometricoProveedor.trim());
     }
   }
 
+  const codTiendasLookup = new Set<string>([
+    ...Array.from(codTiendasRepos),
+    ...Array.from(codTiendasTintometrico),
+  ]);
   const tiendas =
-    codTiendasRepos.size > 0
+    codTiendasLookup.size > 0
       ? await prisma.listaPrecioTienda.findMany({
-          where: { codTienda: { in: Array.from(codTiendasRepos) } },
+          where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
             id: true,
             codTienda: true,
@@ -703,10 +715,18 @@ export async function getItemsTablaEnviarPedido(params: {
       if (!idProv) continue;
       const p = proveedorPorId.get(idProv);
       if (!p) continue;
+      const codTiendaTint =
+        parseCodTiendaFromCodExtTintometrico(r.urgenteCodExt ?? "") ?? "";
+      const codTiendaExisteEnTienda =
+        codTiendaTint.length > 0 && tiendaByCodTienda.has(codTiendaTint);
       idProveedorResuelto = p.id;
       proveedorEtiqueta = proveedorEtiquetaDesdeRow(p);
       descripcion = (r.tintometricoDescripcion ?? "").trim();
       cantPedir = Math.max(0, Math.floor(Number(r.tintometrioCantPedir) || 0));
+      if (!descripcion && codTiendaExisteEnTienda) {
+        descripcion =
+          (tiendaByCodTienda.get(codTiendaTint)?.descripcionTienda ?? "").trim();
+      }
     } else {
       continue;
     }
@@ -817,6 +837,7 @@ export async function getItemsYProveedorParaEnviar(
   const codigoSucursal = (sucursalRow.codigo ?? "").trim();
 
   const codTiendasRepos = new Set<string>();
+  const codTiendasTintometrico = new Set<string>();
   const codExts = new Set<string>();
   const idsTintometricoProveedor = new Set<string>();
 
@@ -827,15 +848,23 @@ export async function getItemsYProveedorParaEnviar(
     if (r.tipoDePedido === TIPO_URGENTE && r.urgenteCodExt?.trim()) {
       codExts.add(r.urgenteCodExt.trim());
     }
+    if (r.tipoDePedido === TIPO_TINTOMETRICO && r.urgenteCodExt?.trim()) {
+      const codTiendaTint = parseCodTiendaFromCodExtTintometrico(r.urgenteCodExt);
+      if (codTiendaTint) codTiendasTintometrico.add(codTiendaTint);
+    }
     if (r.tipoDePedido === TIPO_TINTOMETRICO && r.tintometricoProveedor?.trim()) {
       idsTintometricoProveedor.add(r.tintometricoProveedor.trim());
     }
   }
 
+  const codTiendasLookup = new Set<string>([
+    ...Array.from(codTiendasRepos),
+    ...Array.from(codTiendasTintometrico),
+  ]);
   const tiendas =
-    codTiendasRepos.size > 0
+    codTiendasLookup.size > 0
       ? await prisma.listaPrecioTienda.findMany({
-          where: { codTienda: { in: Array.from(codTiendasRepos) } },
+          where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
             id: true,
             codTienda: true,
@@ -948,12 +977,18 @@ export async function getItemsYProveedorParaEnviar(
       if (!idProv || idProv !== pid) continue;
       const pRow = proveedorPorId.get(idProv);
       if (!pRow) continue;
+      const codTiendaTint =
+        parseCodTiendaFromCodExtTintometrico(r.urgenteCodExt ?? "") ?? "";
+      const codTiendaExisteEnTienda =
+        codTiendaTint.length > 0 && tiendaByCodTienda.has(codTiendaTint);
       codExtOut = (r.urgenteCodExt ?? "").trim();
       codProveedor = "";
       tintometricoDescripcion = r.tintometricoDescripcion;
       descripcionProveedor = (r.tintometricoDescripcion ?? "").trim() || null;
-      descripcionTienda = null;
-      codTienda = null;
+      descripcionTienda = codTiendaExisteEnTienda
+        ? (tiendaByCodTienda.get(codTiendaTint)?.descripcionTienda ?? "").trim() || null
+        : null;
+      codTienda = codTiendaExisteEnTienda ? codTiendaTint : null;
       cantPedir = Math.max(0, Math.floor(Number(r.tintometrioCantPedir) || 0));
     } else {
       continue;

@@ -94,6 +94,15 @@ type ColumnaBalance = {
 const BG_FILA_RESULTADO = "#a9d6f1";
 const FG_FILA_RESULTADO = "#063652";
 
+/**
+ * Altura fija de cada fila del grid de balance mensual (referencia: «Resultado operativo», una línea).
+ * Los botones de icono se escalan a este alto (`h-7 w-7`) para no estirar la fila.
+ */
+const CLASE_FILA_BALANCE_MENSUAL_GRID = "h-10 min-h-10 max-h-10";
+const CLASE_CELDA_BALANCE_MENSUAL = "flex min-h-0 items-center px-3 py-0";
+const CLASE_BOTON_ICONO_BALANCE_MENSUAL =
+  "h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground";
+
 type FilaBalance =
   | {
       id: string;
@@ -210,10 +219,18 @@ function TablaBalanceMensualAlineada({
       <div className="overflow-x-auto">
         <div className="min-w-[min(100%,40rem)] sm:min-w-[44rem]">
           <div
-            className="grid border-b border-white/20 bg-[#0072BB] text-white"
+            className={cn(
+              "grid border-b border-white/20 bg-[#0072BB] text-white",
+              CLASE_FILA_BALANCE_MENSUAL_GRID
+            )}
             style={{ gridTemplateColumns }}
           >
-            <div className="flex items-center justify-center border-r border-white/20 px-2 py-2.5 sm:px-3">
+            <div
+              className={cn(
+                CLASE_CELDA_BALANCE_MENSUAL,
+                "justify-center border-r border-white/20 px-2 sm:px-3"
+              )}
+            >
               <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
                 Concepto
               </span>
@@ -221,7 +238,10 @@ function TablaBalanceMensualAlineada({
             {columnas.map((c) => (
               <div
                 key={c.key}
-                className="border-r border-white/20 px-3 py-2.5 text-center last:border-r-0"
+                className={cn(
+                  CLASE_CELDA_BALANCE_MENSUAL,
+                  "justify-center border-r border-white/20 text-center last:border-r-0"
+                )}
               >
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-white">
                   {c.titulo}
@@ -241,6 +261,7 @@ function TablaBalanceMensualAlineada({
                 key={fila.id}
                 className={cn(
                   "grid border-b border-border/60 last:border-b-0",
+                  CLASE_FILA_BALANCE_MENSUAL_GRID,
                   esFilaResultado && "border-[#0072BB]/25"
                 )}
                 style={{
@@ -250,7 +271,8 @@ function TablaBalanceMensualAlineada({
               >
                 <div
                   className={cn(
-                    "flex items-center border-r border-border/80 px-3 py-2.5 text-sm leading-snug",
+                    CLASE_CELDA_BALANCE_MENSUAL,
+                    "border-r border-border/80 text-sm leading-none whitespace-nowrap",
                     esFilaResultado
                       ? "border-[#0072BB]/20 pl-10 font-bold"
                       : "font-normal text-foreground"
@@ -270,19 +292,20 @@ function TablaBalanceMensualAlineada({
                     <div
                       key={`${fila.id}-${c.key}`}
                       className={cn(
-                        "border-r border-border/80 px-3 py-2.5 text-sm tabular-nums tracking-tight last:border-r-0",
+                        CLASE_CELDA_BALANCE_MENSUAL,
+                        "justify-end border-r border-border/80 text-sm tabular-nums tracking-tight last:border-r-0",
                         esFilaResultado ? "border-[#0072BB]/20 font-bold" : "text-foreground"
                       )}
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
                       {esFilaVentas ? (
-                        <div className="flex w-full items-center justify-end gap-1">
+                        <div className="flex w-full min-w-0 items-center justify-end gap-1">
                           {mostrarEditarVentas && sid ? (
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                              className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
                               aria-label={`Editar ventas — ${c.titulo}`}
                               onClick={() =>
                                 onEditarVentas({
@@ -309,12 +332,12 @@ function TablaBalanceMensualAlineada({
                       ) : fila.tipo === "monto" &&
                         (fila.id === "cv" || fila.id === "cf") &&
                         onAbrirDetalleCostos ? (
-                        <div className="flex w-full items-center justify-end gap-1">
+                        <div className="flex w-full min-w-0 items-center justify-end gap-1">
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                            className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
                             aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
                             onClick={() =>
                               onAbrirDetalleCostos({
@@ -341,7 +364,7 @@ function TablaBalanceMensualAlineada({
                           </span>
                         </div>
                       ) : (
-                        <div className="flex justify-end">
+                        <div className="flex h-full w-full min-w-0 items-center justify-end">
                           <span className={cn(negritaValor ? "font-bold" : "font-normal")}>
                             {txt}
                           </span>

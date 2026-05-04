@@ -19,6 +19,10 @@ END $$;
 ALTER TABLE "fin_bal_gasto_final"
 ADD COLUMN IF NOT EXISTS "plazo_pago_dias" INTEGER NOT NULL DEFAULT 30;
 
+UPDATE "fin_bal_gasto_final"
+SET "plazo_pago_dias" = 30
+WHERE "plazo_pago_dias" < 1 OR "plazo_pago_dias" > 30;
+
 ALTER TABLE "fin_bal_gasto_final"
 DROP CONSTRAINT IF EXISTS "fin_bal_gasto_final_vencimiento_check";
 

@@ -18,3 +18,17 @@ export function buildCodExtTintometrico(codTienda: string, codTintometrico: stri
   const slug = normalizarCodigoTintometricoParaExt(codTintometrico);
   return `TINT-${ct}-${slug}`;
 }
+
+/**
+ * Extrae `cod_tienda` desde `cod_ext` tintométrico (`TINT-{codTienda}-{slug}`).
+ * Devuelve `null` si el formato no coincide o el código queda vacío.
+ */
+export function parseCodTiendaFromCodExtTintometrico(codExt: string): string | null {
+  const t = codExt.trim();
+  if (!t.toUpperCase().startsWith("TINT-")) return null;
+  const rest = t.slice(5);
+  const splitIdx = rest.indexOf("-");
+  if (splitIdx <= 0) return null;
+  const codTienda = rest.slice(0, splitIdx).trim();
+  return codTienda.length > 0 ? codTienda : null;
+}

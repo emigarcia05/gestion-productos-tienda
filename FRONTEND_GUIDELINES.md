@@ -570,10 +570,11 @@ Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza e
 Página **Finanzas → Balance → Balance mensual** (`/finanzas/balance/mensual`). Objetivo: **una sola tabla en CSS Grid** con columna **Concepto** + una columna por **Global** y cada sucursal con `genera_balance`, para alinear importes en la misma línea visual.
 
 - **Layout**: `grid-template-columns: minmax(10.5rem, 1.05fr) repeat(N, minmax(6.75rem, 1fr))`; contenedor con `overflow-x-auto` y ancho mínimo para scroll en pantallas chicas.
+- **Altura de fila (obligatoria en este grid)**: **todas** las filas (incluida la cabecera de columnas) usan la misma altura fija **`h-10` (2,5 rem)**, tomada como referencia de la fila **Resultado operativo** (una línea `text-sm` sin botones). Celdas: `flex items-center`, `py-0`, `px-3`. Los iconos de acción (**editar ventas**, **detalle costos**) usan `Button` `variant="ghost"` `size="icon"` con **`h-7 w-7`** (no `h-8`) para no superar el alto de fila. Constantes `CLASE_FILA_BALANCE_MENSUAL_GRID` / `CLASE_CELDA_BALANCE_MENSUAL` / `CLASE_BOTON_ICONO_BALANCE_MENSUAL` en el componente.
 - **Cabecera de columnas** (Concepto / Global / sucursales): fondo **`#0072BB`**, texto **blanco**, divisores `border-white/20`. *Es la excepción documentada en la guía para IA (punto 2 de estilos).*
 - **Filas de datos**: orden lógico — **Ventas**, **Costo variable**, **Resultado operativo**, **Costo fijo**, **Resultado ejercicio**, **Margen Contribución** (%), **Punto de Equilibrio** ($ o `—`), **Margen Contribución Histórico**, **Punto de Equilibrio Histórico** (últimos dos con `—` hasta backend). Etiquetas de costos en el mismo color que Ventas (`text-foreground`).
 - **Filas resultado** (operativo y ejercicio): fondo **`#a9d6f1`**, texto **`#063652`**, **negrita** en concepto e importes; en la columna Concepto **`pl-10`** para indentar. Constantes `BG_FILA_RESULTADO` / `FG_FILA_RESULTADO` en el componente.
-- **Fila Ventas — edición**: si `puedeEditarVentas` y la columna tiene `sucursalId`, cada celda usa grid **`[1fr_2.25rem]`**: monto a la izquierda, **botón lápiz** (`ghost`, `size="icon"`) a la **derecha** del importe; en **Global** se reserva un hueco `h-8 w-8` para alinear montos con las columnas que llevan botón.
+- **Fila Ventas — edición**: si `puedeEditarVentas` y la columna tiene `sucursalId`, fila **flex** alineada a la derecha: **botón lápiz** + monto; el botón usa la misma clase compacta que el detalle de costos (`h-7 w-7`) para respetar el alto fijo de fila.
 - **Modal**: `EditarVentasBalanceMensualModal.tsx` — `MontoArInput`, `crearFinBalVtasAction`, `router.refresh()` al guardar.
 - **Filtros**: mes y año en `FilterBar` + `ClassicFilteredTableLayout` (`contentWidth="full"`). Aviso ámbar si no hay sucursales con `genera_balance`.
 
@@ -813,6 +814,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-04-23): **Gasto único** — en alta (`GASTO MENSUAL` = NO), **DÍA DEVENGADO** se fija al calendario de hoy en Argentina (máx. 28) y el select queda deshabilitado; el servidor ignora el día enviado en create si `gastoMensual === false`. Helper `diaDevengadoFinBalDesdeCalendarioArgentina` en `@/lib/fechaArgentina`.*
 
 *Última actualización (2026-04-30): **GASTO FINAL** muestra campo **PLAZO DE PAGO** debajo de **DÍA DEVENGADO** en `CrearEditarFinBalGastoFinalModal`. Es obligatorio y solo acepta enteros del **1 al 30**. Se persiste en `fin_bal_gasto_final.plazo_pago_dias` y se usa para calcular vencimientos (`fechaDevengo + plazoPago`).*
+
+*Última actualización (2026-05-04): **Pedido Tintométrico → Recepción**: al generar pedido, el snapshot de historial debe conservar `cod_tienda` real del ítem tintométrico (resuelto desde `cod_ext` tintométrico) para que en recepción se muestre la descripción de `prod_precios_tienda` y no caiga en genéricos como “PRODUCTO VARIOS”.*
 
 *Última actualización (2026-04-23): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); **Mes** = 12 meses; **Año** = 2026…2046; entrada sin query **`redirect`** a mes/año **hoy AR**; rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
 
