@@ -60,6 +60,21 @@ function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
   return `${pad2(d)}-${pad2(m)}-${y}`;
 }
 
+function sumarDiasYmd(
+  y: number,
+  m: number,
+  d: number,
+  dias: number
+): { y: number; m: number; d: number } {
+  const baseUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  baseUtc.setUTCDate(baseUtc.getUTCDate() + dias);
+  return {
+    y: baseUtc.getUTCFullYear(),
+    m: baseUtc.getUTCMonth() + 1,
+    d: baseUtc.getUTCDate(),
+  };
+}
+
 function toCentavos(value: number): number {
   return Math.round(value * 100);
 }
@@ -190,10 +205,12 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       };
     }
 
-    // Regla de negocio: FECHA y FECHA IMPUTACION CONTABLE se exportan
-    // con la misma fecha seleccionada en recepción (sin offset de días).
+    // Regla de negocio: FECHA se exporta como fecha seleccionada + 1 día.
+    // FECHA IMPUTACION CONTABLE mantiene la fecha seleccionada en recepción.
     const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);
-    const fechaFacturaExcel = formatExcelDdMmYyyyDash(y, m, d);
+    const { y: yMasUno, m: mMasUno, d: dMasUno } = sumarDiasYmd(y, m, d, 1);
+    const fechaFacturaExcel = formatExcelDdMmYyyyDash(yMasUno, mMasUno, dMasUno);
+    const fechaImputacionContableExcel = formatExcelDdMmYyyyDash(y, m, d);
 
     // La numeración de comprobante siempre se consulta con "hoy" (Argentina),
     // independiente de la fecha de recepción/factura cargada en el modal.
@@ -248,7 +265,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       "COMPROBANTE": siguienteComprobante,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
       "FECHA": fechaFacturaExcel,
-      "FECHA IMPUTACION CONTABLE": fechaFacturaExcel,
+      "FECHA IMPUTACION CONTABLE": fechaImputacionContableExcel,
       "REALIZA RECEPCION": "SI",
       "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
       "CÓDIGO PRODUCTO": it.codTienda,

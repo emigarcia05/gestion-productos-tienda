@@ -753,7 +753,7 @@ Contrato (SSOT de integración + armado de filas):
        - `prod_ped_historial.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
       - `prod_ped_historial.sucursal.deposito` => columna `DEPOSITO`
        - `prod_ped_historial_merc.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
-      - En el Excel, columnas `FECHA` y `FECHA IMPUTACION CONTABLE` se exportan en formato `DD-MM-AAAA` usando **la misma fecha ingresada** en recepción (sin sumar ni restar días; si el usuario carga `2026-04-14`, se exporta `14-04-2026`).
+     - En el Excel, `FECHA` se exporta en formato `DD-MM-AAAA` con **fecha ingresada + 1 día** (si el usuario carga `2026-04-14`, `FECHA` sale `15-04-2026`). `FECHA IMPUTACION CONTABLE` se exporta con la fecha ingresada original (`14-04-2026` en el ejemplo).
     - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR + 1 día` y `fechaDesde = hoy AR - 5 días`, sin usar `fechaFacturaIso`.
     - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit=10` por consulta.
     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
