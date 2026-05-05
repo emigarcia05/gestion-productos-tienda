@@ -8,8 +8,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import AppModal from "@/components/shared/AppModal";
 import {
@@ -335,14 +334,11 @@ export default function VincularModal({
                             <div className="flex justify-center">
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="icon-xs"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleDesvincular(p)}
                                 disabled={isPending || bloquearEliminarOficial}
-                                className={cn(
-                                  TABLE_ROW_ICON_BUTTON_CLASS,
-                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                                )}
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 title={
                                   bloquearEliminarOficial
                                     ? "No se puede desvincular el proveedor oficial mientras exista un alternativo."
@@ -350,7 +346,7 @@ export default function VincularModal({
                                 }
                                 aria-label={`Desvincular ${p.proveedor.prefijo}`}
                               >
-                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             </div>
                           </TableCell>

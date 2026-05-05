@@ -6,8 +6,7 @@ import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -716,9 +715,9 @@ function FilaCatalogo({
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             type="button"
-            variant="outline"
-            size="icon-xs"
-            className={TABLE_ROW_ICON_BUTTON_CLASS}
+            variant="ghost"
+            size="icon"
+            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
             title="Editar"
             aria-label={`Editar ${nombre}`}
             onClick={(e) => {
@@ -726,16 +725,13 @@ function FilaCatalogo({
               onEditar();
             }}
           >
-            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
           <Button
             type="button"
-            variant="outline"
-            size="icon-xs"
-            className={cn(
-              TABLE_ROW_ICON_BUTTON_CLASS,
-              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-            )}
+            variant="ghost"
+            size="icon"
+            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
             title="Eliminar"
             aria-label={`Eliminar ${nombre}`}
             onClick={(e) => {
@@ -743,7 +739,7 @@ function FilaCatalogo({
               onEliminar();
             }}
           >
-            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
         </div>
       )}

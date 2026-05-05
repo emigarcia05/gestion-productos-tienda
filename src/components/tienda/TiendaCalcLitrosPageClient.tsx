@@ -15,8 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import GestionTiposPinturaModal from "@/components/tienda/GestionTiposPinturaModal";
@@ -368,17 +367,14 @@ export default function TiendaCalcLitrosPageClient({
                               <div className="flex items-center justify-center">
                                 <Button
                                   type="button"
-                                  variant="outline"
-                                  size="icon-xs"
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={() => eliminarFilaPared(row.id)}
                                   aria-label="Eliminar fila"
                                   title="Eliminar"
-                                  className={cn(
-                                    TABLE_ROW_ICON_BUTTON_CLASS,
-                                    TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                                  )}
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 >
-                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 </Button>
                               </div>
                             </TableCell>

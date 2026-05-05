@@ -31,8 +31,7 @@ import EliminarChequeTesoreriaModal from "@/components/finanzas/EliminarChequeTe
 import AcreditarChequeTesoreriaModal from "@/components/finanzas/AcreditarChequeTesoreriaModal";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 
 const TH_NUM = "text-right whitespace-nowrap";
@@ -218,9 +217,9 @@ export default function ChequesCajaTesoreriaModal({
                             <div className="flex flex-wrap items-center justify-center gap-1">
                               <Button
                                 type="button"
-                                size="icon-xs"
-                                variant="outline"
-                                className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                size="icon"
+                                variant="ghost"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 disabled={!puedeAcreditar}
                                 onClick={() => setChequeParaAcreditar(row)}
                                 aria-label={
@@ -234,32 +233,29 @@ export default function ChequesCajaTesoreriaModal({
                                     : "Solo se puede acreditar desde la fecha de acreditación (calendario Argentina)."
                                 }
                               >
-                                <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                               <Button
                                 type="button"
-                                size="icon-xs"
-                                variant="outline"
-                                className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                size="icon"
+                                variant="ghost"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 onClick={() => setChequeEditando(row)}
                                 aria-label="Editar cheque"
                                 title="Editar cheque"
                               >
-                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                               <Button
                                 type="button"
-                                size="icon-xs"
-                                variant="outline"
-                                className={cn(
-                                  TABLE_ROW_ICON_BUTTON_CLASS,
-                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                                )}
+                                size="icon"
+                                variant="ghost"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 onClick={() => setChequeEliminando(row)}
                                 aria-label="Eliminar cheque"
                                 title="Eliminar cheque"
                               >
-                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             </div>
                           </TableCell>

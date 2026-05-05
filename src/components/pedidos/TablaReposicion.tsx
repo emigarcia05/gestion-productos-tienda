@@ -21,8 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import type { ReposicionData, ItemReposicion, SucursalReposicion } from "@/actions/reposicion";
 import { deleteReglaReposicion } from "@/actions/reposicion";
@@ -176,17 +175,14 @@ export default function TablaReposicion({
                     {item.idReposicion ? (
                       <Button
                         type="button"
-                        variant="outline"
-                        size="icon-xs"
-                        className={cn(
-                          TABLE_ROW_ICON_BUTTON_CLASS,
-                          TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                        )}
+                        variant="ghost"
+                        size="icon"
+                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                         onClick={() => handleDelete(item)}
                         disabled={isSaving}
                         aria-label="Eliminar regla de reposición"
                       >
-                        <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                        <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                       </Button>
                     ) : (
                       <span className="inline-block w-8" aria-hidden />

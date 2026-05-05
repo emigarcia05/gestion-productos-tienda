@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -330,12 +329,9 @@ export default function ConfigurarReposicionModal({
                         <TableCell className="text-xs py-2 text-center">
                           <Button
                             type="button"
-                            variant="outline"
-                            size="icon-xs"
-                            className={cn(
-                              TABLE_ROW_ICON_BUTTON_CLASS,
-                              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                            )}
+                            variant="ghost"
+                            size="icon"
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                             aria-label="Quitar producto de la configuración"
                             onClick={() => handleEliminarProductoAdicional(p)}
                           >

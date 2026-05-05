@@ -19,8 +19,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
   TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 import type { SobreStockReposicionItem } from "@/services/sobreStock.service";
@@ -293,12 +292,12 @@ export default function SobreStockReposicionAdvertenciaModal({
                           <div className="flex w-full items-center justify-center gap-1">
                             <Button
                               type="button"
-                              variant="outline"
-                              size="icon-xs"
+                              variant="ghost"
+                              size="icon"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => ajustarCantidad(it.idItemPedidoEnvio, -1)}
                               disabled={pending}
-                              className={TABLE_ROW_ICON_BUTTON_CLASS}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                               aria-label="Disminuir Cant. Pedir"
                               title="Disminuir"
                             >
@@ -332,12 +331,12 @@ export default function SobreStockReposicionAdvertenciaModal({
                             />
                             <Button
                               type="button"
-                              variant="outline"
-                              size="icon-xs"
+                              variant="ghost"
+                              size="icon"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => ajustarCantidad(it.idItemPedidoEnvio, 1)}
                               disabled={pending}
-                              className={TABLE_ROW_ICON_BUTTON_CLASS}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                               aria-label="Aumentar Cant. Pedir"
                               title="Aumentar"
                             >
@@ -349,30 +348,27 @@ export default function SobreStockReposicionAdvertenciaModal({
                           <div className="flex items-center justify-center gap-1">
                             <Button
                               type="button"
-                              variant="outline"
-                              size="icon-xs"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => confirmarFila(it.idItemPedidoEnvio)}
                               disabled={pending}
-                              className={TABLE_ROW_ICON_BUTTON_CLASS}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                               aria-label="Confirmar"
                               title="Confirmar"
                             >
-                              <Check className={TABLE_ROW_ACTION_ICON_CLASS} />
+                              <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                             </Button>
                             <Button
                               type="button"
-                              variant="outline"
-                              size="icon-xs"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => vaciarYConfirmarFila(it.idItemPedidoEnvio)}
                               disabled={pending}
-                              className={cn(
-                                TABLE_ROW_ICON_BUTTON_CLASS,
-                                TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                              )}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                               aria-label="Poner en cero y confirmar"
                               title="Poner en cero y confirmar"
                             >
-                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                             </Button>
                           </div>
                         </TableCell>

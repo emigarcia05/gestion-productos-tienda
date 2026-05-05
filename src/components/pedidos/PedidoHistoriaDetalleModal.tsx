@@ -33,8 +33,7 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
 import {
@@ -838,12 +837,12 @@ export default function PedidoHistoriaDetalleModal({
                               <div className="flex w-full items-center justify-center gap-1">
                                 <Button
                                   type="button"
-                                  variant="outline"
-                                  size="icon-xs"
+                                  variant="ghost"
+                                  size="icon"
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => ajustarEditingValue(-1)}
                                   disabled={locked || busy || !fechaFacturaOk}
-                                  className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                   aria-label="Disminuir"
                                   title="Disminuir"
                                 >
@@ -894,12 +893,12 @@ export default function PedidoHistoriaDetalleModal({
                                 />
                                 <Button
                                   type="button"
-                                  variant="outline"
-                                  size="icon-xs"
+                                  variant="ghost"
+                                  size="icon"
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => ajustarEditingValue(1)}
                                   disabled={locked || busy || !fechaFacturaOk}
-                                  className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                   aria-label="Aumentar"
                                   title="Aumentar"
                                 >
@@ -907,19 +906,16 @@ export default function PedidoHistoriaDetalleModal({
                                 </Button>
                                 <Button
                                   type="button"
-                                  variant="default"
-                                  size="icon-xs"
+                                  variant="ghost"
+                                  size="icon"
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={onClickConfirmarEdicion(item)}
                                   disabled={locked || busy || !fechaFacturaOk}
-                                  className={cn(
-                                    TABLE_ROW_ICON_BUTTON_CLASS,
-                                    "text-primary-foreground [&_svg]:text-primary-foreground"
-                                  )}
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                   aria-label="Confirmar Edición"
                                   title="Confirmar Edición"
                                 >
-                                  <Check className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                  <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 </Button>
                               </div>
                             ) : (
@@ -935,45 +931,42 @@ export default function PedidoHistoriaDetalleModal({
                             >
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="icon-xs"
+                                variant="ghost"
+                                size="icon"
                                 onClick={onClickOk(item)}
                                 disabled={
                                   locked || busy || checkListConfirmed || !fechaFacturaOk
                                 }
-                                className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 aria-label="OK"
                                 title="OK"
                                 data-ok-button={item.id}
                               >
-                                <Check className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="icon-xs"
+                                variant="ghost"
+                                size="icon"
                                 onClick={onClickEditar(item)}
                                 disabled={locked || busy || !fechaFacturaOk}
-                                className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 aria-label="Editar"
                                 title="Editar"
                               >
-                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="icon-xs"
+                                variant="ghost"
+                                size="icon"
                                 onClick={onClickCesto(item)}
                                 disabled={locked || busy || !fechaFacturaOk}
-                                className={cn(
-                                  TABLE_ROW_ICON_BUTTON_CLASS,
-                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                                )}
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 aria-label="Cesto De Basura"
                                 title="Cesto De Basura"
                               >
-                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             </div>
                           </TableCell>

@@ -19,8 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { PedidoHistoriaResumen } from "@/services/pedidosHistoria.service";
@@ -199,16 +198,16 @@ export default function HistorialPedidosPageClient({
                                   <TooltipTrigger asChild>
                                     <Button
                                       type="button"
-                                      variant="outline"
-                                      size="icon-xs"
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openRecepcion(it.id);
                                       }}
                                       aria-label="Recepción De Mercadería"
-                                      className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                     >
-                                      <PackageCheck className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                      <PackageCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
@@ -219,16 +218,16 @@ export default function HistorialPedidosPageClient({
                                   <TooltipTrigger asChild>
                                     <Button
                                       type="button"
-                                      variant="outline"
-                                      size="icon-xs"
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openLectura(it.id);
                                       }}
                                       aria-label="Ver Detalles"
-                                      className={TABLE_ROW_ICON_BUTTON_CLASS}
+                                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                     >
-                                      <Eye className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                      <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Ver Detalles</TooltipContent>
@@ -237,19 +236,16 @@ export default function HistorialPedidosPageClient({
                                   <TooltipTrigger asChild>
                                     <Button
                                       type="button"
-                                      variant="outline"
-                                      size="icon-xs"
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openBorrar(it.id);
                                       }}
                                       aria-label="Borrar Pedido"
-                                      className={cn(
-                                        TABLE_ROW_ICON_BUTTON_CLASS,
-                                        TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                                      )}
+                                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                     >
-                                      <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                      <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Borrar Pedido</TooltipContent>

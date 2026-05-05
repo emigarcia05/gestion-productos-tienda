@@ -26,8 +26,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import {
   getProductosPorPresentacionAction,
@@ -437,20 +436,17 @@ export default function ComparacionCategoriasClient({
                             <TableCell className="celda-datos text-center">
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="icon-xs"
-                                className={cn(
-                                  TABLE_ROW_ICON_BUTTON_CLASS,
-                                  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                                )}
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 onClick={() => handleQuitarFila(p.id)}
                                 disabled={removingItemId === p.id}
                                 title="Quitar fila"
                               >
                                 {removingItemId === p.id ? (
-                                  <Loader2 className={cn(TABLE_ROW_ACTION_ICON_CLASS, "animate-spin")} />
+                                  <Loader2 className={cn(TABLE_ROW_ACTION_ICON_CLASS, "animate-spin")} aria-hidden />
                                 ) : (
-                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 )}
                               </Button>
                             </TableCell>

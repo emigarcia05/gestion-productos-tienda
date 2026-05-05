@@ -25,14 +25,23 @@ export const IMPORT_STAT_BADGE_CLASSES = {
 } as const;
 
 /**
- * Botón de acción con ícono dentro de celdas de tablas de gestión (`Table` compacta).
- * Usar con `<Button variant="outline" size="icon-xs" className={TABLE_ROW_ICON_BUTTON_CLASS} />`
- * e ícono Lucide con {@link TABLE_ROW_ACTION_ICON_CLASS}.
- * Eliminar / cesto: combinar con {@link TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS}.
+ * Botón de **solo ícono** (o texto mínimo tipo +/−) en **celdas de tabla de gestión**.
+ * **Obligatorio:** `variant="ghost"` + `size="icon"` + esta clase (anula el hover ghost).
+ * Ver **FRONTEND_GUIDELINES** §1 — prohibición de `variant="outline"` + `size="icon-xs"` con aspecto documento.
+ */
+export const TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS =
+  "h-9 w-9 shrink-0 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
+
+/**
+ * @deprecated En tablas de gestión las acciones por fila usan siempre {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+ * (fondo #0072BB, ícono blanco). No combinar outline + icon-xs neutro.
  */
 export const TABLE_ROW_ICON_BUTTON_CLASS = "disabled:cursor-not-allowed";
 
-/** Hover para acciones destructivas en tabla (texto negro por defecto, rojo al hover). */
+/**
+ * @deprecated Las acciones destructivas en fila usan el mismo relleno corporativo que el resto;
+ * no usar hover rojo en el botón (la confirmación sigue en modal o `confirm`).
+ */
 export const TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS =
   "hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive";
 

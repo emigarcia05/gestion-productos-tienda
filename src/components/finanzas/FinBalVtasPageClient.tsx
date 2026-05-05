@@ -25,6 +25,11 @@ import {
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import { fmtPrecio } from "@/lib/format";
 import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
+import { Trash2 } from "lucide-react";
+import {
   crearFinBalVtasAction,
   eliminarFinBalVtasAction,
 } from "@/actions/finBalVtas";
@@ -283,16 +288,20 @@ export default function FinBalVtasPageClient({
                         {fmtFecha(f.createdAt)}
                       </TableCell>
                       {esEditor ? (
-                        <TableCell className="celda-datos">
+                        <TableCell className="celda-datos p-1">
+                          <div className="flex justify-center">
                           <Button
                             type="button"
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:bg-destructive/10"
+                            variant="ghost"
+                            size="icon"
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label={`Eliminar ventas de balance — ${f.sucursal.nombre} ${etiquetaMes(f.mes)} ${f.anio}`}
+                            title="Eliminar"
                             onClick={() => void handleEliminar(f.id)}
                           >
-                            Eliminar
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                           </Button>
+                          </div>
                         </TableCell>
                       ) : null}
                     </TableRow>

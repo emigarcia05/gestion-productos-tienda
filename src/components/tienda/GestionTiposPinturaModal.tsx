@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Input } from "@/components/ui/input";
 import {
@@ -209,18 +208,15 @@ export default function GestionTiposPinturaModal({
                           />
                           <Button
                             type="button"
-                            variant="outline"
-                            size="icon-xs"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => removeRow(row.key)}
                             disabled={saving}
                             aria-label="Eliminar fila"
                             title="Eliminar Ítem"
-                            className={cn(
-                              TABLE_ROW_ICON_BUTTON_CLASS,
-                              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                            )}
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                           >
-                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                           </Button>
                         </div>
                       </TableCell>

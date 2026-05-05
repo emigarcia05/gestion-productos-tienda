@@ -22,7 +22,7 @@ import {
   tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
-import { TABLE_ROW_ICON_BUTTON_CLASS } from "@/lib/ui-classes";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import {
   formatDdMmHhMmArgentina,
   formatDdMmYyHhMmNombreArchivoArgentina,
@@ -281,9 +281,9 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         type="button"
-                        variant="outline"
-                        size="icon-xs"
-                        className={TABLE_ROW_ICON_BUTTON_CLASS}
+                        variant="ghost"
+                        size="icon"
+                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                         aria-label="Disminuir stock"
                         onClick={() => ajustarStockUnidad(item.id, item.stock, -1)}
                       >
@@ -299,9 +299,9 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                       />
                       <Button
                         type="button"
-                        variant="outline"
-                        size="icon-xs"
-                        className={TABLE_ROW_ICON_BUTTON_CLASS}
+                        variant="ghost"
+                        size="icon"
+                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                         aria-label="Aumentar stock"
                         onClick={() => ajustarStockUnidad(item.id, item.stock, 1)}
                       >

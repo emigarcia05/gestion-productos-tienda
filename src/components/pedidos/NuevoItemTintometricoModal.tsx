@@ -33,8 +33,7 @@ import SeleccionarBaseTintometricaModal from "@/components/pedidos/SeleccionarBa
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 
 export type NuevoItemTintometricoDraft = {
@@ -314,8 +313,8 @@ export default function NuevoItemTintometricoModal({
                         <TableCell className="celda-datos text-right">
                           <Button
                             type="button"
-                            variant="outline"
-                            size="icon-xs"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => {
                               setBases((prev) => prev.filter((x) => x.id !== b.id));
                               setCantPorBaseId((prev) => {
@@ -324,14 +323,11 @@ export default function NuevoItemTintometricoModal({
                                 return next;
                               });
                             }}
-                            className={cn(
-                              TABLE_ROW_ICON_BUTTON_CLASS,
-                              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-                            )}
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                             aria-label="Borrar Ítem"
                             title="Borrar Ítem"
                           >
-                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                           </Button>
                         </TableCell>
                       </TableRow>

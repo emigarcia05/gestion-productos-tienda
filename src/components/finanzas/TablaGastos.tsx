@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_CLASS,
-  TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
@@ -97,6 +96,10 @@ export default function TablaGastos({
 }: Props) {
   const totalMonto = filas.reduce((acc, fila) => acc + fila.monto, 0);
   const totalPagado = filas.reduce((acc, fila) => acc + fila.pagado, 0);
+  const totalPendiente = filas.reduce(
+    (acc, fila) => acc + Math.max(0, fila.monto - fila.pagado),
+    0
+  );
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
   const anchosFullPct = mostrarAcciones ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
@@ -151,11 +154,8 @@ export default function TablaGastos({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-xs"
-                className={cn(
-                  TABLE_ROW_ICON_BUTTON_CLASS,
-                  "h-7 w-7 shrink-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                )}
+                size="icon"
+                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                 title="Ver evolución mensual del gasto"
                 aria-label={`Ver evolución mensual — ${f.gastoNombre}`}
                 onClick={() => onVerHistorico(f)}
@@ -177,39 +177,36 @@ export default function TablaGastos({
         <div className="flex flex-wrap items-center justify-center gap-1">
           <Button
             type="button"
-            variant="outline"
-            size="icon-xs"
-            className={TABLE_ROW_ICON_BUTTON_CLASS}
+            variant="ghost"
+            size="icon"
+            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
             title="Registrar pago"
             aria-label={`Pagar ${f.gastoNombre}`}
             onClick={() => onPagar!(f)}
           >
-            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
           <Button
             type="button"
-            variant="outline"
-            size="icon-xs"
-            className={TABLE_ROW_ICON_BUTTON_CLASS}
+            variant="ghost"
+            size="icon"
+            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
             title="Editar monto"
             aria-label={`Editar monto ${f.gastoNombre}`}
             onClick={() => onEditarMonto!(f)}
           >
-            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
           <Button
             type="button"
-            variant="outline"
-            size="icon-xs"
-            className={cn(
-              TABLE_ROW_ICON_BUTTON_CLASS,
-              TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS
-            )}
+            variant="ghost"
+            size="icon"
+            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
             title="Eliminar imputación"
             aria-label={`Eliminar ${f.gastoNombre}`}
             onClick={() => onEliminar!(f)}
           >
-            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
         </div>
       </TableCell>
@@ -277,6 +274,16 @@ export default function TablaGastos({
                   <span className="text-muted-foreground">—</span>
                 ) : (
                   <>${fmtPrecio(totalPagado)}</>
+                )}
+              </TarjetaTotalGasto>
+              <TarjetaTotalGasto
+                etiqueta="PENDIENTE"
+                title="Suma de (monto − pagado) por fila, mínimo 0 en cada fila"
+              >
+                {totalPendiente === 0 ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : (
+                  <>${fmtPrecio(totalPendiente)}</>
                 )}
               </TarjetaTotalGasto>
             </div>
