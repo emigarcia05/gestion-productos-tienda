@@ -112,7 +112,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 2. **Clases de filtros (SSOT en FilterBar / globals.css)**
    - Input y SelectTrigger: `INPUT_FILTER_CLASS` / `SELECT_TRIGGER_FILTER_CLASS` = `"input-filtro-unificado"`.
    - Wrapper de cada Select: `FILTER_SELECT_WRAPPER_CLASS` = `"min-w-0 flex-1"`.
-   - Contador: `FILTER_COUNT_CLASS`.
+   - Contador: `FILTER_COUNT_CLASS` (incluye `filtro-count-label`). Cuando convive con `LimpiarFiltrosButton` global, reserva margen derecho para evitar superposición y mantiene truncado en una línea (sin reglas responsive).
    - `LimpiarFiltrosButton` (ícono cesto): **siempre visible** por regla global de UX, incluso sin filtros activos. Su acción sigue limpiando el estado de filtros actual.
    - **Sin búsqueda por descripción**: cuando una pantalla no tiene input de búsqueda y los filtros entran en una sola línea, ubicar las acciones en la **misma fila** usando un slot inline dentro de `FilaFiltrosDesplegables` (`FILTER_INLINE_ACTION_SLOT_CLASS`, por ejemplo con `col-span-2`) para compactar altura. Si no entra en una sola línea, usar `FilterRowNoSearchActions` como segunda fila.
    - SelectContent: `position="popper" side="bottom" align="start" className="select-content-filtro"`.
@@ -136,6 +136,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
 4. **Modal con tabla y filtros**
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección).
    - **Limpieza en modales:** no usar `LimpiarFiltrosButton` (posición global del recuadro de filtros de página); ahorra espacio. Cada `Select` u otro control sin limpiar integrado va envuelto en `FiltroIndividualContainer` (`activo` / `onLimpiar`). Para búsqueda, preferir `FiltroBusquedaInput` (incluye X propia) en lugar de duplicar tachos.
+   - **Estilo y tamaño del tacho individual (`filtro-individual-clear-btn`):** debe usar el mismo look del botón global `LimpiarFiltrosButton` (`variant="primaryIcon"` / `size="icon-lg"`) y, al mismo tiempo, ajustarse al control contenedor sin superarlo (regla CSS global en `globals.css` con `inline-size/block-size` limitados por `%` del wrapper). Esta regla aplica en **Gestión de Productos**, **Finanzas** y debe reutilizarse igual en **Estadísticas**.
 
 5. **Variantes: contador debajo**
    - **Contador debajo a la derecha**: cuando el diseño requiera el número de ítems en una fila inferior alineada a la derecha, usar una tercera fila dentro del `FilterBar`: `<div className="flex justify-end w-full"><span className={FILTER_COUNT_CLASS}>…</span></div>`. No incluir el contador dentro de `FilterRowSelection`.
@@ -829,6 +830,12 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-05-05): filtros globales — `FilterBar` incorpora `FiltroIndividualContainer` para limpieza individual por filtro activo (tacho al margen derecho del filtro) y `LimpiarFiltrosButton` se posiciona en el margen derecho inferior del recuadro para limpieza global.*
 
 *Última actualización (2026-05-05): **Modales con filtros** — sin `LimpiarFiltrosButton`; solo `FiltroIndividualContainer` por control (o `FiltroBusquedaInput` con X). Aplica a modales de selección/listado y a `GastoUnicoBalanceModal` (SUCURSAL / RUBRO).*
+
+*Última actualización (2026-05-05): `filtro-individual-clear-btn` se limita por tamaño del contenedor (no puede ser más grande que el filtro). Regla global en `globals.css` y alcance explícito para Gestión de Productos, Finanzas y futuras pantallas de Estadísticas.*
+
+*Última actualización (2026-05-05): `FiltroIndividualContainer` usa `Button` con `variant="primaryIcon"` y `size="icon-lg"` para igualar estilo visual de `LimpiarFiltrosButton` (mismo lenguaje de color/sombra), manteniendo el límite de tamaño por contenedor.*
+
+*Última actualización (2026-05-05): `FILTER_COUNT_CLASS` agrega `filtro-count-label` para evitar superposición con `LimpiarFiltrosButton` global (reserva de margen derecho + truncado en una línea, sin comportamiento responsive).*
 
 *Última actualización (2026-04-23): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); **Mes** = 12 meses; **Año** = 2026…2046; entrada sin query **`redirect`** a mes/año **hoy AR**; rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
 

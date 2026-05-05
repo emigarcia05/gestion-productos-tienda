@@ -92,14 +92,14 @@ export function FiltroIndividualContainer({
       {activo ? (
         <Button
           type="button"
-          variant="outline"
-          size="icon-xs"
+          variant="primaryIcon"
+          size="icon-lg"
           onClick={onLimpiar}
           className="filtro-individual-clear-btn"
           aria-label="Limpiar este filtro"
           title="Limpiar este filtro"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       ) : null}
     </div>
@@ -143,7 +143,7 @@ export const FILTER_INLINE_ACTION_SLOT_CLASS = "min-w-0 flex items-center justif
 
 /** Clase para el indicador de cantidad de elementos filtrados (color primario del tema). Reutilizable en todos los filtros. */
 export const FILTER_COUNT_CLASS =
-  "text-sm text-primary tabular-nums shrink-0 font-semibold";
+  "text-sm text-primary tabular-nums shrink-0 font-semibold filtro-count-label";
 
 /** Trigger estándar para rango de fechas por calendario. */
 export const FILTER_DATE_RANGE_TRIGGER_CLASS =

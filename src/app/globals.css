@@ -612,6 +612,13 @@
     bottom: 0.65rem;
     z-index: 10;
   }
+  .seccion-filtros .filtro-count-label {
+    margin-right: 3.15rem;
+    max-width: calc(100% - 3.15rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   /* Tacho individual por filtro activo (a la derecha del control). */
   .filtro-individual-container {
@@ -623,11 +630,17 @@
     top: 50%;
     transform: translateY(-50%);
     z-index: 12;
-    height: 1.4rem;
-    width: 1.4rem;
-    min-height: 1.4rem;
-    background-color: var(--background);
-    border-color: var(--border);
+    inline-size: min(2.5rem, calc(100% - 0.5rem));
+    block-size: min(2.5rem, calc(100% - 0.5rem));
+    min-inline-size: 1.125rem;
+    min-block-size: 1.125rem;
+    padding: 0;
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+  }
+  .filtro-individual-container .filtro-individual-clear-btn svg {
+    inline-size: min(1rem, calc(100% - 0.4rem));
+    block-size: min(1rem, calc(100% - 0.4rem));
   }
   .filtro-individual-container [data-slot="select-trigger"].input-filtro-unificado,
   .filtro-individual-container input.input-filtro-unificado {
