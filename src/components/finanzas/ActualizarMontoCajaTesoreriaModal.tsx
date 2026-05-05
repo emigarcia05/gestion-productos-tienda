@@ -72,7 +72,7 @@ export default function ActualizarMontoCajaTesoreriaModal({
       <AppModal
         title="Actualizar Monto"
         size="sm"
-        className="sm:max-w-md"
+        className="max-w-md"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button

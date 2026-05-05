@@ -102,7 +102,7 @@ export default function AccionMasivaModal({
         </TooltipTrigger>
         <TooltipContent>Aplicar cambios a varios productos</TooltipContent>
       </Tooltip>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Acción Masiva</DialogTitle>
         </DialogHeader>

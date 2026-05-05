@@ -36,7 +36,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         title="Instructivo: Importar El Archivo Exportado"
-        className="sm:max-w-5xl"
+        className="max-w-5xl"
         bodyClassName="max-w-full flex flex-col min-h-0"
         scrollBody={false}
         actions={
@@ -46,7 +46,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
         }
       >
         <div className="flex flex-col gap-4 min-h-0 flex-1 flex">
-          <div className="flex items-stretch justify-center gap-2 sm:gap-4 flex-1 min-h-0 min-w-0 overflow-hidden">
+          <div className="flex items-stretch justify-center gap-2 gap-4 flex-1 min-h-0 min-w-0 overflow-hidden">
             <Button
               type="button"
               variant="outline"
@@ -68,7 +68,7 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
                   alt={paso.texto}
                   fill
                   className="object-contain object-center"
-                  sizes="(max-width: 896px) 100vw, 896px"
+                  sizes="( 896px) 100vw, 896px"
                 />
               </div>
             </div>

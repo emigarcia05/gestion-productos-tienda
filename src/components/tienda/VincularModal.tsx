@@ -242,10 +242,10 @@ export default function VincularModal({
         <AppModal
           title="Vínculos Con Proveedores"
           size="lg"
-          className="sm:max-w-2xl w-[calc(100%-2rem)]"
+          className="max-w-2xl w-[calc(100%-2rem)]"
           scrollBody={false}
-          bodyShellClassName="p-1.5 sm:p-2"
-          bodyClassName="flex flex-col min-h-0 overflow-hidden p-2 sm:p-3"
+          bodyShellClassName="p-1.5 p-2"
+          bodyClassName="flex flex-col min-h-0 overflow-hidden p-2 p-3"
           actions={
             <>
               <Button

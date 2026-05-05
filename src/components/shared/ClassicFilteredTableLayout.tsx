@@ -48,8 +48,8 @@ const contentVariants = cva(
         full: "max-w-none",
       },
       density: {
-        default: "px-4 sm:px-6 lg:px-8 gap-0",
-        compact: "px-3 sm:px-4 lg:px-6 gap-0",
+        default: "px-4 px-6 px-8 gap-0",
+        compact: "px-3 px-4 px-6 gap-0",
       },
     },
     defaultVariants: {

@@ -135,7 +135,7 @@ export default function EditarMontoFinBalGastoMensualModal({
       <AppModal
         title="Editar Monto"
         size="md"
-        className="sm:max-w-md"
+        className="max-w-md"
         actions={
           <div className="flex w-full flex-wrap justify-end gap-2">
             <Button

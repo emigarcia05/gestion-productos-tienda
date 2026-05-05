@@ -170,7 +170,7 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
         <TooltipContent>Importar productos desde CSV</TooltipContent>
       </Tooltip>
 
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Importar Productos</DialogTitle>
         </DialogHeader>

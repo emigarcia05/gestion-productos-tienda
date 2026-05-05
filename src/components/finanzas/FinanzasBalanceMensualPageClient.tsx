@@ -217,7 +217,7 @@ function TablaBalanceMensualAlineada({
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <div className="min-w-[min(100%,40rem)] sm:min-w-[44rem]">
+        <div className="min-w-[min(100%,40rem)] min-w-[44rem]">
           <div
             className={cn(
               "grid border-b border-white/20 bg-[#0072BB] text-white",
@@ -228,7 +228,7 @@ function TablaBalanceMensualAlineada({
             <div
               className={cn(
                 CLASE_CELDA_BALANCE_MENSUAL,
-                "justify-center border-r border-white/20 px-2 sm:px-3"
+                "justify-center border-r border-white/20 px-2 px-3"
               )}
             >
               <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white">

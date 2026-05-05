@@ -58,7 +58,7 @@ export default async function ImportarPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 px-6 px-8 py-8 space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Importar datos</h1>
@@ -67,9 +67,9 @@ export default async function ImportarPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 grid-cols-3">
           {/* Upload Zone */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="col-span-2 space-y-4">
             <Card className="border-border/50 bg-card/50">
               <CardHeader>
                 <CardTitle className="text-base">Subir archivo</CardTitle>

@@ -95,7 +95,7 @@ export default function EditarCoeficientesModal({
       <AppModal
         title="Editar Coeficientes"
         size="lg"
-        className="sm:max-w-3xl"
+        className="max-w-3xl"
         padding="sm"
         scrollBody={false}
         actions={

@@ -170,7 +170,7 @@ export default function SobreStockReposicionAdvertenciaModal({
       <AppModal
         title="Advertencia Sobrestock"
         size="lg"
-        className="sm:max-w-[72rem]"
+        className="max-w-[72rem]"
         padding="sm"
         scrollBody={false}
         headerClassName="pt-4 pb-3"

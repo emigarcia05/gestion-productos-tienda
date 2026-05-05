@@ -116,7 +116,7 @@ export default function AltaChequeTesoreriaModal({
       <AppModal
         title="Registrar cheque"
         size="sm"
-        className="sm:max-w-md"
+        className="max-w-md"
         scrollBody={false}
         actions={
           <div className="flex w-full justify-end gap-2">

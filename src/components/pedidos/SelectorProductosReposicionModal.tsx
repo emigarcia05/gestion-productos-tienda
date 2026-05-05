@@ -100,7 +100,7 @@ export default function SelectorProductosReposicionModal({
         onOpenChange(o);
       }}
     >
-      <DialogContent className="modal-app sm:max-w-[40rem] w-[calc(100%-2rem)] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+      <DialogContent className="modal-app max-w-[40rem] w-[calc(100%-2rem)] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="modal-app__header shrink-0">
           <DialogTitle className="modal-app__title">Seleccionar Productos</DialogTitle>
         </DialogHeader>

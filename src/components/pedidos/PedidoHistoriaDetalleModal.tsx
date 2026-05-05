@@ -74,7 +74,7 @@ const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
  * Cabecera resumen: proveedor + metadatos | fecha factura (`sm`: dos columnas ~85% / ~15%).
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 sm:grid-cols-[85fr_15fr] sm:gap-0";
+  "grid min-w-0 w-full grid-cols-1 gap-2 grid-cols-[85fr_15fr] gap-0";
 
 /** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
 const GRID_PEDIDO_HISTORIA_TABLA_COLS =
@@ -454,12 +454,12 @@ export default function PedidoHistoriaDetalleModal({
           title="Recepción Pedido"
           scrollBody={false}
           size="xl"
-          className="sm:max-w-[66rem] h-[95vh] max-h-[95vh]"
+          className="max-w-[66rem] h-[95vh] max-h-[95vh]"
           bodyShellClassName="p-0"
           padding="sm"
           headerClassName="pt-3 pb-3"
           footerClassName="py-3"
-          bodyClassName="py-2 sm:py-2.5"
+          bodyClassName="py-2 py-2.5"
           actions={
             <>
               <Button
@@ -602,7 +602,7 @@ export default function PedidoHistoriaDetalleModal({
               <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full items-center")}>
                 <div
                   className={cn(
-                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center sm:text-left"
+                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center text-left"
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">
@@ -631,7 +631,7 @@ export default function PedidoHistoriaDetalleModal({
                     disabled={locked || loading}
                     aria-label="FECHA FACTURA"
                     className={cn(
-                      "h-9 w-full min-w-0 tabular-nums sm:text-left",
+                      "h-9 w-full min-w-0 tabular-nums text-left",
                       inputBorderClassName,
                       locked || loading ? "cursor-not-allowed" : "cursor-pointer"
                     )}
@@ -646,7 +646,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 sm:pt-0 sm:pb-2",
+                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pt-0 pb-2",
                 !tablaYAltaHabilitados &&
                   !locked &&
                   "pointer-events-none cursor-not-allowed opacity-50"
@@ -664,8 +664,8 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className="flex w-full min-w-0 flex-col gap-3 pt-1 pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-x-10">
-                <div className="flex min-w-0 w-full max-w-full items-center gap-2 sm:w-auto sm:max-w-[36rem]">
+              <div className="flex w-full min-w-0 flex-col gap-3 pt-1 pb-0 flex-row items-center justify-between gap-x-10">
+                <div className="flex min-w-0 w-full max-w-full items-center gap-2 w-auto max-w-[36rem]">
                   <div className="min-w-0 flex-1">
                     <FiltroBusquedaInput
                       id="pedido-historia-agregar-producto-filtro"
@@ -685,7 +685,7 @@ export default function PedidoHistoriaDetalleModal({
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
                   className={cn(
                     "h-10 min-h-10 w-full min-w-0 shrink-0 cursor-pointer justify-center gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
-                    "sm:w-auto sm:shrink-0",
+                    "w-auto shrink-0",
                     "disabled:cursor-not-allowed"
                   )}
                 >

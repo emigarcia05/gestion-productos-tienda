@@ -61,7 +61,7 @@ export default function BalanceMensualGastoHistoricoModal({
       <AppModal
         title={fmtTituloPalabras("Evolución mensual del gasto")}
         size="xl"
-        className="sm:max-w-4xl"
+        className="max-w-4xl"
         bodyClassName="flex flex-col min-h-0 max-h-[min(28rem,72vh)]"
         scrollBody={false}
         actions={
@@ -98,7 +98,7 @@ export default function BalanceMensualGastoHistoricoModal({
                   return (
                     <div
                       key={`${p.anio}-${p.mes}`}
-                      className="flex w-12 shrink-0 flex-col items-stretch gap-1 sm:w-14"
+                      className="flex w-12 shrink-0 flex-col items-stretch gap-1 w-14"
                     >
                       <div className="flex h-36 w-full items-end justify-center rounded-sm bg-muted/25 px-0.5">
                         <div

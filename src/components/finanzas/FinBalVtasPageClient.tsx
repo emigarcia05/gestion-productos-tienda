@@ -149,7 +149,7 @@ export default function FinBalVtasPageClient({
             <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
               Nueva carga
             </h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-end">
+            <div className="mt-4 grid gap-3 grid-cols-2 grid-cols-[1fr_1fr_1fr_1fr_auto] items-end">
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   Sucursal

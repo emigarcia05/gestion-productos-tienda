@@ -180,22 +180,22 @@ export default function TablaGastos({
             variant="outline"
             size="icon-xs"
             className={TABLE_ROW_ICON_BUTTON_CLASS}
-            title="Editar monto"
-            aria-label={`Editar monto ${f.gastoNombre}`}
-            onClick={() => onEditarMonto!(f)}
+            title="Registrar pago"
+            aria-label={`Pagar ${f.gastoNombre}`}
+            onClick={() => onPagar!(f)}
           >
-            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} />
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon-xs"
             className={TABLE_ROW_ICON_BUTTON_CLASS}
-            title="Registrar pago"
-            aria-label={`Pagar ${f.gastoNombre}`}
-            onClick={() => onPagar!(f)}
+            title="Editar monto"
+            aria-label={`Editar monto ${f.gastoNombre}`}
+            onClick={() => onEditarMonto!(f)}
           >
-            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} />
+            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} />
           </Button>
           <Button
             type="button"

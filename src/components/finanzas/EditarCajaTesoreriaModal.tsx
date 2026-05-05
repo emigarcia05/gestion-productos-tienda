@@ -109,7 +109,7 @@ export default function EditarCajaTesoreriaModal({
       <AppModal
         title="Editar Caja"
         size="md"
-        className="sm:max-w-xl"
+        className="max-w-xl"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>

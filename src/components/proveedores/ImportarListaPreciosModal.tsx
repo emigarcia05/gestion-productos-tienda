@@ -174,7 +174,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       </DialogTrigger>
 
       <AppModal
-        className="sm:max-w-3xl"
+        className="max-w-3xl"
         bodyClassName="max-w-full min-w-0"
         title="Importar Lista De Precios"
         actions={

@@ -55,7 +55,7 @@ export default function CantidadPedidoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md text-center">
+      <DialogContent className="max-w-md text-center">
         <DialogHeader>
           <DialogTitle className="text-base text-center text-accent2">Agregar Al Pedido</DialogTitle>
         </DialogHeader>

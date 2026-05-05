@@ -96,7 +96,7 @@ export default function EditarVentasBalanceMensualModal({ open, onOpenChange, ct
       <AppModal
         title="Ventas del periodo"
         size="md"
-        className="sm:max-w-md"
+        className="max-w-md"
         actions={
           <div className="flex w-full flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>

@@ -188,7 +188,7 @@ export default function ConfigurarReposicionModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <AppModal
           title="Configurar Reposición"
-          className="sm:max-w-[40rem] max-h-[100vh]"
+          className="max-w-[40rem] max-h-[100vh]"
           actions={
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

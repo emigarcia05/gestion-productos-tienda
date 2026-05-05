@@ -13,6 +13,7 @@ import {
   montoArPesosEnterosToNormalizedString,
 } from "@/lib/montoArMask";
 import { fmtPrecio } from "@/lib/format";
+import { Check } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -47,13 +48,6 @@ export default function RegistrarPagoFinBalGastoMensualModal({
     return false;
   }, [saving, fila, pagadoPesosInt]);
 
-  const disabledPagarTotal = useMemo(() => {
-    if (saving || !fila) return true;
-    if (fila.monto <= 0) return true;
-    if (fila.pagado >= fila.monto) return true;
-    return false;
-  }, [saving, fila]);
-
   async function handleGuardar() {
     if (!fila || disabledSubmit) return;
     setSaving(true);
@@ -64,26 +58,6 @@ export default function RegistrarPagoFinBalGastoMensualModal({
         return;
       }
       toast.success("Pago registrado.");
-      onOpenChange(false);
-      onSuccess?.();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handlePagarTotal() {
-    if (!fila || disabledPagarTotal) return;
-    setSaving(true);
-    try {
-      const r = await registrarPagoFinBalGastoMensualAction({
-        id: fila.id,
-        pagado: fila.monto,
-      });
-      if (!r.ok) {
-        toast.error(r.error ?? "No se pudo registrar el pago total.");
-        return;
-      }
-      toast.success("Pago total registrado.");
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -102,7 +76,7 @@ export default function RegistrarPagoFinBalGastoMensualModal({
       <AppModal
         title="Registrar Pago"
         size="md"
-        className="sm:max-w-md"
+        className="max-w-md"
         actions={
           <div className="flex w-full flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
@@ -130,23 +104,32 @@ export default function RegistrarPagoFinBalGastoMensualModal({
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 PAGADO
               </span>
-              <MontoArInput
-                valueNormalized={pagadoNorm}
-                onValueNormalizedChange={setPagadoNorm}
-                disabled={saving}
-                autoFocus
-                aria-label="Importe pagado en pesos"
-              />
+              <div className="relative w-full">
+                <MontoArInput
+                  valueNormalized={pagadoNorm}
+                  onValueNormalizedChange={setPagadoNorm}
+                  disabled={saving}
+                  autoFocus
+                  aria-label="Importe pagado en pesos"
+                  className="pr-12"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                  disabled={saving || !fila || fila.monto <= 0 || fila.pagado >= fila.monto}
+                  onClick={() => {
+                    if (!fila) return;
+                    setPagadoNorm(montoArPesosEnterosToNormalizedString(fila.monto));
+                  }}
+                  aria-label="Marcar pago total"
+                  title="Pagar total"
+                >
+                  <Check className="h-4 w-4" aria-hidden />
+                </Button>
+              </div>
             </label>
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full"
-              disabled={disabledPagarTotal}
-              onClick={() => void handlePagarTotal()}
-            >
-              PAGAR TOTAL
-            </Button>
           </div>
         ) : null}
       </AppModal>

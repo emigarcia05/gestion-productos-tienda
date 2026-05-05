@@ -236,7 +236,7 @@ export default function TiendaCalcLitrosPageClient({
       />
       <SectionHeader titulo="Lista Tienda" subtitulo="Calc. Litros" />
 
-      <div className="flex-1 overflow-hidden w-full px-4 sm:px-6 lg:px-8 contenedor-pagina-con-filtros">
+      <div className="flex-1 overflow-hidden w-full px-4 px-6 px-8 contenedor-pagina-con-filtros">
         <section className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-card p-4">
           <div className="flex h-full min-h-0 flex-col gap-3">
             <div className="flex flex-col items-center gap-1">
@@ -245,7 +245,7 @@ export default function TiendaCalcLitrosPageClient({
               </h2>
               <span className="h-0.5 w-[70%] rounded-full bg-primary" aria-hidden />
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 grid-cols-2">
               <Select
                 value={formaCalculo}
                 onValueChange={(value) => setFormaCalculo(value as FormaCalculoLts)}

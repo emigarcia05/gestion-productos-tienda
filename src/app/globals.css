@@ -626,12 +626,12 @@
   }
   .filtro-individual-container .filtro-individual-clear-btn {
     position: absolute;
-    right: 0.4rem;
+    right: 0.3rem;
     top: 50%;
     transform: translateY(-50%);
     z-index: 12;
-    inline-size: min(2.5rem, calc(100% - 0.5rem));
-    block-size: min(2.5rem, calc(100% - 0.5rem));
+    inline-size: min(2.1rem, calc(100% - 0.7rem));
+    block-size: min(2.1rem, calc(100% - 0.7rem));
     min-inline-size: 1.125rem;
     min-block-size: 1.125rem;
     padding: 0;
@@ -1290,15 +1290,10 @@
 }
 .modal-resumen-producto__grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem 1rem;
   font-size: 0.75rem;
   text-align: center;
-}
-@media (min-width: 640px) {
-  .modal-resumen-producto__grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 .modal-resumen-producto__label {
   display: block;

@@ -184,7 +184,7 @@ export default function NuevoItemTintometricoModal({
       <AppModal
         title="Nuevo Ítem Tintométrico"
         scrollBody={false}
-        className="sm:max-w-[46.2rem] max-h-[99vh]"
+        className="max-w-[46.2rem] max-h-[99vh]"
         bodyClassName="flex flex-col gap-4"
         actions={
           <>
@@ -198,7 +198,7 @@ export default function NuevoItemTintometricoModal({
         }
       >
         <div className="grid grid-cols-1 gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <span className="text-xs text-foreground">Sucursal</span>
               <Select

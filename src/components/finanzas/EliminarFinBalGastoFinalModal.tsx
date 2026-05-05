@@ -56,7 +56,7 @@ export default function EliminarFinBalGastoFinalModal({
       <AppModal
         title="Eliminar Gasto Final"
         size="sm"
-        className="sm:max-w-md"
+        className="max-w-md"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button

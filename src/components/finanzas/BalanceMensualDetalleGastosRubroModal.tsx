@@ -64,7 +64,7 @@ export default function BalanceMensualDetalleGastosRubroModal({
       <AppModal
         title={fmtTituloPalabras(titulo)}
         size="xl"
-        className="sm:max-w-5xl"
+        className="max-w-5xl"
         bodyClassName="flex flex-col min-h-0 max-h-[min(36rem,70vh)]"
         scrollBody={false}
         actions={

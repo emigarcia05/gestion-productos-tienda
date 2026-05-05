@@ -222,7 +222,7 @@ export default function FinBalGastosCatalogoPageClient({
       contentWidth="full"
     >
       <div className="flex-1 min-h-0 w-full overflow-hidden py-4">
-        <div className="grid h-full min-h-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid h-full min-h-0 grid-cols-1 gap-3 grid-cols-2 grid-cols-5">
           <CatalogoColumna
             titulo="TIPOS"
             subtitulo={`${jerarquia.length} registro${jerarquia.length === 1 ? "" : "s"}`}

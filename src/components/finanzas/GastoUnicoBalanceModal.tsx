@@ -216,7 +216,7 @@ export default function GastoUnicoBalanceModal({
       <AppModal
         title={tituloModal}
         size="lg"
-        className="sm:max-w-xl"
+        className="max-w-xl"
         padding="sm"
         actions={
           vista === "lista" ? (
@@ -245,7 +245,7 @@ export default function GastoUnicoBalanceModal({
                 . Periodo: <span className="font-medium text-foreground">{mes}/{anio}</span>.
               </p>
               {!cargandoLista && items.length > 0 ? (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 grid-cols-2">
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
                     activo={!!filtSucursal}
@@ -403,25 +403,26 @@ export default function GastoUnicoBalanceModal({
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   Pagado <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
                 </span>
-                <div className="relative">
+                <div className="flex items-center gap-2">
                   <MontoArInput
                     valueNormalized={pagadoNorm}
                     onValueNormalizedChange={setPagadoNorm}
                     disabled={guardando}
                     aria-label="Importe ya pagado"
-                    className="pr-12"
+                    className="flex-1 min-w-0"
                   />
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                    size="sm"
+                    className="h-10 shrink-0 px-3"
                     disabled={guardando || montoPesosInt < 1}
                     onClick={() => setPagadoNorm(montoNorm)}
                     aria-label="Marcar gasto eventual como pagado"
-                    title="Marcar como pagado"
+                    title="Marcar pago total"
                   >
                     <Check className="h-4 w-4" aria-hidden />
+                    Marcar Pago Total
                   </Button>
                 </div>
               </label>

@@ -175,7 +175,7 @@ export default function FinanzasVencPorFechaPageClient({
         }
       >
         <div className="flex flex-1 min-h-0 flex-col gap-2 pb-4">
-          <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+          <div className="flex shrink-0 flex-col gap-1 flex-row items-baseline justify-between gap-4">
             <p
               className={cn(
                 "text-sm font-semibold uppercase tracking-wide text-muted-foreground"
@@ -193,7 +193,7 @@ export default function FinanzasVencPorFechaPageClient({
                 </span>
               ) : null}
             </p>
-            <p className="text-xs tabular-nums text-muted-foreground sm:text-right">
+            <p className="text-xs tabular-nums text-muted-foreground text-right">
               Ventana: {total.toLocaleString("es-AR")} día{total === 1 ? "" : "s"} (hoy + 150)
             </p>
           </div>

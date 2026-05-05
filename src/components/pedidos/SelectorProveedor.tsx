@@ -37,7 +37,7 @@ export default function SelectorProveedor({
   }
 
   return (
-    <div className="relative sm:w-64 shrink-0">
+    <div className="relative w-64 shrink-0">
       <select
         value={proveedorActual}
         onChange={(e) => handleChange(e.target.value)}

@@ -117,7 +117,7 @@ export default function ChequesCajaTesoreriaModal({
           padding="sm"
           scrollBody={false}
           bodyClassName="min-h-0 overflow-hidden flex flex-col"
-          className="sm:max-w-[calc(48rem*1.15)]"
+          className="max-w-[calc(48rem*1.15)]"
           actions={
             <div className="flex w-full flex-wrap items-center justify-between gap-2">
               {esEditor ? (

@@ -46,7 +46,7 @@ export default function EliminarChequeTesoreriaModal({
       <AppModal
         title="Eliminar Cheque"
         size="sm"
-        className="sm:max-w-md"
+        className="max-w-md"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>

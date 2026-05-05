@@ -63,7 +63,7 @@ function sumarTotales(filas: DeudaProveedorRow[]): Record<(typeof CAMPOS_SUMA)[n
 export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedorRow[] }) {
   const totales = filas.length > 0 ? sumarTotales(filas) : null;
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 sm:px-6 lg:px-8">
+    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 px-6 px-8">
       <p
         className={cn(
           "shrink-0 text-sm font-semibold text-muted-foreground tracking-wide uppercase"

@@ -281,7 +281,7 @@ export default function CrearEditarFinBalGastoFinalModal({
       <AppModal
         title={titulo}
         size="md"
-        className="sm:max-w-xl"
+        className="max-w-xl"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button
@@ -403,9 +403,9 @@ export default function CrearEditarFinBalGastoFinalModal({
               disabled={saving || !gastoMensual}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue
-                  placeholder={gastoMensual ? "SELECCIONAR PLAZO" : "VACÍO (TIPO EVENTUAL)"}
-                />
+                <SelectValue placeholder="VACÍO (TIPO EVENTUAL)">
+                  {gastoMensual ? String(vencimiento) : "VACÍO (TIPO EVENTUAL)"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {plazoPagoOpciones.map((d) => (

@@ -22,10 +22,10 @@ const appModalContentVariants = cva(
   {
     variants: {
       size: {
-        sm: "sm:max-w-md",
-        md: "sm:max-w-lg",
-        lg: "sm:max-w-xl",
-        xl: "sm:max-w-3xl",
+        sm: "max-w-md",
+        md: "max-w-lg",
+        lg: "max-w-xl",
+        xl: "max-w-3xl",
       },
     },
     defaultVariants: {
@@ -74,7 +74,7 @@ export interface AppModalProps
   bodyClassName?: string;
   /**
    * Padding del contenedor gris alrededor de la card (por defecto `p-4` vía `cn`).
-   * Ej.: `p-1.5 sm:p-2` para modales compactos.
+   * Ej.: `p-2` para modales compactos.
    */
   bodyShellClassName?: string;
   /** Clases adicionales del header (fondo primary). Ej. `pt-3 pb-3` para modales densos. */

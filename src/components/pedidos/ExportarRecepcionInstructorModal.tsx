@@ -36,7 +36,7 @@ export default function ExportarRecepcionInstructorModal({ open, onOpenChange }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         title="Instructivo: Importar El Archivo Exportado"
-        className="sm:max-w-5xl"
+        className="max-w-5xl"
         bodyClassName="max-w-full flex flex-col min-h-0"
         scrollBody={false}
         actions={
@@ -50,7 +50,7 @@ export default function ExportarRecepcionInstructorModal({ open, onOpenChange }:
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4">
-          <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-2 overflow-hidden sm:gap-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-2 overflow-hidden gap-4">
             <Button
               type="button"
               variant="outline"
@@ -74,7 +74,7 @@ export default function ExportarRecepcionInstructorModal({ open, onOpenChange }:
                   alt={paso.texto}
                   fill
                   className="object-contain object-center"
-                  sizes="(max-width: 896px) 100vw, 896px"
+                  sizes="( 896px) 100vw, 896px"
                 />
               </div>
             </div>

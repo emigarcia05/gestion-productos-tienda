@@ -157,7 +157,7 @@ export default function GestionTiposPinturaModal({
       <AppModal
         title="Editar Rendimientos"
         size="lg"
-        className="sm:max-w-4xl"
+        className="max-w-4xl"
         padding="sm"
         scrollBody={false}
         actions={
