@@ -675,8 +675,10 @@ function FilaCatalogo({
               {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "NO MENSUAL"}
             </div>
             <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              DÍA DEVENGADO: {gastoFinalDetalle.diaDevengado} - PLAZO PAGO:{" "}
-              {gastoFinalDetalle.vencimiento} días
+              DÍA DEVENGADO: {gastoFinalDetalle.diaDevengado}
+            </div>
+            <div className="truncate text-[11px] leading-tight text-muted-foreground">
+              PLAZO DE PAGO: {gastoFinalDetalle.vencimiento} días
             </div>
             {gastoFinalComentarios ? (
               <div
