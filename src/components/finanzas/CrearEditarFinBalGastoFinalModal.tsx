@@ -93,7 +93,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   onSuccess,
 }: Props) {
   const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
-  const normalizarPlazoPago = (value: number) => Math.max(1, Math.min(30, Math.trunc(value)));
+  const normalizarPlazoPago = (value: number) => Math.max(0, Math.min(30, Math.trunc(value)));
 
   const [sucursalId, setSucursalId] = useState("");
   const [proveedorId, setProveedorId] = useState("");
@@ -188,7 +188,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
     if (!sucursalId || !proveedorId) return true;
-    if (!Number.isInteger(vencimiento) || vencimiento < 1 || vencimiento > 30) return true;
+    if (!Number.isInteger(vencimiento) || vencimiento < 0 || vencimiento > 30) return true;
     if (modo === "editar" && (!id || !hasChanges)) return true;
     if (comentarioObligatorioPorTripla && comentariosNorm === "") return true;
     if (comentarioChocaConOtro) return true;
@@ -391,20 +391,20 @@ export default function CrearEditarFinBalGastoFinalModal({
             </span>
             <input
               type="number"
-              min={1}
+              min={0}
               max={30}
               step={1}
               value={vencimiento}
               onChange={(e) => {
                 const value = Number(e.target.value);
-                setVencimiento(Number.isFinite(value) ? normalizarPlazoPago(value) : 1);
+                setVencimiento(Number.isFinite(value) ? normalizarPlazoPago(value) : 0);
               }}
               disabled={saving}
               className={SELECT_TRIGGER_FILTER_CLASS}
               placeholder="DÍAS"
             />
             <p className="text-xs text-muted-foreground">
-              Días hasta el pago del gasto (obligatorio: 1 a 30).
+              Días hasta el pago del gasto (obligatorio: 0 a 30).
             </p>
           </label>
 

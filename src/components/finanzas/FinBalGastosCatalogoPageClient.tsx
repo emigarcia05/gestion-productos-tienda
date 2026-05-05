@@ -659,17 +659,11 @@ function FilaCatalogo({
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         {gastoFinalDetalle ? (
           <>
-            <div className="min-w-0 truncate text-[11px] leading-tight">
-              <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-                PROVEEDOR{" "}
-              </span>
-              <span className="font-medium text-foreground">{nombre}</span>
+            <div className="min-w-0 truncate text-[11px] font-medium leading-tight text-foreground">
+              {nombre}
             </div>
-            <div className="min-w-0 truncate text-[11px] leading-tight">
-              <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-                SUCURSAL{" "}
-              </span>
-              <span className="text-foreground">{gastoFinalDetalle.sucursalNombre}</span>
+            <div className="min-w-0 truncate text-[11px] leading-tight text-foreground">
+              {gastoFinalDetalle.sucursalNombre}
             </div>
             <div className="truncate text-[11px] font-semibold uppercase tracking-wide text-foreground">
               {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "NO MENSUAL"}
@@ -678,7 +672,7 @@ function FilaCatalogo({
               DÍA DEVENGADO: {gastoFinalDetalle.diaDevengado}
             </div>
             <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              PLAZO DE PAGO: {gastoFinalDetalle.vencimiento} días
+              PLAZO DE PAGO: {gastoFinalDetalle.vencimiento} DÍAS
             </div>
             {gastoFinalComentarios ? (
               <div

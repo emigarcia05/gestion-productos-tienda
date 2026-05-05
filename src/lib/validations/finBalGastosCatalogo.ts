@@ -89,8 +89,8 @@ const diaDevengadoSchema = z.coerce
 const vencimientoSchema = z.coerce
   .number()
   .int("El plazo de pago debe ser un número entero de días.")
-  .min(1, "El plazo de pago debe ser entre 1 y 30 días.")
-  .max(30, "El plazo de pago debe ser entre 1 y 30 días.");
+  .min(0, "El plazo de pago debe ser entre 0 y 30 días.")
+  .max(30, "El plazo de pago debe ser entre 0 y 30 días.");
 
 const comentariosFinBalGastoFinalSchema = z
   .string()
