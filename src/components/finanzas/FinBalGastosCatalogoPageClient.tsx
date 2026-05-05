@@ -106,8 +106,8 @@ type ModalGastoFinalState =
       proveedorIdInicial?: string;
       sucursalIdInicial?: string;
       gastoMensualInicial?: boolean;
-      diaDevengadoInicial?: number;
-      vencimientoInicial?: number;
+      diaDevengadoInicial?: number | null;
+      vencimientoInicial?: number | null;
       comentariosInicial?: string | null;
     };
 
@@ -607,9 +607,9 @@ function CatalogoColumna({
 interface FilaCatalogoGastoFinalDetalle {
   sucursalNombre: string;
   gastoMensual: boolean;
-  diaDevengado: number;
+  diaDevengado: number | null;
   /** Días hasta el pago (`fin_bal_gasto_final.plazo_pago_dias`). */
-  vencimiento: number;
+  vencimiento: number | null;
   comentarios: string | null;
 }
 
@@ -679,12 +679,12 @@ function FilaCatalogo({
             </div>
             <div className="truncate text-[11px] leading-tight text-foreground">
               <span className="font-semibold uppercase tracking-wide text-foreground">DIA DEVENGADO: </span>
-              <span className="font-normal text-foreground">{gastoFinalDetalle.diaDevengado}</span>
+              <span className="font-normal text-foreground">{gastoFinalDetalle.diaDevengado ?? "-"}</span>
             </div>
             <div className="truncate text-[11px] leading-tight text-foreground">
               <span className="font-semibold uppercase tracking-wide text-foreground">PLAZO DE PAGO: </span>
               <span className="font-normal text-foreground">
-                {gastoFinalDetalle.vencimiento} DIAS
+                {gastoFinalDetalle.vencimiento == null ? "-" : `${gastoFinalDetalle.vencimiento} DIAS`}
               </span>
             </div>
             {gastoFinalComentarios ? (

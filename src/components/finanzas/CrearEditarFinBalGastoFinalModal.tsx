@@ -57,10 +57,10 @@ interface Props {
   proveedorIdInicial?: string;
   sucursalIdInicial?: string;
   gastoMensualInicial?: boolean;
-  /** En edición: valor persistido (1–28). */
-  diaDevengadoInicial?: number;
+  /** En edición: valor persistido (1–28) para mensual; `null` en eventual. */
+  diaDevengadoInicial?: number | null;
   /** En edición: días de vencimiento persistidos. */
-  vencimientoInicial?: number;
+  vencimientoInicial?: number | null;
   /** En edición: comentarios persistidos (`fin_bal_gasto_final.comentarios`). */
   comentariosInicial?: string | null;
   onSuccess?: () => void;
@@ -83,8 +83,8 @@ export default function CrearEditarFinBalGastoFinalModal({
   proveedorIdInicial = "",
   sucursalIdInicial = "",
   gastoMensualInicial = false,
-  diaDevengadoInicial = 1,
-  vencimientoInicial = 30,
+  diaDevengadoInicial = null,
+  vencimientoInicial = null,
   comentariosInicial = null,
   onSuccess,
 }: Props) {
@@ -107,8 +107,16 @@ export default function CrearEditarFinBalGastoFinalModal({
     setProveedorId(esEdicion ? proveedorIdInicial : "");
     const mensualInicial = esEdicion ? gastoMensualInicial : false;
     setGastoMensual(mensualInicial);
-    setDiaDevengado(esEdicion ? diaDevengadoInicial : diaDevengadoFinBalDesdeCalendarioArgentina());
-    setVencimiento(esEdicion ? normalizarPlazoPago(vencimientoInicial) : 0);
+    setDiaDevengado(
+      esEdicion && diaDevengadoInicial != null
+        ? diaDevengadoInicial
+        : diaDevengadoFinBalDesdeCalendarioArgentina()
+    );
+    setVencimiento(
+      esEdicion && vencimientoInicial != null
+        ? normalizarPlazoPago(vencimientoInicial)
+        : 30
+    );
     setComentarios(
       esEdicion ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
     );
@@ -123,17 +131,16 @@ export default function CrearEditarFinBalGastoFinalModal({
     comentariosInicial,
   ]);
 
-  /** En alta, el tipo EVENTUAL inicia con valores editables por defecto. */
+  /** En alta, al cambiar entre mensual/eventual, se normaliza la UI sin persistir vacíos inválidos. */
   useEffect(() => {
     if (!open || modo !== "crear") return;
-    if (!gastoMensual) {
-      setDiaDevengado(diaDevengadoFinBalDesdeCalendarioArgentina());
-      setVencimiento((prev) => normalizarPlazoPago(prev));
-    } else {
-      // Mensual se bloquea y se muestra vacío en UI; el backend persiste día=1/plazo=0.
+    if (gastoMensual) {
       setDiaDevengado(1);
-      setVencimiento(0);
+      setVencimiento((prev) => normalizarPlazoPago(prev));
+      return;
     }
+    setDiaDevengado(diaDevengadoFinBalDesdeCalendarioArgentina());
+    setVencimiento((prev) => normalizarPlazoPago(prev));
   }, [gastoMensual, open, modo]);
 
   const hermanosMismaProveedorSucursal = useMemo(() => {
@@ -163,8 +170,8 @@ export default function CrearEditarFinBalGastoFinalModal({
       proveedorId !== proveedorIdInicial ||
       sucursalId !== sucursalIdInicial ||
       gastoMensual !== gastoMensualInicial ||
-      diaDevengado !== diaDevengadoInicial ||
-      vencimiento !== vencimientoInicial ||
+      diaDevengado !== (diaDevengadoInicial ?? diaDevengado) ||
+      vencimiento !== (vencimientoInicial ?? vencimiento) ||
       comentarios !== comIni
     );
   }, [
@@ -226,8 +233,8 @@ export default function CrearEditarFinBalGastoFinalModal({
           proveedorId,
           sucursalId,
           gastoMensual,
-          diaDevengado: gastoMensual ? 1 : diaDevengado,
-          vencimiento: gastoMensual ? 0 : vencimiento,
+          diaDevengado: gastoMensual ? diaDevengado : null,
+          vencimiento: gastoMensual ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
@@ -241,8 +248,8 @@ export default function CrearEditarFinBalGastoFinalModal({
           proveedorId,
           sucursalId,
           gastoMensual,
-          diaDevengado: gastoMensual ? 1 : diaDevengado,
-          vencimiento: gastoMensual ? 0 : vencimiento,
+          diaDevengado: gastoMensual ? diaDevengado : null,
+          vencimiento: gastoMensual ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {

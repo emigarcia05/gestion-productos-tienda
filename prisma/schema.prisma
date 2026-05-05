@@ -233,7 +233,9 @@ model FinBalGasto {
 
 /**
  * Gasto de balance “final”: catálogo `fin_bal_cat_gasto` + proveedor + sucursal + `gasto_mensual` + `dia_devengado` + `plazo_pago_dias`.
- * Obligatorios en persistencia: `gasto_id`, `proveedor_id`, `gasto_mensual`, `dia_devengado` (1–28).
+ * Obligatorios en persistencia: `gasto_id`, `proveedor_id`, `gasto_mensual`.
+ * Si `gasto_mensual = true`, `dia_devengado` (1–28) y `plazo_pago_dias` (0–30) son obligatorios.
+ * Si `gasto_mensual = false` (eventual), ambos deben persistir en `NULL`.
  * `comentarios` opcional (TEXT); en UI se ingresa en mayúsculas.
  * Un gasto de catálogo puede tener N filas; la terna gasto + proveedor + sucursal puede repetirse (cada fila tiene `id` propio e imputaciones mensuales independientes).
  */
@@ -243,10 +245,10 @@ model FinBalGastoFinal {
   proveedorId   String   @map("proveedor_id")
   sucursalId    String   @map("sucursal_id")
   gastoMensual  Boolean  @map("gasto_mensual")
-  /** Día del mes (1–28) en que se devenga el gasto. CHECK en DB. Gasto único: en alta, día de hoy AR (cap 28). */
-  diaDevengado  Int      @map("dia_devengado")
-  /** Días entre fecha de gasto (devengo) y fecha de pago (vencimiento). */
-  vencimiento   Int      @default(30) @map("plazo_pago_dias")
+  /** Día del mes (1–28) del devengo en gastos mensuales; `NULL` en eventuales. */
+  diaDevengado  Int?     @map("dia_devengado")
+  /** Plazo de pago (0–30 días) en gastos mensuales; `NULL` en eventuales. */
+  vencimiento   Int?     @map("plazo_pago_dias")
   /** Texto libre (UI: COMENTARIOS, mayúsculas). */
   comentarios   String?  @db.Text @map("comentarios")
   createdAt     DateTime @default(now()) @map("created_at")

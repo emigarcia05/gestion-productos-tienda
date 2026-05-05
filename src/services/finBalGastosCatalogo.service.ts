@@ -54,10 +54,10 @@ export interface FinBalGastoFinalItem {
   proveedorId: string;
   sucursalId: string;
   gastoMensual: boolean;
-  /** 1–28 */
-  diaDevengado: number;
+  /** 1–28 en mensual; `null` en eventual. */
+  diaDevengado: number | null;
   /** Días entre fecha de gasto (devengo) y fecha de pago. */
-  vencimiento: number;
+  vencimiento: number | null;
   /** Texto libre (`fin_bal_gasto_final.comentarios`). */
   comentarios: string | null;
   proveedor: {
@@ -490,8 +490,8 @@ function mapFinBalGastoFinalRow(row: {
   proveedorId: string;
   sucursalId: string;
   gastoMensual: boolean;
-  diaDevengado: number;
-  vencimiento: number;
+  diaDevengado: number | null;
+  vencimiento: number | null;
   comentarios: string | null;
   proveedor: { id: string; nombre: string; prefijo: string | null };
   sucursal: { id: string; nombre: string };
@@ -600,8 +600,8 @@ export async function crearFinBalGastoFinal(
         proveedorId: input.proveedorId,
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
-        diaDevengado: input.gastoMensual ? 1 : input.diaDevengado,
-        vencimiento: input.gastoMensual ? 0 : input.vencimiento,
+        diaDevengado: input.gastoMensual ? input.diaDevengado : null,
+        vencimiento: input.gastoMensual ? input.vencimiento : null,
         comentarios: input.comentarios ?? null,
       },
       include: {
@@ -647,8 +647,8 @@ export async function editarFinBalGastoFinal(
   if (!triplaOk.success) {
     return { success: false, error: triplaOk.error };
   }
-  const diaDevengadoPersist = input.gastoMensual ? 1 : input.diaDevengado;
-  const plazoPagoPersist = input.gastoMensual ? 0 : input.vencimiento;
+  const diaDevengadoPersist = input.gastoMensual ? input.diaDevengado : null;
+  const plazoPagoPersist = input.gastoMensual ? input.vencimiento : null;
   try {
     const row = await prisma.finBalGastoFinal.update({
       where: { id: input.id },

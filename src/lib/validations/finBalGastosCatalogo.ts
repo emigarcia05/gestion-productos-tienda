@@ -108,9 +108,41 @@ export const crearFinBalGastoFinalSchema = z.object({
   proveedorId: prismaCuidOrUuidSchema,
   sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
-  diaDevengado: diaDevengadoSchema,
-  vencimiento: vencimientoSchema,
+  diaDevengado: diaDevengadoSchema.nullable(),
+  vencimiento: vencimientoSchema.nullable(),
   comentarios: comentariosFinBalGastoFinalSchema,
+}).superRefine((data, ctx) => {
+  if (data.gastoMensual) {
+    if (data.diaDevengado == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diaDevengado"],
+        message: "El día devengado es obligatorio para gasto mensual.",
+      });
+    }
+    if (data.vencimiento == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["vencimiento"],
+        message: "El plazo de pago es obligatorio para gasto mensual.",
+      });
+    }
+    return;
+  }
+  if (data.diaDevengado != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["diaDevengado"],
+      message: "En gasto eventual, el día devengado debe quedar vacío.",
+    });
+  }
+  if (data.vencimiento != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["vencimiento"],
+      message: "En gasto eventual, el plazo de pago debe quedar vacío.",
+    });
+  }
 });
 export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSchema>;
 
@@ -119,9 +151,41 @@ export const editarFinBalGastoFinalSchema = z.object({
   proveedorId: prismaCuidOrUuidSchema,
   sucursalId: globalSucursalIdSchema,
   gastoMensual: z.boolean(),
-  diaDevengado: diaDevengadoSchema,
-  vencimiento: vencimientoSchema,
+  diaDevengado: diaDevengadoSchema.nullable(),
+  vencimiento: vencimientoSchema.nullable(),
   comentarios: comentariosFinBalGastoFinalSchema,
+}).superRefine((data, ctx) => {
+  if (data.gastoMensual) {
+    if (data.diaDevengado == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diaDevengado"],
+        message: "El día devengado es obligatorio para gasto mensual.",
+      });
+    }
+    if (data.vencimiento == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["vencimiento"],
+        message: "El plazo de pago es obligatorio para gasto mensual.",
+      });
+    }
+    return;
+  }
+  if (data.diaDevengado != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["diaDevengado"],
+      message: "En gasto eventual, el día devengado debe quedar vacío.",
+    });
+  }
+  if (data.vencimiento != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["vencimiento"],
+      message: "En gasto eventual, el plazo de pago debe quedar vacío.",
+    });
+  }
 });
 export type EditarFinBalGastoFinalInput = z.infer<typeof editarFinBalGastoFinalSchema>;
 

@@ -276,16 +276,16 @@ export async function listarImputacionesMensualesBalance(params: {
 
   return rows.map((r) => {
     const gf = r.gastoFinal;
-    const fechaDevengoIso = isoFechaDevengo(anio, mes, gf.diaDevengado);
+    const fechaDevengoIso = isoFechaDevengo(anio, mes, gf.diaDevengado ?? 1);
     const montoActual = r.monto;
     const fechaVencimientoIso = fechaVencimientoGastoBalanceDesdeDevengoIso(
       fechaDevengoIso,
-      gf.vencimiento
+      gf.vencimiento ?? 0
     );
     const montoVencido = montoVencidoGastoBalance({
       isoHoyArgentina: isoHoy,
       isoDevengo: fechaDevengoIso,
-      vencimientoDias: gf.vencimiento,
+      vencimientoDias: gf.vencimiento ?? 0,
       monto: montoActual,
       pagado: r.pagado,
     });
@@ -365,8 +365,8 @@ export interface FinBalGastoFinalNoMensualListItem {
   gastoNombre: string;
   proveedorNombre: string;
   sucursalNombre: string;
-  diaDevengado: number;
-  vencimiento: number;
+  diaDevengado: number | null;
+  vencimiento: number | null;
   gastoFinalComentarios: string | null;
   /** Si ya existe `fin_bal_gasto_mensual` para este gasto final y el periodo (mes, año). */
   yaImputadoEnPeriodo: boolean;
@@ -505,14 +505,6 @@ export async function crearImputacionGastoUnicoBalance(params: {
       data: { gastoFinalId, mes, anio, monto, pagado },
       select: { id: true },
     });
-    await prisma.finBalGastoFinal.update({
-      where: { id: gastoFinalId },
-      data: {
-        diaDevengado: Math.min(28, d),
-        vencimiento: plazoPersist ?? 0,
-      },
-      select: { id: true },
-    });
     return { success: true, data: { id: row.id } };
   } catch (e: unknown) {
     if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
@@ -565,10 +557,10 @@ export async function sumarPendienteGastosConFechaVencAnteriorA(
   let suma = 0;
   for (const r of all) {
     const gf = r.gastoFinal;
-    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
+    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado ?? 1);
     const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
       fechaDevengoIso,
-      gf.vencimiento
+      gf.vencimiento ?? 0
     );
     if (fechaVenc >= hoyCorte) continue;
     const pend = montoDevengadoPendienteHastaCorte({
@@ -599,10 +591,10 @@ export async function listarVencimientosGastoFlujoEnRango(
   const out: VencimientoGastoFlujoLinea[] = [];
   for (const r of all) {
     const gf = r.gastoFinal;
-    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
+    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado ?? 1);
     const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
       fechaDevengoIso,
-      gf.vencimiento
+      gf.vencimiento ?? 0
     );
     if (fechaVenc < fechaDesde || fechaVenc > fechaHasta) continue;
     const montoPendVenc = montoDevengadoPendienteHastaCorte({
@@ -659,10 +651,10 @@ export async function listarObligacionesGastoVencidasNoMercaderia(): Promise<{
     const gf = r.gastoFinal;
     if (gf.proveedor.proveedorMercaderia) continue;
 
-    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado);
+    const fechaDevengoIso = isoFechaDevengo(r.anio, r.mes, gf.diaDevengado ?? 1);
     const fechaVenc = fechaVencimientoGastoBalanceDesdeDevengoIso(
       fechaDevengoIso,
-      gf.vencimiento
+      gf.vencimiento ?? 0
     );
     if (fechaVenc >= hoyIso) continue;
 
