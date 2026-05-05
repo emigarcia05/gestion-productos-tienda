@@ -659,26 +659,33 @@ function FilaCatalogo({
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         {gastoFinalDetalle ? (
           <>
-            <div className="truncate text-[11px] font-extrabold uppercase tracking-wide text-foreground">
-              {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "EVENTUAL"}
+            <div className="truncate text-[11px] leading-tight text-muted-foreground">
+              <span className="font-semibold uppercase tracking-wide">TIPO: </span>
+              <span className="font-normal text-foreground">
+                {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "EVENTUAL"}
+              </span>
             </div>
             <div className="min-w-0 truncate text-[11px] leading-tight">
               <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-                PROVEEDOR{" "}
+                PROVEEDOR:{" "}
               </span>
-              <span className="font-semibold text-foreground">{nombre}</span>
+              <span className="font-normal text-foreground">{nombre}</span>
             </div>
             <div className="min-w-0 truncate text-[11px] leading-tight">
               <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-                SUCURSAL{" "}
+                SUCURSAL:{" "}
               </span>
-              <span className="font-semibold text-foreground">{gastoFinalDetalle.sucursalNombre}</span>
+              <span className="font-normal text-foreground">{gastoFinalDetalle.sucursalNombre}</span>
             </div>
             <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              DÍA DEVENGADO: {gastoFinalDetalle.diaDevengado}
+              <span className="font-semibold uppercase tracking-wide">DIA DEVENGADO: </span>
+              <span className="font-normal text-foreground">{gastoFinalDetalle.diaDevengado}</span>
             </div>
             <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              PLAZO DE PAGO: {gastoFinalDetalle.vencimiento} días
+              <span className="font-semibold uppercase tracking-wide">PLAZO DE PAGO: </span>
+              <span className="font-normal text-foreground">
+                {gastoFinalDetalle.vencimiento} DIAS
+              </span>
             </div>
             {gastoFinalComentarios ? (
               <div
