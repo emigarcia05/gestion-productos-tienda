@@ -273,7 +273,7 @@ export default function FinanzasBalanceGastosPageClient({
                 ) : (
                   <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
                 )}
-                Cargar Mes
+                CARGAR GASTOS FIJOS
               </Button>
               <Button
                 type="button"
@@ -282,7 +282,7 @@ export default function FinanzasBalanceGastosPageClient({
                 className="h-10 px-4 gap-2"
               >
                 <Receipt className="h-4 w-4 shrink-0" aria-hidden />
-                Gasto Único
+                CARGAR GASTO EVENTUAL
               </Button>
             </div>
           ) : undefined

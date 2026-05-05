@@ -659,30 +659,30 @@ function FilaCatalogo({
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         {gastoFinalDetalle ? (
           <>
-            <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              <span className="font-semibold uppercase tracking-wide">TIPO: </span>
+            <div className="truncate text-[11px] leading-tight text-foreground">
+              <span className="font-semibold uppercase tracking-wide text-foreground">TIPO: </span>
               <span className="font-normal text-foreground">
                 {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "EVENTUAL"}
               </span>
             </div>
             <div className="min-w-0 truncate text-[11px] leading-tight">
-              <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-                PROVEEDOR:{" "}
-              </span>
-              <span className="font-normal text-foreground">{nombre}</span>
-            </div>
-            <div className="min-w-0 truncate text-[11px] leading-tight">
-              <span className="font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="font-semibold uppercase tracking-wide text-foreground">
                 SUCURSAL:{" "}
               </span>
               <span className="font-normal text-foreground">{gastoFinalDetalle.sucursalNombre}</span>
             </div>
-            <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              <span className="font-semibold uppercase tracking-wide">DIA DEVENGADO: </span>
+            <div className="min-w-0 truncate text-[11px] leading-tight">
+              <span className="font-semibold uppercase tracking-wide text-foreground">
+                PROVEEDOR:{" "}
+              </span>
+              <span className="font-normal text-foreground">{nombre}</span>
+            </div>
+            <div className="truncate text-[11px] leading-tight text-foreground">
+              <span className="font-semibold uppercase tracking-wide text-foreground">DIA DEVENGADO: </span>
               <span className="font-normal text-foreground">{gastoFinalDetalle.diaDevengado}</span>
             </div>
-            <div className="truncate text-[11px] leading-tight text-muted-foreground">
-              <span className="font-semibold uppercase tracking-wide">PLAZO DE PAGO: </span>
+            <div className="truncate text-[11px] leading-tight text-foreground">
+              <span className="font-semibold uppercase tracking-wide text-foreground">PLAZO DE PAGO: </span>
               <span className="font-normal text-foreground">
                 {gastoFinalDetalle.vencimiento} DIAS
               </span>

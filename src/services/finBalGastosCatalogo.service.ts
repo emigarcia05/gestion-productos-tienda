@@ -1,4 +1,3 @@
-import { diaDevengadoFinBalDesdeCalendarioArgentina } from "@/lib/fechaArgentina";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 import type {
@@ -601,11 +600,8 @@ export async function crearFinBalGastoFinal(
         proveedorId: input.proveedorId,
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
-        diaDevengado:
-          input.gastoMensual === false
-            ? diaDevengadoFinBalDesdeCalendarioArgentina()
-            : input.diaDevengado,
-        vencimiento: input.vencimiento,
+        diaDevengado: input.gastoMensual ? 1 : input.diaDevengado,
+        vencimiento: input.gastoMensual ? 0 : input.vencimiento,
         comentarios: input.comentarios ?? null,
       },
       include: {
@@ -651,10 +647,8 @@ export async function editarFinBalGastoFinal(
   if (!triplaOk.success) {
     return { success: false, error: triplaOk.error };
   }
-  const diaDevengadoPersist =
-    input.gastoMensual === false && prev.gastoMensual === true
-      ? diaDevengadoFinBalDesdeCalendarioArgentina()
-      : input.diaDevengado;
+  const diaDevengadoPersist = input.gastoMensual ? 1 : input.diaDevengado;
+  const plazoPagoPersist = input.gastoMensual ? 0 : input.vencimiento;
   try {
     const row = await prisma.finBalGastoFinal.update({
       where: { id: input.id },
@@ -663,7 +657,7 @@ export async function editarFinBalGastoFinal(
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
         diaDevengado: diaDevengadoPersist,
-        vencimiento: input.vencimiento,
+        vencimiento: plazoPagoPersist,
         comentarios: input.comentarios ?? null,
       },
       include: {

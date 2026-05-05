@@ -815,9 +815,15 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-04-30): **GASTO FINAL** muestra campo **PLAZO DE PAGO** debajo de **DÍA DEVENGADO** en `CrearEditarFinBalGastoFinalModal`. Es obligatorio y solo acepta enteros del **0 al 30**. Se persiste en `fin_bal_gasto_final.plazo_pago_dias` y se usa para calcular vencimientos (`fechaDevengo + plazoPago`).*
 
-*Última actualización (2026-05-02): **`/finanzas/balance/gastos/catalogo`** — columna **GASTO FINAL** en formato `etiqueta: valor` para todas las líneas, con **etiquetas en negrita** y **valores sin negrita**: **TIPO: MENSUAL/EVENTUAL**, **PROVEEDOR: ...**, **SUCURSAL: ...**, **DIA DEVENGADO: ...**, **PLAZO DE PAGO: ... DIAS**; comentarios opcionales debajo.*
+*Última actualización (2026-05-05): **`CrearEditarFinBalGastoFinalModal`** (Nuevo/Editar Gasto Final) reordena campos a: **TIPO DE GASTO (MENSUAL/EVENTUAL)**, **SUCURSAL**, **PROVEEDOR**, **DÍA DEVENGADO**, **PLAZO DE PAGO**. **DÍA DEVENGADO** usa `Select` 1..28 y **PLAZO DE PAGO** usa `Select` 0..30. Si **TIPO = MENSUAL**, ambos quedan deshabilitados y visibles como vacíos; al guardar se persiste `diaDevengado=1` y `vencimiento=0` para mantener integridad de DB.*
+
+*Última actualización (2026-05-05): **`FinBalGastosCatalogoPageClient`** (columna **GASTO FINAL**) ordena etiquetas en la tarjeta de detalle como **TIPO**, **SUCURSAL**, **PROVEEDOR**, **DIA DEVENGADO**, **PLAZO DE PAGO**; las etiquetas se renderizan en **negrita** y en color **`text-foreground`** (negro del tema).*
+
+*Última actualización (2026-05-05): **`/finanzas/balance/gastos`** — renombre de acciones en header: **CARGAR GASTOS FIJOS** (antes “Cargar Mes”) y **CARGAR GASTO EVENTUAL** (antes “Gasto Único”). En el modal de carga eventual, el título es **Gasto Eventual** (lista) / **Cargar Gasto Eventual** (formulario).*
 
 *Última actualización (2026-05-04): **Pedido Tintométrico → Recepción**: al generar pedido, el snapshot de historial debe conservar `cod_tienda` real del ítem tintométrico (resuelto desde `cod_ext` tintométrico) para que en recepción se muestre la descripción de `prod_precios_tienda` y no caiga en genéricos como “PRODUCTO VARIOS”.*
+
+*Última actualización (2026-05-05): en `GastoUnicoBalanceModal` (carga eventual), el formulario incluye **MONTO**, **PAGADO** (con botón para copiar MONTO y marcar pago total), **FECHA DE GASTO** (obligatoria y acotada al período `mes/anio`) y **PLAZO DE PAGO** (`Select` 0..30). Si `PAGADO === MONTO`, **PLAZO DE PAGO** se bloquea y deja de ser obligatorio.*
 
 *Última actualización (2026-04-23): **`/finanzas/balance/gastos`** — filtros alineados al patrón global (`FilaFiltrosDesplegables` ×2, contador + limpiar en fila 2); **Mes** = 12 meses; **Año** = 2026…2046; entrada sin query **`redirect`** a mes/año **hoy AR**; rubro/gasto/sucursal/proveedor/pagado; acciones y modales de monto; ver `BACKEND_GUIDELINES` §2.5e.*
 

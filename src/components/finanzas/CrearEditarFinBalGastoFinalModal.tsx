@@ -17,11 +17,7 @@ import {
   crearFinBalGastoFinalAction,
   editarFinBalGastoFinalAction,
 } from "@/actions/finBalGastosCatalogo";
-import {
-  dateToIsoYmdArgentina,
-  diaDevengadoFinBalDesdeCalendarioArgentina,
-  formatIsoYmdDdMmYyyyArgentina,
-} from "@/lib/fechaArgentina";
+import { diaDevengadoFinBalDesdeCalendarioArgentina } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 
 type Modo = "crear" | "editar";
@@ -61,7 +57,7 @@ interface Props {
   proveedorIdInicial?: string;
   sucursalIdInicial?: string;
   gastoMensualInicial?: boolean;
-  /** En edición: valor persistido (1–28). En alta se ignora. */
+  /** En edición: valor persistido (1–28). */
   diaDevengadoInicial?: number;
   /** En edición: días de vencimiento persistidos. */
   vencimientoInicial?: number;
@@ -93,6 +89,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   onSuccess,
 }: Props) {
   const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
+  const plazoPagoOpciones = useMemo(() => Array.from({ length: 31 }, (_, i) => i), []);
   const normalizarPlazoPago = (value: number) => Math.max(0, Math.min(30, Math.trunc(value)));
 
   const [sucursalId, setSucursalId] = useState("");
@@ -110,14 +107,8 @@ export default function CrearEditarFinBalGastoFinalModal({
     setProveedorId(esEdicion ? proveedorIdInicial : "");
     const mensualInicial = esEdicion ? gastoMensualInicial : false;
     setGastoMensual(mensualInicial);
-    setDiaDevengado(
-      esEdicion
-        ? diaDevengadoInicial
-        : mensualInicial
-          ? 1
-          : diaDevengadoFinBalDesdeCalendarioArgentina()
-    );
-    setVencimiento(esEdicion ? normalizarPlazoPago(vencimientoInicial) : 30);
+    setDiaDevengado(esEdicion ? diaDevengadoInicial : diaDevengadoFinBalDesdeCalendarioArgentina());
+    setVencimiento(esEdicion ? normalizarPlazoPago(vencimientoInicial) : 0);
     setComentarios(
       esEdicion ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
     );
@@ -132,10 +123,17 @@ export default function CrearEditarFinBalGastoFinalModal({
     comentariosInicial,
   ]);
 
-  /** En alta, al pasar entre mensual y único, el día de devengo sigue la regla de negocio (hoy AR si único). */
+  /** En alta, el tipo EVENTUAL inicia con valores editables por defecto. */
   useEffect(() => {
     if (!open || modo !== "crear") return;
-    setDiaDevengado(gastoMensual ? 1 : diaDevengadoFinBalDesdeCalendarioArgentina());
+    if (!gastoMensual) {
+      setDiaDevengado(diaDevengadoFinBalDesdeCalendarioArgentina());
+      setVencimiento((prev) => normalizarPlazoPago(prev));
+    } else {
+      // Mensual se bloquea y se muestra vacío en UI; el backend persiste día=1/plazo=0.
+      setDiaDevengado(1);
+      setVencimiento(0);
+    }
   }, [gastoMensual, open, modo]);
 
   const hermanosMismaProveedorSucursal = useMemo(() => {
@@ -228,8 +226,8 @@ export default function CrearEditarFinBalGastoFinalModal({
           proveedorId,
           sucursalId,
           gastoMensual,
-          diaDevengado,
-          vencimiento,
+          diaDevengado: gastoMensual ? 1 : diaDevengado,
+          vencimiento: gastoMensual ? 0 : vencimiento,
           comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
@@ -243,8 +241,8 @@ export default function CrearEditarFinBalGastoFinalModal({
           proveedorId,
           sucursalId,
           gastoMensual,
-          diaDevengado,
-          vencimiento,
+          diaDevengado: gastoMensual ? 1 : diaDevengado,
+          vencimiento: gastoMensual ? 0 : vencimiento,
           comentarios: comentariosParaPersistir(),
         });
         if (!r.ok) {
@@ -302,6 +300,25 @@ export default function CrearEditarFinBalGastoFinalModal({
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              TIPO DE GASTO
+            </span>
+            <Select
+              value={gastoMensual ? "mensual" : "eventual"}
+              onValueChange={(v) => setGastoMensual(v === "mensual")}
+              disabled={saving}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value="mensual">MENSUAL</SelectItem>
+                <SelectItem value="eventual">EVENTUAL</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               SUCURSAL
             </span>
             <Select
@@ -346,34 +363,15 @@ export default function CrearEditarFinBalGastoFinalModal({
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              GASTO MENSUAL
-            </span>
-            <Select
-              value={gastoMensual ? "si" : "no"}
-              onValueChange={(v) => setGastoMensual(v === "si")}
-              disabled={saving}
-            >
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                <SelectItem value="no">NO</SelectItem>
-                <SelectItem value="si">SÍ</SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               DÍA DEVENGADO
             </span>
             <Select
-              value={String(diaDevengado)}
+              value={gastoMensual ? undefined : String(diaDevengado)}
               onValueChange={(v) => setDiaDevengado(Number(v))}
-              disabled={saving || (modo === "crear" && !gastoMensual)}
+              disabled={saving || gastoMensual}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="DÍA DEL MES" />
+                <SelectValue placeholder={gastoMensual ? "VACÍO (TIPO MENSUAL)" : "SELECCIONAR DÍA"} />
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {diasOpciones.map((d) => (
@@ -389,23 +387,24 @@ export default function CrearEditarFinBalGastoFinalModal({
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               PLAZO DE PAGO
             </span>
-            <input
-              type="number"
-              min={0}
-              max={30}
-              step={1}
-              value={vencimiento}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                setVencimiento(Number.isFinite(value) ? normalizarPlazoPago(value) : 0);
-              }}
-              disabled={saving}
-              className={SELECT_TRIGGER_FILTER_CLASS}
-              placeholder="DÍAS"
-            />
-            <p className="text-xs text-muted-foreground">
-              Días hasta el pago del gasto (obligatorio: 0 a 30).
-            </p>
+            <Select
+              value={gastoMensual ? undefined : String(vencimiento)}
+              onValueChange={(v) => setVencimiento(normalizarPlazoPago(Number(v)))}
+              disabled={saving || gastoMensual}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue
+                  placeholder={gastoMensual ? "VACÍO (TIPO MENSUAL)" : "SELECCIONAR PLAZO"}
+                />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
+                {plazoPagoOpciones.map((d) => (
+                  <SelectItem key={d} value={String(d)}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="flex flex-col gap-1">

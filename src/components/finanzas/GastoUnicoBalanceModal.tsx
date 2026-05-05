@@ -21,6 +21,7 @@ import {
 } from "@/actions/finBalGastoMensualBalance";
 import type { FinBalGastoFinalNoMensualListItem } from "@/services/finBalGastoMensualBalance.service";
 import { montoArNormalizedStringToPesosIntRounded } from "@/lib/montoArMask";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 
 interface Props {
   open: boolean;
@@ -45,8 +46,10 @@ export default function GastoUnicoBalanceModal({
   const [seleccion, setSeleccion] = useState<FinBalGastoFinalNoMensualListItem | null>(null);
   const [montoNorm, setMontoNorm] = useState("");
   const [pagadoNorm, setPagadoNorm] = useState("");
+  const [fechaGasto, setFechaGasto] = useState("");
+  const [plazoPago, setPlazoPago] = useState<string>("");
   const [guardando, setGuardando] = useState(false);
-  /** Obligatorio para ver el listado de gastos únicos. */
+  /** Obligatorio para ver el listado de gastos eventuales. */
   const [filtSucursal, setFiltSucursal] = useState("");
   /** Opcional; acota por rubro dentro de la sucursal elegida. */
   const [filtRubro, setFiltRubro] = useState("");
@@ -72,6 +75,8 @@ export default function GastoUnicoBalanceModal({
     setSeleccion(null);
     setMontoNorm("");
     setPagadoNorm("");
+    setFechaGasto("");
+    setPlazoPago("");
     setFiltSucursal("");
     setFiltRubro("");
     void cargarLista();
@@ -106,13 +111,49 @@ export default function GastoUnicoBalanceModal({
 
   const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
   const pagadoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(pagadoNorm), [pagadoNorm]);
+  const pagoTotal = montoPesosInt > 0 && pagadoPesosInt === montoPesosInt;
+  const plazoRequerido = montoPesosInt > 0 && !pagoTotal;
+  const plazoPagoInt = useMemo(
+    () => (plazoPago === "" ? null : Number.parseInt(plazoPago, 10)),
+    [plazoPago]
+  );
+  const fechaMin = useMemo(
+    () => `${anio}-${String(mes).padStart(2, "0")}-01`,
+    [anio, mes]
+  );
+  const fechaMax = useMemo(() => {
+    const maxD = new Date(anio, mes, 0).getDate();
+    return `${anio}-${String(mes).padStart(2, "0")}-${String(maxD).padStart(2, "0")}`;
+  }, [anio, mes]);
 
   const disabledGuardar = useMemo(() => {
     if (guardando || !seleccion) return true;
     if (montoPesosInt < 1) return true;
     if (pagadoPesosInt < 0 || pagadoPesosInt > montoPesosInt) return true;
+    if (!fechaGasto) return true;
+    if (fechaGasto < fechaMin || fechaGasto > fechaMax) return true;
+    if (plazoRequerido) {
+      if (
+        typeof plazoPagoInt !== "number" ||
+        !Number.isInteger(plazoPagoInt) ||
+        plazoPagoInt < 0 ||
+        plazoPagoInt > 30
+      ) {
+        return true;
+      }
+    }
     return false;
-  }, [guardando, seleccion, montoPesosInt, pagadoPesosInt]);
+  }, [
+    guardando,
+    seleccion,
+    montoPesosInt,
+    pagadoPesosInt,
+    fechaGasto,
+    fechaMin,
+    fechaMax,
+    plazoRequerido,
+    plazoPagoInt,
+  ]);
 
   async function handleGuardarImputacion() {
     if (!seleccion || disabledGuardar) return;
@@ -124,12 +165,14 @@ export default function GastoUnicoBalanceModal({
         anio,
         monto: montoPesosInt,
         pagado: pagadoPesosInt,
+        fechaGasto,
+        plazoPago: pagoTotal ? undefined : (plazoPagoInt ?? undefined),
       });
       if (!r.ok) {
         toast.error(r.error ?? "No se pudo guardar.");
         return;
       }
-      toast.success("Imputación de gasto único registrada.");
+      toast.success("Imputación de gasto eventual registrada.");
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -141,6 +184,8 @@ export default function GastoUnicoBalanceModal({
     setSeleccion(it);
     setMontoNorm("");
     setPagadoNorm("");
+    setFechaGasto(dateToIsoYmdArgentina(new Date(anio, mes - 1, 1)));
+    setPlazoPago("");
     setVista("formulario");
   }
 
@@ -148,12 +193,14 @@ export default function GastoUnicoBalanceModal({
     setSeleccion(null);
     setMontoNorm("");
     setPagadoNorm("");
+    setFechaGasto("");
+    setPlazoPago("");
     setVista("lista");
     void cargarLista();
   }
 
   const tituloModal =
-    vista === "lista" ? "Gasto único" : "Cargar gasto único";
+    vista === "lista" ? "Gasto Eventual" : "Cargar Gasto Eventual";
 
   return (
     <Dialog
@@ -191,7 +238,7 @@ export default function GastoUnicoBalanceModal({
           {vista === "lista" ? (
             <>
               <p className="text-xs text-muted-foreground">
-                Gastos del catálogo con periodicidad <span className="font-medium text-foreground">GASTO ÚNICO</span>
+                Gastos del catálogo con periodicidad <span className="font-medium text-foreground">EVENTUAL</span>
                 . Periodo: <span className="font-medium text-foreground">{mes}/{anio}</span>.
               </p>
               {!cargandoLista && items.length > 0 ? (
@@ -246,16 +293,16 @@ export default function GastoUnicoBalanceModal({
                   </div>
                 ) : items.length === 0 ? (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No hay gastos únicos en el catálogo.
+                    No hay gastos eventuales en el catálogo.
                   </p>
                 ) : !filtSucursal ? (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
                     Seleccioná una <span className="font-medium text-foreground">SUCURSAL</span> para ver los gastos
-                    únicos.
+                    eventuales.
                   </p>
                 ) : itemsFiltrados.length === 0 ? (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No hay gastos únicos para esta sucursal
+                    No hay gastos eventuales para esta sucursal
                     {filtRubro ? " y el rubro elegido" : ""}.
                   </p>
                 ) : (
@@ -347,10 +394,64 @@ export default function GastoUnicoBalanceModal({
                   disabled={guardando}
                   aria-label="Importe ya pagado"
                 />
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3"
+                    disabled={guardando || montoPesosInt < 1}
+                    onClick={() => setPagadoNorm(montoNorm)}
+                  >
+                    Copiar Monto A Pagado
+                  </Button>
+                </div>
               </label>
-              <p className="text-[11px] text-muted-foreground">
-                Si no ingresás pagado, se guarda en cero. El pagado no puede superar el monto.
-              </p>
+              <label className="flex w-full flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Fecha De Gasto <span className="text-destructive">*</span>
+                </span>
+                <input
+                  type="date"
+                  value={fechaGasto}
+                  min={fechaMin}
+                  max={fechaMax}
+                  onChange={(e) => setFechaGasto(e.target.value)}
+                  disabled={guardando}
+                  className="input-filtro-unificado"
+                  aria-label="Fecha de gasto"
+                />
+              </label>
+              <label className="flex w-full flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Plazo De Pago {plazoRequerido ? <span className="text-destructive">*</span> : null}
+                </span>
+                <Select
+                  value={pagoTotal ? undefined : plazoPago || undefined}
+                  onValueChange={setPlazoPago}
+                  disabled={guardando || pagoTotal}
+                >
+                  <SelectTrigger className="input-filtro-unificado">
+                    <SelectValue
+                      placeholder={
+                        pagoTotal ? "BLOQUEADO (PAGO TOTAL)" : "SELECCIONAR PLAZO"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro max-h-60"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => i).map((d) => (
+                      <SelectItem key={d} value={String(d)}>
+                        {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
             </div>
           ) : null}
         </div>

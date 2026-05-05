@@ -449,13 +449,31 @@ export async function crearImputacionGastoUnicoBalance(params: {
   anio: number;
   monto: number;
   pagado: number;
+  fechaGasto: string;
+  plazoPago?: number;
 }): Promise<ServiceResult<{ id: string }>> {
-  const { gastoFinalId, mes, anio, monto, pagado } = params;
+  const { gastoFinalId, mes, anio, monto, pagado, fechaGasto, plazoPago } = params;
   if (monto < 1) {
     return { success: false, error: "El monto es obligatorio y debe ser mayor a cero." };
   }
   if (pagado < 0 || pagado > monto) {
     return { success: false, error: "El importe pagado debe estar entre 0 y el monto." };
+  }
+  const [y, m, d] = fechaGasto.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d) || y !== anio || m !== mes) {
+    return { success: false, error: "La fecha de gasto debe pertenecer al período seleccionado." };
+  }
+  const maxDiaMes = new Date(anio, mes, 0).getDate();
+  if (d < 1 || d > maxDiaMes) {
+    return { success: false, error: "La fecha de gasto no es válida para el mes seleccionado." };
+  }
+  const pagoCompleto = pagado === monto;
+  const plazoPersist = pagoCompleto ? 0 : plazoPago;
+  if (!pagoCompleto && (typeof plazoPersist !== "number" || plazoPersist < 0 || plazoPersist > 30)) {
+    return {
+      success: false,
+      error: "El plazo de pago es obligatorio y debe estar entre 0 y 30 días.",
+    };
   }
   try {
     const gf = await prisma.finBalGastoFinal.findUnique({
@@ -485,6 +503,14 @@ export async function crearImputacionGastoUnicoBalance(params: {
     }
     const row = await prisma.finBalGastoMensual.create({
       data: { gastoFinalId, mes, anio, monto, pagado },
+      select: { id: true },
+    });
+    await prisma.finBalGastoFinal.update({
+      where: { id: gastoFinalId },
+      data: {
+        diaDevengado: Math.min(28, d),
+        vencimiento: plazoPersist ?? 0,
+      },
       select: { id: true },
     });
     return { success: true, data: { id: row.id } };

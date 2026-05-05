@@ -54,10 +54,31 @@ export const crearImputacionGastoUnicoBalanceSchema = z
     anio: z.coerce.number().int().min(2026).max(2046),
     monto: z.coerce.number().int().min(1, "El monto es obligatorio."),
     pagado: z.coerce.number().int().min(0).optional().default(0),
+    /** ISO `YYYY-MM-DD`, obligatorio y acotado al período seleccionado. */
+    fechaGasto: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha de gasto es obligatoria."),
+    /**
+     * Plazo de pago en días (0..30). Si pagado === monto, puede omitirse
+     * porque el gasto se considera cancelado en su totalidad.
+     */
+    plazoPago: z.coerce.number().int().min(0).max(30).optional(),
   })
   .refine((d) => d.pagado <= d.monto, {
     message: "El pagado no puede superar el monto.",
     path: ["pagado"],
+  })
+  .refine((d) => (d.pagado >= d.monto ? true : typeof d.plazoPago === "number"), {
+    message: "El plazo de pago es obligatorio cuando no está pagado en su totalidad.",
+    path: ["plazoPago"],
+  })
+  .refine((d) => {
+    const [y, m, day] = d.fechaGasto.split("-").map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) return false;
+    if (y !== d.anio || m !== d.mes) return false;
+    const maxDia = new Date(y, m, 0).getDate();
+    return day >= 1 && day <= maxDia;
+  }, {
+    message: "La fecha de gasto debe estar dentro del mes y año seleccionados.",
+    path: ["fechaGasto"],
   });
 export type CrearImputacionGastoUnicoBalanceInput = z.infer<
   typeof crearImputacionGastoUnicoBalanceSchema
