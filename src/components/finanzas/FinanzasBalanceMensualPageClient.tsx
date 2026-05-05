@@ -4,9 +4,12 @@ import { useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PanelRightOpen, Pencil } from "lucide-react";
 import FilterBar, {
+  FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowSelection,
+  LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import {
@@ -44,6 +47,7 @@ import {
   type ElegirRubroBalancePayload,
 } from "@/lib/balanceMensualDetalle";
 import { fmtTituloPalabras } from "@/lib/format";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 
 const ANIO_FILTRO_MIN = 2026;
 const ANIO_FILTRO_MAX = 2046;
@@ -479,6 +483,21 @@ export default function FinanzasBalanceMensualPageClient({
     router.refresh();
   }
 
+  const { mesHoy, anioHoy } = useMemo(() => {
+    const iso = dateToIsoYmdArgentina(new Date());
+    const [yStr, mStr] = iso.split("-");
+    const anioN = Number.parseInt(yStr ?? "", 10);
+    const mesN = Number.parseInt(mStr ?? "", 10);
+    return {
+      mesHoy: Number.isFinite(mesN) ? mesN : 1,
+      anioHoy: Number.isFinite(anioN) ? anioN : ANIO_FILTRO_MIN,
+    };
+  }, []);
+
+  function limpiarFiltrosPeriodo() {
+    navegarPeriodo(mesHoy, anioHoy);
+  }
+
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden">
       <ClassicFilteredTableLayout
@@ -489,7 +508,11 @@ export default function FinanzasBalanceMensualPageClient({
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={anio !== anioHoy}
+                  onLimpiar={() => navegarPeriodo(mes, anioHoy)}
+                >
                   <Select value={String(anio)} onValueChange={(v) => navegarPeriodo(mes, parseInt(v, 10))}>
                     <SelectTrigger className="input-filtro-unificado" aria-label="Año del periodo">
                       <SelectValue placeholder="AÑO" />
@@ -507,8 +530,12 @@ export default function FinanzasBalanceMensualPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                </FiltroIndividualContainer>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={mes !== mesHoy}
+                  onLimpiar={() => navegarPeriodo(mesHoy, anio)}
+                >
                   <Select
                     value={String(mes)}
                     onValueChange={(v) => navegarPeriodo(parseInt(v, 10), anio)}
@@ -529,6 +556,9 @@ export default function FinanzasBalanceMensualPageClient({
                       ))}
                     </SelectContent>
                   </Select>
+                </FiltroIndividualContainer>
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-3")}>
+                  <LimpiarFiltrosButton onClick={limpiarFiltrosPeriodo} />
                 </div>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>

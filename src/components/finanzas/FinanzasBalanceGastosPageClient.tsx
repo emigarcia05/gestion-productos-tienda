@@ -16,10 +16,12 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowSelection,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas/TablaGastos";
 import BalanceMensualGastoHistoricoModal from "@/components/finanzas/BalanceMensualGastoHistoricoModal";
@@ -142,6 +144,17 @@ export default function FinanzasBalanceGastosPageClient({
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
   const [historicoDescripcion, setHistoricoDescripcion] = useState("");
+
+  const { mesHoy, anioHoy } = useMemo(() => {
+    const iso = dateToIsoYmdArgentina(new Date());
+    const [yStr, mStr] = iso.split("-");
+    const anioN = Number.parseInt(yStr ?? "", 10);
+    const mesN = Number.parseInt(mStr ?? "", 10);
+    return {
+      mesHoy: Number.isFinite(mesN) ? mesN : 1,
+      anioHoy: Number.isFinite(anioN) ? anioN : ANIO_FILTRO_MIN,
+    };
+  }, []);
 
   const estadoFiltros = useMemo(
     () => ({
@@ -291,7 +304,11 @@ export default function FinanzasBalanceGastosPageClient({
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtSucursal)}
+                  onLimpiar={() => setFiltSucursal("")}
+                >
                   <Select
                     value={filtSucursal || "none"}
                     onValueChange={(v) => setFiltSucursal(v === "none" ? "" : v)}
@@ -313,9 +330,13 @@ export default function FinanzasBalanceGastosPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
 
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtProveedor)}
+                  onLimpiar={() => setFiltProveedor("")}
+                >
                   <Select
                     value={filtProveedor || "none"}
                     onValueChange={(v) => setFiltProveedor(v === "none" ? "" : v)}
@@ -337,9 +358,13 @@ export default function FinanzasBalanceGastosPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
 
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtRubro)}
+                  onLimpiar={() => setFiltRubro("")}
+                >
                   <Select value={filtRubro || "none"} onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="RUBRO" />
@@ -358,9 +383,13 @@ export default function FinanzasBalanceGastosPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
 
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtGasto)}
+                  onLimpiar={() => setFiltGasto("")}
+                >
                   <Select value={filtGasto || "none"} onValueChange={(v) => setFiltGasto(v === "none" ? "" : v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="GASTO" />
@@ -379,9 +408,13 @@ export default function FinanzasBalanceGastosPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
 
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtEstado)}
+                  onLimpiar={() => setFiltEstado("")}
+                >
                   <Select
                     value={filtEstado || "none"}
                     onValueChange={(v) =>
@@ -403,13 +436,17 @@ export default function FinanzasBalanceGastosPageClient({
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>
 
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={anio !== anioHoy}
+                  onLimpiar={() => navegarPeriodo(mes, anioHoy)}
+                >
                   <Select value={String(anio)} onValueChange={onCambioAnio}>
                     <SelectTrigger className="input-filtro-unificado" aria-label="Año del periodo">
                       <SelectValue placeholder="AÑO" />
@@ -427,9 +464,13 @@ export default function FinanzasBalanceGastosPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
 
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={mes !== mesHoy}
+                  onLimpiar={() => navegarPeriodo(mesHoy, anio)}
+                >
                   <Select
                     value={String(mes)}
                     onValueChange={(v) => navegarPeriodo(parseInt(v, 10), anio)}
@@ -450,7 +491,7 @@ export default function FinanzasBalanceGastosPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
 
                 <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-3 gap-2")}>
                   <span className={FILTER_COUNT_CLASS}>

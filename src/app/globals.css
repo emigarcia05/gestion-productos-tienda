@@ -627,11 +627,14 @@
   .filtro-individual-container .filtro-individual-clear-btn {
     position: absolute;
     right: 0.3rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0.2rem;
+    bottom: 0.2rem;
     z-index: 12;
-    inline-size: min(2.1rem, calc(100% - 0.7rem));
-    block-size: min(2.1rem, calc(100% - 0.7rem));
+    transform: none;
+    inline-size: min(2.1rem, calc(100% - 0.7rem)) !important;
+    block-size: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
     min-inline-size: 1.125rem;
     min-block-size: 1.125rem;
     padding: 0;

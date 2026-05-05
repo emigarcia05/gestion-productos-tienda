@@ -401,28 +401,27 @@ export default function GastoUnicoBalanceModal({
               </label>
               <label className="flex w-full flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  Pagado <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
+                  Pagado
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="relative w-full">
                   <MontoArInput
                     valueNormalized={pagadoNorm}
                     onValueNormalizedChange={setPagadoNorm}
                     disabled={guardando}
                     aria-label="Importe ya pagado"
-                    className="flex-1 min-w-0"
+                    className="w-full min-w-0 pr-12"
                   />
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-10 shrink-0 px-3"
+                    variant="primaryIcon"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md"
                     disabled={guardando || montoPesosInt < 1}
                     onClick={() => setPagadoNorm(montoNorm)}
-                    aria-label="Marcar gasto eventual como pagado"
+                    aria-label="Marcar gasto eventual como pagado (pago total)"
                     title="Marcar pago total"
                   >
                     <Check className="h-4 w-4" aria-hidden />
-                    Marcar Pago Total
                   </Button>
                 </div>
               </label>

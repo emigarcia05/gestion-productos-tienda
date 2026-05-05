@@ -14,6 +14,7 @@ import ChequesCajaTesoreriaModal from "@/components/finanzas/ChequesCajaTesoreri
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowSelection,
   LimpiarFiltrosButton,
@@ -70,8 +71,6 @@ export default function FinanzasTesoreriaPageClient({
     [filas, filtroCaja, filtroTitular, filtroTipoCaja]
   );
 
-  const hayFiltros = !!filtroCaja || !!filtroTitular || !!filtroTipoCaja;
-
   function limpiarFiltros() {
     setFiltroCaja("");
     setFiltroTitular("");
@@ -87,7 +86,11 @@ export default function FinanzasTesoreriaPageClient({
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection>
               <FilaFiltrosDesplegables>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroCaja)}
+                  onLimpiar={() => setFiltroCaja("")}
+                >
                   <Select value={filtroCaja || "none"} onValueChange={(v) => setFiltroCaja(v === "none" ? "" : v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="CAJA" />
@@ -106,8 +109,12 @@ export default function FinanzasTesoreriaPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                </FiltroIndividualContainer>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroTitular)}
+                  onLimpiar={() => setFiltroTitular("")}
+                >
                   <Select
                     value={filtroTitular || "none"}
                     onValueChange={(v) => setFiltroTitular(v === "none" ? "" : v)}
@@ -129,8 +136,12 @@ export default function FinanzasTesoreriaPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                </FiltroIndividualContainer>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroTipoCaja)}
+                  onLimpiar={() => setFiltroTipoCaja("")}
+                >
                   <Select
                     value={filtroTipoCaja || "none"}
                     onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
@@ -152,9 +163,9 @@ export default function FinanzasTesoreriaPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
                 <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2")}>
-                  <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+                  <LimpiarFiltrosButton onClick={limpiarFiltros} />
                 </div>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>

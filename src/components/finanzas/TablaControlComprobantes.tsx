@@ -11,6 +11,7 @@ import FilterBar, {
   FILTER_DATE_RANGE_TRIGGER_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowDateRange,
   FilterRowSelection,
@@ -103,15 +104,6 @@ export default function TablaControlComprobantes({
     return true;
   });
 
-  const hayFiltros =
-    !!filtroProveedor ||
-    !!filtroSucursal ||
-    !!filtroPagado ||
-    !!filtroVencido ||
-    !!filtroControlado ||
-    !!filtroFechaDesde ||
-    !!filtroFechaHasta;
-
   const rangoFechasLabel = (() => {
     if (filtroFechaDesde && filtroFechaHasta) {
       return `${fmtFechaComp(filtroFechaDesde)} — ${fmtFechaComp(filtroFechaHasta)}`;
@@ -150,7 +142,11 @@ export default function TablaControlComprobantes({
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <FilaFiltrosDesplegables>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(filtroProveedor)}
+              onLimpiar={() => setFiltroProveedor("")}
+            >
               <Select
                 value={filtroProveedor || "none"}
                 onValueChange={(v) => setFiltroProveedor(v === "none" ? "" : v)}
@@ -167,8 +163,12 @@ export default function TablaControlComprobantes({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(filtroSucursal)}
+              onLimpiar={() => setFiltroSucursal("")}
+            >
               <Select
                 value={filtroSucursal || "none"}
                 onValueChange={(v) => setFiltroSucursal(v === "none" ? "" : v)}
@@ -185,8 +185,12 @@ export default function TablaControlComprobantes({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(filtroPagado)}
+              onLimpiar={() => setFiltroPagado("")}
+            >
               <Select
                 value={filtroPagado || "none"}
                 onValueChange={(v) => setFiltroPagado(v === "none" ? "" : v)}
@@ -199,8 +203,12 @@ export default function TablaControlComprobantes({
                   <SelectItem value="pendiente">PENDIENTE</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(filtroVencido)}
+              onLimpiar={() => setFiltroVencido("")}
+            >
               <Select
                 value={filtroVencido || "none"}
                 onValueChange={(v) => setFiltroVencido(v === "none" ? "" : v)}
@@ -213,9 +221,9 @@ export default function TablaControlComprobantes({
                   <SelectItem value="vencido">VENCIDO</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FiltroIndividualContainer>
             <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
-              <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "w-full")}>
+              <FiltroIndividualContainer className={cn(FILTER_SELECT_WRAPPER_CLASS, "w-full")} activo={Boolean(filtroControlado)} onLimpiar={() => setFiltroControlado("")}>
                 <Select
                   value={filtroControlado || "none"}
                   onValueChange={(v) => setFiltroControlado(v === "none" ? "" : v)}
@@ -233,9 +241,8 @@ export default function TablaControlComprobantes({
                     <SelectItem value="no">NO</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </FiltroIndividualContainer>
               <LimpiarFiltrosButton
-                visible={hayFiltros}
                 onClick={() => {
                   setFiltroProveedor("");
                   setFiltroSucursal("");
@@ -250,20 +257,29 @@ export default function TablaControlComprobantes({
           </FilaFiltrosDesplegables>
         </FilterRowSelection>
         <FilterRowDateRange>
-          <div className="flex w-full items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className={cn(FILTER_DATE_RANGE_TRIGGER_CLASS, "h-10")}
-              onClick={() => setOpenRangoFechas(true)}
-            >
-              <span className="inline-flex items-center gap-2 truncate">
-                <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
-                <span className="truncate">{rangoFechasLabel}</span>
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
-            </Button>
-          </div>
+          <FiltroIndividualContainer
+            className="w-full min-w-0"
+            activo={Boolean(filtroFechaDesde || filtroFechaHasta)}
+            onLimpiar={() => {
+              setFiltroFechaDesde("");
+              setFiltroFechaHasta("");
+            }}
+          >
+            <div className="flex w-full items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(FILTER_DATE_RANGE_TRIGGER_CLASS, "h-10")}
+                onClick={() => setOpenRangoFechas(true)}
+              >
+                <span className="inline-flex items-center gap-2 truncate">
+                  <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="truncate">{rangoFechasLabel}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
+              </Button>
+            </div>
+          </FiltroIndividualContainer>
         </FilterRowDateRange>
       </FilterBar>
       <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">

@@ -5,6 +5,7 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowSelection,
   LimpiarFiltrosButton,
@@ -140,7 +141,11 @@ export default function FinanzasVencPorFechaPageClient({
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection>
               <FilaFiltrosDesplegables>
-                <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroProveedor)}
+                  onLimpiar={() => setFiltroProveedor("")}
+                >
                   <Select
                     value={filtroProveedor || "none"}
                     onValueChange={(valor) => setFiltroProveedor(valor === "none" ? "" : valor)}
@@ -162,12 +167,9 @@ export default function FinanzasVencPorFechaPageClient({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FiltroIndividualContainer>
                 <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-4")}>
-                  <LimpiarFiltrosButton
-                    visible={!!filtroProveedor}
-                    onClick={() => setFiltroProveedor("")}
-                  />
+                  <LimpiarFiltrosButton onClick={() => setFiltroProveedor("")} />
                 </div>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>
