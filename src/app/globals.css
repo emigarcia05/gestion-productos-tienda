@@ -1469,6 +1469,12 @@ main button,
   box-shadow: 0 1px 2px #0000000d;
 }
 
+/* Botón solo ícono relleno #0072BB en filas de tabla (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`):
+ * `main button` fuerza `padding: 0 1rem` (sin aire vertical); mismo valor en los cuatro lados. */
+button.tabla-row-btn-filled-brand {
+  padding: 0.5rem !important;
+}
+
 /* ─── Título de sección (SectionHeader): diseño global, misma apariencia en todas las rutas ─── */
 .section-header {
   padding: 0.75rem 1.5rem 0;

@@ -30,7 +30,7 @@ export const IMPORT_STAT_BADGE_CLASSES = {
  * Ver **FRONTEND_GUIDELINES** §1 — prohibición de `variant="outline"` + `size="icon-xs"` con aspecto documento.
  */
 export const TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS =
-  "!h-full min-h-[var(--tabla-body-row-min-height)] !w-auto min-w-10 max-w-none self-stretch shrink-0 !px-2 !py-2 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
+  "tabla-row-btn-filled-brand !h-full min-h-[var(--tabla-body-row-min-height)] !w-auto min-w-10 max-w-none self-stretch shrink-0 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
 
 /**
  * Contenedor flex en celdas con botones {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}.
