@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
 import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
@@ -64,11 +64,6 @@ export default function AsignarProductosModal({
     };
   }, [open, proveedorId, q]);
 
-  function limpiar() {
-    setProveedorId("");
-    setQ("");
-  }
-
   async function handleConfirm(ids: string[]) {
     setAsignando(true);
     try {
@@ -84,36 +79,43 @@ export default function AsignarProductosModal({
     }
   }
 
-  const hayFiltros = !!proveedorId || !!q.trim();
-
   const filterContent = (
     <div className="flex flex-col gap-2">
-      <Select
-        value={proveedorId || "none"}
-        onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+      <FiltroIndividualContainer
+        className="w-full"
+        activo={!!proveedorId}
+        onLimpiar={() => setProveedorId("")}
       >
-        <SelectTrigger className="input-filtro-unificado w-full">
-          <SelectValue placeholder="PROVEEDOR" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
-          {proveedores.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              [{p.prefijo}] {p.nombre}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        <Select
+          value={proveedorId || "none"}
+          onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+        >
+          <SelectTrigger className="input-filtro-unificado w-full">
+            <SelectValue placeholder="PROVEEDOR" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
+            {proveedores.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                [{p.prefijo}] {p.nombre}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FiltroIndividualContainer>
 
-      <div className="w-full flex items-center gap-2">
+      <FiltroIndividualContainer
+        className="w-full"
+        activo={!!q.trim()}
+        onLimpiar={() => setQ("")}
+      >
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-          className="input-filtro-unificado flex-1 min-w-0"
+          className="input-filtro-unificado w-full min-w-0"
         />
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
-      </div>
+      </FiltroIndividualContainer>
     </div>
   );
 

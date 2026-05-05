@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FILTER_SELECT_WRAPPER_CLASS } from "@/components/FilterBar";
+import {
+  FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
+} from "@/components/FilterBar";
 import MontoArInput from "@/components/shared/MontoArInput";
 import {
   crearFinBalImputacionGastoUnicoAction,
@@ -243,7 +246,14 @@ export default function GastoUnicoBalanceModal({
               </p>
               {!cargandoLista && items.length > 0 ? (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={!!filtSucursal}
+                    onLimpiar={() => {
+                      setFiltSucursal("");
+                      setFiltRubro("");
+                    }}
+                  >
                     <Select
                       value={filtSucursal || "none"}
                       onValueChange={(v) => {
@@ -251,7 +261,7 @@ export default function GastoUnicoBalanceModal({
                         setFiltRubro("");
                       }}
                     >
-                      <SelectTrigger className="input-filtro-unificado" aria-label="Sucursal (obligatorio)">
+                      <SelectTrigger className="input-filtro-unificado w-full" aria-label="Sucursal (obligatorio)">
                         <SelectValue placeholder="SUCURSAL" />
                       </SelectTrigger>
                       <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
@@ -263,14 +273,18 @@ export default function GastoUnicoBalanceModal({
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className={FILTER_SELECT_WRAPPER_CLASS}>
+                  </FiltroIndividualContainer>
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={!!filtRubro}
+                    onLimpiar={() => setFiltRubro("")}
+                  >
                     <Select
                       value={filtRubro || "none"}
                       onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}
                       disabled={!filtSucursal}
                     >
-                      <SelectTrigger className="input-filtro-unificado" aria-label="Rubro (opcional)">
+                      <SelectTrigger className="input-filtro-unificado w-full" aria-label="Rubro (opcional)">
                         <SelectValue placeholder="RUBRO" />
                       </SelectTrigger>
                       <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
@@ -282,7 +296,7 @@ export default function GastoUnicoBalanceModal({
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                  </FiltroIndividualContainer>
                 </div>
               ) : null}
               <div className="max-h-[min(60vh,28rem)] overflow-y-auto rounded-md border border-border">
@@ -389,22 +403,25 @@ export default function GastoUnicoBalanceModal({
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   Pagado <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
                 </span>
-                <MontoArInput
-                  valueNormalized={pagadoNorm}
-                  onValueNormalizedChange={setPagadoNorm}
-                  disabled={guardando}
-                  aria-label="Importe ya pagado"
-                />
-                <div>
+                <div className="relative">
+                  <MontoArInput
+                    valueNormalized={pagadoNorm}
+                    onValueNormalizedChange={setPagadoNorm}
+                    disabled={guardando}
+                    aria-label="Importe ya pagado"
+                    className="pr-12"
+                  />
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className="h-8 px-3"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                     disabled={guardando || montoPesosInt < 1}
                     onClick={() => setPagadoNorm(montoNorm)}
+                    aria-label="Marcar gasto eventual como pagado"
+                    title="Marcar como pagado"
                   >
-                    Copiar Monto A Pagado
+                    <Check className="h-4 w-4" aria-hidden />
                   </Button>
                 </div>
               </label>

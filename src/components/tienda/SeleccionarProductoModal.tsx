@@ -27,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import {
@@ -110,11 +110,6 @@ export default function SeleccionarProductoModal({
     };
   }, [open, proveedorId, q, hayFiltros, idsProveedoresYaVinculados]);
 
-  function limpiar() {
-    setProveedorId("");
-    setQ("");
-  }
-
   function handleRowDoubleClick(row: ProductoProveedorParaVincular) {
     const producto: ProductoConProveedor = {
       id: row.id,
@@ -154,33 +149,41 @@ export default function SeleccionarProductoModal({
             {/* Mismo ancho que la tabla: contenedor y filtros a ancho completo */}
             <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
               {/* Filtro Proveedor (fijo) */}
-              <Select
-                value={proveedorId || "none"}
-                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+              <FiltroIndividualContainer
+                className="w-full"
+                activo={!!proveedorId}
+                onLimpiar={() => setProveedorId("")}
               >
-                <SelectTrigger className="input-filtro-unificado w-full">
-                  <SelectValue placeholder="PROVEEDOR" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
-                  {proveedores.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      [{p.prefijo}] {p.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select
+                  value={proveedorId || "none"}
+                  onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger className="input-filtro-unificado w-full">
+                    <SelectValue placeholder="PROVEEDOR" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
+                    {proveedores.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        [{p.prefijo}] {p.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FiltroIndividualContainer>
 
-              {/* Filtro por descripción (fijo): input se estira; junto con el botón ocupan el mismo ancho que el desplegable */}
-              <div className="w-full flex items-center gap-2">
+              <FiltroIndividualContainer
+                className="w-full"
+                activo={!!q.trim()}
+                onLimpiar={() => setQ("")}
+              >
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="DESCRIPCIÓN"
-                  className="input-filtro-unificado flex-1 min-w-0"
+                  className="input-filtro-unificado w-full min-w-0"
                 />
-                <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiar} />
-              </div>
+              </FiltroIndividualContainer>
             </div>
 
             {/* Encabezado (fijo, fuera del scroll) + Tabla (solo cuerpo con scroll). Mismo ancho de columnas con table-fixed. */}

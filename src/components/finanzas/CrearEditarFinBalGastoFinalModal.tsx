@@ -193,7 +193,9 @@ export default function CrearEditarFinBalGastoFinalModal({
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
     if (!sucursalId || !proveedorId) return true;
-    if (!Number.isInteger(vencimiento) || vencimiento < 0 || vencimiento > 30) return true;
+    if (gastoMensual && (!Number.isInteger(vencimiento) || vencimiento < 0 || vencimiento > 30)) {
+      return true;
+    }
     if (modo === "editar" && (!id || !hasChanges)) return true;
     if (comentarioObligatorioPorTripla && comentariosNorm === "") return true;
     if (comentarioChocaConOtro) return true;
@@ -208,6 +210,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     comentarioObligatorioPorTripla,
     comentariosNorm,
     comentarioChocaConOtro,
+    gastoMensual,
     vencimiento,
   ]);
 
@@ -373,12 +376,12 @@ export default function CrearEditarFinBalGastoFinalModal({
               DÍA DEVENGADO
             </span>
             <Select
-              value={gastoMensual ? undefined : String(diaDevengado)}
+              value={gastoMensual ? String(diaDevengado) : undefined}
               onValueChange={(v) => setDiaDevengado(Number(v))}
-              disabled={saving || gastoMensual}
+              disabled={saving || !gastoMensual}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder={gastoMensual ? "VACÍO (TIPO MENSUAL)" : "SELECCIONAR DÍA"} />
+                <SelectValue placeholder={gastoMensual ? "SELECCIONAR DÍA" : "VACÍO (TIPO EVENTUAL)"} />
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {diasOpciones.map((d) => (
@@ -395,13 +398,13 @@ export default function CrearEditarFinBalGastoFinalModal({
               PLAZO DE PAGO
             </span>
             <Select
-              value={gastoMensual ? undefined : String(vencimiento)}
+              value={gastoMensual ? String(vencimiento) : undefined}
               onValueChange={(v) => setVencimiento(normalizarPlazoPago(Number(v)))}
-              disabled={saving || gastoMensual}
+              disabled={saving || !gastoMensual}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue
-                  placeholder={gastoMensual ? "VACÍO (TIPO MENSUAL)" : "SELECCIONAR PLAZO"}
+                  placeholder={gastoMensual ? "SELECCIONAR PLAZO" : "VACÍO (TIPO EVENTUAL)"}
                 />
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">

@@ -600,8 +600,8 @@ export async function crearFinBalGastoFinal(
         proveedorId: input.proveedorId,
         sucursalId: input.sucursalId,
         gastoMensual: input.gastoMensual,
-        diaDevengado: input.gastoMensual ? input.diaDevengado : null,
-        vencimiento: input.gastoMensual ? input.vencimiento : null,
+        diaDevengado: input.gastoMensual ? 1 : (input.diaDevengado ?? 1),
+        vencimiento: input.gastoMensual ? 0 : (input.vencimiento ?? 0),
         comentarios: input.comentarios ?? null,
       },
       include: {
@@ -647,8 +647,8 @@ export async function editarFinBalGastoFinal(
   if (!triplaOk.success) {
     return { success: false, error: triplaOk.error };
   }
-  const diaDevengadoPersist = input.gastoMensual ? input.diaDevengado : null;
-  const plazoPagoPersist = input.gastoMensual ? input.vencimiento : null;
+  const diaDevengadoPersist = input.gastoMensual ? 1 : (input.diaDevengado ?? 1);
+  const plazoPagoPersist = input.gastoMensual ? 0 : (input.vencimiento ?? 0);
   try {
     const row = await prisma.finBalGastoFinal.update({
       where: { id: input.id },

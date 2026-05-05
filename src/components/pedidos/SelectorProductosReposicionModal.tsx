@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { getProductosReposicionSelector, type ItemSelectorReposicion } from "@/actions/reposicion";
 import type { SucursalReposicion } from "@/actions/reposicion";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 
 interface Props {
   open: boolean;
@@ -89,10 +89,6 @@ export default function SelectorProductosReposicionModal({
     onOpenChange(false);
   };
 
-  function limpiarDescripcion() {
-    setQ("");
-  }
-
   return (
     <Dialog
       open={open}
@@ -113,9 +109,13 @@ export default function SelectorProductosReposicionModal({
           <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 py-4 gap-4">
             <div>
             <label className="text-sm font-medium text-foreground block mb-1">DESCRIPCIÓN</label>
-            <div className="w-full flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <FiltroIndividualContainer
+              className="w-full"
+              activo={!!q.trim()}
+              onLimpiar={() => setQ("")}
+            >
+              <div className="relative w-full min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   type="text"
                   placeholder="BUSCAR POR DESCRIPCIÓN..."
@@ -124,8 +124,7 @@ export default function SelectorProductosReposicionModal({
                   className="pl-9 input-filtro-unificado w-full"
                 />
               </div>
-              <LimpiarFiltrosButton visible={!!q.trim()} onClick={limpiarDescripcion} />
-            </div>
+            </FiltroIndividualContainer>
             </div>
 
             <div className="border border-border rounded-lg flex-1 min-h-0 flex flex-col">

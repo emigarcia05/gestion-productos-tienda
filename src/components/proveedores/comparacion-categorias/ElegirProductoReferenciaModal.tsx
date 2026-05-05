@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 import { buscarProductosParaAsignarAction } from "@/actions/comparacionCategorias";
 import { getProveedores } from "@/actions/vinculos";
 import { fmtPrecio } from "@/lib/format";
@@ -53,13 +53,6 @@ export default function ElegirProductoReferenciaModal({
   const [selectedRow, setSelectedRow] = useState<ProductoProveedorParaVincular | null>(null);
   const [pending, setPending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const hayFiltros = (proveedorId && proveedorId !== "none") || q.trim() !== "";
-
-  const limpiarFiltros = () => {
-    setProveedorId("");
-    setQ("");
-  };
 
   useEffect(() => {
     if (!open) return;
@@ -109,31 +102,40 @@ export default function ElegirProductoReferenciaModal({
           <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
             <p className="text-sm text-muted-foreground shrink-0 mb-3">{labelCompleto}</p>
             <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
-              <Select
-                value={proveedorId || "none"}
-                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+              <FiltroIndividualContainer
+                className="w-full"
+                activo={!!proveedorId}
+                onLimpiar={() => setProveedorId("")}
               >
-                <SelectTrigger className="input-filtro-unificado w-full">
-                  <SelectValue placeholder="PROVEEDOR" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
-                  {proveedores.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      [{p.prefijo}] {p.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="w-full flex items-center gap-2">
+                <Select
+                  value={proveedorId || "none"}
+                  onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger className="input-filtro-unificado w-full">
+                    <SelectValue placeholder="PROVEEDOR" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">TODOS LOS PROVEEDORES</SelectItem>
+                    {proveedores.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        [{p.prefijo}] {p.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FiltroIndividualContainer>
+              <FiltroIndividualContainer
+                className="w-full"
+                activo={!!q.trim()}
+                onLimpiar={() => setQ("")}
+              >
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-                  className="input-filtro-unificado flex-1 min-w-0"
+                  className="input-filtro-unificado w-full min-w-0"
                 />
-                <LimpiarFiltrosButton visible={!!hayFiltros} onClick={limpiarFiltros} />
-              </div>
+              </FiltroIndividualContainer>
             </div>
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3 overflow-hidden">
               {loading ? (

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
   FilaFiltrosDesplegables,
@@ -169,7 +170,11 @@ export default function FiltrosReposicion({
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(sucursalActual)}
+            onLimpiar={() => handleSucursal("")}
+          >
             <Select
               value={sucursalValue}
               onValueChange={(v) => handleSucursal(v === "none" ? "" : v)}
@@ -194,8 +199,15 @@ export default function FiltrosReposicion({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedorActual)}
+            onLimpiar={() => {
+              onProveedorChange("");
+              navigate({ proveedor: "", pagina: "1" });
+            }}
+          >
             <Select
               value={proveedorActual || "none"}
               onValueChange={(v) => {
@@ -225,8 +237,12 @@ export default function FiltrosReposicion({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(marcaActual)}
+            onLimpiar={() => handleMarca("")}
+          >
             <Select
               value={marcaActual || "none"}
               onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
@@ -252,8 +268,12 @@ export default function FiltrosReposicion({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(rubroActual)}
+            onLimpiar={() => handleRubro("")}
+          >
             <Select
               value={rubroActual || "none"}
               onValueChange={(v) => handleRubro(v === "none" ? "" : v)}
@@ -279,8 +299,12 @@ export default function FiltrosReposicion({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={configuradoActual === "si"}
+            onLimpiar={() => handleConfigurado("none")}
+          >
             <Select
               value={configuradoValue}
               onValueChange={(v) => handleConfigurado(v)}
@@ -302,7 +326,7 @@ export default function FiltrosReposicion({
                 <SelectItem value="si">SÍ</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-3">

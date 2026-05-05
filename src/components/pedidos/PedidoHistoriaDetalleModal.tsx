@@ -6,7 +6,6 @@ import AppModal from "@/components/shared/AppModal";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
 import {
   Table,
   TableBody,
@@ -678,10 +677,6 @@ export default function PedidoHistoriaDetalleModal({
                       className="h-10 min-h-10"
                     />
                   </div>
-                  <LimpiarFiltrosButton
-                    visible={busquedaAgregarProducto.trim().length > 0}
-                    onClick={() => setBusquedaAgregarProducto("")}
-                  />
                 </div>
                 <Button
                   type="button"

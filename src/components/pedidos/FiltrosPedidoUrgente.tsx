@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
   FilaFiltrosDesplegables,
@@ -105,7 +106,11 @@ export default function FiltrosPedidoUrgente({
     <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(sucursal)}
+            onLimpiar={() => updateUrl({ sucursal: "" })}
+          >
             <Select
               value={sucursal || "none"}
               onValueChange={(v) =>
@@ -129,8 +134,12 @@ export default function FiltrosPedidoUrgente({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedor)}
+            onLimpiar={() => updateUrl({ proveedor: "" })}
+          >
             <Select
               value={proveedor || "none"}
               onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
@@ -152,8 +161,12 @@ export default function FiltrosPedidoUrgente({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(pedido)}
+            onLimpiar={() => updateUrl({ pedido: "" })}
+          >
             <Select
               value={pedido || "none"}
               onValueChange={(v) =>
@@ -175,7 +188,7 @@ export default function FiltrosPedidoUrgente({
                 <SelectItem value="reposicion">PEDIDO REPOSICION</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-3">

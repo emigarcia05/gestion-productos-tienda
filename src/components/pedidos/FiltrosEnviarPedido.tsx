@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilaFiltrosDesplegables,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -126,7 +127,11 @@ export default function FiltrosEnviarPedido({
     <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(sucursal)}
+            onLimpiar={() => updateUrl({ sucursal: "" })}
+          >
             <Select
               value={sucursal || "none"}
               onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}
@@ -148,8 +153,12 @@ export default function FiltrosEnviarPedido({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedor)}
+            onLimpiar={() => updateUrl({ proveedor: "" })}
+          >
             <Select
               value={proveedor || "none"}
               onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
@@ -171,8 +180,13 @@ export default function FiltrosEnviarPedido({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")} ref={multiRef}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+            activo={tipos.length > 0}
+            onLimpiar={() => updateUrl({ tipos: [] })}
+          >
+          <div className="relative" ref={multiRef}>
             <button
               type="button"
               onClick={() => setMultiOpen((o) => !o)}
@@ -210,6 +224,7 @@ export default function FiltrosEnviarPedido({
               </div>
             )}
           </div>
+          </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-2">

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
   SELECT_TRIGGER_FILTER_CLASS,
@@ -81,7 +82,11 @@ export default function FiltrosProductos({
   return (
     <FilterBar>
       <FilterRowSelection>
-        <div className={FILTER_SELECT_WRAPPER_CLASS}>
+        <FiltroIndividualContainer
+          className={FILTER_SELECT_WRAPPER_CLASS}
+          activo={Boolean(proveedorActual)}
+          onLimpiar={() => handleProveedor("")}
+        >
           <Select
             value={proveedorActual || "none"}
             onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
@@ -98,7 +103,7 @@ export default function FiltrosProductos({
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </FiltroIndividualContainer>
         <span className={FILTER_COUNT_CLASS}>
           {totalProductos.toLocaleString()} PRODUCTO
           {totalProductos !== 1 ? "S" : ""}

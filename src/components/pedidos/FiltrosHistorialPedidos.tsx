@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowSelection,
   FilterRowSearch,
@@ -119,7 +120,11 @@ export default function FiltrosHistorialPedidos({
     <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedorId.trim())}
+            onLimpiar={() => applyNavigate({ proveedorId: "" })}
+          >
             <Select
               value={proveedorId || "none"}
               onValueChange={(v) =>
@@ -143,9 +148,13 @@ export default function FiltrosHistorialPedidos({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </FiltroIndividualContainer>
 
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(sucursalCodigo)}
+            onLimpiar={() => applyNavigate({ sucursalCodigo: "" })}
+          >
             <Select
               value={sucursalCodigo || "none"}
               onValueChange={(v) =>
@@ -169,9 +178,13 @@ export default function FiltrosHistorialPedidos({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </FiltroIndividualContainer>
 
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={estado !== "PENDIENTE"}
+            onLimpiar={() => applyNavigate({ estado: "PENDIENTE" })}
+          >
             <Select
               value={estado}
               onValueChange={(v) => applyNavigate({ estado: v as EstadoFiltroPedido })}
@@ -190,7 +203,7 @@ export default function FiltrosHistorialPedidos({
                 <SelectItem value="ALL">TODOS</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </FiltroIndividualContainer>
 
           <div />
           <div />

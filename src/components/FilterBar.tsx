@@ -71,6 +71,41 @@ export function FilterRowNoSearchActions({
   return <div className={cn("flex items-center justify-end w-full", className)}>{children}</div>;
 }
 
+/**
+ * Wrapper de filtro individual con botón tacho contextual.
+ * El botón aparece solo cuando el filtro está activo.
+ */
+export function FiltroIndividualContainer({
+  children,
+  activo,
+  onLimpiar,
+  className,
+}: {
+  children: React.ReactNode;
+  activo: boolean;
+  onLimpiar: () => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("filtro-individual-container min-w-0 flex-1", className)}>
+      {children}
+      {activo ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-xs"
+          onClick={onLimpiar}
+          className="filtro-individual-clear-btn"
+          aria-label="Limpiar este filtro"
+          title="Limpiar este filtro"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 /** Fila 2 alternativa: filtro por rango de fechas (trigger con flecha). */
 export function FilterRowDateRange({
   children,
@@ -132,7 +167,7 @@ export function LimpiarFiltrosButton({
       variant="primaryIcon"
       size="icon-lg"
       onClick={onClick}
-      className="h-10 min-h-10 shrink-0"
+      className="limpiar-filtros-global-btn h-10 min-h-10 shrink-0"
       aria-label="Limpiar filtros"
       title="Limpiar filtros"
     >

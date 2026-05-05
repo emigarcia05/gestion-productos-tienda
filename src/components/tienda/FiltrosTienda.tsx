@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
   FilaFiltrosDesplegables,
@@ -131,7 +132,11 @@ export default function FiltrosTienda({
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedorActual)}
+            onLimpiar={() => handleProveedor("")}
+          >
             <Select
               value={proveedorActual || "none"}
               onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
@@ -157,8 +162,12 @@ export default function FiltrosTienda({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(marcaActual)}
+            onLimpiar={() => handleMarca("")}
+          >
             <Select
               value={marcaActual || "none"}
               onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
@@ -183,8 +192,12 @@ export default function FiltrosTienda({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(rubroActual)}
+            onLimpiar={() => handleRubro("")}
+          >
             <Select
               value={rubroActual || "none"}
               onValueChange={(v) => handleRubro(v === "none" ? "" : v)}
@@ -209,8 +222,12 @@ export default function FiltrosTienda({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(subRubroActual)}
+            onLimpiar={() => handleSubRubro("")}
+          >
             <Select
               value={subRubroActual || "none"}
               onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}
@@ -235,8 +252,12 @@ export default function FiltrosTienda({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className={FILTER_SELECT_WRAPPER_CLASS}>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(mejorPrecioActual)}
+            onLimpiar={() => handleMejorPrecio("")}
+          >
             <Select
               value={mejorPrecioActual || "none"}
               onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}
@@ -257,7 +278,7 @@ export default function FiltrosTienda({
                 <SelectItem value="true">MENOR DISPONIBLE</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-3">

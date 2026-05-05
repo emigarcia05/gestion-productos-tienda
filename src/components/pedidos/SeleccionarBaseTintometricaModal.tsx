@@ -6,7 +6,6 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { buscarBasesTintometricasAction } from "@/actions/tintometrico";
 import type { BaseTintometricaRow } from "@/services/tintometrico.service";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
 
 const EMPTY: { items: BaseTintometricaRow[]; total: number } = { items: [], total: 0 };
 
@@ -67,7 +66,7 @@ export default function SeleccionarBaseTintometricaModal({
   );
 
   const filterContent = (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2">
       <div className="flex-1 min-w-0">
         <FiltroBusquedaInput
           id="busqueda-base-tintometrica"
@@ -78,13 +77,6 @@ export default function SeleccionarBaseTintometricaModal({
           inputRef={ref}
         />
       </div>
-      <LimpiarFiltrosButton
-        visible={!!q.trim() || !!errorMsg}
-        onClick={() => {
-          setQ("");
-          fetch("");
-        }}
-      />
       {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
     </div>
   );

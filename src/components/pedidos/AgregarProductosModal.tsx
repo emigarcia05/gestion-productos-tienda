@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/shared/ModalTablaConFiltros";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
-import { LimpiarFiltrosButton } from "@/components/FilterBar";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 import { Input } from "@/components/ui/input";
 import { buscarProductosTiendaPorDescripcionAction } from "@/actions/productosTienda";
 import type { ProductoTiendaRowBusqueda } from "@/services/productosTienda.service";
@@ -81,7 +81,7 @@ export default function AgregarProductosModal({
 
   const filterContent = (
     <div className="flex w-full flex-col gap-2">
-      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-[1fr_10rem_auto] sm:items-center">
+      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-[1fr_10rem] sm:items-center">
         <div className="min-w-0">
           <FiltroBusquedaInput
             id="agregar-productos-filtro"
@@ -92,24 +92,23 @@ export default function AgregarProductosModal({
             inputRef={ref}
           />
         </div>
-        <Input
-          type="number"
-          min={1}
-          step={1}
-          inputMode="numeric"
-          placeholder="CANT."
-          aria-label="Cant. Recibida (nuevo ítem)"
-          value={cantRecibida}
-          onChange={(e) => setCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          className="h-10 w-full min-w-0 text-center tabular-nums"
-        />
-        <LimpiarFiltrosButton
-          visible={!!q.trim() || !!errorMsg}
-          onClick={() => {
-            setQ("");
-            void fetch("");
-          }}
-        />
+        <FiltroIndividualContainer
+          className="min-w-0 w-full"
+          activo={!!cantRecibida.trim()}
+          onLimpiar={() => setCantRecibida("")}
+        >
+          <Input
+            type="number"
+            min={1}
+            step={1}
+            inputMode="numeric"
+            placeholder="CANT."
+            aria-label="Cant. Recibida (nuevo ítem)"
+            value={cantRecibida}
+            onChange={(e) => setCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            className="h-10 w-full min-w-0 text-center tabular-nums input-filtro-unificado"
+          />
+        </FiltroIndividualContainer>
       </div>
       {errorMsg && <span className="text-xs text-destructive">{errorMsg}</span>}
     </div>
