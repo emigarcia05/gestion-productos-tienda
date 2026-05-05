@@ -137,7 +137,7 @@ export default function TablaGastos({
               : f.gastoNombre
           }
         >
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-col gap-1">
             <span className="celda-destacado block truncate">{f.gastoNombre}</span>
             {f.gastoFinalComentarios ? (
               <span
@@ -175,7 +175,7 @@ export default function TablaGastos({
   function renderCeldaAcciones(f: BalanceGastoMensualFila) {
     return (
       <TableCell className={cn(TD_ACCIONES, "celda-datos--accion-relleno-fila")}>
-        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+        <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "gap-1.5")}>
           <Button
             type="button"
             variant="ghost"
@@ -243,7 +243,7 @@ export default function TablaGastos({
           <div data-slot="table-container" className="relative min-h-0 w-full min-w-0 max-w-full">
             <table
               data-slot="table"
-              className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
+              className="w-full caption-bottom text-sm tabla-gestion-compacta tabla-balance-gastos table-fixed"
             >
               <ColgroupAnchos anchos={anchosFullPct} />
               <TableHeader>

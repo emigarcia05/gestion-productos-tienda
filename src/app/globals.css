@@ -894,6 +894,37 @@
   width: 0.875rem;
   height: 0.875rem;
 }
+
+/**
+ * Balance · Gastos (`TablaGastos`): más aire vertical, filas que pueden crecer con texto
+ * en **GASTO** (p. ej. comentarios en 2 líneas) y botones de **ACCIONES** que estiran
+ * al alto de la celda (la regla global de `tbody td button` fija 1.75rem y aquí se anula).
+ */
+.tabla-gestion-compacta.tabla-balance-gastos {
+  --tabla-body-row-min-height: 2.875rem;
+  --tabla-body-cell-padding-y: 0.375rem;
+}
+.tabla-gestion-compacta.tabla-balance-gastos tbody tr {
+  height: auto !important;
+  min-height: var(--tabla-body-row-min-height) !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta.tabla-balance-gastos tbody tr td {
+  height: auto !important;
+  min-height: var(--tabla-body-row-min-height) !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta.tabla-balance-gastos tbody tr td.celda-datos {
+  height: auto !important;
+  min-height: var(--tabla-body-row-min-height) !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta.tabla-balance-gastos tbody td button:not(.tabla-check-toggle) {
+  height: auto !important;
+  max-height: none !important;
+  align-self: stretch;
+}
+
 /* Toggle de tilde compacto en tablas (global y reutilizable). */
 .tabla-gestion-compacta tbody td .tabla-check-toggle {
   --tabla-check-size: calc(var(--tabla-body-row-min-height) - 0.75rem);
