@@ -38,6 +38,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import type { ProveedorTintometrico, SucursalTintometrica } from "@/services/tintometrico.service";
@@ -360,19 +361,26 @@ export default function PedidoTintometricoPageClient({
                       <TableCell className="celda-datos">
                         {i.descripcion}
                       </TableCell>
-                      <TableCell className="celda-datos text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => borrarItem(i)}
-                          disabled={deletingKey === i.key}
-                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                          aria-label="Borrar Ítem"
-                          title="Borrar Ítem"
+                      <TableCell className="celda-datos celda-datos--accion-relleno-fila text-right">
+                        <div
+                          className={cn(
+                            TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                            "justify-end"
+                          )}
                         >
-                          <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                        </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => borrarItem(i)}
+                            disabled={deletingKey === i.key}
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label="Borrar Ítem"
+                            title="Borrar Ítem"
+                          >
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

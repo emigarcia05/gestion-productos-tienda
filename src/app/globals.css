@@ -390,6 +390,10 @@
   .celda-datos.celda-datos--flush-right {
     padding-right: 0 !important;
   }
+  /** Solo ícono en fila: sin padding para que el relleno #0072BB llegue al alto fijo de la celda. */
+  .celda-datos.celda-datos--accion-relleno-fila {
+    padding: 0 !important;
+  }
   .celda-datos.celda-mono {
     font-family: var(--font-mono);
   }

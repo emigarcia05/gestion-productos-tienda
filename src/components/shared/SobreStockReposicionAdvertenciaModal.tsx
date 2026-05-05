@@ -19,6 +19,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
   TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
@@ -289,7 +290,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                             confirmadoByItem[it.idItemPedidoEnvio] === true && "opacity-60"
                           )}
                         >
-                          <div className="flex w-full items-center justify-center gap-1">
+                          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                             <Button
                               type="button"
                               variant="ghost"
@@ -324,7 +325,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                                 }));
                               }}
                               className={cn(
-                                "h-8 w-[3.5rem] min-w-[3.5rem] text-center tabular-nums",
+                                "h-8 w-[3.5rem] min-w-[3.5rem] self-center text-center tabular-nums",
                                 inputBorderClassName
                               )}
                               aria-label={`Cantidad a pedir para ${it.descripcionTienda ?? it.descripcionProveedor ?? it.codExt}`}
@@ -345,7 +346,7 @@ export default function SobreStockReposicionAdvertenciaModal({
                           </div>
                         </TableCell>
                         <TableCell className="celda-datos w-[9%] tabla-bloque-secundario-cell-divider">
-                          <div className="flex items-center justify-center gap-1">
+                          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                             <Button
                               type="button"
                               variant="ghost"

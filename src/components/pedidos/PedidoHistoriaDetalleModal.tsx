@@ -33,6 +33,7 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
@@ -834,7 +835,7 @@ export default function PedidoHistoriaDetalleModal({
                             {locked ? (
                               cantRecibidaVisible
                             ) : isEditing ? (
-                              <div className="flex w-full items-center justify-center gap-1">
+                              <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -887,7 +888,7 @@ export default function PedidoHistoriaDetalleModal({
                                   }}
                                   disabled={locked || busy || !fechaFacturaOk}
                                   className={cn(
-                                    "h-8 w-[3.5rem] min-w-[3.5rem] text-center",
+                                    "h-8 w-[3.5rem] min-w-[3.5rem] self-center text-center",
                                     inputBorderClassName
                                   )}
                                 />
@@ -925,7 +926,7 @@ export default function PedidoHistoriaDetalleModal({
                           <TableCell className="celda-datos w-[15%] tabla-bloque-secundario-cell-divider">
                             <div
                               className={cn(
-                                "flex items-center justify-center gap-1",
+                                TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
                                 checkListConfirmed && "cursor-auto"
                               )}
                             >

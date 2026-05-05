@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
@@ -363,8 +364,8 @@ export default function TiendaCalcLitrosPageClient({
                             <TableCell className="celda-datos text-center tabular-nums">
                               {formatDecimal(lts2Manos, 1)} lts
                             </TableCell>
-                            <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
-                              <div className="flex items-center justify-center">
+                            <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
+                              <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                                 <Button
                                   type="button"
                                   variant="ghost"

@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import type { ReposicionData, ItemReposicion, SucursalReposicion } from "@/actions/reposicion";
@@ -171,19 +172,26 @@ export default function TablaReposicion({
                   <TableCell className="celda-datos tabular-nums">
                     {cantVal === "" ? "" : cantVal}
                   </TableCell>
-                  <TableCell className="celda-datos text-center">
+                  <TableCell
+                    className={cn(
+                      "celda-datos text-center",
+                      item.idReposicion && "celda-datos--accion-relleno-fila"
+                    )}
+                  >
                     {item.idReposicion ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                        onClick={() => handleDelete(item)}
-                        disabled={isSaving}
-                        aria-label="Eliminar regla de reposición"
-                      >
-                        <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                      </Button>
+                      <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                          onClick={() => handleDelete(item)}
+                          disabled={isSaving}
+                          aria-label="Eliminar regla de reposición"
+                        >
+                          <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                        </Button>
+                      </div>
                     ) : (
                       <span className="inline-block w-8" aria-hidden />
                     )}

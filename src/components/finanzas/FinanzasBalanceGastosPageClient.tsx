@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CalendarDays, Loader2, Receipt } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -284,9 +284,9 @@ export default function FinanzasBalanceGastosPageClient({
                 {loading ? (
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
                 ) : (
-                  <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
                 )}
-                CARGAR GASTOS FIJOS
+                GASTO FIJO
               </Button>
               <Button
                 type="button"
@@ -294,8 +294,8 @@ export default function FinanzasBalanceGastosPageClient({
                 disabled={loading}
                 className="h-10 px-4 gap-2"
               >
-                <Receipt className="h-4 w-4 shrink-0" aria-hidden />
-                CARGAR GASTO EVENTUAL
+                <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                GASTO EVENTUAL
               </Button>
             </div>
           ) : undefined
@@ -431,8 +431,8 @@ export default function FinanzasBalanceGastosPageClient({
                       className="select-content-filtro"
                     >
                       <SelectItem value="none">ESTADO</SelectItem>
-                      <SelectItem value="con_monto_sin_pago">CON MONTO Y SIN PAGO</SelectItem>
-                      <SelectItem value="con_monto_con_pago">CON MONTO Y CON PAGO</SelectItem>
+                      <SelectItem value="con_monto_sin_pago">CON MONTO Y PENDIENTE</SelectItem>
+                      <SelectItem value="con_monto_con_pago">CON MONTO Y PAGADO</SelectItem>
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
                     </SelectContent>
                   </Select>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Input } from "@/components/ui/input";
@@ -196,13 +197,13 @@ export default function GestionTiposPinturaModal({
                         />
                       </TableCell>
                       <TableCell className="celda-datos">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "gap-2")}>
                           <Input
                             type="text"
                             inputMode="numeric"
                             value={row.rendimiento}
                             onChange={(e) => updateRow(row.key, "rendimiento", e.target.value)}
-                            className="h-8 w-28 text-center"
+                            className="h-8 w-28 self-center text-center"
                             disabled={saving}
                             aria-label="Rendimiento"
                           />

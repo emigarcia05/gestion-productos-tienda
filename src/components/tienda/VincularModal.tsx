@@ -8,6 +8,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import AppModal from "@/components/shared/AppModal";
@@ -330,8 +331,8 @@ export default function VincularModal({
                           <TableCell className="celda-datos celda-numero">
                             {margenPct != null ? fmtPctEntero(margenPct) : ""}
                           </TableCell>
-                          <TableCell className="celda-datos">
-                            <div className="flex justify-center">
+                          <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                            <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                               <Button
                                 type="button"
                                 variant="ghost"

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Dialog } from "@/components/ui/dialog";
@@ -326,28 +327,30 @@ export default function ConfigurarReposicionModal({
                         <TableCell className="text-xs py-2 text-left">
                           {p.descripcionTienda ?? "—"}
                         </TableCell>
-                        <TableCell className="text-xs py-2 text-center">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                            aria-label="Quitar producto de la configuración"
-                            onClick={() => handleEliminarProductoAdicional(p)}
-                          >
-                            <Plus className="hidden" aria-hidden="true" />
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              className="w-4 h-4"
-                              aria-hidden="true"
+                        <TableCell className="text-xs py-0 text-center">
+                          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                              aria-label="Quitar producto de la configuración"
+                              onClick={() => handleEliminarProductoAdicional(p)}
                             >
-                              <path
-                                d="M9 3h6a1 1 0 0 1 .993.883L16 4v1h4a1 1 0 1 1 0 2h-1.07l-.845 11.037A2 2 0 0 1 16.093 20H7.907a2 2 0 0 1-1.992-1.963L5.07 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 .883-.993L9 3Zm6 4H9l-.8 10.4a0 0 0 0 0 0 0h7.6a0 0 0 0 0 0 0L15 7Zm-3 2a1 1 0 0 1 .993.883L13 10v6a1 1 0 0 1-1.993.117L11 16v-6a1 1 0 0 1 1-1Z"
-                                fill="currentColor"
-                              />
-                            </svg>
-                          </Button>
+                              <Plus className="hidden" aria-hidden="true" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                className="w-4 h-4"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M9 3h6a1 1 0 0 1 .993.883L16 4v1h4a1 1 0 1 1 0 2h-1.07l-.845 11.037A2 2 0 0 1 16.093 20H7.907a2 2 0 0 1-1.992-1.963L5.07 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 .883-.993L9 3Zm6 4H9l-.8 10.4a0 0 0 0 0 0 0h7.6a0 0 0 0 0 0 0L15 7Zm-3 2a1 1 0 0 1 .993.883L13 10v6a1 1 0 0 1-1.993.117L11 16v-6a1 1 0 0 1 1-1Z"
+                                  fill="currentColor"
+                                />
+                              </svg>
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

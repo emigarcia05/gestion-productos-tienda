@@ -30,7 +30,15 @@ export const IMPORT_STAT_BADGE_CLASSES = {
  * Ver **FRONTEND_GUIDELINES** §1 — prohibición de `variant="outline"` + `size="icon-xs"` con aspecto documento.
  */
 export const TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS =
-  "h-9 w-9 shrink-0 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
+  "!h-full min-h-[var(--tabla-body-row-min-height)] !w-9 min-w-9 self-stretch shrink-0 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
+
+/**
+ * Contenedor flex en celdas con botones {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}.
+ * Usar `items-stretch` para que el alto del botón iguale el de la fila; combinar con
+ * `.celda-datos--accion-relleno-fila` cuando haya que anular el padding de `.celda-datos`.
+ */
+export const TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS =
+  "flex h-full min-h-[var(--tabla-body-row-min-height)] w-full flex-wrap items-stretch justify-center gap-1";
 
 /**
  * @deprecated En tablas de gestión las acciones por fila usan siempre {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}

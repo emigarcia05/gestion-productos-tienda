@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { fmtPrecio } from "@/lib/format";
@@ -149,8 +150,8 @@ export default function TablaGastos({
           </div>
         </TableCell>
         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-          <div className="flex w-full items-center justify-end gap-1">
-            {onVerHistorico ? (
+          <div className="flex w-full items-stretch justify-end gap-1">
+            {!mostrarAcciones && onVerHistorico ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -163,7 +164,7 @@ export default function TablaGastos({
                 <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
               </Button>
             ) : null}
-            <span className="min-w-0">{celdaMonto(f.monto)}</span>
+            <span className="min-w-0 self-center">{celdaMonto(f.monto)}</span>
           </div>
         </TableCell>
         <TableCell className={cn(TD_NUM, CELL_MIN)}>{celdaMonto(f.pagado)}</TableCell>
@@ -173,8 +174,8 @@ export default function TablaGastos({
 
   function renderCeldaAcciones(f: BalanceGastoMensualFila) {
     return (
-      <TableCell className={cn(TD_ACCIONES, "p-1")}>
-        <div className="flex flex-wrap items-center justify-center gap-1">
+      <TableCell className={cn(TD_ACCIONES, "celda-datos--accion-relleno-fila")}>
+        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
           <Button
             type="button"
             variant="ghost"
@@ -208,6 +209,26 @@ export default function TablaGastos({
           >
             <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
+          {onVerHistorico ? (
+            <>
+              <span
+                role="separator"
+                aria-orientation="vertical"
+                className="mx-0.5 min-h-[var(--tabla-body-row-min-height)] w-px shrink-0 self-stretch bg-[#0072BB]"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                title="Ver evolución mensual del gasto"
+                aria-label={`Ver evolución mensual — ${f.gastoNombre}`}
+                onClick={() => onVerHistorico(f)}
+              >
+                <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              </Button>
+            </>
+          ) : null}
         </div>
       </TableCell>
     );

@@ -33,6 +33,7 @@ import SeleccionarBaseTintometricaModal from "@/components/pedidos/SeleccionarBa
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 
@@ -310,25 +311,32 @@ export default function NuevoItemTintometricoModal({
                         <TableCell className="celda-datos text-xs">
                           {descripcion}
                         </TableCell>
-                        <TableCell className="celda-datos text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setBases((prev) => prev.filter((x) => x.id !== b.id));
-                              setCantPorBaseId((prev) => {
-                                const next = { ...prev };
-                                delete next[b.id];
-                                return next;
-                              });
-                            }}
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                            aria-label="Borrar Ítem"
-                            title="Borrar Ítem"
+                        <TableCell className="celda-datos celda-datos--accion-relleno-fila text-right">
+                          <div
+                            className={cn(
+                              TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                              "justify-end"
+                            )}
                           >
-                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                          </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setBases((prev) => prev.filter((x) => x.id !== b.id));
+                                setCantPorBaseId((prev) => {
+                                  const next = { ...prev };
+                                  delete next[b.id];
+                                  return next;
+                                });
+                              }}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                              aria-label="Borrar Ítem"
+                              title="Borrar Ítem"
+                            >
+                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -192,8 +193,8 @@ export default function HistorialPedidosPageClient({
                                 ? "RECEPCIONADO"
                                 : "PENDIENTE"}
                             </TableCell>
-                            <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
-                              <div className="flex items-center justify-center gap-2">
+                            <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
+                              <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "gap-2")}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button

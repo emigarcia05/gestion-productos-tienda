@@ -22,7 +22,10 @@ import {
   tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
+import {
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import {
   formatDdMmHhMmArgentina,
   formatDdMmYyHhMmNombreArchivoArgentina,
@@ -278,7 +281,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                     {item.descripcion}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-sm tabular-nums w-[20%]">
-                    <div className="flex items-center justify-center gap-1">
+                    <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                       <Button
                         type="button"
                         variant="ghost"
@@ -295,7 +298,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                         onChange={(e) =>
                           handleCambioStock(item.id, e.target.value)
                         }
-                        className="h-6 w-16 text-center text-sm font-normal"
+                        className="h-6 w-16 self-center text-center text-sm font-normal"
                       />
                       <Button
                         type="button"

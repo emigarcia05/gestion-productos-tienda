@@ -26,6 +26,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import {
@@ -433,7 +434,8 @@ export default function ComparacionCategoriasClient({
                             })()}
                           </TableCell>
                           {puedeEditar && (
-                            <TableCell className="celda-datos text-center">
+                            <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center">
+                              <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -449,6 +451,7 @@ export default function ComparacionCategoriasClient({
                                   <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 )}
                               </Button>
+                              </div>
                             </TableCell>
                           )}
                         </TableRow>

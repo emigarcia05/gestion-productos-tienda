@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 
@@ -126,14 +127,22 @@ export default function TablaPedidoUrgente({
                   ? cantPorId[prod.id]
                   : ""}
               </TableCell>
-              <TableCell className="celda-datos text-center">
+              <TableCell
+                className={cn(
+                  "celda-datos text-center celda-datos--accion-relleno-fila",
+                  CELL_MIN
+                )}
+              >
                 {Number(cantPorId[prod.id] || 0) > 0 ? (
-                  <div className="flex items-center justify-center w-full">
+                  <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                      className={cn(
+                        TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                        "!w-full rounded-sm"
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
                         onRowDeleteClick?.(prod);
