@@ -175,7 +175,12 @@ export default function TablaGastos({
   function renderCeldaAcciones(f: BalanceGastoMensualFila) {
     return (
       <TableCell className={cn(TD_ACCIONES, "celda-datos--accion-relleno-fila")}>
-        <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "gap-1.5")}>
+        <div
+          className={cn(
+            TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+            "gap-1.5 py-1.5"
+          )}
+        >
           <Button
             type="button"
             variant="ghost"
@@ -214,7 +219,7 @@ export default function TablaGastos({
               <span
                 role="separator"
                 aria-orientation="vertical"
-                className="mx-0.5 min-h-[var(--tabla-body-row-min-height)] w-px shrink-0 self-stretch bg-[#0072BB]"
+                className="mx-0.5 min-h-0 w-px shrink-0 self-stretch bg-[#0072BB]"
               />
               <Button
                 type="button"

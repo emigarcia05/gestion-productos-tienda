@@ -896,28 +896,12 @@
 }
 
 /**
- * Balance · Gastos (`TablaGastos`): más aire vertical, filas que pueden crecer con texto
- * en **GASTO** (p. ej. comentarios en 2 líneas) y botones de **ACCIONES** que estiran
- * al alto de la celda (la regla global de `tbody td button` fija 1.75rem y aquí se anula).
+ * Balance · Gastos (`TablaGastos`): fila **alto fijo** (hereda `--tabla-body-row-min-height` en el `<table>`),
+ * más padding vertical en celdas; botones de **ACCIONES** se encogen con `py-1.5` en el wrapper (ver componente).
  */
 .tabla-gestion-compacta.tabla-balance-gastos {
   --tabla-body-row-min-height: 2.875rem;
   --tabla-body-cell-padding-y: 0.375rem;
-}
-.tabla-gestion-compacta.tabla-balance-gastos tbody tr {
-  height: auto !important;
-  min-height: var(--tabla-body-row-min-height) !important;
-  max-height: none !important;
-}
-.tabla-gestion-compacta.tabla-balance-gastos tbody tr td {
-  height: auto !important;
-  min-height: var(--tabla-body-row-min-height) !important;
-  max-height: none !important;
-}
-.tabla-gestion-compacta.tabla-balance-gastos tbody tr td.celda-datos {
-  height: auto !important;
-  min-height: var(--tabla-body-row-min-height) !important;
-  max-height: none !important;
 }
 .tabla-gestion-compacta.tabla-balance-gastos tbody td button:not(.tabla-check-toggle) {
   height: auto !important;
@@ -1473,6 +1457,9 @@ main button,
  * `main button` fuerza `padding: 0 1rem` (sin aire vertical); mismo valor en los cuatro lados. */
 button.tabla-row-btn-filled-brand {
   padding: 0.5rem !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 100% !important;
 }
 
 /* ─── Título de sección (SectionHeader): diseño global, misma apariencia en todas las rutas ─── */
