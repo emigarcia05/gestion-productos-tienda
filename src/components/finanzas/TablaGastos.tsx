@@ -43,14 +43,11 @@ const TH_ACCIONES =
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
-/** Pesos FECHA…PAGADO (sin ACCIONES): 8 columnas. Suman 86 (con editor + ACCIONES 14 → 100%). */
+/** FECHA…PAGADO: 8 columnas de datos base (suma 86). */
 const COL_WIDTHS_DATA_PCT = [9, 9, 9, 15, 12, 14, 9, 9] as const;
-/** FECHA…PAGADO + ACCIONES; suma 100. */
-const COL_WIDTHS_PCT_CON_ACCIONES: readonly number[] = [...COL_WIDTHS_DATA_PCT, 14];
-/** Sin ACCIONES: mismos pesos relativos que {@link COL_WIDTHS_DATA_PCT}, escalados a suma 100%. */
-const COL_WIDTHS_PCT_SIN_ACCIONES: readonly number[] = COL_WIDTHS_DATA_PCT.map(
-  (w) => (w * 100) / 86
-);
+function escalarAnchosDatos(targetSuma: number): readonly number[] {
+  return COL_WIDTHS_DATA_PCT.map((w) => (w * targetSuma) / 86);
+}
 
 const CELL_MIN = "min-w-0";
 
@@ -102,7 +99,13 @@ export default function TablaGastos({
     0
   );
   const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
-  const anchosFullPct = mostrarAcciones ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
+  const mostrarHistorico = Boolean(onVerHistorico);
+  const anchosFullPct: readonly number[] = (() => {
+    if (mostrarAcciones && mostrarHistorico) return [...escalarAnchosDatos(82), 10, 8];
+    if (mostrarAcciones) return [...escalarAnchosDatos(86), 14];
+    if (mostrarHistorico) return [...escalarAnchosDatos(86), 14];
+    return escalarAnchosDatos(100);
+  })();
 
   function celdaMonto(m: number) {
     if (m === 0) return <span className="text-muted-foreground">—</span>;
@@ -149,24 +152,7 @@ export default function TablaGastos({
             ) : null}
           </div>
         </TableCell>
-        <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-          <div className="flex h-full min-h-0 w-full items-center justify-end gap-1 box-border px-1.5 py-1.5">
-            {!mostrarAcciones && onVerHistorico ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                title="Ver evolución mensual del gasto"
-                aria-label={`Ver evolución mensual — ${f.gastoNombre}`}
-                onClick={() => onVerHistorico(f)}
-              >
-                <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-              </Button>
-            ) : null}
-            <span className="min-w-0 self-center">{celdaMonto(f.monto)}</span>
-          </div>
-        </TableCell>
+        <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>{celdaMonto(f.monto)}</TableCell>
         <TableCell className={cn(TD_NUM, CELL_MIN)}>{celdaMonto(f.pagado)}</TableCell>
       </>
     );
@@ -209,32 +195,42 @@ export default function TablaGastos({
           >
             <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
-          {onVerHistorico ? (
-            <>
-              <span
-                role="separator"
-                aria-orientation="vertical"
-                className="mx-0.5 min-h-0 w-px shrink-0 self-stretch bg-[#0072BB]"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                title="Ver evolución mensual del gasto"
-                aria-label={`Ver evolución mensual — ${f.gastoNombre}`}
-                onClick={() => onVerHistorico(f)}
-              >
-                <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-              </Button>
-            </>
-          ) : null}
         </div>
       </TableCell>
     );
   }
 
-  const colSpanVacio = mostrarAcciones ? 9 : 8;
+  function renderCeldaHistorico(f: BalanceGastoMensualFila) {
+    if (!onVerHistorico) return null;
+    const historicoEsPrimerBloqueSecundario = !mostrarAcciones;
+    return (
+      <TableCell
+        className={cn(
+          "celda-datos bg-muted/25 text-muted-foreground",
+          historicoEsPrimerBloqueSecundario
+            ? "tabla-bloque-secundario-cell-divider"
+            : "tabla-bloque-secundario-cell",
+          "celda-datos--accion-relleno-fila"
+        )}
+      >
+        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+            title="Ver evolución mensual del gasto"
+            aria-label={`Ver evolución mensual — ${f.gastoNombre}`}
+            onClick={() => onVerHistorico(f)}
+          >
+            <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+          </Button>
+        </div>
+      </TableCell>
+    );
+  }
+
+  const colSpanVacio = 8 + (mostrarAcciones ? 1 : 0) + (mostrarHistorico ? 1 : 0);
 
   return (
     <div className="flex flex-1 min-h-0 flex-col pb-4">
@@ -257,6 +253,18 @@ export default function TablaGastos({
                   <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                   <TableHead className={cn(TH_NUM, CELL_MIN)}>PAGADO</TableHead>
                   {mostrarAcciones ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
+                  {mostrarHistorico ? (
+                    <TableHead
+                      className={cn(
+                        "min-w-0 text-center text-[11px] font-semibold uppercase",
+                        mostrarAcciones
+                          ? "tabla-bloque-secundario-head"
+                          : "tabla-bloque-secundario-head-divider"
+                      )}
+                    >
+                      HISTORIAL
+                    </TableHead>
+                  ) : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -267,6 +275,7 @@ export default function TablaGastos({
                     <TableRow key={f.id}>
                       {renderCeldasDatos(f)}
                       {mostrarAcciones ? renderCeldaAcciones(f) : null}
+                      {renderCeldaHistorico(f)}
                     </TableRow>
                   ))
                 )}

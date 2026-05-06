@@ -858,7 +858,11 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-05): **`TABLE_ROW_*`** — botón **`aspect-square`** (ancho = alto útil); **`TABLE_ROW_CELL_*`** incluye **`p-1.5`**; **`tbody td button`** fijo **1.75rem** excluye **`.tabla-row-btn-filled-brand`**.*
 
-*Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar**, separador vertical `#0072BB`, **Evolución mensual** (`BarChart2`); rol `simple`: evolución mensual solo en **MONTO**.*
+*Última actualización (2026-05-06): **`/finanzas/balance/gastos/catalogo`** — se retira la columna fija **PROVEEDORES** del layout Finder; la gestión pasa a botón de header **PROVEEDORES** que abre modal dedicado (lista + filtro por nombre + botón **Agregar Proveedor** para editor).*
+
+*Última actualización (2026-05-06): **`GASTO FINAL`** (catálogo gastos) — tarjetas muestran **NOMBRE DE GASTO** + separador y orden fijo de datos (`SUCURSAL`, `PROVEEDOR`, `DIA DEVENGADO`, `PLAZO PAGO`, `TIPO`); acciones **Editar/Eliminar** en overlay centrado al hover con botones ícono compactos.*
+
+*Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar** con botones cuadrados `TABLE_ROW_*`; **Evolución mensual** (`BarChart2`) pasa a columna propia **HISTORIAL** al extremo derecho con formato de bloque secundario (`tabla-bloque-secundario-*`).*
 
 *Última actualización (2026-05-05): `RegistrarPagoFinBalGastoMensualModal` usa el patrón de `GastoUnicoBalanceModal` para **PAGADO**: botón ícono dentro del input (check) para completar **pago total**; la persistencia se confirma con **Guardar**.*
 

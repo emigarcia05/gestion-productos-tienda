@@ -2,14 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarFinBalCatalogoItemModal, {
   type NivelCatalogo,
@@ -29,25 +31,22 @@ import type { ProveedorListItem } from "@/services/proveedor.service";
 /**
  * Página del catálogo jerárquico Finanzas → Balance → Gastos.
  *
- * Layout tipo Finder de 5 columnas:
- *   [TIPOS]  →  [RUBROS]  →  [GASTOS]  →  [GASTO FINAL]  [PROVEEDORES]
+ * Layout tipo Finder de 4 columnas:
+ *   [TIPOS]  →  [RUBROS]  →  [GASTOS]  →  [GASTO FINAL]
  *
  * Las 4 primeras columnas son cascada: tipo → rubro → gasto (`fin_bal_cat_gasto`,
  * sin proveedor) → filas de `fin_bal_gasto_final` (proveedor, sucursal, mensual o no,
  * día devengado y plazo de pago en la UI de columna GASTO FINAL).
- * La columna **PROVEEDORES** es autónoma (no depende de la selección) y
- * permite gestionar el catálogo maestro de proveedores "no-mercadería"
- * (alta/edición/baja) sin salir del módulo — reutiliza el mismo
- * `ProveedorModal` usado en `/gestion-productos/proveedores/lista`. La
- * lista proviene de `getProveedoresNoMercaderia()` (filtro
- * `proveedor_mercaderia = false`).
+ * La gestión de **PROVEEDORES** se resuelve con un botón en el header que
+ * abre un modal autónomo (lista + búsqueda + alta/edición), reutilizando
+ * `ProveedorModal` de `/gestion-productos/proveedores/lista`.
  *
  * Interacción:
  *   - Click en un ítem de las 3 primeras columnas lo selecciona y revela la siguiente.
- *   - Click en un proveedor abre el modal en modo EDITAR.
+ *   - Click en un proveedor dentro del modal abre edición.
  *   - Cada columna tiene su propio header con `+ Nuevo` (solo para editor).
  *   - Cada fila expone acciones "Editar" y "Eliminar" al pasar el mouse
- *     (salvo PROVEEDORES, donde el modal ya tiene botón Eliminar interno).
+ *     (proveedores se gestionan desde su modal dedicado).
  *
  * Vistas de rol:
  *   - `editor`: botonera completa en las columnas mutables.
@@ -58,8 +57,8 @@ interface Props {
   jerarquia: FinBalGastoJerarquiaTipo[];
   /**
    * Lista de proveedores "no-mercadería" (payload del servicio
-   * `getProveedoresNoMercaderia`). Se usa para la columna **PROVEEDORES**
-   * (lectura + apertura del modal en edición).
+   * `getProveedoresNoMercaderia`). Se usa en el modal de **PROVEEDORES**
+   * (lectura + búsqueda + apertura del modal en edición).
    */
   proveedores: ProveedorListItem[];
   sucursales: { id: string; nombre: string }[];
@@ -128,6 +127,8 @@ export default function FinBalGastosCatalogoPageClient({
   const [crearEditar, setCrearEditar] = useState<ModalCrearEditarState>({ open: false });
   const [eliminar, setEliminar] = useState<ModalEliminarState>({ open: false });
   const [proveedorModal, setProveedorModal] = useState<ProveedorModalState>({ open: false });
+  const [proveedoresModalOpen, setProveedoresModalOpen] = useState(false);
+  const [qProveedor, setQProveedor] = useState("");
   const [gastoFinalModal, setGastoFinalModal] = useState<ModalGastoFinalState>({ open: false });
   const [eliminarGastoFinal, setEliminarGastoFinal] = useState<ModalEliminarGastoFinalState>({
     open: false,
@@ -155,6 +156,12 @@ export default function FinBalGastosCatalogoPageClient({
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
     [proveedores]
   );
+
+  const proveedoresFiltrados = useMemo(() => {
+    const q = qProveedor.trim().toLocaleLowerCase("es");
+    if (!q) return proveedores;
+    return proveedores.filter((p) => p.nombre.toLocaleLowerCase("es").includes(q));
+  }, [proveedores, qProveedor]);
 
   /** Centros de costo desde servidor; en edición agrega la sucursal actual si ya no está en la lista (legacy). */
   const sucursalesParaModalGastoFinal = useMemo(() => {
@@ -195,10 +202,12 @@ export default function FinBalGastosCatalogoPageClient({
   }
 
   function openProveedorNuevo() {
+    setProveedoresModalOpen(false);
     setProveedorModal({ open: true, proveedor: null });
   }
 
   function openProveedorEdit(p: ProveedorListItem) {
+    setProveedoresModalOpen(false);
     setProveedorModal({
       open: true,
       proveedor: {
@@ -219,9 +228,14 @@ export default function FinBalGastosCatalogoPageClient({
       title="FINANZAS"
       subtitle="Balance · Catálogo Gastos"
       contentWidth="full"
+      actions={
+        <Button type="button" className="h-10 px-4" onClick={() => setProveedoresModalOpen(true)}>
+          PROVEEDORES
+        </Button>
+      }
     >
       <div className="flex-1 min-h-0 w-full overflow-hidden py-4">
-        <div className="grid h-full min-h-0 grid-cols-1 gap-3 grid-cols-2 grid-cols-5">
+        <div className="grid h-full min-h-0 grid-cols-4 gap-3">
           <CatalogoColumna
             titulo="TIPOS"
             subtitulo={`${jerarquia.length} registro${jerarquia.length === 1 ? "" : "s"}`}
@@ -406,7 +420,9 @@ export default function FinBalGastosCatalogoPageClient({
                   key={a.id}
                   nombre={a.proveedor.nombre}
                   gastoFinalDetalle={{
+                    gastoNombre: gastoSeleccionado.nombre,
                     sucursalNombre: a.sucursal.nombre,
+                    proveedorNombre: a.proveedor.nombre,
                     gastoMensual: a.gastoMensual,
                     diaDevengado: a.diaDevengado,
                     vencimiento: a.vencimiento,
@@ -440,31 +456,6 @@ export default function FinBalGastosCatalogoPageClient({
             )}
           </CatalogoColumna>
 
-          {/* Columna autónoma: CRUD del catálogo maestro de proveedores "no-mercadería".
-              Reutiliza `ProveedorModal` (el mismo de /gestion-productos/proveedores/lista). */}
-          <CatalogoColumna
-            titulo="PROVEEDORES"
-            subtitulo={`${proveedores.length} registro${proveedores.length === 1 ? "" : "s"}`}
-            mostrarNuevo={esEditor}
-            onNuevo={openProveedorNuevo}
-          >
-            {proveedores.length === 0 ? (
-              <EmptyState mensaje="No hay proveedores cargados." />
-            ) : (
-              proveedores.map((p) => (
-                <FilaCatalogo
-                  key={p.id}
-                  nombre={p.nombre}
-                  meta={p.prefijo}
-                  selected={false}
-                  onClick={esEditor ? () => openProveedorEdit(p) : undefined}
-                  mostrarAcciones={false}
-                  onEditar={() => openProveedorEdit(p)}
-                  onEliminar={() => openProveedorEdit(p)}
-                />
-              ))
-            )}
-          </CatalogoColumna>
         </div>
       </div>
 
@@ -538,6 +529,83 @@ export default function FinBalGastosCatalogoPageClient({
       {/* ProveedorModal reutilizado (alta + edición + eliminación interna).
           `proveedor === null` → alta; si no → edición con datos precargados. */}
       <Dialog
+        open={proveedoresModalOpen}
+        onOpenChange={(next) => {
+          setProveedoresModalOpen(next);
+          if (!next) setQProveedor("");
+        }}
+      >
+        {proveedoresModalOpen && (
+          <AppModal
+            title="Proveedores"
+            size="lg"
+            bodyClassName="p-0"
+            actions={
+              <>
+                <Button type="button" variant="outline" onClick={() => setProveedoresModalOpen(false)}>
+                  Cerrar
+                </Button>
+                {esEditor ? (
+                  <Button type="button" onClick={openProveedorNuevo}>
+                    Agregar Proveedor
+                  </Button>
+                ) : null}
+              </>
+            }
+          >
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="border-b border-border p-3">
+                <label className="relative block" aria-label="Buscar proveedor por nombre">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={qProveedor}
+                    onChange={(e) => setQProveedor(e.target.value)}
+                    placeholder="BUSCAR PROVEEDOR..."
+                    className="h-10 pl-9"
+                  />
+                </label>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {proveedoresFiltrados.length === 0 ? (
+                  <EmptyState mensaje="No hay proveedores para el criterio ingresado." />
+                ) : (
+                  proveedoresFiltrados.map((p) => (
+                    <div
+                      key={p.id}
+                      className={cn(
+                        "flex items-center justify-between gap-3 border-b px-3 py-2 text-sm",
+                        esEditor ? "cursor-pointer hover:bg-accent/50" : "cursor-default"
+                      )}
+                      onClick={esEditor ? () => openProveedorEdit(p) : undefined}
+                      role={esEditor ? "button" : undefined}
+                      tabIndex={esEditor ? 0 : undefined}
+                      onKeyDown={(e) => {
+                        if (!esEditor) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openProveedorEdit(p);
+                        }
+                      }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{p.nombre}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{p.prefijo || "—"}</p>
+                      </div>
+                      {esEditor ? (
+                        <span className="text-[11px] font-semibold uppercase text-muted-foreground">
+                          Editar
+                        </span>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </AppModal>
+        )}
+      </Dialog>
+
+      <Dialog
         open={proveedorModal.open}
         onOpenChange={(next) => !next && setProveedorModal({ open: false })}
       >
@@ -604,7 +672,9 @@ function CatalogoColumna({
 
 /** Layout de fila en columna GASTO FINAL (catálogo balance): 4 renglones + comentarios opcional. */
 interface FilaCatalogoGastoFinalDetalle {
+  gastoNombre: string;
   sucursalNombre: string;
+  proveedorNombre: string;
   gastoMensual: boolean;
   diaDevengado: number | null;
   /** Días hasta el pago (`fin_bal_gasto_final.plazo_pago_dias`). */
@@ -640,7 +710,7 @@ function FilaCatalogo({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 border-b px-3 py-2 text-sm transition-colors",
+        "group relative flex items-center gap-2 border-b px-3 py-2 text-sm transition-colors",
         isClickable ? "cursor-pointer hover:bg-accent/50" : "cursor-default",
         selected && "bg-primary/10 hover:bg-primary/15"
       )}
@@ -658,12 +728,10 @@ function FilaCatalogo({
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         {gastoFinalDetalle ? (
           <>
-            <div className="truncate text-[11px] leading-tight text-foreground">
-              <span className="font-semibold uppercase tracking-wide text-foreground">TIPO: </span>
-              <span className="font-normal text-foreground">
-                {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "EVENTUAL"}
-              </span>
+            <div className="truncate text-xs font-semibold uppercase tracking-wide text-foreground">
+              {gastoFinalDetalle.gastoNombre}
             </div>
+            <div className="h-px w-full bg-border" />
             <div className="min-w-0 truncate text-[11px] leading-tight">
               <span className="font-semibold uppercase tracking-wide text-foreground">
                 SUCURSAL:{" "}
@@ -674,16 +742,22 @@ function FilaCatalogo({
               <span className="font-semibold uppercase tracking-wide text-foreground">
                 PROVEEDOR:{" "}
               </span>
-              <span className="font-normal text-foreground">{nombre}</span>
+              <span className="font-normal text-foreground">{gastoFinalDetalle.proveedorNombre}</span>
             </div>
             <div className="truncate text-[11px] leading-tight text-foreground">
               <span className="font-semibold uppercase tracking-wide text-foreground">DIA DEVENGADO: </span>
               <span className="font-normal text-foreground">{gastoFinalDetalle.diaDevengado ?? "-"}</span>
             </div>
             <div className="truncate text-[11px] leading-tight text-foreground">
-              <span className="font-semibold uppercase tracking-wide text-foreground">PLAZO DE PAGO: </span>
+              <span className="font-semibold uppercase tracking-wide text-foreground">PLAZO PAGO: </span>
               <span className="font-normal text-foreground">
                 {gastoFinalDetalle.vencimiento == null ? "-" : `${gastoFinalDetalle.vencimiento} DIAS`}
+              </span>
+            </div>
+            <div className="truncate text-[11px] leading-tight text-foreground">
+              <span className="font-semibold uppercase tracking-wide text-foreground">TIPO: </span>
+              <span className="font-normal text-foreground">
+                {gastoFinalDetalle.gastoMensual ? "MENSUAL" : "EVENTUAL"}
               </span>
             </div>
             {gastoFinalComentarios ? (
@@ -712,12 +786,12 @@ function FilaCatalogo({
       </div>
 
       {mostrarAcciones && (
-        <div className="flex shrink-0 self-stretch items-center justify-center gap-1 px-1 py-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-1 bg-card/75 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+            className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "pointer-events-auto !h-7 !w-7 !p-1")}
             title="Editar"
             aria-label={`Editar ${nombre}`}
             onClick={(e) => {
@@ -731,7 +805,7 @@ function FilaCatalogo({
             type="button"
             variant="ghost"
             size="icon"
-            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+            className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "pointer-events-auto !h-7 !w-7 !p-1")}
             title="Eliminar"
             aria-label={`Eliminar ${nombre}`}
             onClick={(e) => {
@@ -747,7 +821,7 @@ function FilaCatalogo({
       {isClickable && (
         <ChevronRight
           className={cn(
-            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:opacity-0",
             selected && "text-primary"
           )}
         />
