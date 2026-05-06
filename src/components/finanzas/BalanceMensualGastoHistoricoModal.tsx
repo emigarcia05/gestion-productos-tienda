@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { fmtPrecio, fmtTituloPalabras } from "@/lib/format";
+import { TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import { listarHistoricoMontosGastoFinalBalanceAction } from "@/actions/finBalGastoMensualBalance";
 import type { HistoricoMontoGastoFinalBalanceItem } from "@/services/finBalGastoMensualBalance.service";
@@ -20,6 +22,90 @@ interface Props {
 function fmtMonto(n: number) {
   if (n === 0) return "—";
   return `$${fmtPrecio(n)}`;
+}
+
+/** Variación vs. mes anterior; el porcentaje se muestra como entero (`Math.round`). */
+type VariacionMesAnterior =
+  | { kind: "sin_anterior" }
+  | { kind: "sin_base" }
+  | { kind: "flat" }
+  | { kind: "up"; pct: number }
+  | { kind: "down"; pct: number };
+
+function variacionVsMesAnterior(
+  montoAnterior: number | undefined,
+  montoActual: number,
+): VariacionMesAnterior {
+  if (montoAnterior === undefined) return { kind: "sin_anterior" };
+  if (montoAnterior === 0) {
+    if (montoActual === 0) return { kind: "flat" };
+    return { kind: "sin_base" };
+  }
+  const pctEntero = Math.round(
+    ((montoActual - montoAnterior) / montoAnterior) * 100,
+  );
+  if (pctEntero === 0) return { kind: "flat" };
+  if (pctEntero > 0) return { kind: "up", pct: pctEntero };
+  return { kind: "down", pct: Math.abs(pctEntero) };
+}
+
+function CeldaVariacionPct({ variacion }: { variacion: VariacionMesAnterior }) {
+  if (variacion.kind === "sin_anterior") {
+    return (
+      <span
+        className="text-[9px] tabular-nums text-muted-foreground"
+        aria-label="Sin mes anterior para comparar"
+      >
+        —
+      </span>
+    );
+  }
+  if (variacion.kind === "sin_base") {
+    return (
+      <span
+        className="text-[9px] tabular-nums text-muted-foreground"
+        aria-label="Sin monto en el mes anterior para calcular variación porcentual"
+      >
+        —
+      </span>
+    );
+  }
+  if (variacion.kind === "flat") {
+    return (
+      <span
+        className="inline-flex items-center justify-center gap-0.5 text-[9px] tabular-nums text-muted-foreground"
+        aria-label="Variación respecto al mes anterior: 0 por ciento"
+      >
+        0%
+      </span>
+    );
+  }
+  if (variacion.kind === "up") {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center justify-center gap-0.5 text-[9px] tabular-nums",
+          "text-destructive",
+        )}
+        aria-label={`Variación respecto al mes anterior: sube ${variacion.pct} por ciento`}
+      >
+        <ArrowUp className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+        {variacion.pct}%
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center gap-0.5 text-[9px] tabular-nums",
+        TEXT_SUCCESS_CLASS,
+      )}
+      aria-label={`Variación respecto al mes anterior: baja ${variacion.pct} por ciento`}
+    >
+      <ArrowDown className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+      {variacion.pct}%
+    </span>
+  );
 }
 
 export default function BalanceMensualGastoHistoricoModal({
@@ -53,6 +139,18 @@ export default function BalanceMensualGastoHistoricoModal({
       cancelled = true;
     };
   }, [open, gastoFinalId]);
+
+  const serieConVariacion = useMemo(
+    () =>
+      serie.map((p, i) => {
+        const montoAnterior = i > 0 ? serie[i - 1].monto : undefined;
+        return {
+          ...p,
+          variacion: variacionVsMesAnterior(montoAnterior, p.monto),
+        };
+      }),
+    [serie],
+  );
 
   const maxMonto = serie.reduce((m, p) => Math.max(m, p.monto), 0);
 
@@ -89,7 +187,7 @@ export default function BalanceMensualGastoHistoricoModal({
                 Monto por mes
               </div>
               <div className="flex min-h-[11rem] items-end gap-1.5 overflow-x-auto border-b border-border px-1 pb-1">
-                {serie.map((p) => {
+                {serieConVariacion.map((p) => {
                   const pxAlt =
                     maxMonto > 0
                       ? Math.round((p.monto / maxMonto) * 128)
@@ -98,7 +196,7 @@ export default function BalanceMensualGastoHistoricoModal({
                   return (
                     <div
                       key={`${p.anio}-${p.mes}`}
-                      className="flex w-12 shrink-0 flex-col items-stretch gap-1 w-14"
+                      className="flex w-14 shrink-0 flex-col items-stretch gap-0.5"
                     >
                       <div className="flex h-36 w-full items-end justify-center rounded-sm bg-muted/25 px-0.5">
                         <div
@@ -116,6 +214,9 @@ export default function BalanceMensualGastoHistoricoModal({
                       <span className="text-center text-[9px] tabular-nums text-foreground">
                         {fmtMonto(p.monto)}
                       </span>
+                      <div className="flex min-h-[1rem] items-start justify-center">
+                        <CeldaVariacionPct variacion={p.variacion} />
+                      </div>
                     </div>
                   );
                 })}

@@ -27,6 +27,10 @@ import {
   puntoEquilibrioVentasPesos,
 } from "@/lib/balanceMensual";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import { Button } from "@/components/ui/button";
 import EditarVentasBalanceMensualModal, {
   type EditarVentasBalanceMensualContext,
@@ -104,8 +108,11 @@ const FG_FILA_RESULTADO = "#063652";
  */
 const CLASE_FILA_BALANCE_MENSUAL_GRID = "h-10 min-h-10 max-h-10";
 const CLASE_CELDA_BALANCE_MENSUAL = "flex min-h-0 items-center px-3 py-0";
-const CLASE_BOTON_ICONO_BALANCE_MENSUAL =
-  "h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground";
+/** Botón ícono compacto en celdas de balance (misma familia visual que tablas de gestión). */
+const CLASE_BOTON_ACCION_BALANCE_MENSUAL = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!h-7 !w-7 min-h-0 !p-1"
+);
 
 type FilaBalance =
   | {
@@ -306,62 +313,65 @@ function TablaBalanceMensualAlineada({
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
                       {esColumnaSucursal ? (
-                        <div className="grid w-full min-w-0 grid-cols-[10%_90%] items-center">
-                          <div className="flex items-center justify-center gap-0.5">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
-                              aria-label={`Ver histórico — ${fila.etiquetaConcepto} — ${c.titulo}`}
-                              title="Histórico (próximamente)"
-                              disabled
-                            >
-                              <BarChart2 className="h-4 w-4" aria-hidden />
-                            </Button>
-                            {esFilaVentas && mostrarEditarVentas && sid ? (
+                        <div className="grid w-full min-w-0 grid-cols-[10%_90%] items-center gap-0">
+                          <div className="grid min-w-0 grid-cols-2 gap-0.5">
+                            <div className="flex min-w-0 items-center justify-center">
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
-                                aria-label={`Editar ventas — ${c.titulo}`}
-                                onClick={() =>
-                                  onEditarVentas({
-                                    sucursalId: sid,
-                                    nombreSucursal: c.titulo,
-                                    mes,
-                                    anio,
-                                    ventaActual: c.bloque.ventas,
-                                  })
-                                }
+                                className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
+                                aria-label={`Ver histórico — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                                title="Histórico (próximamente)"
+                                disabled
                               >
-                                <Pencil className="h-4 w-4" aria-hidden />
+                                <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
-                            ) : null}
-                            {mostrarDetalleDiscriminacion ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
-                                aria-label={`Ver discriminación — ${fila.etiquetaConcepto} — ${c.titulo}`}
-                                onClick={() =>
-                                  onAbrirDetalleCostos?.({
-                                    tipo: fila.id === "cv" ? "variables" : "fijos",
-                                    columna:
-                                      c.key === "global"
-                                        ? { ambito: "global" }
-                                        : { ambito: "sucursal", nombre: c.titulo },
-                                    etiquetaColumna: c.titulo,
-                                    totalCvCelda: c.bloque.costosVariables,
-                                    totalCfCelda: c.bloque.costosFijos,
-                                  })
-                                }
-                              >
-                                <PanelRightOpen className="h-4 w-4" aria-hidden />
-                              </Button>
-                            ) : null}
+                            </div>
+                            <div className="flex min-w-0 items-center justify-center">
+                              {mostrarDetalleDiscriminacion ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
+                                  aria-label={`Ver discriminación — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                                  onClick={() =>
+                                    onAbrirDetalleCostos?.({
+                                      tipo: fila.id === "cv" ? "variables" : "fijos",
+                                      columna:
+                                        c.key === "global"
+                                          ? { ambito: "global" }
+                                          : { ambito: "sucursal", nombre: c.titulo },
+                                      etiquetaColumna: c.titulo,
+                                      totalCvCelda: c.bloque.costosVariables,
+                                      totalCfCelda: c.bloque.costosFijos,
+                                    })
+                                  }
+                                >
+                                  <PanelRightOpen className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                </Button>
+                              ) : esFilaVentas && mostrarEditarVentas && sid ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
+                                  aria-label={`Editar ventas — ${c.titulo}`}
+                                  onClick={() =>
+                                    onEditarVentas({
+                                      sucursalId: sid,
+                                      nombreSucursal: c.titulo,
+                                      mes,
+                                      anio,
+                                      ventaActual: c.bloque.ventas,
+                                    })
+                                  }
+                                >
+                                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                </Button>
+                              ) : null}
+                            </div>
                           </div>
                           <div className="flex h-full min-w-0 items-center justify-end">
                             <span className={cn(negritaValor ? "font-bold" : "font-normal")}>{txt}</span>
