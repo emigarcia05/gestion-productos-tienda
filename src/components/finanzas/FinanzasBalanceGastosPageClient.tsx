@@ -25,10 +25,9 @@ import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas/TablaGastos";
 import BalanceMensualGastoHistoricoModal from "@/components/finanzas/BalanceMensualGastoHistoricoModal";
-import EditarMontoFinBalGastoMensualModal from "@/components/finanzas/EditarMontoFinBalGastoMensualModal";
 import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBalGastoMensualModal";
 import GastoUnicoBalanceModal from "@/components/finanzas/GastoUnicoBalanceModal";
-import RegistrarPagoFinBalGastoMensualModal from "@/components/finanzas/RegistrarPagoFinBalGastoMensualModal";
+import RegistrarMontoPagoFinBalGastoMensualModal from "@/components/finanzas/RegistrarMontoPagoFinBalGastoMensualModal";
 import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
 import { cn } from "@/lib/utils";
 
@@ -137,8 +136,7 @@ export default function FinanzasBalanceGastosPageClient({
   /** Filtro ESTADO (monto + pago); vacío = sin filtrar por estado. */
   const [filtEstado, setFiltEstado] = useState<FiltroEstadoBalanceGastos>("");
 
-  const [filaEditar, setFilaEditar] = useState<BalanceGastoMensualFila | null>(null);
-  const [filaPagar, setFilaPagar] = useState<BalanceGastoMensualFila | null>(null);
+  const [filaRegistrarMontoPago, setFilaRegistrarMontoPago] = useState<BalanceGastoMensualFila | null>(null);
   const [eliminar, setEliminar] = useState<{ id: string; etiqueta: string } | null>(null);
   const [gastoUnicoOpen, setGastoUnicoOpen] = useState(false);
   const [historicoOpen, setHistoricoOpen] = useState(false);
@@ -509,8 +507,7 @@ export default function FinanzasBalanceGastosPageClient({
           filas={filasFiltradas}
           emptyMessage={emptyMessage}
           esEditor={esEditor}
-          onEditarMonto={(f) => setFilaEditar(f)}
-          onPagar={(f) => setFilaPagar(f)}
+          onRegistrarMontoPago={(f) => setFilaRegistrarMontoPago(f)}
           onEliminar={(f) =>
             setEliminar({
               id: f.id,
@@ -527,19 +524,12 @@ export default function FinanzasBalanceGastosPageClient({
         />
       </ClassicFilteredTableLayout>
 
-      <EditarMontoFinBalGastoMensualModal
-        open={filaEditar !== null}
-        onOpenChange={(next) => !next && setFilaEditar(null)}
-        fila={filaEditar}
+      <RegistrarMontoPagoFinBalGastoMensualModal
+        open={filaRegistrarMontoPago !== null}
+        onOpenChange={(next) => !next && setFilaRegistrarMontoPago(null)}
+        fila={filaRegistrarMontoPago}
         mes={mes}
         anio={anio}
-        onSuccess={() => router.refresh()}
-      />
-
-      <RegistrarPagoFinBalGastoMensualModal
-        open={filaPagar !== null}
-        onOpenChange={(next) => !next && setFilaPagar(null)}
-        fila={filaPagar}
         onSuccess={() => router.refresh()}
       />
 

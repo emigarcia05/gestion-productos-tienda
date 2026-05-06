@@ -18,7 +18,7 @@ import {
 import { fmtPrecio } from "@/lib/format";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import type { BalanceGastoMensualFila } from "@/services/finBalGastoMensualBalance.service";
-import { Banknote, BarChart2, Pencil, Trash2 } from "lucide-react";
+import { BarChart2, Pencil, Trash2 } from "lucide-react";
 import { type ReactNode } from "react";
 
 export type { BalanceGastoMensualFila };
@@ -28,8 +28,7 @@ interface Props {
   /** Si hay datos crudos pero `filas` ya filtradas quedó vacío. */
   emptyMessage?: string;
   esEditor?: boolean;
-  onEditarMonto?: (fila: BalanceGastoMensualFila) => void;
-  onPagar?: (fila: BalanceGastoMensualFila) => void;
+  onRegistrarMontoPago?: (fila: BalanceGastoMensualFila) => void;
   onEliminar?: (fila: BalanceGastoMensualFila) => void;
   /** Abre el histórico mensual del gasto final (mismo modal que balance mensual). */
   onVerHistorico?: (fila: BalanceGastoMensualFila) => void;
@@ -87,8 +86,7 @@ export default function TablaGastos({
   filas,
   emptyMessage,
   esEditor = false,
-  onEditarMonto,
-  onPagar,
+  onRegistrarMontoPago,
   onEliminar,
   onVerHistorico,
 }: Props) {
@@ -98,7 +96,7 @@ export default function TablaGastos({
     (acc, fila) => acc + Math.max(0, fila.monto - fila.pagado),
     0
   );
-  const mostrarAcciones = esEditor && onEditarMonto && onPagar && onEliminar;
+  const mostrarAcciones = esEditor && onRegistrarMontoPago && onEliminar;
   const mostrarHistorico = Boolean(onVerHistorico);
   const anchosFullPct: readonly number[] = (() => {
     if (mostrarAcciones && mostrarHistorico) return [...escalarAnchosDatos(82), 10, 8];
@@ -167,20 +165,9 @@ export default function TablaGastos({
             variant="ghost"
             size="icon"
             className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-            title="Registrar pago"
-            aria-label={`Pagar ${f.gastoNombre}`}
-            onClick={() => onPagar!(f)}
-          >
-            <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-            title="Editar monto"
-            aria-label={`Editar monto ${f.gastoNombre}`}
-            onClick={() => onEditarMonto!(f)}
+            title="Registrar monto y pago"
+            aria-label={`Registrar monto y pago ${f.gastoNombre}`}
+            onClick={() => onRegistrarMontoPago!(f)}
           >
             <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
@@ -202,14 +189,11 @@ export default function TablaGastos({
 
   function renderCeldaHistorico(f: BalanceGastoMensualFila) {
     if (!onVerHistorico) return null;
-    const historicoEsPrimerBloqueSecundario = !mostrarAcciones;
     return (
       <TableCell
         className={cn(
           "celda-datos bg-muted/25 text-muted-foreground",
-          historicoEsPrimerBloqueSecundario
-            ? "tabla-bloque-secundario-cell-divider"
-            : "tabla-bloque-secundario-cell",
+          "tabla-bloque-secundario-cell-divider",
           "celda-datos--accion-relleno-fila"
         )}
       >
@@ -257,9 +241,7 @@ export default function TablaGastos({
                     <TableHead
                       className={cn(
                         "min-w-0 text-center text-[11px] font-semibold uppercase",
-                        mostrarAcciones
-                          ? "tabla-bloque-secundario-head"
-                          : "tabla-bloque-secundario-head-divider"
+                        "tabla-bloque-secundario-head-divider"
                       )}
                     >
                       HISTORIAL

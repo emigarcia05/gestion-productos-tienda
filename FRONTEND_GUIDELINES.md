@@ -868,6 +868,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-06): columna **INDICADOR** (`/finanzas/balance/gastos/catalogo`) — headers `SUCURSALES`/`PROVEEDORES` centrados sobre fondo `bg-muted/60`; en `SUCURSALES` el tilde queda alineado a la izquierda de cada fila y `CORPORATIVO` se ordena al final del listado cuando existe en `global_sucursales`.*
 
+*Última actualización (2026-05-06): `/finanzas/balance/gastos` unifica modales **Editar Monto** + **Registrar Pago** en un único modal **Registrar Monto y Pago** (dos inputs); `PAGADO` se habilita solo cuando `MONTO` tiene dato y conserva botón de pago total (tilde) dentro del input.*
+
 *Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar** con botones cuadrados `TABLE_ROW_*`; **Evolución mensual** (`BarChart2`) pasa a columna propia **HISTORIAL** al extremo derecho con formato de bloque secundario (`tabla-bloque-secundario-*`).*
 
 *Última actualización (2026-05-05): `RegistrarPagoFinBalGastoMensualModal` usa el patrón de `GastoUnicoBalanceModal` para **PAGADO**: botón ícono dentro del input (check) para completar **pago total**; la persistencia se confirma con **Guardar**.*

@@ -505,11 +505,12 @@ export default function FinBalGastosCatalogoPageClient({
                       return (
                         <div
                           key={s.id}
-                          className="flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] text-foreground"
+                          className="grid grid-cols-[10%_90%] items-center border-b px-3 py-2 text-[11px] text-foreground"
                         >
-                          {activa ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
-                          <span className="truncate">{s.nombre}</span>
-                          {!activa ? <span className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                          <div className="flex items-center justify-center">
+                            {activa ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
+                          </div>
+                          <span className="truncate text-right">{s.nombre}</span>
                         </div>
                       );
                     })}
