@@ -170,8 +170,8 @@ export default function FinBalGastosCatalogoPageClient({
     return [...sucursales].sort((a, b) => {
       const aCorp = a.nombre.toLocaleUpperCase("es") === "CORPORATIVO";
       const bCorp = b.nombre.toLocaleUpperCase("es") === "CORPORATIVO";
-      if (aCorp && !bCorp) return -1;
-      if (!aCorp && bCorp) return 1;
+      if (aCorp && !bCorp) return 1;
+      if (!aCorp && bCorp) return -1;
       return a.nombre.localeCompare(b.nombre, "es");
     });
   }, [sucursales]);
@@ -494,8 +494,8 @@ export default function FinBalGastosCatalogoPageClient({
             ) : (
               <div className="flex h-full min-h-0 flex-col">
                 <section className="flex min-h-0 flex-1 flex-col border-b border-border">
-                  <header className="shrink-0 border-b border-border px-3 py-2">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                  <header className="shrink-0 border-b border-border bg-muted/60 px-3 py-2">
+                    <h3 className="text-center text-[11px] font-semibold uppercase tracking-wide text-foreground">
                       SUCURSALES
                     </h3>
                   </header>
@@ -508,15 +508,17 @@ export default function FinBalGastosCatalogoPageClient({
                           className="flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] text-foreground"
                         >
                           <span className="truncate">{s.nombre}</span>
-                          {activa ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
+                          {activa ? (
+                            <Check className="ml-auto h-4 w-4 shrink-0 text-primary" aria-hidden />
+                          ) : null}
                         </div>
                       );
                     })}
                   </div>
                 </section>
                 <section className="flex min-h-0 flex-1 flex-col">
-                  <header className="shrink-0 border-b border-border px-3 py-2">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                  <header className="shrink-0 border-b border-border bg-muted/60 px-3 py-2">
+                    <h3 className="text-center text-[11px] font-semibold uppercase tracking-wide text-foreground">
                       PROVEEDORES
                     </h3>
                   </header>
@@ -877,7 +879,7 @@ function FilaCatalogo({
       </div>
 
       {mostrarAcciones && (
-        <div className="pointer-events-none absolute inset-0 flex items-end justify-end gap-1 bg-card/75 px-2 py-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <div className="pointer-events-none absolute right-2 bottom-2 flex items-center justify-end gap-1 bg-card/75 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             type="button"
             variant="ghost"

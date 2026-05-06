@@ -866,6 +866,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-06): `/finanzas/balance/gastos/catalogo` agrega 5ta columna **INDICADOR** dividida en `SUCURSALES` y `PROVEEDORES`; para el gasto seleccionado, `SUCURSALES` lista corporativo + sucursales de balance y marca con tilde las que tienen asignación activa; `PROVEEDORES` lista proveedores activos del gasto seleccionado.*
 
+*Última actualización (2026-05-06): columna **INDICADOR** (`/finanzas/balance/gastos/catalogo`) — headers `SUCURSALES`/`PROVEEDORES` centrados sobre fondo `bg-muted/60`; en `SUCURSALES` el tilde queda alineado al extremo derecho de cada fila y `CORPORATIVO` se ordena al final del listado.*
+
 *Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar** con botones cuadrados `TABLE_ROW_*`; **Evolución mensual** (`BarChart2`) pasa a columna propia **HISTORIAL** al extremo derecho con formato de bloque secundario (`tabla-bloque-secundario-*`).*
 
 *Última actualización (2026-05-05): `RegistrarPagoFinBalGastoMensualModal` usa el patrón de `GastoUnicoBalanceModal` para **PAGADO**: botón ícono dentro del input (check) para completar **pago total**; la persistencia se confirma con **Guardar**.*
