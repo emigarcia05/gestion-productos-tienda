@@ -881,7 +881,7 @@
 .tabla-gestion-compacta tbody td input[type="number"] {
   -moz-appearance: textfield;
 }
-.tabla-gestion-compacta tbody td button:not(.tabla-check-toggle) {
+.tabla-gestion-compacta tbody td button:not(.tabla-check-toggle):not(.tabla-row-btn-filled-brand) {
   max-height: 1.75rem !important;
   height: 1.75rem !important;
   min-width: 1.5rem;
@@ -890,23 +890,18 @@
   align-items: center;
   justify-content: center;
 }
-.tabla-gestion-compacta tbody td button:not(.tabla-check-toggle) svg {
+.tabla-gestion-compacta tbody td button:not(.tabla-check-toggle):not(.tabla-row-btn-filled-brand) svg {
   width: 0.875rem;
   height: 0.875rem;
 }
 
 /**
  * Balance · Gastos (`TablaGastos`): fila **alto fijo** (hereda `--tabla-body-row-min-height` en el `<table>`),
- * más padding vertical en celdas; botones de **ACCIONES** se encogen con `py-1.5` en el wrapper (ver componente).
+ * más padding en celdas; botones **ACCIONES** usan el patrón global `tabla-row-btn-filled-brand` + wrapper `p-1.5`.
  */
 .tabla-gestion-compacta.tabla-balance-gastos {
   --tabla-body-row-min-height: 2.875rem;
   --tabla-body-cell-padding-y: 0.375rem;
-}
-.tabla-gestion-compacta.tabla-balance-gastos tbody td button:not(.tabla-check-toggle) {
-  height: auto !important;
-  max-height: none !important;
-  align-self: stretch;
 }
 
 /* Toggle de tilde compacto en tablas (global y reutilizable). */
@@ -1458,7 +1453,6 @@ main button,
 button.tabla-row-btn-filled-brand {
   padding: 0.5rem !important;
   min-height: 0 !important;
-  height: auto !important;
   max-height: 100% !important;
 }
 

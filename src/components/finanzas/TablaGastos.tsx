@@ -150,7 +150,7 @@ export default function TablaGastos({
           </div>
         </TableCell>
         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-          <div className="flex w-full items-stretch justify-end gap-1">
+          <div className="flex h-full min-h-0 w-full items-center justify-end gap-1 box-border px-1.5 py-1.5">
             {!mostrarAcciones && onVerHistorico ? (
               <Button
                 type="button"
@@ -175,12 +175,7 @@ export default function TablaGastos({
   function renderCeldaAcciones(f: BalanceGastoMensualFila) {
     return (
       <TableCell className={cn(TD_ACCIONES, "celda-datos--accion-relleno-fila")}>
-        <div
-          className={cn(
-            TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
-            "gap-1.5 py-1.5"
-          )}
-        >
+        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
           <Button
             type="button"
             variant="ghost"

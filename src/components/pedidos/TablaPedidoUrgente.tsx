@@ -139,10 +139,7 @@ export default function TablaPedidoUrgente({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                        "!w-full rounded-sm"
-                      )}
+                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                       onClick={(e) => {
                         e.stopPropagation();
                         onRowDeleteClick?.(prod);

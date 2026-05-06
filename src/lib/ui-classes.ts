@@ -29,16 +29,16 @@ export const IMPORT_STAT_BADGE_CLASSES = {
  * **Obligatorio:** `variant="ghost"` + `size="icon"` + esta clase (anula el hover ghost).
  * Ver **FRONTEND_GUIDELINES** §1 — prohibición de `variant="outline"` + `size="icon-xs"` con aspecto documento.
  */
+/** Botón #0072BB en fila de tabla: cuadrado (ancho = alto), encaja al alto útil del contenedor + `p-*` del wrapper. */
 export const TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS =
-  "tabla-row-btn-filled-brand !h-full min-h-0 max-h-full !w-auto min-w-10 max-w-none self-stretch shrink-0 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
+  "tabla-row-btn-filled-brand aspect-square !h-full max-h-full !w-auto max-w-full min-h-0 min-w-0 self-center shrink-0 rounded-md border-0 bg-[#0072BB] text-white shadow-none hover:bg-[#0072BB]/90 hover:text-white focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50";
 
 /**
  * Contenedor flex en celdas con botones {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}.
- * Usar `items-stretch` para que el alto del botón iguale el de la fila; combinar con
- * `.celda-datos--accion-relleno-fila` cuando haya que anular el padding de `.celda-datos`.
+ * `p-1.5` + `items-center` dejan aire respecto del borde de la celda; el botón cuadrado usa el alto interno.
  */
 export const TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS =
-  "flex h-full min-h-0 w-full flex-wrap items-stretch justify-center gap-1 box-border";
+  "flex h-full min-h-0 w-full flex-wrap items-center justify-center gap-1.5 box-border p-1.5";
 
 /**
  * @deprecated En tablas de gestión las acciones por fila usan siempre {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
