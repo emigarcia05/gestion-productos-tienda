@@ -862,6 +862,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-06): **`GASTO FINAL`** (catálogo gastos) — tarjetas muestran **NOMBRE DE GASTO** + separador y orden fijo de datos (`SUCURSAL`, `PROVEEDOR`, `DIA DEVENGADO`, `PLAZO PAGO`, `TIPO`); acciones **Editar/Eliminar** en overlay centrado al hover con botones ícono compactos.*
 
+*Última actualización (2026-05-06): modal **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` — la acción por fila usa botón ícono **Editar** (Pencil) con formato de botón de acción compacto, en lugar de texto.*
+
+*Última actualización (2026-05-06): `/finanzas/balance/gastos/catalogo` agrega 5ta columna **INDICADOR** dividida en `SUCURSALES` y `PROVEEDORES`; para el gasto seleccionado, `SUCURSALES` lista corporativo + sucursales de balance y marca con tilde las que tienen asignación activa; `PROVEEDORES` lista proveedores activos del gasto seleccionado.*
+
 *Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar** con botones cuadrados `TABLE_ROW_*`; **Evolución mensual** (`BarChart2`) pasa a columna propia **HISTORIAL** al extremo derecho con formato de bloque secundario (`tabla-bloque-secundario-*`).*
 
 *Última actualización (2026-05-05): `RegistrarPagoFinBalGastoMensualModal` usa el patrón de `GastoUnicoBalanceModal` para **PAGADO**: botón ícono dentro del input (check) para completar **pago total**; la persistencia se confirma con **Guardar**.*
