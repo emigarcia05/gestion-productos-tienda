@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { PanelRightOpen, Pencil } from "lucide-react";
+import { BarChart2, PanelRightOpen, Pencil } from "lucide-react";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -144,7 +144,7 @@ const FILAS_BALANCE: FilaBalance[] = [
   {
     id: "ro",
     tipo: "monto",
-    etiquetaConcepto: "Resultado operativo",
+    etiquetaConcepto: "RESULTADO OPERATIVO",
     get: (b) => b.resultadoOperativo,
     valorNegrita: false,
     filaResultado: true,
@@ -159,7 +159,7 @@ const FILAS_BALANCE: FilaBalance[] = [
   {
     id: "re",
     tipo: "monto",
-    etiquetaConcepto: "Resultado ejercicio",
+    etiquetaConcepto: "RESULTADO DEL EJERCICIO",
     get: (b) => b.resultadoEjercicio,
     valorNegrita: false,
     filaResultado: true,
@@ -289,8 +289,11 @@ function TablaBalanceMensualAlineada({
                   const txt =
                     fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
                   const sid = c.sucursalId;
+                  const esColumnaSucursal = Boolean(sid);
                   const esFilaVentas = fila.id === "ventas";
                   const mostrarEditarVentas = esFilaVentas && puedeEditarVentas && Boolean(sid);
+                  const mostrarDetalleDiscriminacion =
+                    fila.tipo === "monto" && (fila.id === "cv" || fila.id === "cf") && Boolean(onAbrirDetalleCostos);
 
                   return (
                     <div
@@ -302,70 +305,67 @@ function TablaBalanceMensualAlineada({
                       )}
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
-                      {esFilaVentas ? (
-                        <div className="flex w-full min-w-0 items-center justify-end gap-1">
-                          {mostrarEditarVentas && sid ? (
+                      {esColumnaSucursal ? (
+                        <div className="grid w-full min-w-0 grid-cols-[10%_90%] items-center">
+                          <div className="flex items-center justify-center gap-0.5">
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
                               className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
-                              aria-label={`Editar ventas — ${c.titulo}`}
-                              onClick={() =>
-                                onEditarVentas({
-                                  sucursalId: sid,
-                                  nombreSucursal: c.titulo,
-                                  mes,
-                                  anio,
-                                  ventaActual: c.bloque.ventas,
-                                })
-                              }
+                              aria-label={`Ver histórico — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                              title="Histórico (próximamente)"
+                              disabled
                             >
-                              <Pencil className="h-4 w-4" aria-hidden />
+                              <BarChart2 className="h-4 w-4" aria-hidden />
                             </Button>
-                          ) : null}
-                          <span
-                            className={cn(
-                              "min-w-0",
-                              negritaValor ? "font-bold" : "font-normal"
-                            )}
-                          >
-                            {txt}
-                          </span>
-                        </div>
-                      ) : fila.tipo === "monto" &&
-                        (fila.id === "cv" || fila.id === "cf") &&
-                        onAbrirDetalleCostos ? (
-                        <div className="flex w-full min-w-0 items-center justify-end gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
-                            aria-label={`Ver detalle por rubro — ${fila.etiquetaConcepto} — ${c.titulo}`}
-                            onClick={() =>
-                              onAbrirDetalleCostos({
-                                tipo: fila.id === "cv" ? "variables" : "fijos",
-                                columna:
-                                  c.key === "global"
-                                    ? { ambito: "global" }
-                                    : { ambito: "sucursal", nombre: c.titulo },
-                                etiquetaColumna: c.titulo,
-                                totalCvCelda: c.bloque.costosVariables,
-                                totalCfCelda: c.bloque.costosFijos,
-                              })
-                            }
-                          >
-                            <PanelRightOpen className="h-4 w-4" aria-hidden />
-                          </Button>
-                          <span
-                            className={cn(
-                              "min-w-0",
-                              negritaValor ? "font-bold" : "font-normal"
-                            )}
-                          >
-                            {txt}
-                          </span>
+                            {esFilaVentas && mostrarEditarVentas && sid ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
+                                aria-label={`Editar ventas — ${c.titulo}`}
+                                onClick={() =>
+                                  onEditarVentas({
+                                    sucursalId: sid,
+                                    nombreSucursal: c.titulo,
+                                    mes,
+                                    anio,
+                                    ventaActual: c.bloque.ventas,
+                                  })
+                                }
+                              >
+                                <Pencil className="h-4 w-4" aria-hidden />
+                              </Button>
+                            ) : null}
+                            {mostrarDetalleDiscriminacion ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={CLASE_BOTON_ICONO_BALANCE_MENSUAL}
+                                aria-label={`Ver discriminación — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                                onClick={() =>
+                                  onAbrirDetalleCostos?.({
+                                    tipo: fila.id === "cv" ? "variables" : "fijos",
+                                    columna:
+                                      c.key === "global"
+                                        ? { ambito: "global" }
+                                        : { ambito: "sucursal", nombre: c.titulo },
+                                    etiquetaColumna: c.titulo,
+                                    totalCvCelda: c.bloque.costosVariables,
+                                    totalCfCelda: c.bloque.costosFijos,
+                                  })
+                                }
+                              >
+                                <PanelRightOpen className="h-4 w-4" aria-hidden />
+                              </Button>
+                            ) : null}
+                          </div>
+                          <div className="flex h-full min-w-0 items-center justify-end">
+                            <span className={cn(negritaValor ? "font-bold" : "font-normal")}>{txt}</span>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex h-full w-full min-w-0 items-center justify-end">

@@ -870,6 +870,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-06): `/finanzas/balance/gastos` unifica modales **Editar Monto** + **Registrar Pago** en un único modal **Registrar Monto y Pago** (dos inputs); `PAGADO` se habilita solo cuando `MONTO` tiene dato y conserva botón de pago total (tilde) dentro del input.*
 
+*Última actualización (2026-05-06): `/finanzas/balance/mensual` — cada celda de sucursal usa sublayout interno `10%` (botones, centrados) + `90%` (dato numérico). Todas las filas muestran botón de histórico (placeholder visual) y las filas con desglose (`Costo variable` / `Costo fijo`) mantienen además botón de discriminación.*
+
 *Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar** con botones cuadrados `TABLE_ROW_*`; **Evolución mensual** (`BarChart2`) pasa a columna propia **HISTORIAL** al extremo derecho con formato de bloque secundario (`tabla-bloque-secundario-*`).*
 
 *Última actualización (2026-05-05): `RegistrarPagoFinBalGastoMensualModal` usa el patrón de `GastoUnicoBalanceModal` para **PAGADO**: botón ícono dentro del input (check) para completar **pago total**; la persistencia se confirma con **Guardar**.*
