@@ -864,9 +864,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-06): modal **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` — la acción por fila usa botón ícono **Editar** (Pencil) con formato de botón de acción compacto, en lugar de texto.*
 
-*Última actualización (2026-05-06): `/finanzas/balance/gastos/catalogo` agrega 5ta columna **INDICADOR** dividida en `SUCURSALES` y `PROVEEDORES`; para el gasto seleccionado, `SUCURSALES` lista corporativo + sucursales de balance y marca con tilde las que tienen asignación activa; `PROVEEDORES` lista proveedores activos del gasto seleccionado.*
+*Última actualización (2026-05-06): `/finanzas/balance/gastos/catalogo` agrega 5ta columna **INDICADOR** dividida en `SUCURSALES` y `PROVEEDORES`; para el gasto seleccionado, `SUCURSALES` usa la misma fuente del modal de gasto final (`listarSucursalesParaGastos`, `centro_costo = true`) y marca con tilde las que tienen asignación activa; `PROVEEDORES` lista proveedores activos del gasto seleccionado.*
 
-*Última actualización (2026-05-06): columna **INDICADOR** (`/finanzas/balance/gastos/catalogo`) — headers `SUCURSALES`/`PROVEEDORES` centrados sobre fondo `bg-muted/60`; en `SUCURSALES` el tilde queda alineado al extremo derecho de cada fila y `CORPORATIVO` se ordena al final del listado.*
+*Última actualización (2026-05-06): columna **INDICADOR** (`/finanzas/balance/gastos/catalogo`) — headers `SUCURSALES`/`PROVEEDORES` centrados sobre fondo `bg-muted/60`; en `SUCURSALES` el tilde queda alineado a la izquierda de cada fila y `CORPORATIVO` se ordena al final del listado cuando existe en `global_sucursales`.*
 
 *Última actualización (2026-05-05): en `TablaGastos` (Balance · Gastos), columna **ACCIONES**: **Registrar Pago** → **Editar** → **Eliminar** con botones cuadrados `TABLE_ROW_*`; **Evolución mensual** (`BarChart2`) pasa a columna propia **HISTORIAL** al extremo derecho con formato de bloque secundario (`tabla-bloque-secundario-*`).*
 

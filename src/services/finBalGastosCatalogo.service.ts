@@ -520,9 +520,9 @@ function mapFinBalGastoFinalRow(row: {
 async function sucursalEsCentroDeCosto(sucursalId: string): Promise<boolean> {
   const s = await prisma.sucursal.findUnique({
     where: { id: sucursalId },
-    select: { centroCosto: true, generaBalance: true },
+    select: { centroCosto: true },
   });
-  return Boolean(s?.centroCosto && s?.generaBalance);
+  return Boolean(s?.centroCosto);
 }
 
 /** Comentarios persistidos comparables (misma regla que Zod `comentariosFinBalGastoFinalSchema`). */
@@ -581,7 +581,7 @@ export async function crearFinBalGastoFinal(
   if (!(await sucursalEsCentroDeCosto(input.sucursalId))) {
     return {
       success: false,
-      error: "La sucursal debe tener centro de costo y generar balance activados.",
+      error: "La sucursal debe tener centro de costo activado.",
     };
   }
   const triplaOk = await validarComentariosParaTriplaGastoFinalRepetida({
@@ -634,7 +634,7 @@ export async function editarFinBalGastoFinal(
   ) {
     return {
       success: false,
-      error: "La sucursal debe tener centro de costo y generar balance activados.",
+      error: "La sucursal debe tener centro de costo activado.",
     };
   }
   const triplaOk = await validarComentariosParaTriplaGastoFinalRepetida({

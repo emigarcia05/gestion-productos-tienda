@@ -507,10 +507,9 @@ export default function FinBalGastosCatalogoPageClient({
                           key={s.id}
                           className="flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] text-foreground"
                         >
+                          {activa ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
                           <span className="truncate">{s.nombre}</span>
-                          {activa ? (
-                            <Check className="ml-auto h-4 w-4 shrink-0 text-primary" aria-hidden />
-                          ) : null}
+                          {!activa ? <span className="h-4 w-4 shrink-0" aria-hidden /> : null}
                         </div>
                       );
                     })}
