@@ -313,7 +313,7 @@ function TablaBalanceMensualAlineada({
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
                       {esColumnaSucursal ? (
-                        <div className="grid w-full min-w-0 grid-cols-[10%_90%] items-center gap-0">
+                        <div className="grid w-full min-w-0 grid-cols-[30%_70%] items-center gap-0">
                           <div className="grid min-w-0 grid-cols-2 gap-0.5">
                             <div className="flex min-w-0 items-center justify-center">
                               <Button

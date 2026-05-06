@@ -73,7 +73,7 @@ function CeldaVariacionPct({ variacion }: { variacion: VariacionMesAnterior }) {
   if (variacion.kind === "flat") {
     return (
       <span
-        className="inline-flex items-center justify-center gap-0.5 text-[9px] tabular-nums text-muted-foreground"
+        className="inline-flex items-center justify-center gap-0.5 text-[11px] font-medium tabular-nums text-foreground"
         aria-label="Variación respecto al mes anterior: 0 por ciento"
       >
         0%
@@ -83,27 +83,33 @@ function CeldaVariacionPct({ variacion }: { variacion: VariacionMesAnterior }) {
   if (variacion.kind === "up") {
     return (
       <span
-        className={cn(
-          "inline-flex items-center justify-center gap-0.5 text-[9px] tabular-nums",
-          "text-destructive",
-        )}
+        className="inline-flex items-center justify-center gap-0.5"
         aria-label={`Variación respecto al mes anterior: sube ${variacion.pct} por ciento`}
       >
-        <ArrowUp className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
-        {variacion.pct}%
+        <ArrowUp
+          className="h-3.5 w-3.5 shrink-0 text-destructive"
+          strokeWidth={2.5}
+          aria-hidden
+        />
+        <span className="text-[11px] font-medium tabular-nums text-foreground">
+          {variacion.pct}%
+        </span>
       </span>
     );
   }
   return (
     <span
-      className={cn(
-        "inline-flex items-center justify-center gap-0.5 text-[9px] tabular-nums",
-        TEXT_SUCCESS_CLASS,
-      )}
+      className="inline-flex items-center justify-center gap-0.5"
       aria-label={`Variación respecto al mes anterior: baja ${variacion.pct} por ciento`}
     >
-      <ArrowDown className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
-      {variacion.pct}%
+      <ArrowDown
+        className={cn("h-3.5 w-3.5 shrink-0", TEXT_SUCCESS_CLASS)}
+        strokeWidth={2.5}
+        aria-hidden
+      />
+      <span className="text-[11px] font-medium tabular-nums text-foreground">
+        {variacion.pct}%
+      </span>
     </span>
   );
 }
