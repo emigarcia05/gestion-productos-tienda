@@ -14,7 +14,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { BadgeCheck, Pencil, Plus, Trash2 } from "lucide-react";
+import { BadgeCheck, Plus, Trash2 } from "lucide-react";
 import { listarChequesPorCajaAction } from "@/actions/finTesoreriaCheques";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
@@ -26,7 +26,6 @@ import {
 } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 import AltaChequeTesoreriaModal from "@/components/finanzas/AltaChequeTesoreriaModal";
-import EditarChequeTesoreriaModal from "@/components/finanzas/EditarChequeTesoreriaModal";
 import EliminarChequeTesoreriaModal from "@/components/finanzas/EliminarChequeTesoreriaModal";
 import AcreditarChequeTesoreriaModal from "@/components/finanzas/AcreditarChequeTesoreriaModal";
 import {
@@ -62,7 +61,6 @@ export default function ChequesCajaTesoreriaModal({
   const [filas, setFilas] = useState<FinTesoreriaChequeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [openAlta, setOpenAlta] = useState(false);
-  const [chequeEditando, setChequeEditando] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeEliminando, setChequeEliminando] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaAcreditar, setChequeParaAcreditar] = useState<FinTesoreriaChequeItem | null>(null);
 
@@ -90,7 +88,6 @@ export default function ChequesCajaTesoreriaModal({
   useEffect(() => {
     if (!open) {
       setOpenAlta(false);
-      setChequeEditando(null);
       setChequeEliminando(null);
       setChequeParaAcreditar(null);
     }
@@ -98,7 +95,6 @@ export default function ChequesCajaTesoreriaModal({
 
   function handleCerrar() {
     setOpenAlta(false);
-    setChequeEditando(null);
     setChequeEliminando(null);
     setChequeParaAcreditar(null);
     onOpenChange(false);
@@ -112,7 +108,7 @@ export default function ChequesCajaTesoreriaModal({
     <>
       <Dialog open={open} onOpenChange={(next) => !next && handleCerrar()}>
         <AppModal
-          title="Cheques de la caja"
+          title="Detalles De Cheques"
           size="xl"
           padding="sm"
           scrollBody={false}
@@ -188,7 +184,7 @@ export default function ChequesCajaTesoreriaModal({
                         row.fechaAcreditacionIso
                       );
                       return (
-                      <TableRow key={row.id}>
+                      <TableRow key={row.id} className="h-10 min-h-10 max-h-10">
                         <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                           {row.tipo}
                         </TableCell>
@@ -214,7 +210,7 @@ export default function ChequesCajaTesoreriaModal({
                               CELL_MIN
                             )}
                           >
-                            <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                            <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "h-full")}>
                               <Button
                                 type="button"
                                 size="icon"
@@ -234,17 +230,6 @@ export default function ChequesCajaTesoreriaModal({
                                 }
                               >
                                 <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              </Button>
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                onClick={() => setChequeEditando(row)}
-                                aria-label="Editar cheque"
-                                title="Editar cheque"
-                              >
-                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                               <Button
                                 type="button"
@@ -279,19 +264,6 @@ export default function ChequesCajaTesoreriaModal({
         onCreated={() => {
           void cargar();
           onChequesChanged?.();
-        }}
-      />
-
-      <EditarChequeTesoreriaModal
-        open={chequeEditando != null}
-        onOpenChange={(next) => {
-          if (!next) setChequeEditando(null);
-        }}
-        cheque={chequeEditando}
-        onUpdated={() => {
-          void cargar();
-          onChequesChanged?.();
-          setChequeEditando(null);
         }}
       />
 

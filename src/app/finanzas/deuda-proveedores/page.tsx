@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import TablaDeudaProveedores from "@/components/finanzas/TablaDeudaProveedores";
+import FinanzasDeudaProveedoresPageClient from "@/components/finanzas/FinanzasDeudaProveedoresPageClient";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { listarDeudaProveedores } from "@/services/deudaProveedores.service";
+import {
+  listarDeudaProveedores,
+  listarDetalleDeudaProveedoresMercaderia,
+} from "@/services/deudaProveedores.service";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,9 @@ export default async function DeudaProveedoresPage() {
   }
 
   const raw = await listarDeudaProveedores();
+  const { hoyIso, detalleLineas } = await listarDetalleDeudaProveedoresMercaderia();
   const filas = raw.map((r) => ({
+    idProveedorDux: r.idProveedorDux,
     nombre: r.nombre,
     deudaTotal: r.deudaTotal.toFixed(2),
     vencida: r.vencida.toFixed(2),
@@ -25,10 +29,10 @@ export default async function DeudaProveedoresPage() {
   }));
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Venc. Provee. Merc.">
-        <TablaDeudaProveedores filas={filas} />
-      </ClassicFilteredTableLayout>
-    </div>
+    <FinanzasDeudaProveedoresPageClient
+      hoyIso={hoyIso}
+      filas={filas}
+      detalleLineas={detalleLineas}
+    />
   );
 }

@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface DeudaProveedorRow {
+  idProveedorDux: string;
   nombre: string;
   deudaTotal: string;
   vencida: string;
@@ -60,7 +61,13 @@ function sumarTotales(filas: DeudaProveedorRow[]): Record<(typeof CAMPOS_SUMA)[n
   return acc;
 }
 
-export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedorRow[] }) {
+export default function TablaDeudaProveedores({
+  filas,
+  onProveedorDoubleClick,
+}: {
+  filas: DeudaProveedorRow[];
+  onProveedorDoubleClick?: (proveedor: string) => void;
+}) {
   const totales = filas.length > 0 ? sumarTotales(filas) : null;
   return (
     <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 px-6 px-8">
@@ -94,7 +101,20 @@ export default function TablaDeudaProveedores({ filas }: { filas: DeudaProveedor
                 />
               ) : (
                 filas.map((f) => (
-                  <TableRow key={f.nombre}>
+                  <TableRow
+                    key={f.nombre}
+                    title={
+                      onProveedorDoubleClick
+                        ? `${f.nombre} · DOBLE CLIC PARA VER DETALLE DE VENCIMIENTOS`
+                        : undefined
+                    }
+                    onDoubleClick={
+                      onProveedorDoubleClick
+                        ? () => onProveedorDoubleClick(f.nombre.toUpperCase())
+                        : undefined
+                    }
+                    className={cn(onProveedorDoubleClick && "cursor-pointer select-none hover:bg-primary/5")}
+                  >
                     <TableCell
                       className="celda-datos celda-proveedor-deuda min-w-[12rem] max-w-[24rem] text-center align-middle font-medium"
                       title={f.nombre}

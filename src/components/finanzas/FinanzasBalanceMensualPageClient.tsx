@@ -24,6 +24,7 @@ import {
   type BalanceMensualBloque,
   type BalanceMensualResumen,
   fmtMargenContribucionPct,
+  partCostosVariablesFijos,
   puntoEquilibrioVentasPesos,
 } from "@/lib/balanceMensual";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,11 @@ type ColumnaBalance = {
   titulo: string;
   bloque: BalanceMensualBloque;
   sucursalId: string | null;
+};
+
+type HistoricoGastoTarget = {
+  gastoFinalId: string;
+  etiqueta: string;
 };
 
 /** Fondo más claro que el encabezado #0072BB, para filas de resultado. */
@@ -208,6 +214,8 @@ function TablaBalanceMensualAlineada({
   puedeEditarVentas,
   onEditarVentas,
   onAbrirDetalleCostos,
+  onAbrirHistoricoGastoResolver,
+  onAbrirHistoricoGasto,
 }: {
   columnas: ColumnaBalance[];
   mes: number;
@@ -221,6 +229,11 @@ function TablaBalanceMensualAlineada({
     totalCvCelda: number;
     totalCfCelda: number;
   }) => void;
+  onAbrirHistoricoGastoResolver: (params: {
+    filaId: string;
+    columna: ColumnaBalance;
+  }) => HistoricoGastoTarget | null;
+  onAbrirHistoricoGasto?: (payload: HistoricoGastoTarget) => void;
 }) {
   const nDatos = columnas.length;
   const gridTemplateColumns = `minmax(10.5rem, 1.05fr) repeat(${nDatos}, minmax(6.75rem, 1fr))`;
@@ -298,6 +311,15 @@ function TablaBalanceMensualAlineada({
                   const sid = c.sucursalId;
                   const esColumnaSucursal = Boolean(sid);
                   const mostrarColumnaConHistorico = esColumnaSucursal || c.key === "global";
+                  const historicoGasto =
+                    fila.tipo === "monto" && onAbrirHistoricoGasto
+                      ? fila.id === "cv" || fila.id === "cf"
+                        ? onAbrirHistoricoGastoResolver({
+                            filaId: fila.id,
+                            columna: c,
+                          })
+                        : null
+                      : null;
                   const esFilaVentas = fila.id === "ventas";
                   const mostrarEditarVentas = esFilaVentas && puedeEditarVentas && Boolean(sid);
                   const mostrarDetalleDiscriminacion =
@@ -315,7 +337,7 @@ function TablaBalanceMensualAlineada({
                     >
                       {mostrarColumnaConHistorico ? (
                         <div className="grid w-full min-w-0 grid-cols-[30%_70%] items-center gap-0">
-                          <div className="grid min-w-0 grid-cols-2 gap-0.5">
+                          <div className="grid min-w-0 grid-cols-2 gap-px">
                             <div className="flex min-w-0 items-center justify-center">
                               <Button
                                 type="button"
@@ -323,8 +345,20 @@ function TablaBalanceMensualAlineada({
                                 size="icon"
                                 className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
                                 aria-label={`Ver histórico — ${fila.etiquetaConcepto} — ${c.titulo}`}
-                                title="Histórico (próximamente)"
-                                disabled
+                                title={
+                                  historicoGasto
+                                    ? "Ver Evolución Mensual Del Gasto"
+                                    : "Sin gasto individual para historial"
+                                }
+                                onClick={() =>
+                                  historicoGasto
+                                    ? onAbrirHistoricoGasto?.({
+                                        gastoFinalId: historicoGasto.gastoFinalId,
+                                        etiqueta: historicoGasto.etiqueta,
+                                      })
+                                    : undefined
+                                }
+                                disabled={!historicoGasto}
                               >
                                 <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
@@ -450,6 +484,35 @@ export default function FinanzasBalanceMensualPageClient({
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
   const [historicoDescripcion, setHistoricoDescripcion] = useState("");
+
+  const onAbrirHistoricoGastoResolver = useMemo(() => {
+    return (params: { filaId: string; columna: ColumnaBalance }): HistoricoGastoTarget | null => {
+      const tipoCosto =
+        params.filaId === "cv" ? "variables" : params.filaId === "cf" ? "fijos" : null;
+      if (!tipoCosto) return null;
+
+      const candidatos = filas
+        .map((f) => {
+          const partes = partCostosVariablesFijos(f.tipoGastoNombre, f.monto);
+          const montoTipo = tipoCosto === "variables" ? partes.costosVariables : partes.costosFijos;
+          return { fila: f, montoTipo };
+        })
+        .filter(({ fila, montoTipo }) => {
+          if (montoTipo <= 0) return false;
+          if (params.columna.key === "global") return true;
+          return fila.sucursalGeneraBalance && fila.sucursalNombre === params.columna.titulo;
+        })
+        .sort((a, b) => b.montoTipo - a.montoTipo);
+
+      const top = candidatos[0];
+      if (!top) return null;
+
+      return {
+        gastoFinalId: top.fila.gastoFinalId,
+        etiqueta: `${top.fila.gastoNombre} — ${top.fila.proveedorNombre} · ${top.fila.sucursalNombre}`,
+      };
+    };
+  }, [filas]);
 
   const seccionesTiposRubros = useMemo(() => {
     if (!detalleRubrosCtx) return [];
@@ -603,6 +666,12 @@ export default function FinanzasBalanceMensualPageClient({
             onAbrirDetalleCostos={(payload) => {
               setDetalleRubrosCtx(payload);
               setDetalleRubrosOpen(true);
+            }}
+            onAbrirHistoricoGastoResolver={onAbrirHistoricoGastoResolver}
+            onAbrirHistoricoGasto={({ gastoFinalId, etiqueta }) => {
+              setHistoricoGastoFinalId(gastoFinalId);
+              setHistoricoDescripcion(etiqueta);
+              setHistoricoOpen(true);
             }}
           />
         </div>

@@ -177,29 +177,6 @@ export default function FinanzasVencPorFechaPageClient({
         }
       >
         <div className="flex flex-1 min-h-0 flex-col gap-2 pb-4">
-          <div className="flex shrink-0 flex-col gap-1 flex-row items-baseline justify-between gap-4">
-            <p
-              className={cn(
-                "text-sm font-semibold uppercase tracking-wide text-muted-foreground"
-              )}
-              aria-live="polite"
-            >
-              <span className={FILTER_COUNT_CLASS}>
-                {filasVista.length.toLocaleString("es-AR")}
-              </span>
-              {` DÍA${filasVista.length === 1 ? "" : "S"} EN ESTA PÁGINA`}
-              {totalPaginas > 1 ? (
-                <span className="font-normal normal-case text-muted-foreground">
-                  {" "}
-                  · Pág. {paginaActual} / {totalPaginas}
-                </span>
-              ) : null}
-            </p>
-            <p className="text-xs tabular-nums text-muted-foreground text-right">
-              Ventana: {total.toLocaleString("es-AR")} día{total === 1 ? "" : "s"} (hoy + 150)
-            </p>
-          </div>
-
           <TablaFlujoDeFondo
             filas={filasVista}
             montoVencimientoPorDia={montoVencimientoPorDia}
