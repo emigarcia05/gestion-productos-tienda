@@ -138,7 +138,7 @@ export default function TablaControlComprobantes({
   }
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 px-6 px-8">
+    <div className="flex flex-1 min-h-0 flex-col gap-2 px-8 pb-4">
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <FilaFiltrosDesplegables>

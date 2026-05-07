@@ -81,7 +81,7 @@ export default function AgregarProductosModal({
 
   const filterContent = (
     <div className="flex w-full flex-col gap-2">
-      <div className="grid w-full grid-cols-1 gap-2 grid-cols-[1fr_10rem] items-center">
+      <div className="grid w-full grid-cols-[1fr_10rem] items-center gap-2">
         <div className="min-w-0">
           <FiltroBusquedaInput
             id="agregar-productos-filtro"

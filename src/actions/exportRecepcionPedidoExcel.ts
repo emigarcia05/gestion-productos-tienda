@@ -4,14 +4,25 @@ import { z } from "zod";
 import type { ActionResult } from "@/lib/types";
 import { puede, PERMISOS } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
-import { getExportRecepcionPedidoExcelPayload } from "@/services/exportRecepcionPedidoExcel.service";
-import { fechaFacturaIsoSchema } from "@/services/exportRecepcionPedidoExcel.service";
+import {
+  ERROR_REQUIERE_DECISION_FISCAL,
+  fechaFacturaIsoSchema,
+  getExportRecepcionPedidoExcelPayload,
+} from "@/services/exportRecepcionPedidoExcel.service";
 import type { ExportRecepcionPedidoExcelPayload } from "@/services/exportRecepcionPedidoExcel.service";
+
+export { ERROR_REQUIERE_DECISION_FISCAL };
 
 const exportRecepcionPedidoExcelSchema = z.object({
   pedidoHistoriaId: z.string().cuid("ID inválido."),
   fechaFacturaIso: fechaFacturaIsoSchema,
   totalPedidoIngreso: z.coerce.number().positive().optional(),
+  /**
+   * SI/NO del modal "¿La compra genera comprobante fiscal?".
+   * Solo aplica cuando `proveedor.iva === PREGUNTA`. Para `SIEMPRE`/`NUNCA`
+   * la regla del enum prevalece (ver `resolverTipoComprobantePorIva`).
+   */
+  decisionFiscal: z.boolean().optional(),
 });
 
 export async function exportarExcelRecepcionPedidoAction(
@@ -29,6 +40,7 @@ export async function exportarExcelRecepcionPedidoAction(
     pedidoHistoriaId: parsed.data.pedidoHistoriaId,
     fechaFacturaIso: parsed.data.fechaFacturaIso,
     totalPedidoIngreso: parsed.data.totalPedidoIngreso,
+    decisionFiscal: parsed.data.decisionFiscal,
   });
 
   if (!payloadRes.success) return { ok: false, error: payloadRes.error };

@@ -70,7 +70,7 @@ export default function TablaDeudaProveedores({
 }) {
   const totales = filas.length > 0 ? sumarTotales(filas) : null;
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-2 px-4 pb-4 px-6 px-8">
+    <div className="flex flex-1 min-h-0 flex-col gap-2 px-8 pb-4">
       <p
         className={cn(
           "shrink-0 text-sm font-semibold text-muted-foreground tracking-wide uppercase"

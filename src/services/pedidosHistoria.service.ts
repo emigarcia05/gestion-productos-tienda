@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
 import type {
@@ -92,6 +92,12 @@ export interface PedidoHistoriaDetalle {
   estado: PedidoHistoriaEstado;
   proveedorId: string;
   proveedorNombre: string;
+  /**
+   * Política de IVA del proveedor (`global_proveedores.iva`). El frontend la
+   * usa para decidir si abre el modal "¿La compra genera comprobante fiscal?"
+   * antes de exportar el Excel de recepción (regla `iva → tipoComprobante`).
+   */
+  proveedorIva: IvaProveedor;
   sucursalId: string;
   sucursalNombre: string;
   items: PedidoHistoriaItemDetalle[];
@@ -192,7 +198,7 @@ export async function getPedidoHistoriaDetalle(params: {
         total: true,
         proveedorId: true,
         sucursalId: true,
-        proveedor: { select: { nombre: true } },
+        proveedor: { select: { nombre: true, iva: true } },
         sucursal: { select: { nombre: true } },
         items: {
           select: { id: true, codTienda: true, cantPedida: true, cantRecibida: true },
@@ -229,6 +235,7 @@ export async function getPedidoHistoriaDetalle(params: {
         estado: normalizarEstadoPedidoHistoria(pedido.estado),
         proveedorId: pedido.proveedorId,
         proveedorNombre: pedido.proveedor.nombre,
+        proveedorIva: pedido.proveedor.iva,
         sucursalId: pedido.sucursalId,
         sucursalNombre: pedido.sucursal.nombre,
         items: pedido.items.map((i) => ({

@@ -73,6 +73,23 @@ export const proveedorMercaderiaFormSchema = z
   .refine((s) => s === "si" || s === "no", "Seleccioná SI o NO en Proveedor Mercadería.")
   .transform((s) => s === "si");
 
+/**
+ * Política de IVA del proveedor desde el form. Reutiliza el módulo
+ * compartido `@/lib/validations/iva` (la fuente de verdad para los 3
+ * valores del enum Postgres `IvaProveedor`); acá se mantienen los aliases
+ * históricos para compatibilidad con call sites (`ProveedorForm`,
+ * `crearProveedor`, `editarProveedor`, etc.).
+ */
+import {
+  IVA_VALUES as IVA_VALUES_SHARED,
+  ivaPoliticaFormSchema,
+  type IvaValue as IvaValueShared,
+} from "@/lib/validations/iva";
+
+export const IVA_PROVEEDOR_VALUES = IVA_VALUES_SHARED;
+export type IvaProveedorValue = IvaValueShared;
+export const ivaProveedorFormSchema = ivaPoliticaFormSchema;
+
 /** Prefijo opcional: vacío → null; si hay texto, exactamente 3 letras A-Z. */
 export const prefijoProveedorOpcionalSchema = z
   .string()
@@ -93,6 +110,7 @@ export const createProveedorSchema = z.object({
   coeficienteTintometrico: coeficienteTintometricoSchema,
   plazosPagos: plazosPagosSchema,
   proveedorMercaderia: proveedorMercaderiaFormSchema,
+  iva: ivaProveedorFormSchema,
 });
 
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;

@@ -50,7 +50,7 @@ export default function ExportarRecepcionInstructorModal({ open, onOpenChange }:
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4">
-          <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-2 overflow-hidden gap-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-4 overflow-hidden">
             <Button
               type="button"
               variant="outline"

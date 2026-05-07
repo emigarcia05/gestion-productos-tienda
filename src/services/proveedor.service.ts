@@ -2,8 +2,11 @@
  * Servicio de Proveedores – Conexión a Neon/PostgreSQL vía Prisma.
  */
 import { randomBytes } from "node:crypto";
+import { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
+
+export { IvaProveedor };
 
 export interface CreateProveedorInput {
   nombre: string;
@@ -16,6 +19,8 @@ export interface CreateProveedorInput {
   plazosPagos?: string | null;
   /** Obligatorio en alta (formulario SI/NO). */
   proveedorMercaderia: boolean;
+  /** Política IVA: SIEMPRE | NUNCA | PREGUNTA (default DB: PREGUNTA). */
+  iva: IvaProveedor;
 }
 
 export interface UpdateProveedorInput {
@@ -29,6 +34,8 @@ export interface UpdateProveedorInput {
   plazosPagos?: string | null;
   /** Obligatorio en edición desde el formulario. */
   proveedorMercaderia: boolean;
+  /** Política IVA: SIEMPRE | NUNCA | PREGUNTA. */
+  iva: IvaProveedor;
 }
 
 export interface UpdateCoeficienteTintometricoInput {
@@ -54,6 +61,8 @@ export interface ProveedorListItem {
    * /gestion-productos/proveedores/lista (ver `getProveedoresMercaderia`).
    */
   proveedorMercaderia: boolean;
+  /** Política IVA: SIEMPRE | NUNCA | PREGUNTA (default BD: PREGUNTA). */
+  iva: IvaProveedor;
   /** Cantidad de ítems en prod_precios_provee. */
   cantProductos: number;
   /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
@@ -143,6 +152,7 @@ async function listarProveedoresInterno(
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
     plazosPagos: p.plazosPagos ?? null,
     proveedorMercaderia: p.proveedorMercaderia,
+    iva: p.iva,
     cantProductos: p._count.listaPrecios,
     cantProductosProvistos: provistosMap.get(p.id) ?? 0,
   }));
@@ -157,6 +167,7 @@ export async function getProveedorById(id: string): Promise<{
   whatsapp: string | null;
   coeficienteTintometrico: number;
   plazosPagos: string | null;
+  iva: IvaProveedor;
 } | null> {
   const p = await prisma.proveedor.findUnique({
     where: { id },
@@ -168,6 +179,7 @@ export async function getProveedorById(id: string): Promise<{
       whatsapp: true,
       coeficienteTintometrico: true,
       plazosPagos: true,
+      iva: true,
     },
   });
   if (!p) return null;
@@ -179,6 +191,7 @@ export async function getProveedorById(id: string): Promise<{
     whatsapp: p.whatsapp ?? null,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
     plazosPagos: p.plazosPagos ?? null,
+    iva: p.iva,
   };
 }
 
@@ -205,6 +218,7 @@ export async function createProveedor(
       coeficienteTintometrico: input.coeficienteTintometrico,
       plazosPagos: input.plazosPagos ?? null,
       proveedorMercaderia: input.proveedorMercaderia,
+      iva: input.iva,
     },
   });
   return { id: proveedor.id, codigoUnico: proveedor.codigoUnico };
@@ -231,6 +245,7 @@ export async function updateProveedor(
       coeficienteTintometrico: input.coeficienteTintometrico,
       plazosPagos: input.plazosPagos ?? null,
       proveedorMercaderia: input.proveedorMercaderia,
+      iva: input.iva,
     },
   });
 }

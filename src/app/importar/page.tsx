@@ -58,7 +58,7 @@ export default async function ImportarPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 px-6 px-8 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-8 space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Importar datos</h1>

@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
-import AppModal from "@/components/shared/AppModal";
+import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarFinBalCatalogoItemModal, {
   type NivelCatalogo,
@@ -107,6 +107,8 @@ type ModalGastoFinalState =
       diaDevengadoInicial?: number | null;
       vencimientoInicial?: number | null;
       comentariosInicial?: string | null;
+      /** Política IVA persistida del gasto final (precarga en `editar`). */
+      ivaInicial?: "SIEMPRE" | "NUNCA" | "PREGUNTA";
     };
 
 type ModalEliminarGastoFinalState =
@@ -246,6 +248,7 @@ export default function FinBalGastosCatalogoPageClient({
         coeficienteTintometrico: p.coeficienteTintometrico,
         plazosPagos: p.plazosPagos ?? undefined,
         proveedorMercaderia: p.proveedorMercaderia,
+        iva: p.iva,
       },
     });
   }
@@ -468,6 +471,7 @@ export default function FinBalGastosCatalogoPageClient({
                       diaDevengadoInicial: a.diaDevengado,
                       vencimientoInicial: a.vencimiento,
                       comentariosInicial: a.comentarios,
+                      ivaInicial: a.iva,
                     })
                   }
                   onEliminar={() =>
@@ -580,6 +584,9 @@ export default function FinBalGastosCatalogoPageClient({
           comentariosInicial={
             gastoFinalModal.modo === "editar" ? gastoFinalModal.comentariosInicial : undefined
           }
+          ivaInicial={
+            gastoFinalModal.modo === "editar" ? gastoFinalModal.ivaInicial : undefined
+          }
           onSuccess={onSuccessRefresh}
         />
       )}
@@ -671,7 +678,7 @@ export default function FinBalGastosCatalogoPageClient({
                     >
                       <div className="min-w-0">
                         <p className="truncate font-medium text-foreground">{p.nombre}</p>
-                        <p className="truncate text-[11px] text-muted-foreground">{p.prefijo || "—"}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{p.prefijo || ""}</p>
                       </div>
                       {esEditor ? (
                         <Button
@@ -925,8 +932,12 @@ function FilaCatalogo({
 
 function EmptyState({ mensaje }: { mensaje: string }) {
   return (
-    <div className="flex h-full min-h-[120px] items-center justify-center px-4 py-8 text-center text-xs text-muted-foreground">
-      {mensaje}
-    </div>
+    <TableEmptyState
+      message={mensaje}
+      placement="compact"
+      textSize="xs"
+      maxWidth="full"
+      className="flex h-full min-h-[120px] items-center justify-center px-4"
+    />
   );
 }

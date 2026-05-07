@@ -29,7 +29,7 @@ export default async function GestionProveedoresPage() {
 
       <Separator className="bg-border" />
 
-      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 px-6 px-8 py-4">
+      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-8 py-4">
         <TablaProveedoresGestion proveedores={proveedores} />
       </div>
     </div>

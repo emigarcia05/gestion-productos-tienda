@@ -18,9 +18,13 @@ import {
   editarFinBalGastoFinalAction,
 } from "@/actions/finBalGastosCatalogo";
 import { diaDevengadoFinBalDesdeCalendarioArgentina } from "@/lib/fechaArgentina";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 
 type Modo = "crear" | "editar";
+
+/** Valores cerrados del Select IVA (alineados al enum Postgres `IvaProveedor`). */
+type IvaValue = "SIEMPRE" | "NUNCA" | "PREGUNTA";
 
 export interface ProveedorOpcionGastoFinal {
   id: string;
@@ -63,6 +67,11 @@ interface Props {
   vencimientoInicial?: number | null;
   /** En edición: comentarios persistidos (`fin_bal_gasto_final.comentarios`). */
   comentariosInicial?: string | null;
+  /**
+   * En edición: valor persistido de **GENERA IVA CRÉDITO** (`fin_bal_gasto_final.iva`).
+   * En alta el modal arranca en `PREGUNTA` (mismo default que la columna en BD).
+   */
+  ivaInicial?: IvaValue;
   onSuccess?: () => void;
 }
 
@@ -86,6 +95,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   diaDevengadoInicial = null,
   vencimientoInicial = null,
   comentariosInicial = null,
+  ivaInicial = "PREGUNTA",
   onSuccess,
 }: Props) {
   const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
@@ -98,6 +108,12 @@ export default function CrearEditarFinBalGastoFinalModal({
   const [diaDevengado, setDiaDevengado] = useState(1);
   const [comentarios, setComentarios] = useState("");
   const [vencimiento, setVencimiento] = useState(30);
+  /**
+   * **GENERA IVA CRÉDITO** (UI). Valores `SIEMPRE` / `NUNCA` / `PREGUNTA`;
+   * persiste en `fin_bal_gasto_final.iva`. Default `PREGUNTA` en alta;
+   * en edición se precarga con `ivaInicial`.
+   */
+  const [iva, setIva] = useState<IvaValue>("PREGUNTA");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -120,6 +136,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     setComentarios(
       esEdicion ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
     );
+    setIva(esEdicion ? ivaInicial : "PREGUNTA");
   }, [
     open,
     modo,
@@ -129,6 +146,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     diaDevengadoInicial,
     vencimientoInicial,
     comentariosInicial,
+    ivaInicial,
   ]);
 
   /** En alta, al cambiar entre mensual/eventual, se normaliza la UI sin persistir vacíos inválidos. */
@@ -172,7 +190,8 @@ export default function CrearEditarFinBalGastoFinalModal({
       gastoMensual !== gastoMensualInicial ||
       diaDevengado !== (diaDevengadoInicial ?? diaDevengado) ||
       vencimiento !== (vencimientoInicial ?? vencimiento) ||
-      comentarios !== comIni
+      comentarios !== comIni ||
+      iva !== ivaInicial
     );
   }, [
     modo,
@@ -188,6 +207,8 @@ export default function CrearEditarFinBalGastoFinalModal({
     vencimientoInicial,
     comentarios,
     comentariosInicial,
+    iva,
+    ivaInicial,
   ]);
 
   const disabledSubmit = useMemo(() => {
@@ -239,6 +260,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           diaDevengado: gastoMensual ? diaDevengado : null,
           vencimiento: gastoMensual ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
+          iva,
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
@@ -254,6 +276,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           diaDevengado: gastoMensual ? diaDevengado : null,
           vencimiento: gastoMensual ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
+          iva,
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
@@ -280,8 +303,7 @@ export default function CrearEditarFinBalGastoFinalModal({
     >
       <AppModal
         title={titulo}
-        size="md"
-        className="max-w-xl"
+        size="lg"
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button
@@ -300,18 +322,14 @@ export default function CrearEditarFinBalGastoFinalModal({
       >
         <div className="grid min-h-0 grid-cols-1 gap-3">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              GASTO
-            </span>
+            <ModalMicroLabel>GASTO</ModalMicroLabel>
             <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
               {gastoNombre}
             </div>
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TIPO DE GASTO
-            </span>
+            <ModalMicroLabel>TIPO DE GASTO</ModalMicroLabel>
             <Select
               value={gastoMensual ? "mensual" : "eventual"}
               onValueChange={(v) => setGastoMensual(v === "mensual")}
@@ -328,9 +346,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              SUCURSAL
-            </span>
+            <ModalMicroLabel>SUCURSAL</ModalMicroLabel>
             <Select
               value={sucursalId || undefined}
               onValueChange={setSucursalId}
@@ -350,9 +366,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              PROVEEDOR
-            </span>
+            <ModalMicroLabel>PROVEEDOR</ModalMicroLabel>
             <Select
               value={proveedorId || undefined}
               onValueChange={setProveedorId}
@@ -372,9 +386,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              DÍA DEVENGADO
-            </span>
+            <ModalMicroLabel>DÍA DEVENGADO</ModalMicroLabel>
             <Select
               value={gastoMensual ? String(diaDevengado) : undefined}
               onValueChange={(v) => setDiaDevengado(Number(v))}
@@ -394,9 +406,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              PLAZO DE PAGO
-            </span>
+            <ModalMicroLabel>PLAZO DE PAGO</ModalMicroLabel>
             <Select
               value={gastoMensual ? String(vencimiento) : undefined}
               onValueChange={(v) => setVencimiento(normalizarPlazoPago(Number(v)))}
@@ -418,9 +428,30 @@ export default function CrearEditarFinBalGastoFinalModal({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              COMENTARIOS
-            </span>
+            <ModalMicroLabel>GENERA IVA CRÉDITO</ModalMicroLabel>
+            <Select
+              value={iva}
+              onValueChange={(v) => setIva(v as IvaValue)}
+              disabled={saving}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="SELECCIONAR" />
+              </SelectTrigger>
+              <SelectContent
+                className="select-content-filtro"
+                position="popper"
+                side="bottom"
+                align="start"
+              >
+                <SelectItem value="SIEMPRE">SIEMPRE</SelectItem>
+                <SelectItem value="NUNCA">NUNCA</SelectItem>
+                <SelectItem value="PREGUNTA">PREGUNTA</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <ModalMicroLabel>COMENTARIOS</ModalMicroLabel>
             <textarea
               value={comentarios}
               onChange={(e) =>

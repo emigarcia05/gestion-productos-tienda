@@ -198,7 +198,7 @@ export default function NuevoItemTintometricoModal({
         }
       >
         <div className="grid grid-cols-1 gap-4">
-          <div className="grid grid-cols-1 grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <span className="text-xs text-foreground">Sucursal</span>
               <Select

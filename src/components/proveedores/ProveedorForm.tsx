@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/select";
 import { crearProveedor, editarProveedor } from "@/actions/proveedores";
 
+type IvaProveedorValue = "SIEMPRE" | "NUNCA" | "PREGUNTA";
+
 interface Props {
   proveedor?: {
     id: string;
@@ -26,6 +28,8 @@ interface Props {
     plazosPagos?: string | null;
     /** Flag "Proveedor Mercadería" (solo edición: precarga SI/NO). */
     proveedorMercaderia?: boolean;
+    /** Política IVA persistida (solo edición: precarga SIEMPRE/NUNCA/PREGUNTA). */
+    iva?: IvaProveedorValue;
   };
   onSuccess?: () => void;
   /** Id del form para asociar botón externo con form="id". */
@@ -44,7 +48,7 @@ function SubmitButton({ isEdit, pending }: { isEdit: boolean; pending: boolean }
   return (
     <Button type="submit" disabled={pending} className="gap-2">
       {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-      {isEdit ? "Guardar cambios" : "Guardar"}
+      {isEdit ? "Guardar Cambios" : "Guardar"}
     </Button>
   );
 }
@@ -73,6 +77,15 @@ export default function ProveedorForm({
     return proveedor.proveedorMercaderia === false ? "no" : "si";
   });
 
+  /**
+   * Política IVA. Controlled + hidden `name="iva"`.
+   * Alta: default `PREGUNTA` (mismo default que la columna `global_proveedores.iva`).
+   * Edición: precarga el valor persistido.
+   */
+  const [iva, setIva] = useState<IvaProveedorValue>(
+    () => proveedor?.iva ?? "PREGUNTA",
+  );
+
   useEffect(() => {
     if (!modalOpen) return;
     if (!proveedor) {
@@ -81,6 +94,11 @@ export default function ProveedorForm({
       setProveedorMercaderia(proveedor.proveedorMercaderia === false ? "no" : "si");
     }
   }, [modalOpen, proveedor?.id, proveedor?.proveedorMercaderia]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    setIva(proveedor?.iva ?? "PREGUNTA");
+  }, [modalOpen, proveedor?.id, proveedor?.iva]);
 
   useEffect(() => {
     onProveedorMercaderiaListoChange?.(proveedorMercaderia !== "");
@@ -168,6 +186,25 @@ export default function ProveedorForm({
           </SelectContent>
         </Select>
         <input type="hidden" name="proveedorMercaderia" value={proveedorMercaderia} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="iva">IVA</Label>
+        <Select
+          value={iva}
+          onValueChange={(v) => setIva(v as IvaProveedorValue)}
+          disabled={pending}
+        >
+          <SelectTrigger id="iva" className="w-full">
+            <SelectValue placeholder="SELECCIONAR IVA" />
+          </SelectTrigger>
+          <SelectContent position="popper" side="bottom" align="start">
+            <SelectItem value="SIEMPRE">SIEMPRE</SelectItem>
+            <SelectItem value="NUNCA">NUNCA</SelectItem>
+            <SelectItem value="PREGUNTA">PREGUNTA</SelectItem>
+          </SelectContent>
+        </Select>
+        <input type="hidden" name="iva" value={iva} />
       </div>
 
       <div className="space-y-1.5">

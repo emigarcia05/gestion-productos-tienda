@@ -276,7 +276,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
           )}
 
           {/* Filtros */}
-          <div className="shrink-0 grid grid-cols-1 grid-cols-2 gap-4 mb-4">
+          <div className="mb-4 grid shrink-0 grid-cols-2 gap-4">
             <div className="grid gap-1">
               <Label>CATEGORÍA</Label>
               <select

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AppModal from "@/components/shared/AppModal";
@@ -21,6 +22,8 @@ export interface ProveedorParaModal {
   plazosPagos?: string | null;
   /** Flag "Proveedor Mercadería" (edición). */
   proveedorMercaderia?: boolean;
+  /** Política IVA persistida (edición). */
+  iva?: "SIEMPRE" | "NUNCA" | "PREGUNTA";
 }
 
 interface Props {
@@ -70,7 +73,7 @@ export default function ProveedorModal({ open, onOpenChange, proveedor, onSucces
 
   return (
     <AppModal
-      title={isEdit ? "Editor Proveedor" : "Nuevo Proveedor"}
+      title={isEdit ? "Editar Proveedor" : "Nuevo Proveedor"}
       actions={
         <>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending || deleting}>
@@ -82,7 +85,7 @@ export default function ProveedorModal({ open, onOpenChange, proveedor, onSucces
               variant="destructive"
               onClick={handleEliminar}
               disabled={pending || deleting}
-              className="gap-2 mr-auto"
+              className={cn("mr-auto gap-2")}
             >
               {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
               <Trash2 className="h-4 w-4" />
@@ -96,7 +99,7 @@ export default function ProveedorModal({ open, onOpenChange, proveedor, onSucces
             className="gap-2"
           >
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isEdit ? "Guardar" : "Guardar"}
+            {isEdit ? "Guardar Cambios" : "Guardar"}
           </Button>
         </>
       }

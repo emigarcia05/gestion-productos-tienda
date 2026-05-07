@@ -45,8 +45,8 @@ export default function ExportarStockInstructorModal({ open, onOpenChange }: Pro
           </Button>
         }
       >
-        <div className="flex flex-col gap-4 min-h-0 flex-1 flex">
-          <div className="flex items-stretch justify-center gap-2 gap-4 flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-4 overflow-hidden">
             <Button
               type="button"
               variant="outline"

@@ -33,6 +33,7 @@ export default function TablaProveedoresGestion({ proveedores }: Props) {
       coeficienteTintometrico: prov.coeficienteTintometrico,
       plazosPagos: prov.plazosPagos ?? undefined,
       proveedorMercaderia: prov.proveedorMercaderia,
+      iva: prov.iva,
     });
     setModalOpen(true);
   }

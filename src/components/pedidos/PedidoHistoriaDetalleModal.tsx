@@ -27,6 +27,7 @@ import {
 } from "@/actions/pedidosHistoria";
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
+import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
 import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
 import MontoArInput from "@/components/shared/MontoArInput";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
@@ -71,10 +72,10 @@ function buildChecklistConfirmadoInicial(
 const inputBorderClassName = "border-[#0072bb] focus-visible:ring-[#0072bb]";
 
 /**
- * Cabecera resumen: proveedor + metadatos | fecha factura (`sm`: dos columnas ~85% / ~15%).
+ * Cabecera resumen: proveedor + metadatos | fecha factura (dos columnas ~85% / ~15%).
  */
 const GRID_CAPAS_SUP_PEDIDO_HISTORIA =
-  "grid min-w-0 w-full grid-cols-1 gap-2 grid-cols-[85fr_15fr] gap-0";
+  "grid min-w-0 w-full grid-cols-[85fr_15fr] items-center gap-0";
 
 /** Misma proporción que columnas de la tabla de ítems (check | desc | cant.p. | cant.r. | acciones). */
 const GRID_PEDIDO_HISTORIA_TABLA_COLS =
@@ -124,6 +125,18 @@ export default function PedidoHistoriaDetalleModal({
   /** Modo de corrección en pedidos RECEPCIONADO (edición local de UI). */
   const [modoCorreccionRecepcionado, setModoCorreccionRecepcionado] = useState(false);
   const [showExportInstructor, setShowExportInstructor] = useState(false);
+
+  /**
+   * Modal "¿La compra genera comprobante fiscal?" — solo se abre cuando
+   * `proveedor.iva === PREGUNTA` antes de cualquier disparador del export.
+   * El resolver de la promesa pendiente se guarda en `decisionFiscalResolverRef`;
+   * si el modal se cierra sin elegir (ESC/overlay) la operación se cancela.
+   */
+  type DecisionFiscalResult = boolean | "cancelado";
+  const [confirmarFiscalOpen, setConfirmarFiscalOpen] = useState(false);
+  const decisionFiscalResolverRef = useRef<
+    ((value: DecisionFiscalResult) => void) | null
+  >(null);
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
@@ -193,6 +206,13 @@ export default function PedidoHistoriaDetalleModal({
       setCheckListConfirmedByItem({});
       setModoCorreccionRecepcionado(false);
       setShowExportInstructor(false);
+      // Si el modal de detalle se reabre con una promesa de decisión fiscal viva,
+      // la cancelamos para evitar resolvers colgados entre aperturas.
+      if (decisionFiscalResolverRef.current) {
+        decisionFiscalResolverRef.current("cancelado");
+        decisionFiscalResolverRef.current = null;
+      }
+      setConfirmarFiscalOpen(false);
     });
 
     void (async () => {
@@ -381,6 +401,39 @@ export default function PedidoHistoriaDetalleModal({
     checklistCompleto &&
     totalPedidoMontoPositivo(totalPedido);
 
+  /**
+   * Abre el modal "¿La compra genera comprobante fiscal?" si el proveedor
+   * tiene `iva = PREGUNTA`. Devuelve:
+   * - `boolean` (SI / NO) cuando se preguntó al operador.
+   * - `undefined` cuando `iva` es SIEMPRE/NUNCA (la regla del enum prevalece).
+   * - `"cancelado"` si el operador cerró el modal sin elegir.
+   */
+  async function pedirDecisionFiscalSiAplica(): Promise<
+    boolean | undefined | "cancelado"
+  > {
+    const iva = detalle?.proveedorIva;
+    if (iva == null) return undefined;
+    if (iva === "SIEMPRE" || iva === "NUNCA") return undefined;
+    return await new Promise<DecisionFiscalResult>((resolve) => {
+      decisionFiscalResolverRef.current = resolve;
+      setConfirmarFiscalOpen(true);
+    });
+  }
+
+  function onSeleccionarDecisionFiscal(decision: boolean) {
+    decisionFiscalResolverRef.current?.(decision);
+    decisionFiscalResolverRef.current = null;
+    setConfirmarFiscalOpen(false);
+  }
+
+  function onOpenChangeConfirmarFiscal(next: boolean) {
+    if (!next) {
+      decisionFiscalResolverRef.current?.("cancelado");
+      decisionFiscalResolverRef.current = null;
+    }
+    setConfirmarFiscalOpen(next);
+  }
+
   async function persistirRecepcionActual(): Promise<boolean> {
     if (!pedidoHistoriaId || !detalle) return false;
     const res = await guardarRecepcionPedidoHistoriaAction({
@@ -413,6 +466,11 @@ export default function PedidoHistoriaDetalleModal({
       return false;
     }
 
+    const decision = await pedirDecisionFiscalSiAplica();
+    if (decision === "cancelado") return false;
+    const decisionFiscal: boolean | undefined =
+      typeof decision === "boolean" ? decision : undefined;
+
     setGuardando("export");
     try {
       const excelRes = await exportarExcelRecepcionPedidoAction({
@@ -421,6 +479,7 @@ export default function PedidoHistoriaDetalleModal({
         totalPedidoIngreso: totalPedidoMontoPositivo(totalPedido)
           ? Number(totalPedido)
           : undefined,
+        decisionFiscal,
       });
       if (!excelRes.ok) {
         toast.error(excelRes.error ?? "Error al generar el Excel.");
@@ -451,7 +510,7 @@ export default function PedidoHistoriaDetalleModal({
     <>
       <Dialog open={open} onOpenChange={handleModalOpenChange}>
         <AppModal
-          title="Recepción Pedido"
+          title="Recepcion Pedido"
           scrollBody={false}
           size="xl"
           className="max-w-[66rem] h-[95vh] max-h-[95vh]"
@@ -459,7 +518,7 @@ export default function PedidoHistoriaDetalleModal({
           padding="sm"
           headerClassName="pt-3 pb-3"
           footerClassName="py-3"
-          bodyClassName="py-2 py-2.5"
+          bodyClassName="py-2.5"
           actions={
             <>
               <Button
@@ -480,6 +539,14 @@ export default function PedidoHistoriaDetalleModal({
                     if (locked) return;
                     if (guardando) return;
 
+                    // Si proveedor.iva = PREGUNTA, primero confirmamos comprobante
+                    // fiscal (modal SI/NO). Cancelar el modal aborta el flujo
+                    // sin guardar ni registrar en DUX.
+                    const decision = await pedirDecisionFiscalSiAplica();
+                    if (decision === "cancelado") return;
+                    const decisionFiscal: boolean | undefined =
+                      typeof decision === "boolean" ? decision : undefined;
+
                     setGuardando("sync");
                     try {
                       const guardadoOk = await persistirRecepcionActual();
@@ -490,6 +557,7 @@ export default function PedidoHistoriaDetalleModal({
                         pedidoHistoriaId,
                         fechaFacturaIso: fechaRecepcion,
                         totalPedidoIngreso: Number(totalPedido),
+                        decisionFiscal,
                       });
                       if (!excelRes.ok) {
                         toast.error(excelRes.error ?? "Error al generar el Excel.");
@@ -599,10 +667,10 @@ export default function PedidoHistoriaDetalleModal({
                 "pt-0 pb-1.5"
               )}
             >
-              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full items-center")}>
+              <div className={cn(GRID_CAPAS_SUP_PEDIDO_HISTORIA, "w-full")}>
                 <div
                   className={cn(
-                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-center text-left"
+                    "flex min-h-0 min-w-0 flex-col justify-center gap-0.5 py-0 text-left"
                   )}
                 >
                   <p className="text-sm font-semibold leading-snug text-foreground">
@@ -646,7 +714,7 @@ export default function PedidoHistoriaDetalleModal({
               aria-labelledby="pedido-historia-agregar-recepcion-titulo"
               className={cn(
                 MODAL_SECTION_CARD_CLASS,
-                "flex shrink-0 flex-col gap-0 pt-0 pb-1.5 pt-0 pb-2",
+                "flex shrink-0 flex-col gap-0 pb-2 pt-0",
                 !tablaYAltaHabilitados &&
                   !locked &&
                   "pointer-events-none cursor-not-allowed opacity-50"
@@ -664,8 +732,8 @@ export default function PedidoHistoriaDetalleModal({
               >
                 AGREGAR PRODUCTO A LA RECEPCIÓN
               </span>
-              <div className="flex w-full min-w-0 flex-col gap-3 pt-1 pb-0 flex-row items-center justify-between gap-x-10">
-                <div className="flex min-w-0 w-full max-w-full items-center gap-2 w-auto max-w-[36rem]">
+              <div className="flex w-full min-w-0 flex-row items-center justify-between gap-x-10 pt-1 pb-0">
+                <div className="flex min-w-0 max-w-[36rem] flex-1 items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <FiltroBusquedaInput
                       id="pedido-historia-agregar-producto-filtro"
@@ -684,9 +752,7 @@ export default function PedidoHistoriaDetalleModal({
                   onClick={() => setAgregarProductosOpen(true)}
                   disabled={locked || loading || !fechaFacturaOk || guardando != null}
                   className={cn(
-                    "h-10 min-h-10 w-full min-w-0 shrink-0 cursor-pointer justify-center gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground",
-                    "w-auto shrink-0",
-                    "disabled:cursor-not-allowed"
+                    "h-10 min-h-10 w-auto shrink-0 cursor-pointer justify-center gap-2 rounded-md px-3 py-1 text-sm font-normal text-primary-foreground [&_svg]:text-primary-foreground disabled:cursor-not-allowed"
                   )}
                 >
                   <Plus className="h-4 w-4" />
@@ -795,9 +861,7 @@ export default function PedidoHistoriaDetalleModal({
                               >
                                 <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
                               </span>
-                            ) : locked ? (
-                              <span className="text-muted-foreground">—</span>
-                            ) : (
+                            ) : locked ? null : (
                               <span
                                 aria-label="Lista de verificación"
                                 title="Verificá con OK, Editar o Cesto en la columna ACCIONES."
@@ -1033,6 +1097,12 @@ export default function PedidoHistoriaDetalleModal({
       <ExportarRecepcionInstructorModal
         open={showExportInstructor}
         onOpenChange={setShowExportInstructor}
+      />
+      <ConfirmarComprobanteFiscalModal
+        open={confirmarFiscalOpen}
+        onOpenChange={onOpenChangeConfirmarFiscal}
+        onSeleccionar={onSeleccionarDecisionFiscal}
+        pending={guardando != null}
       />
     </>
   );

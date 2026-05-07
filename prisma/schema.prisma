@@ -24,6 +24,19 @@ enum TipoChequeTesoreria {
   ECHEQUE
 }
 
+/**
+ * Política de IVA por proveedor (`global_proveedores.iva`).
+ * - SIEMPRE  : el proveedor siempre factura con IVA.
+ * - NUNCA    : el proveedor nunca factura con IVA.
+ * - PREGUNTA : política indefinida; la UI / flujo debe preguntar caso por caso.
+ *   Es el default de la columna (no asume política comercial).
+ */
+enum IvaProveedor {
+  SIEMPRE
+  NUNCA
+  PREGUNTA
+}
+
 model Proveedor {
   id              String   @id @default(cuid())
   nombre          String   @unique(map: "global_proveedores_nombre_key")
@@ -43,6 +56,11 @@ model Proveedor {
    * comportamiento previo de la lista.
    */
   proveedorMercaderia Boolean @default(false) @map("proveedor_mercaderia")
+  /**
+   * Política de IVA del proveedor. Default DB `PREGUNTA` (la UI debe pedir
+   * decisión al operador caso por caso hasta que se registre la política).
+   */
+  iva             IvaProveedor @default(PREGUNTA) @map("iva")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -251,6 +269,15 @@ model FinBalGastoFinal {
   vencimiento   Int?     @map("plazo_pago_dias")
   /** Texto libre (UI: COMENTARIOS, mayúsculas). */
   comentarios   String?  @db.Text @map("comentarios")
+  /**
+   * Política de IVA del gasto final. Reusa el enum `IvaProveedor`
+   * (compartido con `global_proveedores.iva`). Default DB `PREGUNTA`.
+   * La política del gasto final es **independiente** de la del proveedor:
+   * un proveedor con `iva = SIEMPRE` puede tener un gasto final con
+   * `iva = NUNCA` (p. ej. una imputación específica sin discriminación
+   * fiscal), y viceversa.
+   */
+  iva           IvaProveedor @default(PREGUNTA) @map("iva")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

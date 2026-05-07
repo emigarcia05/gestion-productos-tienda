@@ -245,7 +245,7 @@ export default function GastoUnicoBalanceModal({
                 . Periodo: <span className="font-medium text-foreground">{mes}/{anio}</span>.
               </p>
               {!cargandoLista && items.length > 0 ? (
-                <div className="grid grid-cols-1 gap-2 grid-cols-2">
+                <div className="grid grid-cols-2 gap-2">
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
                     activo={!!filtSucursal}

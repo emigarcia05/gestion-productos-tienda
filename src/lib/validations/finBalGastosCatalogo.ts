@@ -4,6 +4,7 @@ import {
   prismaCuidOrUuidSchema,
   prismaCuidSchema,
 } from "@/lib/validations/common";
+import { ivaPoliticaFormSchema } from "@/lib/validations/iva";
 
 /**
  * Validaciones para el catálogo jerárquico Finanzas → Balance → Gastos:
@@ -111,6 +112,8 @@ export const crearFinBalGastoFinalSchema = z.object({
   diaDevengado: diaDevengadoSchema.nullable(),
   vencimiento: vencimientoSchema.nullable(),
   comentarios: comentariosFinBalGastoFinalSchema,
+  /** Política IVA del gasto final (default `PREGUNTA`). Reusa enum `IvaProveedor`. */
+  iva: ivaPoliticaFormSchema,
 }).superRefine((data, ctx) => {
   if (data.gastoMensual) {
     if (data.diaDevengado == null) {
@@ -154,6 +157,8 @@ export const editarFinBalGastoFinalSchema = z.object({
   diaDevengado: diaDevengadoSchema.nullable(),
   vencimiento: vencimientoSchema.nullable(),
   comentarios: comentariosFinBalGastoFinalSchema,
+  /** Política IVA del gasto final (default `PREGUNTA`). Reusa enum `IvaProveedor`. */
+  iva: ivaPoliticaFormSchema,
 }).superRefine((data, ctx) => {
   if (data.gastoMensual) {
     if (data.diaDevengado == null) {

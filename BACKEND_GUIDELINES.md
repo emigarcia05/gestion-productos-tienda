@@ -201,6 +201,73 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - Servicio `createProveedor` / `updateProveedor`: `CreateProveedorInput` / `UpdateProveedorInput` exigen **`proveedorMercaderia: boolean`**; si no hay prefijo, se genera `codigoUnico` interno único y se persiste `prefijo: null` (salvo colisión P2002 en `codigo_unico` → `PROVEEDOR_ERROR.CODIGO_UNICO_DUPLICADO`). Los listados (`listarProveedoresInterno`) exponen `prefijo: string` en UI como `p.prefijo ?? ""`.
   - Actions `crearProveedor` / `editarProveedor`: leen `formData`, validan con Zod y delegan al servicio; orden de mensajes de error de validación prioriza **nombre** y **proveedor mercadería** antes que prefijo.
 
+### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
+
+- Persistencia: `global_proveedores.iva` (`enum IvaProveedor`, **`NOT NULL`**, **default DB `'PREGUNTA'`**). Prisma: `iva IvaProveedor @default(PREGUNTA) @map("iva")`. Sin índice (cardinalidad = 3; mismo criterio que `global_sucursales.centro_costo`).
+- **El enum `IvaProveedor` es transversal**, no exclusivo del modelo `Proveedor`. Otras tablas pueden persistir su propia política reutilizando el mismo tipo Postgres. Hoy lo consume `fin_bal_gasto_final.iva` (ver §2.5e). Si se agrega un nuevo consumidor: **no** crear un enum hermano; reutilizar `IvaProveedor` y documentarlo en esta sección.
+- Enum PostgreSQL/Prisma `IvaProveedor` (consistente con `TipoMovimientoFinanzas`, `TipoCajaTesoreria`, `TipoChequeTesoreria`):
+  - `SIEMPRE` — el proveedor **siempre** factura con IVA.
+  - `NUNCA` — el proveedor **nunca** factura con IVA.
+  - `PREGUNTA` — política indefinida; la UI/flujo debe **preguntar** caso por caso. Es el default semántico (no asume política comercial sobre proveedores nuevos ni preexistentes).
+- Migración `20260507193000_add_global_proveedores_iva` (idempotente):
+  1. `CREATE TYPE "IvaProveedor" AS ENUM ('SIEMPRE','NUNCA','PREGUNTA')` envuelto en `DO $$ BEGIN … EXCEPTION WHEN duplicate_object THEN NULL; END $$`.
+  2. `ALTER TABLE "global_proveedores" ADD COLUMN IF NOT EXISTS "iva" "IvaProveedor" NOT NULL DEFAULT 'PREGUNTA'` — el `DEFAULT` estático actúa como backfill in-place (PostgreSQL ≥ 11 no reescribe la tabla); todas las filas existentes quedan en `PREGUNTA`.
+- Validación Zod (módulo compartido `@/lib/validations/iva.ts`):
+  - **Fuente de verdad**: `IVA_VALUES = ['SIEMPRE','NUNCA','PREGUNTA'] as const`, `type IvaValue`, `ivaPoliticaFormSchema` (acepta `string` opcional, normaliza con `trim().toUpperCase()` y devuelve uno de los 3 valores; cualquier otro string cae a `PREGUNTA` — mismo default que la BD; nunca produce error de validación).
+  - `@/lib/validations/proveedor.ts` re-exporta los aliases históricos para compatibilidad con call sites existentes:
+    - `IVA_PROVEEDOR_VALUES = IVA_VALUES`
+    - `IvaProveedorValue = IvaValue`
+    - `ivaProveedorFormSchema = ivaPoliticaFormSchema`
+  - Incluido en `createProveedorSchema` / `updateProveedorSchema` (clave `iva`) y en `crearFinBalGastoFinalSchema` / `editarFinBalGastoFinalSchema` (también clave `iva`). Cualquier nuevo schema que necesite la política debe importar `ivaPoliticaFormSchema` desde `@/lib/validations/iva` — **no** duplicar el schema.
+- Servicio `src/services/proveedor.service.ts`:
+  - Re-exporta `IvaProveedor` desde `@prisma/client` para call sites que necesiten el tipo.
+  - `CreateProveedorInput` y `UpdateProveedorInput` exigen `iva: IvaProveedor`.
+  - `ProveedorListItem.iva: IvaProveedor` (expuesto en **todos** los listados: `getProveedores`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`).
+  - `getProveedorById` selecciona y devuelve `iva` (para precarga en edición desde otros flujos).
+  - `createProveedor` / `updateProveedor` propagan `iva` al `data` de Prisma. No hay normalización adicional: la única fuente de validación es Zod.
+- Actions `src/actions/proveedores.ts`:
+  - `crearProveedor` y `editarProveedor` agregan `iva: (formData.get("iva") as string | null) ?? ""` al payload bruto antes de `safeParse`.
+  - El orden de mensajes de error agrega `iva` al final (después de `plazosPagos`); en la práctica `ivaProveedorFormSchema` no falla nunca (cae a `PREGUNTA`), pero se mantiene el campo en el flatten por consistencia con el patrón de auditoría.
+- UI (`ProveedorForm.tsx` + `ProveedorModal.tsx` + `TablaProveedoresGestion.tsx` + `TablaProveedoresLista.tsx` + `FinBalGastosCatalogoPageClient.tsx`):
+  - Select `IVA` con opciones SIEMPRE / NUNCA / PREGUNTA, controlled + hidden `<input name="iva">` para que viaje por `FormData`.
+  - **Default UX en alta**: `PREGUNTA` (mismo default de la columna). En edición se precarga `proveedor.iva` persistido. Sin asterisco "obligatorio" (siempre hay un valor válido por defecto).
+  - `ProveedorParaModal` incluye `iva?: 'SIEMPRE' | 'NUNCA' | 'PREGUNTA'`. Las tablas que abren el modal mapean `prov.iva` desde `ProveedorListItem` al armar el `ProveedorParaModal`.
+- **Regla para futuras IAs/colaboradores**:
+  - Si una pantalla nueva debe respetar la política de IVA del proveedor (p. ej. flujo de carga de comprobantes, importación DUX, generación de PDF), **leer `iva` desde el listado/`getProveedorById`**; no inferir desde otros campos. `PREGUNTA` significa explícitamente "preguntar al operador" (no asumir SIEMPRE ni NUNCA).
+  - Si se necesita un nuevo valor (p. ej. `RETENCION`), agregarlo al enum vía migración `ALTER TYPE "IvaProveedor" ADD VALUE 'XXX'` (no reescribir el enum; PostgreSQL no permite borrar valores). Documentar el nuevo caso de uso aquí.
+  - **No** usar `iva` como FK ni como predicado masivo; si un reporte futuro requiere agrupar por política, evaluar primero la cardinalidad en datos reales antes de agregar índice.
+
+#### 1.11d.1 Regla `iva → TIPO COMPROBANTE` en exportación de recepción de pedidos
+
+- **Dónde se aplica**: columna **TIPO COMPROBANTE** del Excel generado por `getExportRecepcionPedidoExcelPayload` (`src/services/exportRecepcionPedidoExcel.service.ts`), invocado por `exportarExcelRecepcionPedidoAction` (`src/actions/exportRecepcionPedidoExcel.ts`) desde el modal `PedidoHistoriaDetalleModal` en el flujo de **Recepción de Pedido** (`/pedidos/historial`).
+- **Tabla del mapeo** (canonizada en helper `resolverTipoComprobantePorIva(iva, decisionFiscal)`):
+
+  | `proveedor.iva` | `decisionFiscal` (UI) | TIPO COMPROBANTE (Excel) |
+  |---|---|---|
+  | `SIEMPRE` | ignorado | `Factura` |
+  | `NUNCA` | ignorado | `Comprobante_Compra` |
+  | `PREGUNTA` | `true` (SI) | `Factura` |
+  | `PREGUNTA` | `false` (NO) | `Comprobante_Compra` |
+  | `PREGUNTA` | `null` / `undefined` | **error** `REQUIERE_DECISION_FISCAL` |
+
+- **Tipos**:
+  - `TipoComprobanteRecepcion = "Factura" | "Comprobante_Compra"` exportado desde el servicio. `RecepcionPedidoExcelRow["TIPO COMPROBANTE"]` usa esta unión (antes era literal único `"Comprobante_Compra"`).
+  - `ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL"` — constante exportada (servicio + Action) que la UI compara para abrir el modal de confirmación fiscal.
+- **Servicio** (`exportRecepcionPedidoExcel.service.ts`):
+  - El `findUnique` de `pedidoHistoria` incluye `proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } }`.
+  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }` sin tocar la API DUX (`getSiguienteComprobanteDuxCompra` solo se invoca después de resolver el tipo).
+- **Action** (`actions/exportRecepcionPedidoExcel.ts`):
+  - Schema Zod agrega `decisionFiscal: z.boolean().optional()` (cliente envía `boolean` o no envía nada).
+  - La Action propaga `decisionFiscal` al servicio sin reinterpretar la regla. Si el servicio devuelve el marker `REQUIERE_DECISION_FISCAL`, viaja hasta el cliente como `error` para que el modal SI/NO se abra.
+- **Flujo cliente** (`PedidoHistoriaDetalleModal.tsx`):
+  - `getPedidoHistoriaDetalle` ahora expone **`proveedorIva: IvaProveedor`** en `PedidoHistoriaDetalle` (select Prisma `proveedor.iva`).
+  - El modal usa `pedirDecisionFiscalSiAplica()`: si `proveedorIva` ∈ {`SIEMPRE`, `NUNCA`} no abre nada y deja que el servicio resuelva; si es `PREGUNTA`, abre el componente nuevo `ConfirmarComprobanteFiscalModal` (Si/No) y espera la respuesta antes de invocar la Action. Cancelar el modal aborta la operación (no guarda recepción ni registra DUX). Aplicado en los 3 disparadores del export: **Registrar En Dux**, **Descargar Recepción** y **Guardar Corrección**.
+- **Regla para futuras IAs**:
+  - **No** duplicar el mapeo en el cliente. Si un nuevo flujo necesita usar la regla, importar y reutilizar `resolverTipoComprobantePorIva` desde `@/services/exportRecepcionPedidoExcel.service`.
+  - **No** asumir un default cuando `iva = PREGUNTA` y falta `decisionFiscal`: la única respuesta correcta es el marker `REQUIERE_DECISION_FISCAL` (la decisión es responsabilidad del operador en UI).
+  - Si una nueva integración (p. ej. PDF, otra API) necesita un mapeo análogo, agregar un helper hermano (`resolverTipoXxxPorIva`) y documentarlo aquí — **no** reusar el helper de Excel para semánticas distintas.
+  - `RecepcionPedidoExcelRow["PRECIO INCLUYE IVA"]` sigue siendo el literal `"SI"` (no se modificó en este cambio); si el negocio decide acoplarlo también a `proveedor.iva`, agregarlo como subsección `1.11d.2` y mantener el helper aislado.
+
 ### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
 
 - Tabla de negocio: `prod_rendimientos` (antes `tipos_pintura_rendimientos` — renombrada en migración `20260418280000_rename_tipos_pintura_rendimientos_a_prod_rendimientos`). Campos: `id` (UUID, `gen_random_uuid()`), `tipo_pintura` (VARCHAR; UNIQUE case-insensitive vía índice de expresión `ux_prod_rendimientos_tipo_lower` sobre `lower(tipo_pintura)`), `rendimiento` (INT, CHECK `prod_rendimientos_rendimiento_check`), `created_at`, `updated_at`. **No está modelada en `schema.prisma`**: todas las lecturas/escrituras son raw SQL (`$queryRaw` / `$executeRaw`) desde el Action.
@@ -526,6 +593,10 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
     - **MENSUAL** (`gasto_mensual = true`): ambos obligatorios (`dia_devengado` 1..28, `plazo_pago_dias` 0..30).
     - **EVENTUAL** (`gasto_mensual = false`): ambos deben persistir en `NULL`.
     - Se valida en DB con `CHECK` único `fin_bal_gasto_final_campos_mensual_eventual_chk`.
+  - `iva` (`enum "IvaProveedor"`, `NOT NULL DEFAULT 'PREGUNTA'`): política de IVA del gasto final. Reutiliza el enum Postgres `IvaProveedor` creado en `20260507193000_add_global_proveedores_iva` (no se crea un enum hermano — ver §1.11d). **Independiente** de `proveedor.iva`: un gasto final puede tener política distinta a la del proveedor asociado (p. ej. proveedor `SIEMPRE` con un gasto final puntual `NUNCA`). Sin índice (cardinalidad = 3). Migración: `20260507213000_add_fin_bal_gasto_final_iva` (idempotente vía `ADD COLUMN IF NOT EXISTS`; el `DEFAULT 'PREGUNTA'` actúa como backfill in-place sin reescribir la tabla).
+    - **Validación Zod**: `crearFinBalGastoFinalSchema` y `editarFinBalGastoFinalSchema` (en `@/lib/validations/finBalGastosCatalogo.ts`) incluyen `iva: ivaPoliticaFormSchema` (módulo compartido `@/lib/validations/iva.ts`); cae a `PREGUNTA` si llega vacío/desconocido (mismo default que la columna).
+    - **Servicio** (`finBalGastosCatalogo.service.ts`): `FinBalGastoFinalItem.iva: IvaProveedor` expuesto en `listarFinBalGastosJerarquia`; `crearFinBalGastoFinal` / `editarFinBalGastoFinal` propagan `iva` al `data` de Prisma; el helper `mapFinBalGastoFinalRow` lo incluye en el tipo de entrada.
+    - **UI** (`CrearEditarFinBalGastoFinalModal`): Select **IVA** con opciones `SIEMPRE` / `NUNCA` / `PREGUNTA`, default `PREGUNTA` en alta y precarga `ivaInicial` en edición. La página `FinBalGastosCatalogoPageClient` propaga `a.iva` al estado del modal cuando se abre en `editar`.
 - **Tabla** `fin_bal_gasto_mensual` (Prisma: `FinBalGastoMensual`): imputación por mes/año ligada a `fin_bal_gasto_final` (`gasto_final_id`, `mes` 1–12, `anio`, `monto` y `pagado` enteros ≥ 0, `pagado ≤ monto`). UNIQUE `(gasto_final_id, mes, anio)`. Migración `20260421200000_add_fin_bal_gasto_mensual`.
   - **Carga eventual manual** (`crearImputacionGastoUnicoBalance` / `crearFinBalImputacionGastoUnicoAction`): además de `monto` y `pagado`, recibe `fechaGasto` (`YYYY-MM-DD`) y `plazoPago` (0..30, obligatorio salvo pago total). `fechaGasto` debe pertenecer al `mes/anio` de la carga. Si `pagado === monto`, el plazo deja de ser obligatorio y se persiste como `0`.
   - Al guardar una carga eventual, no se sobrescriben `dia_devengado` ni `plazo_pago_dias` del catálogo (`fin_bal_gasto_final`): permanecen `NULL` en eventuales por regla funcional.
@@ -553,6 +624,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - `prisma/migrations/20260421140000_fin_bal_cat_gasto_sin_proveedor_mensual/migration.sql` (baja FK/columnas `proveedor_id` y `gasto_mensual`, dedupe por `(rubro_id, nombre)`, `fin_bal_gasto` → `fin_bal_cat_gasto`, constraints/índices renombrados, UNIQUE `fin_bal_cat_gasto_rubro_nombre_ux`).
   - `prisma/migrations/20260421150000_add_fin_bal_gasto_provee/migration.sql` (histórico: alta `fin_bal_gasto_provee`; **supersedido** por `20260421160000`).
   - `prisma/migrations/20260421160000_fin_bal_gasto_final_rename_add_sucursal/migration.sql` (`fin_bal_gasto_provee` → `fin_bal_gasto_final`, columna `sucursal_id` + FK `global_sucursales`, UNIQUE `(gasto_id, proveedor_id, sucursal_id)`, rename de PK/FKs/índices).
+  - `prisma/migrations/20260507213000_add_fin_bal_gasto_final_iva/migration.sql` (alta `iva enum "IvaProveedor" NOT NULL DEFAULT 'PREGUNTA'`; reutiliza el enum creado por `20260507193000_add_global_proveedores_iva`).
 - **Validaciones Zod**: `src/lib/validations/finBalGastosCatalogo.ts`
   - `crearFinBalGastoTipoSchema`, `editarFinBalGastoTipoSchema`, `eliminarFinBalGastoTipoSchema`.
   - `crearFinBalGastoRubroSchema`, `editarFinBalGastoRubroSchema`, `eliminarFinBalGastoRubroSchema`.

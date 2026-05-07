@@ -52,7 +52,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       <SectionHeader titulo={titulo} subtitulo="Lista Proveedores" actions={acciones} />
 
       {/* Filtros */}
-      <div className="shrink-0 max-w-7xl mx-auto w-full px-4 px-6 px-8 pt-4 pb-2">
+      <div className="shrink-0 max-w-7xl mx-auto w-full px-8 pt-4 pb-2">
         {esEditor ? (
           <FiltrosProductos
             proveedores={proveedores}
@@ -68,7 +68,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
       <Separator className="bg-border" />
 
       {/* Card con tabla */}
-      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 px-6 px-8 pb-3 flex flex-col">
+      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-8 pb-3 flex flex-col">
         <Card className={cn("card-tabla-envoltorio", "flex-1")}>
           <CardContent className="flex-1 min-h-0 p-0">
             <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">

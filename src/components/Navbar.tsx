@@ -12,7 +12,7 @@ const navLinks = [
 export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 px-6 px-8">
+      <div className="max-w-7xl mx-auto px-8">
         <div className="flex h-14 items-center gap-6">
           <Link href="/gestion-productos/proveedores" className="flex items-center gap-2 font-semibold">
             <Package className="h-5 w-5 text-primary" />

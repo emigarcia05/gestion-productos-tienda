@@ -1,3 +1,4 @@
+import { type IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 import type {
@@ -60,6 +61,11 @@ export interface FinBalGastoFinalItem {
   vencimiento: number | null;
   /** Texto libre (`fin_bal_gasto_final.comentarios`). */
   comentarios: string | null;
+  /**
+   * Política IVA del gasto final (default DB `PREGUNTA`). Reusa enum
+   * `IvaProveedor`. Es **independiente** de `proveedor.iva`.
+   */
+  iva: IvaProveedor;
   proveedor: {
     id: string;
     nombre: string;
@@ -239,6 +245,7 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
           diaDevengado: a.diaDevengado,
           vencimiento: a.vencimiento,
           comentarios: a.comentarios,
+          iva: a.iva,
           proveedor: {
             id: a.proveedor.id,
             nombre: a.proveedor.nombre.toUpperCase(),
@@ -493,6 +500,7 @@ function mapFinBalGastoFinalRow(row: {
   diaDevengado: number | null;
   vencimiento: number | null;
   comentarios: string | null;
+  iva: IvaProveedor;
   proveedor: { id: string; nombre: string; prefijo: string | null };
   sucursal: { id: string; nombre: string };
 }): FinBalGastoFinalItem {
@@ -505,6 +513,7 @@ function mapFinBalGastoFinalRow(row: {
     diaDevengado: row.diaDevengado,
     vencimiento: row.vencimiento,
     comentarios: row.comentarios,
+    iva: row.iva,
     proveedor: {
       id: row.proveedor.id,
       nombre: row.proveedor.nombre.toUpperCase(),
@@ -603,6 +612,7 @@ export async function crearFinBalGastoFinal(
         diaDevengado: input.gastoMensual ? 1 : (input.diaDevengado ?? 1),
         vencimiento: input.gastoMensual ? 0 : (input.vencimiento ?? 0),
         comentarios: input.comentarios ?? null,
+        iva: input.iva,
       },
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
@@ -659,6 +669,7 @@ export async function editarFinBalGastoFinal(
         diaDevengado: diaDevengadoPersist,
         vencimiento: plazoPagoPersist,
         comentarios: input.comentarios ?? null,
+        iva: input.iva,
       },
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },

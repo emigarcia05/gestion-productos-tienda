@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IvaProveedor } from "@prisma/client";
 import type { ServiceResult } from "@/types";
 import { getSiguienteComprobanteDuxCompra } from "@/services/duxCompras.service";
 import { prisma } from "@/lib/prisma";
@@ -17,8 +18,41 @@ export const duxIdEmpresaComprasSchema = z
   .positive()
   .max(99999999);
 
+/**
+ * Valor permitido en la columna "TIPO COMPROBANTE" del Excel de recepción.
+ * Se resuelve a partir de `proveedor.iva` (ver `resolverTipoComprobantePorIva`).
+ */
+export type TipoComprobanteRecepcion = "Factura" | "Comprobante_Compra";
+
+/**
+ * Marker de error semántico que devuelve el servicio cuando `proveedor.iva = PREGUNTA`
+ * y no se proporcionó una decisión explícita. La UI debe abrir el modal
+ * "¿La compra genera comprobante fiscal?" y reintentar con `decisionFiscal`.
+ */
+export const ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL" as const;
+
+/**
+ * Aplica la regla de negocio `proveedor.iva → tipoComprobante`:
+ * - SIEMPRE  → "Factura"
+ * - NUNCA    → "Comprobante_Compra"
+ * - PREGUNTA → depende de `decisionFiscal` (SI/NO del modal de confirmación):
+ *   - true  → "Factura"
+ *   - false → "Comprobante_Compra"
+ *   - null/undefined → `null` (la UI debe pedir la decisión antes de exportar).
+ */
+export function resolverTipoComprobantePorIva(
+  iva: IvaProveedor,
+  decisionFiscal: boolean | null | undefined
+): TipoComprobanteRecepcion | null {
+  if (iva === IvaProveedor.SIEMPRE) return "Factura";
+  if (iva === IvaProveedor.NUNCA) return "Comprobante_Compra";
+  if (decisionFiscal === true) return "Factura";
+  if (decisionFiscal === false) return "Comprobante_Compra";
+  return null;
+}
+
 export interface RecepcionPedidoExcelRow {
-  "TIPO COMPROBANTE": "Comprobante_Compra";
+  "TIPO COMPROBANTE": TipoComprobanteRecepcion;
   "COMPROBANTE": string;
   "ID PROVEEDOR": string;
   "FECHA": string;
@@ -166,8 +200,14 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
   fechaFacturaIso: string; // YYYY-MM-DD
   idEmpresaCompras?: number;
   totalPedidoIngreso?: number;
+  /**
+   * SI/NO del modal "¿La compra genera comprobante fiscal?".
+   * Solo se usa cuando `proveedor.iva === PREGUNTA`. Para `SIEMPRE`/`NUNCA`
+   * la regla del enum prevalece y este valor se ignora.
+   */
+  decisionFiscal?: boolean;
 }): Promise<ServiceResult<ExportRecepcionPedidoExcelPayload>> {
-  const { pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso } = params;
+  const { pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso, decisionFiscal } = params;
 
   const fechaParsed = fechaFacturaIsoSchema.safeParse(fechaFacturaIso);
   if (!fechaParsed.success) {
@@ -192,13 +232,23 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
         total: true,
         estado: true,
         recepcionNumero: true,
-        proveedor: { select: { idProveedorDux: true, prefijo: true } },
+        proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } },
         sucursal: { select: { deposito: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
       },
     });
 
     if (!pedido) return { success: false, error: "Pedido no encontrado." };
+
+    const tipoComprobante = resolverTipoComprobantePorIva(
+      pedido.proveedor.iva,
+      decisionFiscal
+    );
+    if (tipoComprobante === null) {
+      // proveedor.iva = PREGUNTA y la UI no envió decisionFiscal:
+      // la Action propaga este `error` y el cliente abre el modal de confirmación.
+      return { success: false, error: ERROR_REQUIERE_DECISION_FISCAL };
+    }
 
     const itemsRecibidos = pedido.items
       .map((it) => ({
@@ -276,7 +326,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     }
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it, index) => ({
-      "TIPO COMPROBANTE": "Comprobante_Compra",
+      "TIPO COMPROBANTE": tipoComprobante,
       "COMPROBANTE": comprobanteExport,
       "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
       "FECHA": fechaFacturaExcel,
