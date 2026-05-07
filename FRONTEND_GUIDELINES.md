@@ -738,22 +738,17 @@ En `Sidebar` (`src/components/layout/Sidebar.tsx`), el orden estándar de submó
 Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
 La sincronización se inicia solo desde los botones existentes (header y/o slidenav).
 
-### Stock — Botón `Editar Coeficientes` (Control Stock)
+### Stock — Acciones del encabezado (Control Stock)
 
-- En `Control Stock`, la zona de acciones del encabezado usa layout con dos bloques: izquierda (`Editar Coeficientes`) y derecha (acciones de exportar/imprimir).
-- `Editar Coeficientes` abre modal `EditarCoeficientesModal` con tabla de dos columnas:
-  - `PROVEEDOR` (`proveedores.nombre`)
-  - `COEFICIENTE` (`proveedores.coeficiente_tintometrico`) editable con `Input`.
-- El botón es visible solo para `editor`.
-- Al guardar, persiste en DB y refresca la página para reflejar coeficientes actualizados en módulos dependientes (ej. `Calc. Tintométrico`).
-- En el modal, botón `Guardar` deshabilitado mientras no haya cambios en los coeficientes (o si está guardando).
+- En `Control Stock`, la zona de acciones del encabezado muestra solo acciones de salida (**Exportar** / **Imprimir**) alineadas a la derecha.
+- El botón **Editar Coeficientes** ya no se muestra en esta pantalla.
 
 ### Tienda — `Calc. Tintométrico` (`/tienda/tintometrico`) y `Calc. Litros` (`/tienda/litros`)
 
 - Rutas separadas bajo **Lista Tienda**; la URL antigua `/tienda/tinto-lts` redirige (308) a `/tienda/tintometrico`.
 - Ambos usan encabezado estándar (`SectionHeader`) con título **Lista Tienda** y subtítulo **Calc. Tintométrico** o **Calc. Litros** según la pantalla.
 - No renderizan bloque de filtros (`FilterBar`).
-- **Calc. Tintométrico**: cálculo local en cliente (sin persistencia de montos). Una card `bg-card` a ancho útil (`max-w-xl` centrada para el formulario) con título en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea `bg-primary` al `70%`; grilla etiqueta/campo: `Proveedor` (`Select` con `SELECT_TRIGGER_FILTER_CLASS`), `Px. Compra` (`Input` entero), `Px Lista Tienda` (solo lectura, múltiplo de 100). Solo proveedores con `coeficienteTintometrico > 1` en el desplegable. **Editar Coeficientes** solo `editor`; modal con tabla proveedor/coeficiente y persistencia.
+- **Calc. Tintométrico**: cálculo local en cliente (sin persistencia de montos). Una card `bg-card` a ancho útil (`max-w-xl` centrada para el formulario) con título en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea `bg-primary` al `70%`; grilla etiqueta/campo: `Proveedor` (`Select` con `SELECT_TRIGGER_FILTER_CLASS`), `Px. Compra` (`Input` entero), `Px Lista Tienda` (solo lectura, múltiplo de 100). Solo proveedores con `coeficienteTintometrico > 1` en el desplegable. **Editar Coeficientes** solo `editor`; modal `EditarCoeficientesModal` con tabla de dos columnas (**PROVEEDOR** y **COEFICIENTE** editable), persistencia en DB y botón **Guardar** deshabilitado cuando no hay cambios (o durante guardado).
 - **Calc. Litros**: cálculo local; card única a ancho completo del contenedor con título **CALCULO DE LTS** + línea `bg-primary` al `70%`; selectores **FORMA DE CÁLCULO** y **TIPO DE PINTURA**; tablas según forma (paredes, módulo, pileta). **EDITAR RENDIMIENTOS** solo `editor` (modal CRUD `prod_rendimientos`, antes `tipos_pintura_rendimientos`). Los campos **LARGO**, **ANCHO**, **ALTO** y **PROFUNDIDAD** (dimensiones en metros) usan `InputDimensionMts` en `TiendaCalcLitrosPageClient.tsx`: `Input` con `pr-10` + sufijo visual **Mts.** (`text-muted-foreground`, `pointer-events-none`, `aria-hidden`); el valor sigue siendo solo el número; `aria-label` incluye «en metros».
 - Sidebar (`LISTA TIENDA`) por rol:  
   - **editor**: `Comp. Proveedores`, `Control Aumento`, `Control Stock`, `Calc. Tintométrico`, `Calc. Litros`

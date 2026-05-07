@@ -7,13 +7,10 @@ import FiltrosStock from "@/components/stock/FiltrosStock";
 import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
 import ExportarStockButton from "@/components/stock/ExportarStockButton";
 import ExportarStockInstructorModal from "@/components/stock/ExportarStockInstructorModal";
-import EditarCoeficientesModal from "@/components/stock/EditarCoeficientesModal";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { PAGE_SIZE } from "@/lib/pagination";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 interface Props {
   data: ControlStockData;
@@ -46,24 +43,15 @@ export default function StockPageWithActions({
   paginaNum,
   paramsPagina,
 }: Props) {
-  const router = useRouter();
   const tableRef = useRef<TablaStockHandle>(null);
   const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
   const [showInstructor, setShowInstructor] = useState(false);
-  const [editarCoefOpen, setEditarCoefOpen] = useState(false);
 
   const tieneSucursal = sucursalValida !== null;
   const tieneItems = data.items.length > 0;
 
   const actions = (
-    <div className="flex w-full items-center justify-between gap-2">
-      <div>
-        {esEditor ? (
-          <Button type="button" variant="outline" onClick={() => setEditarCoefOpen(true)}>
-            Editar Coeficientes
-          </Button>
-        ) : null}
-      </div>
+    <div className="flex w-full items-center justify-end gap-2">
       <div className="flex items-center justify-end gap-2">
         {tieneSucursal && tieneItems && (
           <>
@@ -94,14 +82,6 @@ export default function StockPageWithActions({
   return (
     <>
       <ExportarStockInstructorModal open={showInstructor} onOpenChange={setShowInstructor} />
-      <EditarCoeficientesModal
-        open={editarCoefOpen}
-        onOpenChange={setEditarCoefOpen}
-        proveedores={proveedores}
-        onSaved={() => {
-          router.refresh();
-        }}
-      />
       <ClassicFilteredTableLayout
         title="Lista Tienda"
         subtitle="Control Stock"
