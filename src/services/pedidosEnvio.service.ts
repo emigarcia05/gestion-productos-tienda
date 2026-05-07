@@ -696,10 +696,10 @@ export async function getItemsTablaEnviarPedido(params: {
         stock,
         stockeable: tienda.stockeable,
       });
-      cantPedir =
-        r.reposicionCantPedir != null
-          ? Math.max(0, Math.floor(Number(r.reposicionCantPedir)))
-          : computedRepos;
+      // Reposición debe reflejar siempre stock/regla vigentes.
+      // No usar `reposicionCantPedir` persistido porque puede quedar desfasado
+      // cuando cambia stock tras sincronización.
+      cantPedir = computedRepos;
     } else if (r.tipoDePedido === TIPO_URGENTE) {
       const codExtU = (r.urgenteCodExt ?? "").trim();
       if (!codExtU) continue;
@@ -955,10 +955,10 @@ export async function getItemsYProveedorParaEnviar(
         stock,
         stockeable: tienda.stockeable,
       });
-      cantPedir =
-        r.reposicionCantPedir != null
-          ? Math.max(0, Math.floor(Number(r.reposicionCantPedir)))
-          : computedRepos;
+      // Reposición debe reflejar siempre stock/regla vigentes.
+      // No usar `reposicionCantPedir` persistido porque puede quedar desfasado
+      // cuando cambia stock tras sincronización.
+      cantPedir = computedRepos;
     } else if (r.tipoDePedido === TIPO_URGENTE) {
       const codExtU = (r.urgenteCodExt ?? "").trim();
       if (!codExtU) continue;

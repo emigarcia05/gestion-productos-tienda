@@ -510,7 +510,7 @@ export default function FinBalGastosCatalogoPageClient({
                           <div className="flex items-center justify-center">
                             {activa ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
                           </div>
-                          <span className="truncate text-right">{s.nombre}</span>
+                          <span className="truncate text-left">{s.nombre}</span>
                         </div>
                       );
                     })}

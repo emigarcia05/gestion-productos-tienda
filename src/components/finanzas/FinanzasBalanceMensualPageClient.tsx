@@ -297,6 +297,7 @@ function TablaBalanceMensualAlineada({
                     fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
                   const sid = c.sucursalId;
                   const esColumnaSucursal = Boolean(sid);
+                  const mostrarColumnaConHistorico = esColumnaSucursal || c.key === "global";
                   const esFilaVentas = fila.id === "ventas";
                   const mostrarEditarVentas = esFilaVentas && puedeEditarVentas && Boolean(sid);
                   const mostrarDetalleDiscriminacion =
@@ -312,7 +313,7 @@ function TablaBalanceMensualAlineada({
                       )}
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
-                      {esColumnaSucursal ? (
+                      {mostrarColumnaConHistorico ? (
                         <div className="grid w-full min-w-0 grid-cols-[30%_70%] items-center gap-0">
                           <div className="grid min-w-0 grid-cols-2 gap-0.5">
                             <div className="flex min-w-0 items-center justify-center">
@@ -329,7 +330,7 @@ function TablaBalanceMensualAlineada({
                               </Button>
                             </div>
                             <div className="flex min-w-0 items-center justify-center">
-                              {mostrarDetalleDiscriminacion ? (
+                              {esColumnaSucursal && mostrarDetalleDiscriminacion ? (
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -351,7 +352,7 @@ function TablaBalanceMensualAlineada({
                                 >
                                   <PanelRightOpen className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 </Button>
-                              ) : esFilaVentas && mostrarEditarVentas && sid ? (
+                              ) : esColumnaSucursal && esFilaVentas && mostrarEditarVentas && sid ? (
                                 <Button
                                   type="button"
                                   variant="ghost"

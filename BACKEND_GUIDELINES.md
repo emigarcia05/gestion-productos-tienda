@@ -608,7 +608,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 
-- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems desde **`prod_ped_merc`** con cantidad a pedir resuelta **`> 0`** por tipo (incluye `reposicion_cant_pedir` o fórmula de stock). Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
+- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems desde **`prod_ped_merc`** con cantidad a pedir resuelta **`> 0`** por tipo. En **REPOSICIÓN** la cantidad se calcula siempre en runtime con la regla `stock <= punto` + forma (`CANT_FIJA`/`CANT_MAXIMA`) usando stock vigente de `prod_precios_tienda` (no depende de `reposicion_cant_pedir` persistido). Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
 - **`getEnviarPedidoTablaData`**: delega en **`getItemsTablaEnviarPedido`** pasando lo que venga de la URL (vacío = sin acotar).
 
 #### Pedido Urgente — listado
