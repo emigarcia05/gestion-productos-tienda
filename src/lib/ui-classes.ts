@@ -17,6 +17,13 @@ export const TEXT_WARNING_CLASS = "text-accent2";
 export const ICON_WARNING_INTERACTIVE_CLASS =
   "inline-flex items-center justify-center rounded-sm text-accent2 outline-offset-2 hover:text-accent2/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
 
+/**
+ * Callout/banner de advertencia no destructiva (p. ej. avisos de configuración faltante en Balance mensual).
+ * Reusa la familia `accent2` (amarillo de marca) sin acoplarse a paletas genéricas como `amber-*`.
+ */
+export const CALLOUT_WARNING_CLASS =
+  "rounded-md border border-accent2/40 bg-accent2/10 px-3 py-2 text-xs text-foreground";
+
 /** Badges del resumen numérico en ImportarModal (ResultStat). */
 export const IMPORT_STAT_BADGE_CLASSES = {
   created: BADGE_SUCCESS_TINT_CLASS,

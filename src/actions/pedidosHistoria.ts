@@ -65,14 +65,14 @@ const listarPedidosHistoriaSchema = z.object({
   estado: z.enum(["PENDIENTE", "SIN RECEPCION", "RECEPCIONADO", "ALL"]).optional(),
   proveedorId: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().min(1).max(128).optional()
+    prismaCuidSchema.optional()
   ),
   sucursalCodigo: z.enum(["guaymallen", "maipu"]).optional(),
   q: z.string().max(200).optional(),
 });
 
 export async function getPedidoHistoriaDetalleAction(
-  params: z.infer<typeof getPedidoHistoriaDetalleSchema>
+  params: unknown
 ): Promise<ActionResult<pedidosHistoriaService.PedidoHistoriaDetalle>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -91,7 +91,7 @@ export async function getPedidoHistoriaDetalleAction(
 }
 
 export async function listarPedidosHistoriaAction(
-  params: z.infer<typeof listarPedidosHistoriaSchema>
+  params: unknown
 ): Promise<
   ActionResult<{
     items: pedidosHistoriaService.PedidoHistoriaResumen[];
@@ -124,7 +124,7 @@ export async function listarPedidosHistoriaAction(
 
 /** Regenera la nota de pedido PDF desde el snapshot del historial (mismo layout que al generar). */
 export async function descargarPdfPedidoHistoriaAction(
-  params: z.infer<typeof descargarPdfPedidoHistoriaSchema>
+  params: unknown
 ): Promise<ActionResult<{ pdfBase64: string; filename: string }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -164,7 +164,7 @@ export async function descargarPdfPedidoHistoriaAction(
 }
 
 export async function actualizarPedidoHistoriaItemCantRecibidaAction(
-  params: z.infer<typeof actualizarCantRecibidaSchema>
+  params: unknown
 ): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -186,7 +186,7 @@ export async function actualizarPedidoHistoriaItemCantRecibidaAction(
 }
 
 export async function agregarPedidoHistoriaItemAction(
-  params: z.infer<typeof agregarItemSchema>
+  params: unknown
 ): Promise<ActionResult<{ idItem: string }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -209,7 +209,7 @@ export async function agregarPedidoHistoriaItemAction(
 }
 
 export async function marcarPedidoHistoriaRegistradoAction(
-  params: z.infer<typeof marcarRegistradoSchema>
+  params: unknown
 ): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -230,7 +230,7 @@ export async function marcarPedidoHistoriaRegistradoAction(
 }
 
 export async function guardarRecepcionPedidoHistoriaAction(
-  params: z.infer<typeof guardarRecepcionSchema>
+  params: unknown
 ): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -251,7 +251,7 @@ export async function guardarRecepcionPedidoHistoriaAction(
 }
 
 export async function reabrirPedidoHistoriaRecepcionAction(
-  params: z.infer<typeof reabrirRecepcionSchema>
+  params: unknown
 ): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
@@ -271,7 +271,7 @@ export async function reabrirPedidoHistoriaRecepcionAction(
 }
 
 export async function eliminarPedidoHistoriaAction(
-  params: z.infer<typeof eliminarPedidoHistoriaSchema>
+  params: unknown
 ): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {

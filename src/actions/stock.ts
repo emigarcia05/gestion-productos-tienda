@@ -178,10 +178,15 @@ export async function registrarExportacionExcelStock(ids: string[]): Promise<Act
   if (!parsed.success) {
     return { ok: false, error: "IDs inválidos." };
   }
-  const ahora = new Date();
-  await prisma.listaPrecioTienda.updateMany({
-    where: { id: { in: parsed.data } },
-    data: { ultimaExportacionExcel: ahora },
-  });
-  return { ok: true, data: undefined };
+  try {
+    const ahora = new Date();
+    await prisma.listaPrecioTienda.updateMany({
+      where: { id: { in: parsed.data } },
+      data: { ultimaExportacionExcel: ahora },
+    });
+    return { ok: true, data: undefined };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error al registrar exportación.";
+    return { ok: false, error: message };
+  }
 }

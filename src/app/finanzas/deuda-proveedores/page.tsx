@@ -16,7 +16,7 @@ export default async function DeudaProveedoresPage() {
   }
 
   const raw = await listarDeudaProveedores();
-  const { hoyIso, detalleLineas } = await listarDetalleDeudaProveedoresMercaderia();
+  const { detalleLineas } = await listarDetalleDeudaProveedoresMercaderia();
   const filas = raw.map((r) => ({
     idProveedorDux: r.idProveedorDux,
     nombre: r.nombre,
@@ -30,7 +30,6 @@ export default async function DeudaProveedoresPage() {
 
   return (
     <FinanzasDeudaProveedoresPageClient
-      hoyIso={hoyIso}
       filas={filas}
       detalleLineas={detalleLineas}
     />

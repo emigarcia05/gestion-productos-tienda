@@ -78,6 +78,8 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
     totalPorDia[key] = (totalPorDia[key] ?? 0) + m;
     if (!acumDetalle[key]) acumDetalle[key] = [];
     acumDetalle[key].push({
+      fechaDevengadaIso: sortFechaCompToIso(l.fechaComp),
+      fechaVencimientoIso: key,
       proveedor: l.nombre.trim().toUpperCase(),
       detalle: FLUJO_FONDO_DETALLE_MERCADERIA,
       monto: m,
@@ -91,6 +93,8 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
     totalPorDia[key] = (totalPorDia[key] ?? 0) + g.monto;
     if (!acumDetalle[key]) acumDetalle[key] = [];
     acumDetalle[key].push({
+      fechaDevengadaIso: g.devengoIso,
+      fechaVencimientoIso: g.fechaVenc,
       proveedor: g.proveedor,
       detalle: g.detalle,
       monto: g.monto,
@@ -128,7 +132,7 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   );
 
   return (
-    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <FinanzasVencPorFechaPageClient
         saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
         cajaDisponibleInicial={cajaDisponibleInicial}

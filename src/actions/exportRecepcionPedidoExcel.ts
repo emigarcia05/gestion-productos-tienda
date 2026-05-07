@@ -15,7 +15,7 @@ const exportRecepcionPedidoExcelSchema = z.object({
 });
 
 export async function exportarExcelRecepcionPedidoAction(
-  params: z.infer<typeof exportRecepcionPedidoExcelSchema>
+  params: unknown
 ): Promise<ActionResult<{ excelBase64: string; filename: string }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {

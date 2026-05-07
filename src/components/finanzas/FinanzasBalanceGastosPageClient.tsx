@@ -265,7 +265,7 @@ export default function FinanzasBalanceGastosPageClient({
       : undefined;
 
   return (
-    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <ClassicFilteredTableLayout
         title="Balance"
         subtitle="Gastos"

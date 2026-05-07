@@ -27,7 +27,7 @@ export default async function ControlComprobantesPage() {
   }));
 
   return (
-    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <ClassicFilteredTableLayout
         title="Finanzas"
         subtitle="Control Comp. Merc."

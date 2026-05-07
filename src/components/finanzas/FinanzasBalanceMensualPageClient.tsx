@@ -29,6 +29,7 @@ import {
 } from "@/lib/balanceMensual";
 import { cn } from "@/lib/utils";
 import {
+  CALLOUT_WARNING_CLASS,
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
@@ -241,7 +242,7 @@ function TablaBalanceMensualAlineada({
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <div className="min-w-[min(100%,40rem)] min-w-[44rem]">
+        <div className="min-w-[44rem]">
           <div
             className={cn(
               "grid border-b border-white/20 bg-[#0072BB] text-white",
@@ -252,7 +253,7 @@ function TablaBalanceMensualAlineada({
             <div
               className={cn(
                 CLASE_CELDA_BALANCE_MENSUAL,
-                "justify-center border-r border-white/20 px-2 px-3"
+                "justify-center border-r border-white/20"
               )}
             >
               <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
@@ -336,7 +337,7 @@ function TablaBalanceMensualAlineada({
                       style={esFilaResultado ? { color: FG_FILA_RESULTADO } : undefined}
                     >
                       {mostrarColumnaConHistorico ? (
-                        <div className="grid w-full min-w-0 grid-cols-[30%_70%] items-center gap-0">
+                        <div className="grid w-full min-w-0 grid-cols-[25%_75%] items-center gap-0">
                           <div className="grid min-w-0 grid-cols-2 gap-px">
                             <div className="flex min-w-0 items-center justify-center">
                               <Button
@@ -573,7 +574,7 @@ export default function FinanzasBalanceMensualPageClient({
   }
 
   return (
-    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <ClassicFilteredTableLayout
         title="Balance"
         subtitle="Balance mensual"
@@ -641,7 +642,7 @@ export default function FinanzasBalanceMensualPageClient({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-4">
           {resumen.sucursales.length === 0 ? (
-            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-100">
+            <p className={CALLOUT_WARNING_CLASS}>
               No hay sucursales con <strong>genera_balance</strong> activo: solo se muestra el bloque
               global. Configurá al menos una sucursal en base de datos para ver el desglose.
             </p>

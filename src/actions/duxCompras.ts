@@ -1,6 +1,5 @@
 "use server";
 
-import { z } from "zod";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
@@ -14,7 +13,7 @@ import {
 const exportSiguienteComprobanteSchema = siguienteComprobanteDuxParamsSchema;
 
 export async function getSiguienteComprobanteDuxCompraAction(
-  params: z.infer<typeof exportSiguienteComprobanteSchema>
+  params: unknown
 ): Promise<ActionResult<SiguienteComprobanteResult>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {

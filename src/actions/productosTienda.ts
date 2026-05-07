@@ -12,7 +12,7 @@ const buscarProductosTiendaPorDescripcionSchema = z.object({
 });
 
 export async function buscarProductosTiendaPorDescripcionAction(
-  params: z.infer<typeof buscarProductosTiendaPorDescripcionSchema>
+  params: unknown
 ): Promise<
   ActionResult<{
     items: productosTiendaService.ProductoTiendaRowBusqueda[];

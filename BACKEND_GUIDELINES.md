@@ -56,6 +56,42 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 
 - `editarProducto` / `aplicarCampoMasivo`: permiso alineado a lista de precios — `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)` (matriz actual: solo `editor`). Evita usar solo `esEditor()` sin anclar al permiso de producto del módulo.
 
+### 1.2.5 Auditoría de seguridad — patrones obligatorios (cierre 2026-05)
+
+Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumplen un patrón homogéneo. Documentado para fijar la línea base y servir de checklist para futuras IAs:
+
+**A. Firma de payloads provenientes del cliente**
+- Toda Action invocable desde el cliente que reciba un objeto/array de datos **debe** declarar el parámetro como `unknown` (o `string` cuando el dato sea un solo ID/string controlado).
+- Está prohibido tipar la firma con `z.infer<typeof X>` u otros tipos derivados que la “pinten” como segura: el cliente puede ignorar el tipo TS y mandar cualquier cosa por la red. La validación **siempre** se hace dentro de la Action con `schema.safeParse(raw)`.
+- Excepción tolerada (alineado a Next.js): firmas que reciben `FormData` (la propia API estándar) o tipos primitivos individuales (`id: string`) — pero igual deben pasar por Zod (`prismaCuidSchema`, `uuidSchema`, etc.) antes de tocar BD.
+
+**B. Gate doble “módulo + editor” en mutaciones de submódulos sensibles**
+- Convención: cada submódulo cuyo permiso de acceso sea `simple/editor` o `editor` debe exigir **`puede(rol, PERMISOS.<modulo>.<accion>)` antes** de `esEditor()` cuando la Action sea de escritura. El orden importa: el primer chequeo es el del **módulo** (rechaza acceso conceptual), el segundo es el de **escritura** (rechaza modo solo-lectura).
+- Ejemplos confirmados (no son los únicos):
+  - **Vínculos tienda** (`vinculos.ts`): `vincularProducto` y `desvincularProducto` exigen `puede(rol, PERMISOS.tienda.acceso) + esEditor()`.
+  - **Tipos de pintura / rendimientos** (`tiposPinturaRendimientos.ts`): `upsertTipoPinturaRendimientoAction` y `deleteTipoPinturaRendimientoAction` exigen `puede(rol, PERMISOS.tienda.tintoLts) + esEditor()` (gate consistente con la lectura `getTiposPinturaRendimientosAction`).
+  - **Comparación categorías** (`comparacionCategorias.ts`): mutaciones (CRUD + asignar/quitar/dto-extra) ancladas a `puede(rol, PERMISOS.comparacionCategorias.editar)`.
+
+**C. IDs validados por modelo Prisma**
+- En filtros de listado (`q`/paginación/IDs opcionales), **`proveedorId`** debe usar `prismaCuidSchema.optional()` (Prisma `Proveedor` usa `cuid()`) — no `z.string().min(1).max(128)`. Aplicado en `listarPedidosHistoriaSchema` (`src/actions/pedidosHistoria.ts`).
+- Reglas vigentes (referencia rápida):
+  - **CUID** (`Proveedor`, `PedidoHistoria`, `PedidoHistoriaItem`, `Marca`, `Sucursal`, `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `CajaTesoreria`, `ComprobanteProveedor`, `MovimientoFinanzas`, `FinTesoreriaCheque`): `prismaCuidSchema`.
+  - **UUID** (`ListaPrecioTienda`, `ListaPrecioProveedor`, `ProdPedMerc2`, `prod_rendimientos`): `uuidSchema`.
+  - **Mixto / FK legacy / sucursal seed**: `prismaCuidOrUuidSchema` o `globalSucursalIdSchema`.
+
+**D. Sin throw al cliente**
+- Toda Action **debe** envolver llamadas a Prisma / servicios que puedan lanzar (incluso lecturas) en `try/catch` y devolver `{ ok: false, error: string }` con un mensaje legible.
+- Lecturas que devuelven un shape vacío (no `ActionResult`) deben caer al shape vacío también ante excepción (ej. `getPedidoUrgenteData`, `getControlStock`, `getTiendaPageData`): no propagar stack traces.
+- `actions/comparacionCategorias.ts` (lecturas), `actions/vinculos.ts` (`vincularProducto` / `desvincularProducto`), `actions/stock.ts` (`registrarExportacionExcelStock`) y `actions/pedidos.ts` (`getPedidoUrgenteData`, `comprobarItemsParaGenerarPedidoAction`) ya cumplen este contrato tras 2026-05.
+
+**E. Anti-patrón: una Action no debe llamar a otra Action**
+- Si una Action necesita reutilizar lógica de otra, **delegar al servicio común** (no invocar la Action vecina). Las Actions son orquestadores I/O; encadenarlas duplica chequeos de sesión y mezcla niveles de validación.
+- Ejemplo aplicado (2026-05): `comprobarItemsParaGenerarPedidoAction` ahora invoca `getItemsTablaEnviarPedido` (servicio) en lugar de `getEnviarPedidoTablaData` (Action vecina).
+
+**F. Helpers de gate compartidos**
+- Cuando un archivo tiene varias Actions con el mismo gate, definir un helper local que devuelva `{ ok: false; error: string } | null` (ej. `requireEditorFinanzas` en `finBalGastosCatalogo.ts` y `finBalGastoMensualBalance.ts`).
+- **Anti-patrón**: helpers tipo `canEdit() => () => Promise<boolean>` (doble función arrow). Se reemplazó por `tienePermisoEditar(): Promise<boolean>` en `comparacionCategorias.ts`.
+
 ### 1.3 Integridad de datos
 
 - **Validación obligatoria**: Todo payload que toque la base de datos (IDs, FormData, objetos de entrada) **debe** validarse con **Zod (v4)** antes de usarse.
@@ -358,7 +394,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - **Paginación `/compras`**: la API DUX devuelve **como máximo 50** filas por GET (`DUX_COMPRAS_API_PAGE_LIMIT` en `duxComprasApi.ts`). `fetchComprasPagesAcumulado` usa `limit=50` y `offset=0,50,100…` hasta vacío o menos de 50 resultados. `DUX_COMPRAS_SYNC_LIMIT` (opcional) acota 1..50; `DUX_COMPRAS_SYNC_MAX_PAGES` default **500** (techo de seguridad, configurable). Entre páginas y entre sucursales se respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
   - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `global_proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
 - **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
-- **Deuda por proveedor (Finanzas — pantalla *Venc. Provee. Merc.*, ruta `/finanzas/deuda-proveedores`)**: `listarDeudaProveedores` en `src/services/deudaProveedores.service.ts` — por cada línea con saldo (`total > monto_aplicado`), **fecha de vencimiento** = `fecha_comp` + primer plazo en `global_proveedores.plazos_pagos` (CSV; si falta o no es numérico → **30** días; mínimo **1** día). **Hoy** = fecha en `America/Argentina/Buenos_Aires`. Columnas agregadas: **deuda total**, **vencida** (`fecha_venc` &lt; hoy), **5 / 30 / 45 / 60 DÍAS** según ventanas `hoy … hoy+5`, `hoy+6 … hoy+30`, `hoy+31 … hoy+45`, `≥ hoy+46`. Además, `listarDetalleDeudaProveedoresMercaderia()` expone `hoyIso` + detalle por proveedor en shape `FlujoFondoDetalleDiaFila` (detalle fijo `MERCADERÍA`) para modal de doble clic en la tabla. Lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso`.
+- **Deuda por proveedor (Finanzas — pantalla *Venc. Provee. Merc.*, ruta `/finanzas/deuda-proveedores`)**: `listarDeudaProveedores` en `src/services/deudaProveedores.service.ts` — por cada línea con saldo (`total > monto_aplicado`), **fecha de vencimiento** = `fecha_comp` + primer plazo en `global_proveedores.plazos_pagos` (CSV; si falta o no es numérico → **30** días; mínimo **1** día). **Hoy** = fecha en `America/Argentina/Buenos_Aires`. Columnas agregadas: **deuda total**, **vencida** (`fecha_venc` &lt; hoy), **5 / 30 / 45 / 60 DÍAS** según ventanas `hoy … hoy+5`, `hoy+6 … hoy+30`, `hoy+31 … hoy+45`, `≥ hoy+46`. Además, `listarDetalleDeudaProveedoresMercaderia()` expone detalle por proveedor en shape `FlujoFondoDetalleDiaFila` con `fechaDevengadaIso` (=`fecha_comp`), `fechaVencimientoIso` (cálculo de plazo proveedor), `detalle` fijo `MERCADERÍA`, para modal de doble clic en la tabla. Lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso`.
 - **Venc. por fecha (Finanzas)**: `listarVencimientosEnRango` + **`sumarSaldoVencimientosConFechaVencAnteriorA`** en `src/services/vencimientosPorFecha.service.ts` (misma CTE; **pendiente** = `total - monto_aplicado`); y **`listarVencimientosGastoFlujoEnRango`** + **`sumarPendienteGastosConFechaVencAnteriorA`** en `src/services/finBalGastoMensualBalance.service.ts` (imputaciones `fin_bal_gasto_mensual`, venc. desde devengo + **`fin_bal_gasto_final.plazo_pago_dias`** días; **pendiente** = fórmula devengado coherente con `/finanzas/balance/gastos`, corte = fecha de venc en ventana o &lt; hoy). El listado filtra `fecha_venc` en `[hoy, hoy + 150 días]` **inclusive** (compras) y venc. de gasto en el mismo rango. **VTOS ACUMULADOS** toma la suma de **ambos** orígenes con venc. &lt; hoy (compras: saldo; gastos: monto devengado pendiente a hoy) + la suma corrida del **vencimiento del día**; **SALDO** = **`CAJA DISPONIBLE - VTOS ACUMULADOS`**. La página `src/app/finanzas/venc-por-fecha/page.tsx` unifica en servidor: detalle del modal **una fila por obligación** (comprobante o imputación), con columna fija `MERCADERÍA` para compras. Paginado: **`pagina`**, `PAGE_SIZE = 100` (slice server-side). **CAJA DISPONIBLE** como antes (`fin_tesoreria_cajas`, `max(SALDO, 0)` en filas siguientes).
 - **Control Comprobantes (Finanzas)**:
   - Lectura: `listarControlComprobantes()` en `src/services/controlComprobantes.service.ts` (join `fin_compras_comprobante` + `global_proveedores` + `global_sucursales`) devuelve: `fechaComp`, `proveedorNombre`, `sucursalNombre`, `comprobante`, `total`, `montoAplicado`, `controlado` y `vencimientoSaldo`.
@@ -499,7 +535,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - **Actions** `src/actions/finBalGastoMensualBalance.ts`: `cargarFinBalGastoMensualMesAction({ mes, anio }?)` (editor; default mes actual si se omite), `editarMontoFinBalGastoMensualAction`, `eliminarFinBalGastoMensualAction`, `obtenerMontoMesAnteriorFinBalGastoMensualAction` (lectura con permiso finanzas). Revalidan `/finanzas` y `/finanzas/balance/gastos`.
   - **Validaciones** `src/lib/validations/finBalGastoMensualBalance.ts`: `mesAnioQuerySchema`, `editarMontoFinBalGastoMensualSchema`, `eliminarFinBalGastoMensualSchema`, `obtenerMontoMesAnteriorSchema`.
   - **Página** `src/app/finanzas/balance/gastos/page.tsx`: `searchParams` opcionales `mes` / `anio` (`mesAnioQuerySchema`: **mes** 1–12, **anio** 2026–2046). Si **no** vienen `mes` ni `anio` en la URL, **`redirect`** a `?mes=&anio=` con **mes y año calendario actuales en Argentina** (`mesAnioCalendarioArgentina` + año acotado al rango). Si el parse falla (valores fuera de rango), **`redirect`** al mismo default. Sin **redirect** por periodo sin filas en BD. Lista con `listarImputacionesMensualesBalance`.
-  - **Venc. Provee. Gastos** (`/finanzas/vencimientos-gastos`): lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso` (igual que otras pantallas de Finanzas). **`listarObligacionesGastoVencidasNoMercaderia()`** en `finBalGastoMensualBalance.service.ts` devuelve `hoyIso` (calendario Argentina), `proveedores` (agregado por nombre de proveedor con `proveedorMercaderia === false`, solo imputaciones con **fecha de vencimiento** estrictamente anterior a hoy y **pendiente a hoy** &gt; 0) y `detalleLineas` (mismo shape que `FlujoFondoDetalleDiaFila` para **`TablaFlujoDeFondoDetalleDia`**). Sin Action dedicada: el servicio se invoca solo desde el Server Component.
+  - **Venc. Provee. Gastos** (`/finanzas/vencimientos-gastos`): lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso` (igual que otras pantallas de Finanzas). **`listarObligacionesGastoVencidasNoMercaderia()`** en `finBalGastoMensualBalance.service.ts` devuelve `hoyIso` (calendario Argentina), `proveedores` (agregado por nombre de proveedor con `proveedorMercaderia === false`, solo imputaciones con **fecha de vencimiento** estrictamente anterior a hoy y **pendiente a hoy** &gt; 0) y `detalleLineas` (`FlujoFondoDetalleDiaFila` con `fechaDevengadaIso`, `fechaVencimientoIso`, `proveedor`, `detalle`, `monto`, `sortFecha`, `sortId`) para **`TablaFlujoDeFondoDetalleDia`**. Sin Action dedicada: el servicio se invoca solo desde el Server Component.
 - **Integridad referencial**:
   - `onDelete: Restrict` en ambas FKs: no se puede borrar un tipo con rubros asociados ni un rubro con gastos asociados. Si se necesita baja en cascada, cambiar explícitamente a `Cascade` en la migración correspondiente y documentarlo.
 - **Convención de normalización**: al persistir desde service/action, aplicar `trim + toUpperCase` sobre `nombre` (alineado a `fin_tesoreria_cajas`, `movimientos_finanzas.nombre`).
@@ -811,12 +847,15 @@ Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a va
 Antes de entregar código nuevo o modificado, verificar:
 
 - [ ] **Sesión/rol**: ¿Toda Action que modifica datos comprueba `esEditor()` o `getRol()` + `puede()` al inicio? ¿Las lecturas expuestas como Action comprueban `puede()` (incl. listas con precios, vínculos, proveedores)? ¿Las mutaciones sensibles en módulos con acceso compartido simple/editor exigen `esEditor()` además de `puede()`?
+- [ ] **Gate doble (módulo + editor)**: Si la mutación pertenece a un submódulo con permiso de módulo (`tienda.*`, `finanzas.*`, etc.), ¿se chequea **primero** `puede(rol, PERMISOS.<modulo>.<accion>)` y **después** `esEditor()`? Ver §1.2.5.B.
+- [ ] **Firma de payload**: ¿Las Actions que reciben objetos/arrays del cliente declaran el parámetro como `unknown` (o `string`/`FormData` para casos puntuales) y validan con `schema.safeParse(raw)`? Prohibido tipar con `z.infer<typeof X>` (§1.2.5.A).
 - [ ] **Zod**: ¿Todo payload de entrada (IDs, FormData, objetos, **y parámetros de lectura** con `q`/paginación/filtros) se valida con un esquema Zod antes de usarse en BD o servicios?
-- [ ] **IDs**: ¿Los UUID y los `cuid` se validan con el esquema correcto (`uuidSchema` vs `prismaCuidSchema`) según el modelo Prisma?
+- [ ] **IDs**: ¿Los UUID y los `cuid` se validan con el esquema correcto (`uuidSchema` vs `prismaCuidSchema`) según el modelo Prisma? Casos especiales: `proveedorId` siempre `prismaCuidSchema` (modelo `Proveedor` usa `cuid()`).
 - [ ] **Sin `any`**: ¿El código evita `any` y usa tipos explícitos o inferidos?
 - [ ] **ActionResult**: ¿Las Actions que pueden fallar devuelven `ActionResult<T>` con `{ ok, data? }` o `{ ok: false, error }`?
-- [ ] **No throw al cliente**: ¿Los errores se capturan y se devuelven como `{ ok: false, error: string }` en lugar de lanzar?
-- [ ] **Lógica en servicios**: ¿La lógica de negocio y el acceso a Prisma están en `src/services/` y no en la Action?
+- [ ] **No throw al cliente**: ¿Los errores se capturan en `try/catch` y se devuelven como `{ ok: false, error: string }` (o shape vacío en lecturas que no usan `ActionResult`) en lugar de lanzar?
+- [ ] **Lógica en servicios**: ¿La lógica de negocio y el acceso a Prisma están en `src/services/` y no en la Action? (Excepciones documentadas: `tienda.ts`, `stock.ts`, `tiposPinturaRendimientos.ts`, ciertas operaciones puntuales en `vinculos.ts`/`reposicion.ts`).
+- [ ] **No anidar Actions**: ¿La Action delega a servicios y nunca invoca otra Action vecina? (§1.2.5.E).
 - [ ] **revalidatePath**: ¿Se llama a `revalidatePath` (o `revalidateTag`) tras mutaciones que afectan a rutas concretas?
 - [ ] **Permisos**: Si existe un permiso en `PERMISOS` para la funcionalidad, ¿se usa `puede(rol, PERMISOS.*)` en lugar de solo `esEditor()` cuando aplique?
 
@@ -928,6 +967,8 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
+*Última actualización (2026-05-07): **Auditoría de seguridad cerrada** — todos los Server Actions revisados (26/26) cumplen los gates documentados. Patrones nuevos consolidados en §1.2.5 (firma `unknown` para payloads de cliente, gate doble módulo+editor, IDs por modelo Prisma, no anidar Actions, sin throw al cliente, helpers de gate compartidos) + checklist actualizada en §4 + tabla de cambios en §5.11. Correcciones aplicadas: gate doble en `vinculos.vincularProducto` y `tiposPinturaRendimientos.{upsert,delete}`; `proveedorId` con `prismaCuidSchema` en `pedidosHistoria`; refactor `canEdit() => tienePermisoEditar()` y `try/catch` en lecturas de `comparacionCategorias`; `comprobarItemsParaGenerarPedidoAction` deja de invocar Action vecina y delega al servicio; firmas `raw: unknown` en `pedidos.ts` y `reposicion.ts`; `try/catch` adicional en `pedidos.getPedidoUrgenteData`, `stock.registrarExportacionExcelStock` y mutaciones de `vinculos.ts`.*
+
 *Última actualización (2026-04-24): **Balance mensual** y **`fin_bal_vtas`** (resumen, upsert, unique, revalidaciones, helpers `fmtMargenContribucionPct` / `puntoEquilibrioVentasPesos`) — ver **§2.5f**.*
 
 *Última actualización (2026-04-21): `global_proveedores.prefijo` **opcional** (NULL permitido; unique PostgreSQL). Alta sin prefijo: servicio genera `codigo_unico` tipo `Z`+hex; importación de lista usa `prefijo` efectivo = prefijo trim o `codigo_unico`. Migración `20260421180000_global_proveedores_prefijo_nullable` + función `trg_lista_precios_set_cod_ext` con `COALESCE(NULLIF(trim(p.prefijo), ''), p.codigo_unico)` para `cod_ext`. Zod: `prefijoProveedorOpcionalSchema`, `proveedorMercaderiaFormSchema` (SI/NO obligatorio desde form). Ver §1.11c.*
@@ -991,3 +1032,54 @@ Antes de entregar código nuevo o modificado, verificar:
   - ajuste por ítem en pasos de `0.01`, con tope de `±0.10` respecto al precio base;
   - tolerancia final permitida en exportación: `0.10`.
 - Si no se logra quedar dentro de la tolerancia, el servicio devuelve error y no genera payload de Excel.
+
+### 5.11 Auditoría de seguridad — cierre 2026-05 (Server Actions)
+
+Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: backend 100% alineado con los gates documentados en §1.2.x.
+
+| Área | Cambio |
+|------|--------|
+| `src/actions/vinculos.ts` | **`vincularProducto`**: gate doble agregado (`puede(rol, PERMISOS.tienda.acceso) + esEditor()`) — antes solo `esEditor()`, vector potencial de bypass por rol con permisos de tienda revocados. Ambas mutaciones (`vincular` / `desvincular`) ahora envuelven Prisma en `try/catch` para evitar fugas de stack al cliente. |
+| `src/actions/tiposPinturaRendimientos.ts` | **`upsertTipoPinturaRendimientoAction` / `deleteTipoPinturaRendimientoAction`**: gate doble agregado (`puede(rol, PERMISOS.tienda.tintoLts) + esEditor()`) — antes solo `esEditor()`. Coherencia con la lectura `getTiposPinturaRendimientosAction` (que ya pedía `tienda.tintoLts`). |
+| `src/actions/pedidosHistoria.ts` | `listarPedidosHistoriaSchema.proveedorId`: cambio de `z.string().min(1).max(128).optional()` a `prismaCuidSchema.optional()`. El modelo `Proveedor` usa `cuid()`; aceptar strings arbitrarios de hasta 128 chars era una superficie de ataque para SQL/lookup probing. |
+| `src/actions/comparacionCategorias.ts` | Reemplazo del helper anti-patrón `canEdit()` (función que retorna función) por **`tienePermisoEditar(): Promise<boolean>`** (12 call sites). Se agregó `try/catch` a las 5 lecturas (`getArbolCategoriasAction`, `getProductosPorPresentacionAction`, `getPresentacionesConLabelAction`, `getPresentacionesParaGestionAction`, `buscarProductosParaAsignarAction`) para no propagar errores Prisma al cliente. |
+| `src/actions/pedidos.ts` | **`comprobarItemsParaGenerarPedidoAction`**: dejó de invocar a la Action vecina `getEnviarPedidoTablaData` y ahora llama directo al servicio `getItemsTablaEnviarPedido`. Anti-patrón “Action llamando Action” eliminado (§1.2.5.E). Además, `upsertPedidoUrgenteMercaderiaItemAction` y `deletePedidoTintometricoItemAction` cambian su firma de `raw: z.infer<...>` a `raw: unknown` (§1.2.5.A). `getPedidoUrgenteData` envuelto en `try/catch` con shape vacío en error. |
+| `src/actions/reposicion.ts` | `upsertReglaReposicion` y `deleteReglaReposicion`: firma `raw: unknown` (antes `z.infer<...>`). |
+| `src/actions/stock.ts` | `registrarExportacionExcelStock`: `try/catch` alrededor del `updateMany` para no propagar errores Prisma al cliente. |
+
+**Estado por archivo (26/26 cumplen gates):**
+
+| Action | Gate | Zod | ActionResult | Servicio | Estado |
+|--------|------|-----|--------------|----------|--------|
+| `cajasTesoreria.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
+| `comparacionCategorias.ts` | comparacionCategorias.{acceso,editar} | ✓ | ✓ | ✓ | ✅ |
+| `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
+| `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
+| `duxCompras.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
+| `exportRecepcionPedidoExcel.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
+| `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
+| `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |
+| `finBalVtas.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
+| `finTesoreriaCheques.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
+| `importar.ts` | importar + editor | ✓ | ✓ | ✓ | ✅ |
+| `listaPrecios.ts` | listaPrecios.* | ✓ | ✓ | ✓ | ✅ |
+| `movimientosFinanzas.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
+| `pedidos.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
+| `pedidosHistoria.ts` | pedidos.acceso | ✓ (CUIDs) | ✓ | ✓ | ✅ |
+| `productos.ts` (mock) | listaPrecios.acciones.edicionMasiva | ✓ | ✓ | n/a | ✅ |
+| `productosTienda.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
+| `proveedores.ts` | proveedores.* / editor (mutaciones) | ✓ | ✓ | ✓ | ✅ |
+| `reposicion.ts` | pedidos.acceso | ✓ | ✓ | ✓ (parcial) | ✅ |
+| `sesion.ts` | n/a (entrada para activar editor) | ✓ | n/a | n/a | ✅ |
+| `stock.ts` | stock.acceso | ✓ | ✓ | n/a (legacy con Prisma directa) | ✅ |
+| `syncListaPrecioTienda.ts` | tienda.acciones.sincronizar | n/a | shape específico | ✓ | ✅ |
+| `tienda.ts` | tienda.{acceso,controlAumentos,tintoLts} | ✓ | ✓ | n/a (legacy con Prisma directa) | ✅ |
+| `tintometrico.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
+| `tiposPinturaRendimientos.ts` | tienda.tintoLts + editor (mutaciones) | ✓ | ✓ | n/a (raw SQL inline) | ✅ |
+| `vinculos.ts` | tienda.acceso + editor (mutaciones) | ✓ | ✓ | ✓ (parcial) | ✅ |
+
+**Deudas técnicas residuales (no bloqueantes, documentadas):**
+- `tienda.ts`, `stock.ts`, `tiposPinturaRendimientos.ts`: lógica de Prisma / raw SQL inline en la Action en lugar de delegar a un servicio. Funcional y con Zod + `try/catch` correcto; mover a `src/services/` queda como evolución arquitectural (§5.2).
+- `vinculos.ts` y `reposicion.ts`: una parte de la lógica vive en la Action (Prisma directa) — aceptable por simplicidad y volumen de SQL, pero candidato a extracción a servicio si crece.
+
+**Auditoría = COMPLETADA.** Cualquier nueva Server Action o cambio de gate debe documentarse aquí o en una sub-sección 5.x dedicada y respetar el patrón de §1.2.5.

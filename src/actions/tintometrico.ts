@@ -11,7 +11,7 @@ const buscarBasesSchema = z.object({
 });
 
 export async function buscarBasesTintometricasAction(
-  raw: z.infer<typeof buscarBasesSchema>
+  raw: unknown
 ): Promise<ActionResult<{ items: Awaited<ReturnType<typeof buscarBasesTintometricas>>["items"]; total: number }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {

@@ -80,26 +80,30 @@ export async function getPedidoUrgenteData(params: {
         : pedido === "reposicion"
           ? "reposicion"
           : undefined;
-  const [proveedores, result] = await Promise.all([
-    getProveedoresParaPedidoUrgente(),
-    tieneSucursal && sucursalHabilitada
-      ? getListaPreciosParaPedidoUrgente(
-          sucursalValida,
-          proveedorValido || undefined,
-          pedidoTipo,
-          qValida ? q : undefined,
-          paginaNum,
-          PAGE_SIZE
-        )
-      : Promise.resolve({ items: [], total: 0, totalPaginas: 0 }),
-  ]);
+  try {
+    const [proveedores, result] = await Promise.all([
+      getProveedoresParaPedidoUrgente(),
+      tieneSucursal && sucursalHabilitada
+        ? getListaPreciosParaPedidoUrgente(
+            sucursalValida,
+            proveedorValido || undefined,
+            pedidoTipo,
+            qValida ? q : undefined,
+            paginaNum,
+            PAGE_SIZE
+          )
+        : Promise.resolve({ items: [], total: 0, totalPaginas: 0 }),
+    ]);
 
-  return {
-    proveedores,
-    productos: result.items,
-    total: result.total,
-    totalPaginas: result.totalPaginas,
-  };
+    return {
+      proveedores,
+      productos: result.items,
+      total: result.total,
+      totalPaginas: result.totalPaginas,
+    };
+  } catch {
+    return { proveedores: [], productos: [], total: 0, totalPaginas: 0 };
+  }
 }
 
 /** Datos iniciales para la página Generar Pedido (filtros: proveedores). */
@@ -189,12 +193,17 @@ export async function comprobarItemsParaGenerarPedidoAction(
   if (!(await sucursalPedidoHabilitada(sucursal))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
   }
-  const { items } = await getEnviarPedidoTablaData({
-    sucursal,
-    proveedor: proveedorId,
-    tipos,
-  });
-  return { ok: true, data: { hayItems: items.length > 0 } };
+  try {
+    const { items } = await getItemsTablaEnviarPedido({
+      sucursalCodigo: sucursal,
+      proveedorId: proveedorId.trim() || undefined,
+      tipos,
+    });
+    return { ok: true, data: { hayItems: items.length > 0 } };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error al comprobar ítems del pedido.";
+    return { ok: false, error: message };
+  }
 }
 
 const SUCURSALES_VALIDAS: SucursalPedidoEnvio[] = ["guaymallen", "maipu"];
@@ -332,7 +341,7 @@ const upsertPedidoUrgenteItemSchema = z.object({
   cant: z.number().int().min(0),
 });
 
-export async function upsertPedidoUrgenteMercaderiaItemAction(raw: z.infer<typeof upsertPedidoUrgenteItemSchema>): Promise<ActionResult<void>> {
+export async function upsertPedidoUrgenteMercaderiaItemAction(raw: unknown): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
@@ -424,7 +433,7 @@ const deleteTintometricoItemSchema = z.union([
 ]);
 
 export async function deletePedidoTintometricoItemAction(
-  raw: z.infer<typeof deleteTintometricoItemSchema>
+  raw: unknown
 ): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {

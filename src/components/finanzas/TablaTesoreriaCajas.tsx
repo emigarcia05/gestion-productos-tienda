@@ -18,6 +18,7 @@ import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 
 export interface TesoreriaCajaFila {
@@ -249,7 +250,7 @@ export default function TablaTesoreriaCajas({
                             {f.ultActualizacion}
                             {estaDesactualizada ? (
                               <TriangleAlert
-                                className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500"
+                                className={cn("h-4 w-4 shrink-0", TEXT_WARNING_CLASS)}
                                 aria-hidden
                               />
                             ) : null}

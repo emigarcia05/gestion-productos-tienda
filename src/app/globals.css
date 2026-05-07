@@ -683,6 +683,21 @@
     --normal-border: var(--border);
     --border-radius: var(--radius);
   }
+
+  /**
+   * Cascarón de página de área (Finanzas, Estadísticas, etc.).
+   * Reemplaza la cadena repetida `flex h-screen min-h-0 flex-col overflow-hidden`
+   * en `page.tsx` y *PageClients que ocupan toda la pantalla. Una sola fuente de
+   * verdad para el layout flex column con altura completa y scroll interno
+   * delegado a `.contenedor-tabla-gestion`.
+   */
+  .area-page-shell {
+    display: flex;
+    height: 100vh;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
 }
 
 @layer utilities {

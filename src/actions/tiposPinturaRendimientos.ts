@@ -58,6 +58,10 @@ export async function getTiposPinturaRendimientosAction(): Promise<TipoPinturaRe
 export async function upsertTipoPinturaRendimientoAction(
   raw: unknown
 ): Promise<ActionResult<TipoPinturaRendimiento>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.tintoLts)) {
+    return { ok: false, error: "Sin acceso al módulo de litros." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
 
   const parsed = upsertSchema.safeParse(raw);
@@ -105,6 +109,10 @@ export async function upsertTipoPinturaRendimientoAction(
 }
 
 export async function deleteTipoPinturaRendimientoAction(idRaw: string): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.tintoLts)) {
+    return { ok: false, error: "Sin acceso al módulo de litros." };
+  }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const id = idSchema.safeParse(idRaw);
   if (!id.success) return { ok: false, error: "ID inválido." };

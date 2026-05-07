@@ -45,11 +45,10 @@ const buscarProductosAsignarSchema = z.object({
 
 const PATH = "/proveedores/comparacion-categorias";
 
-function canEdit() {
-  return async () => {
-    const rol = await getRol();
-    return puede(rol, PERMISOS.comparacionCategorias.editar);
-  };
+/** Resuelve si el rol vigente tiene permiso de edición de comparación-categorías. */
+async function tienePermisoEditar(): Promise<boolean> {
+  const rol = await getRol();
+  return puede(rol, PERMISOS.comparacionCategorias.editar);
 }
 
 /** Árbol de categorías (lectura para todos con acceso). */
@@ -58,8 +57,12 @@ export async function getArbolCategoriasAction(): Promise<ActionResult<Awaited<R
   if (!puede(rol, PERMISOS.comparacionCategorias.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
-  const data = await getArbolCategorias();
-  return { ok: true, data };
+  try {
+    const data = await getArbolCategorias();
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar el árbol de categorías." };
+  }
 }
 
 /** Productos de una presentación con comparación vs objetivo. */
@@ -72,15 +75,19 @@ export async function getProductosPorPresentacionAction(
   }
   const parsed = presentacionIdSchema.safeParse(presentacionId);
   if (!parsed.success) return { ok: false, error: "ID de presentación inválido." };
-  const result = await getProductosPorPresentacion(parsed.data);
-  return {
-    ok: true,
-    data: {
-      productos: result.productos,
-      costoCompraObjetivo: result.costoCompraObjetivo,
-      labelCompleto: result.labelCompleto,
-    },
-  };
+  try {
+    const result = await getProductosPorPresentacion(parsed.data);
+    return {
+      ok: true,
+      data: {
+        productos: result.productos,
+        costoCompraObjetivo: result.costoCompraObjetivo,
+        labelCompleto: result.labelCompleto,
+      },
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar productos." };
+  }
 }
 
 /** Lista de presentaciones con label (para selects). */
@@ -89,18 +96,23 @@ export async function getPresentacionesConLabelAction(): Promise<ActionResult<Aw
   if (!puede(rol, PERMISOS.comparacionCategorias.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
-  const data = await getPresentacionesConLabel();
-  return { ok: true, data };
+  try {
+    const data = await getPresentacionesConLabel();
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar presentaciones." };
+  }
 }
 
 /** Lista plana de presentaciones para modal Gestionar categorías (combinación + producto ref + costo objetivo). */
 export async function getPresentacionesParaGestionAction(): Promise<ActionResult<Awaited<ReturnType<typeof getPresentacionesParaGestion>>>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
-    return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  try {
+    const data = await getPresentacionesParaGestion();
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar presentaciones." };
   }
-  const data = await getPresentacionesParaGestion();
-  return { ok: true, data };
 }
 
 /** Buscar productos de lista precios para asignar a una categoría (modal). Misma forma que Vincular nuevo producto. */
@@ -108,22 +120,23 @@ export async function buscarProductosParaAsignarAction(
   proveedorId?: string,
   q?: string
 ): Promise<ActionResult<Awaited<ReturnType<typeof listarProductosProveedoresParaVincular>>>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
-    return { ok: false, error: "Sin permisos." };
-  }
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = buscarProductosAsignarSchema.safeParse({ proveedorId, q });
   if (!parsed.success) return { ok: false, error: "Parámetros de búsqueda inválidos." };
-  const data = await listarProductosProveedoresParaVincular(
-    parsed.data.proveedorId,
-    parsed.data.q ?? ""
-  );
-  return { ok: true, data };
+  try {
+    const data = await listarProductosProveedoresParaVincular(
+      parsed.data.proveedorId,
+      parsed.data.q ?? ""
+    );
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al buscar productos." };
+  }
 }
 
 // ─── CRUD Categorias ────────────────────────────────────────────────────────
 export async function createCategoriaAction(nombre: string): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = createCategoriaSchema.safeParse({ nombre });
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors.nombre?.[0] ?? parsed.error.message;
@@ -139,7 +152,7 @@ export async function createCategoriaAction(nombre: string): Promise<ActionResul
 }
 
 export async function updateCategoriaAction(id: string, data: { nombre?: string }): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = updateCategoriaSchema.safeParse({ id, data });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -152,7 +165,7 @@ export async function updateCategoriaAction(id: string, data: { nombre?: string 
 }
 
 export async function deleteCategoriaAction(id: string): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
@@ -166,7 +179,7 @@ export async function deleteCategoriaAction(id: string): Promise<ActionResult> {
 
 // ─── CRUD Subcategorias ─────────────────────────────────────────────────────
 export async function createSubcategoriaAction(categoriaId: string, nombre: string): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = createSubcategoriaSchema.safeParse({ categoriaId, nombre });
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors.nombre?.[0] ?? parsed.error.message;
@@ -185,7 +198,7 @@ export async function updateSubcategoriaAction(
   id: string,
   data: { nombre?: string; categoriaId?: string }
 ): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = updateSubcategoriaSchema.safeParse({ id, data });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -198,7 +211,7 @@ export async function updateSubcategoriaAction(
 }
 
 export async function deleteSubcategoriaAction(id: string): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
@@ -216,7 +229,7 @@ export async function createPresentacionAction(
   nombre: string,
   costoCompraObjetivo?: number | null
 ): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = createPresentacionSchema.safeParse({ subcategoriaId, nombre, costoCompraObjetivo });
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors.nombre?.[0] ?? parsed.error.message;
@@ -235,7 +248,7 @@ export async function updatePresentacionAction(
   id: string,
   data: { nombre?: string; subcategoriaId?: string; costoCompraObjetivo?: number | null; idProductoReferencia?: string | null }
 ): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = updatePresentacionSchema.safeParse({ id, data });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -248,7 +261,7 @@ export async function updatePresentacionAction(
 }
 
 export async function deletePresentacionAction(id: string): Promise<ActionResult> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
@@ -265,7 +278,7 @@ export async function asignarProductosAPresentacionAction(
   presentacionId: string,
   idsProductos: string[]
 ): Promise<ActionResult<{ count: number }>> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = asignarProductosSchema.safeParse({ presentacionId, idsProductos });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -282,7 +295,7 @@ export async function asignarProductosAPresentacionAction(
 export async function quitarAsignacionPresentacionAction(
   idsProductos: string[]
 ): Promise<ActionResult<{ count: number }>> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = idsProductosSchema.safeParse(idsProductos);
   if (!parsed.success) return { ok: false, error: "IDs inválidos." };
   try {
@@ -300,7 +313,7 @@ export async function actualizarDtoExtraComparacionAction(
   listaPrecioProveedorId: string,
   dtoExtra: number | null
 ): Promise<ActionResult<{ dtoExtra: number | null }>> {
-  if (!(await canEdit()())) return { ok: false, error: "Sin permisos." };
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
 
   const parsed = actualizarDtoExtraComparacionSchema.safeParse({ listaPrecioProveedorId, dtoExtra });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };

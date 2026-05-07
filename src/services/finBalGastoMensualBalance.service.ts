@@ -670,6 +670,8 @@ export async function listarObligacionesGastoVencidasNoMercaderia(): Promise<{
 
     const proveedor = gf.proveedor.nombre.toUpperCase();
     detalleLineas.push({
+      fechaDevengadaIso: fechaDevengoIso,
+      fechaVencimientoIso: fechaVenc,
       proveedor,
       detalle: gf.gasto.nombre.toUpperCase(),
       monto: pend,

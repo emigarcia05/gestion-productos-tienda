@@ -9,27 +9,18 @@ import TablaDeudaProveedores, {
   type DeudaProveedorRow,
 } from "@/components/finanzas/TablaDeudaProveedores";
 import { TablaFlujoDeFondoDetalleDia } from "@/components/finanzas/TablaFlujoDeFondo";
-import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
 import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 
 interface Props {
-  hoyIso: string;
   filas: DeudaProveedorRow[];
   detalleLineas: FlujoFondoDetalleDiaFila[];
 }
 
 export default function FinanzasDeudaProveedoresPageClient({
-  hoyIso,
   filas,
   detalleLineas,
 }: Props) {
   const [proveedorDetalle, setProveedorDetalle] = useState<string | null>(null);
-
-  const fechaCorteLarga = useMemo(() => {
-    const [yy, mm, dd] = hoyIso.split("-").map(Number);
-    if (!Number.isFinite(yy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return "";
-    return formatFechaLargaNotaPedidoArgentina(new Date(yy, mm - 1, dd));
-  }, [hoyIso]);
 
   const filasDetalleProveedor = useMemo(() => {
     if (!proveedorDetalle) return [];
@@ -37,7 +28,7 @@ export default function FinanzasDeudaProveedoresPageClient({
   }, [proveedorDetalle, detalleLineas]);
 
   return (
-    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <ClassicFilteredTableLayout title="Finanzas" subtitle="Venc. Provee. Merc.">
         <TablaDeudaProveedores
           filas={filas}
@@ -50,21 +41,7 @@ export default function FinanzasDeudaProveedoresPageClient({
         onOpenChange={(open) => !open && setProveedorDetalle(null)}
       >
         <AppModal
-          title={
-            proveedorDetalle && fechaCorteLarga ? (
-              <span className="flex flex-col items-center gap-1 text-center">
-                <span>Detalle De Vencimientos</span>
-                <span className="text-sm font-normal text-primary-foreground/95">
-                  {proveedorDetalle}
-                </span>
-                <span className="text-xs font-normal text-primary-foreground/90">
-                  CORTE: {fechaCorteLarga}
-                </span>
-              </span>
-            ) : (
-              "Detalle De Vencimientos"
-            )
-          }
+          title="Detalle De Vencimientos"
           size="lg"
           padding="sm"
           scrollBody={false}

@@ -65,6 +65,8 @@ export async function listarVencimientosEnRango(
  * Orden: proveedor, detalle, `sortFecha` (fecha devengo o `fecha_comp`), `sortId`.
  */
 export type FlujoFondoDetalleDiaFila = {
+  fechaDevengadaIso: string;
+  fechaVencimientoIso: string;
   proveedor: string;
   detalle: string;
   monto: number;

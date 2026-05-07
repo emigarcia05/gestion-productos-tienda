@@ -74,6 +74,7 @@ type DeudaProveedorDetalleLineaRaw = {
   saldo: Prisma.Decimal;
   comprobanteId: string;
   fechaComp: string;
+  fechaVenc: string;
 };
 
 export async function listarDetalleDeudaProveedoresMercaderia(): Promise<{
@@ -89,7 +90,21 @@ export async function listarDetalleDeudaProveedoresMercaderia(): Promise<{
         p.nombre AS proveedor,
         (c.total - c.monto_aplicado) AS saldo,
         c.id::text AS "comprobanteId",
-        c.fecha_comp::text AS "fechaComp"
+        c.fecha_comp::text AS "fechaComp",
+        (
+          c.fecha_comp::date
+          + GREATEST(
+            1,
+            COALESCE(
+              CASE
+                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
+                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
+                ELSE NULL
+              END,
+              30
+            )
+          )
+        )::text AS "fechaVenc"
       FROM fin_compras_comprobante c
       INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
@@ -99,6 +114,8 @@ export async function listarDetalleDeudaProveedoresMercaderia(): Promise<{
 
   const detalleLineas = ordenarDetallesFlujoDia(
     rows.map((r) => ({
+      fechaDevengadaIso: r.fechaComp.slice(0, 10),
+      fechaVencimientoIso: r.fechaVenc.slice(0, 10),
       proveedor: r.proveedor.toUpperCase(),
       detalle: FLUJO_FONDO_DETALLE_MERCADERIA,
       monto: Number(r.saldo),

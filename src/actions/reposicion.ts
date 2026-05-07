@@ -370,7 +370,7 @@ const upsertReglaSchema = z.object({
  * resolviendo proveedor/cod_ext vigentes desde `prod_precios_tienda`.
  * Validación estricta: no guarda nada si falta Forma/Punto/Cant.
  */
-export async function upsertReglaReposicion(raw: z.infer<typeof upsertReglaSchema>): Promise<ActionResult<void>> {
+export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin acceso." };
@@ -411,7 +411,7 @@ const deleteReglaSchema = z.object({
 /**
  * Elimina la regla de reposición por ID.
  */
-export async function deleteReglaReposicion(raw: z.infer<typeof deleteReglaSchema>): Promise<ActionResult<void>> {
+export async function deleteReglaReposicion(raw: unknown): Promise<ActionResult<void>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin acceso." };
