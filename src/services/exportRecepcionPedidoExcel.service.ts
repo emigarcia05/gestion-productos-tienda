@@ -31,7 +31,7 @@ export const duxIdEmpresaComprasSchema = z
  * Valor permitido en la columna "TIPO COMPROBANTE" del Excel de recepción.
  * Se resuelve a partir de `proveedor.iva` (ver `resolverTipoComprobantePorIva`).
  */
-export type TipoComprobanteRecepcion = "Factura" | "Comprobante_Compra";
+export type TipoComprobanteRecepcion = "FACTURA" | "Comprobante_Compra";
 
 /**
  * Marker de error semántico que devuelve el servicio cuando `proveedor.iva = PREGUNTA`
@@ -42,10 +42,10 @@ export const ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL" as cons
 
 /**
  * Aplica la regla de negocio `proveedor.iva → tipoComprobante`:
- * - SIEMPRE  → "Factura"
+ * - SIEMPRE  → "FACTURA" (columna Excel en mayúsculas; DUX usa `tipo_comp` FACTURA)
  * - NUNCA    → "Comprobante_Compra"
  * - PREGUNTA → depende de `decisionFiscal` (SI/NO del modal de confirmación):
- *   - true  → "Factura"
+ *   - true  → "FACTURA"
  *   - false → "Comprobante_Compra"
  *   - null/undefined → `null` (la UI debe pedir la decisión antes de exportar).
  */
@@ -53,9 +53,9 @@ export function resolverTipoComprobantePorIva(
   iva: IvaProveedor,
   decisionFiscal: boolean | null | undefined
 ): TipoComprobanteRecepcion | null {
-  if (iva === IvaProveedor.SIEMPRE) return "Factura";
+  if (iva === IvaProveedor.SIEMPRE) return "FACTURA";
   if (iva === IvaProveedor.NUNCA) return "Comprobante_Compra";
-  if (decisionFiscal === true) return "Factura";
+  if (decisionFiscal === true) return "FACTURA";
   if (decisionFiscal === false) return "Comprobante_Compra";
   return null;
 }
@@ -318,11 +318,15 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       hastaUtc.getUTCDate()
     );
 
+    const tipoCompDux: "FACTURA" | "COMPROBANTE_COMPRA" =
+      tipoComprobante === "FACTURA" ? "FACTURA" : "COMPROBANTE_COMPRA";
+
     const { ultimoComprobante, totalImporte } =
       await getSiguienteComprobanteDuxCompra({
         fechaDesde: fechaDesdeComprobante,
         fechaHasta: fechaHastaComprobante,
         idEmpresa: idEmpresaParsed.data,
+        tipoComp: tipoCompDux,
       });
     // Primera recepción (pedido pendiente): recepcionNumero todavía no fue incrementado.
     // Correcciones (pedido recepcionado): ya se incrementa al guardar la corrección.

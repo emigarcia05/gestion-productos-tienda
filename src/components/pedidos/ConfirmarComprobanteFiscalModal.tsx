@@ -13,8 +13,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /**
    * Selección del operador:
-   * - `true`  → "SI" → la compra genera comprobante fiscal → "TIPO COMPROBANTE" = Factura.
-   * - `false` → "NO" → la compra NO genera comprobante fiscal → "TIPO COMPROBANTE" = Comprobante_Compra.
+   * - `true`  → "SI" → comprobante fiscal → columna Excel **FACTURA**.
+   * - `false` → "NO" → sin fiscal → columna Excel **Comprobante_Compra**.
    * El componente NO cierra el modal por sí mismo; deja que el padre lo haga
    * (así puede invocar la Action y solo cerrar si todo terminó OK).
    */
@@ -31,7 +31,7 @@ interface Props {
  * `proveedor.iva === PREGUNTA` antes de exportar el Excel de recepción.
  *
  * Para `proveedor.iva === SIEMPRE` o `NUNCA` el modal no aparece y el
- * mapeo `iva → tipoComprobante` (Factura | Comprobante_Compra) se aplica
+ * mapeo `iva → tipoComprobante` (**FACTURA** | Comprobante_Compra en Excel) se aplica
  * automáticamente en el servicio (`resolverTipoComprobantePorIva`).
  */
 export default function ConfirmarComprobanteFiscalModal({
@@ -71,7 +71,7 @@ export default function ConfirmarComprobanteFiscalModal({
         <p className="mt-2 text-xs text-muted-foreground">
           La respuesta determina el TIPO COMPROBANTE del Excel:
           <br />
-          <span className="font-medium">SI</span> → Factura ·{" "}
+          <span className="font-medium">SI</span> → FACTURA ·{" "}
           <span className="font-medium">NO</span> → Comprobante_Compra
         </p>
       </AppModal>

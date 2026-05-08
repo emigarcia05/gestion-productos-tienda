@@ -245,18 +245,18 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
   | `proveedor.iva` | `decisionFiscal` (UI) | TIPO COMPROBANTE (Excel) |
   |---|---|---|
-  | `SIEMPRE` | ignorado | `Factura` |
+  | `SIEMPRE` | ignorado | `FACTURA` |
   | `NUNCA` | ignorado | `Comprobante_Compra` |
-  | `PREGUNTA` | `true` (SI) | `Factura` |
+  | `PREGUNTA` | `true` (SI) | `FACTURA` |
   | `PREGUNTA` | `false` (NO) | `Comprobante_Compra` |
   | `PREGUNTA` | `null` / `undefined` | **error** `REQUIERE_DECISION_FISCAL` |
 
 - **Tipos**:
-  - `TipoComprobanteRecepcion = "Factura" | "Comprobante_Compra"` exportado desde el servicio. `RecepcionPedidoExcelRow["TIPO COMPROBANTE"]` usa esta unión (antes era literal único `"Comprobante_Compra"`).
+  - `TipoComprobanteRecepcion = "FACTURA" | "Comprobante_Compra"` exportado desde el servicio (**FACTURA** en mayúsculas para coincidir con importación DUX). `RecepcionPedidoExcelRow["TIPO COMPROBANTE"]` usa esta unión.
   - `ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL"` — constante exportada sólo desde **`exportRecepcionPedidoExcel.service.ts`**. Un archivo **`"use server"`** (p. ej. `actions/exportRecepcionPedidoExcel.ts`) **no** puede `export`-ar strings, objetos ni funciones síncronas: sólo **async functions** como Server Actions; re-exportar esa constante provocaba `invalid-use-server-value` en runtime.
 - **Servicio** (`exportRecepcionPedidoExcel.service.ts`):
   - El `findUnique` de `pedidoHistoria` incluye `proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } }`.
-  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }` sin tocar la API DUX (`getSiguienteComprobanteDuxCompra` solo se invoca después de resolver el tipo).
+  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }` sin tocar la API DUX. Tras resolver **`FACTURA`** vs **`Comprobante_Compra`** (literal en Excel), llama a `getSiguienteComprobanteDuxCompra` con **`tipoComp: "FACTURA"`** o **`"COMPROBANTE_COMPRA"`** según el caso: DUX filtra por `tipo_comp` y toma el **mayor** `comprobante` sólo entre ítems de ese tipo (correlativos independientes por tipo).
 - **Action** (`actions/exportRecepcionPedidoExcel.ts`):
   - Schema Zod agrega `decisionFiscal: z.boolean().optional()` (cliente envía `boolean` o no envía nada).
   - La Action propaga `decisionFiscal` al servicio sin reinterpretar la regla. Si el servicio devuelve el marker `REQUIERE_DECISION_FISCAL`, viaja hasta el cliente como `error` para que el modal SI/NO se abra.
@@ -867,18 +867,19 @@ Objetivo: resolver el “próximo comprobante” para la integración con DUX v�
 
 Contrato (SSOT de lógica de negocio + integración externa):
 
-1. `getSiguienteComprobanteDuxCompra({ fechaDesde, fechaHasta, idEmpresa })`
+1. `getSiguienteComprobanteDuxCompra({ fechaDesde, fechaHasta, idEmpresa, tipoComp? })`
    - Entrada (validada con Zod):
      - `fechaDesde`: `string` formato `DD/MM/YYYY`
      - `fechaHasta`: `string` formato `DD/MM/YYYY`
      - `idEmpresa`: `number` entero positivo
+     - `tipoComp` (opcional): `"FACTURA"` | `"COMPROBANTE_COMPRA"`. Si se informa, sólo participan en el máximo las filas cuyo `tipo_comp`/`tipo_comprobante` (normalizado mayúsculas y espacios → `_`) coincide. **Recepción pedidos / Excel** siempre envía este campo acorde a la columna **TIPO COMPROBANTE**. Si se omite, el comportamiento es el histórico (máximo entre todos los tipos en el rango).
    - Proceso:
      - Lee de DB las sucursales y resuelve `global_sucursales.id_dux` (columna `Sucursal.idDux` en Prisma).
     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=10`.
      - Entre cada petición a `/compras` y la siguiente espera **al menos 5 s** (DUX responde `429` si se supera la frecuencia). Intervalo configurable con `DUX_COMPRAS_MIN_INTERVAL_MS` (ms; por defecto `5000`; `0` desactiva la espera solo para entornos de prueba).
      - Si tras recorrer sucursales no hay comprobantes válidos y se usa el fallback sin `idSucursal`, también espera ese intervalo **después** de la última consulta por sucursal.
-    - Del set resultante toma el mayor `comprobante` numérico y calcula `siguienteComprobante = maxComprobante + 5` usando `BigInt`.
+    - Del set resultante toma el mayor `comprobante` numérico (únicamente entre ítems que cumplan `tipoComp` si vino informado) y calcula `siguienteComprobante = maxComprobante + 5` usando `BigInt`.
    - Salida:
      - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
    - Errores:
