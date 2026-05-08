@@ -368,14 +368,10 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <SyncStatusIndicator />
           <ImportStatusIndicator />
         </div>
-        <div className="flex justify-center pt-2" aria-hidden>
-          <div className="h-px w-[80%] bg-sidebar-foreground/70" />
-        </div>
-        <div className="flex flex-col gap-3 pt-3 w-full min-w-0">
-          <SidebarMainAppArea esEditor={rol === "editor"} />
-        </div>
-        <div className="flex justify-center pt-2" aria-hidden>
-          <div className="h-px w-[80%] bg-sidebar-foreground/70" />
+        <div className="flex w-full min-w-0 flex-col pt-2">
+          <div className="mx-auto h-px w-[80%] shrink-0 bg-sidebar-foreground/70" aria-hidden />
+          <SidebarMainAppArea esEditor={rol === "editor"} className="pt-3" />
+          <div className="mx-auto mt-2 h-px w-[80%] shrink-0 bg-sidebar-foreground/70" aria-hidden />
         </div>
         <div className="w-full min-w-0 pt-3">
           <div className="rounded-lg p-2">

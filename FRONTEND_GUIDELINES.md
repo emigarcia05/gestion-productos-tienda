@@ -74,7 +74,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → separador superior (`pt-2`) → bloque **nombre del área + logo** (`SidebarMainAppArea`) → separador inferior (`pt-2`, mismo estilo del superior: `h-px w-[80%] bg-sidebar-foreground/70`) → contenedor propio de **`SelectorRol` `compact`** (`w-full min-w-0 pt-3` + wrapper `rounded-lg p-2`, sin borde ni fondo), evitando mezclar ambos en el mismo contenedor visual.
+    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → un solo contenedor `flex flex-col pt-2` con **regla superior** (`mx-auto h-px w-[80%] bg-sidebar-foreground/70`) + **`SidebarMainAppArea`** (`className="pt-3"` en sidebar) + **regla inferior** (`mx-auto mt-2 h-px w-[80%]`, mismo estilo) → contenedor propio de **`SelectorRol` `compact`** (`w-full min-w-0 pt-3` + wrapper `rounded-lg p-2`, sin borde ni fondo), evitando mezclar ambos en el mismo contenedor visual.
     - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa. `SyncStatusIndicator` en **reposo**: textos según **área** (`getMainAppAreaIdFromPathname`): **Gestión Productos** y **Estadísticas Productos** → **`SINCRONIZACION PROD.`** / hover **`SINCRONIZAR PROD.`**; **Finanzas** → **`SINCRONIZACION COMPRAS`** / hover **`SINCRONIZAR COMPRAS`**. Línea 2 **`Últ. Act.: Hace …`** (regla de tiempo: bloques de **15 min.** bajo 1 h; luego horas/días). En **sync lista precios** (polling API): **`SINCRONIZANDO PROD.`** + detalle X de Y. En **sync compras** (Finanzas): **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (sucursales ya procesadas / total con `id_dux`), vía polling `GET /api/sync-compras-proveedor-dux/status` y hook **`useSyncComprasProveedorDuxStatusPoll`** (mientras corre la action).
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
@@ -701,7 +701,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 
 En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**, montado en **`Sidebar`** debajo del bloque **nombre del área + logo** (bloque inferior `mt-auto`, no en la cabecera).
 
-- **Contenedor dedicado**: el `SelectorRol` se renderiza dentro de su propio wrapper (`rounded-lg border border-sidebar-border/60 bg-sidebar-accent/10 p-2`) separado del bloque `SidebarMainAppArea` para mantener independencia visual/estructural.
+- **Contenedor dedicado**: el `SelectorRol` se renderiza dentro de su propio wrapper (`rounded-lg p-2`, sin borde ni fondo) separado del bloque `SidebarMainAppArea` para mantener independencia visual/estructural.
 
 - **Formato**: ícono `User` (`aria-hidden`) + texto **`SIMPLE` / `EDITOR`** (según `rolActual`).
 - **Interacción**
@@ -921,7 +921,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-06): **`/finanzas/balance/gastos/catalogo`** — se retira la columna fija **PROVEEDORES** del layout Finder; la gestión pasa a botón de header **PROVEEDORES** que abre modal dedicado (lista + filtro por nombre + botón **Agregar Proveedor** para editor).*
 
-*Última actualización (2026-05-06): **`GASTO FINAL`** (catálogo gastos) — tarjetas muestran **NOMBRE DE GASTO** + separador y orden fijo de datos (`SUCURSAL`, `PROVEEDOR`, `DIA DEVENGADO`, `PLAZO PAGO`, `TIPO`); acciones **Editar/Eliminar** en overlay centrado al hover con botones ícono compactos.*
+*Última actualización (2026-05-06): **`GASTO FINAL`** (catálogo gastos) — tarjetas muestran **NOMBRE DE GASTO** + separador y orden fijo de datos (`SUCURSAL`, `PROVEEDOR`, `DIA DEVENGADO`, `PLAZO PAGO`, `IVA CRÉDITO`, `TIPO`); acciones **Editar/Eliminar** en overlay centrado al hover con botones ícono compactos.*
 
 *Última actualización (2026-05-06): modal **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` — la acción por fila usa botón ícono **Editar** (Pencil) con formato de botón de acción compacto, en lugar de texto.*
 
@@ -942,6 +942,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-05-07): `/finanzas/balance/mensual` — se compacta la subcolumna de acciones por celda de `30%` a `25%` (`grid-cols-[25%_75%]`) para reducir la separación visual entre botones cuando hay dos acciones.*
 
 *Última actualización (2026-05-07): **Catálogo Gastos — Gasto Final** — el control persistido como `fin_bal_gasto_final.iva` se etiqueta en modal **GENERA IVA CRÉDITO** y se muestra debajo de **PLAZO DE PAGO**.*
+
+*Última actualización (2026-05-08): **Catálogo Gastos — Gasto Final** (columna, tarjeta `FilaCatalogo`) — línea **IVA CRÉDITO:** con texto **`SIEMPRE` / `NUNCA` / `PREGUNTA`** (mismo enum que el modal), ubicada entre **PLAZO PAGO** y **TIPO**.*
 
 *Última actualización (2026-05-07): **Auditoría refactor (utilidades + shadcn)** — `px-8`/`px-6` sin triplicar `px-*`; `DialogHeader`/`DialogFooter` con una sola regla por eje; grillas sin `grid-cols-1` + `grid-cols-*` duplicados; `AppModal` `size` sin `max-w-*` redundante; `ModalMicroLabel` en `CrearEditarFinBalGastoFinalModal`; `TableEmptyState` en catálogo gastos; `PedidoHistoriaDetalleModal` y modales instructivos alineados a §2 y §5.*
 

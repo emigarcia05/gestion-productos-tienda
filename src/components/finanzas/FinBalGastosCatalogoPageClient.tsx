@@ -457,6 +457,7 @@ export default function FinBalGastosCatalogoPageClient({
                     gastoMensual: a.gastoMensual,
                     diaDevengado: a.diaDevengado,
                     vencimiento: a.vencimiento,
+                    ivaCredito: a.iva,
                     comentarios: a.comentarios,
                   }}
                   selected={false}
@@ -780,6 +781,8 @@ interface FilaCatalogoGastoFinalDetalle {
   diaDevengado: number | null;
   /** Días hasta el pago (`fin_bal_gasto_final.plazo_pago_dias`). */
   vencimiento: number | null;
+  /** Misma política que **GENERA IVA CRÉDITO** en el modal (`fin_bal_gasto_final.iva`). */
+  ivaCredito: "SIEMPRE" | "NUNCA" | "PREGUNTA";
   comentarios: string | null;
 }
 
@@ -854,6 +857,10 @@ function FilaCatalogo({
               <span className="font-normal text-foreground">
                 {gastoFinalDetalle.vencimiento == null ? "-" : `${gastoFinalDetalle.vencimiento} DIAS`}
               </span>
+            </div>
+            <div className="truncate text-[11px] leading-tight text-foreground">
+              <span className="font-semibold uppercase tracking-wide text-foreground">IVA CRÉDITO: </span>
+              <span className="font-normal text-foreground">{gastoFinalDetalle.ivaCredito}</span>
             </div>
             <div className="truncate text-[11px] leading-tight text-foreground">
               <span className="font-semibold uppercase tracking-wide text-foreground">TIPO: </span>

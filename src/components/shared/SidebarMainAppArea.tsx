@@ -66,6 +66,8 @@ const areaIcons: Record<MainAppAreaId, LucideIcon> = {
 };
 
 export interface SidebarMainAppAreaProps {
+  /** Clases en el contenedor del bloque área + logo (p. ej. espaciado respecto de reglas). */
+  className?: string;
   /** Dónde aplicar tokens de texto (sidebar vs modal). */
   labelContext?: AreaTitleContext;
   /** Mostrar logo clickeable (abre modal de áreas). */
@@ -81,6 +83,7 @@ export interface SidebarMainAppAreaProps {
 }
 
 export default function SidebarMainAppArea({
+  className,
   labelContext = "sidebar",
   showLogo = true,
   showLabel = true,
@@ -104,7 +107,7 @@ export default function SidebarMainAppArea({
 
   return (
     <>
-      <div className="flex flex-col items-center gap-2 w-full min-w-0">
+      <div className={cn("flex flex-col items-center gap-2 w-full min-w-0", className)}>
         {showLabel && showLogo ? (
           <div
             className="w-full min-w-0 shrink-0 px-1 text-center"
