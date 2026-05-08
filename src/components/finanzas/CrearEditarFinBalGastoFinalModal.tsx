@@ -17,7 +17,6 @@ import {
   crearFinBalGastoFinalAction,
   editarFinBalGastoFinalAction,
 } from "@/actions/finBalGastosCatalogo";
-import { diaDevengadoFinBalDesdeCalendarioArgentina } from "@/lib/fechaArgentina";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 
@@ -67,10 +66,7 @@ interface Props {
   vencimientoInicial?: number | null;
   /** En edición: comentarios persistidos (`fin_bal_gasto_final.comentarios`). */
   comentariosInicial?: string | null;
-  /**
-   * En edición: valor persistido de **GENERA IVA CRÉDITO** (`fin_bal_gasto_final.iva`).
-   * En alta el modal arranca en `PREGUNTA` (mismo default que la columna en BD).
-   */
+  /** En edición: valor persistido de **GENERA IVA CRÉDITO** (`fin_bal_gasto_final.iva`). En alta no hay valor hasta que el usuario elija. */
   ivaInicial?: IvaValue;
   onSuccess?: () => void;
 }
@@ -95,7 +91,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   diaDevengadoInicial = null,
   vencimientoInicial = null,
   comentariosInicial = null,
-  ivaInicial = "PREGUNTA",
+  ivaInicial,
   onSuccess,
 }: Props) {
   const diasOpciones = useMemo(() => Array.from({ length: 28 }, (_, i) => i + 1), []);
@@ -104,16 +100,13 @@ export default function CrearEditarFinBalGastoFinalModal({
 
   const [sucursalId, setSucursalId] = useState("");
   const [proveedorId, setProveedorId] = useState("");
-  const [gastoMensual, setGastoMensual] = useState(false);
-  const [diaDevengado, setDiaDevengado] = useState(1);
+  /** `null` en alta = el usuario aún no eligió tipo; en edición siempre `boolean` tras hidratar. */
+  const [gastoMensual, setGastoMensual] = useState<boolean | null>(null);
+  const [diaDevengado, setDiaDevengado] = useState<number | null>(null);
   const [comentarios, setComentarios] = useState("");
-  const [vencimiento, setVencimiento] = useState(30);
-  /**
-   * **GENERA IVA CRÉDITO** (UI). Valores `SIEMPRE` / `NUNCA` / `PREGUNTA`;
-   * persiste en `fin_bal_gasto_final.iva`. Default `PREGUNTA` en alta;
-   * en edición se precarga con `ivaInicial`.
-   */
-  const [iva, setIva] = useState<IvaValue>("PREGUNTA");
+  const [vencimiento, setVencimiento] = useState<number | null>(null);
+  /** En alta: `""` hasta elegir opción; en edición siempre `IvaValue` tras hidratar. */
+  const [iva, setIva] = useState<IvaValue | "">("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -121,22 +114,26 @@ export default function CrearEditarFinBalGastoFinalModal({
     const esEdicion = modo === "editar";
     setSucursalId(esEdicion ? sucursalIdInicial : "");
     setProveedorId(esEdicion ? proveedorIdInicial : "");
-    const mensualInicial = esEdicion ? gastoMensualInicial : false;
-    setGastoMensual(mensualInicial);
-    setDiaDevengado(
-      esEdicion && diaDevengadoInicial != null
-        ? diaDevengadoInicial
-        : diaDevengadoFinBalDesdeCalendarioArgentina()
-    );
-    setVencimiento(
-      esEdicion && vencimientoInicial != null
-        ? normalizarPlazoPago(vencimientoInicial)
-        : 30
-    );
+    if (esEdicion) {
+      setGastoMensual(gastoMensualInicial);
+      setDiaDevengado(
+        gastoMensualInicial && diaDevengadoInicial != null ? diaDevengadoInicial : null
+      );
+      setVencimiento(
+        gastoMensualInicial && vencimientoInicial != null
+          ? normalizarPlazoPago(vencimientoInicial)
+          : null
+      );
+      setIva(ivaInicial ?? "PREGUNTA");
+    } else {
+      setGastoMensual(null);
+      setDiaDevengado(null);
+      setVencimiento(null);
+      setIva("");
+    }
     setComentarios(
       esEdicion ? comentariosNormalizadosParaEstado(comentariosInicial) : ""
     );
-    setIva(esEdicion ? ivaInicial : "PREGUNTA");
   }, [
     open,
     modo,
@@ -148,18 +145,6 @@ export default function CrearEditarFinBalGastoFinalModal({
     comentariosInicial,
     ivaInicial,
   ]);
-
-  /** En alta, al cambiar entre mensual/eventual, se normaliza la UI sin persistir vacíos inválidos. */
-  useEffect(() => {
-    if (!open || modo !== "crear") return;
-    if (gastoMensual) {
-      setDiaDevengado(1);
-      setVencimiento((prev) => normalizarPlazoPago(prev));
-      return;
-    }
-    setDiaDevengado(diaDevengadoFinBalDesdeCalendarioArgentina());
-    setVencimiento((prev) => normalizarPlazoPago(prev));
-  }, [gastoMensual, open, modo]);
 
   const hermanosMismaProveedorSucursal = useMemo(() => {
     if (!proveedorId || !sucursalId) return [];
@@ -184,14 +169,25 @@ export default function CrearEditarFinBalGastoFinalModal({
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
     const comIni = comentariosNormalizadosParaEstado(comentariosInicial);
+    const diaIni =
+      gastoMensualInicial && diaDevengadoInicial != null ? diaDevengadoInicial : null;
+    const venIni =
+      gastoMensualInicial && vencimientoInicial != null
+        ? normalizarPlazoPago(vencimientoInicial)
+        : null;
+    const ivaRef = ivaInicial ?? "PREGUNTA";
+    /** Gasto eventual: día y plazo bloqueados en UI y siempre `null` al persistir — no entran al cómputo de cambios salvo transición de/ hacia mensual. */
+    const cambioDiaOPlazo =
+      gastoMensual === true && gastoMensualInicial === true
+        ? diaDevengado !== diaIni || vencimiento !== venIni
+        : false;
     return (
       proveedorId !== proveedorIdInicial ||
       sucursalId !== sucursalIdInicial ||
       gastoMensual !== gastoMensualInicial ||
-      diaDevengado !== (diaDevengadoInicial ?? diaDevengado) ||
-      vencimiento !== (vencimientoInicial ?? vencimiento) ||
+      cambioDiaOPlazo ||
       comentarios !== comIni ||
-      iva !== ivaInicial
+      iva !== ivaRef
     );
   }, [
     modo,
@@ -214,8 +210,11 @@ export default function CrearEditarFinBalGastoFinalModal({
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
     if (!sucursalId || !proveedorId) return true;
-    if (gastoMensual && (!Number.isInteger(vencimiento) || vencimiento < 0 || vencimiento > 30)) {
-      return true;
+    if (iva === "") return true;
+    if (gastoMensual === null) return true;
+    if (gastoMensual === true) {
+      if (diaDevengado == null || vencimiento == null) return true;
+      if (!Number.isInteger(vencimiento) || vencimiento < 0 || vencimiento > 30) return true;
     }
     if (modo === "editar" && (!id || !hasChanges)) return true;
     if (comentarioChocaConOtro) return true;
@@ -229,7 +228,9 @@ export default function CrearEditarFinBalGastoFinalModal({
     hasChanges,
     comentarioChocaConOtro,
     gastoMensual,
+    diaDevengado,
     vencimiento,
+    iva,
   ]);
 
   useEffect(() => {
@@ -253,11 +254,11 @@ export default function CrearEditarFinBalGastoFinalModal({
           gastoId,
           proveedorId,
           sucursalId,
-          gastoMensual,
+          gastoMensual: gastoMensual as boolean,
           diaDevengado: gastoMensual ? diaDevengado : null,
           vencimiento: gastoMensual ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
-          iva,
+          iva: iva as IvaValue,
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
@@ -269,11 +270,11 @@ export default function CrearEditarFinBalGastoFinalModal({
           id: id!,
           proveedorId,
           sucursalId,
-          gastoMensual,
+          gastoMensual: gastoMensual as boolean,
           diaDevengado: gastoMensual ? diaDevengado : null,
           vencimiento: gastoMensual ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
-          iva,
+          iva: iva as IvaValue,
         });
         if (!r.ok) {
           toast.error(r.error ?? "No se pudo guardar.");
@@ -328,12 +329,18 @@ export default function CrearEditarFinBalGastoFinalModal({
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>TIPO DE GASTO</ModalMicroLabel>
             <Select
-              value={gastoMensual ? "mensual" : "eventual"}
-              onValueChange={(v) => setGastoMensual(v === "mensual")}
+              value={
+                gastoMensual === null ? undefined : gastoMensual ? "mensual" : "eventual"
+              }
+              onValueChange={(v) => {
+                setGastoMensual(v === "mensual");
+                setDiaDevengado(null);
+                setVencimiento(null);
+              }}
               disabled={saving}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue />
+                <SelectValue placeholder="SELECCIONAR TIPO DE GASTO" />
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 <SelectItem value="mensual">MENSUAL</SelectItem>
@@ -385,12 +392,22 @@ export default function CrearEditarFinBalGastoFinalModal({
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>DÍA DEVENGADO</ModalMicroLabel>
             <Select
-              value={gastoMensual ? String(diaDevengado) : undefined}
+              value={
+                gastoMensual === true && diaDevengado != null ? String(diaDevengado) : undefined
+              }
               onValueChange={(v) => setDiaDevengado(Number(v))}
-              disabled={saving || !gastoMensual}
+              disabled={saving || gastoMensual !== true}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder={gastoMensual ? "SELECCIONAR DÍA" : "VACÍO (TIPO EVENTUAL)"} />
+                <SelectValue
+                  placeholder={
+                    gastoMensual === true
+                      ? "SELECCIONAR DÍA"
+                      : gastoMensual === false
+                        ? "NO APLICA (EVENTUAL)"
+                        : "SELECCIONAR TIPO DE GASTO PRIMERO"
+                  }
+                />
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {diasOpciones.map((d) => (
@@ -405,14 +422,22 @@ export default function CrearEditarFinBalGastoFinalModal({
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>PLAZO DE PAGO</ModalMicroLabel>
             <Select
-              value={gastoMensual ? String(vencimiento) : undefined}
+              value={
+                gastoMensual === true && vencimiento != null ? String(vencimiento) : undefined
+              }
               onValueChange={(v) => setVencimiento(normalizarPlazoPago(Number(v)))}
-              disabled={saving || !gastoMensual}
+              disabled={saving || gastoMensual !== true}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="VACÍO (TIPO EVENTUAL)">
-                  {gastoMensual ? String(vencimiento) : "VACÍO (TIPO EVENTUAL)"}
-                </SelectValue>
+                <SelectValue
+                  placeholder={
+                    gastoMensual === true
+                      ? "SELECCIONAR PLAZO (DÍAS)"
+                      : gastoMensual === false
+                        ? "NO APLICA (EVENTUAL)"
+                        : "SELECCIONAR TIPO DE GASTO PRIMERO"
+                  }
+                />
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {plazoPagoOpciones.map((d) => (
@@ -424,15 +449,22 @@ export default function CrearEditarFinBalGastoFinalModal({
             </Select>
           </label>
 
+          {gastoMensual === false ? (
+            <p className="text-xs text-muted-foreground -mt-1">
+              Gasto eventual: DÍA DEVENGADO y PLAZO DE PAGO quedan exceptuados (sin carga obligatoria; se persisten
+              vacíos).
+            </p>
+          ) : null}
+
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>GENERA IVA CRÉDITO</ModalMicroLabel>
             <Select
-              value={iva}
+              value={iva === "" ? undefined : iva}
               onValueChange={(v) => setIva(v as IvaValue)}
               disabled={saving}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="SELECCIONAR" />
+                <SelectValue placeholder="SELECCIONAR IVA CRÉDITO" />
               </SelectTrigger>
               <SelectContent
                 className="select-content-filtro"
