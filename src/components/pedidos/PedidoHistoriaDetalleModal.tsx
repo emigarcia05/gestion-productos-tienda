@@ -45,9 +45,15 @@ import {
 
 const INSTRUCTOR_DELAY_MS = 1500;
 
-/** Texto plano de un error desconocido (throws de Server Actions / runtime). */
+/** Texto plano de un error desconocido (throws de Server Actions / runtime). Incluye `digest` si React/Next lo adjuntan. */
 function mensajeErrorDesconocido(e: unknown): string {
-  if (e instanceof Error) return e.message;
+  if (e instanceof Error) {
+    const digest =
+      "digest" in e && typeof (e as { digest?: unknown }).digest === "string"
+        ? (e as { digest: string }).digest
+        : null;
+    return digest ? `${e.message}\n\ndigest: ${digest}` : e.message;
+  }
   if (typeof e === "string") return e;
   try {
     return JSON.stringify(e);

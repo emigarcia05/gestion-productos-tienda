@@ -98,8 +98,17 @@ export interface PedidoHistoriaItemDetalle {
 
 export interface PedidoHistoriaDetalle {
   id: string;
-  generadoAt: Date;
-  registradoAt: Date | null;
+  /**
+   * En el servicio es `Date` (Prisma). Tras `getPedidoHistoriaDetalleAction`
+   * debe viajar como **ISO string** para evitar fallos de serialización del
+   * runtime de Server Actions (en producción el cliente podía ver solo el
+   * error genérico de "Server Components render").
+   */
+  generadoAt: Date | string;
+  /**
+   * Misma regla que `generadoAt`: en wire, ISO string o `null`.
+   */
+  registradoAt: Date | string | null;
   total: number | null;
   estado: PedidoHistoriaEstado;
   proveedorId: string;
@@ -113,6 +122,26 @@ export interface PedidoHistoriaDetalle {
   sucursalId: string;
   sucursalNombre: string;
   items: PedidoHistoriaItemDetalle[];
+}
+
+/**
+ * Convierte fechas Prisma a ISO antes de devolver el detalle en una Server Action.
+ * Evita rechazos del transporte RSC/Actions con mensaje opaco en producción.
+ */
+export function serializarPedidoHistoriaDetalleParaCliente(
+  d: PedidoHistoriaDetalle
+): PedidoHistoriaDetalle {
+  return {
+    ...d,
+    generadoAt:
+      d.generadoAt instanceof Date ? d.generadoAt.toISOString() : d.generadoAt,
+    registradoAt:
+      d.registradoAt == null
+        ? null
+        : d.registradoAt instanceof Date
+          ? d.registradoAt.toISOString()
+          : d.registradoAt,
+  };
 }
 
 function normalizeCodTienda(value: string | null | undefined): string {

@@ -108,7 +108,12 @@ export async function getPedidoHistoriaDetalleAction(
     });
 
     if (!res.success) return { ok: false, error: res.error };
-    return { ok: true, data: res.data };
+    return {
+      ok: true,
+      data: pedidosHistoriaService.serializarPedidoHistoriaDetalleParaCliente(
+        res.data
+      ),
+    };
   });
 }
 
