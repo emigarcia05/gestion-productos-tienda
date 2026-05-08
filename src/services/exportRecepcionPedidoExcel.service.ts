@@ -8,6 +8,15 @@ import {
   formatDdMmHhMmGuionesBajosArchivoArgentina,
 } from "@/lib/fechaArgentina";
 
+/** Prefijo de log uniforme. Loggear en el catch evita que los errores queden
+ *  opacos detrás de "An error occurred in the Server Components render…". */
+const LOG_TAG = "[exportRecepcionPedidoExcel]";
+
+function logServiceError(scope: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`${LOG_TAG}[${scope}]`, msg);
+}
+
 export const fechaFacturaIsoSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida. Formato esperado: YYYY-MM-DD");
@@ -240,6 +249,22 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
 
     if (!pedido) return { success: false, error: "Pedido no encontrado." };
 
+    // Defensa de shape: las FK son NOT NULL en BD, pero protegemos el acceso
+    // a `pedido.proveedor.iva` ante un cliente Prisma desactualizado o un
+    // dato corrupto. Sin este check, antes saltaba como TypeError ("Cannot
+    // read properties of undefined (reading 'iva')") atrapado por el catch
+    // externo con un mensaje confuso.
+    if (!pedido.proveedor || !pedido.sucursal) {
+      logServiceError(
+        "getExportRecepcionPedidoExcelPayload",
+        `relaciones incompletas: proveedor=${!!pedido.proveedor} sucursal=${!!pedido.sucursal} pedidoId=${pedidoHistoriaId}`
+      );
+      return {
+        success: false,
+        error: "El pedido tiene datos incompletos (proveedor/sucursal).",
+      };
+    }
+
     const tipoComprobante = resolverTipoComprobantePorIva(
       pedido.proveedor.iva,
       decisionFiscal
@@ -352,6 +377,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       },
     };
   } catch (e) {
+    logServiceError("getExportRecepcionPedidoExcelPayload", e);
     const msg = e instanceof Error ? e.message : "Error al preparar el Excel de recepción.";
     return { success: false, error: msg };
   }

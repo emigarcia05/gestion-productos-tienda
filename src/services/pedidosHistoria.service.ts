@@ -10,6 +10,18 @@ import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/paginatio
 
 const COD_TIENDA_FALLBACK = "1503";
 
+/**
+ * Prefijo de log uniforme para todo el módulo de historial de pedidos.
+ * Los catch del servicio loggean con `[pedidoHistoria][<fn>]` para que
+ * sea grepable contra digests en Vercel Function Logs.
+ */
+const LOG_TAG = "[pedidoHistoria]";
+
+function logServiceError(scope: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`${LOG_TAG}[${scope}]`, msg);
+}
+
 /** Retención por estado (días): purga automática en cada escritura del historial. */
 const DIAS_RETENCION_PEDIDOS_PENDIENTE = 4;
 const DIAS_RETENCION_PEDIDOS_RECEPCIONADO = 30;
@@ -176,6 +188,7 @@ export async function crearPedidoHistoriaSnapshot(params: {
       return { success: true, data: { id: pedidoHistoria.id } };
     });
   } catch (e) {
+    logServiceError("crearPedidoHistoriaSnapshot", e);
     const msg = e instanceof Error ? e.message : "Error al crear el snapshot del pedido.";
     return { success: false, error: msg };
   }
@@ -208,6 +221,23 @@ export async function getPedidoHistoriaDetalle(params: {
     });
 
     if (!pedido) return { success: false, error: "Pedido no encontrado." };
+
+    // Defensa de shape: las FK son NOT NULL en BD, pero un cliente Prisma
+    // generado contra un schema desactualizado o una corrupción podría
+    // devolver `proveedor`/`sucursal` undefined. Antes esto producía
+    // `TypeError: Cannot read properties of undefined (reading 'nombre')`
+    // que era atrapado por el try/catch externo, pero el mensaje resultante
+    // era confuso y opaco.
+    if (!pedido.proveedor || !pedido.sucursal) {
+      logServiceError(
+        "getPedidoHistoriaDetalle",
+        `relaciones incompletas para pedido ${pedido.id}: proveedor=${!!pedido.proveedor} sucursal=${!!pedido.sucursal}`
+      );
+      return {
+        success: false,
+        error: "El pedido tiene datos incompletos (proveedor/sucursal).",
+      };
+    }
 
     const codTiendaSet = Array.from(new Set(pedido.items.map((i) => i.codTienda)));
     const descRows = await prisma.listaPrecioTienda.findMany({
@@ -248,6 +278,7 @@ export async function getPedidoHistoriaDetalle(params: {
       },
     };
   } catch (e) {
+    logServiceError("getPedidoHistoriaDetalle", e);
     const msg = e instanceof Error ? e.message : "Error al leer el detalle del pedido.";
     return { success: false, error: msg };
   }
@@ -344,8 +375,11 @@ export async function listarPedidosHistoria(params: {
         items: rows.map((r) => ({
           id: r.id,
           generadoAt: r.generadoAt,
-          proveedorNombre: r.proveedor.nombre,
-          sucursalNombre: r.sucursal.nombre,
+          // Defensa de shape: normalmente las FK garantizan ambos, pero
+          // ante una corrupción de datos preferimos mostrar "—" antes que
+          // tirar TypeError y romper el render del listado.
+          proveedorNombre: r.proveedor?.nombre ?? "—",
+          sucursalNombre: r.sucursal?.nombre ?? "—",
           estado: normalizarEstadoPedidoHistoria(r.estado),
           registradoAt: r.registradoAt,
         })),
@@ -355,6 +389,7 @@ export async function listarPedidosHistoria(params: {
       },
     };
   } catch (e) {
+    logServiceError("listarPedidosHistoria", e);
     const msg = e instanceof Error ? e.message : "Error al listar el historial de pedidos.";
     return { success: false, error: msg };
   }
@@ -398,6 +433,7 @@ export async function agregarPedidoHistoriaItem(params: {
 
     return { success: true, data: { idItem: idItem.id } };
   } catch (e) {
+    logServiceError("agregarPedidoHistoriaItem", e);
     const msg = e instanceof Error ? e.message : "Error al agregar el producto al pedido.";
     return { success: false, error: msg };
   }
@@ -432,6 +468,7 @@ export async function actualizarPedidoHistoriaItemCantRecibida(params: {
 
     return { success: true, data: undefined };
   } catch (e) {
+    logServiceError("actualizarPedidoHistoriaItemCantRecibida", e);
     const msg = e instanceof Error ? e.message : "Error al actualizar la cantidad recibida.";
     return { success: false, error: msg };
   }
@@ -531,6 +568,7 @@ export async function guardarRecepcionPedidoHistoria(params: {
 
     return { success: true, data: undefined };
   } catch (e) {
+    logServiceError("guardarRecepcionPedidoHistoria", e);
     const msg =
       e instanceof Error ? e.message : "Error al guardar la recepción del pedido.";
     return { success: false, error: msg };
@@ -562,6 +600,7 @@ export async function marcarPedidoHistoriaRegistrado(params: {
     });
     return { success: true, data: undefined };
   } catch (e) {
+    logServiceError("marcarPedidoHistoriaRegistrado", e);
     const msg = e instanceof Error ? e.message : "Error al marcar el pedido como registrado.";
     return { success: false, error: msg };
   }
@@ -594,6 +633,7 @@ export async function reabrirPedidoHistoriaRecepcion(params: {
     });
     return { success: true, data: undefined };
   } catch (e) {
+    logServiceError("reabrirPedidoHistoriaRecepcion", e);
     const msg = e instanceof Error ? e.message : "Error al reabrir la recepción del pedido.";
     return { success: false, error: msg };
   }
@@ -681,6 +721,17 @@ export async function getPedidoHistoriaPdfPayload(params: {
       };
     }
 
+    if (!pedido.proveedor || !pedido.sucursal) {
+      logServiceError(
+        "getPedidoHistoriaPdfPayload",
+        `relaciones incompletas para pedido ${id}: proveedor=${!!pedido.proveedor} sucursal=${!!pedido.sucursal}`
+      );
+      return {
+        success: false,
+        error: "El pedido tiene datos incompletos (proveedor/sucursal).",
+      };
+    }
+
     return {
       success: true,
       data: {
@@ -692,6 +743,7 @@ export async function getPedidoHistoriaPdfPayload(params: {
       },
     };
   } catch (e) {
+    logServiceError("getPedidoHistoriaPdfPayload", e);
     const msg = e instanceof Error ? e.message : "Error al armar el PDF del pedido.";
     return { success: false, error: msg };
   }
@@ -709,6 +761,7 @@ export async function eliminarPedidoHistoria(params: {
     await prisma.pedidoHistoria.delete({ where: { id } });
     return { success: true, data: undefined };
   } catch (e) {
+    logServiceError("eliminarPedidoHistoria", e);
     const msg = e instanceof Error ? e.message : "Error al borrar el pedido.";
     return { success: false, error: msg };
   }

@@ -290,6 +290,44 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **No** lanzar errores al cliente desde Actions; capturar y devolver `{ ok: false, error: string }`.
 - **Excepciones**: `sesion.ts` (activar/desactivar editor) puede devolver `{ ok, error? }` por conveniencia; el resto debe tender a `ActionResult` cuando haya flujo de éxito/error.
 
+### 1.5.1 Error Boundaries de Server Components y diagnóstico en producción
+
+Esta sección **es obligatoria** para todas las páginas RSC y existe para evitar la regresión documentada en `§5.12` (mensaje genérico *"An error occurred in the Server Components render…"* en `/pedidos/historial`).
+
+**A. Boundaries presentes (no eliminar)**
+
+- `src/app/global-error.tsx` — captura excepciones del **root layout** (incluye `getRol()` y cualquier provider) y de Server Components que no tengan un `error.tsx` más cercano. **Debe ser Client Component** y renderizar sus propios `<html>`/`<body>` (regla de Next.js 16). Loggea `digest` con prefijo `[global-error]` para grep en Vercel Function Logs.
+- `src/app/pedidos/historial/error.tsx` — boundary específico del módulo Recepción Pedido. Cualquier excepción durante el render del Server Component `pedidos/historial/page.tsx` o de sus hijos cae acá. Loggea con prefijo `[pedidos/historial][error-boundary]`.
+- **Regla**: cualquier nuevo módulo con un Server Component que lea de Prisma o sesión debe agregar un `error.tsx` en su carpeta antes de salir a producción. No alcanza con depender solo de `global-error.tsx`: queremos UI específica del módulo + un `digest` rastreable.
+
+**B. Hardening en Server Components (page.tsx)**
+
+- **Nunca** dejar una llamada que pueda lanzar (Prisma, `getRol`, fetch externo) fuera de `try/catch` en el cuerpo de un `async` page/layout. La excepción atraviesa el render y se vuelve el mensaje genérico opaco.
+- Patrón aplicado en `src/app/pedidos/historial/page.tsx`:
+  - Cada lectura de catálogo auxiliar (p. ej. `prisma.proveedor.findMany`) va en su propio `try/catch`; si falla, se cae a un fallback (`[]`) y se loggea con prefijo `[pedidos/historial][page]`.
+  - El servicio principal (`listarPedidosHistoria`) ya devuelve `ServiceResult`, pero igual se envuelve para capturar fallos del adapter (init de Neon, conn pool exhausted) que pueden lanzar fuera del `try/catch` interno.
+
+**C. Sesión defensiva (`getRol`)**
+
+- `getRol()` (`src/lib/sesion.ts`) atrapa cualquier excepción de iron-session (cookie corrupta, secret rotado, firma inválida) y devuelve `"simple"` con un log `[sesion][getRol]`. Antes este `throw` subía hasta el render del root layout y disparaba el error genérico en **toda** la app, sin pista útil.
+- Consecuencia: una sesión inválida ya no rompe el render; sólo redirige a inicio si la página exige un permiso. Si una nueva ruta necesita distinguir “sesión inválida” vs “sin permiso”, debe llamar a `getSesion()` directamente y manejar su propio `try/catch`.
+
+**D. Logging server-side (no opacar errores)**
+
+- **Toda Action y servicio del flujo crítico de pedidos/recepción** loggea en el `catch` con un prefijo identificable antes de devolver `ServiceResult/ActionResult`:
+  - Servicios: `[pedidoHistoria][<fn>]` y `[exportRecepcionPedidoExcel][<fn>]`.
+  - Actions: `[pedidoHistoria][action][<fn>]` y `[exportRecepcionPedidoExcel][action]`.
+- Los Action wrappers usan `ejecutarActionSegura(scope, fn)` (helper privado en `src/actions/pedidosHistoria.ts`): cualquier excepción que escape al body de la Action (ej. en `revalidatePath`, en `getRol`, en validaciones raras) se convierte en `{ ok: false, error: "Error inesperado al procesar la solicitud." }` y queda grepeada en logs como `[pedidoHistoria][action][<scope>]`. Replicar este patrón en cualquier Action nueva del módulo.
+- Para futuras IAs: cuando agreguen una nueva Action de pedidos/recepción, **es obligatorio**:
+  1. Envolverla en `ejecutarActionSegura("nombreCorto", async () => { ... })`.
+  2. Mantener `getRol()` + `puede(rol, PERMISOS.pedidos.acceso)` dentro del wrapper.
+  3. Loggear con el mismo prefijo en `console.error` si se agregan `try/catch` internos.
+
+**E. Defensa de shape contra relaciones nulas**
+
+- Aunque las FK estén declaradas `NOT NULL`, los servicios que leen relaciones con `select.proveedor.{...}` o `select.sucursal.{...}` **deben** validar que la relación no sea `undefined` antes de leer subcampos (p. ej. `pedido.proveedor.iva`). En `getPedidoHistoriaDetalle`, `getPedidoHistoriaPdfPayload` y `getExportRecepcionPedidoExcelPayload` se devuelve un `ServiceResult` con error explícito si la relación viene incompleta y se loggea con el prefijo del módulo. Esto evita que un cliente Prisma desactualizado (entre deploys) se traduzca en `TypeError` genéricos.
+- En listados (`listarPedidosHistoria`) se usa el patrón menos estricto `r.proveedor?.nombre ?? "—"` para no romper el render del listado completo si una fila está corrupta.
+
 ---
 
 ## 2. Esquemas de referencia
@@ -1155,3 +1193,59 @@ Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: b
 - `vinculos.ts` y `reposicion.ts`: una parte de la lógica vive en la Action (Prisma directa) — aceptable por simplicidad y volumen de SQL, pero candidato a extracción a servicio si crece.
 
 **Auditoría = COMPLETADA.** Cualquier nueva Server Action o cambio de gate debe documentarse aquí o en una sub-sección 5.x dedicada y respetar el patrón de §1.2.5.
+
+### 5.12 Triage y fix — error genérico de Server Components en Recepción Pedido (2026-05-08)
+
+**Síntoma reportado en producción:** al abrir el modal *Recepción Pedido* y operar sobre `/gestion-productos/pedidos/historial`, el cliente veía
+*"An error occurred in the Server Components render. The specific message is omitted in production builds... A digest property is included..."*
+Sin contenido y sin trazabilidad útil del lado del usuario.
+
+**Causa raíz (combinación):**
+
+1. **No existía ningún `error.tsx` en toda la app** (`src/app/**`) — confirmado vía `Glob`. En Next.js 16, una excepción no atrapada en cualquier Server Component se traduce literal a ese mensaje cuando no hay un boundary. Este fue el factor dominante: cualquier error transitorio se veía igual y opaco.
+2. **`src/app/pedidos/historial/page.tsx`** ejecutaba `prisma.proveedor.findMany(...)` y `pedidosHistoriaService.listarPedidosHistoria(...)` **sin `try/catch`** (el segundo devuelve `ServiceResult` pero el adapter Prisma puede lanzar fuera del catch interno cuando hay timeout / pool exhausted en serverless durante revalidaciones). `HistorialPedidosPageClient` llama a `router.refresh()` cada vez que se cierra el modal y cada Action hace `revalidatePath("/pedidos/historial")`, generando ráfagas de re-render del Server Component que aumentan la probabilidad de error transitorio.
+3. **`getRol()`** (`src/lib/sesion.ts`) lanzaba si la cookie estaba corrupta o firmada con un secret distinto. Como se usa en el root layout (`src/app/layout.tsx`) y en cada page RSC, una cookie inválida volaba la app entera con el mismo mensaje genérico.
+4. **Catches sin `console.error` en services/actions del flujo** dejaban el incidente sin rastro grepeable en Vercel Function Logs: el `digest` no podía emparejarse con un mensaje útil.
+
+**Fix aplicado:**
+
+- **Boundaries** (nuevos):
+  - `src/app/global-error.tsx` — captura errores del root layout (incluye `getRol()`); Client Component con `<html>`/`<body>` propios; loggea `digest` con prefijo `[global-error]`.
+  - `src/app/pedidos/historial/error.tsx` — boundary específico del módulo; UI con botones *Reintentar* / *Volver al inicio*; loggea con prefijo `[pedidos/historial][error-boundary]`.
+- **Page hardening** (`src/app/pedidos/historial/page.tsx`):
+  - `prisma.proveedor.findMany` y `pedidosHistoriaService.listarPedidosHistoria` envueltos en `try/catch` con fallback (`proveedores: []`, `res = { success: false }`) y log `[pedidos/historial][page]`.
+- **Sesión defensiva** (`src/lib/sesion.ts`): `getRol()` atrapa cualquier excepción de iron-session y retorna `"simple"` con log `[sesion][getRol]`. Con esto, una cookie inválida ya no rompe el render; la página redirige a inicio si exige permiso.
+- **Logging server-side** con prefijo identificable en cada `catch` de:
+  - `src/services/pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `getPedidoHistoriaDetalle`, `listarPedidosHistoria`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `guardarRecepcionPedidoHistoria`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `getPedidoHistoriaPdfPayload`, `eliminarPedidoHistoria`).
+  - `src/services/exportRecepcionPedidoExcel.service.ts` (`getExportRecepcionPedidoExcelPayload`).
+  - `src/actions/pedidosHistoria.ts` (helper `ejecutarActionSegura(scope, fn)` envolviendo las 9 Actions del módulo).
+  - `src/actions/exportRecepcionPedidoExcel.ts` (`exportarExcelRecepcionPedidoAction`, top-level `try/catch`).
+- **Defensa de shape** ante `proveedor`/`sucursal` undefined en:
+  - `getPedidoHistoriaDetalle` y `getPedidoHistoriaPdfPayload`: devuelven `ServiceResult` con error legible y log si la relación viene incompleta.
+  - `getExportRecepcionPedidoExcelPayload`: idéntico, antes de leer `pedido.proveedor.iva`.
+  - `listarPedidosHistoria`: `r.proveedor?.nombre ?? "—"` y `r.sucursal?.nombre ?? "—"` para no romper el listado completo si una fila trae datos corruptos.
+
+**Convención obligatoria para futuras IAs/módulos** (ver §1.5.1):
+
+- Toda nueva ruta con Server Component que lea Prisma o sesión debe agregar un `error.tsx` específico además del `global-error.tsx`.
+- Toda Action nueva del módulo Recepción Pedido debe envolverse en `ejecutarActionSegura("nombreCorto", async () => { ... })`.
+- Todo `catch` en services del módulo debe loggear con `[pedidoHistoria][<fn>]` o `[exportRecepcionPedidoExcel][<fn>]` antes de devolver `ServiceResult`.
+- Toda lectura de relación con `select.proveedor.{...}` o `select.sucursal.{...}` debe validar `!relacion` antes de acceder a subcampos.
+
+**Cómo grepear logs de futuros incidentes** (Vercel Function Logs → filtro por digest):
+
+```
+[pedidoHistoria]                    # prefijo de servicios del módulo
+[pedidoHistoria][action]            # prefijo de Actions envueltas con `ejecutarActionSegura`
+[exportRecepcionPedidoExcel]        # servicios de export Excel
+[exportRecepcionPedidoExcel][action]
+[pedidos/historial][page]           # errores en la página RSC
+[pedidos/historial][error-boundary] # captura del boundary específico del módulo
+[global-error]                      # captura del boundary global
+[sesion][getRol]                    # cookie inválida / iron-session falló
+```
+
+**Verificación:**
+- `tsc --noEmit` ✓
+- `ReadLints` sobre los 8 archivos modificados ✓
+- BD up-to-date (`prisma migrate status` → 119/119 aplicadas) ✓

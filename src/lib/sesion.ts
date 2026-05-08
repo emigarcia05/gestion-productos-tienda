@@ -35,9 +35,23 @@ export async function getSesion(): Promise<IronSession<SesionData>> {
   return getIronSession<SesionData>(cookieStore, SESSION_OPTIONS);
 }
 
+/**
+ * Devuelve el rol actual o "simple" si la cookie está corrupta / expirada /
+ * firmada con un secret distinto. iron-session puede lanzar al verificar la
+ * firma de una cookie inválida; antes este throw subía hasta el render del
+ * Server Component y disparaba el mensaje genérico
+ *   "An error occurred in the Server Components render…"
+ * sin dejar rastro útil. Ahora caemos a "simple" y dejamos un log grepeable.
+ */
 export async function getRol(): Promise<Rol> {
-  const sesion = await getSesion();
-  return sesion.rol ?? "simple";
+  try {
+    const sesion = await getSesion();
+    return sesion.rol ?? "simple";
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[sesion][getRol] cookie inválida o sesion no recuperable:", msg);
+    return "simple";
+  }
 }
 
 export async function esEditor(): Promise<boolean> {

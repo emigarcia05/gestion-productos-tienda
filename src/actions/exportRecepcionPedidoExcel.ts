@@ -28,26 +28,26 @@ const exportRecepcionPedidoExcelSchema = z.object({
 export async function exportarExcelRecepcionPedidoAction(
   params: unknown
 ): Promise<ActionResult<{ excelBase64: string; filename: string }>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) {
-    return { ok: false, error: "Sin permisos para pedidos." };
-  }
-
-  const parsed = exportRecepcionPedidoExcelSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "Parámetros inválidos." };
-
-  const payloadRes = await getExportRecepcionPedidoExcelPayload({
-    pedidoHistoriaId: parsed.data.pedidoHistoriaId,
-    fechaFacturaIso: parsed.data.fechaFacturaIso,
-    totalPedidoIngreso: parsed.data.totalPedidoIngreso,
-    decisionFiscal: parsed.data.decisionFiscal,
-  });
-
-  if (!payloadRes.success) return { ok: false, error: payloadRes.error };
-
-  const payload: ExportRecepcionPedidoExcelPayload = payloadRes.data;
-
   try {
+    const rol = await getRol();
+    if (!puede(rol, PERMISOS.pedidos.acceso)) {
+      return { ok: false, error: "Sin permisos para pedidos." };
+    }
+
+    const parsed = exportRecepcionPedidoExcelSchema.safeParse(params);
+    if (!parsed.success) return { ok: false, error: "Parámetros inválidos." };
+
+    const payloadRes = await getExportRecepcionPedidoExcelPayload({
+      pedidoHistoriaId: parsed.data.pedidoHistoriaId,
+      fechaFacturaIso: parsed.data.fechaFacturaIso,
+      totalPedidoIngreso: parsed.data.totalPedidoIngreso,
+      decisionFiscal: parsed.data.decisionFiscal,
+    });
+
+    if (!payloadRes.success) return { ok: false, error: payloadRes.error };
+
+    const payload: ExportRecepcionPedidoExcelPayload = payloadRes.data;
+
     const XLSX = await import("xlsx");
     const hoja = XLSX.utils.json_to_sheet(payload.rows);
     const libro = XLSX.utils.book_new();
@@ -59,8 +59,12 @@ export async function exportarExcelRecepcionPedidoAction(
 
     return { ok: true, data: { excelBase64, filename: payload.filename } };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error al generar el Excel.";
-    return { ok: false, error: message };
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("[exportRecepcionPedidoExcel][action]", message);
+    return {
+      ok: false,
+      error: "Error inesperado al generar el Excel de recepción.",
+    };
   }
 }
 

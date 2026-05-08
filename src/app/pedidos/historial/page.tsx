@@ -9,6 +9,8 @@ import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 
 export const dynamic = "force-dynamic";
 
+const LOG_TAG = "[pedidos/historial][page]";
+
 interface Props {
   searchParams: Promise<{
     pagina?: string;
@@ -43,24 +45,46 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
 
   const estadoUi: "PENDIENTE" | "RECEPCIONADO" | "ALL" = estadoFiltro;
 
-  const proveedoresRaw = await prisma.proveedor.findMany({
-    where: { proveedorMercaderia: true },
-    select: { id: true, nombre: true, prefijo: true },
-    orderBy: { prefijo: "asc" },
-  });
-  const proveedores = proveedoresRaw.map((p) => ({
-    id: p.id,
-    nombre: p.nombre,
-    prefijo: p.prefijo ?? "",
-  }));
+  // Resolución defensiva del listado de proveedores: cualquier error transitorio
+  // de Neon (timeout, pool exhausted, conn reset) NO debe romper el render del
+  // Server Component. Si falla, mostramos la página con `proveedores: []` y
+  // dejamos rastro en logs para el digest correspondiente.
+  let proveedores: Array<{ id: string; nombre: string; prefijo: string }> = [];
+  try {
+    const proveedoresRaw = await prisma.proveedor.findMany({
+      where: { proveedorMercaderia: true },
+      select: { id: true, nombre: true, prefijo: true },
+      orderBy: { prefijo: "asc" },
+    });
+    proveedores = proveedoresRaw.map((p) => ({
+      id: p.id,
+      nombre: p.nombre,
+      prefijo: p.prefijo ?? "",
+    }));
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(LOG_TAG, "fallo prisma.proveedor.findMany:", msg);
+  }
 
-  const res = await pedidosHistoriaService.listarPedidosHistoria({
-    pagina: paginaNum,
-    proveedorId: proveedorId || undefined,
-    sucursalCodigo: sucursalCodigo || undefined,
-    estado: estadoFiltro,
-    q: qTrim || undefined,
-  });
+  // `listarPedidosHistoria` ya devuelve ServiceResult; aún así envolvemos la
+  // llamada por si Prisma lanza fuera del catch del servicio (raro, pero
+  // posible cuando el adapter PG falla en init durante revalidaciones).
+  let res: Awaited<
+    ReturnType<typeof pedidosHistoriaService.listarPedidosHistoria>
+  >;
+  try {
+    res = await pedidosHistoriaService.listarPedidosHistoria({
+      pagina: paginaNum,
+      proveedorId: proveedorId || undefined,
+      sucursalCodigo: sucursalCodigo || undefined,
+      estado: estadoFiltro,
+      q: qTrim || undefined,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(LOG_TAG, "fallo listarPedidosHistoria:", msg);
+    res = { success: false, error: msg };
+  }
 
   if (!res.success) {
     return (
