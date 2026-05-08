@@ -378,7 +378,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="h-px w-[80%] bg-sidebar-foreground/70" />
         </div>
         <div className="w-full min-w-0 pt-3">
-          <div className="rounded-lg border border-sidebar-border/60 bg-sidebar-accent/10 p-2">
+          <div className="rounded-lg bg-sidebar-accent/10 p-2">
             <SelectorRol rolActual={rol} compact />
           </div>
         </div>
