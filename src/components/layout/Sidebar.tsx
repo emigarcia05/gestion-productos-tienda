@@ -372,7 +372,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="flex justify-center" aria-hidden>
             <div className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85" />
           </div>
-          <div className="mt-2 rounded-lg p-2">
+          <div className="mt-2 rounded-lg px-2 pt-2 pb-0">
             <SelectorRol rolActual={rol} compact />
           </div>
         </div>

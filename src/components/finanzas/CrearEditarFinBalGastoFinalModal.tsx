@@ -20,6 +20,12 @@ import {
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 
+/** Trigger de selects en este modal: asegura texto visible (p. ej. plazo **0**) sobre `bg-card`. */
+const GASTO_FINAL_SELECT_TRIGGER_CLASS = cn(
+  SELECT_TRIGGER_FILTER_CLASS,
+  "text-foreground [&_[data-slot=select-value]]:text-foreground"
+);
+
 type Modo = "crear" | "editar";
 
 /** Valores cerrados del Select IVA (alineados al enum Postgres `IvaProveedor`). */
@@ -423,12 +429,14 @@ export default function CrearEditarFinBalGastoFinalModal({
             <ModalMicroLabel>PLAZO DE PAGO</ModalMicroLabel>
             <Select
               value={
-                gastoMensual === true && vencimiento != null ? String(vencimiento) : undefined
+                gastoMensual === true && typeof vencimiento === "number"
+                  ? String(vencimiento)
+                  : undefined
               }
               onValueChange={(v) => setVencimiento(normalizarPlazoPago(Number(v)))}
               disabled={saving || gastoMensual !== true}
             >
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+              <SelectTrigger className={GASTO_FINAL_SELECT_TRIGGER_CLASS}>
                 <SelectValue
                   placeholder={
                     gastoMensual === true
@@ -437,7 +445,11 @@ export default function CrearEditarFinBalGastoFinalModal({
                         ? "NO APLICA (EVENTUAL)"
                         : "SELECCIONAR TIPO DE GASTO PRIMERO"
                   }
-                />
+                >
+                  {gastoMensual === true && typeof vencimiento === "number"
+                    ? String(vencimiento)
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="select-content-filtro max-h-60" position="popper" side="bottom" align="start">
                 {plazoPagoOpciones.map((d) => (
