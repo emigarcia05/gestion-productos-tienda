@@ -906,20 +906,17 @@ Contrato (SSOT de integración + armado de filas):
    - Proceso:
      - Lee desde DB:
        - `prod_ped_historial.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
-      - `prod_ped_historial.sucursal.deposito` => columna `DEPOSITO`
+       - `prod_ped_historial.sucursal.deposito` => columna `DEPOSITO`
        - `prod_ped_historial_merc.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
      - En el Excel, `FECHA` se exporta en formato `DD-MM-AAAA` con **fecha ingresada + 1 día** (si el usuario carga `2026-04-14`, `FECHA` sale `15-04-2026`). `FECHA IMPUTACION CONTABLE` se exporta con la fecha ingresada original (`14-04-2026` en el ejemplo).
-    - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR + 1 día` y `fechaDesde = hoy AR - 15 días`, sin usar `fechaFacturaIso`.
-     - `COMPROBANTE` en Excel se calcula como `ultimoComprobanteDux + recepcionOrdinal`, donde `recepcionOrdinal` es:
-       - `recepcion_numero + 1` si el pedido está pendiente (primera recepción en curso),
-       - `recepcion_numero` si el pedido ya está recepcionado (corrección guardada).
-       El contador persistido `prod_ped_historial.recepcion_numero` se incrementa en `marcarPedidoHistoriaRegistrado` (primera recepción) y en `guardarRecepcionPedidoHistoria` cuando el pedido ya está `RECEPCIONADO` (cada corrección confirmada).
-    - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit = DUX_COMPRAS_API_PAGE_LIMIT` por consulta. La suma **`ultimo + recepciónOrdinal`** en columna Excel usa **`incrementarComprobanteDux`** (compatible con dígitos y con factura AFIP `L-PV-NUM`).
-    - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
-    - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** en todas las filas del Excel de recepción.
-    - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 5) y `totalImporte`.
-    - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
-    - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:
+     - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR + 1 día` y `fechaDesde = hoy AR - 15 días`, sin usar `fechaFacturaIso`.
+     - **Numeración Excel (regla de negocio):** sobre el **último** comprobante DUX del tipo en el rango: **1ª recepción = último + 1**, **2ª = último + 2**, **3ª = último + 3**, etc. (`incrementarComprobanteDux` con ese entero como delta). El entero se deriva de `prod_ped_historial.recepcion_numero`: si el pedido está **PENDIENTE**, se usa `recepcion_numero + 1` (el cierre en curso aún no incrementó el contador); si está **RECEPCIONADO**, se usa `recepcion_numero` (ya refleja la última recepción/corrección guardada). El contador sube en `marcarPedidoHistoriaRegistrado` (primer cierre) y en `guardarRecepcionPedidoHistoria` cuando el pedido ya está `RECEPCIONADO` (cada corrección guardada).
+     - La resolución del comprobante en DUX: una consulta por sucursal válida (`id_dux`) y `limit = DUX_COMPRAS_API_PAGE_LIMIT` por consulta. **No** confundir con el campo auxiliar `siguienteComprobante` del servicio DUX (`último + 5` para otros usos); la **columna Excel** usa sólo **último + nº de recepción** como arriba.
+     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
+     - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** en todas las filas del Excel de recepción.
+     - Consulta DUX `compras` para obtener el **último** comprobante del tipo (y `totalImporte` como respaldo para `PRECIO`). El `siguienteComprobante` (`último + 5`) en la respuesta del servicio no es el que pobla la columna Excel de recepción.
+     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
+     - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:
       1) `prod_ped_historial.total` persistido al registrar recepción;
       2) `totalImporte` devuelto por DUX `/compras`.
    - Salida:

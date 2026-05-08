@@ -326,11 +326,16 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
         idEmpresa: idEmpresaParsed.data,
         tipoComp: tipoCompDux,
       });
-    // Primera recepción (pedido pendiente): recepcionNumero todavía no fue incrementado.
-    // Correcciones (pedido recepcionado): ya se incrementa al guardar la corrección.
-    const recepcionOrdinal =
+    /**
+     * Correlativo Excel sobre el último comprobante DUX del tipo: 1ª recepción = último + 1,
+     * 2ª = último + 2, etc. (`incrementarComprobanteDux`).
+     * `recepcionNumero` cuenta cierres: sube en `marcarPedidoHistoriaRegistrado` y en cada
+     * `guardarRecepcionPedidoHistoria` con pedido ya RECEPCIONADO; mientras el pedido está
+     * PENDIENTE el contador aún no refleja el cierre en curso → se usa `n + 1`.
+     */
+    const deltaComprobantePorRecepcion: number =
       pedido.estado === "RECEPCIONADO" ? pedido.recepcionNumero : pedido.recepcionNumero + 1;
-    const comprobanteExport = sumarComprobante(ultimoComprobante, recepcionOrdinal);
+    const comprobanteExport = sumarComprobante(ultimoComprobante, deltaComprobantePorRecepcion);
 
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
