@@ -368,11 +368,11 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <SyncStatusIndicator />
           <ImportStatusIndicator />
         </div>
-        <div className="w-full min-w-0 pt-3">
+        <div className="flex w-full min-w-0 flex-col gap-3 pt-3">
           <div className="flex justify-center" aria-hidden>
             <div className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85" />
           </div>
-          <div className="mt-2 rounded-lg px-2 pt-2 pb-0">
+          <div className="rounded-lg px-2 pb-0">
             <SelectorRol rolActual={rol} compact />
           </div>
         </div>
