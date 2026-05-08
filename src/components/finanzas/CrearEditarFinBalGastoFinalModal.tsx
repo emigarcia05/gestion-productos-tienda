@@ -173,13 +173,13 @@ export default function CrearEditarFinBalGastoFinalModal({
 
   const comentariosNorm = useMemo(() => comentariosNormModal(comentarios), [comentarios]);
 
-  const comentarioObligatorioPorTripla = hermanosMismaProveedorSucursal.length > 0;
+  const hayOtraFilaMismaProveedorSucursal = hermanosMismaProveedorSucursal.length > 0;
   const comentarioChocaConOtro = useMemo(() => {
-    if (!comentarioObligatorioPorTripla) return false;
+    if (comentariosNorm === "") return false;
     return hermanosMismaProveedorSucursal.some(
       (f) => comentariosNormModal(f.comentarios) === comentariosNorm
     );
-  }, [hermanosMismaProveedorSucursal, comentarioObligatorioPorTripla, comentariosNorm]);
+  }, [hermanosMismaProveedorSucursal, comentariosNorm]);
 
   const hasChanges = useMemo(() => {
     if (modo !== "editar") return true;
@@ -218,7 +218,6 @@ export default function CrearEditarFinBalGastoFinalModal({
       return true;
     }
     if (modo === "editar" && (!id || !hasChanges)) return true;
-    if (comentarioObligatorioPorTripla && comentariosNorm === "") return true;
     if (comentarioChocaConOtro) return true;
     return false;
   }, [
@@ -228,8 +227,6 @@ export default function CrearEditarFinBalGastoFinalModal({
     modo,
     id,
     hasChanges,
-    comentarioObligatorioPorTripla,
-    comentariosNorm,
     comentarioChocaConOtro,
     gastoMensual,
     vencimiento,
@@ -470,10 +467,10 @@ export default function CrearEditarFinBalGastoFinalModal({
               )}
             />
             <span className="text-xs text-muted-foreground">{comentarios.length} / 10000</span>
-            {comentarioObligatorioPorTripla ? (
+            {hayOtraFilaMismaProveedorSucursal ? (
               <p className="text-xs text-muted-foreground">
-                Ya hay otra fila con el mismo proveedor y sucursal para este gasto. Complete COMENTARIOS con un texto
-                distinto para poder guardar.
+                Ya hay otra fila con el mismo proveedor y sucursal. Podés usar COMENTARIOS para distinguirlas en el
+                listado (opcional).
               </p>
             ) : null}
             {comentarioChocaConOtro ? (

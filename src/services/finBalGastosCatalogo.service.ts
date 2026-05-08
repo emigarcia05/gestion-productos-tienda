@@ -542,8 +542,8 @@ function comentariosGastoFinalNormalizado(c: string | null | undefined): string 
 }
 
 /**
- * Si ya hay otra fila con el mismo gasto + proveedor + sucursal, hace obligatorio un COMENTARIOS no vacío
- * y distinto (normalizado) al resto, para poder coexistir varias filas sin índice único en BD.
+ * Varias filas pueden compartir gasto + proveedor + sucursal. **COMENTARIOS** es opcional (incluido vacío).
+ * Solo se rechaza si el texto **no vacío** (normalizado) coincide con otra fila hermana.
  */
 async function validarComentariosParaTriplaGastoFinalRepetida(params: {
   gastoId: string;
@@ -562,15 +562,8 @@ async function validarComentariosParaTriplaGastoFinalRepetida(params: {
     },
     select: { comentarios: true },
   });
-  if (otros.length === 0) {
+  if (otros.length === 0 || norm === "") {
     return { success: true, data: undefined };
-  }
-  if (norm === "") {
-    return {
-      success: false,
-      error:
-        "Ya existe un gasto final con el mismo proveedor y sucursal para este gasto. Ingrese COMENTARIOS para diferenciar esta fila.",
-    };
   }
   for (const o of otros) {
     if (comentariosGastoFinalNormalizado(o.comentarios) === norm) {
