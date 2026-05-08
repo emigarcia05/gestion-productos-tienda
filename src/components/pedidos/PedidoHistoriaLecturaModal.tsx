@@ -15,7 +15,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { getPedidoHistoriaDetalleAction } from "@/actions/pedidosHistoria";
+import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
 import type {
   PedidoHistoriaDetalle,
   PedidoHistoriaItemDetalle,
@@ -76,7 +76,7 @@ export default function PedidoHistoriaLecturaModal({
     setDetalle(null);
 
     void (async () => {
-      const res = await getPedidoHistoriaDetalleAction({ pedidoHistoriaId });
+      const res = await fetchPedidoHistoriaDetalle(pedidoHistoriaId);
       if (cancelled) return;
       setLoading(false);
       if (!res.ok) {

@@ -21,10 +21,10 @@ import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
 import type { ProductoTiendaRowBusqueda } from "@/services/productosTienda.service";
 import {
-  getPedidoHistoriaDetalleAction,
   guardarRecepcionPedidoHistoriaAction,
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
+import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
@@ -76,6 +76,9 @@ function pistaOperativaParaMensaje(mensaje: string): string | null {
   const m = mensaje.toLowerCase();
   if (m.includes("was not found on the server")) {
     return "Suele pasar tras un despliegue: recargá la página completa (F5 o Ctrl+Shift+R).";
+  }
+  if (m.includes("ref. soporte") || m.includes("ref. soporte (logs vercel)")) {
+    return "Buscá esa referencia en Vercel → Functions → Logs (mismo rango horario) para ver el error completo en servidor.";
   }
   if (m.includes("digest") && m.includes("server components")) {
     return "Error de render en servidor: recargá la página; si vuelve a ocurrir, enviá este bloque.";
@@ -196,7 +199,7 @@ export default function PedidoHistoriaDetalleModal({
     id: string,
     options?: { preserveChecklist?: boolean }
   ): Promise<PedidoHistoriaDetalle | null> {
-    const res = await getPedidoHistoriaDetalleAction({ pedidoHistoriaId: id });
+    const res = await fetchPedidoHistoriaDetalle(id);
     if (!res.ok) {
       setDetalle(null);
       const userLine = res.error ?? "Error al cargar detalle.";

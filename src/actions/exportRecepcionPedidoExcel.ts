@@ -5,13 +5,10 @@ import type { ActionResult } from "@/lib/types";
 import { puede, PERMISOS } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import {
-  ERROR_REQUIERE_DECISION_FISCAL,
   fechaFacturaIsoSchema,
   getExportRecepcionPedidoExcelPayload,
 } from "@/services/exportRecepcionPedidoExcel.service";
 import type { ExportRecepcionPedidoExcelPayload } from "@/services/exportRecepcionPedidoExcel.service";
-
-export { ERROR_REQUIERE_DECISION_FISCAL };
 
 const exportRecepcionPedidoExcelSchema = z.object({
   pedidoHistoriaId: z.string().cuid("ID inválido."),
