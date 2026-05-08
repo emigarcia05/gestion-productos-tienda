@@ -15,7 +15,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
@@ -44,6 +44,38 @@ import {
 } from "@/lib/fechaArgentina";
 
 const INSTRUCTOR_DELAY_MS = 1500;
+
+/** Texto plano de un error desconocido (throws de Server Actions / runtime). */
+function mensajeErrorDesconocido(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return String(e);
+  }
+}
+
+function armarDiagnosticoUsuario(contexto: string, mensaje: string): string {
+  const marca = new Date().toISOString();
+  return (
+    `[Recepcion Pedido · ${contexto} · ${marca}]\n\n` +
+    `${mensaje.trim()}\n\n` +
+    `(Copiá este bloque completo para soporte o desarrollo.)`
+  );
+}
+
+/** Pista breve si el mensaje encaja con errores frecuentes de deploy / transport. */
+function pistaOperativaParaMensaje(mensaje: string): string | null {
+  const m = mensaje.toLowerCase();
+  if (m.includes("was not found on the server")) {
+    return "Suele pasar tras un despliegue: recargá la página completa (F5 o Ctrl+Shift+R).";
+  }
+  if (m.includes("digest") && m.includes("server components")) {
+    return "Error de render en servidor: recargá la página; si vuelve a ocurrir, enviá este bloque.";
+  }
+  return null;
+}
 
 function parseIntSafe(value: string): number {
   const n = Math.max(0, Math.floor(Number(value) || 0));
@@ -108,6 +140,8 @@ export default function PedidoHistoriaDetalleModal({
   const [loading, setLoading] = useState(false);
   const [guardando, setGuardando] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /** Mensaje técnico listo para copiar (contexto + ISO + texto). */
+  const [errorDiagnostico, setErrorDiagnostico] = useState<string | null>(null);
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
@@ -159,7 +193,9 @@ export default function PedidoHistoriaDetalleModal({
     const res = await getPedidoHistoriaDetalleAction({ pedidoHistoriaId: id });
     if (!res.ok) {
       setDetalle(null);
-      setErrorMsg(res.error ?? "Error al cargar detalle.");
+      const userLine = res.error ?? "Error al cargar detalle.";
+      setErrorMsg(userLine);
+      setErrorDiagnostico(armarDiagnosticoUsuario("cargar detalle", userLine));
       return null;
     }
     const detalleNormalizado = res.data;
@@ -187,6 +223,7 @@ export default function PedidoHistoriaDetalleModal({
       if (d) setFechaRecepcion(dateToIsoYmdArgentina(d));
     }
     setErrorMsg(null);
+    setErrorDiagnostico(null);
     return detalleNormalizado;
   }
 
@@ -196,6 +233,7 @@ export default function PedidoHistoriaDetalleModal({
     queueMicrotask(() => {
       setDetalle(null);
       setErrorMsg(null);
+      setErrorDiagnostico(null);
       setLoading(true);
       setEditingItemId(null);
       setEditingValue("");
@@ -219,8 +257,9 @@ export default function PedidoHistoriaDetalleModal({
       try {
         await cargarDetalle(pedidoHistoriaId);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Error al cargar detalle.";
-        setErrorMsg(msg);
+        const raw = mensajeErrorDesconocido(e);
+        setErrorMsg(raw);
+        setErrorDiagnostico(armarDiagnosticoUsuario("cargar detalle (excepción)", raw));
       } finally {
         setLoading(false);
       }
@@ -447,12 +486,17 @@ export default function PedidoHistoriaDetalleModal({
         })),
       });
       if (!res.ok) {
-        toast.error(res.error ?? "Error al guardar la recepción.");
+        const line = res.error ?? "Error al guardar la recepción.";
+        toast.error(line);
+        setErrorDiagnostico(armarDiagnosticoUsuario("guardar recepción", line));
         return false;
       }
+      setErrorDiagnostico(null);
       return true;
-    } catch {
+    } catch (e) {
+      const raw = mensajeErrorDesconocido(e);
       toast.error("Error inesperado al guardar la recepción.");
+      setErrorDiagnostico(armarDiagnosticoUsuario("guardar recepción (excepción)", raw));
       return false;
     }
   }
@@ -487,14 +531,19 @@ export default function PedidoHistoriaDetalleModal({
         decisionFiscal,
       });
       if (!excelRes.ok) {
-        toast.error(excelRes.error ?? "Error al generar el Excel.");
+        const line = excelRes.error ?? "Error al generar el Excel.";
+        toast.error(line);
+        setErrorDiagnostico(armarDiagnosticoUsuario("exportar Excel de recepción", line));
         return false;
       }
       descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
       setTimeout(() => setShowExportInstructor(true), INSTRUCTOR_DELAY_MS);
+      setErrorDiagnostico(null);
       return true;
-    } catch {
+    } catch (e) {
+      const raw = mensajeErrorDesconocido(e);
       toast.error("Error inesperado al generar el Excel.");
+      setErrorDiagnostico(armarDiagnosticoUsuario("exportar Excel de recepción (excepción)", raw));
       return false;
     } finally {
       setGuardando(null);
@@ -568,7 +617,15 @@ export default function PedidoHistoriaDetalleModal({
                         decisionFiscal,
                       });
                       if (!excelRes.ok) {
-                        toast.error(excelRes.error ?? "Error al generar el Excel.");
+                        const line =
+                          excelRes.error ?? "Error al generar el Excel.";
+                        toast.error(line);
+                        setErrorDiagnostico(
+                          armarDiagnosticoUsuario(
+                            "exportar Excel · flujo registrar en DUX",
+                            line
+                          )
+                        );
                         return;
                       }
                       descargarExcelBase64(
@@ -585,13 +642,25 @@ export default function PedidoHistoriaDetalleModal({
                         totalPedido: Number(totalPedido),
                       });
                       if (!res.ok) {
-                        toast.error(res.error ?? "Error al registrar en DUX.");
+                        const line = res.error ?? "Error al registrar en DUX.";
+                        toast.error(line);
+                        setErrorDiagnostico(
+                          armarDiagnosticoUsuario("marcar registrado en DUX", line)
+                        );
                         return;
                       }
                       toast.success("Pedido registrado en DUX.");
+                      setErrorDiagnostico(null);
                       handleModalOpenChange(false);
-                    } catch {
+                    } catch (e) {
+                      const raw = mensajeErrorDesconocido(e);
                       toast.error("Error inesperado al registrar la recepción.");
+                      setErrorDiagnostico(
+                        armarDiagnosticoUsuario(
+                          "flujo completo registrar en DUX (excepción)",
+                          raw
+                        )
+                      );
                     } finally {
                       setGuardando(null);
                     }
@@ -718,6 +787,62 @@ export default function PedidoHistoriaDetalleModal({
               </div>
             </div>
           </section>
+
+          {errorDiagnostico ? (() => {
+            const pista = pistaOperativaParaMensaje(errorDiagnostico);
+            return (
+            <div
+              role="alert"
+              className="mx-0 shrink-0 border-y border-destructive/35 bg-muted px-3 py-2.5 sm:px-4"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2 gap-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-destructive">
+                  Error técnico (copiar y enviar a soporte)
+                </p>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setErrorDiagnostico(null)}
+                  >
+                    Ocultar cartel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(errorDiagnostico).then(
+                        () => toast.success("Detalle técnico copiado."),
+                        () =>
+                          toast.error(
+                            "No se pudo copiar. Seleccioná el texto abajo con el mouse."
+                          )
+                      );
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    Copiar detalle
+                  </Button>
+                </div>
+              </div>
+              {pista ? (
+                <p className="mt-1.5 text-xs text-muted-foreground">{pista}</p>
+              ) : null}
+              <pre
+                className={cn(
+                  "mt-2 max-h-[8.5rem] overflow-y-auto rounded-md border border-border bg-card p-2.5 font-mono text-[11px] leading-snug whitespace-pre-wrap break-words text-foreground select-all"
+                )}
+                tabIndex={0}
+              >
+                {errorDiagnostico}
+              </pre>
+            </div>
+            );
+          })() : null}
 
           <div className="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-0 overflow-hidden">
             <section
