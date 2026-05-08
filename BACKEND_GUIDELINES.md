@@ -875,15 +875,15 @@ Contrato (SSOT de lógica de negocio + integración externa):
      - `tipoComp` (opcional): `"FACTURA"` | `"COMPROBANTE_COMPRA"`. Si se informa, sólo participan en el máximo las filas cuyo `tipo_comp`/`tipo_comprobante` (normalizado mayúsculas y espacios → `_`) coincide. **Recepción pedidos / Excel** siempre envía este campo acorde a la columna **TIPO COMPROBANTE**. Si se omite, el comportamiento es el histórico (máximo entre todos los tipos en el rango).
    - Proceso:
      - Lee de DB las sucursales y resuelve `global_sucursales.id_dux` (columna `Sucursal.idDux` en Prisma).
-    - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
-      - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit=10`.
+     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
+       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit` = **`DUX_COMPRAS_API_PAGE_LIMIT` (50)**, igual que el máximo que admite la API (evita descartar el correlativo FACTURA más reciente cuando hay muchas líneas **COMPROBANTE_COMPRA** antes en la página).
      - Entre cada petición a `/compras` y la siguiente espera **al menos 5 s** (DUX responde `429` si se supera la frecuencia). Intervalo configurable con `DUX_COMPRAS_MIN_INTERVAL_MS` (ms; por defecto `5000`; `0` desactiva la espera solo para entornos de prueba).
      - Si tras recorrer sucursales no hay comprobantes válidos y se usa el fallback sin `idSucursal`, también espera ese intervalo **después** de la última consulta por sucursal.
-    - Del set resultante toma el mayor `comprobante` numérico (únicamente entre ítems que cumplan `tipoComp` si vino informado) y calcula `siguienteComprobante = maxComprobante + 5` usando `BigInt`.
+     - **Formato `comprobante`:** con `tipoComp = COMPROBANTE_COMPRA` sólo participan ítems cuyo comprobante es **sólo dígitos**. Con **`tipoComp = FACTURA`** (recepción Excel) también se aceptan comprobantes **AFIP típicos** `L-#####-########` (p. ej. `A-00000-00000001`), porque DUX devuelve así las facturas; el máximo se calcula en `@/lib/duxComprobanteCorrelativo` y **`siguienteComprobante = incremento(+5)`** sobre ese texto (dígitos como `BigInt`; AFIP incrementa el último tramo numérico).
    - Salida:
      - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
    - Errores:
-     - Si DUX no devuelve resultados o el comprobante no es numérico, lanza error en la service y la Action lo transforma a `ActionResult`.
+     - Si DUX no devuelve resultados o el comprobante no es un formato ordenable conocido (`parseComprobanteDuxSortKey`), lanza error en la service y la Action lo transforma a `ActionResult`.
 
 Acceso desde UI/cliente:
 - La `server action` `src/actions/duxCompras.ts#getSiguienteComprobanteDuxCompraAction` exige `esEditor()` y valida parámetros con el mismo esquema Zod.
@@ -914,7 +914,7 @@ Contrato (SSOT de integración + armado de filas):
        - `recepcion_numero + 1` si el pedido está pendiente (primera recepción en curso),
        - `recepcion_numero` si el pedido ya está recepcionado (corrección guardada).
        El contador persistido `prod_ped_historial.recepcion_numero` se incrementa en `marcarPedidoHistoriaRegistrado` (primera recepción) y en `guardarRecepcionPedidoHistoria` cuando el pedido ya está `RECEPCIONADO` (cada corrección confirmada).
-    - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit=10` por consulta.
+    - La resolución del comprobante mantiene la lógica del servicio DUX: una consulta por sucursal válida (`id_dux`) y `limit = DUX_COMPRAS_API_PAGE_LIMIT` por consulta. La suma **`ultimo + recepciónOrdinal`** en columna Excel usa **`incrementarComprobanteDux`** (compatible con dígitos y con factura AFIP `L-PV-NUM`).
     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
     - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** en todas las filas del Excel de recepción.
     - Consulta DUX `compras` para obtener el `siguienteComprobante` (ultimo + 5) y `totalImporte`.

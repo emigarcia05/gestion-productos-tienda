@@ -7,6 +7,7 @@ import {
   dateToIsoYmdArgentina,
   formatDdMmHhMmGuionesBajosArchivoArgentina,
 } from "@/lib/fechaArgentina";
+import { incrementarComprobanteDux } from "@/lib/duxComprobanteCorrelativo";
 
 /** Prefijo de log uniforme. Loggear en el catch evita que los errores queden
  *  opacos detrás de "An error occurred in the Server Components render…". */
@@ -104,11 +105,8 @@ function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
 }
 
 function sumarComprobante(baseComprobante: string, incremento: number): string {
-  if (!/^\d+$/.test(baseComprobante)) {
-    throw new Error("El comprobante DUX no es numérico.");
-  }
   const inc = Math.max(0, Math.floor(incremento));
-  return (BigInt(baseComprobante) + BigInt(inc)).toString();
+  return incrementarComprobanteDux(baseComprobante, inc);
 }
 
 function sumarDiasYmd(

@@ -1,9 +1,15 @@
 import { z } from "zod";
-import { fetchComprasPage } from "@/lib/duxComprasApi";
-import type { CompraDux } from "@/lib/duxComprasApi";
+import { DUX_COMPRAS_API_PAGE_LIMIT, fetchComprasPage, type CompraDux } from "@/lib/duxComprasApi";
+import {
+  comprobanteDuxEsOrdenableParaCorrelativo,
+  compareComprobanteDuxSortKey,
+  incrementarComprobanteDux,
+  parseComprobanteDuxSortKey,
+} from "@/lib/duxComprobanteCorrelativo";
 import { prisma } from "@/lib/prisma";
 
-const DUX_COMPROBANTE_QUERY_LIMIT = 10;
+/** Misma cota que permite DUX por página (sync y máximo en recepción para no truncar correlativos). */
+const DUX_COMPROBANTE_QUERY_LIMIT = DUX_COMPRAS_API_PAGE_LIMIT;
 const DUX_COMPROBANTE_INCREMENTO = 5;
 
 /** DUX devuelve 429 si las peticiones a `/compras` van demasiado seguidas; mínimo 5 s entre una y otra. */
@@ -68,11 +74,52 @@ export interface SiguienteComprobanteResult {
   totalImporte: number;
 }
 
+/** Incluye sólo filas cuyo texto de comprobante podemos ordenar/incrementar coherentemente. */
+function comprobanteAceptadoParaCorrelativo(
+  compra: CompraDux,
+  filtroTipo: TipoCompFiltroDux | undefined
+): boolean {
+  const comp = (compra.comprobante ?? "").trim();
+  if (!comp) return false;
+  if (!compraCumpleFiltroTipoComp(compra, filtroTipo)) return false;
+
+  if (filtroTipo === "COMPROBANTE_COMPRA") {
+    return /^\d+$/.test(comp);
+  }
+  if (filtroTipo === "FACTURA") {
+    return comprobanteDuxEsOrdenableParaCorrelativo(comp);
+  }
+  // Sin filtro de tipo (comportamiento legacy): cualquier formato que sepamos ordenar.
+  return comprobanteDuxEsOrdenableParaCorrelativo(comp);
+}
+
+function comprobanteEsMayorOIgual(aRaw: string, bRaw: string): boolean {
+  const ka = parseComprobanteDuxSortKey(aRaw);
+  const kb = parseComprobanteDuxSortKey(bRaw);
+  if (!ka || !kb) return false;
+  const c = compareComprobanteDuxSortKey(ka, kb);
+  return c >= 0;
+}
+
+/** Mayor `CompraDux` por texto de `comprobante` (mismas reglas que `parseComprobanteDuxSortKey`). */
+function mayorComprobanteEntre(a: CompraDux, b: CompraDux): CompraDux {
+  const ac = (a.comprobante ?? "").trim();
+  const bc = (b.comprobante ?? "").trim();
+  return comprobanteEsMayorOIgual(bc, ac) ? b : a;
+}
+
+/** Entre dos candidatos `{ c, idSucursal }` tras agregar sucursales. */
+function elegirMayorEntrada(
+  best: { c: CompraDux; idSucursal: number },
+  cur: { c: CompraDux; idSucursal: number }
+): { c: CompraDux; idSucursal: number } {
+  const ac = (best.c.comprobante ?? "").trim();
+  const bc = (cur.c.comprobante ?? "").trim();
+  return comprobanteEsMayorOIgual(bc, ac) ? cur : best;
+}
+
 function toNextComprobante(comprobante: string): string {
-  // El “comprobante” viene como string numérico. Usamos BigInt para no depender del safe integer.
-  if (!/^\d+$/.test(comprobante)) throw new Error("El comprobante DUX no es numérico.");
-  const next = BigInt(comprobante) + BigInt(DUX_COMPROBANTE_INCREMENTO);
-  return next.toString();
+  return incrementarComprobanteDux(comprobante, DUX_COMPROBANTE_INCREMENTO);
 }
 
 export async function getSiguienteComprobanteDuxCompra(params: {
@@ -131,13 +178,7 @@ export async function getSiguienteComprobanteDuxCompra(params: {
 
   const comprasValidas = comprasPorSucursal
     .flatMap((r) => r.compras.map((c) => ({ c, idSucursal: r.idSucursal })))
-    .filter(
-      ({ c }) =>
-        c &&
-        c.comprobante &&
-        /^\d+$/.test(c.comprobante) &&
-        compraCumpleFiltroTipoComp(c, filtroTipo)
-    );
+    .filter(({ c }) => comprobanteAceptadoParaCorrelativo(c, filtroTipo));
 
   function mensajeSinComprobantesDelTipo(): string {
     const etiqueta =
@@ -161,10 +202,7 @@ export async function getSiguienteComprobanteDuxCompra(params: {
       limit: DUX_COMPROBANTE_QUERY_LIMIT,
     });
 
-    const candidatos = compras.filter(
-      (row) =>
-        row && row.comprobante && /^\d+$/.test(row.comprobante) && compraCumpleFiltroTipoComp(row, filtroTipo)
-    );
+    const candidatos = compras.filter((row) => comprobanteAceptadoParaCorrelativo(row, filtroTipo));
 
     if (candidatos.length === 0) {
       throw new Error(
@@ -174,9 +212,7 @@ export async function getSiguienteComprobanteDuxCompra(params: {
       );
     }
 
-    const mejor = candidatos.reduce((max, cur) =>
-      BigInt(cur.comprobante) > BigInt(max.comprobante) ? cur : max
-    );
+    const mejor = candidatos.reduce((max, cur) => mayorComprobanteEntre(max, cur));
 
     const ultimoComprobante = mejor.comprobante;
     const siguienteComprobante = toNextComprobante(ultimoComprobante);
@@ -190,17 +226,12 @@ export async function getSiguienteComprobanteDuxCompra(params: {
     return { ultimoComprobante, siguienteComprobante, totalImporte };
   }
 
-  const compraMax = comprasValidas.reduce((max, cur) => {
-    // Comparamos numéricamente con BigInt.
-    const maxB = BigInt(max.c.comprobante);
-    const curB = BigInt(cur.c.comprobante);
-    return curB > maxB ? cur : max;
-  });
+  const compraMaxEntry = comprasValidas.reduce((max, cur) => elegirMayorEntrada(max, cur));
 
-  const ultimoComprobante = compraMax.c.comprobante;
+  const ultimoComprobante = compraMaxEntry.c.comprobante;
   const siguienteComprobante = toNextComprobante(ultimoComprobante);
 
-  const totalStr = compraMax.c.total ?? compraMax.c.montoAplicado;
+  const totalStr = compraMaxEntry.c.total ?? compraMaxEntry.c.montoAplicado;
   const totalImporte = totalStr ? Number.parseFloat(String(totalStr)) : NaN;
   if (!Number.isFinite(totalImporte)) {
     throw new Error("DUX no devolvió un 'total' válido para calcular el PRECIO.");
