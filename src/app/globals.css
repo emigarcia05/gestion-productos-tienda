@@ -133,6 +133,7 @@
   --sidebar-primary-foreground: #fff;
   --sidebar-accent: rgba(255, 255, 255, 0.15);
   --sidebar-accent-foreground: #fff;
+  --sidebar-user-switcher-bg: #021d36;
   --sidebar-border: rgba(255, 255, 255, 0.2);
   --sidebar-ring: rgba(255, 255, 255, 0.3);
   --sidebar-indicator: #ffc107;
@@ -227,6 +228,12 @@
   /* ─── Barra de filtros Tienda / lista-precios (contenedor principal) ─── */
   .filtros-contenedor-tienda {
     @apply flex flex-col gap-y-2 py-2;
+  }
+
+  /* Superficie dedicada al botón de cambio de usuario de la slidenav. */
+  .sidebar-user-switcher-surface {
+    background-color: var(--sidebar-user-switcher-bg);
+    color: var(--sidebar-foreground);
   }
 
   /* ─── Clase maestra inputs y selects de filtro (SSOT): misma apariencia para desplegables y filtro descripción ───

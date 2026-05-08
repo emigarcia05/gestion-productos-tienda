@@ -373,7 +373,14 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         </div>
         <div className="flex flex-col gap-3 pt-3 w-full min-w-0">
           <SidebarMainAppArea esEditor={rol === "editor"} />
-          <SelectorRol rolActual={rol} compact />
+        </div>
+        <div className="flex justify-center pt-2" aria-hidden>
+          <div className="h-px w-[80%] bg-sidebar-foreground/70" />
+        </div>
+        <div className="w-full min-w-0 pt-3">
+          <div className="rounded-lg border border-sidebar-border/60 bg-sidebar-accent/10 p-2">
+            <SelectorRol rolActual={rol} compact />
+          </div>
         </div>
       </div>
     </aside>

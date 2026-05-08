@@ -74,7 +74,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → separador (`pt-2`) → **nombre del área** (`SidebarMainAppArea` con `showLogo={false}`) → **logo** (`SidebarMainAppArea` con `showLabel={false}`) → **`SelectorRol` `compact`**; `gap-3` entre bloques en `flex flex-col pt-3`.
+    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → separador superior (`pt-2`) → bloque **nombre del área + logo** (`SidebarMainAppArea`) → separador inferior (`pt-2`, mismo estilo del superior: `h-px w-[80%] bg-sidebar-foreground/70`) → contenedor propio de **`SelectorRol` `compact`** (`w-full min-w-0 pt-3` + wrapper `rounded-lg border border-sidebar-border/60 bg-sidebar-accent/10 p-2`), evitando mezclar ambos en el mismo contenedor visual.
     - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa. `SyncStatusIndicator` en **reposo**: textos según **área** (`getMainAppAreaIdFromPathname`): **Gestión Productos** y **Estadísticas Productos** → **`SINCRONIZACION PROD.`** / hover **`SINCRONIZAR PROD.`**; **Finanzas** → **`SINCRONIZACION COMPRAS`** / hover **`SINCRONIZAR COMPRAS`**. Línea 2 **`Últ. Act.: Hace …`** (regla de tiempo: bloques de **15 min.** bajo 1 h; luego horas/días). En **sync lista precios** (polling API): **`SINCRONIZANDO PROD.`** + detalle X de Y. En **sync compras** (Finanzas): **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (sucursales ya procesadas / total con `id_dux`), vía polling `GET /api/sync-compras-proveedor-dux/status` y hook **`useSyncComprasProveedorDuxStatusPoll`** (mientras corre la action).
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
@@ -697,11 +697,14 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 
 En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de una sola línea**, montado en **`Sidebar`** debajo del bloque **nombre del área + logo** (bloque inferior `mt-auto`, no en la cabecera).
 
+- **Contenedor dedicado**: el `SelectorRol` se renderiza dentro de su propio wrapper (`rounded-lg border border-sidebar-border/60 bg-sidebar-accent/10 p-2`) separado del bloque `SidebarMainAppArea` para mantener independencia visual/estructural.
+
 - **Formato**: ícono `User` (`aria-hidden`) + texto **`SIMPLE` / `EDITOR`** (según `rolActual`).
 - **Interacción**
   - En **SIMPLE**: click abre modal de contraseña para pasar a **EDITOR**.
   - En **EDITOR**: click vuelve a **SIMPLE** sin modal.
-- **Feedback visual**: el botón debe tener hover claro (ej. `hover:bg-sidebar-accent/80`) y `focus-visible:ring-*` para accesibilidad.
+- **Superficie del botón**: usar la clase global **`sidebar-user-switcher-surface`** (definida en `globals.css`) para fijar el fondo corporativo del selector en **`#021D36`** (`--sidebar-user-switcher-bg`) y texto `var(--sidebar-foreground)`. Reutilizar esta clase/token cuando se necesite el mismo patrón visual.
+- **Feedback visual**: mantener `focus-visible:ring-*` para accesibilidad sin sobrescribir el color base.
 
 #### Modal “Acceso De Editor” (mismo archivo)
 
