@@ -108,12 +108,27 @@ export async function getPedidoHistoriaDetalleAction(
     });
 
     if (!res.success) return { ok: false, error: res.error };
-    return {
-      ok: true,
-      data: pedidosHistoriaService.serializarPedidoHistoriaDetalleParaCliente(
-        res.data
-      ),
-    };
+    const wired =
+      pedidosHistoriaService.serializarPedidoHistoriaDetalleParaCliente(res.data);
+    try {
+      // Última barrera: el flight de Actions/RSC debe recibir sólo datos JSON planos.
+      const data = JSON.parse(
+        JSON.stringify(wired)
+      ) as pedidosHistoriaService.PedidoHistoriaDetalle;
+      return { ok: true, data };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(
+        "[pedidoHistoria][action][getPedidoHistoriaDetalle]",
+        "fallo JSON.stringify/parse:",
+        msg
+      );
+      return {
+        ok: false,
+        error:
+          "No se pudo transmitir el detalle del pedido. Probá recargar la página.",
+      };
+    }
   });
 }
 

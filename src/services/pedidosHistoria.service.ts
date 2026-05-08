@@ -125,22 +125,51 @@ export interface PedidoHistoriaDetalle {
 }
 
 /**
- * Convierte fechas Prisma a ISO antes de devolver el detalle en una Server Action.
- * Evita rechazos del transporte RSC/Actions con mensaje opaco en producción.
+ * Convierte el detalle a **solo valores JSON** (strings, números, null).
+ * No usa `...d` para no arrastrar getters/propiedades raras del runtime de Prisma.
+ * `JSON.parse(JSON.stringify(·))` en la Action culmina la garantía para el flight de Next.js.
  */
 export function serializarPedidoHistoriaDetalleParaCliente(
   d: PedidoHistoriaDetalle
 ): PedidoHistoriaDetalle {
+  const generadoAt =
+    d.generadoAt instanceof Date ? d.generadoAt.toISOString() : String(d.generadoAt);
+  const registradoRaw = d.registradoAt;
+  const registradoAt =
+    registradoRaw == null
+      ? null
+      : registradoRaw instanceof Date
+        ? registradoRaw.toISOString()
+        : String(registradoRaw);
+
+  const total =
+    d.total == null
+      ? null
+      : typeof d.total === "number" && Number.isFinite(d.total)
+        ? d.total
+        : Number(d.total);
+
+  const iva = String(d.proveedorIva) as IvaProveedor;
+
   return {
-    ...d,
-    generadoAt:
-      d.generadoAt instanceof Date ? d.generadoAt.toISOString() : d.generadoAt,
-    registradoAt:
-      d.registradoAt == null
-        ? null
-        : d.registradoAt instanceof Date
-          ? d.registradoAt.toISOString()
-          : d.registradoAt,
+    id: String(d.id),
+    generadoAt,
+    registradoAt,
+    total: total == null || !Number.isFinite(total) ? null : total,
+    estado: d.estado,
+    proveedorId: String(d.proveedorId),
+    proveedorNombre: String(d.proveedorNombre),
+    proveedorIva: iva,
+    sucursalId: String(d.sucursalId),
+    sucursalNombre: String(d.sucursalNombre),
+    items: d.items.map((i) => ({
+      id: String(i.id),
+      codTienda: String(i.codTienda),
+      descripcionTienda: String(i.descripcionTienda ?? ""),
+      cantPedida: Number(i.cantPedida),
+      cantRecibida:
+        i.cantRecibida == null ? null : Number(i.cantRecibida),
+    })),
   };
 }
 
