@@ -436,20 +436,25 @@ export default function PedidoHistoriaDetalleModal({
 
   async function persistirRecepcionActual(): Promise<boolean> {
     if (!pedidoHistoriaId || !detalle) return false;
-    const res = await guardarRecepcionPedidoHistoriaAction({
-      pedidoHistoriaId,
-      items: detalle.items.map((item) => ({
-        id: item.id.startsWith("tmp-") ? undefined : item.id,
-        codTienda: item.codTienda,
-        cantPedida: item.cantPedida,
-        cantRecibida: item.cantRecibida,
-      })),
-    });
-    if (!res.ok) {
-      toast.error(res.error ?? "Error al guardar la recepción.");
+    try {
+      const res = await guardarRecepcionPedidoHistoriaAction({
+        pedidoHistoriaId,
+        items: detalle.items.map((item) => ({
+          id: item.id.startsWith("tmp-") ? undefined : item.id,
+          codTienda: item.codTienda,
+          cantPedida: item.cantPedida,
+          cantRecibida: item.cantRecibida,
+        })),
+      });
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al guardar la recepción.");
+        return false;
+      }
+      return true;
+    } catch {
+      toast.error("Error inesperado al guardar la recepción.");
       return false;
     }
-    return true;
   }
 
   async function descargarRecepcionExcel(): Promise<boolean> {
@@ -488,6 +493,9 @@ export default function PedidoHistoriaDetalleModal({
       descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
       setTimeout(() => setShowExportInstructor(true), INSTRUCTOR_DELAY_MS);
       return true;
+    } catch {
+      toast.error("Error inesperado al generar el Excel.");
+      return false;
     } finally {
       setGuardando(null);
     }
@@ -582,6 +590,8 @@ export default function PedidoHistoriaDetalleModal({
                       }
                       toast.success("Pedido registrado en DUX.");
                       handleModalOpenChange(false);
+                    } catch {
+                      toast.error("Error inesperado al registrar la recepción.");
                     } finally {
                       setGuardando(null);
                     }
