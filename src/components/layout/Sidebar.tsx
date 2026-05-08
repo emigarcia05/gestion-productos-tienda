@@ -377,7 +377,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           </div>
         </div>
         <div className="flex w-full min-w-0 flex-col pt-2 pb-2">
-          <SidebarMainAppArea esEditor={rol === "editor"} className="pt-3" />
+          <SidebarMainAppArea esEditor={rol === "editor"} className="pt-2" />
         </div>
       </div>
     </aside>
