@@ -251,6 +251,9 @@ export async function listarImputacionesMensualesBalance(params: {
     where: { mes, anio },
     orderBy: [{ createdAt: "asc" }],
     include: {
+      imputacionSucursal: {
+        select: { nombre: true, generaBalance: true, centroCosto: true },
+      },
       gastoFinal: {
         select: {
           diaDevengado: true,
@@ -293,13 +296,15 @@ export async function listarImputacionesMensualesBalance(params: {
     const comRaw = gf.comentarios?.trim() ?? "";
     const gastoFinalComentarios = comRaw.length > 0 ? comRaw.toUpperCase() : null;
 
+    const sucursalDisplay = r.imputacionSucursal ?? gf.sucursal;
+
     return {
       id: r.id,
       gastoFinalId: r.gastoFinalId,
       fechaDevengoIso,
-      sucursalNombre: gf.sucursal?.nombre.toUpperCase() ?? "—",
-      sucursalGeneraBalance: gf.sucursal?.generaBalance ?? false,
-      sucursalCentroCosto: gf.sucursal?.centroCosto ?? false,
+      sucursalNombre: sucursalDisplay?.nombre.toUpperCase() ?? "—",
+      sucursalGeneraBalance: sucursalDisplay?.generaBalance ?? false,
+      sucursalCentroCosto: sucursalDisplay?.centroCosto ?? false,
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),
@@ -445,6 +450,7 @@ export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
  */
 export async function crearImputacionGastoUnicoBalance(params: {
   gastoFinalId: string;
+  sucursalId: string;
   mes: number;
   anio: number;
   monto: number;
@@ -452,7 +458,7 @@ export async function crearImputacionGastoUnicoBalance(params: {
   fechaGasto: string;
   plazoPago?: number;
 }): Promise<ServiceResult<{ id: string }>> {
-  const { gastoFinalId, mes, anio, monto, pagado, fechaGasto, plazoPago } = params;
+  const { gastoFinalId, sucursalId, mes, anio, monto, pagado, fechaGasto, plazoPago } = params;
   if (monto < 1) {
     return { success: false, error: "El monto es obligatorio y debe ser mayor a cero." };
   }
@@ -489,6 +495,16 @@ export async function crearImputacionGastoUnicoBalance(params: {
         error: "Este gasto está configurado como mensual; usá «Cargar Mes».",
       };
     }
+    const sucImputacion = await prisma.sucursal.findUnique({
+      where: { id: sucursalId },
+      select: { id: true, centroCosto: true },
+    });
+    if (!sucImputacion?.centroCosto) {
+      return {
+        success: false,
+        error: "Elegí una sucursal válida (centro de costo).",
+      };
+    }
     const dupe = await prisma.finBalGastoMensual.findUnique({
       where: {
         gastoFinalId_mes_anio: { gastoFinalId, mes, anio },
@@ -502,7 +518,7 @@ export async function crearImputacionGastoUnicoBalance(params: {
       };
     }
     const row = await prisma.finBalGastoMensual.create({
-      data: { gastoFinalId, mes, anio, monto, pagado },
+      data: { gastoFinalId, mes, anio, monto, pagado, imputacionSucursalId: sucursalId },
       select: { id: true },
     });
     return { success: true, data: { id: row.id } };

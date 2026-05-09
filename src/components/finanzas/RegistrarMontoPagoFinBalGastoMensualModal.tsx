@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Loader2, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -192,29 +192,38 @@ export default function RegistrarMontoPagoFinBalGastoMensualModal({
               />
             </label>
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-sm">
-              <span className="min-w-0 text-muted-foreground">
-                {loadingUltMonto || ultMonto === undefined ? (
-                  <>Ult. Monto …</>
-                ) : ultMonto !== null ? (
-                  <>Ult. Monto ${fmtPrecio(ultMonto)}</>
-                ) : (
-                  <>Sin monto en mes anterior</>
-                )}
-              </span>
-              <span className="text-muted-foreground select-none" aria-hidden>
-                {" "}
-                -{" "}
-              </span>
-              <Button
-                type="button"
-                variant="link"
-                className="h-auto min-h-0 p-0 text-primary underline-offset-4"
-                disabled={!puedeRepetirMonto}
-                onClick={() => void handleRepetirMonto()}
-              >
-                {aplicandoRepetir ? "Aplicando…" : "Repetir Monto"}
-              </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
+              {loadingUltMonto || ultMonto === undefined ? (
+                <>
+                  <span className="font-semibold text-foreground">Ult. Monto</span>
+                  <span className="font-normal text-foreground">…</span>
+                </>
+              ) : ultMonto !== null ? (
+                <>
+                  <span className="inline-flex flex-wrap items-center justify-center gap-x-0">
+                    <span className="font-semibold text-foreground">Ult. Monto $</span>
+                    <span className="font-normal text-foreground">{fmtPrecio(ultMonto)}</span>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    disabled={!puedeRepetirMonto || aplicandoRepetir}
+                    onClick={() => void handleRepetirMonto()}
+                    aria-label="Repetir último monto"
+                    title="Repetir último monto"
+                  >
+                    {aplicandoRepetir ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Repeat2 className="h-4 w-4" aria-hidden />
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <span className="font-normal text-foreground">Sin monto en mes anterior</span>
+              )}
             </div>
 
             <label className="flex w-full flex-col items-center gap-1 text-center">

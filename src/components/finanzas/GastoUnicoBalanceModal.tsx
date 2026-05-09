@@ -16,6 +16,7 @@ import {
 import {
   FILTER_SELECT_WRAPPER_CLASS,
   FiltroIndividualContainer,
+  INPUT_FILTER_CLASS,
 } from "@/components/FilterBar";
 import MontoArInput from "@/components/shared/MontoArInput";
 import {
@@ -24,13 +25,14 @@ import {
 } from "@/actions/finBalGastoMensualBalance";
 import type { FinBalGastoFinalNoMensualListItem } from "@/services/finBalGastoMensualBalance.service";
 import { montoArNormalizedStringToPesosIntRounded } from "@/lib/montoArMask";
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mes: number;
   anio: number;
+  sucursalesCentroCosto: { id: string; nombre: string }[];
   onSuccess?: () => void;
 }
 
@@ -41,6 +43,7 @@ export default function GastoUnicoBalanceModal({
   onOpenChange,
   mes,
   anio,
+  sucursalesCentroCosto,
   onSuccess,
 }: Props) {
   const [vista, setVista] = useState<Vista>("lista");
@@ -52,10 +55,12 @@ export default function GastoUnicoBalanceModal({
   const [fechaGasto, setFechaGasto] = useState("");
   const [plazoPago, setPlazoPago] = useState<string>("");
   const [guardando, setGuardando] = useState(false);
-  /** Obligatorio para ver el listado de gastos eventuales. */
-  const [filtSucursal, setFiltSucursal] = useState("");
-  /** Opcional; acota por rubro dentro de la sucursal elegida. */
+  /** Opcional; acota por rubro. */
   const [filtRubro, setFiltRubro] = useState("");
+  /** Filtro por nombre de gasto (coincidencia parcial, mayúsculas es-AR). */
+  const [filtNombreGasto, setFiltNombreGasto] = useState("");
+  /** Paso «Cargar»: sucursal de imputación obligatoria antes del resto de campos. */
+  const [imputacionSucursalId, setImputacionSucursalId] = useState("");
 
   const cargarLista = useCallback(async () => {
     setCargandoLista(true);
@@ -80,25 +85,17 @@ export default function GastoUnicoBalanceModal({
     setPagadoNorm("");
     setFechaGasto("");
     setPlazoPago("");
-    setFiltSucursal("");
     setFiltRubro("");
+    setFiltNombreGasto("");
+    setImputacionSucursalId("");
     void cargarLista();
   }, [open, mes, anio, cargarLista]);
 
-  const sucursalesOpciones = useMemo(() => {
-    const u = [...new Set(items.map((i) => i.sucursalNombre))];
+  const rubrosOpciones = useMemo(() => {
+    const u = [...new Set(items.map((i) => i.rubroNombre))];
     u.sort((a, b) => a.localeCompare(b, "es"));
     return u;
   }, [items]);
-
-  const rubrosOpciones = useMemo(() => {
-    if (!filtSucursal) return [];
-    const u = [
-      ...new Set(items.filter((i) => i.sucursalNombre === filtSucursal).map((i) => i.rubroNombre)),
-    ];
-    u.sort((a, b) => a.localeCompare(b, "es"));
-    return u;
-  }, [items, filtSucursal]);
 
   useEffect(() => {
     if (!filtRubro) return;
@@ -106,11 +103,14 @@ export default function GastoUnicoBalanceModal({
   }, [filtRubro, rubrosOpciones]);
 
   const itemsFiltrados = useMemo(() => {
-    if (!filtSucursal) return [];
-    return items.filter(
-      (i) => i.sucursalNombre === filtSucursal && (!filtRubro || i.rubroNombre === filtRubro)
-    );
-  }, [items, filtSucursal, filtRubro]);
+    let out = items;
+    if (filtRubro) out = out.filter((i) => i.rubroNombre === filtRubro);
+    const q = filtNombreGasto.trim().toLocaleUpperCase("es-AR");
+    if (q !== "") {
+      out = out.filter((i) => i.gastoNombre.includes(q));
+    }
+    return out;
+  }, [items, filtRubro, filtNombreGasto]);
 
   const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
   const pagadoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(pagadoNorm), [pagadoNorm]);
@@ -131,6 +131,7 @@ export default function GastoUnicoBalanceModal({
 
   const disabledGuardar = useMemo(() => {
     if (guardando || !seleccion) return true;
+    if (imputacionSucursalId === "") return true;
     if (montoPesosInt < 1) return true;
     if (pagadoPesosInt < 0 || pagadoPesosInt > montoPesosInt) return true;
     if (!fechaGasto) return true;
@@ -149,6 +150,7 @@ export default function GastoUnicoBalanceModal({
   }, [
     guardando,
     seleccion,
+    imputacionSucursalId,
     montoPesosInt,
     pagadoPesosInt,
     fechaGasto,
@@ -164,6 +166,7 @@ export default function GastoUnicoBalanceModal({
     try {
       const r = await crearFinBalImputacionGastoUnicoAction({
         gastoFinalId: seleccion.gastoFinalId,
+        sucursalId: imputacionSucursalId,
         mes,
         anio,
         monto: montoPesosInt,
@@ -187,8 +190,9 @@ export default function GastoUnicoBalanceModal({
     setSeleccion(it);
     setMontoNorm("");
     setPagadoNorm("");
-    setFechaGasto(dateToIsoYmdArgentina(new Date(anio, mes - 1, 1)));
+    setFechaGasto("");
     setPlazoPago("");
+    setImputacionSucursalId("");
     setVista("formulario");
   }
 
@@ -198,12 +202,12 @@ export default function GastoUnicoBalanceModal({
     setPagadoNorm("");
     setFechaGasto("");
     setPlazoPago("");
+    setImputacionSucursalId("");
     setVista("lista");
     void cargarLista();
   }
 
-  const tituloModal =
-    vista === "lista" ? "Gasto Eventual" : "Cargar Gasto Eventual";
+  const tituloModal = vista === "lista" ? "Nuevo Gasto Eventual" : "Cargar Gasto Eventual";
 
   return (
     <Dialog
@@ -240,40 +244,8 @@ export default function GastoUnicoBalanceModal({
         <div className="grid min-h-0 gap-3 text-sm">
           {vista === "lista" ? (
             <>
-              <p className="text-xs text-muted-foreground">
-                Gastos del catálogo con periodicidad <span className="font-medium text-foreground">EVENTUAL</span>
-                . Periodo: <span className="font-medium text-foreground">{mes}/{anio}</span>.
-              </p>
               {!cargandoLista && items.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <FiltroIndividualContainer
-                    className={FILTER_SELECT_WRAPPER_CLASS}
-                    activo={!!filtSucursal}
-                    onLimpiar={() => {
-                      setFiltSucursal("");
-                      setFiltRubro("");
-                    }}
-                  >
-                    <Select
-                      value={filtSucursal || "none"}
-                      onValueChange={(v) => {
-                        setFiltSucursal(v === "none" ? "" : v);
-                        setFiltRubro("");
-                      }}
-                    >
-                      <SelectTrigger className="input-filtro-unificado w-full" aria-label="Sucursal (obligatorio)">
-                        <SelectValue placeholder="SUCURSAL" />
-                      </SelectTrigger>
-                      <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                        <SelectItem value="none">SUCURSAL *</SelectItem>
-                        {sucursalesOpciones.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FiltroIndividualContainer>
+                <div className="grid gap-2 sm:grid-cols-2">
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
                     activo={!!filtRubro}
@@ -282,7 +254,6 @@ export default function GastoUnicoBalanceModal({
                     <Select
                       value={filtRubro || "none"}
                       onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}
-                      disabled={!filtSucursal}
                     >
                       <SelectTrigger className="input-filtro-unificado w-full" aria-label="Rubro (opcional)">
                         <SelectValue placeholder="RUBRO" />
@@ -297,6 +268,20 @@ export default function GastoUnicoBalanceModal({
                       </SelectContent>
                     </Select>
                   </FiltroIndividualContainer>
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={filtNombreGasto.trim() !== ""}
+                    onLimpiar={() => setFiltNombreGasto("")}
+                  >
+                    <input
+                      type="text"
+                      value={filtNombreGasto}
+                      onChange={(e) => setFiltNombreGasto(e.target.value.toLocaleUpperCase("es-AR"))}
+                      placeholder="NOMBRE DE GASTO"
+                      aria-label="Filtrar por nombre de gasto"
+                      className={cn(INPUT_FILTER_CLASS, "w-full")}
+                    />
+                  </FiltroIndividualContainer>
                 </div>
               ) : null}
               <div className="max-h-[min(60vh,28rem)] overflow-y-auto rounded-md border border-border">
@@ -309,15 +294,9 @@ export default function GastoUnicoBalanceModal({
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
                     No hay gastos eventuales en el catálogo.
                   </p>
-                ) : !filtSucursal ? (
-                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    Seleccioná una <span className="font-medium text-foreground">SUCURSAL</span> para ver los gastos
-                    eventuales.
-                  </p>
                 ) : itemsFiltrados.length === 0 ? (
                   <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No hay gastos eventuales para esta sucursal
-                    {filtRubro ? " y el rubro elegido" : ""}.
+                    No hay gastos eventuales que coincidan con los filtros.
                   </p>
                 ) : (
                   <ul className="divide-y divide-border">
@@ -389,13 +368,39 @@ export default function GastoUnicoBalanceModal({
               </div>
               <label className="flex w-full flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Sucursal <span className="text-destructive">*</span>
+                </span>
+                <Select
+                  value={imputacionSucursalId || "none"}
+                  onValueChange={(v) => setImputacionSucursalId(v === "none" ? "" : v)}
+                  disabled={guardando || sucursalesCentroCosto.length === 0}
+                >
+                  <SelectTrigger className="input-filtro-unificado w-full" autoFocus aria-label="Sucursal de imputación">
+                    <SelectValue placeholder="SELECCIONAR SUCURSAL" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                    <SelectItem value="none">SELECCIONAR SUCURSAL</SelectItem>
+                    {sucursalesCentroCosto.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.nombre.toUpperCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {sucursalesCentroCosto.length === 0 ? (
+                  <span className="text-xs text-muted-foreground">
+                    No hay sucursales con centro de costo para imputar.
+                  </span>
+                ) : null}
+              </label>
+              <label className="flex w-full flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   Monto <span className="text-destructive">*</span>
                 </span>
                 <MontoArInput
                   valueNormalized={montoNorm}
                   onValueNormalizedChange={setMontoNorm}
-                  disabled={guardando}
-                  autoFocus
+                  disabled={guardando || imputacionSucursalId === ""}
                   aria-label="Monto en pesos"
                 />
               </label>
@@ -407,7 +412,7 @@ export default function GastoUnicoBalanceModal({
                   <MontoArInput
                     valueNormalized={pagadoNorm}
                     onValueNormalizedChange={setPagadoNorm}
-                    disabled={guardando}
+                    disabled={guardando || imputacionSucursalId === ""}
                     aria-label="Importe ya pagado"
                     className="w-full min-w-0 pr-12"
                   />
@@ -416,7 +421,7 @@ export default function GastoUnicoBalanceModal({
                     variant="primaryIcon"
                     size="icon"
                     className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md"
-                    disabled={guardando || montoPesosInt < 1}
+                    disabled={guardando || imputacionSucursalId === "" || montoPesosInt < 1}
                     onClick={() => setPagadoNorm(montoNorm)}
                     aria-label="Marcar gasto eventual como pagado (pago total)"
                     title="Marcar pago total"
@@ -435,7 +440,7 @@ export default function GastoUnicoBalanceModal({
                   min={fechaMin}
                   max={fechaMax}
                   onChange={(e) => setFechaGasto(e.target.value)}
-                  disabled={guardando}
+                  disabled={guardando || imputacionSucursalId === ""}
                   className="input-filtro-unificado"
                   aria-label="Fecha de gasto"
                 />
@@ -447,7 +452,7 @@ export default function GastoUnicoBalanceModal({
                 <Select
                   value={pagoTotal ? undefined : plazoPago || undefined}
                   onValueChange={setPlazoPago}
-                  disabled={guardando || pagoTotal}
+                  disabled={guardando || pagoTotal || imputacionSucursalId === ""}
                 >
                   <SelectTrigger className="input-filtro-unificado">
                     <SelectValue

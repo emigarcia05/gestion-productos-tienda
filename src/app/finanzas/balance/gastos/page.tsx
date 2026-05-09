@@ -4,6 +4,7 @@ import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance"
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarImputacionesMensualesBalance, mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
+import { listarSucursalesParaGastos } from "@/services/movimientosFinanzas.service";
 
 export const dynamic = "force-dynamic";
 
@@ -55,9 +56,18 @@ export default async function BalanceGastosPage({ searchParams }: Props) {
 
   const { mes, anio } = parsed.data;
 
-  const filas = await listarImputacionesMensualesBalance({ mes, anio });
+  const [filas, sucursalesCentroCosto] = await Promise.all([
+    listarImputacionesMensualesBalance({ mes, anio }),
+    listarSucursalesParaGastos(),
+  ]);
 
   return (
-    <FinanzasBalanceGastosPageClient filas={filas} esEditor={esEditor} mes={mes} anio={anio} />
+    <FinanzasBalanceGastosPageClient
+      filas={filas}
+      esEditor={esEditor}
+      mes={mes}
+      anio={anio}
+      sucursalesCentroCosto={sucursalesCentroCosto}
+    />
   );
 }

@@ -117,6 +117,8 @@ interface Props {
   esEditor: boolean;
   mes: number;
   anio: number;
+  /** Selectores de sucursal (centro de costo) para gasto eventual. */
+  sucursalesCentroCosto: { id: string; nombre: string }[];
 }
 
 export default function FinanzasBalanceGastosPageClient({
@@ -124,6 +126,7 @@ export default function FinanzasBalanceGastosPageClient({
   esEditor,
   mes,
   anio,
+  sucursalesCentroCosto,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -546,6 +549,7 @@ export default function FinanzasBalanceGastosPageClient({
         onOpenChange={setGastoUnicoOpen}
         mes={mes}
         anio={anio}
+        sucursalesCentroCosto={sucursalesCentroCosto}
         onSuccess={() => router.refresh()}
       />
 

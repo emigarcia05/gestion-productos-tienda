@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismaCuidSchema } from "@/lib/validations/common";
+import { globalSucursalIdSchema, prismaCuidSchema } from "@/lib/validations/common";
 
 /** Periodo calendario para Balance · Gastos y acciones relacionadas (`fin_bal_gasto_mensual`). */
 export const mesAnioQuerySchema = z.object({
@@ -50,6 +50,8 @@ export type HistoricoMontosGastoFinalBalanceInput = z.infer<
 export const crearImputacionGastoUnicoBalanceSchema = z
   .object({
     gastoFinalId: prismaCuidSchema,
+    /** Sucursal de imputación (obligatoria en alta desde Balance · Gastos eventual). */
+    sucursalId: globalSucursalIdSchema,
     mes: z.coerce.number().int().min(1).max(12),
     anio: z.coerce.number().int().min(2026).max(2046),
     monto: z.coerce.number().int().min(1, "El monto es obligatorio."),
