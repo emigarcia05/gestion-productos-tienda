@@ -203,7 +203,7 @@ export default function FinBalGastosCatalogoPageClient({
       gastoSeleccionado
     ) {
       const row = gastoSeleccionado.asignacionesFinales.find((a) => a.id === gastoFinalModal.id);
-      if (row && !ids.has(row.sucursal.id)) {
+      if (row?.sucursal && !ids.has(row.sucursal.id)) {
         return [...sucursales, { id: row.sucursal.id, nombre: row.sucursal.nombre }].sort((a, b) =>
           a.nombre.localeCompare(b.nombre, "es")
         );
@@ -452,7 +452,7 @@ export default function FinBalGastosCatalogoPageClient({
                   nombre={a.proveedor.nombre}
                   gastoFinalDetalle={{
                     gastoNombre: gastoSeleccionado.nombre,
-                    sucursalNombre: a.sucursal.nombre,
+                    sucursalNombre: a.sucursal?.nombre ?? "—",
                     proveedorNombre: a.proveedor.nombre,
                     gastoMensual: a.gastoMensual,
                     diaDevengado: a.diaDevengado,
@@ -468,7 +468,7 @@ export default function FinBalGastosCatalogoPageClient({
                       modo: "editar",
                       id: a.id,
                       proveedorIdInicial: a.proveedorId,
-                      sucursalIdInicial: a.sucursalId,
+                      sucursalIdInicial: a.sucursalId ?? undefined,
                       gastoMensualInicial: a.gastoMensual,
                       diaDevengadoInicial: a.diaDevengado,
                       vencimientoInicial: a.vencimiento,
@@ -481,7 +481,7 @@ export default function FinBalGastosCatalogoPageClient({
                       open: true,
                       id: a.id,
                       proveedorNombre: a.proveedor.nombre,
-                      sucursalNombre: a.sucursal.nombre,
+                      sucursalNombre: a.sucursal?.nombre ?? "",
                     })
                   }
                 />

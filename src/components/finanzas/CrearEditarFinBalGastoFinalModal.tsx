@@ -40,8 +40,17 @@ export interface ProveedorOpcionGastoFinal {
 export interface FinBalGastoFinalFilaHermana {
   id: string;
   proveedorId: string;
-  sucursalId: string;
+  sucursalId: string | null;
   comentarios: string | null;
+}
+
+function sucursalIdNormalizadoTripla(id: string | null | undefined): string | null {
+  if (id == null || id === "") return null;
+  return id;
+}
+
+function mismaSucursalTripla(a: string | null | undefined, b: string): boolean {
+  return sucursalIdNormalizadoTripla(a) === sucursalIdNormalizadoTripla(b);
 }
 
 function comentariosNormModal(c: string | null | undefined): string {
@@ -118,7 +127,7 @@ export default function CrearEditarFinBalGastoFinalModal({
   useEffect(() => {
     if (!open) return;
     const esEdicion = modo === "editar";
-    setSucursalId(esEdicion ? sucursalIdInicial : "");
+    setSucursalId(esEdicion ? (sucursalIdInicial ?? "") : "");
     setProveedorId(esEdicion ? proveedorIdInicial : "");
     if (esEdicion) {
       setGastoMensual(gastoMensualInicial);
@@ -153,14 +162,16 @@ export default function CrearEditarFinBalGastoFinalModal({
   ]);
 
   const hermanosMismaProveedorSucursal = useMemo(() => {
-    if (!proveedorId || !sucursalId) return [];
+    if (!proveedorId) return [];
+    if (gastoMensual === null) return [];
+    if (gastoMensual && !sucursalId) return [];
     return filasMismoGastoFinal.filter(
       (f) =>
         f.proveedorId === proveedorId &&
-        f.sucursalId === sucursalId &&
+        mismaSucursalTripla(f.sucursalId, sucursalId) &&
         (modo === "crear" || !id || f.id !== id)
     );
-  }, [filasMismoGastoFinal, proveedorId, sucursalId, modo, id]);
+  }, [filasMismoGastoFinal, proveedorId, sucursalId, modo, id, gastoMensual]);
 
   const comentariosNorm = useMemo(() => comentariosNormModal(comentarios), [comentarios]);
 
@@ -189,7 +200,7 @@ export default function CrearEditarFinBalGastoFinalModal({
         : false;
     return (
       proveedorId !== proveedorIdInicial ||
-      sucursalId !== sucursalIdInicial ||
+      sucursalId !== (sucursalIdInicial ?? "") ||
       gastoMensual !== gastoMensualInicial ||
       cambioDiaOPlazo ||
       comentarios !== comIni ||
@@ -215,10 +226,11 @@ export default function CrearEditarFinBalGastoFinalModal({
 
   const disabledSubmit = useMemo(() => {
     if (saving) return true;
-    if (!sucursalId || !proveedorId) return true;
+    if (!proveedorId) return true;
     if (iva === "") return true;
     if (gastoMensual === null) return true;
     if (gastoMensual === true) {
+      if (!sucursalId) return true;
       if (diaDevengado == null || vencimiento == null) return true;
       if (!Number.isInteger(vencimiento) || vencimiento < 0 || vencimiento > 30) return true;
     }
@@ -229,11 +241,11 @@ export default function CrearEditarFinBalGastoFinalModal({
     saving,
     sucursalId,
     proveedorId,
+    gastoMensual,
     modo,
     id,
     hasChanges,
     comentarioChocaConOtro,
-    gastoMensual,
     diaDevengado,
     vencimiento,
     iva,
@@ -259,10 +271,10 @@ export default function CrearEditarFinBalGastoFinalModal({
         const r = await crearFinBalGastoFinalAction({
           gastoId,
           proveedorId,
-          sucursalId,
+          sucursalId: gastoMensual === true ? sucursalId : null,
           gastoMensual: gastoMensual as boolean,
-          diaDevengado: gastoMensual ? diaDevengado : null,
-          vencimiento: gastoMensual ? vencimiento : null,
+          diaDevengado: gastoMensual === true ? diaDevengado : null,
+          vencimiento: gastoMensual === true ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
           iva: iva as IvaValue,
         });
@@ -275,10 +287,10 @@ export default function CrearEditarFinBalGastoFinalModal({
         const r = await editarFinBalGastoFinalAction({
           id: id!,
           proveedorId,
-          sucursalId,
+          sucursalId: gastoMensual === true ? sucursalId : null,
           gastoMensual: gastoMensual as boolean,
-          diaDevengado: gastoMensual ? diaDevengado : null,
-          vencimiento: gastoMensual ? vencimiento : null,
+          diaDevengado: gastoMensual === true ? diaDevengado : null,
+          vencimiento: gastoMensual === true ? vencimiento : null,
           comentarios: comentariosParaPersistir(),
           iva: iva as IvaValue,
         });
@@ -339,9 +351,11 @@ export default function CrearEditarFinBalGastoFinalModal({
                 gastoMensual === null ? undefined : gastoMensual ? "mensual" : "eventual"
               }
               onValueChange={(v) => {
-                setGastoMensual(v === "mensual");
+                const mensual = v === "mensual";
+                setGastoMensual(mensual);
                 setDiaDevengado(null);
                 setVencimiento(null);
+                if (!mensual) setSucursalId("");
               }}
               disabled={saving}
             >
@@ -357,22 +371,51 @@ export default function CrearEditarFinBalGastoFinalModal({
 
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>SUCURSAL</ModalMicroLabel>
-            <Select
-              value={sucursalId || undefined}
-              onValueChange={setSucursalId}
-              disabled={saving || sucursales.length === 0}
-            >
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="SELECCIONAR SUCURSAL" />
-              </SelectTrigger>
-              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                {sucursales.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {gastoMensual === true ? (
+              <Select
+                value={sucursalId || undefined}
+                onValueChange={setSucursalId}
+                disabled={saving || sucursales.length === 0}
+              >
+                <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                  <SelectValue placeholder="SELECCIONAR SUCURSAL" />
+                </SelectTrigger>
+                <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                  {sucursales.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : gastoMensual === false ? (
+              <>
+                <div
+                  className={cn(
+                    SELECT_TRIGGER_FILTER_CLASS,
+                    "flex items-center text-muted-foreground",
+                    "cursor-not-allowed select-none opacity-80"
+                  )}
+                  aria-disabled="true"
+                >
+                  NO APLICA (GASTO EVENTUAL)
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  En gasto eventual la sucursal no se guarda (valor vacío en base de datos).
+                </p>
+              </>
+            ) : (
+              <div
+                className={cn(
+                  SELECT_TRIGGER_FILTER_CLASS,
+                  "flex items-center text-muted-foreground",
+                  "cursor-not-allowed select-none"
+                )}
+                aria-disabled="true"
+              >
+                SELECCIONÁ TIPO DE GASTO PRIMERO
+              </div>
+            )}
           </label>
 
           <label className="flex flex-col gap-1">
@@ -380,7 +423,11 @@ export default function CrearEditarFinBalGastoFinalModal({
             <Select
               value={proveedorId || undefined}
               onValueChange={setProveedorId}
-              disabled={saving || !sucursalId || proveedoresOpciones.length === 0}
+              disabled={
+                saving ||
+                proveedoresOpciones.length === 0 ||
+                (gastoMensual === true && !sucursalId)
+              }
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
@@ -513,13 +560,16 @@ export default function CrearEditarFinBalGastoFinalModal({
             <span className="text-xs text-muted-foreground">{comentarios.length} / 10000</span>
             {hayOtraFilaMismaProveedorSucursal ? (
               <p className="text-xs text-muted-foreground">
-                Ya hay otra fila con el mismo proveedor y sucursal. Podés usar COMENTARIOS para distinguirlas en el
-                listado (opcional).
+                {gastoMensual
+                  ? "Ya hay otra fila con el mismo proveedor y sucursal para este gasto. Podés usar COMENTARIOS para distinguirlas (obligatorio si el texto coincide con otra fila)."
+                  : "Ya hay otra fila eventual con el mismo proveedor para este gasto. Podés usar COMENTARIOS para distinguirlas (obligatorio si el texto coincide con otra fila)."}
               </p>
             ) : null}
             {comentarioChocaConOtro ? (
               <p className="text-xs text-destructive">
-                Ese texto en COMENTARIOS coincide con otra fila del mismo proveedor y sucursal. Cambie el texto.
+                {gastoMensual
+                  ? "Ese texto en COMENTARIOS coincide con otra fila del mismo proveedor y sucursal. Cambie el texto."
+                  : "Ese texto en COMENTARIOS coincide con otra fila eventual del mismo proveedor. Cambie el texto."}
               </p>
             ) : null}
           </label>

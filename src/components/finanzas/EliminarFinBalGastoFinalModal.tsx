@@ -79,8 +79,10 @@ export default function EliminarFinBalGastoFinalModal({
         }
       >
         <p className="text-sm text-muted-foreground">
-          {id && proveedorNombre && sucursalNombre && gastoNombre
-            ? `¿Eliminar el gasto final "${gastoNombre}" — ${proveedorNombre} — ${sucursalNombre}? Esta acción no se puede deshacer.`
+          {id && proveedorNombre && gastoNombre
+            ? sucursalNombre
+              ? `¿Eliminar el gasto final "${gastoNombre}" — ${proveedorNombre} — ${sucursalNombre}? Esta acción no se puede deshacer.`
+              : `¿Eliminar el gasto final "${gastoNombre}" — ${proveedorNombre} (eventual sin sucursal)? Esta acción no se puede deshacer.`
             : "Seleccioná un gasto final para eliminar."}
         </p>
       </AppModal>

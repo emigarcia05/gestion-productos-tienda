@@ -250,10 +250,11 @@ model FinBalGasto {
 }
 
 /**
- * Gasto de balance “final”: catálogo `fin_bal_cat_gasto` + proveedor + sucursal + `gasto_mensual` + `dia_devengado` + `plazo_pago_dias`.
+ * Gasto de balance “final”: catálogo `fin_bal_cat_gasto` + proveedor + sucursal opcional + `gasto_mensual` + `dia_devengado` + `plazo_pago_dias`.
  * Obligatorios en persistencia: `gasto_id`, `proveedor_id`, `gasto_mensual`.
+ * `sucursal_id`: obligatorio si `gasto_mensual = true` (centro de costo); debe ser **NULL** si `gasto_mensual = false` (eventual).
  * Si `gasto_mensual = true`, `dia_devengado` (1–28) y `plazo_pago_dias` (0–30) son obligatorios.
- * Si `gasto_mensual = false` (eventual), ambos deben persistir en `NULL`.
+ * Si `gasto_mensual = false` (eventual), `dia_devengado`, `plazo_pago_dias` y `sucursal_id` deben persistir en **`NULL`**.
  * `comentarios` opcional (TEXT); en UI se ingresa en mayúsculas.
  * Un gasto de catálogo puede tener N filas; la terna gasto + proveedor + sucursal puede repetirse (cada fila tiene `id` propio e imputaciones mensuales independientes).
  */
@@ -261,7 +262,7 @@ model FinBalGastoFinal {
   id            String   @id @default(cuid())
   gastoId       String   @map("gasto_id")
   proveedorId   String   @map("proveedor_id")
-  sucursalId    String   @map("sucursal_id")
+  sucursalId    String?  @map("sucursal_id")
   gastoMensual  Boolean  @map("gasto_mensual")
   /** Día del mes (1–28) del devengo en gastos mensuales; `NULL` en eventuales. */
   diaDevengado  Int?     @map("dia_devengado")
@@ -283,7 +284,7 @@ model FinBalGastoFinal {
 
   gasto     FinBalGasto @relation(fields: [gastoId], references: [id], onDelete: Cascade)
   proveedor Proveedor   @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
-  sucursal  Sucursal    @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+  sucursal  Sucursal?   @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
   /** Una fila por mes/año imputado (unicidad en DB). */
   mensuales FinBalGastoMensual[]
 

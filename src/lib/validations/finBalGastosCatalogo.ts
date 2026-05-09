@@ -8,7 +8,7 @@ import { ivaPoliticaFormSchema } from "@/lib/validations/iva";
 
 /**
  * Validaciones para el catálogo jerárquico Finanzas → Balance → Gastos:
- * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N) + fin_bal_gasto_final (gasto + proveedor + sucursal; la terna puede repetirse entre filas).
+ * fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N) + fin_bal_gasto_final (gasto + proveedor + sucursal opcional si gasto eventual; la terna puede repetirse entre filas).
  *
  * Convención de normalización: todos los `nombre` se normalizan con `trim + toUpperCase`,
  * consistente con fin_tesoreria, movimientos_finanzas.nombre y demás catálogos finanzas.
@@ -79,7 +79,12 @@ export const eliminarFinBalGastoSchema = z.object({
 });
 export type EliminarFinBalGastoInput = z.infer<typeof eliminarFinBalGastoSchema>;
 
-// ─── Gasto final (`fin_bal_gasto_final`: gasto + proveedor + sucursal) ─────
+// ─── Gasto final (`fin_bal_gasto_final`: gasto + proveedor + sucursal según mensual) ─
+
+/** Entrada HTTP: vacío / null se normaliza según `gasto_mensual` en el schema refinado. */
+const gastoFinalSucursalEntradaSchema = z
+  .union([globalSucursalIdSchema, z.literal(""), z.null()])
+  .optional();
 
 const diaDevengadoSchema = z.coerce
   .number()
@@ -104,10 +109,10 @@ const comentariosFinBalGastoFinalSchema = z
     return t === "" ? null : t;
   });
 
-export const crearFinBalGastoFinalSchema = z.object({
+const crearFinBalGastoFinalSchemaBase = z.object({
   gastoId: prismaCuidOrUuidSchema,
   proveedorId: prismaCuidOrUuidSchema,
-  sucursalId: globalSucursalIdSchema,
+  sucursalId: gastoFinalSucursalEntradaSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema.nullable(),
   vencimiento: vencimientoSchema.nullable(),
@@ -147,12 +152,41 @@ export const crearFinBalGastoFinalSchema = z.object({
     });
   }
 });
-export type CrearFinBalGastoFinalInput = z.infer<typeof crearFinBalGastoFinalSchema>;
 
-export const editarFinBalGastoFinalSchema = z.object({
+export const crearFinBalGastoFinalSchema = crearFinBalGastoFinalSchemaBase
+  .superRefine((data, ctx) => {
+    const vacio = data.sucursalId == null || data.sucursalId === "";
+    if (data.gastoMensual && vacio) {
+      ctx.addIssue({
+        code: "custom",
+        message: "La sucursal es obligatoria cuando el gasto es mensual.",
+        path: ["sucursalId"],
+      });
+    }
+    if (!data.gastoMensual && !vacio) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Para gasto eventual no debe indicarse sucursal.",
+        path: ["sucursalId"],
+      });
+    }
+  })
+  .transform((data) => ({
+    gastoId: data.gastoId,
+    proveedorId: data.proveedorId,
+    gastoMensual: data.gastoMensual,
+    diaDevengado: data.diaDevengado,
+    vencimiento: data.vencimiento,
+    comentarios: data.comentarios,
+    sucursalId: data.gastoMensual ? (data.sucursalId as string) : null,
+    iva: data.iva,
+  }));
+export type CrearFinBalGastoFinalInput = z.output<typeof crearFinBalGastoFinalSchema>;
+
+const editarFinBalGastoFinalSchemaBase = z.object({
   id: prismaCuidSchema,
   proveedorId: prismaCuidOrUuidSchema,
-  sucursalId: globalSucursalIdSchema,
+  sucursalId: gastoFinalSucursalEntradaSchema,
   gastoMensual: z.boolean(),
   diaDevengado: diaDevengadoSchema.nullable(),
   vencimiento: vencimientoSchema.nullable(),
@@ -192,7 +226,36 @@ export const editarFinBalGastoFinalSchema = z.object({
     });
   }
 });
-export type EditarFinBalGastoFinalInput = z.infer<typeof editarFinBalGastoFinalSchema>;
+
+export const editarFinBalGastoFinalSchema = editarFinBalGastoFinalSchemaBase
+  .superRefine((data, ctx) => {
+    const vacio = data.sucursalId == null || data.sucursalId === "";
+    if (data.gastoMensual && vacio) {
+      ctx.addIssue({
+        code: "custom",
+        message: "La sucursal es obligatoria cuando el gasto es mensual.",
+        path: ["sucursalId"],
+      });
+    }
+    if (!data.gastoMensual && !vacio) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Para gasto eventual no debe indicarse sucursal.",
+        path: ["sucursalId"],
+      });
+    }
+  })
+  .transform((data) => ({
+    id: data.id,
+    proveedorId: data.proveedorId,
+    gastoMensual: data.gastoMensual,
+    diaDevengado: data.diaDevengado,
+    vencimiento: data.vencimiento,
+    comentarios: data.comentarios,
+    sucursalId: data.gastoMensual ? (data.sucursalId as string) : null,
+    iva: data.iva,
+  }));
+export type EditarFinBalGastoFinalInput = z.output<typeof editarFinBalGastoFinalSchema>;
 
 export const eliminarFinBalGastoFinalSchema = z.object({
   id: prismaCuidSchema,

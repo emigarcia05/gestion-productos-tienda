@@ -164,7 +164,7 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
 
   try {
     const finals = await prisma.finBalGastoFinal.findMany({
-      where: { gastoMensual: true },
+      where: { gastoMensual: true, sucursalId: { not: null } },
       select: { id: true },
     });
     if (finals.length === 0) {
@@ -297,9 +297,9 @@ export async function listarImputacionesMensualesBalance(params: {
       id: r.id,
       gastoFinalId: r.gastoFinalId,
       fechaDevengoIso,
-      sucursalNombre: gf.sucursal.nombre.toUpperCase(),
-      sucursalGeneraBalance: gf.sucursal.generaBalance,
-      sucursalCentroCosto: gf.sucursal.centroCosto,
+      sucursalNombre: gf.sucursal?.nombre.toUpperCase() ?? "—",
+      sucursalGeneraBalance: gf.sucursal?.generaBalance ?? false,
+      sucursalCentroCosto: gf.sucursal?.centroCosto ?? false,
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),
@@ -416,7 +416,7 @@ export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),
       proveedorNombre: gf.proveedor.nombre.toUpperCase(),
-      sucursalNombre: gf.sucursal.nombre.toUpperCase(),
+      sucursalNombre: gf.sucursal?.nombre.toUpperCase() ?? "—",
       diaDevengado: gf.diaDevengado,
       vencimiento: gf.vencimiento,
       gastoFinalComentarios: comRaw.length > 0 ? comRaw.toUpperCase() : null,

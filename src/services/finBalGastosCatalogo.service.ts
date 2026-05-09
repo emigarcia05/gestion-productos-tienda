@@ -15,7 +15,7 @@ import type {
 /**
  * Catálogo jerárquico Finanzas → Balance → Gastos:
  *   fin_bal_gasto_tipo (1) ─→ fin_bal_gasto_rubro (N) ─→ fin_bal_cat_gasto (N)
- *   y filas `fin_bal_gasto_final` (gasto + proveedor + sucursal + mensual + día devengado + comentarios opcional, N por gasto).
+ *   y filas `fin_bal_gasto_final` (gasto + proveedor + sucursal si mensual + flag mensual + día devengado + comentarios opcional, N por gasto).
  *
  * Convenciones:
  * - `nombre` se persiste en MAYÚSCULAS (ya viene normalizado desde Zod en la Action).
@@ -48,12 +48,13 @@ export interface FinBalGastoItem {
   updatedAt: Date;
 }
 
-/** Fila de `fin_bal_gasto_final` con proveedor y sucursal para UI de catálogo. */
+/** Fila de `fin_bal_gasto_final` con proveedor y sucursal (esta última solo si `gastoMensual`) para UI de catálogo. */
 export interface FinBalGastoFinalItem {
   id: string;
   gastoId: string;
   proveedorId: string;
-  sucursalId: string;
+  /** `null` si gasto eventual (`gasto_mensual = false`). */
+  sucursalId: string | null;
   gastoMensual: boolean;
   /** 1–28 en mensual; `null` en eventual. */
   diaDevengado: number | null;
@@ -74,7 +75,7 @@ export interface FinBalGastoFinalItem {
   sucursal: {
     id: string;
     nombre: string;
-  };
+  } | null;
 }
 
 export interface FinBalGastoJerarquiaGasto extends FinBalGastoItem {
@@ -251,10 +252,12 @@ export async function listarFinBalGastosJerarquia(): Promise<FinBalGastoJerarqui
             nombre: a.proveedor.nombre.toUpperCase(),
             prefijo: a.proveedor.prefijo ?? "",
           },
-          sucursal: {
-            id: a.sucursal.id,
-            nombre: a.sucursal.nombre.toUpperCase(),
-          },
+          sucursal: a.sucursal
+            ? {
+                id: a.sucursal.id,
+                nombre: a.sucursal.nombre.toUpperCase(),
+              }
+            : null,
         })),
       })),
     })),
@@ -495,14 +498,14 @@ function mapFinBalGastoFinalRow(row: {
   id: string;
   gastoId: string;
   proveedorId: string;
-  sucursalId: string;
+  sucursalId: string | null;
   gastoMensual: boolean;
   diaDevengado: number | null;
   vencimiento: number | null;
   comentarios: string | null;
   iva: IvaProveedor;
   proveedor: { id: string; nombre: string; prefijo: string | null };
-  sucursal: { id: string; nombre: string };
+  sucursal: { id: string; nombre: string } | null;
 }): FinBalGastoFinalItem {
   return {
     id: row.id,
@@ -519,10 +522,12 @@ function mapFinBalGastoFinalRow(row: {
       nombre: row.proveedor.nombre.toUpperCase(),
       prefijo: row.proveedor.prefijo ?? "",
     },
-    sucursal: {
-      id: row.sucursal.id,
-      nombre: row.sucursal.nombre.toUpperCase(),
-    },
+    sucursal: row.sucursal
+      ? {
+          id: row.sucursal.id,
+          nombre: row.sucursal.nombre.toUpperCase(),
+        }
+      : null,
   };
 }
 
@@ -548,7 +553,7 @@ function comentariosGastoFinalNormalizado(c: string | null | undefined): string 
 async function validarComentariosParaTriplaGastoFinalRepetida(params: {
   gastoId: string;
   proveedorId: string;
-  sucursalId: string;
+  sucursalId: string | null;
   comentarios: string | null;
   excludeId?: string;
 }): Promise<ServiceResult<void>> {
@@ -567,10 +572,13 @@ async function validarComentariosParaTriplaGastoFinalRepetida(params: {
   }
   for (const o of otros) {
     if (comentariosGastoFinalNormalizado(o.comentarios) === norm) {
+      const ctx =
+        params.sucursalId == null
+          ? "mismo proveedor (sin sucursal)"
+          : "mismo proveedor, sucursal";
       return {
         success: false,
-        error:
-          "Ya existe otra fila con el mismo proveedor, sucursal y comentarios. Cambie el texto en COMENTARIOS.",
+        error: `Ya existe otra fila con ${ctx} y comentarios iguales. Cambie el texto en COMENTARIOS.`,
       };
     }
   }
@@ -580,10 +588,20 @@ async function validarComentariosParaTriplaGastoFinalRepetida(params: {
 export async function crearFinBalGastoFinal(
   input: CrearFinBalGastoFinalInput
 ): Promise<ServiceResult<FinBalGastoFinalItem>> {
-  if (!(await sucursalEsCentroDeCosto(input.sucursalId))) {
+  if (input.gastoMensual) {
+    if (!input.sucursalId) {
+      return { success: false, error: "La sucursal es obligatoria para gasto mensual." };
+    }
+    if (!(await sucursalEsCentroDeCosto(input.sucursalId))) {
+      return {
+        success: false,
+        error: "La sucursal debe tener centro de costo y generar balance activados.",
+      };
+    }
+  } else if (input.sucursalId != null) {
     return {
       success: false,
-      error: "La sucursal debe tener centro de costo activado.",
+      error: "Los gastos eventuales no deben tener sucursal asignada.",
     };
   }
   const triplaOk = await validarComentariosParaTriplaGastoFinalRepetida({
@@ -631,13 +649,23 @@ export async function editarFinBalGastoFinal(
   if (!prev) {
     return { success: false, error: "Gasto final no encontrado." };
   }
-  if (
-    input.sucursalId !== prev.sucursalId &&
-    !(await sucursalEsCentroDeCosto(input.sucursalId))
-  ) {
+  if (input.gastoMensual) {
+    if (!input.sucursalId) {
+      return { success: false, error: "La sucursal es obligatoria para gasto mensual." };
+    }
+    if (
+      input.sucursalId !== prev.sucursalId &&
+      !(await sucursalEsCentroDeCosto(input.sucursalId))
+    ) {
+      return {
+        success: false,
+        error: "La sucursal debe tener centro de costo y generar balance activados.",
+      };
+    }
+  } else if (input.sucursalId != null) {
     return {
       success: false,
-      error: "La sucursal debe tener centro de costo activado.",
+      error: "Los gastos eventuales no deben tener sucursal asignada.",
     };
   }
   const triplaOk = await validarComentariosParaTriplaGastoFinalRepetida({
