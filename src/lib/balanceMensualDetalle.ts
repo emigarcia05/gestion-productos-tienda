@@ -45,6 +45,18 @@ function montoTipo(f: BalanceGastoMensualFila, tipo: "variables" | "fijos"): num
   return tipo === "variables" ? costosVariables : costosFijos;
 }
 
+/** Orden de filas en modales de detalle (CV/CF, rubro, tipo, líneas): mayor monto primero. */
+function ordenarDetalleBalancePorMontoDesc<T extends { monto: number }>(
+  items: T[],
+  desempate: (a: T, b: T) => number,
+): void {
+  items.sort((a, b) => {
+    const d = b.monto - a.monto;
+    if (d !== 0) return d;
+    return desempate(a, b);
+  });
+}
+
 /** Totales directos, pool y reparto por sucursal (misma lógica que el resumen del balance). */
 export function contextoRepartoBalanceMensual(
   filas: BalanceGastoMensualFila[],
@@ -170,10 +182,9 @@ export function agruparRubrosCostoMensual(
       esRepartoPool: clave === BALANCE_MENSUAL_RUBRO_REPARTO_CC,
     });
   }
-  filasOut.sort((a, b) => {
-    if (a.esRepartoPool !== b.esRepartoPool) return a.esRepartoPool ? 1 : -1;
-    return a.etiqueta.localeCompare(b.etiqueta, "es");
-  });
+  ordenarDetalleBalancePorMontoDesc(filasOut, (a, b) =>
+    a.etiqueta.localeCompare(b.etiqueta, "es"),
+  );
   return filasOut;
 }
 
@@ -227,7 +238,16 @@ export function agruparTiposYRubrosCostoMensual(
     }
   }
 
-  tiposOrden.sort((a, b) => a.localeCompare(b, "es"));
+  function sumaMontosTipo(t: string): number {
+    let s = 0;
+    for (const m of mapaTipoRubro.get(t)!.values()) s += m;
+    return s;
+  }
+  tiposOrden.sort((a, b) => {
+    const d = sumaMontosTipo(b) - sumaMontosTipo(a);
+    if (d !== 0) return d;
+    return a.localeCompare(b, "es");
+  });
   for (const tipo of tiposOrden) {
     const mr = mapaTipoRubro.get(tipo)!;
     const rubros: BalanceMensualRubroAgrupado[] = [];
@@ -240,7 +260,9 @@ export function agruparTiposYRubrosCostoMensual(
         esRepartoPool: false,
       });
     }
-    rubros.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
+    ordenarDetalleBalancePorMontoDesc(rubros, (a, b) =>
+      a.etiqueta.localeCompare(b.etiqueta, "es"),
+    );
     secciones.push({
       tipoGastoNombre: tipo,
       etiquetaTipo: tipo,
@@ -373,11 +395,9 @@ export function listarGastosAgregadosPorRubroTipo(
       tieneHistorialDisponible: v.tieneHistorialDisponible,
     });
   }
-  out.sort((a, b) => {
-    const d = b.monto - a.monto;
-    if (d !== 0) return d;
-    return a.gastoNombre.localeCompare(b.gastoNombre, "es");
-  });
+  ordenarDetalleBalancePorMontoDesc(out, (a, b) =>
+    a.gastoNombre.localeCompare(b.gastoNombre, "es"),
+  );
   return out;
 }
 
@@ -428,7 +448,7 @@ export function listarGastosDetalleRubro(
         monto: m,
       });
     }
-    out.sort((a, b) =>
+    ordenarDetalleBalancePorMontoDesc(out, (a, b) =>
       `${a.gastoNombre}|${a.sucursalNombre}`.localeCompare(
         `${b.gastoNombre}|${b.sucursalNombre}`,
         "es",
@@ -479,7 +499,7 @@ export function listarGastosDetalleRubro(
     }
   }
 
-  out.sort((a, b) =>
+  ordenarDetalleBalancePorMontoDesc(out, (a, b) =>
     `${a.gastoNombre}|${a.proveedorNombre}`.localeCompare(
       `${b.gastoNombre}|${b.proveedorNombre}`,
       "es",

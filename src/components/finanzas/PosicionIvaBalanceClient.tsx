@@ -94,6 +94,9 @@ interface Props {
 }
 
 function celdaMontoPesos(pesos: number) {
+  if (pesos === 0) {
+    return <span className="text-muted-foreground">—</span>;
+  }
   return <>${fmtPrecio(pesos)}</>;
 }
 
@@ -533,10 +536,10 @@ export default function PosicionIvaBalanceClient({
                           </TableCell>
                           <TableCell className="celda-datos min-w-0">{f.denominacionReceptor}</TableCell>
                           <TableCell className={cn(TD_NUM, "celda-destacado")}>
-                            ${fmtPrecio(f.impTotal)}
+                            {celdaMontoPesos(f.impTotal)}
                           </TableCell>
                           <TableCell className={TD_NUM}>
-                            ${fmtPrecio(ivaCreditoDesdeTotalConIva21(f.impTotal))}
+                            {celdaMontoPesos(ivaCreditoDesdeTotalConIva21(f.impTotal))}
                           </TableCell>
                         </TableRow>
                       ))
@@ -571,9 +574,9 @@ export default function PosicionIvaBalanceClient({
                           <TableCell className="celda-datos min-w-0">{f.gastoNombre}</TableCell>
                           <TableCell className="celda-datos min-w-0">{f.sucursalNombre}</TableCell>
                           <TableCell className={cn(TD_NUM, "celda-destacado")}>
-                            ${fmtPrecio(f.monto)}
+                            {celdaMontoPesos(f.monto)}
                           </TableCell>
-                          <TableCell className={TD_NUM}>${fmtPrecio(f.ivaCredito)}</TableCell>
+                          <TableCell className={TD_NUM}>{celdaMontoPesos(f.ivaCredito)}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -605,9 +608,9 @@ export default function PosicionIvaBalanceClient({
                           </TableCell>
                           <TableCell className="celda-datos min-w-0">{f.proveedorNombre}</TableCell>
                           <TableCell className={cn(TD_NUM, "celda-destacado")}>
-                            ${fmtPrecio(f.monto)}
+                            {celdaMontoPesos(f.monto)}
                           </TableCell>
-                          <TableCell className={TD_NUM}>${fmtPrecio(f.ivaCredito)}</TableCell>
+                          <TableCell className={TD_NUM}>{celdaMontoPesos(f.ivaCredito)}</TableCell>
                         </TableRow>
                       ))
                     )}

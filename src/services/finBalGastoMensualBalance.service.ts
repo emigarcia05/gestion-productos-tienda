@@ -437,6 +437,16 @@ export interface HistoricoMontoGastoFinalBalanceItem {
   etiquetaMes: string;
 }
 
+/** Orden estable: mes más antiguo primero (eje temporal del gráfico). */
+function ordenarHistoricoMontosCronologicamenteAsc(
+  items: HistoricoMontoGastoFinalBalanceItem[],
+): HistoricoMontoGastoFinalBalanceItem[] {
+  return [...items].sort((a, b) => {
+    if (a.anio !== b.anio) return a.anio - b.anio;
+    return a.mes - b.mes;
+  });
+}
+
 /**
  * Lista todos los meses con imputación en `fin_bal_gasto_mensual` para un `gasto_final_id`,
  * orden cronológico ascendente.
@@ -449,12 +459,14 @@ export async function listarHistoricoMontosGastoFinalBalance(
     orderBy: [{ anio: "asc" }, { mes: "asc" }],
     select: { mes: true, anio: true, monto: true },
   });
-  return rows.map((r) => ({
-    mes: r.mes,
-    anio: r.anio,
-    monto: r.monto,
-    etiquetaMes: `${MESES_CORTO_ES[r.mes] ?? String(r.mes)} ${r.anio}`,
-  }));
+  return ordenarHistoricoMontosCronologicamenteAsc(
+    rows.map((r) => ({
+      mes: r.mes,
+      anio: r.anio,
+      monto: r.monto,
+      etiquetaMes: `${MESES_CORTO_ES[r.mes] ?? String(r.mes)} ${r.anio}`,
+    })),
+  );
 }
 
 /** Ítem del catálogo `fin_bal_gasto_final` con `gasto_mensual = false` (gasto único). */

@@ -149,19 +149,29 @@ export default function BalanceMensualGastoHistoricoModal({
     };
   }, [open, gastoFinalId]);
 
+  /** Siempre cronológico (mes antiguo → reciente); asegura eje del gráfico y variación vs. mes anterior. */
+  const serieCronologica = useMemo(
+    () =>
+      [...serie].sort((a, b) => {
+        if (a.anio !== b.anio) return a.anio - b.anio;
+        return a.mes - b.mes;
+      }),
+    [serie],
+  );
+
   const serieConVariacion = useMemo(
     () =>
-      serie.map((p, i) => {
-        const montoAnterior = i > 0 ? serie[i - 1].monto : undefined;
+      serieCronologica.map((p, i) => {
+        const montoAnterior = i > 0 ? serieCronologica[i - 1].monto : undefined;
         return {
           ...p,
           variacion: variacionVsMesAnterior(montoAnterior, p.monto),
         };
       }),
-    [serie],
+    [serieCronologica],
   );
 
-  const maxMonto = serie.reduce((m, p) => Math.max(m, p.monto), 0);
+  const maxMonto = serieCronologica.reduce((m, p) => Math.max(m, p.monto), 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,7 +205,7 @@ export default function BalanceMensualGastoHistoricoModal({
           {serie.length === 0 && !pending && !error ? (
             <p className="text-xs text-muted-foreground">No hay otros meses imputados para este gasto.</p>
           ) : null}
-          {serie.length > 0 ? (
+          {serieCronologica.length > 0 ? (
             <div className="flex min-h-[14rem] min-w-0 flex-1 flex-col gap-3">
               <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 Monto por mes
