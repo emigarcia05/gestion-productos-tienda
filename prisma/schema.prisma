@@ -374,6 +374,23 @@ model FinBalIvaDebImportLine {
   @@map("fin_bal_iva_deb_import_line")
 }
 
+/**
+ * IVA saldo manual por mes (balance · posición de IVA).
+ * Si existe fila para `anio`/`mes`, la tabla muestra ese saldo y deja en blanco débito/crédito hasta que se elimine.
+ */
+model FinBalPosicionIvaSaldoManual {
+  id         String   @id @default(cuid())
+  anio       Int
+  mes        Int
+  saldoPesos Decimal  @map("saldo_pesos") @db.Decimal(14, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([anio, mes], map: "fin_bal_posicion_iva_saldo_manual_anio_mes_ux")
+  @@index([anio])
+  @@map("fin_bal_posicion_iva_saldo_manual")
+}
+
 model ListaPrecioProveedor {
   id                String   @id @default(uuid())
   idProveedor       String   @map("id_proveedor")

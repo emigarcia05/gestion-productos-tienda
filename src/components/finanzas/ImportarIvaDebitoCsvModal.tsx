@@ -6,23 +6,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { importarFinBalIvaDebCsvAction } from "@/actions/finBalIvaDeb";
-
-const MESES: { valor: number; etiqueta: string }[] = [
-  { valor: 1, etiqueta: "ENERO" },
-  { valor: 2, etiqueta: "FEBRERO" },
-  { valor: 3, etiqueta: "MARZO" },
-  { valor: 4, etiqueta: "ABRIL" },
-  { valor: 5, etiqueta: "MAYO" },
-  { valor: 6, etiqueta: "JUNIO" },
-  { valor: 7, etiqueta: "JULIO" },
-  { valor: 8, etiqueta: "AGOSTO" },
-  { valor: 9, etiqueta: "SEPTIEMBRE" },
-  { valor: 10, etiqueta: "OCTUBRE" },
-  { valor: 11, etiqueta: "NOVIEMBRE" },
-  { valor: 12, etiqueta: "DICIEMBRE" },
-];
 
 interface Props {
   open: boolean;
@@ -43,8 +27,6 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
     if (inputRef.current) inputRef.current.value = "";
   }, [open]);
 
-  const etiquetaMes = MESES.find((m) => m.valor === mes)?.etiqueta ?? String(mes);
-
   async function handleImportar() {
     if (!archivo || guardando) return;
     setGuardando(true);
@@ -59,17 +41,19 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
         return;
       }
       const d = r.data;
-      const partes = [
-        `${d.insertados} nuevo(s)`,
-        `${d.actualizados} actualizado(s)`,
-      ];
+      const emitidosPeriodo = d.insertados + d.actualizados;
+      let msg = `Importación lista: ${emitidosPeriodo} comprobante(s) emitidos en el período · ${d.insertados} creado(s) · ${d.actualizados} actualización(es).`;
+      const extras: string[] = [];
       if (d.ignoradasOtroMes > 0) {
-        partes.push(`${d.ignoradasOtroMes} ignorado(s) (otro mes)`);
+        extras.push(`${d.ignoradasOtroMes} omitido(s) (otro mes)`);
       }
       if (d.ignoradasInvalidas > 0) {
-        partes.push(`${d.ignoradasInvalidas} fila(s) inválida(s) en el archivo`);
+        extras.push(`${d.ignoradasInvalidas} fila(s) inválida(s)`);
       }
-      toast.success(`Importación lista: ${partes.join(" · ")}.`);
+      if (extras.length > 0) {
+        msg += ` ${extras.join(" · ")}.`;
+      }
+      toast.success(msg);
       onOpenChange(false);
       router.refresh();
     } finally {
@@ -100,7 +84,7 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
       }}
     >
       <AppModal
-        title="Importar comprobantes (IVA débito)"
+        title="Importar Comprobantes Fiscales Emitidos"
         size="md"
         className="max-w-md"
         actions={
@@ -115,19 +99,14 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
         }
       >
         <div className="flex flex-col gap-4 text-sm">
-          <p className="text-muted-foreground">
-            Período: <span className="font-medium text-foreground">{etiquetaMes}</span>{" "}
-            <span className="tabular-nums">{anio}</span>
-            . Solo se graban filas cuya fecha de emisión cae en ese mes; el resto se omite.
-          </p>
           <div className="space-y-2">
-            <Label htmlFor="fin-bal-iva-deb-csv">Archivo CSV (export AFIP, separador «;»)</Label>
             <input
               ref={inputRef}
               id="fin-bal-iva-deb-csv"
               type="file"
               accept=".csv,text/csv"
               className="hidden"
+              aria-label="CSV comprobantes fiscales emitidos"
               disabled={guardando}
               onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
             />

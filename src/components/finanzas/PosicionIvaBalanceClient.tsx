@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Loader2, Pencil, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import type {
 import { ivaCreditoDesdeTotalConIva21 } from "@/lib/ivaDesdeTotalBruto21";
 import type { DetalleLineaIvaDebitoBalance } from "@/services/finBalIvaDeb.service";
 import ImportarIvaDebitoCsvModal from "@/components/finanzas/ImportarIvaDebitoCsvModal";
+import EditarIvaSaldoManualModal from "@/components/finanzas/EditarIvaSaldoManualModal";
 import { toast } from "sonner";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -74,6 +75,8 @@ interface Props {
   esEditor: boolean;
   ivaDebitoPorMes: number[];
   ivaCreditoPorMes: number[];
+  /** Índice 0 = enero; si no es null, ese mes usa saldo manual y débito/crédito se muestran vacíos. */
+  saldoManualPorMes: (number | null)[];
 }
 
 function celdaMontoPesos(pesos: number) {
@@ -85,8 +88,10 @@ export default function PosicionIvaBalanceClient({
   esEditor,
   ivaDebitoPorMes,
   ivaCreditoPorMes,
+  saldoManualPorMes,
 }: Props) {
   const [mesModalVentasIva, setMesModalVentasIva] = useState<number | null>(null);
+  const [mesModalSaldoManual, setMesModalSaldoManual] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mesDetalle, setMesDetalle] = useState<number | null>(null);
   const [vista, setVista] = useState<VistaModalPosicionIva>("detalle-posicion");
@@ -94,6 +99,47 @@ export default function PosicionIvaBalanceClient({
   const [filasDebito, setFilasDebito] = useState<DetalleLineaIvaDebitoBalance[]>([]);
   const [filasGasto, setFilasGasto] = useState<DetalleLineaIvaCreditoBalance[]>([]);
   const [filasCompra, setFilasCompra] = useState<DetalleLineaIvaCreditoCompraMercaderia[]>([]);
+
+  const hayMesConSaldoManual = useMemo(
+    () => saldoManualPorMes.some((x) => x !== null),
+    [saldoManualPorMes],
+  );
+
+  const filasPosicionIva = useMemo(() => {
+    let running = 0;
+    return MESES_CALENDARIO.map((m) => {
+      const ix = m.valor - 1;
+      const debito = ivaDebitoPorMes[ix] ?? 0;
+      const credito = ivaCreditoPorMes[ix] ?? 0;
+      const saldoCalculado = debito - credito;
+      const manual = saldoManualPorMes[ix] ?? null;
+      const usaManual = manual !== null;
+      const saldoMostrado = usaManual ? manual : saldoCalculado;
+      running += saldoMostrado;
+      return {
+        mes: m.valor,
+        etiquetaMes: m.etiqueta,
+        ix,
+        debito,
+        credito,
+        usaManual,
+        saldoMostrado,
+        saldoAcumulado: running,
+      };
+    });
+  }, [ivaDebitoPorMes, ivaCreditoPorMes, saldoManualPorMes]);
+
+  const saldoAcumuladoAnual =
+    filasPosicionIva.length > 0 ? filasPosicionIva[filasPosicionIva.length - 1].saldoAcumulado : 0;
+
+  const sumaDebitoAnual = useMemo(
+    () => ivaDebitoPorMes.reduce((a, n) => a + (n ?? 0), 0),
+    [ivaDebitoPorMes],
+  );
+  const sumaCreditoAnual = useMemo(
+    () => ivaCreditoPorMes.reduce((a, n) => a + (n ?? 0), 0),
+    [ivaCreditoPorMes],
+  );
 
   const etiquetaMesDetalle =
     mesDetalle != null ? MESES_CALENDARIO.find((x) => x.valor === mesDetalle)?.etiqueta ?? "" : "";
@@ -223,80 +269,142 @@ export default function PosicionIvaBalanceClient({
                   className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
                 >
                   <colgroup>
-                    <col style={{ width: "26%" }} />
-                    <col style={{ width: "6%" }} />
                     <col style={{ width: "18%" }} />
-                    <col style={{ width: "25%" }} />
-                    <col style={{ width: "25%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "22%" }} />
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="min-w-0">MES</TableHead>
-                      <TableHead className="min-w-0 w-11 px-1">
-                        <span className="sr-only">Importar CSV IVA débito</span>
-                      </TableHead>
                       <TableHead className={cn(TH_DEBITO_IMPORTE, "min-w-0 font-medium")}>
                         IVA DÉBITO
                       </TableHead>
                       <TableHead className={cn(TH_NUM, "min-w-0")}>IVA CRÉDITO</TableHead>
                       <TableHead className={cn(TH_NUM, "min-w-0")}>IVA SALDO</TableHead>
+                      <TableHead className={cn(TH_NUM, "min-w-0 font-medium")}>
+                        SALDO ACUMULADO
+                      </TableHead>
+                      <TableHead className="text-center whitespace-nowrap min-w-0 px-2 font-medium">
+                        ACCIONES
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {MESES_CALENDARIO.map((m) => {
-                      const ix = m.valor - 1;
-                      const debito = ivaDebitoPorMes[ix] ?? 0;
-                      const credito = ivaCreditoPorMes[ix] ?? 0;
-                      const saldo = debito - credito;
-                      return (
+                    {filasPosicionIva.map((row) => (
                       <TableRow
-                        key={m.valor}
+                        key={row.mes}
                         className="cursor-pointer select-none hover:bg-muted/50"
                         tabIndex={0}
                         role="button"
                         title="Clic para ver detalle del mes"
-                        onClick={() => abrirMenuMes(m.valor)}
+                        onClick={() => abrirMenuMes(row.mes)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            abrirMenuMes(m.valor);
+                            abrirMenuMes(row.mes);
                           }
                         }}
                       >
                         <TableCell className="celda-datos min-w-0 whitespace-nowrap font-medium">
-                          {m.etiqueta} {anio}
+                          {row.etiquetaMes} {anio}
+                        </TableCell>
+                        <TableCell className={TD_DEBITO_IMPORTE}>
+                          {row.usaManual ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            celdaMontoPesos(row.debito)
+                          )}
                         </TableCell>
                         <TableCell
-                          className="celda-datos min-w-0 align-middle px-1 py-1.5"
+                          className={cn(TD_NUM, "min-w-0", !row.usaManual && "celda-destacado")}
+                        >
+                          {row.usaManual ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            celdaMontoPesos(row.credito)
+                          )}
+                        </TableCell>
+                        <TableCell className={cn(TD_NUM, "min-w-0")}>
+                          <span
+                            className={cn(
+                              "tabular-nums",
+                              row.usaManual && "font-medium text-foreground",
+                            )}
+                          >
+                            {celdaMontoPesos(row.saldoMostrado)}
+                          </span>
+                        </TableCell>
+                        <TableCell className={cn(TD_NUM, "min-w-0 font-medium")}>
+                          {celdaMontoPesos(row.saldoAcumulado)}
+                        </TableCell>
+                        <TableCell
+                          className="celda-datos min-w-0 px-2 py-1.5 align-middle"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex justify-center">
+                          <div className="flex flex-wrap items-center justify-center gap-1">
                             {esEditor ? (
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 className={CLASE_BOTON_EDITAR_IVA_DEBITO}
-                                title="Importar CSV de comprobantes (IVA débito)"
-                                aria-label="Importar CSV IVA débito"
+                                title="Importar comprobantes fiscales emitidos (CSV)"
+                                aria-label="Importar comprobantes fiscales emitidos"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setMesModalVentasIva(m.valor);
+                                  setMesModalVentasIva(row.mes);
                                 }}
                               >
                                 <Upload className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             ) : null}
+                            {esEditor ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={CLASE_BOTON_EDITAR_IVA_DEBITO}
+                                title="Editar IVA saldo manual"
+                                aria-label="Editar IVA saldo manual"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMesModalSaldoManual(row.mes);
+                                }}
+                              >
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                            ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className={TD_DEBITO_IMPORTE}>{celdaMontoPesos(debito)}</TableCell>
-                        <TableCell className={cn(TD_NUM, "min-w-0 celda-destacado")}>
-                          {celdaMontoPesos(credito)}
-                        </TableCell>
-                        <TableCell className={cn(TD_NUM, "min-w-0")}>{celdaMontoPesos(saldo)}</TableCell>
                       </TableRow>
-                    );
-                    })}
+                    ))}
+                    <TableRow className="border-t border-border bg-muted/35 hover:bg-muted/35 font-medium">
+                      <TableCell className="celda-datos min-w-0 whitespace-nowrap uppercase tracking-wide">
+                        SALDO ACUMULADO
+                      </TableCell>
+                      <TableCell className={TD_DEBITO_IMPORTE}>
+                        {hayMesConSaldoManual ? (
+                          <span className="text-muted-foreground font-normal">—</span>
+                        ) : (
+                          celdaMontoPesos(sumaDebitoAnual)
+                        )}
+                      </TableCell>
+                      <TableCell className={cn(TD_NUM, "min-w-0")}>
+                        {hayMesConSaldoManual ? (
+                          <span className="text-muted-foreground font-normal">—</span>
+                        ) : (
+                          celdaMontoPesos(sumaCreditoAnual)
+                        )}
+                      </TableCell>
+                      <TableCell className={cn(TD_NUM, "min-w-0 text-muted-foreground font-normal")}>
+                        —
+                      </TableCell>
+                      <TableCell className={cn(TD_NUM, "min-w-0")}>{celdaMontoPesos(saldoAcumuladoAnual)}</TableCell>
+                      <TableCell className="celda-datos min-w-0 px-2 py-1.5" aria-hidden />
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
@@ -350,10 +458,10 @@ export default function PosicionIvaBalanceClient({
             ) : vista === "iva-credito-menu" ? (
               <div className="flex flex-col gap-2 py-2">
                 <Button type="button" className="w-full" onClick={() => void abrirDetalleGastos()}>
-                  Gasto
+                  GASTO
                 </Button>
                 <Button type="button" className="w-full" onClick={() => void abrirDetalleCompras()}>
-                  Compra Mercadería
+                  COMPRA MERCADERÍA
                 </Button>
               </div>
             ) : cargandoDetalle ? (
@@ -479,6 +587,24 @@ export default function PosicionIvaBalanceClient({
         }}
         mes={mesModalVentasIva ?? 1}
         anio={anio}
+      />
+
+      <EditarIvaSaldoManualModal
+        open={mesModalSaldoManual != null}
+        onOpenChange={(open) => {
+          if (!open) setMesModalSaldoManual(null);
+        }}
+        mes={mesModalSaldoManual ?? 1}
+        anio={anio}
+        saldoCalculado={
+          mesModalSaldoManual != null
+            ? (ivaDebitoPorMes[mesModalSaldoManual - 1] ?? 0) -
+              (ivaCreditoPorMes[mesModalSaldoManual - 1] ?? 0)
+            : 0
+        }
+        saldoManual={
+          mesModalSaldoManual != null ? saldoManualPorMes[mesModalSaldoManual - 1] ?? null : null
+        }
       />
     </div>
   );
