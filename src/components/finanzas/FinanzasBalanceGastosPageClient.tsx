@@ -27,8 +27,13 @@ import TablaGastos, { type BalanceGastoMensualFila } from "@/components/finanzas
 import BalanceMensualGastoHistoricoModal from "@/components/finanzas/BalanceMensualGastoHistoricoModal";
 import EliminarFinBalGastoMensualModal from "@/components/finanzas/EliminarFinBalGastoMensualModal";
 import GastoUnicoBalanceModal from "@/components/finanzas/GastoUnicoBalanceModal";
+import IvaDiscriminaCargaMesModal from "@/components/finanzas/IvaDiscriminaCargaMesModal";
 import RegistrarMontoPagoFinBalGastoMensualModal from "@/components/finanzas/RegistrarMontoPagoFinBalGastoMensualModal";
-import { cargarFinBalGastoMensualMesAction } from "@/actions/finBalGastoMensualBalance";
+import {
+  cargarFinBalGastoMensualMesAction,
+  listarPendientesDiscriminaIvaCargaMesAction,
+} from "@/actions/finBalGastoMensualBalance";
+import type { PendienteDiscriminaIvaCargaMesItem } from "@/services/finBalGastoMensualBalance.service";
 import { cn } from "@/lib/utils";
 
 type DimensionOpcionesFiltro = "sucursal" | "proveedor" | "rubro" | "gasto";
@@ -160,6 +165,8 @@ export default function FinanzasBalanceGastosPageClient({
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
   const [historicoDescripcion, setHistoricoDescripcion] = useState("");
+  const [ivaCargaMesModalOpen, setIvaCargaMesModalOpen] = useState(false);
+  const [pendientesIvaCargaMes, setPendientesIvaCargaMes] = useState<PendienteDiscriminaIvaCargaMesItem[]>([]);
 
   const { mesHoy, anioHoy } = useMemo(() => {
     const iso = dateToIsoYmdArgentina(new Date());
@@ -253,30 +260,59 @@ export default function FinanzasBalanceGastosPageClient({
     setFiltTipo("");
   }
 
+  async function ejecutarCargaMesDesdeCatalogo(ivaPorGastoFinalId?: Record<string, boolean>) {
+    const res = await cargarFinBalGastoMensualMesAction({
+      mes,
+      anio,
+      ...(ivaPorGastoFinalId && Object.keys(ivaPorGastoFinalId).length > 0 ? { ivaPorGastoFinalId } : {}),
+    });
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudo cargar el mes.");
+      return;
+    }
+    const { creados, yaExistentes } = res.data;
+    if (creados > 0) {
+      toast.success(
+        creados === 1
+          ? "Se cargó 1 imputación del mes."
+          : `Se cargaron ${creados} imputaciones del mes.`
+      );
+    } else if (yaExistentes > 0) {
+      toast.info("Las imputaciones del mes ya estaban cargadas.");
+    } else {
+      toast.info("No hay gastos mensuales en el catálogo para cargar.");
+    }
+    router.refresh();
+  }
+
   async function handleCargarMes() {
     setLoading(true);
     try {
-      const res = await cargarFinBalGastoMensualMesAction({ mes, anio });
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudo cargar el mes.");
+      const pre = await listarPendientesDiscriminaIvaCargaMesAction({ mes, anio });
+      if (!pre.ok) {
+        toast.error(pre.error ?? "No se pudo verificar el alta del mes.");
         return;
       }
-      const { creados, yaExistentes } = res.data;
-      if (creados > 0) {
-        toast.success(
-          creados === 1
-            ? "Se cargó 1 imputación del mes."
-            : `Se cargaron ${creados} imputaciones del mes.`
-        );
-      } else if (yaExistentes > 0) {
-        toast.info("Las imputaciones del mes ya estaban cargadas.");
-      } else {
-        toast.info("No hay gastos mensuales en el catálogo para cargar.");
+      if (pre.data.pendientesPregunta.length > 0) {
+        setPendientesIvaCargaMes(pre.data.pendientesPregunta);
+        setIvaCargaMesModalOpen(true);
+        return;
       }
-      router.refresh();
+      await ejecutarCargaMesDesdeCatalogo();
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleConfirmIvaCargaMes(ivaPorGastoFinalId: Record<string, boolean>) {
+    void (async () => {
+      setLoading(true);
+      try {
+        await ejecutarCargaMesDesdeCatalogo(ivaPorGastoFinalId);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }
 
   const emptyMessage =
@@ -595,6 +631,13 @@ export default function FinanzasBalanceGastosPageClient({
         anio={anio}
         sucursalesCentroCosto={sucursalesCentroCosto}
         onSuccess={() => router.refresh()}
+      />
+
+      <IvaDiscriminaCargaMesModal
+        open={ivaCargaMesModalOpen}
+        onOpenChange={setIvaCargaMesModalOpen}
+        items={pendientesIvaCargaMes}
+        onConfirm={handleConfirmIvaCargaMes}
       />
 
       <BalanceMensualGastoHistoricoModal

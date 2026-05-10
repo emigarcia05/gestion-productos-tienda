@@ -30,6 +30,7 @@ import {
   FolderTree,
   BookOpen,
   CircleDollarSign,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -165,6 +166,12 @@ const FINANZAS_MODULES: {
         href: "/finanzas/balance/vtas",
         label: "Balance Vtas",
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
+        href: "/finanzas/balance/posicion-iva",
+        label: "Posición de IVA",
+        icon: <Percent className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
     ],

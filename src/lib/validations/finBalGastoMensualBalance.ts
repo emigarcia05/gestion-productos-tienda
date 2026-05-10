@@ -8,7 +8,10 @@ export const mesAnioQuerySchema = z.object({
 });
 export type MesAnioQuery = z.infer<typeof mesAnioQuerySchema>;
 
-export const cargarImputacionesMesParamsSchema = mesAnioQuerySchema;
+export const cargarImputacionesMesParamsSchema = mesAnioQuerySchema.extend({
+  /** Decisiones de discrimina IVA para gastos finales con política `PREGUNTA` al cargar el mes. */
+  ivaPorGastoFinalId: z.record(z.string(), z.boolean()).optional(),
+});
 export type CargarImputacionesMesParams = z.infer<typeof cargarImputacionesMesParamsSchema>;
 
 export const editarMontoFinBalGastoMensualSchema = z.object({
@@ -63,6 +66,8 @@ export const crearImputacionGastoUnicoBalanceSchema = z
      * porque el gasto se considera cancelado en su totalidad.
      */
     plazoPago: z.coerce.number().int().min(0).max(30).optional(),
+    /** Obligatorio si el gasto final tiene `iva = PREGUNTA` (discrimina IVA). */
+    discriminaIva: z.boolean().optional(),
   })
   .refine((d) => d.pagado <= d.monto, {
     message: "El pagado no puede superar el monto.",

@@ -2,11 +2,25 @@
  * Imputaciones mensuales de gastos de balance (`fin_bal_gasto_mensual`)
  * para la pantalla `/finanzas/balance/gastos`.
  */
+import type { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types/service.types";
 import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 import { ordenarDetallesFlujoDia } from "@/services/vencimientosPorFecha.service";
+
+/** Resuelve si la imputación discrimina IVA según la política del gasto final y la respuesta del usuario (PREGUNTA). */
+export function discriminaIvaDesdePoliticaGastoFinal(
+  politica: IvaProveedor,
+  respuestaUsuario?: boolean
+): ServiceResult<boolean> {
+  if (politica === "SIEMPRE") return { success: true, data: true };
+  if (politica === "NUNCA") return { success: true, data: false };
+  if (typeof respuestaUsuario !== "boolean") {
+    return { success: false, error: "Indicá si el gasto discrimina IVA." };
+  }
+  return { success: true, data: respuestaUsuario };
+}
 
 export interface BalanceGastoMensualFila {
   id: string;
@@ -32,6 +46,8 @@ export interface BalanceGastoMensualFila {
   fechaVencimientoIso: string;
   /** Si hoy (AR) ≥ fecha de vencimiento: pendiente de pago `max(0, monto - pagado)`; si no, 0. */
   montoVencido: number;
+  /** Columna `fin_bal_gasto_mensual.iva`: discrimina IVA en este período. */
+  discriminaIva: boolean;
 }
 
 /** Días del mes calendario (1–12). Abril → 30. */
@@ -151,14 +167,19 @@ export function mesAnteriorCalendario(mes: number, anio: number): { mes: number;
   return { mes: mes - 1, anio };
 }
 
+/** Ítem con política PREGUNTA pendiente de decisión de «discrimina IVA» al cargar el mes desde catálogo. */
+export interface PendienteDiscriminaIvaCargaMesItem {
+  gastoFinalId: string;
+  etiqueta: string;
+}
+
 /**
- * Crea filas `fin_bal_gasto_mensual` (monto 0, pagado 0) para el mes/año dado,
- * por cada `fin_bal_gasto_final` con `gasto_mensual = true` que aún no tenga fila.
+ * Lista gastos mensuales del catálogo que se crearían en `(mes, anio)` y exigen decisión de IVA (`PREGUNTA`).
  */
-export async function cargarImputacionesMensualesDesdeCatalogo(params: {
+export async function listarPendientesDiscriminaIvaCargaMesCatalogo(params: {
   mes: number;
   anio: number;
-}): Promise<ServiceResult<{ creados: number; yaExistentes: number }>> {
+}): Promise<ServiceResult<{ pendientesPregunta: PendienteDiscriminaIvaCargaMesItem[] }>> {
   const { mes, anio } = params;
   if (mes < 1 || mes > 12 || anio < 2000 || anio > 2100) {
     return { success: false, error: "Mes o año inválido." };
@@ -167,7 +188,58 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
   try {
     const finals = await prisma.finBalGastoFinal.findMany({
       where: { gastoMensual: true, sucursalId: { not: null } },
-      select: { id: true },
+      select: {
+        id: true,
+        iva: true,
+        proveedor: { select: { nombre: true } },
+        gasto: { select: { nombre: true } },
+        sucursal: { select: { nombre: true } },
+      },
+    });
+    if (finals.length === 0) {
+      return { success: true, data: { pendientesPregunta: [] } };
+    }
+
+    const existentes = await prisma.finBalGastoMensual.findMany({
+      where: { mes, anio, gastoFinalId: { in: finals.map((f) => f.id) } },
+      select: { gastoFinalId: true },
+    });
+    const ya = new Set(existentes.map((e) => e.gastoFinalId));
+    const pendientesPregunta: PendienteDiscriminaIvaCargaMesItem[] = finals
+      .filter((f) => !ya.has(f.id) && f.iva === "PREGUNTA")
+      .map((f) => ({
+        gastoFinalId: f.id,
+        etiqueta: `${f.gasto.nombre.toUpperCase()} · ${f.proveedor.nombre.toUpperCase()} · ${f.sucursal?.nombre.toUpperCase() ?? "—"}`,
+      }));
+
+    pendientesPregunta.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
+
+    return { success: true, data: { pendientesPregunta } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Error al listar pendientes de IVA.";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Crea filas `fin_bal_gasto_mensual` (monto 0, pagado 0) para el mes/año dado,
+ * por cada `fin_bal_gasto_final` con `gasto_mensual = true` que aún no tenga fila.
+ * Para política `PREGUNTA`, `ivaPorGastoFinalId[gastoFinalId]` debe ser `true`/`false` (discrimina IVA).
+ */
+export async function cargarImputacionesMensualesDesdeCatalogo(params: {
+  mes: number;
+  anio: number;
+  ivaPorGastoFinalId?: Record<string, boolean>;
+}): Promise<ServiceResult<{ creados: number; yaExistentes: number }>> {
+  const { mes, anio, ivaPorGastoFinalId = {} } = params;
+  if (mes < 1 || mes > 12 || anio < 2000 || anio > 2100) {
+    return { success: false, error: "Mes o año inválido." };
+  }
+
+  try {
+    const finals = await prisma.finBalGastoFinal.findMany({
+      where: { gastoMensual: true, sucursalId: { not: null } },
+      select: { id: true, iva: true },
     });
     if (finals.length === 0) {
       return { success: true, data: { creados: 0, yaExistentes: 0 } };
@@ -181,22 +253,40 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
     const aCrear = finals.filter((f) => !ya.has(f.id));
 
     if (aCrear.length === 0) {
-      return { success: true, data: { creados: 0, yaExistentes: finals.length } };
+      return { success: true, data: { creados: 0, yaExistentes: ya.size } };
     }
 
-    await prisma.$transaction(
-      aCrear.map((f) =>
-        prisma.finBalGastoMensual.create({
-          data: {
-            gastoFinalId: f.id,
-            mes,
-            anio,
-            monto: 0,
-            pagado: 0,
-          },
-        })
-      )
-    );
+    for (const f of aCrear) {
+      if (f.iva === "PREGUNTA" && !Object.prototype.hasOwnProperty.call(ivaPorGastoFinalId, f.id)) {
+        return {
+          success: false,
+          error:
+            "Falta indicar si discrimina IVA para uno o más gastos con política «pregunta». Volvé a cargar el mes y completá el modal.",
+        };
+      }
+    }
+
+    const creates = aCrear.map((f) => {
+      const resolved = discriminaIvaDesdePoliticaGastoFinal(
+        f.iva,
+        f.iva === "PREGUNTA" ? ivaPorGastoFinalId[f.id] : undefined
+      );
+      if (!resolved.success) {
+        throw new Error(resolved.error);
+      }
+      return prisma.finBalGastoMensual.create({
+        data: {
+          gastoFinalId: f.id,
+          mes,
+          anio,
+          monto: 0,
+          pagado: 0,
+          iva: resolved.data,
+        },
+      });
+    });
+
+    await prisma.$transaction(creates);
 
     return {
       success: true,
@@ -318,6 +408,7 @@ export async function listarImputacionesMensualesBalance(params: {
       pagado: r.pagado,
       fechaVencimientoIso,
       montoVencido,
+      discriminaIva: r.iva,
     };
   });
 }
@@ -369,6 +460,8 @@ export async function listarHistoricoMontosGastoFinalBalance(
 /** Ítem del catálogo `fin_bal_gasto_final` con `gasto_mensual = false` (gasto único). */
 export interface FinBalGastoFinalNoMensualListItem {
   gastoFinalId: string;
+  /** Política de IVA del gasto final (`SIEMPRE` / `NUNCA` / `PREGUNTA`). */
+  ivaPolitica: IvaProveedor;
   tipoGastoNombre: string;
   rubroNombre: string;
   gastoNombre: string;
@@ -421,6 +514,7 @@ export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
     const comRaw = gf.comentarios?.trim() ?? "";
     return {
       gastoFinalId: gf.id,
+      ivaPolitica: gf.iva,
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),
@@ -461,8 +555,11 @@ export async function crearImputacionGastoUnicoBalance(params: {
   pagado: number;
   fechaGasto: string;
   plazoPago?: number;
+  /** Obligatorio si el gasto final tiene `iva = PREGUNTA`: discrimina IVA en esta imputación. */
+  discriminaIva?: boolean;
 }): Promise<ServiceResult<{ id: string }>> {
-  const { gastoFinalId, sucursalId, mes, anio, monto, pagado, fechaGasto, plazoPago } = params;
+  const { gastoFinalId, sucursalId, mes, anio, monto, pagado, fechaGasto, plazoPago, discriminaIva } =
+    params;
   if (monto < 1) {
     return { success: false, error: "El monto es obligatorio y debe ser mayor a cero." };
   }
@@ -488,7 +585,7 @@ export async function crearImputacionGastoUnicoBalance(params: {
   try {
     const gf = await prisma.finBalGastoFinal.findUnique({
       where: { id: gastoFinalId },
-      select: { id: true, gastoMensual: true },
+      select: { id: true, gastoMensual: true, iva: true },
     });
     if (!gf) {
       return { success: false, error: "Gasto no encontrado en el catálogo." };
@@ -498,6 +595,10 @@ export async function crearImputacionGastoUnicoBalance(params: {
         success: false,
         error: "Este gasto está configurado como mensual; usá «Cargar Mes».",
       };
+    }
+    const ivaResolved = discriminaIvaDesdePoliticaGastoFinal(gf.iva, discriminaIva);
+    if (!ivaResolved.success) {
+      return { success: false, error: ivaResolved.error };
     }
     const sucImputacion = await prisma.sucursal.findUnique({
       where: { id: sucursalId },
@@ -522,7 +623,15 @@ export async function crearImputacionGastoUnicoBalance(params: {
       };
     }
     const row = await prisma.finBalGastoMensual.create({
-      data: { gastoFinalId, mes, anio, monto, pagado, imputacionSucursalId: sucursalId },
+      data: {
+        gastoFinalId,
+        mes,
+        anio,
+        monto,
+        pagado,
+        imputacionSucursalId: sucursalId,
+        iva: ivaResolved.data,
+      },
       select: { id: true },
     });
     return { success: true, data: { id: row.id } };

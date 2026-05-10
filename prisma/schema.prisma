@@ -314,6 +314,11 @@ model FinBalGastoMensual {
    * Si es NULL, la UI de Balance usa `fin_bal_gasto_final.sucursal_id`.
    */
   imputacionSucursalId String?   @map("imputacion_sucursal_id")
+  /**
+   * Si la imputación discrimina IVA en este período (`fin_bal_gasto_final.iva`:
+   * SIEMPRE → true, NUNCA → false, PREGUNTA → definido por el usuario al alta).
+   */
+  iva          Boolean  @map("iva")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

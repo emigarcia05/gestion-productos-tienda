@@ -13,11 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  FILTER_SELECT_WRAPPER_CLASS,
-  FiltroIndividualContainer,
-  INPUT_FILTER_CLASS,
-} from "@/components/FilterBar";
+import { FILTER_SELECT_WRAPPER_CLASS, FiltroIndividualContainer } from "@/components/FilterBar";
 import MontoArInput from "@/components/shared/MontoArInput";
 import {
   crearFinBalImputacionGastoUnicoAction,
@@ -25,8 +21,6 @@ import {
 } from "@/actions/finBalGastoMensualBalance";
 import type { FinBalGastoFinalNoMensualListItem } from "@/services/finBalGastoMensualBalance.service";
 import { montoArNormalizedStringToPesosIntRounded } from "@/lib/montoArMask";
-import { cn } from "@/lib/utils";
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,10 +51,12 @@ export default function GastoUnicoBalanceModal({
   const [guardando, setGuardando] = useState(false);
   /** Opcional; acota por rubro. */
   const [filtRubro, setFiltRubro] = useState("");
-  /** Filtro por nombre de gasto (coincidencia parcial, mayúsculas es-AR). */
-  const [filtNombreGasto, setFiltNombreGasto] = useState("");
+  /** Opcional; acota a un gasto eventual del catálogo (`gasto_final_id`). */
+  const [filtGastoFinalId, setFiltGastoFinalId] = useState("");
   /** Paso «Cargar»: sucursal de imputación obligatoria antes del resto de campos. */
   const [imputacionSucursalId, setImputacionSucursalId] = useState("");
+  /** Solo si `fin_bal_gasto_final.iva === PREGUNTA`: SI / NO discrimina IVA. */
+  const [discriminaIvaRespuesta, setDiscriminaIvaRespuesta] = useState<"none" | "si" | "no">("none");
 
   const cargarLista = useCallback(async () => {
     setCargandoLista(true);
@@ -86,8 +82,9 @@ export default function GastoUnicoBalanceModal({
     setFechaGasto("");
     setPlazoPago("");
     setFiltRubro("");
-    setFiltNombreGasto("");
+    setFiltGastoFinalId("");
     setImputacionSucursalId("");
+    setDiscriminaIvaRespuesta("none");
     void cargarLista();
   }, [open, mes, anio, cargarLista]);
 
@@ -102,15 +99,35 @@ export default function GastoUnicoBalanceModal({
     if (!rubrosOpciones.includes(filtRubro)) setFiltRubro("");
   }, [filtRubro, rubrosOpciones]);
 
+  /** Ítems eventuales para poblar el desplegable GASTO (respetando rubro si hay). */
+  const itemsParaSelectGasto = useMemo(() => {
+    let out = items;
+    if (filtRubro) out = out.filter((i) => i.rubroNombre === filtRubro);
+    return [...out].sort((a, b) => {
+      const c = a.gastoNombre.localeCompare(b.gastoNombre, "es");
+      if (c !== 0) return c;
+      return a.proveedorNombre.localeCompare(b.proveedorNombre, "es");
+    });
+  }, [items, filtRubro]);
+
+  useEffect(() => {
+    if (!filtGastoFinalId) return;
+    if (!itemsParaSelectGasto.some((i) => i.gastoFinalId === filtGastoFinalId)) {
+      setFiltGastoFinalId("");
+    }
+  }, [filtGastoFinalId, itemsParaSelectGasto]);
+
+  const etiquetaOpcionGasto = useCallback((it: FinBalGastoFinalNoMensualListItem) => {
+    const dupNombre = itemsParaSelectGasto.filter((x) => x.gastoNombre === it.gastoNombre).length > 1;
+    return dupNombre ? `${it.gastoNombre} · ${it.proveedorNombre}` : it.gastoNombre;
+  }, [itemsParaSelectGasto]);
+
   const itemsFiltrados = useMemo(() => {
     let out = items;
     if (filtRubro) out = out.filter((i) => i.rubroNombre === filtRubro);
-    const q = filtNombreGasto.trim().toLocaleUpperCase("es-AR");
-    if (q !== "") {
-      out = out.filter((i) => i.gastoNombre.includes(q));
-    }
+    if (filtGastoFinalId) out = out.filter((i) => i.gastoFinalId === filtGastoFinalId);
     return out;
-  }, [items, filtRubro, filtNombreGasto]);
+  }, [items, filtRubro, filtGastoFinalId]);
 
   const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
   const pagadoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(pagadoNorm), [pagadoNorm]);
@@ -146,6 +163,13 @@ export default function GastoUnicoBalanceModal({
         return true;
       }
     }
+    if (
+      seleccion.ivaPolitica === "PREGUNTA" &&
+      discriminaIvaRespuesta !== "si" &&
+      discriminaIvaRespuesta !== "no"
+    ) {
+      return true;
+    }
     return false;
   }, [
     guardando,
@@ -158,6 +182,7 @@ export default function GastoUnicoBalanceModal({
     fechaMax,
     plazoRequerido,
     plazoPagoInt,
+    discriminaIvaRespuesta,
   ]);
 
   async function handleGuardarImputacion() {
@@ -173,6 +198,9 @@ export default function GastoUnicoBalanceModal({
         pagado: pagadoPesosInt,
         fechaGasto,
         plazoPago: pagoTotal ? undefined : (plazoPagoInt ?? undefined),
+        ...(seleccion.ivaPolitica === "PREGUNTA"
+          ? { discriminaIva: discriminaIvaRespuesta === "si" }
+          : {}),
       });
       if (!r.ok) {
         toast.error(r.error ?? "No se pudo guardar.");
@@ -193,6 +221,7 @@ export default function GastoUnicoBalanceModal({
     setFechaGasto("");
     setPlazoPago("");
     setImputacionSucursalId("");
+    setDiscriminaIvaRespuesta("none");
     setVista("formulario");
   }
 
@@ -203,6 +232,7 @@ export default function GastoUnicoBalanceModal({
     setFechaGasto("");
     setPlazoPago("");
     setImputacionSucursalId("");
+    setDiscriminaIvaRespuesta("none");
     setVista("lista");
     void cargarLista();
   }
@@ -270,17 +300,25 @@ export default function GastoUnicoBalanceModal({
                   </FiltroIndividualContainer>
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
-                    activo={filtNombreGasto.trim() !== ""}
-                    onLimpiar={() => setFiltNombreGasto("")}
+                    activo={Boolean(filtGastoFinalId)}
+                    onLimpiar={() => setFiltGastoFinalId("")}
                   >
-                    <input
-                      type="text"
-                      value={filtNombreGasto}
-                      onChange={(e) => setFiltNombreGasto(e.target.value.toLocaleUpperCase("es-AR"))}
-                      placeholder="NOMBRE DE GASTO"
-                      aria-label="Filtrar por nombre de gasto"
-                      className={cn(INPUT_FILTER_CLASS, "w-full")}
-                    />
+                    <Select
+                      value={filtGastoFinalId || "none"}
+                      onValueChange={(v) => setFiltGastoFinalId(v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger className="input-filtro-unificado w-full" aria-label="Gasto (opcional)">
+                        <SelectValue placeholder="GASTO" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                        <SelectItem value="none">GASTO</SelectItem>
+                        {itemsParaSelectGasto.map((it) => (
+                          <SelectItem key={it.gastoFinalId} value={it.gastoFinalId}>
+                            {etiquetaOpcionGasto(it)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FiltroIndividualContainer>
                 </div>
               ) : null}
@@ -366,6 +404,27 @@ export default function GastoUnicoBalanceModal({
                   Vencimiento {seleccion.vencimiento == null ? "-" : `${seleccion.vencimiento} días`}
                 </div>
               </div>
+              {seleccion.ivaPolitica === "PREGUNTA" ? (
+                <label className="flex w-full flex-col gap-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    ¿El gasto discrimina IVA? <span className="text-destructive">*</span>
+                  </span>
+                  <Select
+                    value={discriminaIvaRespuesta}
+                    onValueChange={(v) => setDiscriminaIvaRespuesta(v as "none" | "si" | "no")}
+                    disabled={guardando}
+                  >
+                    <SelectTrigger className="input-filtro-unificado w-full" aria-label="¿El gasto discrimina IVA?">
+                      <SelectValue placeholder="SELECCIONAR" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                      <SelectItem value="none">SELECCIONAR</SelectItem>
+                      <SelectItem value="si">SI</SelectItem>
+                      <SelectItem value="no">NO</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+              ) : null}
               <label className="flex w-full flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   Sucursal <span className="text-destructive">*</span>

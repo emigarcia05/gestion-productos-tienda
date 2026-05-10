@@ -22,10 +22,12 @@ import {
   eliminarFinBalGastoMensual,
   listarGastosFinalesNoMensualesConEstadoPeriodo,
   listarHistoricoMontosGastoFinalBalance,
+  listarPendientesDiscriminaIvaCargaMesCatalogo,
   mesAnioCalendarioArgentina,
   obtenerMontoImputacionMesAnterior,
   type FinBalGastoFinalNoMensualListItem,
   type HistoricoMontoGastoFinalBalanceItem,
+  type PendienteDiscriminaIvaCargaMesItem,
 } from "@/services/finBalGastoMensualBalance.service";
 
 function revalidateGastosPaths(): void {
@@ -71,6 +73,25 @@ export async function cargarFinBalGastoMensualMesAction(
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateGastosPaths();
+  return { ok: true, data: res.data };
+}
+
+/** Lista gastos mensuales del catálogo (política `PREGUNTA`) pendientes de decisión de IVA antes de cargar el mes. */
+export async function listarPendientesDiscriminaIvaCargaMesAction(
+  raw?: unknown
+): Promise<ActionResult<{ pendientesPregunta: PendienteDiscriminaIvaCargaMesItem[] }>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const def = mesAnioCalendarioArgentina();
+  const parsed = cargarImputacionesMesParamsSchema.safeParse(
+    raw && typeof raw === "object" && raw !== null ? raw : { mes: def.mes, anio: def.anio }
+  );
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const { mes, anio } = parsed.data;
+  const res = await listarPendientesDiscriminaIvaCargaMesCatalogo({ mes, anio });
+  if (!res.success) return { ok: false, error: res.error };
   return { ok: true, data: res.data };
 }
 
