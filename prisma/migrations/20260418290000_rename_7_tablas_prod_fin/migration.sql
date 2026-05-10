@@ -77,14 +77,79 @@ ALTER INDEX "pedidos_historia_items_pedido_historia_id_cod_tienda_key"
 -- prod_ped_merc (unique global sobre 4 columnas; nombre mantenido corto via map:)
 ALTER INDEX "pedidos_mercaderia_item_unique" RENAME TO "prod_ped_merc_item_unique";
 
--- prod_precios_provee: 2 uniques (uno sobre cod_ext, otro sobre (id_proveedor, cod_prod_proveedor))
--- El unique sobre cod_ext NO está declarado en schema.prisma (drift histórico) pero existe en BD.
--- Lo conservamos con nombre prolijo (map: en schema se maneja aparte si se decide modelarlo).
-ALTER INDEX "uq_lista_precios_cod_ext"       RENAME TO "prod_precios_provee_cod_ext_ux";
-ALTER INDEX "uq_lista_precios_proveedor_cod" RENAME TO "prod_precios_provee_id_proveedor_cod_prod_prov_key";
+-- prod_precios_provee: 2 uniques (Neon vs replay desde cero)
+-- En Neon los índices pudieron llamarse uq_*; en replay desde migraciones el nombre suele ser otro
+-- o el unique sobre cod_ext puede no existir (DROP en 20260301180000). Condicional para shadow DB.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'uq_lista_precios_cod_ext'
+  ) THEN
+    EXECUTE 'ALTER INDEX "uq_lista_precios_cod_ext" RENAME TO "prod_precios_provee_cod_ext_ux"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'lista_precios_proveedores_cod_ext_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "lista_precios_proveedores_cod_ext_key" RENAME TO "prod_precios_provee_cod_ext_ux"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'precios_proveedores_cod_ext_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "precios_proveedores_cod_ext_key" RENAME TO "prod_precios_provee_cod_ext_ux"';
+  END IF;
 
--- prod_precios_tienda
-ALTER INDEX "lista_precios_tienda_cod_ext_key" RENAME TO "prod_precios_tienda_cod_ext_key";
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'uq_lista_precios_proveedor_cod'
+  ) THEN
+    EXECUTE 'ALTER INDEX "uq_lista_precios_proveedor_cod" RENAME TO "prod_precios_provee_id_proveedor_cod_prod_prov_key"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'precios_proveedores_id_proveedor_cod_prod_proveedor_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "precios_proveedores_id_proveedor_cod_prod_proveedor_key" RENAME TO "prod_precios_provee_id_proveedor_cod_prod_prov_key"';
+  END IF;
+END $$;
+
+-- prod_precios_tienda: unique cod_ext — en replay el índice suele seguir como lista_precios_tienda_cod_externo_key
+-- Índices auxiliares idx_* solo existen en algunas BD; opcionales en shadow DB.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'lista_precios_tienda_cod_ext_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "lista_precios_tienda_cod_ext_key" RENAME TO "prod_precios_tienda_cod_ext_key"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'lista_precios_tienda_cod_externo_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "lista_precios_tienda_cod_externo_key" RENAME TO "prod_precios_tienda_cod_ext_key"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'precios_tienda_cod_ext_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "precios_tienda_cod_ext_key" RENAME TO "prod_precios_tienda_cod_ext_key"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'precios_tienda_cod_externo_key'
+  ) THEN
+    EXECUTE 'ALTER INDEX "precios_tienda_cod_externo_key" RENAME TO "prod_precios_tienda_cod_ext_key"';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_lista_precios_tienda_cod_externo'
+  ) THEN
+    EXECUTE 'ALTER INDEX "idx_lista_precios_tienda_cod_externo" RENAME TO "prod_precios_tienda_cod_ext_aux_idx"';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_lista_precios_tienda_proveedor'
+  ) THEN
+    EXECUTE 'ALTER INDEX "idx_lista_precios_tienda_proveedor" RENAME TO "prod_precios_tienda_proveedor_idx"';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_precios_tienda_cod_tienda'
+  ) THEN
+    EXECUTE 'ALTER INDEX "idx_precios_tienda_cod_tienda" RENAME TO "prod_precios_tienda_cod_tienda_idx"';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'precios_tienda_ultima_exportacion_excel_idx'
+  ) THEN
+    EXECUTE 'ALTER INDEX "precios_tienda_ultima_exportacion_excel_idx" RENAME TO "prod_precios_tienda_ultima_exportacion_excel_idx"';
+  END IF;
+END $$;
 
 -- fin_tesoreria_cajas (unique con map: explícito en schema)
 ALTER INDEX "cajas_tesoreria_nombre_titular_ux" RENAME TO "fin_tesoreria_cajas_nombre_titular_ux";
@@ -109,15 +174,7 @@ ALTER INDEX "pedidos_historia_items_pedido_historia_id_idx"
 ALTER INDEX "pedidos_mercaderia_sucursal_id_idx"
     RENAME TO "prod_ped_merc_sucursal_id_idx";
 
--- prod_precios_tienda (3 índices auxiliares históricos)
-ALTER INDEX "idx_lista_precios_tienda_cod_externo"
-    RENAME TO "prod_precios_tienda_cod_ext_aux_idx";
-ALTER INDEX "idx_lista_precios_tienda_proveedor"
-    RENAME TO "prod_precios_tienda_proveedor_idx";
-ALTER INDEX "idx_precios_tienda_cod_tienda"
-    RENAME TO "prod_precios_tienda_cod_tienda_idx";
-ALTER INDEX "precios_tienda_ultima_exportacion_excel_idx"
-    RENAME TO "prod_precios_tienda_ultima_exportacion_excel_idx";
+-- prod_precios_tienda: índices auxiliares ya renombrados arriba si existían
 
 -- fin_tesoreria_cajas
 ALTER INDEX "cajas_tesoreria_tipo_caja_idx" RENAME TO "fin_tesoreria_cajas_tipo_caja_idx";

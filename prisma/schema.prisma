@@ -356,6 +356,23 @@ model FinBalVtas {
   @@map("fin_bal_vtas")
 }
 
+/**
+ * Total ventas con IVA declarado manualmente por mes (Posición de IVA · débito).
+ * `monto`: bruto con IVA 21 % implícito; el débito fiscal en pantalla es `round(monto − monto/1,21)`.
+ */
+model FinBalIvaDeb {
+  id    String @id @default(cuid())
+  /** Año calendario (columna física `anio`). */
+  anio  Int    @map("anio")
+  /** Mes calendario 1–12. */
+  mes   Int
+  monto Int
+
+  @@unique([anio, mes], map: "fin_bal_iva_deb_mes_anio_ux")
+  @@index([anio])
+  @@map("fin_bal_iva_deb")
+}
+
 model ListaPrecioProveedor {
   id                String   @id @default(uuid())
   idProveedor       String   @map("id_proveedor")

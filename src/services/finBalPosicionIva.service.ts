@@ -1,39 +1,40 @@
 /**
- * Posición de IVA (Balance): lecturas sobre `fin_bal_gasto_mensual` y derivados.
+ * Posición de IVA (Balance): débito desde `fin_bal_iva_deb` (totales declarados en UI); crédito desde
+ * `fin_bal_gasto_mensual` + `fin_compras_comprobante` (facturas).
  */
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isoFechaDevengo } from "@/services/finBalGastoMensualBalance.service";
 
-/** Monto bruto con IVA 21 % implícito en la fórmula acordada (`monto / 1.21` = neto gravado). */
+/** Monto bruto con IVA 21 % implícito en la fórmula (`total / 1.21` = neto gravado). */
 const DIVISOR_NETO_CON_IVA = 1.21 as const;
 
-/**
- * IVA crédito fiscal por línea: `monto - (monto / 1.21)` con redondeo al peso entero.
- * Solo aplica cuando la imputación discrimina IVA (`iva = true` en BD).
- */
-export function ivaCreditoDesdeMontoImputacionConIva21(monto: number): number {
-  if (!Number.isFinite(monto) || monto <= 0) return 0;
-  return Math.round(monto - monto / DIVISOR_NETO_CON_IVA);
+/** Valor de `fin_compras_comprobante.comprobante` para tomar facturas en Posición de IVA. */
+export const COMPROBANTE_FILA_FACTURA_IVA_CREDITO = "FACTURA" as const;
+
+function totalDecimalAPesosEnteros(total: Prisma.Decimal): number {
+  const n = Number(total);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n);
 }
 
 /**
- * Suma de IVA crédito por mes calendario (`mes` 1–12) para un año dado.
- * Incluye solo filas `fin_bal_gasto_mensual` con `iva = true`.
+ * IVA crédito fiscal: `total - (total / 1.21)` redondeado al peso entero.
+ * Aplica a montos brutos con alícuota implícita 21 % (gastos balance y totales de factura).
  */
-export async function sumarIvaCreditoPorMesAnio(anio: number): Promise<number[]> {
-  const totals = Array.from({ length: 12 }, () => 0);
-  const rows = await prisma.finBalGastoMensual.findMany({
-    where: { anio, iva: true },
-    select: { mes: true, monto: true },
-  });
-  for (const r of rows) {
-    if (r.mes < 1 || r.mes > 12) continue;
-    totals[r.mes - 1] += ivaCreditoDesdeMontoImputacionConIva21(r.monto);
-  }
-  return totals;
+export function ivaCreditoDesdeTotalConIva21(totalPesos: number): number {
+  if (!Number.isFinite(totalPesos) || totalPesos <= 0) return 0;
+  return Math.round(totalPesos - totalPesos / DIVISOR_NETO_CON_IVA);
 }
 
-/** Línea de detalle para modal «IVA Crédito» (imputaciones con `iva = true` en un mes). */
+function isoYmdDesdeFechaComp(fechaComp: Date): string {
+  const y = fechaComp.getUTCFullYear();
+  const m = String(fechaComp.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(fechaComp.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Línea de detalle IVA crédito · gastos balance (`iva = true`). */
 export interface DetalleLineaIvaCreditoBalance {
   id: string;
   fechaDevengoIso: string;
@@ -43,17 +44,74 @@ export interface DetalleLineaIvaCreditoBalance {
   ivaCredito: number;
 }
 
+/** Línea de detalle IVA crédito · compras mercadería (`fin_compras_comprobante`, facturas). */
+export interface DetalleLineaIvaCreditoCompraMercaderia {
+  id: string;
+  fechaIso: string;
+  proveedorNombre: string;
+  monto: number;
+  ivaCredito: number;
+}
+
 /**
- * Listado de imputaciones del mes con discrimina IVA, para desglose de crédito fiscal.
+ * Suma de IVA crédito por mes calendario (`mes` 1–12) para un año dado.
+ * - `fin_bal_gasto_mensual` con `iva = true`
+ * - `fin_compras_comprobante` con `comprobante = 'FACTURA'` (fecha según `fecha_comp`).
  */
-export async function listarDetalleIvaCreditoMes(params: {
+export async function sumarIvaCreditoPorMesAnio(anio: number): Promise<number[]> {
+  const totals = Array.from({ length: 12 }, () => 0);
+
+  const [gastos, facturas] = await Promise.all([
+    prisma.finBalGastoMensual.findMany({
+      where: { anio, iva: true },
+      select: { mes: true, monto: true },
+    }),
+    prisma.comprobanteProveedor.findMany({
+      where: {
+        comprobante: COMPROBANTE_FILA_FACTURA_IVA_CREDITO,
+        fechaComp: {
+          gte: new Date(Date.UTC(anio, 0, 1)),
+          lt: new Date(Date.UTC(anio + 1, 0, 1)),
+        },
+      },
+      select: { fechaComp: true, total: true },
+    }),
+  ]);
+
+  for (const r of gastos) {
+    if (r.mes < 1 || r.mes > 12) continue;
+    totals[r.mes - 1] += ivaCreditoDesdeTotalConIva21(r.monto);
+  }
+
+  for (const f of facturas) {
+    const y = f.fechaComp.getUTCFullYear();
+    const mes = f.fechaComp.getUTCMonth() + 1;
+    if (y !== anio || mes < 1 || mes > 12) continue;
+    const pesos = totalDecimalAPesosEnteros(f.total);
+    totals[mes - 1] += ivaCreditoDesdeTotalConIva21(pesos);
+  }
+
+  return totals;
+}
+
+function rangoUtcMes(anio: number, mes: number): { inicio: Date; finExcl: Date } | null {
+  if (mes < 1 || mes > 12 || anio < 2000 || anio > 2100) return null;
+  return {
+    inicio: new Date(Date.UTC(anio, mes - 1, 1)),
+    finExcl: new Date(Date.UTC(anio, mes, 1)),
+  };
+}
+
+/** Imputaciones del mes con `iva = true` (detalle modal Gastos). */
+export async function listarDetalleIvaCreditoGastosMes(params: {
   anio: number;
   mes: number;
 }): Promise<DetalleLineaIvaCreditoBalance[]> {
   const { anio, mes } = params;
-  if (mes < 1 || mes > 12 || anio < 2000 || anio > 2100) return [];
+  const rango = rangoUtcMes(anio, mes);
+  if (!rango) return [];
 
-  const rows = await prisma.finBalGastoMensual.findMany({
+  const rowsGasto = await prisma.finBalGastoMensual.findMany({
     where: { anio, mes, iva: true },
     orderBy: [{ createdAt: "asc" }],
     include: {
@@ -68,7 +126,7 @@ export async function listarDetalleIvaCreditoMes(params: {
     },
   });
 
-  return rows.map((r) => {
+  return rowsGasto.map((r) => {
     const gf = r.gastoFinal;
     const fechaDevengoIso = isoFechaDevengo(anio, mes, gf.diaDevengado ?? 1);
     const sucursalDisplay = r.imputacionSucursal ?? gf.sucursal;
@@ -78,7 +136,44 @@ export async function listarDetalleIvaCreditoMes(params: {
       gastoNombre: gf.gasto.nombre.toUpperCase(),
       sucursalNombre: sucursalDisplay?.nombre.toUpperCase() ?? "—",
       monto: r.monto,
-      ivaCredito: ivaCreditoDesdeMontoImputacionConIva21(r.monto),
+      ivaCredito: ivaCreditoDesdeTotalConIva21(r.monto),
+    };
+  });
+}
+
+/** Facturas `FACTURA` del mes por `fecha_comp` (detalle modal Compras mercadería). */
+export async function listarDetalleIvaCreditoComprasMercaderiaMes(params: {
+  anio: number;
+  mes: number;
+}): Promise<DetalleLineaIvaCreditoCompraMercaderia[]> {
+  const { anio, mes } = params;
+  const rango = rangoUtcMes(anio, mes);
+  if (!rango) return [];
+
+  const { inicio, finExcl } = rango;
+
+  const rowsFactura = await prisma.comprobanteProveedor.findMany({
+    where: {
+      comprobante: COMPROBANTE_FILA_FACTURA_IVA_CREDITO,
+      fechaComp: { gte: inicio, lt: finExcl },
+    },
+    orderBy: [{ fechaComp: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      fechaComp: true,
+      total: true,
+      proveedor: { select: { nombre: true } },
+    },
+  });
+
+  return rowsFactura.map((r) => {
+    const pesos = totalDecimalAPesosEnteros(r.total);
+    return {
+      id: r.id,
+      fechaIso: isoYmdDesdeFechaComp(r.fechaComp),
+      proveedorNombre: r.proveedor.nombre.toUpperCase(),
+      monto: pesos,
+      ivaCredito: ivaCreditoDesdeTotalConIva21(pesos),
     };
   });
 }

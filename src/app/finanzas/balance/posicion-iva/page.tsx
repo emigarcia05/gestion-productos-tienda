@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import FinanzasBalancePosicionIvaPage from "@/components/finanzas/FinanzasBalancePosicionIvaPage";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
-import { sumarIvaCreditoPorMesAnio } from "@/services/finBalPosicionIva.service";
+import { listarMontosBrutosFinBalIvaDebPorAnio } from "@/services/finBalIvaDeb.service";
+import { sumarIvaCreditoPorMesAnio, ivaCreditoDesdeTotalConIva21 } from "@/services/finBalPosicionIva.service";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getRol } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,26 @@ export default async function BalancePosicionIvaPage() {
     redirect("/gestion-productos/proveedores/sugeridos");
   }
 
+  const editor = await esEditor();
   const { anio: anioRaw } = mesAnioCalendarioArgentina();
   const anio = clampAnio(anioRaw);
 
-  const ivaCreditoPorMes = await sumarIvaCreditoPorMesAnio(anio);
+  const [montosBrutosVentasConIvaPorMes, ivaCreditoPorMes] = await Promise.all([
+    listarMontosBrutosFinBalIvaDebPorAnio(anio),
+    sumarIvaCreditoPorMesAnio(anio),
+  ]);
 
-  return <FinanzasBalancePosicionIvaPage anio={anio} ivaCreditoPorMes={ivaCreditoPorMes} />;
+  const ivaDebitoPorMes = montosBrutosVentasConIvaPorMes.map((bruto) =>
+    ivaCreditoDesdeTotalConIva21(bruto),
+  );
+
+  return (
+    <FinanzasBalancePosicionIvaPage
+      anio={anio}
+      esEditor={editor}
+      montosBrutosVentasConIvaPorMes={montosBrutosVentasConIvaPorMes}
+      ivaDebitoPorMes={ivaDebitoPorMes}
+      ivaCreditoPorMes={ivaCreditoPorMes}
+    />
+  );
 }
