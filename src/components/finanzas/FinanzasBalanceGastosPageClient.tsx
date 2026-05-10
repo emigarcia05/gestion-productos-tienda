@@ -40,6 +40,18 @@ type FiltroEstadoBalanceGastos =
   | "con_monto_con_pago"
   | "sin_monto";
 
+/** Catálogo recurrente mensual vs gasto eventual (`fin_bal_gasto_final.gasto_mensual`). */
+type FiltroTipoBalanceGastos = "" | "mensual" | "eventual";
+
+function aplicarFiltroTipoFilas(
+  rows: BalanceGastoMensualFila[],
+  filtroTipo: FiltroTipoBalanceGastos
+): BalanceGastoMensualFila[] {
+  if (!filtroTipo) return rows;
+  if (filtroTipo === "mensual") return rows.filter((r) => r.esGastoMensual);
+  return rows.filter((r) => !r.esGastoMensual);
+}
+
 function aplicarFiltroEstadoFilas(
   rows: BalanceGastoMensualFila[],
   filtroEstado: FiltroEstadoBalanceGastos
@@ -71,9 +83,10 @@ function filasParaOpcionesDesplegable(
     filtRubro: string;
     filtGasto: string;
     filtEstado: FiltroEstadoBalanceGastos;
+    filtTipo: FiltroTipoBalanceGastos;
   }
 ): BalanceGastoMensualFila[] {
-  let out = filas;
+  let out = aplicarFiltroTipoFilas(filas, estado.filtTipo);
   if (omitir !== "sucursal" && estado.filtSucursal) {
     out = out.filter((r) => r.sucursalNombre === estado.filtSucursal);
   }
@@ -138,6 +151,8 @@ export default function FinanzasBalanceGastosPageClient({
   const [filtProveedor, setFiltProveedor] = useState("");
   /** Filtro ESTADO (monto + pago); vacío = sin filtrar por estado. */
   const [filtEstado, setFiltEstado] = useState<FiltroEstadoBalanceGastos>("");
+  /** MENSUAL vs EVENTUAL (`gasto_mensual` en catálogo). */
+  const [filtTipo, setFiltTipo] = useState<FiltroTipoBalanceGastos>("");
 
   const [filaRegistrarMontoPago, setFilaRegistrarMontoPago] = useState<BalanceGastoMensualFila | null>(null);
   const [eliminar, setEliminar] = useState<{ id: string; etiqueta: string } | null>(null);
@@ -164,8 +179,9 @@ export default function FinanzasBalanceGastosPageClient({
       filtRubro,
       filtGasto,
       filtEstado,
+      filtTipo,
     }),
-    [filtSucursal, filtProveedor, filtRubro, filtGasto, filtEstado]
+    [filtSucursal, filtProveedor, filtRubro, filtGasto, filtEstado, filtTipo]
   );
 
   const sucursalesOpciones = useMemo(() => {
@@ -205,14 +221,14 @@ export default function FinanzasBalanceGastosPageClient({
   }, [filtGasto, gastosOpciones]);
 
   const filasFiltradas = useMemo(() => {
-    let out = filas;
+    let out = aplicarFiltroTipoFilas(filas, filtTipo);
     if (filtRubro) out = out.filter((f) => f.rubroNombre === filtRubro);
     if (filtGasto) out = out.filter((f) => f.gastoNombre === filtGasto);
     if (filtSucursal) out = out.filter((f) => f.sucursalNombre === filtSucursal);
     if (filtProveedor) out = out.filter((f) => f.proveedorNombre === filtProveedor);
     out = aplicarFiltroEstadoFilas(out, filtEstado);
     return out;
-  }, [filas, filtRubro, filtGasto, filtSucursal, filtProveedor, filtEstado]);
+  }, [filas, filtTipo, filtRubro, filtGasto, filtSucursal, filtProveedor, filtEstado]);
 
   /** Periodo: siempre `mes` + `anio` (URL / servidor). */
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
@@ -234,6 +250,7 @@ export default function FinanzasBalanceGastosPageClient({
     setFiltSucursal("");
     setFiltProveedor("");
     setFiltEstado("");
+    setFiltTipo("");
   }
 
   async function handleCargarMes() {
@@ -494,7 +511,34 @@ export default function FinanzasBalanceGastosPageClient({
                   </Select>
                 </FiltroIndividualContainer>
 
-                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-3 gap-2")}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtTipo)}
+                  onLimpiar={() => setFiltTipo("")}
+                >
+                  <Select
+                    value={filtTipo || "none"}
+                    onValueChange={(v) =>
+                      setFiltTipo(v === "none" ? "" : (v as FiltroTipoBalanceGastos))
+                    }
+                  >
+                    <SelectTrigger className="input-filtro-unificado" aria-label="Tipo de gasto (mensual / eventual)">
+                      <SelectValue placeholder="TIPO" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TIPO</SelectItem>
+                      <SelectItem value="mensual">MENSUAL</SelectItem>
+                      <SelectItem value="eventual">EVENTUAL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2 gap-2")}>
                   <span className={FILTER_COUNT_CLASS}>
                     {filasFiltradas.length.toLocaleString("es-AR")} GASTO
                     {filasFiltradas.length === 1 ? "" : "S"}

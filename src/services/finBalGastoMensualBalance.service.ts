@@ -19,6 +19,8 @@ export interface BalanceGastoMensualFila {
   sucursalGeneraBalance: boolean;
   sucursalCentroCosto: boolean;
   tipoGastoNombre: string;
+  /** `fin_bal_gasto_final.gasto_mensual`: recurrente mensual vs eventual (único). */
+  esGastoMensual: boolean;
   rubroNombre: string;
   gastoNombre: string;
   /** Comentarios del `fin_bal_gasto_final` (gasto + proveedor + sucursal), si hay. */
@@ -256,6 +258,7 @@ export async function listarImputacionesMensualesBalance(params: {
       },
       gastoFinal: {
         select: {
+          gastoMensual: true,
           diaDevengado: true,
           vencimiento: true,
           comentarios: true,
@@ -306,6 +309,7 @@ export async function listarImputacionesMensualesBalance(params: {
       sucursalGeneraBalance: sucursalDisplay?.generaBalance ?? false,
       sucursalCentroCosto: sucursalDisplay?.centroCosto ?? false,
       tipoGastoNombre: gf.gasto.rubro.tipo.nombre.toUpperCase(),
+      esGastoMensual: gf.gastoMensual,
       rubroNombre: gf.gasto.rubro.nombre.toUpperCase(),
       gastoNombre: gf.gasto.nombre.toUpperCase(),
       gastoFinalComentarios,
