@@ -337,7 +337,7 @@ export interface BalanceMensualGastoAgregado {
   tieneHistorialDisponible: boolean;
 }
 
-/** Gastos agregados por nombre para un rubro (y tipo, salvo reparto CC). */
+/** Gastos agregados por nombre para un rubro (y tipo, salvo reparto CC). Orden: mayor monto primero. */
 export function listarGastosAgregadosPorRubroTipo(
   filas: BalanceGastoMensualFila[],
   columna: BalanceMensualColumnaDetalle,
@@ -373,7 +373,11 @@ export function listarGastosAgregadosPorRubroTipo(
       tieneHistorialDisponible: v.tieneHistorialDisponible,
     });
   }
-  out.sort((a, b) => a.gastoNombre.localeCompare(b.gastoNombre, "es"));
+  out.sort((a, b) => {
+    const d = b.monto - a.monto;
+    if (d !== 0) return d;
+    return a.gastoNombre.localeCompare(b.gastoNombre, "es");
+  });
   return out;
 }
 
