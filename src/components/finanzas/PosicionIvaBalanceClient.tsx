@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,10 @@ import type {
 } from "@/services/finBalPosicionIva.service";
 import TotalVentasConIvaModal from "@/components/finanzas/TotalVentasConIvaModal";
 import { toast } from "sonner";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 
 const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
   { valor: 1, etiqueta: "ENERO" },
@@ -46,6 +50,12 @@ const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
 
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
+
+/** Botón ícono edición en tabla balance (misma familia que Balance mensual). */
+const CLASE_BOTON_EDITAR_IVA_DEBITO = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!h-7 !w-7 min-h-0 !p-1 shrink-0",
+);
 
 type VistaDetalleIva = "menu" | "gastos" | "compras";
 
@@ -193,13 +203,14 @@ export default function PosicionIvaBalanceClient({
                             {esEditor ? (
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-auto shrink-0 justify-start whitespace-normal px-2 py-1.5 text-left text-xs font-medium leading-snug sm:max-w-[min(100%,11rem)]"
+                                variant="ghost"
+                                size="icon"
+                                className={CLASE_BOTON_EDITAR_IVA_DEBITO}
                                 title="TOTAL VENTAS CON IVA"
+                                aria-label="Editar total ventas con IVA"
                                 onClick={() => setMesModalVentasIva(m.valor)}
                               >
-                                TOTAL VENTAS CON IVA
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             ) : null}
                             <span

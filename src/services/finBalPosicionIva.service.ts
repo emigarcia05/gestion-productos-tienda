@@ -9,8 +9,11 @@ import { isoFechaDevengo } from "@/services/finBalGastoMensualBalance.service";
 /** Monto bruto con IVA 21 % implícito en la fórmula (`total / 1.21` = neto gravado). */
 const DIVISOR_NETO_CON_IVA = 1.21 as const;
 
-/** Valor de `fin_compras_comprobante.comprobante` para tomar facturas en Posición de IVA. */
-export const COMPROBANTE_FILA_FACTURA_IVA_CREDITO = "FACTURA" as const;
+/**
+ * Valor de `fin_compras_comprobante.tipo_comp` para compras con IVA crédito (factura fiscal).
+ * No confundir con la columna `comprobante`, que guarda el número de comprobante desde DUX.
+ */
+export const TIPO_COMP_FACTURA_IVA_CREDITO = "FACTURA" as const;
 
 function totalDecimalAPesosEnteros(total: Prisma.Decimal): number {
   const n = Number(total);
@@ -56,7 +59,7 @@ export interface DetalleLineaIvaCreditoCompraMercaderia {
 /**
  * Suma de IVA crédito por mes calendario (`mes` 1–12) para un año dado.
  * - `fin_bal_gasto_mensual` con `iva = true`
- * - `fin_compras_comprobante` con `comprobante = 'FACTURA'` (fecha según `fecha_comp`).
+ * - `fin_compras_comprobante` con `tipo_comp = 'FACTURA'` (fecha según `fecha_comp`).
  */
 export async function sumarIvaCreditoPorMesAnio(anio: number): Promise<number[]> {
   const totals = Array.from({ length: 12 }, () => 0);
@@ -68,7 +71,10 @@ export async function sumarIvaCreditoPorMesAnio(anio: number): Promise<number[]>
     }),
     prisma.comprobanteProveedor.findMany({
       where: {
-        comprobante: COMPROBANTE_FILA_FACTURA_IVA_CREDITO,
+        tipoComp: {
+          equals: TIPO_COMP_FACTURA_IVA_CREDITO,
+          mode: "insensitive",
+        },
         fechaComp: {
           gte: new Date(Date.UTC(anio, 0, 1)),
           lt: new Date(Date.UTC(anio + 1, 0, 1)),
@@ -141,7 +147,7 @@ export async function listarDetalleIvaCreditoGastosMes(params: {
   });
 }
 
-/** Facturas `FACTURA` del mes por `fecha_comp` (detalle modal Compras mercadería). */
+/** Comprobantes con `tipo_comp` factura del mes por `fecha_comp` (detalle modal Compras mercadería). */
 export async function listarDetalleIvaCreditoComprasMercaderiaMes(params: {
   anio: number;
   mes: number;
@@ -154,7 +160,10 @@ export async function listarDetalleIvaCreditoComprasMercaderiaMes(params: {
 
   const rowsFactura = await prisma.comprobanteProveedor.findMany({
     where: {
-      comprobante: COMPROBANTE_FILA_FACTURA_IVA_CREDITO,
+      tipoComp: {
+        equals: TIPO_COMP_FACTURA_IVA_CREDITO,
+        mode: "insensitive",
+      },
       fechaComp: { gte: inicio, lt: finExcl },
     },
     orderBy: [{ fechaComp: "asc" }, { id: "asc" }],
