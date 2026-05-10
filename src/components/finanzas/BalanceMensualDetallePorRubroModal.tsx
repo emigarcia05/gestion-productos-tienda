@@ -21,9 +21,42 @@ import type {
   ElegirRubroBalancePayload,
 } from "@/lib/balanceMensualDetalle";
 
-const TH_NUM = "text-right whitespace-nowrap";
-const TD_NUM = "celda-datos text-right tabular-nums";
+const TH_CENTER = "text-center whitespace-nowrap";
+const TD_MONTO = "celda-datos tabular-nums";
 const CELL_MIN = "min-w-0";
+
+function CeldaPorcentajeConBarra({
+  parte,
+  totalTipoCelda,
+}: {
+  parte: number;
+  totalTipoCelda: number;
+}) {
+  const texto = fmtPctDeTotal(parte, totalTipoCelda);
+  const pct = totalTipoCelda > 0 ? (parte / totalTipoCelda) * 100 : 0;
+  const barW =
+    totalTipoCelda > 0 && parte > 0 ? Math.min(100, Math.max(pct, 3)) : 0;
+
+  return (
+    <div className="flex w-full min-w-0 flex-col items-stretch gap-1.5 py-0.5">
+      <div className="flex justify-center tabular-nums">
+        <span>{texto}</span>
+      </div>
+      <div
+        className="h-2 w-full overflow-hidden rounded-sm bg-muted/60"
+        title={texto !== "—" ? `${texto} sobre el total de esta columna` : undefined}
+        aria-hidden
+      >
+        {barW > 0 ? (
+          <div
+            className="h-full rounded-sm bg-primary"
+            style={{ width: `${barW}%` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 function fmtMonto(n: number) {
   if (n === 0) return "—";
@@ -89,9 +122,9 @@ export default function BalanceMensualDetallePorRubroModal({
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className={CELL_MIN}>RUBRO</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+                    <TableHead className={cn(TH_CENTER, CELL_MIN)}>MONTO</TableHead>
                     <TableHead
-                      className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+                      className={cn(TH_CENTER, CELL_MIN, "text-[10px] leading-tight")}
                       title={`Participación del rubro sobre el total de ${tipo === "variables" ? "costos variables" : "costos fijos"} de esta columna del balance.`}
                     >
                       <span className="block">{etiquetaPctBase}</span>
@@ -118,11 +151,11 @@ export default function BalanceMensualDetallePorRubroModal({
                         </TableRow>
                         {sec.rubros.map((r) => (
                           <TableRow key={`${sec.tipoGastoNombre ?? "r"}-${r.clave}`}>
-                            <TableCell className={cn(CELL_MIN, "celda-datos align-middle")}>
+                            <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                               <span className="font-medium text-foreground">{r.etiqueta}</span>
                             </TableCell>
-                            <TableCell className={cn(TD_NUM, "align-middle")}>
-                              <div className="flex w-full items-center justify-end gap-1">
+                            <TableCell className={cn(TD_MONTO, "align-middle")}>
+                              <div className="flex w-full items-center justify-center gap-1">
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -142,8 +175,13 @@ export default function BalanceMensualDetallePorRubroModal({
                                 <span>{fmtMonto(r.monto)}</span>
                               </div>
                             </TableCell>
-                            <TableCell className={cn(TD_NUM, "align-middle")}>
-                              {fmtPctDeTotal(r.monto, totalTipoCelda)}
+                            <TableCell
+                              className={cn(
+                                TD_MONTO,
+                                "align-middle whitespace-normal !px-2 !text-center",
+                              )}
+                            >
+                              <CeldaPorcentajeConBarra parte={r.monto} totalTipoCelda={totalTipoCelda} />
                             </TableCell>
                           </TableRow>
                         ))}
