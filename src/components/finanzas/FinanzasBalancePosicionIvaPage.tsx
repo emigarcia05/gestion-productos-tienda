@@ -2,10 +2,6 @@ import PosicionIvaBalanceClient from "@/components/finanzas/PosicionIvaBalanceCl
 
 interface Props {
   anio: number;
-  /** Mes calendario actual (Argentina, 1–12) para ocultar saldo acumulado en meses futuros. */
-  mesCalendarioActual: number;
-  /** Año calendario actual (Argentina). */
-  anioCalendarioActual: number;
   esEditor: boolean;
   ivaDebitoPorMes: number[];
   ivaCreditoPorMes: number[];
@@ -14,8 +10,6 @@ interface Props {
 
 export default function FinanzasBalancePosicionIvaPage({
   anio,
-  mesCalendarioActual,
-  anioCalendarioActual,
   esEditor,
   ivaDebitoPorMes,
   ivaCreditoPorMes,
@@ -24,8 +18,6 @@ export default function FinanzasBalancePosicionIvaPage({
   return (
     <PosicionIvaBalanceClient
       anio={anio}
-      mesCalendarioActual={mesCalendarioActual}
-      anioCalendarioActual={anioCalendarioActual}
       esEditor={esEditor}
       ivaDebitoPorMes={ivaDebitoPorMes}
       ivaCreditoPorMes={ivaCreditoPorMes}

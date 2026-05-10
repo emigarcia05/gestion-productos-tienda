@@ -70,22 +70,8 @@ type VistaModalPosicionIva =
   | "iva-credito-gastos"
   | "iva-credito-compras";
 
-/** Si la fila es de un mes estrictamente posterior al calendario actual (Argentina). */
-function saldoAcumuladoOcultoMesFuturo(
-  mesFila: number,
-  anioTabla: number,
-  mesActual: number,
-  anioActual: number,
-): boolean {
-  if (anioTabla > anioActual) return true;
-  if (anioTabla < anioActual) return false;
-  return mesFila > mesActual;
-}
-
 interface Props {
   anio: number;
-  mesCalendarioActual: number;
-  anioCalendarioActual: number;
   esEditor: boolean;
   ivaDebitoPorMes: number[];
   ivaCreditoPorMes: number[];
@@ -102,8 +88,6 @@ function celdaMontoPesos(pesos: number) {
 
 export default function PosicionIvaBalanceClient({
   anio,
-  mesCalendarioActual,
-  anioCalendarioActual,
   esEditor,
   ivaDebitoPorMes,
   ivaCreditoPorMes,
@@ -125,7 +109,6 @@ export default function PosicionIvaBalanceClient({
   );
 
   const filasPosicionIva = useMemo(() => {
-    let running = 0;
     return MESES_CALENDARIO.map((m) => {
       const ix = m.valor - 1;
       const debito = ivaDebitoPorMes[ix] ?? 0;
@@ -134,7 +117,6 @@ export default function PosicionIvaBalanceClient({
       const manual = saldoManualPorMes[ix] ?? null;
       const usaManual = manual !== null;
       const saldoMostrado = usaManual ? manual : saldoCalculado;
-      running += saldoMostrado;
       return {
         mes: m.valor,
         etiquetaMes: m.etiqueta,
@@ -143,21 +125,14 @@ export default function PosicionIvaBalanceClient({
         credito,
         usaManual,
         saldoMostrado,
-        saldoAcumulado: running,
       };
     });
   }, [ivaDebitoPorMes, ivaCreditoPorMes, saldoManualPorMes]);
 
-  /** Saldo acumulado al último mes “cerrado” según la fecha actual; null si el año de la tabla es futuro. */
-  const saldoAcumuladoPie = useMemo((): number | null => {
-    if (anio > anioCalendarioActual) return null;
-    if (anio < anioCalendarioActual) {
-      const dic = filasPosicionIva[11];
-      return dic?.saldoAcumulado ?? 0;
-    }
-    const ix = mesCalendarioActual - 1;
-    return filasPosicionIva[ix]?.saldoAcumulado ?? 0;
-  }, [anio, anioCalendarioActual, mesCalendarioActual, filasPosicionIva]);
+  const sumaIvaSaldoAnual = useMemo(
+    () => filasPosicionIva.reduce((a, row) => a + row.saldoMostrado, 0),
+    [filasPosicionIva],
+  );
 
   const sumaDebitoAnual = useMemo(
     () => ivaDebitoPorMes.reduce((a, n) => a + (n ?? 0), 0),
@@ -296,12 +271,11 @@ export default function PosicionIvaBalanceClient({
                   className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
                 >
                   <colgroup>
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "18%" }} />
                     <col style={{ width: "22%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "24%" }} />
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -311,9 +285,6 @@ export default function PosicionIvaBalanceClient({
                       </TableHead>
                       <TableHead className={cn(TH_NUM, "min-w-0")}>IVA CRÉDITO</TableHead>
                       <TableHead className={cn(TH_NUM, "min-w-0")}>IVA SALDO</TableHead>
-                      <TableHead className={cn(TH_NUM, "min-w-0 font-medium")}>
-                        SALDO ACUMULADO
-                      </TableHead>
                       <TableHead className="text-center whitespace-nowrap min-w-0 px-2 font-medium">
                         ACCIONES
                       </TableHead>
@@ -364,18 +335,6 @@ export default function PosicionIvaBalanceClient({
                             {celdaMontoPesos(row.saldoMostrado)}
                           </span>
                         </TableCell>
-                        <TableCell className={cn(TD_NUM, "min-w-0 font-medium")}>
-                          {saldoAcumuladoOcultoMesFuturo(
-                            row.mes,
-                            anio,
-                            mesCalendarioActual,
-                            anioCalendarioActual,
-                          ) ? (
-                            <span className="text-muted-foreground font-normal">—</span>
-                          ) : (
-                            celdaMontoPesos(row.saldoAcumulado)
-                          )}
-                        </TableCell>
                         <TableCell
                           className="celda-datos min-w-0 px-2 py-1.5 align-middle"
                           onClick={(e) => e.stopPropagation()}
@@ -419,7 +378,7 @@ export default function PosicionIvaBalanceClient({
                     ))}
                     <TableRow className="border-t border-border bg-muted/35 hover:bg-muted/35 font-medium">
                       <TableCell className="celda-datos min-w-0 whitespace-nowrap uppercase tracking-wide">
-                        SALDO ACUMULADO
+                        TOTALES
                       </TableCell>
                       <TableCell className={TD_DEBITO_IMPORTE}>
                         {hayMesConSaldoManual ? (
@@ -435,15 +394,8 @@ export default function PosicionIvaBalanceClient({
                           celdaMontoPesos(sumaCreditoAnual)
                         )}
                       </TableCell>
-                      <TableCell className={cn(TD_NUM, "min-w-0 text-muted-foreground font-normal")}>
-                        —
-                      </TableCell>
                       <TableCell className={cn(TD_NUM, "min-w-0")}>
-                        {saldoAcumuladoPie === null ? (
-                          <span className="text-muted-foreground font-normal">—</span>
-                        ) : (
-                          celdaMontoPesos(saldoAcumuladoPie)
-                        )}
+                        {celdaMontoPesos(sumaIvaSaldoAnual)}
                       </TableCell>
                       <TableCell className="celda-datos min-w-0 px-2 py-1.5" aria-hidden />
                     </TableRow>
