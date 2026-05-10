@@ -55,7 +55,7 @@ export function diasEnMesCalendario(anio: number, mes1a12: number): number {
   return new Date(anio, mes1a12, 0).getDate();
 }
 
-function isoFechaDevengo(anio: number, mes: number, diaDevengado: number): string {
+export function isoFechaDevengo(anio: number, mes: number, diaDevengado: number): string {
   const maxD = diasEnMesCalendario(anio, mes);
   const d = Math.min(Math.max(1, diaDevengado), maxD);
   const mm = String(mes).padStart(2, "0");

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import FinanzasBalancePosicionIvaPage from "@/components/finanzas/FinanzasBalancePosicionIvaPage";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
+import { sumarIvaCreditoPorMesAnio } from "@/services/finBalPosicionIva.service";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 
@@ -22,5 +23,7 @@ export default async function BalancePosicionIvaPage() {
   const { anio: anioRaw } = mesAnioCalendarioArgentina();
   const anio = clampAnio(anioRaw);
 
-  return <FinanzasBalancePosicionIvaPage anio={anio} />;
+  const ivaCreditoPorMes = await sumarIvaCreditoPorMesAnio(anio);
+
+  return <FinanzasBalancePosicionIvaPage anio={anio} ivaCreditoPorMes={ivaCreditoPorMes} />;
 }
