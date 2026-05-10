@@ -1,7 +1,7 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import { Fragment } from "react";
-import { PanelRightOpen } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,13 @@ export default function BalanceMensualDetallePorRubroModal({
   const etiquetaPctBase =
     tipo === "variables" ? "% SOBRE COSTOS VARIABLES" : "% SOBRE COSTOS FIJOS";
 
+  function onFilaRubroKeyDown(e: KeyboardEvent<HTMLTableRowElement>, payload: ElegirRubroBalancePayload) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onElegirRubro(payload);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -149,31 +156,27 @@ export default function BalanceMensualDetallePorRubroModal({
                             {fmtTituloPalabras(sec.etiquetaTipo.toLowerCase())}
                           </TableCell>
                         </TableRow>
-                        {sec.rubros.map((r) => (
-                          <TableRow key={`${sec.tipoGastoNombre ?? "r"}-${r.clave}`}>
+                        {sec.rubros.map((r) => {
+                          const payload: ElegirRubroBalancePayload = {
+                            rubro: r,
+                            tipoGastoNombre: sec.tipoGastoNombre,
+                            etiquetaTipo: sec.etiquetaTipo,
+                          };
+                          return (
+                          <TableRow
+                            key={`${sec.tipoGastoNombre ?? "r"}-${r.clave}`}
+                            role="button"
+                            tabIndex={0}
+                            className="cursor-pointer hover:bg-muted/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label={`Ver gastos del rubro — ${r.etiqueta}`}
+                            onClick={() => onElegirRubro(payload)}
+                            onKeyDown={(e) => onFilaRubroKeyDown(e, payload)}
+                          >
                             <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                               <span className="font-medium text-foreground">{r.etiqueta}</span>
                             </TableCell>
                             <TableCell className={cn(TD_MONTO, "align-middle")}>
-                              <div className="flex w-full items-center justify-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                                  aria-label={`Ver gastos del rubro — ${r.etiqueta}`}
-                                  onClick={() =>
-                                    onElegirRubro({
-                                      rubro: r,
-                                      tipoGastoNombre: sec.tipoGastoNombre,
-                                      etiquetaTipo: sec.etiquetaTipo,
-                                    })
-                                  }
-                                >
-                                  <PanelRightOpen className="h-4 w-4" aria-hidden />
-                                </Button>
-                                <span>{fmtMonto(r.monto)}</span>
-                              </div>
+                              {fmtMonto(r.monto)}
                             </TableCell>
                             <TableCell
                               className={cn(
@@ -184,7 +187,8 @@ export default function BalanceMensualDetallePorRubroModal({
                               <CeldaPorcentajeConBarra parte={r.monto} totalTipoCelda={totalTipoCelda} />
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </Fragment>
                     ))
                   )}

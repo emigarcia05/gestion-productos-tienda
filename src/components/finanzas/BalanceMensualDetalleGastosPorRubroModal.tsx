@@ -17,9 +17,42 @@ import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { BalanceMensualGastoAgregado } from "@/lib/balanceMensualDetalle";
 
-const TH_NUM = "text-right whitespace-nowrap";
-const TD_NUM = "celda-datos text-right tabular-nums";
+const TH_CENTER = "text-center whitespace-nowrap";
+const TD_MONTO = "celda-datos tabular-nums";
 const CELL_MIN = "min-w-0";
+
+/** Mismo patrón que `BalanceMensualDetallePorRubroModal` (% centrado + barra debajo, relleno alineado a la izquierda). */
+function CeldaPorcentajeConBarra({
+  parte,
+  denominador,
+}: {
+  parte: number;
+  denominador: number;
+}) {
+  const texto = fmtPctDeTotal(parte, denominador);
+  const pct = denominador > 0 ? (parte / denominador) * 100 : 0;
+  const barW = denominador > 0 && parte > 0 ? Math.min(100, Math.max(pct, 3)) : 0;
+
+  return (
+    <div className="flex w-full min-w-0 flex-col items-stretch gap-1.5 py-0.5">
+      <div className="flex justify-center tabular-nums">
+        <span>{texto}</span>
+      </div>
+      <div
+        className="h-2 w-full overflow-hidden rounded-sm bg-muted/60"
+        title={texto !== "—" ? `${texto} sobre el total de esta columna` : undefined}
+        aria-hidden
+      >
+        {barW > 0 ? (
+          <div
+            className="h-full rounded-sm bg-primary"
+            style={{ width: `${barW}%` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 function fmtMonto(n: number) {
   if (n === 0) return "—";
@@ -28,32 +61,6 @@ function fmtMonto(n: number) {
 
 function filaGastoPuedeAbrirDetalle(g: BalanceMensualGastoAgregado) {
   return g.cantidadLineas > 1 || g.tieneHistorialDisponible;
-}
-
-function CeldaMagnitudBarra({
-  monto,
-  maxMonto,
-  etiqueta,
-}: {
-  monto: number;
-  maxMonto: number;
-  etiqueta: string;
-}) {
-  const pctBar = maxMonto > 0 ? (monto / maxMonto) * 100 : 0;
-  const barWidth = monto > 0 ? Math.max(pctBar, 4) : 0;
-  return (
-    <div
-      className="min-w-0 px-1"
-      title={`${etiqueta}: ${fmtMonto(monto)} (respecto del mayor gasto de la lista)`}
-    >
-      <div className="h-2 w-full overflow-hidden rounded-sm bg-muted/60">
-        <div
-          className="h-full min-w-0 rounded-sm bg-primary"
-          style={{ width: `${barWidth}%` }}
-        />
-      </div>
-    </div>
-  );
 }
 
 interface Props {
@@ -75,7 +82,6 @@ function TablaGastosRubro({
   totalRubroSeccion,
   etiquetaPctCf,
   gastos,
-  maxMonto,
   onElegirGasto,
 }: {
   tipo: "variables" | "fijos";
@@ -83,7 +89,6 @@ function TablaGastosRubro({
   totalRubroSeccion: number;
   etiquetaPctCf: string;
   gastos: BalanceMensualGastoAgregado[];
-  maxMonto: number;
   onElegirGasto: (g: BalanceMensualGastoAgregado) => void;
 }) {
   function onFilaKeyDown(e: KeyboardEvent<HTMLTableRowElement>, g: BalanceMensualGastoAgregado) {
@@ -98,43 +103,36 @@ function TablaGastosRubro({
     <Table
       variant="compact"
       scrollX={false}
-      className="tabla-gestion-compacta table-fixed w-full min-w-[44rem]"
+      className="tabla-gestion-compacta table-fixed w-full min-w-[40rem]"
     >
       <colgroup>
-        <col style={{ width: "30%" }} />
-        <col style={{ width: "16%" }} />
-        <col style={{ width: "14%" }} />
-        <col style={{ width: "14%" }} />
-        <col style={{ width: "26%" }} />
+        <col style={{ width: "36%" }} />
+        <col style={{ width: "22%" }} />
+        <col style={{ width: "21%" }} />
+        <col style={{ width: "21%" }} />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <TableHead className={CELL_MIN}>GASTO</TableHead>
-          <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+          <TableHead className={cn(CELL_MIN, "!text-left")}>GASTO</TableHead>
+          <TableHead className={cn(TH_CENTER, CELL_MIN)}>MONTO</TableHead>
           <TableHead
-            className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+            className={cn(TH_CENTER, CELL_MIN, "text-[10px] leading-tight")}
             title="Participación del gasto sobre el total del rubro (en esta sección)."
           >
             <span className="block">% SOBRE</span>
             <span className="block">RUBRO</span>
           </TableHead>
           <TableHead
-            className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+            className={cn(TH_CENTER, CELL_MIN, "text-[10px] leading-tight")}
             title={`Participación sobre el total de ${tipo === "variables" ? "costos variables" : "costos fijos"} de esta columna del balance.`}
           >
             <span className="block">{etiquetaPctCf}</span>
-          </TableHead>
-          <TableHead
-            className={cn(CELL_MIN, "!text-left text-[10px] leading-tight")}
-            title="Comparación ilustrativa del monto respecto del mayor gasto de esta lista."
-          >
-            MAGNITUD
           </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {gastos.length === 0 ? (
-          <EmptyTableRow colSpan={5} message="No hay gastos para este rubro." />
+          <EmptyTableRow colSpan={4} message="No hay gastos para este rubro." />
         ) : (
           gastos.map((g) => {
             const activa = filaGastoPuedeAbrirDetalle(g);
@@ -153,24 +151,25 @@ function TablaGastosRubro({
                 onClick={() => activa && onElegirGasto(g)}
                 onKeyDown={(e) => onFilaKeyDown(e, g)}
               >
-                <TableCell className={cn(CELL_MIN, "celda-datos align-middle text-left")}>
+                <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                   <span className="font-medium text-foreground">{g.gastoNombre}</span>
                 </TableCell>
-                <TableCell className={cn(TD_NUM, "align-middle")}>{fmtMonto(g.monto)}</TableCell>
-                <TableCell className={cn(TD_NUM, "align-middle")}>
-                  {fmtPctDeTotal(g.monto, totalRubroSeccion)}
-                </TableCell>
-                <TableCell className={cn(TD_NUM, "align-middle")}>
-                  {fmtPctDeTotal(g.monto, totalTipoCelda)}
+                <TableCell className={cn(TD_MONTO, "align-middle")}>{fmtMonto(g.monto)}</TableCell>
+                <TableCell
+                  className={cn(
+                    TD_MONTO,
+                    "align-middle whitespace-normal !px-2 !text-center",
+                  )}
+                >
+                  <CeldaPorcentajeConBarra parte={g.monto} denominador={totalRubroSeccion} />
                 </TableCell>
                 <TableCell
-                  className={cn(CELL_MIN, "celda-datos align-middle !text-left whitespace-normal")}
+                  className={cn(
+                    TD_MONTO,
+                    "align-middle whitespace-normal !px-2 !text-center",
+                  )}
                 >
-                  <CeldaMagnitudBarra
-                    monto={g.monto}
-                    maxMonto={maxMonto}
-                    etiqueta={g.gastoNombre}
-                  />
+                  <CeldaPorcentajeConBarra parte={g.monto} denominador={totalTipoCelda} />
                 </TableCell>
               </TableRow>
             );
@@ -197,7 +196,6 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
   const etiquetaPctCf =
     tipo === "variables" ? "% SOBRE COSTOS VARIABLES" : "% SOBRE COSTOS FIJOS";
-  const maxMonto = gastos.reduce((m, g) => Math.max(m, g.monto), 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -223,7 +221,6 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
                 totalRubroSeccion={totalRubroSeccion}
                 etiquetaPctCf={etiquetaPctCf}
                 gastos={gastos}
-                maxMonto={maxMonto}
                 onElegirGasto={onElegirGasto}
               />
             </div>
