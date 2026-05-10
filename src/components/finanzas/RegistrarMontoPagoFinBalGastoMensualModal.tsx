@@ -206,9 +206,9 @@ export default function RegistrarMontoPagoFinBalGastoMensualModal({
                   </span>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="primaryIcon"
                     size="icon"
-                    className="h-8 w-8 shrink-0"
+                    className="h-7 w-7 shrink-0 rounded-md"
                     disabled={!puedeRepetirMonto || aplicandoRepetir}
                     onClick={() => void handleRepetirMonto()}
                     aria-label="Repetir último monto"
