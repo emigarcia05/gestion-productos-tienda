@@ -4,10 +4,8 @@
  */
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ivaCreditoDesdeTotalConIva21 } from "@/lib/ivaDesdeTotalBruto21";
 import { isoFechaDevengo } from "@/services/finBalGastoMensualBalance.service";
-
-/** Monto bruto con IVA 21 % implícito en la fórmula (`total / 1.21` = neto gravado). */
-const DIVISOR_NETO_CON_IVA = 1.21 as const;
 
 /**
  * Valor de `fin_compras_comprobante.tipo_comp` para compras con IVA crédito (factura fiscal).
@@ -15,19 +13,12 @@ const DIVISOR_NETO_CON_IVA = 1.21 as const;
  */
 export const TIPO_COMP_FACTURA_IVA_CREDITO = "FACTURA" as const;
 
+export { ivaCreditoDesdeTotalConIva21 };
+
 function totalDecimalAPesosEnteros(total: Prisma.Decimal): number {
   const n = Number(total);
   if (!Number.isFinite(n)) return 0;
   return Math.round(n);
-}
-
-/**
- * IVA crédito fiscal: `total - (total / 1.21)` redondeado al peso entero.
- * Aplica a montos brutos con alícuota implícita 21 % (gastos balance y totales de factura).
- */
-export function ivaCreditoDesdeTotalConIva21(totalPesos: number): number {
-  if (!Number.isFinite(totalPesos) || totalPesos <= 0) return 0;
-  return Math.round(totalPesos - totalPesos / DIVISOR_NETO_CON_IVA);
 }
 
 function isoYmdDesdeFechaComp(fechaComp: Date): string {

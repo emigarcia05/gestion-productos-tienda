@@ -27,7 +27,7 @@ import type {
   DetalleLineaIvaCreditoBalance,
   DetalleLineaIvaCreditoCompraMercaderia,
 } from "@/services/finBalPosicionIva.service";
-import { ivaCreditoDesdeTotalConIva21 } from "@/services/finBalPosicionIva.service";
+import { ivaCreditoDesdeTotalConIva21 } from "@/lib/ivaDesdeTotalBruto21";
 import type { DetalleLineaIvaDebitoBalance } from "@/services/finBalIvaDeb.service";
 import ImportarIvaDebitoCsvModal from "@/components/finanzas/ImportarIvaDebitoCsvModal";
 import { toast } from "sonner";
