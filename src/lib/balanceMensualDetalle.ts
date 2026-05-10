@@ -331,6 +331,10 @@ export function totalMontoTipoEnCelda(
 export interface BalanceMensualGastoAgregado {
   gastoNombre: string;
   monto: number;
+  /** Cantidad de imputaciones (líneas) agrupadas bajo este nombre de gasto. */
+  cantidadLineas: number;
+  /** Al menos una línea tiene gasto final vinculado (permite evolución / histórico). */
+  tieneHistorialDisponible: boolean;
 }
 
 /** Gastos agregados por nombre para un rubro (y tipo, salvo reparto CC). */
@@ -344,14 +348,30 @@ export function listarGastosAgregadosPorRubroTipo(
   const lineas = listarGastosDetalleRubro(filas, columna, tipoCosto, rubroClave, {
     tipoGastoNombre,
   });
-  const mapa = new Map<string, number>();
+  const mapa = new Map<
+    string,
+    { monto: number; cantidadLineas: number; tieneHistorialDisponible: boolean }
+  >();
   for (const L of lineas) {
-    mapa.set(L.gastoNombre, (mapa.get(L.gastoNombre) ?? 0) + L.monto);
+    const cur = mapa.get(L.gastoNombre) ?? {
+      monto: 0,
+      cantidadLineas: 0,
+      tieneHistorialDisponible: false,
+    };
+    cur.monto += L.monto;
+    cur.cantidadLineas += 1;
+    if (L.gastoFinalId.trim() !== "") cur.tieneHistorialDisponible = true;
+    mapa.set(L.gastoNombre, cur);
   }
   const out: BalanceMensualGastoAgregado[] = [];
-  for (const [gastoNombre, monto] of mapa) {
-    if (monto <= 0) continue;
-    out.push({ gastoNombre, monto });
+  for (const [gastoNombre, v] of mapa) {
+    if (v.monto <= 0) continue;
+    out.push({
+      gastoNombre,
+      monto: v.monto,
+      cantidadLineas: v.cantidadLineas,
+      tieneHistorialDisponible: v.tieneHistorialDisponible,
+    });
   }
   out.sort((a, b) => a.gastoNombre.localeCompare(b.gastoNombre, "es"));
   return out;

@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelRightOpen } from "lucide-react";
+import type { KeyboardEvent } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,36 @@ function fmtMonto(n: number) {
   return `$${fmtPrecio(n)}`;
 }
 
+function filaGastoPuedeAbrirDetalle(g: BalanceMensualGastoAgregado) {
+  return g.cantidadLineas > 1 || g.tieneHistorialDisponible;
+}
+
+function CeldaMagnitudBarra({
+  monto,
+  maxMonto,
+  etiqueta,
+}: {
+  monto: number;
+  maxMonto: number;
+  etiqueta: string;
+}) {
+  const pctBar = maxMonto > 0 ? (monto / maxMonto) * 100 : 0;
+  const barWidth = monto > 0 ? Math.max(pctBar, 4) : 0;
+  return (
+    <div
+      className="min-w-0 px-1"
+      title={`${etiqueta}: ${fmtMonto(monto)} (respecto del mayor gasto de la lista)`}
+    >
+      <div className="h-2 w-full overflow-hidden rounded-sm bg-muted/60">
+        <div
+          className="h-full min-w-0 rounded-sm bg-primary"
+          style={{ width: `${barWidth}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,53 +69,115 @@ interface Props {
   onElegirGasto: (g: BalanceMensualGastoAgregado) => void;
 }
 
-function GastosComparativoBarras({
+function TablaGastosRubro({
+  tipo,
+  totalTipoCelda,
+  totalRubroSeccion,
+  etiquetaPctCf,
   gastos,
   maxMonto,
+  onElegirGasto,
 }: {
+  tipo: "variables" | "fijos";
+  totalTipoCelda: number;
+  totalRubroSeccion: number;
+  etiquetaPctCf: string;
   gastos: BalanceMensualGastoAgregado[];
   maxMonto: number;
+  onElegirGasto: (g: BalanceMensualGastoAgregado) => void;
 }) {
+  function onFilaKeyDown(e: KeyboardEvent<HTMLTableRowElement>, g: BalanceMensualGastoAgregado) {
+    if (!filaGastoPuedeAbrirDetalle(g)) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onElegirGasto(g);
+    }
+  }
+
   return (
-    <div
-      className="flex min-w-0 flex-col gap-0 bg-muted/20 px-3 py-0"
-      aria-label="Comparativo ilustrativo de montos por gasto"
+    <Table
+      variant="compact"
+      scrollX={false}
+      className="tabla-gestion-compacta table-fixed w-full min-w-[44rem]"
     >
-      <div
-        className={cn(
-          "sticky top-0 z-10 flex h-10 min-h-10 shrink-0 items-center border-b border-border bg-muted/20",
-        )}
-      >
-        <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-          Magnitud
-        </span>
-      </div>
-      <div className="flex flex-col">
-        {gastos.map((g) => {
-          const pctBar = maxMonto > 0 ? (g.monto / maxMonto) * 100 : 0;
-          const barWidth = g.monto > 0 ? Math.max(pctBar, 5) : 0;
-          return (
-            <div
-              key={g.gastoNombre}
-              className="flex min-h-10 flex-col justify-center gap-1 border-b border-border/50 py-2 last:border-b-0"
-            >
-              <div
-                className="h-2.5 w-full overflow-hidden rounded-sm bg-muted/60"
-                title={`${g.gastoNombre}: ${fmtMonto(g.monto)}`}
+      <colgroup>
+        <col style={{ width: "30%" }} />
+        <col style={{ width: "16%" }} />
+        <col style={{ width: "14%" }} />
+        <col style={{ width: "14%" }} />
+        <col style={{ width: "26%" }} />
+      </colgroup>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className={CELL_MIN}>GASTO</TableHead>
+          <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+          <TableHead
+            className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+            title="Participación del gasto sobre el total del rubro (en esta sección)."
+          >
+            <span className="block">% SOBRE</span>
+            <span className="block">RUBRO</span>
+          </TableHead>
+          <TableHead
+            className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+            title={`Participación sobre el total de ${tipo === "variables" ? "costos variables" : "costos fijos"} de esta columna del balance.`}
+          >
+            <span className="block">{etiquetaPctCf}</span>
+          </TableHead>
+          <TableHead
+            className={cn(CELL_MIN, "!text-left text-[10px] leading-tight")}
+            title="Comparación ilustrativa del monto respecto del mayor gasto de esta lista."
+          >
+            MAGNITUD
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {gastos.length === 0 ? (
+          <EmptyTableRow colSpan={5} message="No hay gastos para este rubro." />
+        ) : (
+          gastos.map((g) => {
+            const activa = filaGastoPuedeAbrirDetalle(g);
+            return (
+              <TableRow
+                key={g.gastoNombre}
+                className={cn(
+                  activa &&
+                    "cursor-pointer hover:bg-muted/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                )}
+                role={activa ? "button" : undefined}
+                tabIndex={activa ? 0 : undefined}
+                aria-label={
+                  activa ? `Abrir detalle e historial — ${g.gastoNombre}` : undefined
+                }
+                onClick={() => activa && onElegirGasto(g)}
+                onKeyDown={(e) => onFilaKeyDown(e, g)}
               >
-                <div
-                  className="h-full min-w-0 rounded-sm bg-primary"
-                  style={{ width: `${barWidth}%` }}
-                />
-              </div>
-              <span className="sr-only">
-                {g.gastoNombre}, {fmtMonto(g.monto)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+                <TableCell className={cn(CELL_MIN, "celda-datos align-middle text-left")}>
+                  <span className="font-medium text-foreground">{g.gastoNombre}</span>
+                </TableCell>
+                <TableCell className={cn(TD_NUM, "align-middle")}>{fmtMonto(g.monto)}</TableCell>
+                <TableCell className={cn(TD_NUM, "align-middle")}>
+                  {fmtPctDeTotal(g.monto, totalRubroSeccion)}
+                </TableCell>
+                <TableCell className={cn(TD_NUM, "align-middle")}>
+                  {fmtPctDeTotal(g.monto, totalTipoCelda)}
+                </TableCell>
+                <TableCell
+                  className={cn(CELL_MIN, "celda-datos align-middle !text-left whitespace-normal")}
+                >
+                  <CeldaMagnitudBarra
+                    monto={g.monto}
+                    maxMonto={maxMonto}
+                    etiqueta={g.gastoNombre}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })
+        )}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -124,115 +216,17 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
           <p className="shrink-0 text-xs text-muted-foreground">{subtitulo}</p>
           <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-            {gastos.length === 0 ? (
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto [scrollbar-gutter:stable]">
-                  <Table
-                    variant="compact"
-                    scrollX={false}
-                    className="tabla-gestion-compacta table-fixed w-full min-w-[38rem]"
-                  >
-                    <colgroup>
-                      <col style={{ width: "34%" }} />
-                      <col style={{ width: "20%" }} />
-                      <col style={{ width: "23%" }} />
-                      <col style={{ width: "23%" }} />
-                    </colgroup>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className={CELL_MIN}>GASTO</TableHead>
-                        <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                        <TableHead
-                          className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
-                          title="Participación del gasto sobre el total del rubro (en esta sección)."
-                        >
-                          <span className="block">% SOBRE</span>
-                          <span className="block">RUBRO</span>
-                        </TableHead>
-                        <TableHead
-                          className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
-                          title={`Participación sobre el total de ${tipo === "variables" ? "costos variables" : "costos fijos"} de esta columna del balance.`}
-                        >
-                          <span className="block">{etiquetaPctCf}</span>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <EmptyTableRow colSpan={4} message="No hay gastos para este rubro." />
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            ) : (
-              <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[30%_70%] gap-0 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
-                <div className="min-h-0 min-w-0 border-r border-border">
-                  <GastosComparativoBarras gastos={gastos} maxMonto={maxMonto} />
-                </div>
-                <div className="min-h-0 min-w-0 overflow-x-auto">
-                  <Table
-                    variant="compact"
-                    scrollX={false}
-                    className="tabla-gestion-compacta table-fixed w-full min-w-[32rem]"
-                  >
-                    <colgroup>
-                      <col style={{ width: "34%" }} />
-                      <col style={{ width: "20%" }} />
-                      <col style={{ width: "23%" }} />
-                      <col style={{ width: "23%" }} />
-                    </colgroup>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className={CELL_MIN}>GASTO</TableHead>
-                        <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                        <TableHead
-                          className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
-                          title="Participación del gasto sobre el total del rubro (en esta sección)."
-                        >
-                          <span className="block">% SOBRE</span>
-                          <span className="block">RUBRO</span>
-                        </TableHead>
-                        <TableHead
-                          className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
-                          title={`Participación sobre el total de ${tipo === "variables" ? "costos variables" : "costos fijos"} de esta columna del balance.`}
-                        >
-                          <span className="block">{etiquetaPctCf}</span>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {gastos.map((g) => (
-                        <TableRow key={g.gastoNombre}>
-                          <TableCell className={cn(CELL_MIN, "celda-datos align-middle")}>
-                            <span className="font-medium text-foreground">{g.gastoNombre}</span>
-                          </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            <div className="flex w-full items-center justify-end gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                                aria-label={`Ver líneas del gasto — ${g.gastoNombre}`}
-                                onClick={() => onElegirGasto(g)}
-                              >
-                                <PanelRightOpen className="h-4 w-4" aria-hidden />
-                              </Button>
-                              <span>{fmtMonto(g.monto)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            {fmtPctDeTotal(g.monto, totalRubroSeccion)}
-                          </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            {fmtPctDeTotal(g.monto, totalTipoCelda)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
+            <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto [scrollbar-gutter:stable]">
+              <TablaGastosRubro
+                tipo={tipo}
+                totalTipoCelda={totalTipoCelda}
+                totalRubroSeccion={totalRubroSeccion}
+                etiquetaPctCf={etiquetaPctCf}
+                gastos={gastos}
+                maxMonto={maxMonto}
+                onElegirGasto={onElegirGasto}
+              />
+            </div>
           </div>
           {gastos.length > 0 ? (
             <div className="flex shrink-0 justify-between border-t border-border pt-2 text-xs text-muted-foreground">
