@@ -749,7 +749,7 @@
   min-height: var(--tabla-thead-height) !important;
   max-height: var(--tabla-thead-height) !important;
   font-size: 0.75rem !important;
-  font-weight: 400;
+  font-weight: var(--font-weight-bold);
   text-align: center;
   vertical-align: middle;
   color: var(--primary-foreground);

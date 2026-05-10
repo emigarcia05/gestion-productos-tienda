@@ -3,7 +3,7 @@ import FinanzasBalanceMensualPageClient from "@/components/finanzas/FinanzasBala
 import { resumenBalanceMensualDesdeFilas } from "@/lib/balanceMensual";
 import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
 import {
   listarImputacionesMensualesBalance,
   mesAnioCalendarioArgentina,
@@ -69,7 +69,6 @@ export default async function BalanceMensualPage({ searchParams }: Props) {
     ventasPorSucursalNombre[v.sucursal.nombre] = v.monto;
   }
   const resumen = resumenBalanceMensualDesdeFilas(filas, ventasPorSucursalNombre, sucursalesBalance);
-  const puedeEditarVentas = await esEditor();
 
   return (
     <FinanzasBalanceMensualPageClient
@@ -78,7 +77,6 @@ export default async function BalanceMensualPage({ searchParams }: Props) {
       resumen={resumen}
       filas={filas}
       sucursalesGeneranBalance={sucursalesBalance}
-      puedeEditarVentas={puedeEditarVentas}
     />
   );
 }

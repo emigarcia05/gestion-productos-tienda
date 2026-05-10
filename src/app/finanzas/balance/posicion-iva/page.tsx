@@ -23,8 +23,9 @@ export default async function BalancePosicionIvaPage() {
   }
 
   const editor = await esEditor();
-  const { anio: anioRaw } = mesAnioCalendarioArgentina();
-  const anio = clampAnio(anioRaw);
+  const { mes: mesCalendarioActual, anio: anioCalendarioActualRaw } = mesAnioCalendarioArgentina();
+  const anio = clampAnio(anioCalendarioActualRaw);
+  const anioCalendarioActual = anioCalendarioActualRaw;
 
   const [montosBrutosVentasConIvaPorMes, ivaCreditoPorMes, saldoManualPorMes] = await Promise.all([
     listarMontosBrutosFinBalIvaDebPorAnio(anio),
@@ -39,6 +40,8 @@ export default async function BalancePosicionIvaPage() {
   return (
     <FinanzasBalancePosicionIvaPage
       anio={anio}
+      mesCalendarioActual={mesCalendarioActual}
+      anioCalendarioActual={anioCalendarioActual}
       esEditor={editor}
       ivaDebitoPorMes={ivaDebitoPorMes}
       ivaCreditoPorMes={ivaCreditoPorMes}

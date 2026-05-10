@@ -17,6 +17,8 @@ interface Props {
   gastoFinalId: string | null;
   /** Subtítulo / contexto (ej. gasto · proveedor · sucursal). */
   descripcion: string;
+  /** Con acceso desde costo variable/fijo en grilla: clic en barra abre desglose por rubro de ese mes. */
+  onSeleccionarMesEnGrafico?: (mes: number, anio: number) => void | Promise<void>;
 }
 
 function fmtMonto(n: number) {
@@ -119,6 +121,7 @@ export default function BalanceMensualGastoHistoricoModal({
   onOpenChange,
   gastoFinalId,
   descripcion,
+  onSeleccionarMesEnGrafico,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [serie, setSerie] = useState<HistoricoMontoGastoFinalBalanceItem[]>([]);
@@ -176,6 +179,11 @@ export default function BalanceMensualGastoHistoricoModal({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
           <p className="shrink-0 text-xs text-muted-foreground">{descripcion}</p>
+          {onSeleccionarMesEnGrafico ? (
+            <p className="shrink-0 text-[11px] text-muted-foreground">
+              Elegí un mes en el gráfico para abrir el detalle de costos por rubro de ese periodo.
+            </p>
+          ) : null}
           {error ? (
             <p className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
@@ -199,21 +207,41 @@ export default function BalanceMensualGastoHistoricoModal({
                       ? Math.round((p.monto / maxMonto) * 128)
                       : 0;
                   const alturaPx = p.monto > 0 ? Math.max(pxAlt, 6) : 2;
+                  const barInteractive = Boolean(onSeleccionarMesEnGrafico);
                   return (
                     <div
                       key={`${p.anio}-${p.mes}`}
                       className="flex w-14 shrink-0 flex-col items-stretch gap-0.5"
                     >
-                      <div className="flex h-36 w-full items-end justify-center rounded-sm bg-muted/25 px-0.5">
-                        <div
-                          className={cn(
-                            "w-[82%] rounded-t-sm",
-                            p.monto > 0 ? "bg-[#0072BB]" : "bg-muted-foreground/20",
-                          )}
-                          style={{ height: `${alturaPx}px` }}
-                          title={`${p.etiquetaMes}: ${fmtMonto(p.monto)}`}
-                        />
-                      </div>
+                      {barInteractive ? (
+                        <button
+                          type="button"
+                          className="flex h-36 w-full items-end justify-center rounded-sm bg-muted/25 px-0.5 outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          aria-label={`Ver desglose por rubro en ${p.etiquetaMes} de ${p.anio}`}
+                          title={`${p.etiquetaMes}: ${fmtMonto(p.monto)} — Clic para desglose`}
+                          onClick={() => void onSeleccionarMesEnGrafico?.(p.mes, p.anio)}
+                        >
+                          <div
+                            className={cn(
+                              "w-[82%] rounded-t-sm",
+                              p.monto > 0 ? "bg-[#0072BB]" : "bg-muted-foreground/20",
+                            )}
+                            style={{ height: `${alturaPx}px` }}
+                            aria-hidden
+                          />
+                        </button>
+                      ) : (
+                        <div className="flex h-36 w-full items-end justify-center rounded-sm bg-muted/25 px-0.5">
+                          <div
+                            className={cn(
+                              "w-[82%] rounded-t-sm",
+                              p.monto > 0 ? "bg-[#0072BB]" : "bg-muted-foreground/20",
+                            )}
+                            style={{ height: `${alturaPx}px` }}
+                            title={`${p.etiquetaMes}: ${fmtMonto(p.monto)}`}
+                          />
+                        </div>
+                      )}
                       <span className="text-center text-[9px] leading-tight text-muted-foreground">
                         {p.etiquetaMes}
                       </span>

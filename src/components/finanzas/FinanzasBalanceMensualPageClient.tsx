@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart2, PanelRightOpen, Pencil } from "lucide-react";
+import { BarChart2 } from "lucide-react";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -26,6 +26,7 @@ import {
   fmtMargenContribucionPct,
   partCostosVariablesFijos,
   puntoEquilibrioVentasPesos,
+  resumenBalanceMensualDesdeFilas,
 } from "@/lib/balanceMensual";
 import { cn } from "@/lib/utils";
 import {
@@ -34,9 +35,6 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { Button } from "@/components/ui/button";
-import EditarVentasBalanceMensualModal, {
-  type EditarVentasBalanceMensualContext,
-} from "@/components/finanzas/EditarVentasBalanceMensualModal";
 import BalanceMensualDetallePorRubroModal from "@/components/finanzas/BalanceMensualDetallePorRubroModal";
 import BalanceMensualDetalleGastosPorRubroModal from "@/components/finanzas/BalanceMensualDetalleGastosPorRubroModal";
 import BalanceMensualDetalleGastosRubroModal from "@/components/finanzas/BalanceMensualDetalleGastosRubroModal";
@@ -54,6 +52,8 @@ import {
 } from "@/lib/balanceMensualDetalle";
 import { fmtTituloPalabras } from "@/lib/format";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import { cargarFilasBalanceMensualPeriodoAction } from "@/actions/finBalGastoMensualBalance";
+import { toast } from "sonner";
 
 const ANIO_FILTRO_MIN = 2026;
 const ANIO_FILTRO_MAX = 2046;
@@ -104,6 +104,16 @@ type HistoricoGastoTarget = {
   gastoFinalId: string;
   etiqueta: string;
 };
+
+/** Contexto de columna/tipo de costo al abrir historial desde la grilla (clic en barra → desglose). */
+type HistoricoDetalleCostosOrigen = {
+  tipoCosto: "variables" | "fijos";
+  columna: BalanceMensualColumnaDetalle;
+  etiquetaColumna: string;
+};
+
+/** Payload al abrir el historial desde costo variable/fijo (incluye contexto para desglose por rubro desde el gráfico). */
+type AbrirHistoricoDesdeGrillaPayload = HistoricoGastoTarget & HistoricoDetalleCostosOrigen;
 
 /** Fondo más claro que el encabezado #0072BB, para filas de resultado. */
 const BG_FILA_RESULTADO = "#a9d6f1";
@@ -210,31 +220,15 @@ const FILAS_BALANCE: FilaBalance[] = [
 
 function TablaBalanceMensualAlineada({
   columnas,
-  mes,
-  anio,
-  puedeEditarVentas,
-  onEditarVentas,
-  onAbrirDetalleCostos,
   onAbrirHistoricoGastoResolver,
   onAbrirHistoricoGasto,
 }: {
   columnas: ColumnaBalance[];
-  mes: number;
-  anio: number;
-  puedeEditarVentas: boolean;
-  onEditarVentas: (ctx: EditarVentasBalanceMensualContext) => void;
-  onAbrirDetalleCostos?: (payload: {
-    tipo: "variables" | "fijos";
-    columna: BalanceMensualColumnaDetalle;
-    etiquetaColumna: string;
-    totalCvCelda: number;
-    totalCfCelda: number;
-  }) => void;
   onAbrirHistoricoGastoResolver: (params: {
     filaId: string;
     columna: ColumnaBalance;
   }) => HistoricoGastoTarget | null;
-  onAbrirHistoricoGasto?: (payload: HistoricoGastoTarget) => void;
+  onAbrirHistoricoGasto?: (payload: AbrirHistoricoDesdeGrillaPayload) => void;
 }) {
   const nDatos = columnas.length;
   const gridTemplateColumns = `minmax(10.5rem, 1.05fr) repeat(${nDatos}, minmax(6.75rem, 1fr))`;
@@ -256,7 +250,7 @@ function TablaBalanceMensualAlineada({
                 "justify-center border-r border-white/20"
               )}
             >
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white">
                 Concepto
               </span>
             </div>
@@ -268,7 +262,7 @@ function TablaBalanceMensualAlineada({
                   "justify-center border-r border-white/20 text-center last:border-r-0"
                 )}
               >
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                <span className="text-xs font-bold uppercase tracking-[0.06em] text-white">
                   {c.titulo}
                 </span>
               </div>
@@ -309,9 +303,7 @@ function TablaBalanceMensualAlineada({
                 {columnas.map((c) => {
                   const txt =
                     fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
-                  const sid = c.sucursalId;
-                  const esColumnaSucursal = Boolean(sid);
-                  const mostrarColumnaConHistorico = esColumnaSucursal || c.key === "global";
+                  const mostrarColumnaConHistorico = Boolean(c.sucursalId) || c.key === "global";
                   const historicoGasto =
                     fila.tipo === "monto" && onAbrirHistoricoGasto
                       ? fila.id === "cv" || fila.id === "cf"
@@ -321,10 +313,6 @@ function TablaBalanceMensualAlineada({
                           })
                         : null
                       : null;
-                  const esFilaVentas = fila.id === "ventas";
-                  const mostrarEditarVentas = esFilaVentas && puedeEditarVentas && Boolean(sid);
-                  const mostrarDetalleDiscriminacion =
-                    fila.tipo === "monto" && (fila.id === "cv" || fila.id === "cf") && Boolean(onAbrirDetalleCostos);
 
                   return (
                     <div
@@ -338,8 +326,7 @@ function TablaBalanceMensualAlineada({
                     >
                       {mostrarColumnaConHistorico ? (
                         <div className="grid w-full min-w-0 grid-cols-[25%_75%] items-center gap-0">
-                          <div className="grid min-w-0 grid-cols-2 gap-px">
-                            <div className="flex min-w-0 items-center justify-center">
+                          <div className="flex min-w-0 items-center justify-center">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -351,63 +338,24 @@ function TablaBalanceMensualAlineada({
                                     ? "Ver Evolución Mensual Del Gasto"
                                     : "Sin gasto individual para historial"
                                 }
-                                onClick={() =>
-                                  historicoGasto
-                                    ? onAbrirHistoricoGasto?.({
-                                        gastoFinalId: historicoGasto.gastoFinalId,
-                                        etiqueta: historicoGasto.etiqueta,
-                                      })
-                                    : undefined
-                                }
+                                onClick={() => {
+                                  if (!historicoGasto || fila.tipo !== "monto") return;
+                                  if (fila.id !== "cv" && fila.id !== "cf") return;
+                                  onAbrirHistoricoGasto?.({
+                                    gastoFinalId: historicoGasto.gastoFinalId,
+                                    etiqueta: historicoGasto.etiqueta,
+                                    tipoCosto: fila.id === "cv" ? "variables" : "fijos",
+                                    columna:
+                                      c.key === "global"
+                                        ? { ambito: "global" }
+                                        : { ambito: "sucursal", nombre: c.titulo },
+                                    etiquetaColumna: c.titulo,
+                                  });
+                                }}
                                 disabled={!historicoGasto}
                               >
                                 <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
-                            </div>
-                            <div className="flex min-w-0 items-center justify-center">
-                              {esColumnaSucursal && mostrarDetalleDiscriminacion ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
-                                  aria-label={`Ver discriminación — ${fila.etiquetaConcepto} — ${c.titulo}`}
-                                  onClick={() =>
-                                    onAbrirDetalleCostos?.({
-                                      tipo: fila.id === "cv" ? "variables" : "fijos",
-                                      columna:
-                                        c.key === "global"
-                                          ? { ambito: "global" }
-                                          : { ambito: "sucursal", nombre: c.titulo },
-                                      etiquetaColumna: c.titulo,
-                                      totalCvCelda: c.bloque.costosVariables,
-                                      totalCfCelda: c.bloque.costosFijos,
-                                    })
-                                  }
-                                >
-                                  <PanelRightOpen className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                                </Button>
-                              ) : esColumnaSucursal && esFilaVentas && mostrarEditarVentas && sid ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
-                                  aria-label={`Editar ventas — ${c.titulo}`}
-                                  onClick={() =>
-                                    onEditarVentas({
-                                      sucursalId: sid,
-                                      nombreSucursal: c.titulo,
-                                      mes,
-                                      anio,
-                                      ventaActual: c.bloque.ventas,
-                                    })
-                                  }
-                                >
-                                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                                </Button>
-                              ) : null}
-                            </div>
                           </div>
                           <div className="flex h-full min-w-0 items-center justify-end">
                             <span className={cn(negritaValor ? "font-bold" : "font-normal")}>{txt}</span>
@@ -438,7 +386,6 @@ interface Props {
   resumen: BalanceMensualResumen;
   filas: BalanceGastoMensualFila[];
   sucursalesGeneranBalance: { id: string; nombre: string }[];
-  puedeEditarVentas: boolean;
 }
 
 type DetalleRubrosModalCtx = {
@@ -468,12 +415,9 @@ export default function FinanzasBalanceMensualPageClient({
   resumen,
   filas,
   sucursalesGeneranBalance,
-  puedeEditarVentas,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [ventasModalOpen, setVentasModalOpen] = useState(false);
-  const [ventasModalCtx, setVentasModalCtx] = useState<EditarVentasBalanceMensualContext | null>(null);
   const [detalleRubrosOpen, setDetalleRubrosOpen] = useState(false);
   const [detalleRubrosCtx, setDetalleRubrosCtx] = useState<DetalleRubrosModalCtx | null>(null);
   const [detalleGastosPorRubroOpen, setDetalleGastosPorRubroOpen] = useState(false);
@@ -485,6 +429,16 @@ export default function FinanzasBalanceMensualPageClient({
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
   const [historicoDescripcion, setHistoricoDescripcion] = useState("");
+  const [historicoDetalleCostosOrigen, setHistoricoDetalleCostosOrigen] =
+    useState<HistoricoDetalleCostosOrigen | null>(null);
+  const [filasParaModalesDetalle, setFilasParaModalesDetalle] =
+    useState<BalanceGastoMensualFila[] | null>(null);
+  const [detalleModalesMesAnio, setDetalleModalesMesAnio] = useState<{
+    mes: number;
+    anio: number;
+  } | null>(null);
+
+  const filasEfectivasDetalle = filasParaModalesDetalle ?? filas;
 
   const onAbrirHistoricoGastoResolver = useMemo(() => {
     return (params: { filaId: string; columna: ColumnaBalance }): HistoricoGastoTarget | null => {
@@ -518,28 +472,28 @@ export default function FinanzasBalanceMensualPageClient({
   const seccionesTiposRubros = useMemo(() => {
     if (!detalleRubrosCtx) return [];
     return agruparTiposYRubrosCostoMensual(
-      filas,
+      filasEfectivasDetalle,
       sucursalesGeneranBalance,
       detalleRubrosCtx.columna,
       detalleRubrosCtx.tipo,
     );
-  }, [detalleRubrosCtx, filas, sucursalesGeneranBalance]);
+  }, [detalleRubrosCtx, filasEfectivasDetalle, sucursalesGeneranBalance]);
 
   const gastosAgregadosPorRubro = useMemo(() => {
     if (!detalleGastosPorRubroCtx) return [];
     return listarGastosAgregadosPorRubroTipo(
-      filas,
+      filasEfectivasDetalle,
       detalleGastosPorRubroCtx.columna,
       detalleGastosPorRubroCtx.tipo,
       detalleGastosPorRubroCtx.rubroClave,
       detalleGastosPorRubroCtx.tipoGastoNombre,
     );
-  }, [detalleGastosPorRubroCtx, filas]);
+  }, [detalleGastosPorRubroCtx, filasEfectivasDetalle]);
 
   const filasLineasGastoDetalle = useMemo(() => {
     if (!detalleLineasGastoCtx) return [];
     return listarGastosDetalleRubro(
-      filas,
+      filasEfectivasDetalle,
       detalleLineasGastoCtx.columna,
       detalleLineasGastoCtx.tipo,
       detalleLineasGastoCtx.rubroClave,
@@ -548,7 +502,7 @@ export default function FinanzasBalanceMensualPageClient({
         gastoNombre: detalleLineasGastoCtx.gastoNombre,
       },
     );
-  }, [detalleLineasGastoCtx, filas]);
+  }, [detalleLineasGastoCtx, filasEfectivasDetalle]);
 
   function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
     const q = new URLSearchParams();
@@ -571,6 +525,42 @@ export default function FinanzasBalanceMensualPageClient({
 
   function limpiarFiltrosPeriodo() {
     navegarPeriodo(mesHoy, anioHoy);
+  }
+
+  const mesAnioEtiquetaModalesDetalle = detalleModalesMesAnio ?? { mes, anio };
+
+  async function handleSeleccionarMesEnGraficoHistorico(mesBar: number, anioBar: number) {
+    if (!historicoDetalleCostosOrigen) return;
+    const res = await cargarFilasBalanceMensualPeriodoAction({ mes: mesBar, anio: anioBar });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    const { filas: filasB, ventasPorSucursalNombre } = res.data;
+    const resumenB = resumenBalanceMensualDesdeFilas(
+      filasB,
+      ventasPorSucursalNombre,
+      sucursalesGeneranBalance,
+    );
+    const { tipoCosto, columna, etiquetaColumna } = historicoDetalleCostosOrigen;
+    const bloque =
+      columna.ambito === "global"
+        ? resumenB.global
+        : resumenB.sucursales.find((s) => s.nombre === columna.nombre)?.bloque;
+    if (!bloque) {
+      toast.error("No se encontró la columna en el resumen de ese periodo.");
+      return;
+    }
+    setFilasParaModalesDetalle(filasB);
+    setDetalleModalesMesAnio({ mes: mesBar, anio: anioBar });
+    setDetalleRubrosCtx({
+      tipo: tipoCosto,
+      columna,
+      etiquetaColumna,
+      totalCvCelda: bloque.costosVariables,
+      totalCfCelda: bloque.costosFijos,
+    });
+    setDetalleRubrosOpen(true);
   }
 
   return (
@@ -657,40 +647,29 @@ export default function FinanzasBalanceMensualPageClient({
                 sucursalId: s.sucursalId || null,
               })),
             ]}
-            mes={mes}
-            anio={anio}
-            puedeEditarVentas={puedeEditarVentas}
-            onEditarVentas={(ctx) => {
-              setVentasModalCtx(ctx);
-              setVentasModalOpen(true);
-            }}
-            onAbrirDetalleCostos={(payload) => {
-              setDetalleRubrosCtx(payload);
-              setDetalleRubrosOpen(true);
-            }}
             onAbrirHistoricoGastoResolver={onAbrirHistoricoGastoResolver}
-            onAbrirHistoricoGasto={({ gastoFinalId, etiqueta }) => {
-              setHistoricoGastoFinalId(gastoFinalId);
-              setHistoricoDescripcion(etiqueta);
+            onAbrirHistoricoGasto={(payload) => {
+              setHistoricoDetalleCostosOrigen({
+                tipoCosto: payload.tipoCosto,
+                columna: payload.columna,
+                etiquetaColumna: payload.etiquetaColumna,
+              });
+              setHistoricoGastoFinalId(payload.gastoFinalId);
+              setHistoricoDescripcion(payload.etiqueta);
               setHistoricoOpen(true);
             }}
           />
         </div>
       </ClassicFilteredTableLayout>
-      <EditarVentasBalanceMensualModal
-        open={ventasModalOpen}
-        onOpenChange={(open) => {
-          setVentasModalOpen(open);
-          if (!open) setVentasModalCtx(null);
-        }}
-        ctx={ventasModalCtx}
-        onSuccess={() => router.refresh()}
-      />
       <BalanceMensualDetallePorRubroModal
         open={detalleRubrosOpen}
         onOpenChange={(open) => {
           setDetalleRubrosOpen(open);
-          if (!open) setDetalleRubrosCtx(null);
+          if (!open) {
+            setDetalleRubrosCtx(null);
+            setFilasParaModalesDetalle(null);
+            setDetalleModalesMesAnio(null);
+          }
         }}
         titulo={
           detalleRubrosCtx
@@ -701,7 +680,10 @@ export default function FinanzasBalanceMensualPageClient({
         }
         subtitulo={
           detalleRubrosCtx
-            ? `${detalleRubrosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+            ? `${detalleRubrosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(
+                mesAnioEtiquetaModalesDetalle.mes,
+                mesAnioEtiquetaModalesDetalle.anio,
+              )}`
             : ""
         }
         tipo={detalleRubrosCtx?.tipo ?? "variables"}
@@ -734,7 +716,10 @@ export default function FinanzasBalanceMensualPageClient({
                 detalleGastosPorRubroCtx.etiquetaTipo.toLowerCase(),
               )} · ${
                 detalleGastosPorRubroCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
-              } · ${detalleGastosPorRubroCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+              } · ${detalleGastosPorRubroCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(
+                mesAnioEtiquetaModalesDetalle.mes,
+                mesAnioEtiquetaModalesDetalle.anio,
+              )}`
             : ""
         }
         tipo={detalleGastosPorRubroCtx?.tipo ?? "variables"}
@@ -765,7 +750,10 @@ export default function FinanzasBalanceMensualPageClient({
                 detalleLineasGastoCtx.etiquetaTipo.toLowerCase(),
               )} · ${
                 detalleLineasGastoCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
-              } · ${detalleLineasGastoCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(mes, anio)}`
+              } · ${detalleLineasGastoCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(
+                mesAnioEtiquetaModalesDetalle.mes,
+                mesAnioEtiquetaModalesDetalle.anio,
+              )}`
             : ""
         }
         tipo={detalleLineasGastoCtx?.tipo ?? "variables"}
@@ -774,7 +762,7 @@ export default function FinanzasBalanceMensualPageClient({
         totalPorTipo={(tipoNombre: string) =>
           detalleLineasGastoCtx
             ? totalMontoTipoEnCelda(
-                filas,
+                filasEfectivasDetalle,
                 sucursalesGeneranBalance,
                 detalleLineasGastoCtx.columna,
                 detalleLineasGastoCtx.tipo,
@@ -789,6 +777,7 @@ export default function FinanzasBalanceMensualPageClient({
             : null
         }
         onAbrirHistorico={({ gastoFinalId, etiqueta }) => {
+          setHistoricoDetalleCostosOrigen(null);
           setHistoricoGastoFinalId(gastoFinalId);
           setHistoricoDescripcion(etiqueta);
           setHistoricoOpen(true);
@@ -802,10 +791,14 @@ export default function FinanzasBalanceMensualPageClient({
           if (!open) {
             setHistoricoGastoFinalId(null);
             setHistoricoDescripcion("");
+            setHistoricoDetalleCostosOrigen(null);
           }
         }}
         gastoFinalId={historicoGastoFinalId}
         descripcion={historicoDescripcion}
+        onSeleccionarMesEnGrafico={
+          historicoDetalleCostosOrigen ? handleSeleccionarMesEnGraficoHistorico : undefined
+        }
       />
     </div>
   );

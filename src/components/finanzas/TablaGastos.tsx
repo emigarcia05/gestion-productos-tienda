@@ -38,7 +38,7 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 /** Primera columna del bloque secundario: línea vertical #0072bb (mismo patrón que el resto de tablas). */
 const TH_ACCIONES =
-  "min-w-0 tabla-bloque-secundario-head-divider text-center text-[11px] font-semibold uppercase";
+  "min-w-0 tabla-bloque-secundario-head-divider text-center text-[11px] font-bold uppercase";
 const TD_ACCIONES =
   "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider";
 
@@ -240,7 +240,7 @@ export default function TablaGastos({
                   {mostrarHistorico ? (
                     <TableHead
                       className={cn(
-                        "min-w-0 text-center text-[11px] font-semibold uppercase",
+                        "min-w-0 text-center text-[11px] font-bold uppercase",
                         "tabla-bloque-secundario-head-divider"
                       )}
                     >

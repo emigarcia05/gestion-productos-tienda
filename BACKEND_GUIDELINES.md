@@ -540,7 +540,7 @@ Modelo de datos para registrar movimientos con monto y sucursal:
 
 ### 2.5f Balance mensual (`/finanzas/balance/mensual`) y ventas de balance (`fin_bal_vtas`)
 
-- **Rutas**: `src/app/finanzas/balance/mensual/page.tsx` (redirect desde `/finanzas/balance`); cliente `src/components/finanzas/FinanzasBalanceMensualPageClient.tsx`. Permiso: `PERMISOS.finanzas.acceso`; edición de ventas además **`esEditor()`** (misma regla que **Balance · Ventas**).
+- **Rutas**: `src/app/finanzas/balance/mensual/page.tsx` (redirect desde `/finanzas/balance`); cliente `src/components/finanzas/FinanzasBalanceMensualPageClient.tsx`. Permiso: `PERMISOS.finanzas.acceso`. La pantalla es **solo lectura** respecto de ventas: no expone edición de `fin_bal_vtas` (eso queda en **Balance · Ventas**, con **`esEditor()`** en mutaciones vía actions).
 - **Datos en servidor (por mes/año calendario Argentina)**: en paralelo se cargan `listarImputacionesMensualesBalance({ mes, anio })` (`finBalGastoMensualBalance.service.ts`), `listarSucursalesGeneraBalanceParaVtas()` y `listarFinBalVtasPorMesAnio(mes, anio)` (`finBalVtas.service.ts`). El resumen se arma con **`resumenBalanceMensualDesdeFilas(filas, ventasPorNombre, sucursalesGeneranBalance)`** en `src/lib/balanceMensual.ts`.
 - **Reglas de negocio del resumen** (`balanceMensual.ts`):
   - **Global**: suma todas las imputaciones del mes; **ventas** del global = suma de ventas cargadas en sucursales con `genera_balance` (no es un registro aparte en `fin_bal_vtas`).
@@ -549,7 +549,8 @@ Modelo de datos para registrar movimientos con monto y sucursal:
   - **Exportado para UI o informes**: `fmtMargenContribucionPct(p)` (porcentaje sobre ventas o `—`); `puntoEquilibrioVentasPesos(b)` — ventas en pesos necesarias para cubrir costos fijos con el ratio actual `(resultadoOperativo / ventas)`; devuelve `null` si no es calculable.
 - **Tabla `fin_bal_vtas`** (Prisma `FinBalVtas`): montos enteros por **`sucursal_id` + `mes` + `anio`**. **`@@unique([sucursalId, mes, anio])`** (`fin_bal_vtas_sucursal_mes_anio_ux`); migración **`20260427120000_fin_bal_vtas_unique_sucursal_mes_anio`** deduplica antes del unique. **`crearFinBalVtas`** en `finBalVtas.service.ts` hace **`upsert`** (misma acción alinea **Balance · Ventas** y balance mensual). Validación: `crearFinBalVtasSchema` en `@/lib/validations/finBalVtas.ts`. La sucursal debe tener **`genera_balance`** (validado en servicio).
 - **Actions** (`src/actions/finBalVtas.ts`): mutaciones con `esEditor()`; tras crear/eliminar ventas, **`revalidatePath`** de `/finanzas/balance/vtas` y **`/finanzas/balance/mensual`**.
-- **Modal de edición de ventas** (solo editor): `src/components/finanzas/EditarVentasBalanceMensualModal.tsx`; persiste vía `crearFinBalVtasAction`.
+- **Lectura de periodo para desglose desde el historial** (`src/actions/finBalGastoMensualBalance.ts`): **`cargarFilasBalanceMensualPeriodoAction`** (`mes`/`anio` vía **`mesAnioQuerySchema`**) devuelve **`filas`** (`listarImputacionesMensualesBalance`) y **`ventasPorSucursalNombre`** (`listarFinBalVtasPorMesAnio`); solo **`PERMISOS.finanzas.acceso`**. La UI arma el resumen con **`resumenBalanceMensualDesdeFilas`** igual que la página.
+- **UI de carga/edición de ventas**: **`src/components/finanzas/CrearFinBalVtasModal.tsx`** y **`FinBalVtasPageClient.tsx`** en `/finanzas/balance/vtas`; persistencia vía **`crearFinBalVtasAction`** / eliminación en las actions de `finBalVtas.ts`. No existe modal de ventas en Balance mensual.
 - **Histórico MC / PE en pantalla**: hoy la UI muestra **—** hasta definir fuente (mes anterior, promedio, tabla nueva, etc.).
 
 ### 2.5c Cajas de tesorería (`fin_tesoreria_cajas`, Prisma: `CajaTesoreria`)

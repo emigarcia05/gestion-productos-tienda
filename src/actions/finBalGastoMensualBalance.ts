@@ -11,6 +11,7 @@ import {
   eliminarFinBalGastoMensualSchema,
   historicoMontosGastoFinalBalanceSchema,
   listarGastosFinalesNoMensualesParamsSchema,
+  mesAnioQuerySchema,
   obtenerMontoMesAnteriorSchema,
   registrarPagoFinBalGastoMensualSchema,
 } from "@/lib/validations/finBalGastoMensualBalance";
@@ -22,13 +23,18 @@ import {
   eliminarFinBalGastoMensual,
   listarGastosFinalesNoMensualesConEstadoPeriodo,
   listarHistoricoMontosGastoFinalBalance,
+  listarImputacionesMensualesBalance,
   listarPendientesDiscriminaIvaCargaMesCatalogo,
   mesAnioCalendarioArgentina,
   obtenerMontoImputacionMesAnterior,
+  type BalanceGastoMensualFila,
   type FinBalGastoFinalNoMensualListItem,
   type HistoricoMontoGastoFinalBalanceItem,
   type PendienteDiscriminaIvaCargaMesItem,
 } from "@/services/finBalGastoMensualBalance.service";
+import {
+  listarFinBalVtasPorMesAnio,
+} from "@/services/finBalVtas.service";
 
 function revalidateGastosPaths(): void {
   revalidatePath("/finanzas");
@@ -204,4 +210,33 @@ export async function listarHistoricoMontosGastoFinalBalanceAction(
 
   const data = await listarHistoricoMontosGastoFinalBalance(parsed.data.gastoFinalId);
   return { ok: true, data };
+}
+
+/** Imputaciones del mes y ventas `fin_bal_vtas` para armar el mismo resumen que la página (p. ej. desglose al elegir una barra del historial). */
+export async function cargarFilasBalanceMensualPeriodoAction(
+  raw: unknown,
+): Promise<
+  ActionResult<{
+    filas: BalanceGastoMensualFila[];
+    ventasPorSucursalNombre: Record<string, number>;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  const parsed = mesAnioQuerySchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  const { mes, anio } = parsed.data;
+  const [filas, vtasMes] = await Promise.all([
+    listarImputacionesMensualesBalance({ mes, anio }),
+    listarFinBalVtasPorMesAnio(mes, anio),
+  ]);
+  const ventasPorSucursalNombre: Record<string, number> = {};
+  for (const v of vtasMes) {
+    ventasPorSucursalNombre[v.sucursal.nombre] = v.monto;
+  }
+  return { ok: true, data: { filas, ventasPorSucursalNombre } };
 }

@@ -47,7 +47,7 @@ export default function PrintStock({ items, sucursal, onClose }: Props) {
 
     table { width: 100%; border-collapse: collapse; }
     thead tr { background: var(--primary); color: #fff; }
-    thead th { padding: 5px 6px; text-align: left; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
+    thead th { padding: 5px 6px; text-align: left; font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     thead th.cant { text-align: right; width: 60px; }
     thead th.cod  { width: 80px; }
 
