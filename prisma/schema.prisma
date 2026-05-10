@@ -357,20 +357,21 @@ model FinBalVtas {
 }
 
 /**
- * Total ventas con IVA declarado manualmente por mes (Posición de IVA · débito).
- * `monto`: bruto con IVA 21 % implícito; el débito fiscal en pantalla es `round(monto − monto/1,21)`.
+ * Líneas importadas desde CSV AFIP (ventas / liquidación). Posición de IVA · débito:
+ * se agrupa `imp_total` por mes de `fecha_emision` y se aplica `round(bruto − bruto/1,21)` al total mensual.
  */
-model FinBalIvaDeb {
-  id    String @id @default(cuid())
-  /** Año calendario (columna física `anio`). */
-  anio  Int    @map("anio")
-  /** Mes calendario 1–12. */
-  mes   Int
-  monto Int
+model FinBalIvaDebImportLine {
+  id                   String   @id @default(cuid())
+  /** Hash estable por fila para no duplicar al reimportar el mismo comprobante. */
+  dedupeKey            String   @unique @map("dedupe_key") @db.VarChar(64)
+  fechaEmision         DateTime @map("fecha_emision") @db.Date
+  denominacionReceptor String   @map("denominacion_receptor") @db.VarChar(512)
+  impTotal             Decimal  @map("imp_total") @db.Decimal(14, 2)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
-  @@unique([anio, mes], map: "fin_bal_iva_deb_mes_anio_ux")
-  @@index([anio])
-  @@map("fin_bal_iva_deb")
+  @@index([fechaEmision])
+  @@map("fin_bal_iva_deb_import_line")
 }
 
 model ListaPrecioProveedor {

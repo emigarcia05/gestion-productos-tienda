@@ -21,22 +21,65 @@ ALTER INDEX "marcas_pkey" RENAME TO "prod_marcas_pkey";
 ALTER INDEX "marcas_nombre_key" RENAME TO "prod_marcas_nombre_key";
 
 -- ─── 3) global_proveedores (ex proveedores) ──────────────────────────────
-ALTER INDEX "proveedores_pkey" RENAME TO "global_proveedores_pkey";
-ALTER INDEX "proveedores_nombre_key" RENAME TO "global_proveedores_nombre_key";
-ALTER INDEX "proveedores_id_proveedor_dux_key" RENAME TO "global_proveedores_id_proveedor_dux_key";
-ALTER INDEX "proveedores_proveedor_mercaderia_idx" RENAME TO "global_proveedores_proveedor_mercaderia_idx";
-ALTER INDEX "idx_proveedores_codigo_unico" RENAME TO "global_proveedores_codigo_unico_idx";
-ALTER INDEX "idx_proveedores_created_at" RENAME TO "global_proveedores_created_at_idx";
-ALTER INDEX "idx_proveedores_nombre" RENAME TO "global_proveedores_nombre_legacy_ux";
-ALTER INDEX "idx_proveedores_sufijo" RENAME TO "global_proveedores_prefijo_ux";
+-- Índices opcionales idx_* pueden no existir en replay (shadow DB); el unique de prefijo puede seguir como proveedores_sufijo_key.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'proveedores_pkey') THEN
+    EXECUTE 'ALTER INDEX "proveedores_pkey" RENAME TO "global_proveedores_pkey"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'proveedores_nombre_key') THEN
+    EXECUTE 'ALTER INDEX "proveedores_nombre_key" RENAME TO "global_proveedores_nombre_key"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'proveedores_id_proveedor_dux_key') THEN
+    EXECUTE 'ALTER INDEX "proveedores_id_proveedor_dux_key" RENAME TO "global_proveedores_id_proveedor_dux_key"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'proveedores_proveedor_mercaderia_idx') THEN
+    EXECUTE 'ALTER INDEX "proveedores_proveedor_mercaderia_idx" RENAME TO "global_proveedores_proveedor_mercaderia_idx"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_proveedores_codigo_unico') THEN
+    EXECUTE 'ALTER INDEX "idx_proveedores_codigo_unico" RENAME TO "global_proveedores_codigo_unico_idx"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_proveedores_created_at') THEN
+    EXECUTE 'ALTER INDEX "idx_proveedores_created_at" RENAME TO "global_proveedores_created_at_idx"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_proveedores_nombre') THEN
+    EXECUTE 'ALTER INDEX "idx_proveedores_nombre" RENAME TO "global_proveedores_nombre_legacy_ux"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_proveedores_sufijo') THEN
+    EXECUTE 'ALTER INDEX "idx_proveedores_sufijo" RENAME TO "global_proveedores_prefijo_ux"';
+  ELSIF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'proveedores_sufijo_key') THEN
+    EXECUTE 'ALTER INDEX "proveedores_sufijo_key" RENAME TO "global_proveedores_prefijo_ux"';
+  ELSIF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'proveedores_prefijo_key') THEN
+    EXECUTE 'ALTER INDEX "proveedores_prefijo_key" RENAME TO "global_proveedores_prefijo_ux"';
+  END IF;
+END $$;
 
-ALTER TABLE "global_proveedores"
-  RENAME CONSTRAINT "chk_sufijo_3_letras" TO "global_proveedores_chk_prefijo_3_letras";
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'global_proveedores'
+      AND c.conname = 'chk_sufijo_3_letras'
+  ) THEN
+    EXECUTE 'ALTER TABLE "global_proveedores" RENAME CONSTRAINT "chk_sufijo_3_letras" TO "global_proveedores_chk_prefijo_3_letras"';
+  END IF;
+END $$;
 
 -- ─── 4) global_sucursales (ex sucursales) ───────────────────────────────────
-ALTER INDEX "sucursales_pkey" RENAME TO "global_sucursales_pkey";
-ALTER INDEX "sucursales_codigo_key" RENAME TO "global_sucursales_codigo_key";
-ALTER INDEX "sucursales_nombre_idx" RENAME TO "global_sucursales_nombre_idx";
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'sucursales_pkey') THEN
+    EXECUTE 'ALTER INDEX "sucursales_pkey" RENAME TO "global_sucursales_pkey"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'sucursales_codigo_key') THEN
+    EXECUTE 'ALTER INDEX "sucursales_codigo_key" RENAME TO "global_sucursales_codigo_key"';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'sucursales_nombre_idx') THEN
+    EXECUTE 'ALTER INDEX "sucursales_nombre_idx" RENAME TO "global_sucursales_nombre_idx"';
+  END IF;
+END $$;
 
 -- ─── 5) Funciones que citan tablas por nombre ─────────────────────────────
 CREATE OR REPLACE FUNCTION sync_pedidos_mercaderia_cant_pedir()

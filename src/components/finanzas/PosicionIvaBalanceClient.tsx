@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,14 @@ import {
   listarDetalleIvaCreditoComprasMercaderiaMesAction,
   listarDetalleIvaCreditoGastosMesAction,
 } from "@/actions/finBalPosicionIva";
+import { listarDetalleIvaDebitoMesAction } from "@/actions/finBalIvaDeb";
 import type {
   DetalleLineaIvaCreditoBalance,
   DetalleLineaIvaCreditoCompraMercaderia,
 } from "@/services/finBalPosicionIva.service";
-import TotalVentasConIvaModal from "@/components/finanzas/TotalVentasConIvaModal";
+import { ivaCreditoDesdeTotalConIva21 } from "@/services/finBalPosicionIva.service";
+import type { DetalleLineaIvaDebitoBalance } from "@/services/finBalIvaDeb.service";
+import ImportarIvaDebitoCsvModal from "@/components/finanzas/ImportarIvaDebitoCsvModal";
 import { toast } from "sonner";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -49,7 +52,9 @@ const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
 ];
 
 const TH_NUM = "text-right whitespace-nowrap";
+const TH_DEBITO_IMPORTE = "text-center whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
+const TD_DEBITO_IMPORTE = "celda-datos text-center tabular-nums whitespace-nowrap align-middle";
 
 /** Botón ícono edición en tabla balance (misma familia que Balance mensual). */
 const CLASE_BOTON_EDITAR_IVA_DEBITO = cn(
@@ -57,13 +62,16 @@ const CLASE_BOTON_EDITAR_IVA_DEBITO = cn(
   "!h-7 !w-7 min-h-0 !p-1 shrink-0",
 );
 
-type VistaDetalleIva = "menu" | "gastos" | "compras";
+type VistaModalPosicionIva =
+  | "detalle-posicion"
+  | "iva-debito-detalle"
+  | "iva-credito-menu"
+  | "iva-credito-gastos"
+  | "iva-credito-compras";
 
 interface Props {
   anio: number;
   esEditor: boolean;
-  /** Bruto con IVA persistido por mes (`fin_bal_iva_deb`), índice 0 = enero. */
-  montosBrutosVentasConIvaPorMes: number[];
   ivaDebitoPorMes: number[];
   ivaCreditoPorMes: number[];
 }
@@ -75,15 +83,15 @@ function celdaMontoPesos(pesos: number) {
 export default function PosicionIvaBalanceClient({
   anio,
   esEditor,
-  montosBrutosVentasConIvaPorMes,
   ivaDebitoPorMes,
   ivaCreditoPorMes,
 }: Props) {
   const [mesModalVentasIva, setMesModalVentasIva] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mesDetalle, setMesDetalle] = useState<number | null>(null);
-  const [vista, setVista] = useState<VistaDetalleIva>("menu");
+  const [vista, setVista] = useState<VistaModalPosicionIva>("detalle-posicion");
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
+  const [filasDebito, setFilasDebito] = useState<DetalleLineaIvaDebitoBalance[]>([]);
   const [filasGasto, setFilasGasto] = useState<DetalleLineaIvaCreditoBalance[]>([]);
   const [filasCompra, setFilasCompra] = useState<DetalleLineaIvaCreditoCompraMercaderia[]>([]);
 
@@ -92,32 +100,72 @@ export default function PosicionIvaBalanceClient({
 
   const tituloModal =
     mesDetalle == null
-      ? "Detalle IVA Crédito"
-      : vista === "menu"
-        ? `Detalle IVA Crédito - ${etiquetaMesDetalle} ${anio}`
-        : vista === "gastos"
-          ? `Detalle IVA Crédito - Gastos - ${etiquetaMesDetalle} ${anio}`
-          : `Detalle IVA Crédito - Compras Mercadería - ${etiquetaMesDetalle} ${anio}`;
+      ? "Detalle Posición IVA"
+      : vista === "detalle-posicion"
+        ? `Detalle Posición IVA · ${etiquetaMesDetalle} ${anio}`
+        : vista === "iva-debito-detalle"
+          ? `Detalle IVA Débito - ${etiquetaMesDetalle} ${anio}`
+          : vista === "iva-credito-menu"
+            ? `Detalle IVA Crédito · ${etiquetaMesDetalle} ${anio}`
+            : vista === "iva-credito-gastos"
+              ? `Detalle IVA Crédito - Gastos - ${etiquetaMesDetalle} ${anio}`
+              : `Detalle IVA Crédito - Compras Mercadería - ${etiquetaMesDetalle} ${anio}`;
 
   const abrirMenuMes = useCallback((mes: number) => {
     setMesDetalle(mes);
-    setVista("menu");
+    setVista("detalle-posicion");
+    setFilasDebito([]);
     setFilasGasto([]);
     setFilasCompra([]);
     setCargandoDetalle(false);
     setModalOpen(true);
   }, []);
 
-  const volverMenu = useCallback(() => {
-    setVista("menu");
-    setFilasGasto([]);
-    setFilasCompra([]);
-    setCargandoDetalle(false);
+  const volver = useCallback(() => {
+    if (vista === "iva-debito-detalle") {
+      setVista("detalle-posicion");
+      setFilasDebito([]);
+      setCargandoDetalle(false);
+      return;
+    }
+    if (vista === "iva-credito-menu") {
+      setVista("detalle-posicion");
+      return;
+    }
+    if (vista === "iva-credito-gastos" || vista === "iva-credito-compras") {
+      setVista("iva-credito-menu");
+      setFilasGasto([]);
+      setFilasCompra([]);
+      setCargandoDetalle(false);
+    }
+  }, [vista]);
+
+  const abrirCreditoMenu = useCallback(() => {
+    setVista("iva-credito-menu");
   }, []);
+
+  const abrirDetalleDebito = useCallback(async () => {
+    if (mesDetalle == null) return;
+    setVista("iva-debito-detalle");
+    setCargandoDetalle(true);
+    setFilasDebito([]);
+    try {
+      const r = await listarDetalleIvaDebitoMesAction({ mes: mesDetalle, anio });
+      if (!r.ok) {
+        toast.error(r.error ?? "No se pudo cargar el detalle.");
+        setFilasDebito([]);
+        setVista("detalle-posicion");
+        return;
+      }
+      setFilasDebito(r.data);
+    } finally {
+      setCargandoDetalle(false);
+    }
+  }, [anio, mesDetalle]);
 
   const abrirDetalleGastos = useCallback(async () => {
     if (mesDetalle == null) return;
-    setVista("gastos");
+    setVista("iva-credito-gastos");
     setCargandoDetalle(true);
     setFilasGasto([]);
     try {
@@ -135,7 +183,7 @@ export default function PosicionIvaBalanceClient({
 
   const abrirDetalleCompras = useCallback(async () => {
     if (mesDetalle == null) return;
-    setVista("compras");
+    setVista("iva-credito-compras");
     setCargandoDetalle(true);
     setFilasCompra([]);
     try {
@@ -155,7 +203,8 @@ export default function PosicionIvaBalanceClient({
     setModalOpen(open);
     if (!open) {
       setMesDetalle(null);
-      setVista("menu");
+      setVista("detalle-posicion");
+      setFilasDebito([]);
       setFilasGasto([]);
       setFilasCompra([]);
       setCargandoDetalle(false);
@@ -174,15 +223,21 @@ export default function PosicionIvaBalanceClient({
                   className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
                 >
                   <colgroup>
-                    <col style={{ width: "28%" }} />
-                    <col style={{ width: "24%" }} />
-                    <col style={{ width: "24%" }} />
-                    <col style={{ width: "24%" }} />
+                    <col style={{ width: "26%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "25%" }} />
+                    <col style={{ width: "25%" }} />
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="min-w-0">MES</TableHead>
-                      <TableHead className="min-w-0 text-left whitespace-nowrap">IVA DÉBITO</TableHead>
+                      <TableHead className="min-w-0 w-11 px-1">
+                        <span className="sr-only">Importar CSV IVA débito</span>
+                      </TableHead>
+                      <TableHead className={cn(TH_DEBITO_IMPORTE, "min-w-0 font-medium")}>
+                        IVA DÉBITO
+                      </TableHead>
                       <TableHead className={cn(TH_NUM, "min-w-0")}>IVA CRÉDITO</TableHead>
                       <TableHead className={cn(TH_NUM, "min-w-0")}>IVA SALDO</TableHead>
                     </TableRow>
@@ -194,52 +249,48 @@ export default function PosicionIvaBalanceClient({
                       const credito = ivaCreditoPorMes[ix] ?? 0;
                       const saldo = debito - credito;
                       return (
-                      <TableRow key={m.valor}>
+                      <TableRow
+                        key={m.valor}
+                        className="cursor-pointer select-none hover:bg-muted/50"
+                        tabIndex={0}
+                        role="button"
+                        title="Clic para ver detalle del mes"
+                        onClick={() => abrirMenuMes(m.valor)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            abrirMenuMes(m.valor);
+                          }
+                        }}
+                      >
                         <TableCell className="celda-datos min-w-0 whitespace-nowrap font-medium">
                           {m.etiqueta} {anio}
                         </TableCell>
-                        <TableCell className="celda-datos min-w-0 align-middle">
-                          <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                        <TableCell
+                          className="celda-datos min-w-0 align-middle px-1 py-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex justify-center">
                             {esEditor ? (
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 className={CLASE_BOTON_EDITAR_IVA_DEBITO}
-                                title="TOTAL VENTAS CON IVA"
-                                aria-label="Editar total ventas con IVA"
-                                onClick={() => setMesModalVentasIva(m.valor)}
+                                title="Importar CSV de comprobantes (IVA débito)"
+                                aria-label="Importar CSV IVA débito"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMesModalVentasIva(m.valor);
+                                }}
                               >
-                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                <Upload className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             ) : null}
-                            <span
-                              className={cn(
-                                "tabular-nums whitespace-nowrap text-right",
-                                esEditor ? "sm:ml-auto" : "ml-auto w-full flex-1",
-                              )}
-                            >
-                              {celdaMontoPesos(debito)}
-                            </span>
                           </div>
                         </TableCell>
-                        <TableCell
-                          className={cn(
-                            TD_NUM,
-                            "min-w-0 celda-destacado cursor-pointer select-none",
-                            "hover:bg-muted/50"
-                          )}
-                          title="Clic para ver detalle"
-                          onClick={() => abrirMenuMes(m.valor)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              abrirMenuMes(m.valor);
-                            }
-                          }}
-                        >
+                        <TableCell className={TD_DEBITO_IMPORTE}>{celdaMontoPesos(debito)}</TableCell>
+                        <TableCell className={cn(TD_NUM, "min-w-0 celda-destacado")}>
                           {celdaMontoPesos(credito)}
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "min-w-0")}>{celdaMontoPesos(saldo)}</TableCell>
@@ -257,14 +308,20 @@ export default function PosicionIvaBalanceClient({
       <Dialog open={modalOpen} onOpenChange={cerrarModal}>
         <AppModal
           title={tituloModal}
-          size="xl"
-          className="max-w-4xl"
+          size={
+            vista === "detalle-posicion" || vista === "iva-credito-menu" ? "sm" : "xl"
+          }
+          className={
+            vista === "detalle-posicion" || vista === "iva-credito-menu"
+              ? undefined
+              : "max-w-4xl"
+          }
           padding="sm"
           scrollBody
           actions={
             <div className="flex w-full flex-wrap justify-end gap-2">
-              {vista !== "menu" ? (
-                <Button type="button" variant="outline" onClick={volverMenu}>
+              {vista !== "detalle-posicion" ? (
+                <Button type="button" variant="outline" onClick={volver}>
                   Volver
                 </Button>
               ) : null}
@@ -274,25 +331,73 @@ export default function PosicionIvaBalanceClient({
             </div>
           }
         >
-          <div className="min-h-[12rem]">
-            {vista === "menu" ? (
-              <div className="flex flex-col gap-4 py-2">
-                <p className="text-sm text-muted-foreground">¿Qué detalle desea ver?</p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button type="button" className="flex-1" onClick={() => void abrirDetalleGastos()}>
-                    Gasto
-                  </Button>
-                  <Button type="button" className="flex-1" onClick={() => void abrirDetalleCompras()}>
-                    Compra Mercadería
-                  </Button>
-                </div>
+          <div
+            className={cn(
+              vista === "detalle-posicion" || vista === "iva-credito-menu"
+                ? "min-h-0"
+                : "min-h-[12rem]",
+            )}
+          >
+            {vista === "detalle-posicion" ? (
+              <div className="flex flex-col gap-2 py-2">
+                <Button type="button" className="w-full" onClick={() => void abrirDetalleDebito()}>
+                  IVA DÉBITO
+                </Button>
+                <Button type="button" className="w-full" onClick={abrirCreditoMenu}>
+                  IVA CRÉDITO
+                </Button>
+              </div>
+            ) : vista === "iva-credito-menu" ? (
+              <div className="flex flex-col gap-2 py-2">
+                <Button type="button" className="w-full" onClick={() => void abrirDetalleGastos()}>
+                  Gasto
+                </Button>
+                <Button type="button" className="w-full" onClick={() => void abrirDetalleCompras()}>
+                  Compra Mercadería
+                </Button>
               </div>
             ) : cargandoDetalle ? (
               <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden />
                 Cargando…
               </div>
-            ) : vista === "gastos" ? (
+            ) : vista === "iva-debito-detalle" ? (
+              <div className="rounded-md border border-border overflow-hidden">
+                <Table className="text-sm tabla-gestion-compacta">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="min-w-0 whitespace-nowrap">FECHA</TableHead>
+                      <TableHead className="min-w-0">DENOMINACIÓN SOCIAL</TableHead>
+                      <TableHead className={cn(TH_NUM, "min-w-0")}>MONTO</TableHead>
+                      <TableHead className={cn(TH_NUM, "min-w-0")}>IVA DÉBITO</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filasDebito.length === 0 ? (
+                      <EmptyTableRow
+                        colSpan={4}
+                        message="No hay comprobantes importados para este mes."
+                      />
+                    ) : (
+                      filasDebito.map((f) => (
+                        <TableRow key={f.id}>
+                          <TableCell className="celda-datos whitespace-nowrap tabular-nums">
+                            {formatIsoYmdDdMmYyyyArgentina(f.fechaEmisionIso)}
+                          </TableCell>
+                          <TableCell className="celda-datos min-w-0">{f.denominacionReceptor}</TableCell>
+                          <TableCell className={cn(TD_NUM, "celda-destacado")}>
+                            ${fmtPrecio(f.impTotal)}
+                          </TableCell>
+                          <TableCell className={TD_NUM}>
+                            ${fmtPrecio(ivaCreditoDesdeTotalConIva21(f.impTotal))}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : vista === "iva-credito-gastos" ? (
               <div className="rounded-md border border-border overflow-hidden">
                 <Table className="text-sm tabla-gestion-compacta">
                   <TableHeader>
@@ -367,16 +472,13 @@ export default function PosicionIvaBalanceClient({
         </AppModal>
       </Dialog>
 
-      <TotalVentasConIvaModal
+      <ImportarIvaDebitoCsvModal
         open={mesModalVentasIva != null}
         onOpenChange={(open) => {
           if (!open) setMesModalVentasIva(null);
         }}
         mes={mesModalVentasIva ?? 1}
         anio={anio}
-        montoBrutoActual={
-          mesModalVentasIva != null ? (montosBrutosVentasConIvaPorMes[mesModalVentasIva - 1] ?? 0) : 0
-        }
       />
     </div>
   );

@@ -38,7 +38,6 @@ export default async function BalancePosicionIvaPage() {
     <FinanzasBalancePosicionIvaPage
       anio={anio}
       esEditor={editor}
-      montosBrutosVentasConIvaPorMes={montosBrutosVentasConIvaPorMes}
       ivaDebitoPorMes={ivaDebitoPorMes}
       ivaCreditoPorMes={ivaCreditoPorMes}
     />

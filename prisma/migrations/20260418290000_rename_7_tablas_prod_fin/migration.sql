@@ -186,18 +186,90 @@ ALTER INDEX "comprobantes_proveedor_id_proveedor_idx"
     RENAME TO "fin_compras_comprobante_id_proveedor_idx";
 
 -- ─── 6) Renombrar CHECK constraints históricos en prod_precios_provee ─────
-ALTER TABLE "prod_precios_provee"
-    RENAME CONSTRAINT "lista_precios_proveedores_cx_aprox_transporte_check"
-                  TO "prod_precios_provee_cx_transporte_check";
-ALTER TABLE "prod_precios_provee"
-    RENAME CONSTRAINT "lista_precios_proveedores_dto_cantidad_check"
-                  TO "prod_precios_provee_dto_cantidad_check";
-ALTER TABLE "prod_precios_provee"
-    RENAME CONSTRAINT "lista_precios_proveedores_dto_marca_range"
-                  TO "prod_precios_provee_dto_marca_check";
-ALTER TABLE "prod_precios_provee"
-    RENAME CONSTRAINT "lista_precios_proveedores_dto_producto_check"
-                  TO "prod_precios_provee_dto_rubro_check";
+-- En Neon algunos checks tienen nombres viejos; en replay (shadow DB) pueden no existir
+-- o tener otro nombre (p. ej. columna cx_aprox_transporte → cx_transporte). Solo renombrar si existe.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'lista_precios_proveedores_cx_aprox_transporte_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "lista_precios_proveedores_cx_aprox_transporte_check" TO "prod_precios_provee_cx_transporte_check"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'lista_precios_proveedores_cx_transporte_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "lista_precios_proveedores_cx_transporte_check" TO "prod_precios_provee_cx_transporte_check"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'precios_proveedores_cx_transporte_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "precios_proveedores_cx_transporte_check" TO "prod_precios_provee_cx_transporte_check"';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'lista_precios_proveedores_dto_cantidad_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "lista_precios_proveedores_dto_cantidad_check" TO "prod_precios_provee_dto_cantidad_check"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'precios_proveedores_dto_cantidad_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "precios_proveedores_dto_cantidad_check" TO "prod_precios_provee_dto_cantidad_check"';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'lista_precios_proveedores_dto_marca_range'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "lista_precios_proveedores_dto_marca_range" TO "prod_precios_provee_dto_marca_check"';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'lista_precios_proveedores_dto_producto_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "lista_precios_proveedores_dto_producto_check" TO "prod_precios_provee_dto_rubro_check"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'precios_proveedores_dto_producto_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "precios_proveedores_dto_producto_check" TO "prod_precios_provee_dto_rubro_check"';
+  ELSIF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    INNER JOIN pg_class t ON c.conrelid = t.oid
+    INNER JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public' AND t.relname = 'prod_precios_provee'
+      AND c.conname = 'precios_proveedores_dto_rubro_check'
+  ) THEN
+    EXECUTE 'ALTER TABLE "prod_precios_provee" RENAME CONSTRAINT "precios_proveedores_dto_rubro_check" TO "prod_precios_provee_dto_rubro_check"';
+  END IF;
+END $$;
 
 -- ─── 7) Renombrar triggers (si existen, cosmético) ────────────────────────
 DO $$

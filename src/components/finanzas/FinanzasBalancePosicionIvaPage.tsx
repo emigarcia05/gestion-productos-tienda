@@ -3,7 +3,6 @@ import PosicionIvaBalanceClient from "@/components/finanzas/PosicionIvaBalanceCl
 interface Props {
   anio: number;
   esEditor: boolean;
-  montosBrutosVentasConIvaPorMes: number[];
   ivaDebitoPorMes: number[];
   ivaCreditoPorMes: number[];
 }
@@ -11,7 +10,6 @@ interface Props {
 export default function FinanzasBalancePosicionIvaPage({
   anio,
   esEditor,
-  montosBrutosVentasConIvaPorMes,
   ivaDebitoPorMes,
   ivaCreditoPorMes,
 }: Props) {
@@ -19,7 +17,6 @@ export default function FinanzasBalancePosicionIvaPage({
     <PosicionIvaBalanceClient
       anio={anio}
       esEditor={esEditor}
-      montosBrutosVentasConIvaPorMes={montosBrutosVentasConIvaPorMes}
       ivaDebitoPorMes={ivaDebitoPorMes}
       ivaCreditoPorMes={ivaCreditoPorMes}
     />
