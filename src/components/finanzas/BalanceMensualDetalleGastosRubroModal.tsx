@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart2 } from "lucide-react";
+import { ChartNoAxesColumn } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,47 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { BalanceMensualFilaDetalleGasto } from "@/lib/balanceMensualDetalle";
 
 const TH_NUM = "text-right whitespace-nowrap";
+const TH_PCT = "text-center whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
+
+/** % centrado + barra de magnitud (mismo criterio que otros modales de balance). */
+function CeldaPorcentajeConBarra({
+  parte,
+  denominador,
+}: {
+  parte: number;
+  denominador: number;
+}) {
+  const texto = fmtPctDeTotal(parte, denominador);
+  const pct = denominador > 0 ? (parte / denominador) * 100 : 0;
+  const barW = denominador > 0 && parte > 0 ? Math.min(100, Math.max(pct, 3)) : 0;
+
+  return (
+    <div className="flex w-full min-w-0 flex-col items-stretch gap-1.5 py-0.5">
+      <div className="flex justify-center tabular-nums">
+        <span>{texto}</span>
+      </div>
+      <div
+        className="h-2 w-full overflow-hidden rounded-sm bg-muted/60"
+        title={texto !== "—" ? `${texto} sobre el total de referencia` : undefined}
+        aria-hidden
+      >
+        {barW > 0 ? (
+          <div
+            className="h-full rounded-sm bg-primary"
+            style={{ width: `${barW}%` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 function fmtMonto(n: number) {
   if (n === 0) return "—";
@@ -58,7 +93,6 @@ export default function BalanceMensualDetalleGastosRubroModal({
   onAbrirHistorico,
   onVolver,
 }: Props) {
-  const total = filas.reduce((a, r) => a + r.monto, 0);
   const etiquetaPctTipo = "% SOBRE TIPO";
 
   return (
@@ -83,7 +117,11 @@ export default function BalanceMensualDetalleGastosRubroModal({
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
-          <p className="shrink-0 text-xs text-muted-foreground">{subtitulo}</p>
+          {subtitulo ? (
+            <p className="shrink-0 text-center text-xs font-medium uppercase tracking-wide text-black">
+              {subtitulo}
+            </p>
+          ) : null}
           {notaInformativa ? (
             <p className="shrink-0 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               {notaInformativa}
@@ -108,21 +146,21 @@ export default function BalanceMensualDetalleGastosRubroModal({
                     <TableHead className={CELL_MIN}>DETALLE</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                     <TableHead
-                      className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+                      className={cn(TH_PCT, CELL_MIN, "text-[10px] leading-tight")}
                       title="Participación de la línea sobre el total del gasto (nombre) en esta vista."
                     >
                       <span className="block">% SOBRE</span>
                       <span className="block">GASTO</span>
                     </TableHead>
                     <TableHead
-                      className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+                      className={cn(TH_PCT, CELL_MIN, "text-[10px] leading-tight")}
                       title="Participación sobre el total del rubro en esta sección."
                     >
                       <span className="block">% SOBRE</span>
                       <span className="block">RUBRO</span>
                     </TableHead>
                     <TableHead
-                      className={cn(TH_NUM, CELL_MIN, "text-[10px] leading-tight")}
+                      className={cn(TH_PCT, CELL_MIN, "text-[10px] leading-tight")}
                       title={`Participación sobre el total del tipo de gasto en esta columna (${tipo === "variables" ? "variables + reparto proporcional del pool" : "fijos + reparto proporcional del pool"} en sucursal).`}
                     >
                       <span className="block">{etiquetaPctTipo}</span>
@@ -143,12 +181,15 @@ export default function BalanceMensualDetalleGastosRubroModal({
                             </span>
                           </TableCell>
                           <TableCell className={cn(TD_NUM, "align-middle")}>
-                            <div className="flex w-full items-center justify-end gap-1">
+                            <div className="flex w-full items-center justify-end gap-1.5">
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                                className={cn(
+                                  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                                  "!h-8 !w-8 shrink-0 !p-0 [&_svg]:size-4",
+                                )}
                                 aria-label={`Ver evolución mensual — ${r.gastoNombre}`}
                                 onClick={() =>
                                   onAbrirHistorico({
@@ -157,19 +198,40 @@ export default function BalanceMensualDetalleGastosRubroModal({
                                   })
                                 }
                               >
-                                <BarChart2 className="h-4 w-4" aria-hidden />
+                                <ChartNoAxesColumn className="h-4 w-4" aria-hidden />
                               </Button>
                               <span>{fmtMonto(r.monto)}</span>
                             </div>
                           </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            {fmtPctDeTotal(r.monto, totalGastoAgregado)}
+                          <TableCell
+                            className={cn(
+                              TD_NUM,
+                              "align-middle whitespace-normal !px-2 !text-center",
+                            )}
+                          >
+                            <CeldaPorcentajeConBarra
+                              parte={r.monto}
+                              denominador={totalGastoAgregado}
+                            />
                           </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            {fmtPctDeTotal(r.monto, totalRubroSeccion)}
+                          <TableCell
+                            className={cn(
+                              TD_NUM,
+                              "align-middle whitespace-normal !px-2 !text-center",
+                            )}
+                          >
+                            <CeldaPorcentajeConBarra
+                              parte={r.monto}
+                              denominador={totalRubroSeccion}
+                            />
                           </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            {fmtPctDeTotal(r.monto, denomTipo)}
+                          <TableCell
+                            className={cn(
+                              TD_NUM,
+                              "align-middle whitespace-normal !px-2 !text-center",
+                            )}
+                          >
+                            <CeldaPorcentajeConBarra parte={r.monto} denominador={denomTipo} />
                           </TableCell>
                         </TableRow>
                       );
@@ -179,12 +241,6 @@ export default function BalanceMensualDetalleGastosRubroModal({
               </Table>
             </div>
           </div>
-          {filas.length > 0 ? (
-            <div className="flex shrink-0 justify-between border-t border-border pt-2 text-xs text-muted-foreground">
-              <span>Total</span>
-              <span className="tabular-nums font-semibold text-foreground">{fmtMonto(total)}</span>
-            </div>
-          ) : null}
         </div>
       </AppModal>
     </Dialog>

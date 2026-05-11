@@ -15,6 +15,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   gastoFinalId: string | null;
+  /** Clasificación del gasto en el balance (título del modal). */
+  costoClase?: "fijos" | "variables";
   /** Con acceso desde costo variable/fijo en grilla: clic en barra abre desglose por rubro de ese mes. */
   onSeleccionarMesEnGrafico?: (mes: number, anio: number) => void | Promise<void>;
   /** Navegación hacia el modal anterior (ej. detalle de líneas). */
@@ -116,10 +118,22 @@ function CeldaVariacionPct({ variacion }: { variacion: VariacionMesAnterior }) {
   );
 }
 
+function tituloHistorialGasto(costoClase?: "fijos" | "variables") {
+  const base = "Historial gasto por mes";
+  if (costoClase === "fijos") {
+    return fmtTituloPalabras(`${base} - gasto fijo`);
+  }
+  if (costoClase === "variables") {
+    return fmtTituloPalabras(`${base} - gasto variable`);
+  }
+  return fmtTituloPalabras(base);
+}
+
 export default function BalanceMensualGastoHistoricoModal({
   open,
   onOpenChange,
   gastoFinalId,
+  costoClase,
   onSeleccionarMesEnGrafico,
   onVolver,
 }: Props) {
@@ -176,7 +190,7 @@ export default function BalanceMensualGastoHistoricoModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        title={fmtTituloPalabras("Evolución mensual del gasto")}
+        title={tituloHistorialGasto(costoClase)}
         size="xl"
         className="max-w-4xl"
         bodyClassName="flex flex-col min-h-0 max-h-[min(28rem,72vh)]"
@@ -208,7 +222,7 @@ export default function BalanceMensualGastoHistoricoModal({
           ) : null}
           {serieCronologica.length > 0 ? (
             <div className="flex min-h-[14rem] min-w-0 flex-1 flex-col gap-3">
-              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="text-center text-[10px] font-medium uppercase tracking-wide text-black">
                 Monto por mes
               </div>
               <div className="flex min-h-[11rem] items-end gap-1.5 overflow-x-auto border-b border-border px-1 pb-1">

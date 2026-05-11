@@ -88,7 +88,6 @@ export default function BalanceMensualDetallePorRubroModal({
   onElegirRubro,
   onVolver,
 }: Props) {
-  const total = secciones.reduce((a, s) => a + s.rubros.reduce((b, r) => b + r.monto, 0), 0);
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
   const etiquetaPctBase =
     tipo === "variables" ? "% SOBRE COSTOS VARIABLES" : "% SOBRE COSTOS FIJOS";
@@ -122,7 +121,11 @@ export default function BalanceMensualDetallePorRubroModal({
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
-          <p className="shrink-0 text-xs text-muted-foreground">{subtitulo}</p>
+          {subtitulo ? (
+            <p className="shrink-0 text-center text-xs font-medium uppercase tracking-wide text-black">
+              {subtitulo}
+            </p>
+          ) : null}
           <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto [scrollbar-gutter:stable]">
               <Table
@@ -205,12 +208,6 @@ export default function BalanceMensualDetallePorRubroModal({
               </Table>
             </div>
           </div>
-          {total > 0 ? (
-            <div className="flex shrink-0 justify-between border-t border-border pt-2 text-xs text-muted-foreground">
-              <span>Total</span>
-              <span className="tabular-nums font-semibold text-foreground">{fmtMonto(total)}</span>
-            </div>
-          ) : null}
         </div>
       </AppModal>
     </Dialog>

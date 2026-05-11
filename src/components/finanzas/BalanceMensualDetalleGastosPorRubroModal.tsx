@@ -194,7 +194,6 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
   onElegirGasto,
   onVolver,
 }: Props) {
-  const total = gastos.reduce((a, g) => a + g.monto, 0);
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
   const etiquetaPctCf =
     tipo === "variables" ? "% SOBRE COSTOS VARIABLES" : "% SOBRE COSTOS FIJOS";
@@ -221,7 +220,11 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
-          <p className="shrink-0 text-xs text-muted-foreground">{subtitulo}</p>
+          {subtitulo ? (
+            <p className="shrink-0 text-center text-xs font-medium uppercase tracking-wide text-black">
+              {subtitulo}
+            </p>
+          ) : null}
           <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto [scrollbar-gutter:stable]">
               <TablaGastosRubro
@@ -234,12 +237,6 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
               />
             </div>
           </div>
-          {gastos.length > 0 ? (
-            <div className="flex shrink-0 justify-between border-t border-border pt-2 text-xs text-muted-foreground">
-              <span>Total</span>
-              <span className="tabular-nums font-semibold text-foreground">{fmtMonto(total)}</span>
-            </div>
-          ) : null}
         </div>
       </AppModal>
     </Dialog>

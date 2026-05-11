@@ -50,7 +50,6 @@ import {
   type BalanceMensualGastoAgregado,
   type ElegirRubroBalancePayload,
 } from "@/lib/balanceMensualDetalle";
-import { fmtTituloPalabras } from "@/lib/format";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import { cargarFilasBalanceMensualPeriodoAction } from "@/actions/finBalGastoMensualBalance";
 import { toast } from "sonner";
@@ -88,9 +87,10 @@ function fmtMontoPe(b: BalanceMensualBloque) {
   return `$${fmtPrecio(pe)}`;
 }
 
-function etiquetaPeriodoBalance(mes: number, anio: number): string {
-  const m = MESES_CALENDARIO.find((x) => x.valor === mes)?.etiqueta.toLowerCase() ?? String(mes);
-  return `${m} ${anio}`;
+/** Línea de contexto en modales de drill-down: `SUCURSAL - AÑO - MES` (mes como en catálogo, mayúsculas). */
+function fmtLineaContextoModalBalance(etiquetaColumna: string, mes: number, anio: number): string {
+  const mesNom = MESES_CALENDARIO.find((x) => x.valor === mes)?.etiqueta ?? String(mes);
+  return `${etiquetaColumna.toUpperCase()} - ${anio} - ${mesNom}`;
 }
 
 type ColumnaBalance = {
@@ -686,16 +686,17 @@ export default function FinanzasBalanceMensualPageClient({
         titulo={
           detalleRubrosCtx
             ? detalleRubrosCtx.tipo === "variables"
-              ? "Costo variable por tipo y rubro"
-              : "Costo fijo por tipo y rubro"
+              ? "Detalle costo variable por rubro"
+              : "Detalle costo fijo por rubro"
             : "Detalle por rubro"
         }
         subtitulo={
           detalleRubrosCtx
-            ? `${detalleRubrosCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(
+            ? fmtLineaContextoModalBalance(
+                detalleRubrosCtx.etiquetaColumna,
                 mesAnioEtiquetaModalesDetalle.mes,
                 mesAnioEtiquetaModalesDetalle.anio,
-              )}`
+              )
             : ""
         }
         tipo={detalleRubrosCtx?.tipo ?? "variables"}
@@ -727,17 +728,18 @@ export default function FinanzasBalanceMensualPageClient({
           setDetalleGastosPorRubroOpen(open);
           if (!open) setDetalleGastosPorRubroCtx(null);
         }}
-        titulo="Gastos por rubro"
+        titulo={
+          detalleGastosPorRubroCtx
+            ? `Detalle de gasto en ${detalleGastosPorRubroCtx.tituloRubro.toLowerCase()}`
+            : "Gastos por rubro"
+        }
         subtitulo={
           detalleGastosPorRubroCtx
-            ? `${fmtTituloPalabras(detalleGastosPorRubroCtx.tituloRubro.toLowerCase())} · ${fmtTituloPalabras(
-                detalleGastosPorRubroCtx.etiquetaTipo.toLowerCase(),
-              )} · ${
-                detalleGastosPorRubroCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
-              } · ${detalleGastosPorRubroCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(
+            ? fmtLineaContextoModalBalance(
+                detalleGastosPorRubroCtx.etiquetaColumna,
                 mesAnioEtiquetaModalesDetalle.mes,
                 mesAnioEtiquetaModalesDetalle.anio,
-              )}`
+              )
             : ""
         }
         tipo={detalleGastosPorRubroCtx?.tipo ?? "variables"}
@@ -765,17 +767,18 @@ export default function FinanzasBalanceMensualPageClient({
           setDetalleLineasGastoOpen(open);
           if (!open) setDetalleLineasGastoCtx(null);
         }}
-        titulo={detalleLineasGastoCtx?.gastoNombre ?? "Líneas de gasto"}
+        titulo={
+          detalleLineasGastoCtx
+            ? `Detalle de ${detalleLineasGastoCtx.gastoNombre.toLowerCase()}`
+            : "Líneas de gasto"
+        }
         subtitulo={
           detalleLineasGastoCtx
-            ? `${fmtTituloPalabras(detalleLineasGastoCtx.tituloRubro.toLowerCase())} · ${fmtTituloPalabras(
-                detalleLineasGastoCtx.etiquetaTipo.toLowerCase(),
-              )} · ${
-                detalleLineasGastoCtx.tipo === "variables" ? "Costo variable" : "Costo fijo"
-              } · ${detalleLineasGastoCtx.etiquetaColumna} · ${etiquetaPeriodoBalance(
+            ? fmtLineaContextoModalBalance(
+                detalleLineasGastoCtx.etiquetaColumna,
                 mesAnioEtiquetaModalesDetalle.mes,
                 mesAnioEtiquetaModalesDetalle.anio,
-              )}`
+              )
             : ""
         }
         tipo={detalleLineasGastoCtx?.tipo ?? "variables"}
@@ -814,6 +817,10 @@ export default function FinanzasBalanceMensualPageClient({
         open={historicoOpen}
         onOpenChange={handleHistoricoOpenChange}
         gastoFinalId={historicoGastoFinalId}
+        costoClase={
+          historicoDetalleCostosOrigen?.tipoCosto ??
+          (historicoAbiertoDesde === "lineas" ? detalleLineasGastoCtx?.tipo : undefined)
+        }
         onSeleccionarMesEnGrafico={
           historicoDetalleCostosOrigen ? handleSeleccionarMesEnGraficoHistorico : undefined
         }
