@@ -633,7 +633,7 @@ export interface PedidoUrgenteItem {
   estaVinculadoTienda: boolean;
   /**
    * Si existe otro proveedor (habilitado) para el mismo producto de tienda con menor precio **comparable**
-   * (`pxComparablePedidoUrgenteReposicion`: balance IVA Posición IVA + política `iva` del proveedor):
+   * (`pxComparablePedidoUrgenteReposicion`: **IVA SALDO ≥ 0** → sin IVA; **< 0** → con IVA según `iva`):
    * sugerencia para desviar el pedido. `costo` sigue siendo compra final **sin IVA** para la UI.
    */
   sugerenciaProveedorMenorCosto: {
@@ -730,7 +730,7 @@ async function mercaderiaMapsDesdeMerc2(
  * Pantalla Pedido Urgente (filtros `urgente` o `cualquier`): todas las filas de **`prod_precios_provee`** con **`habilitado = true`**.
  * Cantidades / flags de urgente y reposición se leen de **`prod_ped_merc`** según sucursal.
  * Comparación entre proveedores que comparten el mismo **`cod_tienda`** (`codTiendaVinculo`): **precio comparable** vía
- * `pxComparablePedidoUrgenteReposicion` (balance IVA acumulado en Posición IVA + política `Proveedor.iva`; si saldo > 0 se usa factor IVA en la comparación).
+ * `pxComparablePedidoUrgenteReposicion`: si **IVA SALDO ≥ 0** compara por `px_compra_final_sin_iva`; si **< 0** por precio final con IVA según `Proveedor.iva`.
  */
 async function getListaPedidoUrgenteDesdeListaPrecios(
   sucursalTrim: string,

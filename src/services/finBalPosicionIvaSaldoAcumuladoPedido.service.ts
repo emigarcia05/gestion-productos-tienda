@@ -6,7 +6,7 @@ import {
 } from "@/services/finBalPosicionIva.service";
 import { listarSaldoManualPosicionIvaPorAnio } from "@/services/finBalPosicionIvaSaldoManual.service";
 
-/** Inicio del acumulado usado para decidir si se compara por precio con IVA en Pedido Urgente/Reposición. */
+/** Inicio del acumulado «IVA SALDO» usado en `pxComparablePedidoUrgenteReposicion` (Pedido Urgente / reposición). */
 const ACUM_PEDIDO_COMPARE_IVA_ANIO = 2026;
 const ACUM_PEDIDO_COMPARE_IVA_MES = 4;
 
