@@ -1070,7 +1070,9 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización (2026-05-12): **Rename** tabla **`fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`** (modelo Prisma **`FinBalIvaDebImportLine`** sin cambio de nombre TS). Migración **`20260512220000_rename_fin_bal_iva_deb_import_line_to_fin_bal_pos_iva_final`** (rename de tabla, PK `fin_bal_pos_iva_final_pkey`, índices `fin_bal_pos_iva_final_dedupe_key_key`, `fin_bal_pos_iva_final_fecha_emision_idx`). Servicio **`finBalIvaDeb.service.ts`**. Ver `@@map("fin_bal_pos_iva_final")` en `schema.prisma`.*
+*Última actualización (2026-05-13): **Rename** tabla **`fin_bal_pos_iva_final` → `fin_bal_iva_deb_import`** (historial CSV IVA débito; modelo Prisma **`FinBalIvaDebImportLine`**, `@@map("fin_bal_iva_deb_import")`). Migración **`20260513130000_rename_fin_bal_pos_iva_final_to_fin_bal_iva_deb_import`**. Antes: `fin_bal_iva_deb_import_line` → … → `fin_bal_pos_iva_final`. Servicio **`finBalIvaDeb.service.ts`**. Ver `schema.prisma`.*
+
+*Última actualización (2026-05-12): **Rename** tabla **`fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`**. Migración **`20260512220000_rename_fin_bal_iva_deb_import_line_to_fin_bal_pos_iva_final`**. Cadena siguiente: ver entrada 2026-05-13 (`fin_bal_iva_deb_import`).*
 
 *Última actualización (2026-05-12): **Dominio gastos Balance** — migración **`20260512203000_drop_movimientos_finanzas_cheques`** (tabla hija huérfana) y **`20260512210000_drop_movimientos_finanzas`** con enum **`TipoMovimientoFinanzas`**; modelo Prisma **`MovimientoFinanzas`** fuera del schema; eliminados `movimientosFinanzas.service.ts`, **`actions/movimientosFinanzas.ts`**, **`validations/movimientosFinanzas.ts`**, **`NuevoGastoModal`**. **`listarSucursalesParaGastos`** + **`SucursalOption`** en **`finBalGastoMensualBalance.service.ts`**. Ver §2.5b.*
 

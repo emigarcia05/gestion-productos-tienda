@@ -319,20 +319,20 @@ model FinBalVtas {
 /**
  * Líneas importadas desde CSV AFIP (ventas / liquidación). Posición de IVA · débito:
  * se agrupa `imp_total` por mes de `fecha_emision` y se aplica `round(bruto − bruto/1,21)` al total mensual.
- * Tabla física **`fin_bal_pos_iva_final`** (histórico: `fin_bal_iva_deb_import_line`).
+ * Tabla física **`fin_bal_iva_deb_import`** (histórico: `fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`).
  */
 model FinBalIvaDebImportLine {
   id                   String   @id @default(cuid())
   /** Hash estable por fila para no duplicar al reimportar el mismo comprobante. */
-  dedupeKey            String   @unique(map: "fin_bal_pos_iva_final_dedupe_key_key") @map("dedupe_key") @db.VarChar(64)
+  dedupeKey            String   @unique(map: "fin_bal_iva_deb_import_dedupe_key_key") @map("dedupe_key") @db.VarChar(64)
   fechaEmision         DateTime @map("fecha_emision") @db.Date
   denominacionReceptor String   @map("denominacion_receptor") @db.VarChar(512)
   impTotal             Decimal  @map("imp_total") @db.Decimal(14, 2)
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 
-  @@index([fechaEmision], map: "fin_bal_pos_iva_final_fecha_emision_idx")
-  @@map("fin_bal_pos_iva_final")
+  @@index([fechaEmision], map: "fin_bal_iva_deb_import_fecha_emision_idx")
+  @@map("fin_bal_iva_deb_import")
 }
 
 /**
