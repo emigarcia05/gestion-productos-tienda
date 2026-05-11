@@ -35,7 +35,7 @@ type ProductoConProveedor = {
   descuentoRubro: number;
   descuentoCantidad: number;
   cxTransporte: number;
-  pxCompraFinal?: number | null;
+  pxCompraFinalSinIva?: number | null;
   proveedor: { nombre: string; prefijo: string };
 };
 
@@ -61,8 +61,8 @@ interface Props {
 const UMBRAL_PCT = 1;
 
 function pxCompraDeProducto(p: ProductoConProveedor): number {
-  return p.pxCompraFinal != null
-    ? p.pxCompraFinal
+  return p.pxCompraFinalSinIva != null
+    ? p.pxCompraFinalSinIva
     : calcPxCompraFinal(
         p.precioLista,
         p.descuentoRubro,
@@ -71,9 +71,9 @@ function pxCompraDeProducto(p: ProductoConProveedor): number {
       );
 }
 
-function DifCosto({ costoTienda, pxCompraFinal }: { costoTienda: number; pxCompraFinal: number }) {
-  if (costoTienda <= 0 || pxCompraFinal <= 0) return <span className="variacion-costo--neutra">—</span>;
-  const dif = ((pxCompraFinal - costoTienda) / costoTienda) * 100;
+function DifCosto({ costoTienda, pxCompraFinalSinIva }: { costoTienda: number; pxCompraFinalSinIva: number }) {
+  if (costoTienda <= 0 || pxCompraFinalSinIva <= 0) return <span className="variacion-costo--neutra">—</span>;
+  const dif = ((pxCompraFinalSinIva - costoTienda) / costoTienda) * 100;
   const abs = Math.abs(dif);
   if (abs < UMBRAL_PCT) return <span className="variacion-costo--neutra">≈0%</span>;
   const absFmt = abs.toFixed(1);
@@ -325,7 +325,7 @@ export default function VincularModal({
                             ${fmtPrecio(px)}
                           </TableCell>
                           <TableCell className="celda-datos celda-numero">
-                            <DifCosto costoTienda={costoTienda} pxCompraFinal={px} />
+                            <DifCosto costoTienda={costoTienda} pxCompraFinalSinIva={px} />
                           </TableCell>
                           <TableCell className="celda-datos celda-numero">
                             {margenPct != null ? fmtPctEntero(margenPct) : ""}

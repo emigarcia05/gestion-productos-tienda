@@ -35,7 +35,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   presentacionId: string;
   labelCompleto: string;
-  onElegido: (pxCompraFinal: number) => void;
+  onElegido: (pxCompraFinalSinIva: number) => void;
 }
 
 export default function ElegirProductoReferenciaModal({
@@ -80,9 +80,9 @@ export default function ElegirProductoReferenciaModal({
   }, [open, proveedorId, q]);
 
   const handleUsar = () => {
-    if (selectedRow == null || selectedRow.pxCompraFinal == null) return;
+    if (selectedRow == null || selectedRow.pxCompraFinalSinIva == null) return;
     setPending(true);
-    onElegido(selectedRow.pxCompraFinal);
+    onElegido(selectedRow.pxCompraFinalSinIva);
     setPending(false);
     onOpenChange(false);
   };
@@ -169,7 +169,7 @@ export default function ElegirProductoReferenciaModal({
                       <TableBody>
                         {rows.map((row) => {
                           const isSelected = selectedRow?.id === row.id;
-                          const hasPx = row.pxCompraFinal != null;
+                          const hasPx = row.pxCompraFinalSinIva != null;
                           return (
                             <TableRow
                               key={row.id}
@@ -189,8 +189,8 @@ export default function ElegirProductoReferenciaModal({
                                 {row.descripcionProveedor}
                               </TableCell>
                               <TableCell className="py-1.5 w-28 text-right tabular-nums">
-                                {row.pxCompraFinal != null
-                                  ? `$${fmtPrecio(row.pxCompraFinal)}`
+                                {row.pxCompraFinalSinIva != null
+                                  ? `$${fmtPrecio(row.pxCompraFinalSinIva)}`
                                   : "—"}
                               </TableCell>
                             </TableRow>
@@ -202,7 +202,7 @@ export default function ElegirProductoReferenciaModal({
                 </>
               )}
             </div>
-            {selectedRow != null && selectedRow.pxCompraFinal != null && (
+            {selectedRow != null && selectedRow.pxCompraFinalSinIva != null && (
               <div className="shrink-0 pt-3">
                 <Button
                   type="button"
@@ -210,7 +210,7 @@ export default function ElegirProductoReferenciaModal({
                   onClick={handleUsar}
                   disabled={pending}
                 >
-                  Usar como referencia (${fmtPrecio(selectedRow.pxCompraFinal)})
+                  Usar como referencia (${fmtPrecio(selectedRow.pxCompraFinalSinIva)})
                 </Button>
               </div>
             )}

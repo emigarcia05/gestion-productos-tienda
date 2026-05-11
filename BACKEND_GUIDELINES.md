@@ -145,16 +145,17 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
 - **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`prod_precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `PENDIENTE` \| `RECEPCIONADO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`PENDIENTE`**. Compatibilidad legacy: se acepta `SIN RECEPCION` y se normaliza a `PENDIENTE`. Zod en `listarPedidosHistoriaAction`: `estado` incluye `ALL`; `q` con `.max(200).optional()`.
 
-### 1.8 Fuente de costo final (`px_compra_final`)
+### 1.8 Precio de compra sin IVA (`px_compra_final_sin_iva`)
 
-- En listados/exportaciones donde el "costo" represente el valor final calculado para el proveedor (ej. **Control Aumentos**), usar como fuente **`px_compra_final`** de `prod_precios_provee` (campo `pxCompraFinal` en Prisma).
-- Evitar exportar un costo derivado de la tabla de tienda (`costo_compra`/`costoTienda`) si existe una columna final calculada en `prod_precios_provee`.
-- **Control Aumentos (Excel)**: el archivo de exportación se limita a las columnas **`CODIGO`** y **`COSTO`**; no incluir columnas auxiliares (por ejemplo proveedor o código externo) mientras no exista un nuevo requerimiento funcional.
+- En listados/exportaciones donde el “costo” proveedor debe ser la **columna generada sin IVA** en `prod_precios_provee`, usar **`px_compra_final_sin_iva`** (campo Prisma **`pxCompraFinalSinIva`**). La comparación de proveedores para **sugerencia de menor costo** en Pedido Urgente/Reposición puede aplicar factor IVA sobre ese valor según `global_proveedores.iva` y el acumulado de saldo IVA (ver §2.5 «Pedido Urgente — listado»); el campo de columna sigue siendo la base sin IVA.
+- Evitar tomar solo `costo_compra` de tienda cuando el contrato sea el precio de lista proveedor calculado en `prod_precios_provee`.
+- **Control Aumentos (Excel)**: columna **`COSTO`** = **`px_compra_final_sin_iva`** del vínculo proveedor oficial; exportación sólo **`CODIGO`** y **`COSTO`** (sin columnas auxiliares salvo nuevo requerimiento).
+- Migración de columna física: **`20260514120000_rename_prod_precios_provee_px_compra_final_sin_iva`** (`px_compra_final` → `px_compra_final_sin_iva`, misma expresión GENERATED).
 
 ### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
 
 - En `getTiendaPageData` (listado “Comp. Proveedores”), cuando hay mejora por un proveedor **no-oficial**:
-  - el “mejor proveedor” se define por el menor `px_compra_final` entre proveedores no-oficiales **con `habilitado = true`** en `prod_precios_provee`;
+  - el “mejor proveedor” se define por el menor `px_compra_final_sin_iva` entre proveedores no-oficiales **con `habilitado = true`** en `prod_precios_provee`;
   - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);
   - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
 
@@ -755,7 +756,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 #### Pedido Urgente — listado
 
 - **`getPedidoUrgenteData`**: con **sucursal** válida ya se llama a **`getListaPreciosParaPedidoUrgente`**; proveedor y `q` (≥ 3 caracteres) son opcionales para filtrar. El parámetro `pedido` soporta `cualquier`, `urgente` y `reposicion`: para `urgente/cualquier` filtra por pares (`id_proveedor`, `cod_ext`) y para `reposicion` filtra por `cod_tienda` configurado en **`prod_ped_merc`** (`reposicion_cod_tienda`).
-- **Comparación por menor costo en doble click (Pedido Urgente):** `getListaPreciosParaPedidoUrgente` expone por fila `estaVinculadoTienda` + `sugerenciaProveedorMenorCosto` cuando, para el mismo `id_lista_precios_tienda`, existe otro `prod_precios_provee` habilitado con costo menor (costo = `px_compra_final` o fallback `calcPxCompraFinal`). Esto habilita en frontend el cartel de desvío a proveedor más barato antes del modal de cantidad.
+- **Comparación «menor costo» (sugerencia ante doble clic) en Pedido Urgente y Reposición:** para el mismo `id_lista_precios_tienda`, se considera alternativa “más barata” según un **precio comparable** (no solo `px_compra_final_sin_iva` / `calcPxCompraFinal`). Se calcula **`sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido`**: suma mensual de saldo IVA (manual en `fin_bal_posicion_iva_saldo_manual` o, si falta, débito − crédito como en **Posición IVA**) desde **abril 2026** hasta el **mes calendario actual en Argentina** (inclusive). Si esa suma **> 0**, el comparable es precio **final con IVA**: factor **×1,21** solo si `proveedor.iva === SIEMPRE`; **NUNCA** y **PREGUNTA** usan **×1**. Si la suma **≤ 0**, el comparable coincide con el precio **sin IVA** (misma base que antes). La respuesta **`sugerenciaProveedorMenorCosto.costo`** sigue exponiendo el valor **sin IVA** del proveedor sugerido (coherente con listados y modal). Implementación: **`pxComparablePedidoUrgenteReposicion`** (`src/lib/precioComparacionPedidoUrgenteReposicion.ts`) + cableado en **`getListaPreciosParaPedidoUrgente`** / **`getListaPedidoUrgenteDesdeMerc2`** (`listaPrecios.service.ts`), con `proveedor.iva` en los `select`/`include` necesarios.
 
 ### 2.6 Servicio `pedidosHistoria.service.ts`
 

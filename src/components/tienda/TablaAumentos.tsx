@@ -30,8 +30,8 @@ function exportarXLS(items: ItemAumento[]) {
   import("xlsx").then((XLSX) => {
     const filas = items.map((i) => ({
       "CODIGO": i.codItem,
-      // "COSTO" del Excel debe provenir de la fórmula oficial en prod_precios_provee (px_compra_final).
-      "COSTO": parseFloat(i.pxCompraFinal.toFixed(2)),
+      // "COSTO" del Excel: columna generada prod_precios_provee.px_compra_final_sin_iva.
+      "COSTO": parseFloat(i.pxCompraFinalSinIva.toFixed(2)),
     }));
 
     const hoja   = XLSX.utils.json_to_sheet(filas);

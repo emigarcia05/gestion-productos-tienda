@@ -23,7 +23,7 @@ export async function getProductosVinculadosPorItemTienda(itemTiendaId: string):
       descuentoRubro: r.dtoRubro,
       descuentoCantidad: r.dtoCantidad,
       cxTransporte: r.cxTransporte,
-      pxCompraFinal: r.pxCompraFinal != null ? Number(r.pxCompraFinal) : null,
+      pxCompraFinalSinIva: r.pxCompraFinalSinIva != null ? Number(r.pxCompraFinalSinIva) : null,
       disponible: true,
       proveedorId: r.proveedor.id,
       proveedor: { id: r.proveedor.id, nombre: r.proveedor.nombre, prefijo: r.proveedor.prefijo ?? "" },

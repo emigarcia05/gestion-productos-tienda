@@ -370,7 +370,7 @@ model ListaPrecioProveedor {
   dtoCantidad       Int      @map("dto_cantidad") @default(0)
   dtoFinanciero     Int      @map("dto_financiero") @default(0)
   cxTransporte       Int      @map("cx_transporte") @default(0)
-  pxCompraFinal     Decimal? @map("px_compra_final") @db.Decimal(14, 4) // generada: base * (1 - dtoTotal/100) * (1 + cx_transporte/100), dtoTotal capado 0-100
+  pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: precio compra sin IVA; base * (1 - dtoTotal/100) * (1 + cx_transporte/100), dtoTotal capado 0-100
   idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   habilitado         Boolean  @map("habilitado") @default(true) // mapea opción SÍ/NO del modal importar

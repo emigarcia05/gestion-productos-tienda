@@ -24,8 +24,8 @@ export interface ProductoPedidoUrgente {
   codExt: string;
   prefijo: string;
   descripcion: string;
-  /** px_compra_final desde prod_precios_provee (null si no está disponible). */
-  pxCompraFinal: number | null;
+  /** `px_compra_final_sin_iva` desde prod_precios_provee (null si no está disponible). */
+  pxCompraFinalSinIva: number | null;
   /** Cantidad pedida (URGENTE) desde `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
   /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda` del ítem. */

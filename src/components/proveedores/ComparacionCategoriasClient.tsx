@@ -117,7 +117,7 @@ export default function ComparacionCategoriasClient({
     const valores = productosFiltrados
       .map((p) => {
         const dtoStr = dtoEspecial[p.id] ?? "";
-        const pxOriginal = p.pxCompraFinal;
+        const pxOriginal = p.pxCompraFinalSinIva;
         const pxConDescuento = pxConDto(pxOriginal, dtoStr);
         const pxEfectivo = pxConDescuento ?? pxOriginal;
         return pxEfectivo;
@@ -136,7 +136,7 @@ export default function ComparacionCategoriasClient({
       .filter((p) => sel.has(p.id))
       .map((p) => {
         const dtoStr = dtoEspecial[p.id] ?? "";
-        const pxOriginal = p.pxCompraFinal;
+        const pxOriginal = p.pxCompraFinalSinIva;
         const pxConDescuento = pxConDto(pxOriginal, dtoStr);
         return pxConDescuento ?? pxOriginal;
       })
@@ -358,7 +358,7 @@ export default function ComparacionCategoriasClient({
                     {productosFiltrados.map((p) => {
                       const isSelectedForCompare = selectedCompareIds.includes(p.id);
                       const dtoStr = dtoEspecial[p.id] ?? "";
-                      const pxOriginal = p.pxCompraFinal;
+                      const pxOriginal = p.pxCompraFinalSinIva;
                       const pxConDescuento = pxConDto(pxOriginal, dtoStr);
                       const pxEfectivo = pxConDescuento ?? pxOriginal;
 

@@ -18,8 +18,8 @@ export interface ProductoCompleto {
   descuentoRubro: number;
   descuentoCantidad: number;
   cxTransporte: number;
-  /** Precio de compra final desde prod_precios_provee.px_compra_final. Si viene null, se usa cálculo en cliente. */
-  pxCompraFinal?: number | null;
+  /** Precio de compra sin IVA desde prod_precios_provee.px_compra_final_sin_iva. Si viene null, se usa cálculo en cliente. */
+  pxCompraFinalSinIva?: number | null;
   disponible: boolean;
   proveedorId: string;
   proveedor: ProveedorResumen;

@@ -4,7 +4,8 @@ export function clampPercent(value: number): number {
 }
 
 /**
- * Precio de compra final: todos los dto y cx_transporte son porcentajes.
+ * Precio de compra **sin IVA** (misma lógica que la columna generada `prod_precios_provee.px_compra_final_sin_iva`).
+ * Todos los dto y cx_transporte son porcentajes.
  * Fórmula con descuento acumulado:
  *   precioLista × (1 - dtoTotal/100) × (1 + cxTransporte/100)
  * donde dtoTotal = dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero (capado 0-100).

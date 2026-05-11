@@ -10,12 +10,15 @@ import { buildCodExt } from "@/lib/codigos";
 import { calcPxCompraFinal, clampPercent } from "@/lib/calculos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
+import { IvaProveedor } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { pxComparablePedidoUrgenteReposicion } from "@/lib/precioComparacionPedidoUrgenteReposicion";
+import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
 
 function costoCompraFinalProveedorLista(params: {
-  pxCompraFinal: Prisma.Decimal | null;
+  pxCompraFinalSinIva: Prisma.Decimal | null;
   pxListaProveedor: Prisma.Decimal;
   dtoRubro: number;
   dtoCantidad: number;
@@ -25,7 +28,7 @@ function costoCompraFinalProveedorLista(params: {
   dtoFinanciero: number;
 }): number {
   const {
-    pxCompraFinal,
+    pxCompraFinalSinIva,
     pxListaProveedor,
     dtoRubro,
     dtoCantidad,
@@ -34,7 +37,7 @@ function costoCompraFinalProveedorLista(params: {
     dtoMarca,
     dtoFinanciero,
   } = params;
-  if (pxCompraFinal != null) return Number(pxCompraFinal);
+  if (pxCompraFinalSinIva != null) return Number(pxCompraFinalSinIva);
   return calcPxCompraFinal(
     Number(pxListaProveedor),
     dtoRubro,
@@ -44,6 +47,76 @@ function costoCompraFinalProveedorLista(params: {
     dtoMarca,
     dtoFinanciero
   );
+}
+
+type CamposCostoListaProveedor = {
+  pxCompraFinalSinIva: Prisma.Decimal | null;
+  pxListaProveedor: Prisma.Decimal;
+  dtoRubro: number;
+  dtoCantidad: number;
+  cxTransporte: number;
+  dtoProveedor: number;
+  dtoMarca: number;
+  dtoFinanciero: number;
+};
+
+function ivaProveedorDesdeLista(
+  proveedor: { iva?: IvaProveedor | null } | null | undefined
+): IvaProveedor {
+  return proveedor?.iva ?? IvaProveedor.NUNCA;
+}
+
+/** Elige otro proveedor en la misma tienda con menor precio comparable (IVA SALDO acumulado + política `iva`). */
+function sugerenciaProveedorMenorCostoComparable(
+  sumaIvaSaldoAcumulado: number,
+  idListaActual: string,
+  actual: CamposCostoListaProveedor & { iva: IvaProveedor },
+  alternativas: Array<
+    CamposCostoListaProveedor & {
+      id: string;
+      iva: IvaProveedor;
+      nombreProveedor: string;
+    }
+  >
+): { listaPrecioProveedorId: string; proveedorNombre: string; costo: number } | null {
+  const costoSinIvaActual = costoCompraFinalProveedorLista(actual);
+  const comparableActual = pxComparablePedidoUrgenteReposicion(
+    costoSinIvaActual,
+    actual.iva,
+    sumaIvaSaldoAcumulado
+  );
+  const mejor = alternativas
+    .filter((alt) => alt.id !== idListaActual)
+    .map((alt) => {
+      const costoSinIva = costoCompraFinalProveedorLista(alt);
+      return {
+        id: alt.id,
+        nombreProveedor: alt.nombreProveedor,
+        costoSinIva,
+        comparable: pxComparablePedidoUrgenteReposicion(
+          costoSinIva,
+          alt.iva,
+          sumaIvaSaldoAcumulado
+        ),
+      };
+    })
+    .filter(
+      (x) =>
+        x.nombreProveedor.length > 0 &&
+        Number.isFinite(x.costoSinIva) &&
+        x.costoSinIva > 0 &&
+        Number.isFinite(x.comparable) &&
+        Number.isFinite(comparableActual) &&
+        x.comparable < comparableActual
+    )
+    .sort((x, y) => x.comparable - y.comparable)[0];
+
+  if (!mejor) return null;
+  return {
+    listaPrecioProveedorId: mejor.id,
+    proveedorNombre: mejor.nombreProveedor,
+    costo: mejor.costoSinIva,
+  };
 }
 
 /** Fila para el cliente (lista-precios / sugeridos): proveedor + descripción tienda si existe. */
@@ -65,7 +138,7 @@ export interface FilaListaPrecioParaCliente {
   dtoCantidad: number;
   dtoFinanciero: number;
   cxTransporte: number;
-  pxCompraFinal: number | null;
+  pxCompraFinalSinIva: number | null;
   proveedor: { id: string; prefijo: string; nombre: string } | null;
 }
 
@@ -110,7 +183,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     dtoCantidad: f.dtoCantidad,
     dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
-    pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
+    pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
       ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
       : null,
@@ -219,7 +292,7 @@ export async function getListaPreciosConTiendaFiltrada(
     dtoCantidad: f.dtoCantidad,
     dtoFinanciero: f.dtoFinanciero,
     cxTransporte: f.cxTransporte,
-    pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
+    pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
       ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
       : null,
@@ -296,7 +369,7 @@ export async function getRubrosDisponiblesListaPrecios(
   return out;
 }
 
-/** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. pxCompraFinal para selector de costo objetivo. */
+/** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. pxCompraFinalSinIva para selector de costo objetivo. */
 export interface ProductoProveedorParaVincular {
   id: string;
   idProveedor: string;
@@ -306,7 +379,7 @@ export interface ProductoProveedorParaVincular {
   rubro: string | null;
   proveedor: { prefijo: string; nombre: string };
   /** Precio final de compra (para usar como costo objetivo al seleccionar desde lista). */
-  pxCompraFinal: number | null;
+  pxCompraFinalSinIva: number | null;
 }
 
 const MAX_PRODUCTOS_VINCULAR = 500;
@@ -340,7 +413,7 @@ export async function listarProductosProveedoresParaVincular(
     descripcionProveedor: r.descripcionProveedor,
     rubro: r.rubro ?? null,
     proveedor: { prefijo: r.proveedor.prefijo ?? "", nombre: r.proveedor.nombre },
-    pxCompraFinal: r.pxCompraFinal != null ? Number(r.pxCompraFinal) : null,
+    pxCompraFinalSinIva: r.pxCompraFinalSinIva != null ? Number(r.pxCompraFinalSinIva) : null,
   }));
 }
 
@@ -546,8 +619,8 @@ export interface PedidoUrgenteItem {
   codExt: string;
   prefijo: string;
   descripcion: string;
-  /** px_compra_final desde prod_precios_provee para lógica de opción de compra. */
-  pxCompraFinal: number | null;
+  /** `px_compra_final_sin_iva` desde prod_precios_provee para lógica de opción de compra. */
+  pxCompraFinalSinIva: number | null;
   /** Cantidad pedida (URGENTE): `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
   /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda`. */
@@ -763,7 +836,7 @@ async function getListaPedidoUrgenteDesdeMerc2(
       ? await prisma.listaPrecioProveedor.findMany({
           where: lpWhere,
           include: {
-            proveedor: { select: { id: true, nombre: true, prefijo: true } },
+            proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
             listaPrecioTienda: { select: { codTienda: true } },
           },
         })
@@ -785,6 +858,13 @@ async function getListaPedidoUrgenteDesdeMerc2(
       cantUrgente: Math.max(0, Math.floor(Number(m.urgenteCantPedir ?? 0))),
     });
   }
+
+  const totalPaginasLista = total <= 0 ? 1 : Math.ceil(total / pageSize);
+  if (filasResueltas.length === 0) {
+    return { items: [], total, totalPaginas: totalPaginasLista };
+  }
+
+  const sumaIvaSaldoAcumulado = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
 
   const codExtsRes = [...new Set(filasResueltas.map((x) => x.f.codExt))];
   const tiendaRows =
@@ -821,7 +901,7 @@ async function getListaPedidoUrgenteDesdeMerc2(
           select: {
             id: true,
             idListaPrecioTienda: true,
-            pxCompraFinal: true,
+            pxCompraFinalSinIva: true,
             pxListaProveedor: true,
             dtoProveedor: true,
             dtoMarca: true,
@@ -829,7 +909,7 @@ async function getListaPedidoUrgenteDesdeMerc2(
             dtoCantidad: true,
             dtoFinanciero: true,
             cxTransporte: true,
-            proveedor: { select: { nombre: true, prefijo: true } },
+            proveedor: { select: { nombre: true, prefijo: true, iva: true } },
           },
         })
       : [];
@@ -865,38 +945,36 @@ async function getListaPedidoUrgenteDesdeMerc2(
     const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
     const cantUrgenteUi = cantUrgente;
     const tiendaId = tiendaIdPorListaPrecioProveedorId.get(f.id) ?? null;
-    const costoActual = costoCompraFinalProveedorLista({
-      pxCompraFinal: f.pxCompraFinal,
-      pxListaProveedor: f.pxListaProveedor,
-      dtoRubro: f.dtoRubro,
-      dtoCantidad: f.dtoCantidad,
-      cxTransporte: f.cxTransporte,
-      dtoProveedor: f.dtoProveedor,
-      dtoMarca: f.dtoMarca,
-      dtoFinanciero: f.dtoFinanciero,
-    });
     const alternativas = tiendaId ? alternativasByTienda.get(tiendaId) ?? [] : [];
-    const mejorAlternativa = alternativas
-      .filter((a) => a.id !== f.id)
-      .map((a) => ({
-        ...a,
-        costo: costoCompraFinalProveedorLista({
-          pxCompraFinal: a.pxCompraFinal,
-          pxListaProveedor: a.pxListaProveedor,
-          dtoRubro: a.dtoRubro,
-          dtoCantidad: a.dtoCantidad,
-          cxTransporte: a.cxTransporte,
-          dtoProveedor: a.dtoProveedor,
-          dtoMarca: a.dtoMarca,
-          dtoFinanciero: a.dtoFinanciero,
-        }),
+    const sugerencia = sugerenciaProveedorMenorCostoComparable(
+      sumaIvaSaldoAcumulado,
+      f.id,
+      {
+        pxCompraFinalSinIva: f.pxCompraFinalSinIva,
+        pxListaProveedor: f.pxListaProveedor,
+        dtoRubro: f.dtoRubro,
+        dtoCantidad: f.dtoCantidad,
+        cxTransporte: f.cxTransporte,
+        dtoProveedor: f.dtoProveedor,
+        dtoMarca: f.dtoMarca,
+        dtoFinanciero: f.dtoFinanciero,
+        iva: ivaProveedorDesdeLista(f.proveedor),
+      },
+      alternativas.map((a) => ({
+        id: a.id,
+        pxCompraFinalSinIva: a.pxCompraFinalSinIva,
+        pxListaProveedor: a.pxListaProveedor,
+        dtoRubro: a.dtoRubro,
+        dtoCantidad: a.dtoCantidad,
+        cxTransporte: a.cxTransporte,
+        dtoProveedor: a.dtoProveedor,
+        dtoMarca: a.dtoMarca,
+        dtoFinanciero: a.dtoFinanciero,
+        iva: ivaProveedorDesdeLista(a.proveedor),
+        nombreProveedor:
+          a.proveedor?.nombre?.trim() || a.proveedor?.prefijo?.trim() || "",
       }))
-      .filter((a) => Number.isFinite(a.costo) && a.costo > 0 && a.costo < costoActual)
-      .sort((a, b) => a.costo - b.costo)[0];
-    const nombreProveedorAlt =
-      mejorAlternativa?.proveedor?.nombre?.trim() ||
-      mejorAlternativa?.proveedor?.prefijo?.trim() ||
-      "";
+    );
 
     return {
       id: f.id,
@@ -904,31 +982,23 @@ async function getListaPedidoUrgenteDesdeMerc2(
       prefijo: f.proveedor?.prefijo ?? "",
       descripcion:
         (descTienda?.trim() && descTienda) || f.descripcionProveedor,
-      pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
+      pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
       cantPedidaUrgente: cantUrgenteUi,
       confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
       cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
       estaVinculadoTienda: tiendaId != null,
-      sugerenciaProveedorMenorCosto:
-        mejorAlternativa && nombreProveedorAlt
-          ? {
-              listaPrecioProveedorId: mejorAlternativa.id,
-              proveedorNombre: nombreProveedorAlt,
-              costo: mejorAlternativa.costo,
-            }
-          : null,
+      sugerenciaProveedorMenorCosto: sugerencia,
     };
   });
 
-  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / pageSize);
-  return { items, total, totalPaginas };
+  return { items, total, totalPaginas: totalPaginasLista };
 }
 
 /**
  * Ítems de lista precios para la pantalla Pedido Urgente.
  * Solo devuelve datos si sucursal está informada.
  * descripcion = descripcion_tienda si existe; si no, descripcion_proveedor.
- * incluye pxCompraFinal para lógica de ranking en opción de compra.
+ * incluye pxCompraFinalSinIva para lógica de ranking en opción de compra.
  */
 export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
@@ -1014,7 +1084,7 @@ export async function getListaPreciosParaPedidoUrgente(
     prisma.listaPrecioProveedor.findMany({
       where,
       include: {
-        proveedor: { select: { id: true, nombre: true, prefijo: true } },
+        proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
         listaPrecioTienda: { select: { codTienda: true } },
       },
       orderBy: { codExt: "asc" },
@@ -1023,6 +1093,13 @@ export async function getListaPreciosParaPedidoUrgente(
     }),
     prisma.listaPrecioProveedor.count({ where }),
   ]);
+
+  const totalPaginasListaGeneral = total <= 0 ? 1 : Math.ceil(total / takeSize);
+  if (filas.length === 0) {
+    return { items: [], total, totalPaginas: totalPaginasListaGeneral };
+  }
+
+  const sumaIvaSaldoAcumulado = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
 
   const codExts = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
@@ -1057,7 +1134,7 @@ export async function getListaPreciosParaPedidoUrgente(
           select: {
             id: true,
             idListaPrecioTienda: true,
-            pxCompraFinal: true,
+            pxCompraFinalSinIva: true,
             pxListaProveedor: true,
             dtoProveedor: true,
             dtoMarca: true,
@@ -1065,7 +1142,7 @@ export async function getListaPreciosParaPedidoUrgente(
             dtoCantidad: true,
             dtoFinanciero: true,
             cxTransporte: true,
-            proveedor: { select: { nombre: true, prefijo: true } },
+            proveedor: { select: { nombre: true, prefijo: true, iva: true } },
           },
         })
       : [];
@@ -1098,66 +1175,55 @@ export async function getListaPreciosParaPedidoUrgente(
     const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
     const cantUrgente = mercaderiaMapUrgente.get(key) ?? 0;
     const tiendaId = tiendaIdPorListaPrecioProveedorId.get(f.id) ?? null;
-    const costoActual = costoCompraFinalProveedorLista({
-      pxCompraFinal: f.pxCompraFinal,
-      pxListaProveedor: f.pxListaProveedor,
-      dtoRubro: f.dtoRubro,
-      dtoCantidad: f.dtoCantidad,
-      cxTransporte: f.cxTransporte,
-      dtoProveedor: f.dtoProveedor,
-      dtoMarca: f.dtoMarca,
-      dtoFinanciero: f.dtoFinanciero,
-    });
     const alternativas = tiendaId ? alternativasByTienda.get(tiendaId) ?? [] : [];
-    const mejorAlternativa = alternativas
-      .filter((a) => a.id !== f.id)
-      .map((a) => ({
-        ...a,
-        costo: costoCompraFinalProveedorLista({
-          pxCompraFinal: a.pxCompraFinal,
-          pxListaProveedor: a.pxListaProveedor,
-          dtoRubro: a.dtoRubro,
-          dtoCantidad: a.dtoCantidad,
-          cxTransporte: a.cxTransporte,
-          dtoProveedor: a.dtoProveedor,
-          dtoMarca: a.dtoMarca,
-          dtoFinanciero: a.dtoFinanciero,
-        }),
+    const sugerencia = sugerenciaProveedorMenorCostoComparable(
+      sumaIvaSaldoAcumulado,
+      f.id,
+      {
+        pxCompraFinalSinIva: f.pxCompraFinalSinIva,
+        pxListaProveedor: f.pxListaProveedor,
+        dtoRubro: f.dtoRubro,
+        dtoCantidad: f.dtoCantidad,
+        cxTransporte: f.cxTransporte,
+        dtoProveedor: f.dtoProveedor,
+        dtoMarca: f.dtoMarca,
+        dtoFinanciero: f.dtoFinanciero,
+        iva: ivaProveedorDesdeLista(f.proveedor),
+      },
+      alternativas.map((a) => ({
+        id: a.id,
+        pxCompraFinalSinIva: a.pxCompraFinalSinIva,
+        pxListaProveedor: a.pxListaProveedor,
+        dtoRubro: a.dtoRubro,
+        dtoCantidad: a.dtoCantidad,
+        cxTransporte: a.cxTransporte,
+        dtoProveedor: a.dtoProveedor,
+        dtoMarca: a.dtoMarca,
+        dtoFinanciero: a.dtoFinanciero,
+        iva: ivaProveedorDesdeLista(a.proveedor),
+        nombreProveedor:
+          a.proveedor?.nombre?.trim() || a.proveedor?.prefijo?.trim() || "",
       }))
-      .filter((a) => Number.isFinite(a.costo) && a.costo > 0 && a.costo < costoActual)
-      .sort((a, b) => a.costo - b.costo)[0];
-    const nombreProveedorAlt =
-      mejorAlternativa?.proveedor?.nombre?.trim() ||
-      mejorAlternativa?.proveedor?.prefijo?.trim() ||
-      "";
+    );
 
     return {
       id: f.id,
       codExt: f.codExt,
       prefijo: f.proveedor?.prefijo ?? "",
       descripcion: (descTienda?.trim() && descTienda) || f.descripcionProveedor,
-      pxCompraFinal: f.pxCompraFinal != null ? Number(f.pxCompraFinal) : null,
+      pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
       cantPedidaUrgente: cantUrgente,
       confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
       cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
       estaVinculadoTienda: tiendaId != null,
-      sugerenciaProveedorMenorCosto:
-        mejorAlternativa && nombreProveedorAlt
-          ? {
-              listaPrecioProveedorId: mejorAlternativa.id,
-              proveedorNombre: nombreProveedorAlt,
-              costo: mejorAlternativa.costo,
-            }
-          : null,
+      sugerenciaProveedorMenorCosto: sugerencia,
     };
   });
-
-  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / takeSize);
 
   return {
     items,
     total,
-    totalPaginas,
+    totalPaginas: totalPaginasListaGeneral,
   };
 }
 

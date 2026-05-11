@@ -74,8 +74,8 @@ export interface ItemTiendaParaTabla {
   habilitado: boolean;
   _count: { productos: number };
   /**
-   * Si hay ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra:
-   * prefijo del proveedor no-oficial con el menor px_compra_final. Null en caso contrario.
+   * Si hay ≥2 proveedores vinculados y al menos un no oficial con px_compra_final_sin_iva < costo_compra:
+   * prefijo del proveedor no-oficial con el menor px_compra_final_sin_iva. Null en caso contrario.
    */
   mejorProveedorNoOficialPrefijo: string | null;
   /**
@@ -162,7 +162,7 @@ export async function getTiendaPageData(params: {
   // Filtro por proveedor: solo proveedores oficiales (columna proveedor en prod_precios_tienda). Los vinculados son solo para comparación en la tabla.
   if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
 
-  /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final < costo_compra. */
+  /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final_sin_iva < costo_compra. */
   let idsMenorCxDisponible: string[] = [];
   if (mejorPrecio === "true") {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
@@ -174,7 +174,7 @@ export async function getTiendaPageData(params: {
           INNER JOIN global_proveedores p ON p.id = lpp.id_proveedor
           WHERE lpp.id_lista_precios_tienda = lpt.id
             AND LOWER(TRIM(COALESCE(p.nombre, ''))) != LOWER(TRIM(COALESCE(lpt.proveedor, '')))
-            AND COALESCE(lpp.px_compra_final, lpp.px_lista_proveedor::numeric) < lpt.costo_compra
+            AND COALESCE(lpp.px_compra_final_sin_iva, lpp.px_lista_proveedor::numeric) < lpt.costo_compra
         )
     `;
     idsMenorCxDisponible = rows.map((r) => r.id);
@@ -221,7 +221,7 @@ export async function getTiendaPageData(params: {
           where: { idListaPrecioTienda: { in: rows.map((r) => r.id) } },
           select: {
             idListaPrecioTienda: true,
-            pxCompraFinal: true,
+            pxCompraFinalSinIva: true,
             pxListaProveedor: true,
             dtoProveedor: true,
             dtoMarca: true,
@@ -240,7 +240,7 @@ export async function getTiendaPageData(params: {
     proveedorOficialPorTienda.set(r.id, txt);
   }
 
-  // Mínimo px_compra_final solo entre proveedores NO oficiales por ítem tienda.
+  // Mínimo px_compra_final_sin_iva solo entre proveedores NO oficiales por ítem tienda.
   // Guardamos también el nombre (normalizado) del mejor proveedor no-oficial para poder resolver su prefijo luego.
   const minPxNoOficialPorTienda = new Map<string, { px: number; mejorProveedorNombre: string | null }>();
   for (const lp of linkedPrices) {
@@ -249,8 +249,8 @@ export async function getTiendaPageData(params: {
     const nombreProveedor = (lp.proveedor?.nombre ?? "").trim().toLowerCase();
     if (nombreProveedor === oficial) continue; // excluir proveedor oficial
     let n: number;
-    if (lp.pxCompraFinal != null) {
-      n = Number(lp.pxCompraFinal);
+    if (lp.pxCompraFinalSinIva != null) {
+      n = Number(lp.pxCompraFinalSinIva);
     } else {
       const pxLista = Number(lp.pxListaProveedor);
       n = calcPxCompraFinal(
@@ -350,8 +350,8 @@ export interface ItemAumento {
   proveedorDux:    string | null;  // prefijo del proveedor (para UI)
   proveedorNombre: string | null;   // nombre completo (para exportación)
   costoTienda:     number;
-  pxCompraFinal:   number;
-  pctAumento:      number; // ((pxCompraFinal - costoTienda) / costoTienda) * 100
+  pxCompraFinalSinIva:   number;
+  pctAumento:      number; // ((pxCompraFinalSinIva - costoTienda) / costoTienda) * 100
 }
 
 export interface GrupoAumento {
@@ -484,7 +484,7 @@ export async function cambiarAProveedorMenorCostoAction(
     select: {
       idListaPrecioTienda: true,
       codExt: true,
-      pxCompraFinal: true,
+      pxCompraFinalSinIva: true,
       pxListaProveedor: true,
       dtoProveedor: true,
       dtoMarca: true,
@@ -519,8 +519,8 @@ export async function cambiarAProveedorMenorCostoAction(
       .filter((v) => !esProveedorOficial(oficialTexto, v.proveedor))
       .map((v) => {
         const costo =
-          v.pxCompraFinal != null
-            ? Number(v.pxCompraFinal)
+          v.pxCompraFinalSinIva != null
+            ? Number(v.pxCompraFinalSinIva)
             : calcPxCompraFinal(
                 Number(v.pxListaProveedor),
                 v.dtoRubro,

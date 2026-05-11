@@ -11,10 +11,10 @@ const normalizeNombreCategoria = (nombre: string): string =>
 
 const getObjetivoFromPresentacion = (p: {
   costoCompraObjetivo: unknown;
-  productoReferencia?: { pxCompraFinal: unknown } | null;
+  productoReferencia?: { pxCompraFinalSinIva: unknown } | null;
 }): number | null => {
-  if (p.productoReferencia?.pxCompraFinal != null) {
-    return Number(p.productoReferencia.pxCompraFinal);
+  if (p.productoReferencia?.pxCompraFinalSinIva != null) {
+    return Number(p.productoReferencia.pxCompraFinalSinIva);
   }
   if (p.costoCompraObjetivo != null) {
     return Number(p.costoCompraObjetivo);
@@ -42,12 +42,12 @@ export interface ProductoEnCategoria {
   codExt: string;
   descripcionProveedor: string;
   marca: string | null;
-  pxCompraFinal: number | null;
+  pxCompraFinalSinIva: number | null;
   proveedorPrefijo: string | null;
   /** DTO. EXTRA (0-99) persistido para "Comp. Por Cat." por ítem. */
   dtoExtraComparacion: number | null;
   costoCompraObjetivo: number | null;
-  diferenciaVsObjetivo: number | null; // pxCompraFinal - objetivo (negativo = bajo objetivo)
+  diferenciaVsObjetivo: number | null; // pxCompraFinalSinIva - objetivo (negativo = bajo objetivo)
 }
 
 /** Árbol completo Categoria → Subcategoria → Presentacion para la UI. */
@@ -61,7 +61,7 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
           presentaciones: {
             orderBy: { nombre: "asc" },
             include: {
-              productoReferencia: { select: { pxCompraFinal: true } },
+              productoReferencia: { select: { pxCompraFinalSinIva: true } },
             },
           },
         },
@@ -98,7 +98,7 @@ export async function getProductosPorPresentacion(
           proveedor: { select: { prefijo: true } },
           dtoExtraComparacion: { select: { dtoExtra: true } },
         },
-        orderBy: { pxCompraFinal: "asc" },
+        orderBy: { pxCompraFinalSinIva: "asc" },
       },
     },
   });
@@ -110,13 +110,13 @@ export async function getProductosPorPresentacion(
   const labelCompleto = `${presentacion.subcategoria.categoria.nombre} - ${presentacion.subcategoria.nombre} - ${presentacion.nombre}`;
 
   const productos: ProductoEnCategoria[] = presentacion.listaPrecios.map((lp) => {
-    const pxFinal = lp.pxCompraFinal != null ? Number(lp.pxCompraFinal) : null;
+    const pxFinal = lp.pxCompraFinalSinIva != null ? Number(lp.pxCompraFinalSinIva) : null;
     return {
       id: lp.id,
       codExt: lp.codExt,
       descripcionProveedor: lp.descripcionProveedor,
       marca: lp.marca ?? null,
-      pxCompraFinal: pxFinal,
+      pxCompraFinalSinIva: pxFinal,
       proveedorPrefijo: lp.proveedor?.prefijo ?? null,
       dtoExtraComparacion: lp.dtoExtraComparacion?.dtoExtra ?? null,
       // En "Comp. Por Cat." ya no existe un referente/clic; la VARIACIÓN se calcula vs mínimo en frontend.
@@ -171,7 +171,7 @@ export interface PresentacionParaGestion {
   categoriaId: string;
   subcategoriaId: string;
   costoCompraObjetivo: number | null;
-  /** Producto asignado cuya px_compra_final coincide con el costo objetivo, si existe. */
+  /** Producto asignado cuya `px_compra_final_sin_iva` coincide con el costo objetivo, si existe. */
   productoReferencia: { prefijo: string; descripcionProveedor: string } | null;
 }
 
@@ -187,14 +187,14 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
         select: {
           proveedor: { select: { prefijo: true } },
           descripcionProveedor: true,
-          pxCompraFinal: true,
+          pxCompraFinalSinIva: true,
         },
       },
       listaPrecios: {
         select: {
           proveedor: { select: { prefijo: true } },
           descripcionProveedor: true,
-          pxCompraFinal: true,
+          pxCompraFinalSinIva: true,
         },
       },
     },
@@ -203,14 +203,14 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
     const objetivo = getObjetivoFromPresentacion(p);
 
     // Si hay productoReferencia explícito, usarlo siempre.
-    const refExplicito = p.productoReferencia && p.productoReferencia.pxCompraFinal != null
+    const refExplicito = p.productoReferencia && p.productoReferencia.pxCompraFinalSinIva != null
       ? p.productoReferencia
       : null;
 
     // Fallback para presentaciones antiguas: buscar por coincidencia con costoCompraObjetivo.
     const refCalculado = !refExplicito && objetivo != null && p.listaPrecios.length > 0
       ? p.listaPrecios.find(
-          (lp) => lp.pxCompraFinal != null && Math.abs(Number(lp.pxCompraFinal) - objetivo) < TOLERANCIA_OBJETIVO
+          (lp) => lp.pxCompraFinalSinIva != null && Math.abs(Number(lp.pxCompraFinalSinIva) - objetivo) < TOLERANCIA_OBJETIVO
         )
       : null;
 

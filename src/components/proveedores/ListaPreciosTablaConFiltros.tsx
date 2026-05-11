@@ -346,7 +346,7 @@ export default function ListaPreciosTablaConFiltros({
                   </div>
                 </TableCell>
                 <TableCell className="celda-datos celda-numero celda-destacado">
-                  ${fmtPrecio(Number(fila.pxCompraFinal ?? 0))}
+                  ${fmtPrecio(Number(fila.pxCompraFinalSinIva ?? 0))}
                 </TableCell>
                 <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.dtoProveedor)}%

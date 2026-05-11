@@ -38,7 +38,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
       listaPreciosProveedores: {
         where: { idListaPrecioTienda: { not: null } },
         select: {
-          pxCompraFinal: true,
+          pxCompraFinalSinIva: true,
           pxListaProveedor: true,
           dtoProveedor: true,
           dtoMarca: true,
@@ -75,8 +75,8 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
     if (!lpOficial) continue;
 
     let pxCompra: number;
-    if (lpOficial.pxCompraFinal != null) {
-      pxCompra = toNum(lpOficial.pxCompraFinal);
+    if (lpOficial.pxCompraFinalSinIva != null) {
+      pxCompra = toNum(lpOficial.pxCompraFinalSinIva);
     } else {
       pxCompra = calcPxCompraFinal(
         toNum(lpOficial.pxListaProveedor),
@@ -109,7 +109,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
       proveedorDux,
       proveedorNombre,
       costoTienda,
-      pxCompraFinal: pxCompra,
+      pxCompraFinalSinIva: pxCompra,
       pctAumento,
     });
   }

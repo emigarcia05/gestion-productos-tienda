@@ -129,7 +129,7 @@ export default function EditarCostoObjetivoModal({
   };
 
   const handleUsarDesdeLista = async () => {
-    if (selectedRow == null || selectedRow.pxCompraFinal == null) return;
+    if (selectedRow == null || selectedRow.pxCompraFinalSinIva == null) return;
     setPendingDesdeLista(true);
     try {
       const res = await updatePresentacionAction(presentacionId, {
@@ -140,8 +140,8 @@ export default function EditarCostoObjetivoModal({
         toast.error(res.error ?? "Error al guardar.");
         return;
       }
-      toast.success(`Costo objetivo definido: $${fmtPrecio(selectedRow.pxCompraFinal)}`);
-      onSaved(selectedRow.pxCompraFinal);
+      toast.success(`Costo objetivo definido: $${fmtPrecio(selectedRow.pxCompraFinalSinIva)}`);
+      onSaved(selectedRow.pxCompraFinalSinIva);
       onOpenChange(false);
     } finally {
       setPendingDesdeLista(false);
@@ -254,7 +254,7 @@ export default function EditarCostoObjetivoModal({
                       <TableBody>
                         {rows.map((row) => {
                           const isSelected = selectedRow?.id === row.id;
-                          const hasPx = row.pxCompraFinal != null;
+                          const hasPx = row.pxCompraFinalSinIva != null;
                           return (
                             <TableRow
                               key={row.id}
@@ -274,8 +274,8 @@ export default function EditarCostoObjetivoModal({
                                 {row.descripcionProveedor}
                               </TableCell>
                               <TableCell className="py-1.5 text-right tabular-nums">
-                                {row.pxCompraFinal != null
-                                  ? `$${fmtPrecio(row.pxCompraFinal)}`
+                                {row.pxCompraFinalSinIva != null
+                                  ? `$${fmtPrecio(row.pxCompraFinalSinIva)}`
                                   : "—"}
                               </TableCell>
                             </TableRow>
@@ -285,14 +285,14 @@ export default function EditarCostoObjetivoModal({
                     </Table>
                   )}
                 </div>
-                {selectedRow != null && selectedRow.pxCompraFinal != null && (
+                {selectedRow != null && selectedRow.pxCompraFinalSinIva != null && (
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleUsarDesdeLista}
                     disabled={pendingDesdeLista}
                   >
-                    Usar este costo (${fmtPrecio(selectedRow.pxCompraFinal)}) como objetivo
+                    Usar este costo (${fmtPrecio(selectedRow.pxCompraFinalSinIva)}) como objetivo
                   </Button>
                 )}
               </div>

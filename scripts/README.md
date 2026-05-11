@@ -10,7 +10,7 @@ Todos los scripts se ejecutan **desde la terminal** en la raíz del proyecto. So
 | `npm run db:init-schema` | Crea o actualiza la tabla `proveedores` para que coincida con el schema de Prisma (id TEXT, nombre, sufijo, codigo_unico, created_at, updated_at). |
 | `npm run db:migrate-neon` | Igual que `db:init-schema`: ejecuta la migración que alinea `proveedores` con Prisma (renombra `abreviatura` → `sufijo`, añade columnas si faltan, convierte id a TEXT). |
 | `npm run db:migrate-descripciones` | Aplica cambios de columnas: agrega `lista_precios_proveedores.descripcion_proveedor` y renombra `lista_precios_tienda.descripcion` → `descripcion_tienda`. |
-| `npm run db:create-lista-precios` | Crea la tabla `lista_precios_proveedores` en Neon (FK a `proveedores` ON DELETE CASCADE, trigger para `cod_ext`, columna generada `px_compra_final`). |
+| `npm run db:create-lista-precios` | Legacy: crea `lista_precios_proveedores` en Neon (no es `prod_precios_provee`; el script usa el nombre histórico de columna `px_compra_final`). En BD actual usar migraciones Prisma. |
 | `npm run db:create-lista-precios-tienda` | Crea la tabla `lista_precios_tienda` (columna `cod_ext`; sin FK; índice en `cod_ext`). |
 | `npm run db:fix-lista-precios-tienda-cod-ext` | Solo para tablas creadas con versión antigua: renombra `cod_externo` → `cod_ext`. |
 | `npm run db:fix-lista-precios-proveedores-columnas` | Si falla `listaPrecioProveedor.updateMany()` por columna inexistente: renombra `descuento_*` / `cx_transporte` a `dto_producto`, `dto_cantidad`, `cx_aprox_transporte`. |
