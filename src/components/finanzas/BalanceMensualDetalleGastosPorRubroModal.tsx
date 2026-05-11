@@ -74,6 +74,7 @@ interface Props {
   totalRubroSeccion: number;
   gastos: BalanceMensualGastoAgregado[];
   onElegirGasto: (g: BalanceMensualGastoAgregado) => void;
+  onVolver?: () => void;
 }
 
 function TablaGastosRubro({
@@ -191,6 +192,7 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
   totalRubroSeccion,
   gastos,
   onElegirGasto,
+  onVolver,
 }: Props) {
   const total = gastos.reduce((a, g) => a + g.monto, 0);
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
@@ -206,9 +208,16 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(32rem,62vh)]"
         scrollBody={false}
         actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
+          <>
+            {onVolver ? (
+              <Button type="button" variant="outline" onClick={onVolver}>
+                Volver
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          </>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">

@@ -41,6 +41,7 @@ interface Props {
   filas: BalanceMensualFilaDetalleGasto[];
   notaInformativa?: string | null;
   onAbrirHistorico: (payload: { gastoFinalId: string; etiqueta: string }) => void;
+  onVolver?: () => void;
 }
 
 export default function BalanceMensualDetalleGastosRubroModal({
@@ -55,6 +56,7 @@ export default function BalanceMensualDetalleGastosRubroModal({
   filas,
   notaInformativa,
   onAbrirHistorico,
+  onVolver,
 }: Props) {
   const total = filas.reduce((a, r) => a + r.monto, 0);
   const etiquetaPctTipo = "% SOBRE TIPO";
@@ -68,9 +70,16 @@ export default function BalanceMensualDetalleGastosRubroModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(36rem,70vh)]"
         scrollBody={false}
         actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
+          <>
+            {onVolver ? (
+              <Button type="button" variant="outline" onClick={onVolver}>
+                Volver
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          </>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">

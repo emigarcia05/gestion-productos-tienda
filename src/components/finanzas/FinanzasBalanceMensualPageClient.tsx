@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart2 } from "lucide-react";
 import FilterBar, {
@@ -428,7 +428,10 @@ export default function FinanzasBalanceMensualPageClient({
     useState<DetalleLineasGastoModalCtx | null>(null);
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
-  const [historicoDescripcion, setHistoricoDescripcion] = useState("");
+  /** Origen del historial para ofrecer «Volver» al modal de líneas cuando aplica. */
+  const [historicoAbiertoDesde, setHistoricoAbiertoDesde] = useState<"grilla" | "lineas" | null>(
+    null,
+  );
   const [historicoDetalleCostosOrigen, setHistoricoDetalleCostosOrigen] =
     useState<HistoricoDetalleCostosOrigen | null>(null);
   const [filasParaModalesDetalle, setFilasParaModalesDetalle] =
@@ -528,6 +531,15 @@ export default function FinanzasBalanceMensualPageClient({
   }
 
   const mesAnioEtiquetaModalesDetalle = detalleModalesMesAnio ?? { mes, anio };
+
+  const handleHistoricoOpenChange = useCallback((nextOpen: boolean) => {
+    setHistoricoOpen(nextOpen);
+    if (!nextOpen) {
+      setHistoricoGastoFinalId(null);
+      setHistoricoDetalleCostosOrigen(null);
+      setHistoricoAbiertoDesde(null);
+    }
+  }, []);
 
   async function handleSeleccionarMesEnGraficoHistorico(mesBar: number, anioBar: number) {
     if (!historicoDetalleCostosOrigen) return;
@@ -655,7 +667,7 @@ export default function FinanzasBalanceMensualPageClient({
                 etiquetaColumna: payload.etiquetaColumna,
               });
               setHistoricoGastoFinalId(payload.gastoFinalId);
-              setHistoricoDescripcion(payload.etiqueta);
+              setHistoricoAbiertoDesde("grilla");
               setHistoricoOpen(true);
             }}
           />
@@ -702,6 +714,12 @@ export default function FinanzasBalanceMensualPageClient({
           });
           setDetalleGastosPorRubroOpen(true);
         }}
+        onVolver={() => {
+          setDetalleRubrosOpen(false);
+          setDetalleRubrosCtx(null);
+          setFilasParaModalesDetalle(null);
+          setDetalleModalesMesAnio(null);
+        }}
       />
       <BalanceMensualDetalleGastosPorRubroModal
         open={detalleGastosPorRubroOpen}
@@ -735,6 +753,10 @@ export default function FinanzasBalanceMensualPageClient({
             totalGastoAgregado: g.monto,
           });
           setDetalleLineasGastoOpen(true);
+        }}
+        onVolver={() => {
+          setDetalleGastosPorRubroOpen(false);
+          setDetalleGastosPorRubroCtx(null);
         }}
       />
       <BalanceMensualDetalleGastosRubroModal
@@ -776,28 +798,27 @@ export default function FinanzasBalanceMensualPageClient({
             ? "Los importes son el total del mes imputado a cada centro de costo (sin balance). En la tabla del balance, ese total se reparte en partes iguales entre las sucursales que generan balance."
             : null
         }
-        onAbrirHistorico={({ gastoFinalId, etiqueta }) => {
+        onAbrirHistorico={({ gastoFinalId }) => {
           setHistoricoDetalleCostosOrigen(null);
           setHistoricoGastoFinalId(gastoFinalId);
-          setHistoricoDescripcion(etiqueta);
+          setHistoricoAbiertoDesde("lineas");
           setHistoricoOpen(true);
+        }}
+        onVolver={() => {
+          setDetalleLineasGastoOpen(false);
+          setDetalleLineasGastoCtx(null);
         }}
       />
       <BalanceMensualGastoHistoricoModal
         key={historicoGastoFinalId ?? "sin-gasto"}
         open={historicoOpen}
-        onOpenChange={(open) => {
-          setHistoricoOpen(open);
-          if (!open) {
-            setHistoricoGastoFinalId(null);
-            setHistoricoDescripcion("");
-            setHistoricoDetalleCostosOrigen(null);
-          }
-        }}
+        onOpenChange={handleHistoricoOpenChange}
         gastoFinalId={historicoGastoFinalId}
-        descripcion={historicoDescripcion}
         onSeleccionarMesEnGrafico={
           historicoDetalleCostosOrigen ? handleSeleccionarMesEnGraficoHistorico : undefined
+        }
+        onVolver={
+          historicoAbiertoDesde === "lineas" ? () => handleHistoricoOpenChange(false) : undefined
         }
       />
     </div>

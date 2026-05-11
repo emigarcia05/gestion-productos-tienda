@@ -73,6 +73,7 @@ interface Props {
   totalCfCelda: number;
   secciones: BalanceMensualSeccionTipoRubros[];
   onElegirRubro: (payload: ElegirRubroBalancePayload) => void;
+  onVolver?: () => void;
 }
 
 export default function BalanceMensualDetallePorRubroModal({
@@ -85,6 +86,7 @@ export default function BalanceMensualDetallePorRubroModal({
   totalCfCelda,
   secciones,
   onElegirRubro,
+  onVolver,
 }: Props) {
   const total = secciones.reduce((a, s) => a + s.rubros.reduce((b, r) => b + r.monto, 0), 0);
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
@@ -107,9 +109,16 @@ export default function BalanceMensualDetallePorRubroModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(32rem,62vh)]"
         scrollBody={false}
         actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
+          <>
+            {onVolver ? (
+              <Button type="button" variant="outline" onClick={onVolver}>
+                Volver
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          </>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">

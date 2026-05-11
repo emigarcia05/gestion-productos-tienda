@@ -15,10 +15,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   gastoFinalId: string | null;
-  /** Subtítulo / contexto (ej. gasto · proveedor · sucursal). */
-  descripcion: string;
   /** Con acceso desde costo variable/fijo en grilla: clic en barra abre desglose por rubro de ese mes. */
   onSeleccionarMesEnGrafico?: (mes: number, anio: number) => void | Promise<void>;
+  /** Navegación hacia el modal anterior (ej. detalle de líneas). */
+  onVolver?: () => void;
 }
 
 function fmtMonto(n: number) {
@@ -120,8 +120,8 @@ export default function BalanceMensualGastoHistoricoModal({
   open,
   onOpenChange,
   gastoFinalId,
-  descripcion,
   onSeleccionarMesEnGrafico,
+  onVolver,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [serie, setSerie] = useState<HistoricoMontoGastoFinalBalanceItem[]>([]);
@@ -182,18 +182,19 @@ export default function BalanceMensualGastoHistoricoModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(28rem,72vh)]"
         scrollBody={false}
         actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
+          <>
+            {onVolver ? (
+              <Button type="button" variant="outline" onClick={onVolver}>
+                Volver
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          </>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
-          <p className="shrink-0 text-xs text-muted-foreground">{descripcion}</p>
-          {onSeleccionarMesEnGrafico ? (
-            <p className="shrink-0 text-[11px] text-muted-foreground">
-              Elegí un mes en el gráfico para abrir el detalle de costos por rubro de ese periodo.
-            </p>
-          ) : null}
           {error ? (
             <p className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}

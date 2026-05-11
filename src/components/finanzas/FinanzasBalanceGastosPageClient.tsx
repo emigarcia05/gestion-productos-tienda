@@ -164,7 +164,6 @@ export default function FinanzasBalanceGastosPageClient({
   const [gastoUnicoOpen, setGastoUnicoOpen] = useState(false);
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
-  const [historicoDescripcion, setHistoricoDescripcion] = useState("");
   const [ivaCargaMesModalOpen, setIvaCargaMesModalOpen] = useState(false);
   const [pendientesIvaCargaMes, setPendientesIvaCargaMes] = useState<PendienteDiscriminaIvaCargaMesItem[]>([]);
 
@@ -599,9 +598,6 @@ export default function FinanzasBalanceGastosPageClient({
           }
           onVerHistorico={(f) => {
             setHistoricoGastoFinalId(f.gastoFinalId);
-            setHistoricoDescripcion(
-              `${f.gastoNombre} — ${f.proveedorNombre} · ${f.sucursalNombre}`,
-            );
             setHistoricoOpen(true);
           }}
         />
@@ -647,11 +643,9 @@ export default function FinanzasBalanceGastosPageClient({
           setHistoricoOpen(open);
           if (!open) {
             setHistoricoGastoFinalId(null);
-            setHistoricoDescripcion("");
           }
         }}
         gastoFinalId={historicoGastoFinalId}
-        descripcion={historicoDescripcion}
       />
     </div>
   );
