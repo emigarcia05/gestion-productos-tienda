@@ -238,15 +238,16 @@ export async function syncListaPrecioTiendaFromDux(
         .filter((v) => v.length > 0)
     );
     const existentes = await prisma.listaPrecioTienda.findMany({
-      select: { id: true, codTienda: true },
+      select: { codTienda: true },
     });
-    const idsParaEliminar = existentes
+    const codTiendasParaEliminar = existentes
       .filter((r) => !codTiendasRecibidos.has((r.codTienda ?? "").trim()))
-      .map((r) => r.id);
-    for (let i = 0; i < idsParaEliminar.length; i += CHUNK_DELETE_SIZE) {
-      const chunkIds = idsParaEliminar.slice(i, i + CHUNK_DELETE_SIZE);
+      .map((r) => r.codTienda.trim())
+      .filter((v) => v.length > 0);
+    for (let i = 0; i < codTiendasParaEliminar.length; i += CHUNK_DELETE_SIZE) {
+      const chunk = codTiendasParaEliminar.slice(i, i + CHUNK_DELETE_SIZE);
       await prisma.listaPrecioTienda.deleteMany({
-        where: { id: { in: chunkIds } },
+        where: { codTienda: { in: chunk } },
       });
     }
   } catch (e) {
@@ -255,7 +256,7 @@ export async function syncListaPrecioTiendaFromDux(
     console.error("Error en limpieza de cod_tienda ausentes:", msg);
   }
 
-  // Vinculación automática por cod_ext: prod_precios_provee.id_lista_precios_tienda = prod_precios_tienda.id donde cod_ext coincide
+  // Vinculación automática por cod_ext: `prod_precios_provee.cod_tienda` = `prod_precios_tienda.cod_tienda` donde `cod_ext` coincide
   await assertListaPrecioTiendaSyncNotCancelled();
   try {
     await vincularProveedoresPorCodExt();

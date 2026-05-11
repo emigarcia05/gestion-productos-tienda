@@ -12,7 +12,10 @@ import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 import { IvaProveedor } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
-import { pxComparablePedidoUrgenteReposicion } from "@/lib/precioComparacionPedidoUrgenteReposicion";
+import {
+  pxComparablePedidoUrgenteReposicion,
+  pxFinalCompraConIvaProveedor,
+} from "@/lib/precioComparacionPedidoUrgenteReposicion";
 import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
@@ -66,14 +69,58 @@ function ivaProveedorDesdeLista(
   return proveedor?.iva ?? IvaProveedor.NUNCA;
 }
 
-/** Elige otro proveedor en la misma tienda con menor precio comparable (IVA SALDO acumulado + política `iva`). */
-function sugerenciaProveedorMenorCostoComparable(
-  sumaIvaSaldoAcumulado: number,
-  idListaActual: string,
+/** Pedido Urgente / «cualquier» en esa pantalla: mismo vínculo a tienda → comparar por precio final con IVA. */
+function sugerenciaProveedorMenorCostoPorPrecioFinalConIvaMismaTienda(
+  codExtListaActual: string,
   actual: CamposCostoListaProveedor & { iva: IvaProveedor },
   alternativas: Array<
     CamposCostoListaProveedor & {
-      id: string;
+      codExt: string;
+      iva: IvaProveedor;
+      nombreProveedor: string;
+    }
+  >
+): { listaPrecioProveedorId: string; proveedorNombre: string; costo: number } | null {
+  const costoSinIvaActual = costoCompraFinalProveedorLista(actual);
+  const comparableActual = pxFinalCompraConIvaProveedor(costoSinIvaActual, actual.iva);
+  const mejor = alternativas
+    .filter((alt) => alt.codExt !== codExtListaActual)
+    .map((alt) => {
+      const costoSinIva = costoCompraFinalProveedorLista(alt);
+      return {
+        codExt: alt.codExt,
+        nombreProveedor: alt.nombreProveedor,
+        costoSinIva,
+        comparable: pxFinalCompraConIvaProveedor(costoSinIva, alt.iva),
+      };
+    })
+    .filter(
+      (x) =>
+        x.nombreProveedor.length > 0 &&
+        Number.isFinite(x.costoSinIva) &&
+        x.costoSinIva > 0 &&
+        Number.isFinite(x.comparable) &&
+        Number.isFinite(comparableActual) &&
+        x.comparable < comparableActual
+    )
+    .sort((x, y) => x.comparable - y.comparable)[0];
+
+  if (!mejor) return null;
+  return {
+    listaPrecioProveedorId: mejor.codExt,
+    proveedorNombre: mejor.nombreProveedor,
+    costo: mejor.costoSinIva,
+  };
+}
+
+/** Elige otro proveedor en la misma tienda con menor precio comparable (IVA SALDO acumulado + política `iva`). */
+function sugerenciaProveedorMenorCostoComparable(
+  sumaIvaSaldoAcumulado: number,
+  codExtListaActual: string,
+  actual: CamposCostoListaProveedor & { iva: IvaProveedor },
+  alternativas: Array<
+    CamposCostoListaProveedor & {
+      codExt: string;
       iva: IvaProveedor;
       nombreProveedor: string;
     }
@@ -86,11 +133,11 @@ function sugerenciaProveedorMenorCostoComparable(
     sumaIvaSaldoAcumulado
   );
   const mejor = alternativas
-    .filter((alt) => alt.id !== idListaActual)
+    .filter((alt) => alt.codExt !== codExtListaActual)
     .map((alt) => {
       const costoSinIva = costoCompraFinalProveedorLista(alt);
       return {
-        id: alt.id,
+        codExt: alt.codExt,
         nombreProveedor: alt.nombreProveedor,
         costoSinIva,
         comparable: pxComparablePedidoUrgenteReposicion(
@@ -113,7 +160,7 @@ function sugerenciaProveedorMenorCostoComparable(
 
   if (!mejor) return null;
   return {
-    listaPrecioProveedorId: mejor.id,
+    listaPrecioProveedorId: mejor.codExt,
     proveedorNombre: mejor.nombreProveedor,
     costo: mejor.costoSinIva,
   };
@@ -169,7 +216,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
   );
 
   return filas.map((f) => ({
-    id: f.id,
+    id: f.codExt,
     codExt: f.codExt,
     descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
     descripcionProveedor: f.descripcionProveedor,
@@ -275,7 +322,7 @@ export async function getListaPreciosConTiendaFiltrada(
   );
 
   let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => ({
-    id: f.id,
+    id: f.codExt,
     codExt: f.codExt,
     descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
     descripcionProveedor: f.descripcionProveedor,
@@ -406,7 +453,7 @@ export async function listarProductosProveedoresParaVincular(
   });
 
   return rows.map((r) => ({
-    id: r.id,
+    id: r.codExt,
     idProveedor: r.idProveedor,
     codExt: r.codExt,
     codProdProv: r.codProdProveedor,
@@ -603,7 +650,7 @@ export async function actualizarListaPreciosMasivo(
   params.push(ids);
 
   try {
-    const sql = `UPDATE prod_precios_provee SET ${setClauses.join(", ")} WHERE id = ANY($${params.length}::uuid[])`;
+    const sql = `UPDATE prod_precios_provee SET ${setClauses.join(", ")} WHERE cod_ext = ANY($${params.length}::text[])`;
     const actualizados = await prisma.$executeRawUnsafe(sql, ...params);
     return { actualizados: Number(actualizados) };
   } catch (e) {
@@ -724,10 +771,12 @@ async function mercaderiaMapsDesdeMerc2(
 }
 
 /**
- * Filas URGENTE desde `prod_ped_merc` (`urgente_cod_ext`, `urgente_cant_pedir`).
- * Proveedor y precios vía `prod_precios_provee` por `cod_ext`; descripción: tienda o proveedor.
+ * Pantalla Pedido Urgente (filtros `urgente` o `cualquier`): todas las filas de **`prod_precios_provee`** con **`habilitado = true`**.
+ * Cantidades / flags de urgente y reposición se leen de **`prod_ped_merc`** según sucursal.
+ * Comparación entre proveedores que comparten el mismo **`cod_tienda`** (`codTiendaVinculo`; mismo vínculo a `prod_precios_tienda`):
+ * **precio final con IVA** según **`Proveedor.iva`** (`SIEMPRE` ×1,21; `NUNCA`/`PREGUNTA` ×1).
  */
-async function getListaPedidoUrgenteDesdeMerc2(
+async function getListaPedidoUrgenteDesdeListaPrecios(
   sucursalTrim: string,
   prov: string | undefined,
   busqueda: string,
@@ -746,127 +795,53 @@ async function getListaPedidoUrgenteDesdeMerc2(
     return { items: [], total: 0, totalPaginas: 1 };
   }
 
-  const mercParts: Prisma.ProdPedMerc2WhereInput[] = [
-    { tipoDePedido: TIPO_URGENTE_MERC2 },
-    { sucursalId: sucursalRow.id },
-    { urgenteCantPedir: { gt: 0 } },
-    { urgenteCodExt: { not: null } },
-  ];
+  const listaWhereParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
   if (prov) {
-    const codsDeProv = await prisma.listaPrecioProveedor.findMany({
-      where: { idProveedor: prov, habilitado: true },
-      select: { codExt: true },
-      distinct: ["codExt"],
-      take: 8000,
-    });
-    const codList = [
-      ...new Set(codsDeProv.map((r) => (r.codExt ?? "").trim()).filter((c) => c.length > 0)),
-    ];
-    if (codList.length === 0) {
-      return { items: [], total: 0, totalPaginas: 1 };
-    }
-    mercParts.push({ urgenteCodExt: { in: codList } });
+    listaWhereParts.push({ idProveedor: prov });
   }
-
   if (busqueda.length >= 3) {
     const tokens = busqueda.trim().split(/\s+/).filter(Boolean);
     if (tokens.length > 0) {
-      const lpMatch = await prisma.listaPrecioProveedor.findMany({
-        where: {
-          habilitado: true,
-          ...(prov ? { idProveedor: prov } : {}),
-          AND: tokens.map((token) => ({
-            OR: [
-              { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
-              { codExt: { contains: token, mode: "insensitive" as const } },
-              {
-                listaPrecioTienda: {
-                  descripcionTienda: { contains: token, mode: "insensitive" as const },
-                },
+      listaWhereParts.push({
+        AND: tokens.map((token) => ({
+          OR: [
+            { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
+            { codExt: { contains: token, mode: "insensitive" as const } },
+            {
+              listaPrecioTienda: {
+                descripcionTienda: { contains: token, mode: "insensitive" as const },
               },
-            ],
-          })),
-        },
-        select: { idProveedor: true, codExt: true },
+            },
+          ],
+        })),
       });
-      if (lpMatch.length === 0) {
-        return { items: [], total: 0, totalPaginas: 1 };
-      }
-      const codExtBusq = [
-        ...new Set(lpMatch.map((p) => (p.codExt ?? "").trim()).filter((c) => c.length > 0)),
-      ];
-      mercParts.push({ urgenteCodExt: { in: codExtBusq } });
     }
   }
-
-  const mercWhere: Prisma.ProdPedMerc2WhereInput =
-    mercParts.length === 1 ? mercParts[0]! : { AND: mercParts };
+  const listaWhere: Prisma.ListaPrecioProveedorWhereInput =
+    listaWhereParts.length === 1 ? listaWhereParts[0]! : { AND: listaWhereParts };
 
   const skip = (Math.max(1, paginaNum) - 1) * pageSize;
 
-  const [mercRows, total] = await Promise.all([
-    prisma.prodPedMerc2.findMany({
-      where: mercWhere,
-      orderBy: { urgenteCodExt: "asc" },
+  const [filas, total] = await Promise.all([
+    prisma.listaPrecioProveedor.findMany({
+      where: listaWhere,
+      include: {
+        proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
+        listaPrecioTienda: { select: { codTienda: true } },
+      },
+      orderBy: { codExt: "asc" },
       skip,
       take: pageSize,
-      select: {
-        urgenteCodExt: true,
-        urgenteCantPedir: true,
-      },
     }),
-    prisma.prodPedMerc2.count({ where: mercWhere }),
+    prisma.listaPrecioProveedor.count({ where: listaWhere }),
   ]);
 
-  const codExts = [
-    ...new Set(
-      mercRows
-        .map((m) => (m.urgenteCodExt ?? "").trim())
-        .filter((c) => c.length > 0)
-    ),
-  ];
-  const lpWhere: Prisma.ListaPrecioProveedorWhereInput = {
-    habilitado: true,
-    ...(codExts.length > 0 ? { codExt: { in: codExts } } : { id: { in: [] } }),
-    ...(prov ? { idProveedor: prov } : {}),
-  };
-
-  const lpRows =
-    codExts.length > 0
-      ? await prisma.listaPrecioProveedor.findMany({
-          where: lpWhere,
-          include: {
-            proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
-            listaPrecioTienda: { select: { codTienda: true } },
-          },
-        })
-      : [];
-
-  function resolveLp(m: (typeof mercRows)[number]): (typeof lpRows)[number] | null {
-    const ce = (m.urgenteCodExt ?? "").trim();
-    if (!ce) return null;
-    const cand = lpRows.filter((l) => l.codExt === ce && (!prov || l.idProveedor === prov));
-    return cand[0] ?? null;
-  }
-
-  const filasResueltas: { f: (typeof lpRows)[number]; cantUrgente: number }[] = [];
-  for (const m of mercRows) {
-    const lp = resolveLp(m);
-    if (!lp) continue;
-    filasResueltas.push({
-      f: lp,
-      cantUrgente: Math.max(0, Math.floor(Number(m.urgenteCantPedir ?? 0))),
-    });
-  }
-
   const totalPaginasLista = total <= 0 ? 1 : Math.ceil(total / pageSize);
-  if (filasResueltas.length === 0) {
+  if (filas.length === 0) {
     return { items: [], total, totalPaginas: totalPaginasLista };
   }
 
-  const sumaIvaSaldoAcumulado = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
-
-  const codExtsRes = [...new Set(filasResueltas.map((x) => x.f.codExt))];
+  const codExtsRes = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
     codExtsRes.length > 0
       ? await prisma.listaPrecioTienda.findMany({
@@ -881,26 +856,17 @@ async function getListaPedidoUrgenteDesdeMerc2(
       .map((t) => [t.codExt, t.descripcionTienda as string])
   );
 
-  const tiendaIdPorListaPrecioProveedorId = new Map<string, string>();
-  for (const { f } of filasResueltas) {
-    if (f.idListaPrecioTienda) {
-      tiendaIdPorListaPrecioProveedorId.set(f.id, f.idListaPrecioTienda);
-    }
-  }
-
-  const tiendaIds = [
-    ...new Set(filasResueltas.map((x) => x.f.idListaPrecioTienda).filter((v): v is string => Boolean(v))),
-  ];
+  const tiendaIdsUniq = [...new Set(filas.map((f) => f.codTiendaVinculo).filter((v): v is string => Boolean(v)))];
   const alternativasPorTienda =
-    tiendaIds.length > 0
+    tiendaIdsUniq.length > 0
       ? await prisma.listaPrecioProveedor.findMany({
           where: {
             habilitado: true,
-            idListaPrecioTienda: { in: tiendaIds },
+            codTiendaVinculo: { in: tiendaIdsUniq },
           },
           select: {
-            id: true,
-            idListaPrecioTienda: true,
+            codExt: true,
+            codTiendaVinculo: true,
             pxCompraFinalSinIva: true,
             pxListaProveedor: true,
             dtoProveedor: true,
@@ -915,78 +881,74 @@ async function getListaPedidoUrgenteDesdeMerc2(
       : [];
   const alternativasByTienda = new Map<string, typeof alternativasPorTienda>();
   for (const alt of alternativasPorTienda) {
-    if (!alt.idListaPrecioTienda) continue;
-    const list = alternativasByTienda.get(alt.idListaPrecioTienda) ?? [];
+    if (!alt.codTiendaVinculo) continue;
+    const list = alternativasByTienda.get(alt.codTiendaVinculo) ?? [];
     list.push(alt);
-    alternativasByTienda.set(alt.idListaPrecioTienda, list);
+    alternativasByTienda.set(alt.codTiendaVinculo, list);
   }
 
-  const pairs = filasResueltas.map((x) => ({
-    idProveedor: x.f.idProveedor,
-    codExt: x.f.codExt,
-  }));
-  const maps =
+  const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
+  const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
     pairs.length > 0
       ? await mercaderiaMapsDesdeMerc2(
           sucursalTrim,
           pairs,
-          filasResueltas
-            .map((x) => x.f.listaPrecioTienda?.codTienda?.trim() ?? "")
-            .filter(Boolean)
+          filas.map((f) => f.listaPrecioTienda?.codTienda?.trim() ?? "").filter(Boolean)
         )
       : {
           mercaderiaMapUrgente: new Map<string, number>(),
           mercaderiaRepoSet: new Set<string>(),
           mercaderiaMapRepo: new Map<string, number>(),
         };
-  const { mercaderiaRepoSet, mercaderiaMapRepo } = maps;
 
-  const items: PedidoUrgenteItem[] = filasResueltas.map(({ f, cantUrgente }) => {
+  const items: PedidoUrgenteItem[] = filas.map((f) => {
+    const key = `${f.idProveedor}:${f.codExt}`;
     const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
-    const cantUrgenteUi = cantUrgente;
-    const tiendaId = tiendaIdPorListaPrecioProveedorId.get(f.id) ?? null;
-    const alternativas = tiendaId ? alternativasByTienda.get(tiendaId) ?? [] : [];
-    const sugerencia = sugerenciaProveedorMenorCostoComparable(
-      sumaIvaSaldoAcumulado,
-      f.id,
-      {
-        pxCompraFinalSinIva: f.pxCompraFinalSinIva,
-        pxListaProveedor: f.pxListaProveedor,
-        dtoRubro: f.dtoRubro,
-        dtoCantidad: f.dtoCantidad,
-        cxTransporte: f.cxTransporte,
-        dtoProveedor: f.dtoProveedor,
-        dtoMarca: f.dtoMarca,
-        dtoFinanciero: f.dtoFinanciero,
-        iva: ivaProveedorDesdeLista(f.proveedor),
-      },
-      alternativas.map((a) => ({
-        id: a.id,
-        pxCompraFinalSinIva: a.pxCompraFinalSinIva,
-        pxListaProveedor: a.pxListaProveedor,
-        dtoRubro: a.dtoRubro,
-        dtoCantidad: a.dtoCantidad,
-        cxTransporte: a.cxTransporte,
-        dtoProveedor: a.dtoProveedor,
-        dtoMarca: a.dtoMarca,
-        dtoFinanciero: a.dtoFinanciero,
-        iva: ivaProveedorDesdeLista(a.proveedor),
-        nombreProveedor:
-          a.proveedor?.nombre?.trim() || a.proveedor?.prefijo?.trim() || "",
-      }))
-    );
+    const cantUrgenteUi = mercaderiaMapUrgente.get(key) ?? 0;
+    const tiendaListaId = f.codTiendaVinculo ?? null;
+    const alternativas = tiendaListaId ? alternativasByTienda.get(tiendaListaId) ?? [] : [];
+    const sugerencia = tiendaListaId
+      ? sugerenciaProveedorMenorCostoPorPrecioFinalConIvaMismaTienda(
+          f.codExt,
+          {
+            pxCompraFinalSinIva: f.pxCompraFinalSinIva,
+            pxListaProveedor: f.pxListaProveedor,
+            dtoRubro: f.dtoRubro,
+            dtoCantidad: f.dtoCantidad,
+            cxTransporte: f.cxTransporte,
+            dtoProveedor: f.dtoProveedor,
+            dtoMarca: f.dtoMarca,
+            dtoFinanciero: f.dtoFinanciero,
+            iva: ivaProveedorDesdeLista(f.proveedor),
+          },
+          alternativas.map((a) => ({
+            codExt: a.codExt,
+            pxCompraFinalSinIva: a.pxCompraFinalSinIva,
+            pxListaProveedor: a.pxListaProveedor,
+            dtoRubro: a.dtoRubro,
+            dtoCantidad: a.dtoCantidad,
+            cxTransporte: a.cxTransporte,
+            dtoProveedor: a.dtoProveedor,
+            dtoMarca: a.dtoMarca,
+            dtoFinanciero: a.dtoFinanciero,
+            iva: ivaProveedorDesdeLista(a.proveedor),
+            nombreProveedor:
+              a.proveedor?.nombre?.trim() || a.proveedor?.prefijo?.trim() || "",
+          }))
+        )
+      : null;
 
     return {
-      id: f.id,
+      id: f.codExt,
       codExt: f.codExt,
       prefijo: f.proveedor?.prefijo ?? "",
       descripcion:
         (descTienda?.trim() && descTienda) || f.descripcionProveedor,
       pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
-      cantPedidaUrgente: cantUrgenteUi,
+      cantPedidaUrgente: Math.max(0, Math.floor(cantUrgenteUi)),
       confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
       cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
-      estaVinculadoTienda: tiendaId != null,
+      estaVinculadoTienda: tiendaListaId != null,
       sugerenciaProveedorMenorCosto: sugerencia,
     };
   });
@@ -1023,7 +985,7 @@ export async function getListaPreciosParaPedidoUrgente(
   const paginaNum = Math.max(1, pagina ?? 1);
 
   if (pedidoTipo === "urgente" || pedidoTipo === "cualquier") {
-    return getListaPedidoUrgenteDesdeMerc2(sucursalTrim, prov, busqueda, takeSize, paginaNum);
+    return getListaPedidoUrgenteDesdeListaPrecios(sucursalTrim, prov, busqueda, takeSize, paginaNum);
   }
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
@@ -1116,24 +1078,24 @@ export async function getListaPreciosParaPedidoUrgente(
       .map((t) => [t.codExt, t.descripcionTienda as string])
   );
 
-  const tiendaIdPorListaPrecioProveedorId = new Map<string, string>();
+  const tiendaCodVincPorCodExtLista = new Map<string, string>();
   for (const f of filas) {
-    if (f.idListaPrecioTienda) {
-      tiendaIdPorListaPrecioProveedorId.set(f.id, f.idListaPrecioTienda);
+    if (f.codTiendaVinculo) {
+      tiendaCodVincPorCodExtLista.set(f.codExt, f.codTiendaVinculo);
     }
   }
 
-  const tiendaIds = [...new Set(filas.map((f) => f.idListaPrecioTienda).filter((v): v is string => Boolean(v)))];
+  const tiendaIds = [...new Set(filas.map((f) => f.codTiendaVinculo).filter((v): v is string => Boolean(v)))];
   const alternativasPorTienda =
     tiendaIds.length > 0
       ? await prisma.listaPrecioProveedor.findMany({
           where: {
             habilitado: true,
-            idListaPrecioTienda: { in: tiendaIds },
+            codTiendaVinculo: { in: tiendaIds },
           },
           select: {
-            id: true,
-            idListaPrecioTienda: true,
+            codExt: true,
+            codTiendaVinculo: true,
             pxCompraFinalSinIva: true,
             pxListaProveedor: true,
             dtoProveedor: true,
@@ -1148,10 +1110,10 @@ export async function getListaPreciosParaPedidoUrgente(
       : [];
   const alternativasByTienda = new Map<string, typeof alternativasPorTienda>();
   for (const alt of alternativasPorTienda) {
-    if (!alt.idListaPrecioTienda) continue;
-    const list = alternativasByTienda.get(alt.idListaPrecioTienda) ?? [];
+    if (!alt.codTiendaVinculo) continue;
+    const list = alternativasByTienda.get(alt.codTiendaVinculo) ?? [];
     list.push(alt);
-    alternativasByTienda.set(alt.idListaPrecioTienda, list);
+    alternativasByTienda.set(alt.codTiendaVinculo, list);
   }
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
@@ -1174,11 +1136,11 @@ export async function getListaPreciosParaPedidoUrgente(
     const key = `${f.idProveedor}:${f.codExt}`;
     const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
     const cantUrgente = mercaderiaMapUrgente.get(key) ?? 0;
-    const tiendaId = tiendaIdPorListaPrecioProveedorId.get(f.id) ?? null;
+    const tiendaId = tiendaCodVincPorCodExtLista.get(f.codExt) ?? null;
     const alternativas = tiendaId ? alternativasByTienda.get(tiendaId) ?? [] : [];
     const sugerencia = sugerenciaProveedorMenorCostoComparable(
       sumaIvaSaldoAcumulado,
-      f.id,
+      f.codExt,
       {
         pxCompraFinalSinIva: f.pxCompraFinalSinIva,
         pxListaProveedor: f.pxListaProveedor,
@@ -1191,7 +1153,7 @@ export async function getListaPreciosParaPedidoUrgente(
         iva: ivaProveedorDesdeLista(f.proveedor),
       },
       alternativas.map((a) => ({
-        id: a.id,
+        codExt: a.codExt,
         pxCompraFinalSinIva: a.pxCompraFinalSinIva,
         pxListaProveedor: a.pxListaProveedor,
         dtoRubro: a.dtoRubro,
@@ -1207,7 +1169,7 @@ export async function getListaPreciosParaPedidoUrgente(
     );
 
     return {
-      id: f.id,
+      id: f.codExt,
       codExt: f.codExt,
       prefijo: f.proveedor?.prefijo ?? "",
       descripcion: (descTienda?.trim() && descTienda) || f.descripcionProveedor,

@@ -172,7 +172,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
   try {
     const sucursalId = await getSucursalIdByCodigo(sucursal);
     const item = await prisma.listaPrecioProveedor.findUnique({
-      where: { id: listaPrecioProveedorId },
+      where: { codExt: listaPrecioProveedorId },
       select: {
         idProveedor: true,
         codExt: true,
@@ -247,7 +247,7 @@ export async function syncPedidoUrgenteEnvio(
     }
 
     const filas = await tx.listaPrecioProveedor.findMany({
-      where: { id: { in: ids } },
+      where: { codExt: { in: ids } },
       include: {
         proveedor: { select: { id: true } },
         listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
@@ -256,7 +256,7 @@ export async function syncPedidoUrgenteEnvio(
 
     const toCreate = filas
       .map((f) => {
-        const cant = cantById.get(f.id) ?? 0;
+        const cant = cantById.get(f.codExt) ?? 0;
         if (cant <= 0) return null;
         return {
           codExt: f.codExt,
@@ -474,14 +474,14 @@ export type LpRowPick = {
   idProveedor: string;
   descripcionProveedor: string;
   codProdProveedor?: string | null;
-  idListaPrecioTienda: string | null;
+  codTiendaVinculo: string | null;
   listaPrecioTienda?: { codTienda: string } | null;
   proveedor: { prefijo: string | null; nombre: string | null };
 };
 
 export function pickListaPrecioProveedorPorCodExtYTienda(
   lista: LpRowPick[],
-  tienda: { proveedor: string | null; id: string }
+  tienda: { proveedor: string | null; codTienda: string }
 ): LpRowPick | null {
   if (lista.length === 0) return null;
   const proveedorTiendaNorm = (tienda.proveedor ?? "").trim().toUpperCase();
@@ -493,7 +493,7 @@ export function pickListaPrecioProveedorPorCodExtYTienda(
       (pref === proveedorTiendaNorm || nom === proveedorTiendaNorm)
     );
   });
-  const vinculado = lista.find((r) => r.idListaPrecioTienda === tienda.id);
+  const vinculado = lista.find((r) => r.codTiendaVinculo === tienda.codTienda);
   return porNombre ?? vinculado ?? lista[0] ?? null;
 }
 
@@ -593,7 +593,6 @@ export async function getItemsTablaEnviarPedido(params: {
       ? await prisma.listaPrecioTienda.findMany({
           where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
-            id: true,
             codTienda: true,
             codExt: true,
             proveedor: true,
@@ -623,7 +622,7 @@ export async function getItemsTablaEnviarPedido(params: {
             idProveedor: true,
             codProdProveedor: true,
             descripcionProveedor: true,
-            idListaPrecioTienda: true,
+            codTiendaVinculo: true,
             listaPrecioTienda: { select: { codTienda: true } },
             proveedor: { select: { prefijo: true, nombre: true } },
           },
@@ -856,7 +855,6 @@ export async function getItemsYProveedorParaEnviar(
       ? await prisma.listaPrecioTienda.findMany({
           where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
-            id: true,
             codTienda: true,
             codExt: true,
             proveedor: true,
@@ -886,7 +884,7 @@ export async function getItemsYProveedorParaEnviar(
             idProveedor: true,
             codProdProveedor: true,
             descripcionProveedor: true,
-            idListaPrecioTienda: true,
+            codTiendaVinculo: true,
             listaPrecioTienda: { select: { codTienda: true } },
             proveedor: { select: { prefijo: true, nombre: true } },
           },

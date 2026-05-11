@@ -9,7 +9,7 @@ import type { ProductoCompleto } from "@/types";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { getProveedoresMercaderia as getProveedoresFromProveedores } from "@/actions/proveedores";
-import { uuidSchema } from "@/lib/validations/common";
+import { listaPreciosCodExtSchema, listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { z } from "zod";
 
 const listarParaVincularFiltrosSchema = z.object({
@@ -17,13 +17,13 @@ const listarParaVincularFiltrosSchema = z.object({
   q: z.string().max(500).optional(),
 });
 
-export async function getVinculos(itemTiendaId: string): Promise<ServiceResult<ProductoCompleto[]>> {
+export async function getVinculos(itemTiendaCod: string): Promise<ServiceResult<ProductoCompleto[]>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
     return { success: false, error: "Sin acceso a tienda." };
   }
-  const parsedId = uuidSchema.safeParse(itemTiendaId);
-  if (!parsedId.success) return { success: false, error: "ID de ítem inválido." };
+  const parsedId = listaPreciosCodTiendaSchema.safeParse(itemTiendaCod);
+  if (!parsedId.success) return { success: false, error: "Cód. tienda inválido." };
   return getProductosVinculadosPorItemTienda(parsedId.data);
 }
 
@@ -58,39 +58,43 @@ export async function listarProductosParaVincular(
 }
 
 export async function vincularProducto(
-  itemTiendaId: string,
-  productoProveedorId: string
+  itemTiendaCod: string,
+  productoListaCodExt: string
 ): Promise<ActionResult> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
     return { ok: false, error: "Sin acceso a tienda." };
   }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  const parsedItem = uuidSchema.safeParse(itemTiendaId);
-  const parsedProducto = uuidSchema.safeParse(productoProveedorId);
+  const parsedItem = listaPreciosCodTiendaSchema.safeParse(itemTiendaCod);
+  const parsedProducto = listaPreciosCodExtSchema.safeParse(productoListaCodExt);
   if (!parsedItem.success || !parsedProducto.success) {
-    return { ok: false, error: "IDs inválidos." };
+    return { ok: false, error: "Datos de vínculo inválidos." };
   }
   try {
     const { prisma } = await import("@/lib/prisma");
     const producto = await prisma.listaPrecioProveedor.findUnique({
-      where: { id: parsedProducto.data },
+      where: { codExt: parsedProducto.data },
       select: { idProveedor: true },
     });
     if (!producto) return { ok: false, error: "Producto no encontrado." };
     const yaVinculadoMismoProveedor = await prisma.listaPrecioProveedor.findFirst({
       where: {
-        idListaPrecioTienda: parsedItem.data,
+        codTiendaVinculo: parsedItem.data,
         idProveedor: producto.idProveedor,
-        id: { not: parsedProducto.data },
+        codExt: { not: parsedProducto.data },
       },
     });
     if (yaVinculadoMismoProveedor) {
-      return { ok: false, error: "Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor." };
+      return {
+        ok: false,
+        error:
+          "Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor.",
+      };
     }
     await prisma.listaPrecioProveedor.update({
-      where: { id: parsedProducto.data },
-      data: { idListaPrecioTienda: parsedItem.data },
+      where: { codExt: parsedProducto.data },
+      data: { codTiendaVinculo: parsedItem.data },
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
@@ -101,37 +105,37 @@ export async function vincularProducto(
 }
 
 export async function desvincularProducto(
-  itemTiendaId: string,
-  productoProveedorId: string
+  itemTiendaCod: string,
+  productoListaCodExt: string
 ): Promise<ActionResult> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
     return { ok: false, error: "Sin acceso a tienda." };
   }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  const parsedItem = uuidSchema.safeParse(itemTiendaId);
-  const parsed = uuidSchema.safeParse(productoProveedorId);
-  if (!parsedItem.success || !parsed.success) return { ok: false, error: "ID de producto inválido." };
+  const parsedItem = listaPreciosCodTiendaSchema.safeParse(itemTiendaCod);
+  const parsed = listaPreciosCodExtSchema.safeParse(productoListaCodExt);
+  if (!parsedItem.success || !parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
     const { prisma } = await import("@/lib/prisma");
     const itemTienda = await prisma.listaPrecioTienda.findUnique({
-      where: { id: parsedItem.data },
-      select: { id: true, proveedor: true },
+      where: { codTienda: parsedItem.data },
+      select: { codTienda: true, proveedor: true },
     });
     if (!itemTienda) return { ok: false, error: "Ítem tienda no encontrado." };
     const producto = await prisma.listaPrecioProveedor.findUnique({
-      where: { id: parsed.data },
+      where: { codExt: parsed.data },
       select: {
-        id: true,
-        idListaPrecioTienda: true,
+        codExt: true,
+        codTiendaVinculo: true,
         proveedor: { select: { nombre: true, prefijo: true } },
       },
     });
-    if (!producto || producto.idListaPrecioTienda !== itemTienda.id) {
+    if (!producto || producto.codTiendaVinculo !== itemTienda.codTienda) {
       return { ok: false, error: "Producto no encontrado o no vinculado a este ítem." };
     }
     const totalVinculados = await prisma.listaPrecioProveedor.count({
-      where: { idListaPrecioTienda: itemTienda.id },
+      where: { codTiendaVinculo: itemTienda.codTienda },
     });
     const oficialTxt = (itemTienda.proveedor ?? "").trim().toLowerCase();
     const esOficial =
@@ -146,8 +150,8 @@ export async function desvincularProducto(
       };
     }
     await prisma.listaPrecioProveedor.update({
-      where: { id: parsed.data },
-      data: { idListaPrecioTienda: null },
+      where: { codExt: parsed.data },
+      data: { codTiendaVinculo: null },
     });
     revalidatePath("/tienda");
     return { ok: true, data: undefined };

@@ -23,6 +23,23 @@ export const globalSucursalIdSchema = z.union([
   z.literal("suc_corporativo"),
 ]);
 
+/** Clave natural `prod_precios_provee.cod_ext`. */
+export const listaPreciosCodExtSchema = z
+  .string()
+  .min(1, "Cód. externo inválido.")
+  .max(200, "Cód. externo demasiado largo.");
+
+/** Lista no vacía de `cod_ext` (p. ej. edición masiva lista proveedor). */
+export const listaPreciosCodExtListSchema = z
+  .array(listaPreciosCodExtSchema)
+  .min(1, "Al menos un código es requerido.");
+
+/** Clave natural `prod_precios_tienda.cod_tienda`. */
+export const listaPreciosCodTiendaSchema = z
+  .string()
+  .min(1, "Cód. tienda inválido.")
+  .max(200, "Cód. tienda demasiado largo.");
+
 /** Lista de UUIDs (mínimo uno). */
 export const uuidsSchema = z.array(uuidSchema).min(1, "Al menos un ID es requerido.");
 

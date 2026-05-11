@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-/** UUIDs para listas de IDs en edición masiva. */
-export const idsUuidSchema = z.array(z.string().uuid()).min(1, "Al menos un ID es requerido.");
+/** Lista no vacía de `cod_ext` para edición masiva en `prod_precios_provee`. */
+export { listaPreciosCodExtListSchema } from "@/lib/validations/common";
 
 /** Campos permitidos en actualización masiva de lista de precios. */
 export const actualizacionMasivaListaPreciosSchema = z.object({

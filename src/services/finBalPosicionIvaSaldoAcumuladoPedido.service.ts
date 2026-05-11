@@ -16,30 +16,35 @@ const ACUM_PEDIDO_COMPARE_IVA_MES = 4;
  * calendario actual en Argentina (inclusive). Meses futuros no entran.
  */
 export async function sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(): Promise<number> {
-  const { mes: mesActual, anio: anioActual } = mesAnioCalendarioArgentina();
-  let total = 0;
+  try {
+    const { mes: mesActual, anio: anioActual } = mesAnioCalendarioArgentina();
+    let total = 0;
 
-  for (let anio = ACUM_PEDIDO_COMPARE_IVA_ANIO; anio <= anioActual; anio++) {
-    const mesInicio = anio === ACUM_PEDIDO_COMPARE_IVA_ANIO ? ACUM_PEDIDO_COMPARE_IVA_MES : 1;
-    const mesFin = anio === anioActual ? mesActual : 12;
-    if (mesInicio > mesFin) continue;
+    for (let anio = ACUM_PEDIDO_COMPARE_IVA_ANIO; anio <= anioActual; anio++) {
+      const mesInicio = anio === ACUM_PEDIDO_COMPARE_IVA_ANIO ? ACUM_PEDIDO_COMPARE_IVA_MES : 1;
+      const mesFin = anio === anioActual ? mesActual : 12;
+      if (mesInicio > mesFin) continue;
 
-    const [brutosPorMes, creditoPorMes, manualPorMes] = await Promise.all([
-      listarMontosBrutosFinBalIvaDebPorAnio(anio),
-      sumarIvaCreditoPorMesAnio(anio),
-      listarSaldoManualPosicionIvaPorAnio(anio),
-    ]);
+      const [brutosPorMes, creditoPorMes, manualPorMes] = await Promise.all([
+        listarMontosBrutosFinBalIvaDebPorAnio(anio),
+        sumarIvaCreditoPorMesAnio(anio),
+        listarSaldoManualPosicionIvaPorAnio(anio),
+      ]);
 
-    for (let mes = mesInicio; mes <= mesFin; mes++) {
-      const ix = mes - 1;
-      const manual = manualPorMes[ix];
-      const debito = ivaCreditoDesdeTotalConIva21(brutosPorMes[ix] ?? 0);
-      const credito = creditoPorMes[ix] ?? 0;
-      const calculado = debito - credito;
-      const saldoMes = manual !== null ? manual : calculado;
-      total += saldoMes;
+      for (let mes = mesInicio; mes <= mesFin; mes++) {
+        const ix = mes - 1;
+        const manual = manualPorMes[ix];
+        const debito = ivaCreditoDesdeTotalConIva21(brutosPorMes[ix] ?? 0);
+        const credito = creditoPorMes[ix] ?? 0;
+        const calculado = debito - credito;
+        const saldoMes = manual !== null ? manual : calculado;
+        total += saldoMes;
+      }
     }
-  }
 
-  return total;
+    return total;
+  } catch (e) {
+    console.error("sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido", e);
+    return 0;
+  }
 }

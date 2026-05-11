@@ -9,6 +9,7 @@ export interface ProveedorResumen {
 }
 
 export interface ProductoCompleto {
+  /** `prod_precios_provee.cod_ext` (PK lista proveedor). */
   id: string;
   codProdProv: string;
   codigoExterno: string;

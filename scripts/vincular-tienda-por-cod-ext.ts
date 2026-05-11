@@ -1,7 +1,7 @@
 /**
  * Acción única: vincula lista_precios_proveedores con lista_precios_tienda por cod_ext.
  * Para cada ítem de tienda, actualiza todos los ítems de proveedores con el mismo cod_ext
- * asignando id_lista_precios_tienda = id del ítem de tienda.
+ * asignando **`prod_precios_provee.cod_tienda`** (`codTiendaVinculo`) desde el **`cod_tienda`** del ítem de tienda con el mismo `cod_ext`.
  *
  * Ejecutar una sola vez: npm run db:vincular-tienda-por-cod-ext
  * Requiere DATABASE_URL en .env.
@@ -37,16 +37,16 @@ async function main() {
   const { prisma } = await import("../src/lib/prisma");
 
   const tiendaRows = await prisma.listaPrecioTienda.findMany({
-    select: { id: true, codExt: true },
+    select: { codTienda: true, codExt: true },
   });
 
-  console.log(`→ ${tiendaRows.length} ítem(s) en lista_precios_tienda. Vinculando por cod_ext...`);
+  console.log(`→ ${tiendaRows.length} ítem(s) en prod_precios_tienda. Vinculando por cod_ext...`);
 
   let totalUpdated = 0;
   for (const t of tiendaRows) {
     const result = await prisma.listaPrecioProveedor.updateMany({
       where: { codExt: t.codExt },
-      data: { idListaPrecioTienda: t.id },
+      data: { codTiendaVinculo: t.codTienda },
     });
     totalUpdated += result.count;
     if (result.count > 0) {
@@ -54,7 +54,7 @@ async function main() {
     }
   }
 
-  console.log(`✓ Listo. Total de filas en lista_precios_proveedores actualizadas: ${totalUpdated}`);
+  console.log(`✓ Listo. Total de filas en prod_precios_provee actualizadas: ${totalUpdated}`);
 }
 
 main()

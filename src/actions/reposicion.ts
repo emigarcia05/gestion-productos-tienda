@@ -25,6 +25,7 @@ export type SucursalReposicion = "guaymallen" | "maipu";
 export type FormaPedirReposicionOption = "CANT_MAXIMA" | "CANT_FIJA" | "";
 
 export interface ItemReposicion {
+  /** Clave estable de fila tienda (= `prod_precios_tienda.cod_tienda`). El nombre conserva compatibilidad con la UI */
   idListaTienda: string;
   codExt: string;
   codTienda: string;
@@ -285,7 +286,7 @@ export async function getReposicionData(
       stockeable: r.stockeable,
     });
     return {
-      idListaTienda: r.id,
+      idListaTienda: r.codTienda,
       codExt: r.codExt,
       codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,
@@ -315,6 +316,7 @@ export async function getReposicionData(
 }
 
 export interface ItemSelectorReposicion {
+  /** Igual que `ItemReposicion.idListaTienda` (= `cod_tienda`). */
   idListaTienda: string;
   codExt: string;
   codTienda: string;
@@ -350,7 +352,7 @@ export async function getProductosReposicionSelector(
   });
 
   return rows.map((r) => ({
-      idListaTienda: r.id,
+      idListaTienda: r.codTienda,
       codExt: r.codExt,
       codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,

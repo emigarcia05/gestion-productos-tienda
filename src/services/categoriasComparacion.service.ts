@@ -112,7 +112,7 @@ export async function getProductosPorPresentacion(
   const productos: ProductoEnCategoria[] = presentacion.listaPrecios.map((lp) => {
     const pxFinal = lp.pxCompraFinalSinIva != null ? Number(lp.pxCompraFinalSinIva) : null;
     return {
-      id: lp.id,
+      id: lp.codExt,
       codExt: lp.codExt,
       descripcionProveedor: lp.descripcionProveedor,
       marca: lp.marca ?? null,
@@ -292,7 +292,7 @@ export type UpdatePresentacionData = {
   nombre?: string;
   subcategoriaId?: string;
   costoCompraObjetivo?: number | null;
-   idProductoReferencia?: string | null;
+  productoReferenciaCodExt?: string | null;
 };
 
 export async function updatePresentacion(id: string, data: UpdatePresentacionData) {
@@ -302,7 +302,8 @@ export async function updatePresentacion(id: string, data: UpdatePresentacionDat
   }
   if (data.subcategoriaId !== undefined) payload.subcategoriaId = data.subcategoriaId;
   if (data.costoCompraObjetivo !== undefined) payload.costoCompraObjetivo = data.costoCompraObjetivo;
-  if (data.idProductoReferencia !== undefined) payload.idProductoReferencia = data.idProductoReferencia;
+  if (data.productoReferenciaCodExt !== undefined)
+    payload.productoReferenciaCodExt = data.productoReferenciaCodExt;
   return prisma.presentacionComparacion.update({ where: { id }, data: payload });
 }
 
@@ -310,24 +311,24 @@ export async function deletePresentacion(id: string) {
   return prisma.presentacionComparacion.delete({ where: { id } });
 }
 
-/** Asignar productos (ids de prod_precios_provee) a una presentación. */
+/** Asignar productos (`cod_ext` de prod_precios_provee) a una presentación. */
 export async function asignarProductosAPresentacion(
   presentacionId: string,
-  idsProductos: string[]
+  codigosExtProductos: string[]
 ): Promise<{ count: number }> {
-  if (idsProductos.length === 0) return { count: 0 };
+  if (codigosExtProductos.length === 0) return { count: 0 };
   const result = await prisma.listaPrecioProveedor.updateMany({
-    where: { id: { in: idsProductos } },
+    where: { codExt: { in: codigosExtProductos } },
     data: { idPresentacion: presentacionId },
   });
   return { count: result.count };
 }
 
 /** Quitar asignación de presentación de productos (poner id_presentacion en null). */
-export async function quitarAsignacionPresentacion(idsProductos: string[]): Promise<{ count: number }> {
-  if (idsProductos.length === 0) return { count: 0 };
+export async function quitarAsignacionPresentacion(codigosExtProductos: string[]): Promise<{ count: number }> {
+  if (codigosExtProductos.length === 0) return { count: 0 };
   const result = await prisma.listaPrecioProveedor.updateMany({
-    where: { id: { in: idsProductos } },
+    where: { codExt: { in: codigosExtProductos } },
     data: { idPresentacion: null },
   });
   return { count: result.count };
@@ -335,19 +336,19 @@ export async function quitarAsignacionPresentacion(idsProductos: string[]): Prom
 
 /** Persistir DTO. EXTRA para "Comp. Por Cat." por ítem (ListaPrecioProveedor). */
 export async function actualizarDtoExtraComparacionItem(
-  listaPrecioProveedorId: string,
+  listaPrecioProveedorCodExt: string,
   dtoExtra: number | null
 ): Promise<void> {
   if (dtoExtra === null) {
     await prisma.comparacionDtoExtraItem.deleteMany({
-      where: { listaPrecioProveedorId },
+      where: { listaPrecioProveedorCodExt },
     });
     return;
   }
 
   await prisma.comparacionDtoExtraItem.upsert({
-    where: { listaPrecioProveedorId },
-    create: { listaPrecioProveedorId, dtoExtra },
+    where: { listaPrecioProveedorCodExt },
+    create: { listaPrecioProveedorCodExt, dtoExtra },
     update: { dtoExtra },
   });
 }

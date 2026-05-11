@@ -92,7 +92,6 @@ export async function buscarBasesTintometricas(
     prisma.listaPrecioTienda.findMany({
       where,
       select: {
-        id: true,
         codTienda: true,
         codExt: true,
         descripcionTienda: true,
@@ -107,7 +106,7 @@ export async function buscarBasesTintometricas(
 
   return {
     items: rows.map((r) => ({
-      id: r.id,
+      id: r.codTienda,
       codTienda: r.codTienda,
       codExt: r.codExt,
       descripcionTienda: (r.descripcionTienda ?? "").trim(),

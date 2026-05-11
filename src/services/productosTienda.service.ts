@@ -53,7 +53,7 @@ export async function buscarProductosTiendaPorDescripcion(params: {
     const [rows, total] = await Promise.all([
       prisma.listaPrecioTienda.findMany({
         where: whereDescripcion,
-        select: { id: true, codTienda: true, descripcionTienda: true },
+        select: { codTienda: true, descripcionTienda: true },
         orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
         take,
       }),
@@ -61,7 +61,7 @@ export async function buscarProductosTiendaPorDescripcion(params: {
     ]);
 
     const items: ProductoTiendaRowBusqueda[] = rows.map((r) => ({
-      id: r.id,
+      id: r.codTienda,
       codTienda: r.codTienda,
       descripcionTienda: (r.descripcionTienda ?? "").trim(),
     }));

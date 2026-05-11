@@ -353,11 +353,11 @@ model FinBalPosicionIvaSaldoManual {
 }
 
 model ListaPrecioProveedor {
-  id                String   @id @default(uuid())
+  /** PK lógica: prefijo proveedor + código producto en import (único global). */
+  codExt            String   @id @map("cod_ext")
   idProveedor       String   @map("id_proveedor")
   codProdProveedor  String   @map("cod_prod_proveedor")
   descripcionProveedor String  @map("descripcion_proveedor")
-  codExt            String   @map("cod_ext") // ya no unique: varios proveedores pueden compartir el mismo cod_ext (1 tienda → N proveedores)
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
   pxDolares         Boolean  @map("px_dolares") @default(false) // mapea switch SÍ/NO del modal importar: true = precio × cotizacion_dolar
   cotizacionDolar   Decimal  @map("cotizacion_dolar") @db.Decimal(14, 4) @default(1) // cotización USD → pesos; se usa cuando px_dolares = true
@@ -371,14 +371,14 @@ model ListaPrecioProveedor {
   dtoFinanciero     Int      @map("dto_financiero") @default(0)
   cxTransporte       Int      @map("cx_transporte") @default(0)
   pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: precio compra sin IVA; base * (1 - dtoTotal/100) * (1 + cx_transporte/100), dtoTotal capado 0-100
-  idListaPrecioTienda String? @map("id_lista_precios_tienda") // FK: vincula este ítem proveedor con un ítem del catálogo tienda (1 tienda → N proveedores)
+  codTiendaVinculo String? @map("cod_tienda") // FK al ítem tienda (`prod_precios_tienda.cod_tienda`; 1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   habilitado         Boolean  @map("habilitado") @default(true) // mapea opción SÍ/NO del modal importar
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
-  listaPrecioTienda ListaPrecioTienda? @relation(fields: [idListaPrecioTienda], references: [id], onDelete: SetNull)
+  listaPrecioTienda ListaPrecioTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
   dtoExtraComparacion ComparacionDtoExtraItem?
@@ -388,13 +388,13 @@ model ListaPrecioProveedor {
 }
 
 model ComparacionDtoExtraItem {
-  id                     String @id @default(cuid())
-  listaPrecioProveedorId String @unique @map("id_lista_precios_proveedores")
+  id                       String @id @default(cuid())
+  listaPrecioProveedorCodExt String @unique @map("cod_ext_prod_precios_provee")
   dtoExtra               Int? @map("dto_extra") // 0-99, null si está vacío
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
-  listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorId], references: [id], onDelete: Cascade)
+  listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
 
   @@map("prod_comp_dto_extra")
 }
@@ -429,13 +429,13 @@ model PresentacionComparacion {
   subcategoriaId        String    @map("subcategoria_id")
   nombre               String
   costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
-  idProductoReferencia  String?   @map("id_producto_referencia")
+  productoReferenciaCodExt String? @unique @map("prod_ref_cod_ext")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
   listaPrecios  ListaPrecioProveedor[] @relation("PresentacionItems")
-  productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [idProductoReferencia], references: [id], onDelete: SetNull)
+  productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [productoReferenciaCodExt], references: [codExt], onDelete: SetNull)
 
   @@map("prod_comp_presentaciones")
 }
@@ -454,9 +454,8 @@ model Marca {
 
 // Alimentada solo por API externa (tabla prod_precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
-  id              String   @id @default(uuid())
+  codTienda       String   @id @map("cod_tienda") // clave de negocio estable (PK); sync upsert por cod_tienda
   codExt          String   @map("cod_ext") // mutable: puede variar por cambio de proveedor en DUX
-  codTienda       String   @unique @map("cod_tienda") // clave de negocio estable para sync/upsert
   rubro           String?
   subRubro        String?  @map("sub_rubro")
   marca           String?  // texto tal cual viene de la API DUX (se mantiene para trazabilidad)
@@ -473,7 +472,7 @@ model ListaPrecioTienda {
   ultimaExportacionExcel DateTime? @map("ultima_exportacion_excel")
 
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
-  listaPreciosProveedores ListaPrecioProveedor[] // 1 tienda → N proveedores (vinculados por id_lista_precios_tienda)
+  listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
 
   @@map("prod_precios_tienda")
 }

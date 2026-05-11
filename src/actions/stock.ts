@@ -9,10 +9,12 @@ import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
+import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 
 export type Sucursal = "guaymallen" | "maipu";
 
 export interface ItemStock {
+  /** `cod_tienda` (`prod_precios_tienda`); clave estable para tabla y export Excel. */
   id:              string;
   codItem:         string;
   descripcion:     string;
@@ -143,7 +145,7 @@ export async function getControlStock(
   ]);
 
   const items: ItemStock[] = rows.map((r) => ({
-    id: r.id,
+    id: r.codTienda,
     codItem: r.codTienda,
     descripcion: r.descripcionTienda ?? "",
     marca: r.marca,
@@ -163,7 +165,7 @@ export async function getControlStock(
   };
 }
 
-const idsUuidSchema = z.array(z.string().uuid()).optional().default([]);
+const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);
 
 /**
  * Registra la última exportación Excel de stock para una lista de ítems (persistente).
@@ -174,14 +176,14 @@ export async function registrarExportacionExcelStock(ids: string[]): Promise<Act
   if (!puede(rol, PERMISOS.stock.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
-  const parsed = idsUuidSchema.safeParse(ids ?? []);
+  const parsed = codTiendasExcelSchema.safeParse(ids ?? []);
   if (!parsed.success) {
     return { ok: false, error: "IDs inválidos." };
   }
   try {
     const ahora = new Date();
     await prisma.listaPrecioTienda.updateMany({
-      where: { id: { in: parsed.data } },
+      where: { codTienda: { in: parsed.data } },
       data: { ultimaExportacionExcel: ahora },
     });
     return { ok: true, data: undefined };

@@ -133,13 +133,13 @@ async function listarProveedoresInterno(
     }),
     prisma.listaPrecioProveedor.groupBy({
       by: ["idProveedor"],
-      where: { idListaPrecioTienda: { not: null } },
-      _count: { id: true },
+      where: { codTiendaVinculo: { not: null } },
+      _count: { codExt: true },
     }),
   ]);
 
   const provistosMap = new Map(
-    provistosByProveedor.map((g) => [g.idProveedor, g._count.id])
+    provistosByProveedor.map((g) => [g.idProveedor, g._count.codExt])
   );
 
   return rows.map((p) => ({

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { listaPreciosCodExtSchema } from "@/lib/validations/common";
+
 export const uuidSchema = z.string().uuid("ID inválido.");
 export const comparacionIdSchema = z.string().cuid("ID inválido.");
 
@@ -41,21 +43,21 @@ export const updatePresentacionSchema = z.object({
     nombre: z.string().min(1).optional(),
     subcategoriaId: comparacionIdSchema.optional(),
     costoCompraObjetivo: z.number().positive().nullable().optional(),
-    idProductoReferencia: uuidSchema.nullable().optional(),
+    productoReferenciaCodExt: listaPreciosCodExtSchema.nullable().optional(),
   }),
 });
 
 export const asignarProductosSchema = z.object({
   presentacionId: comparacionIdSchema,
-  idsProductos: z.array(uuidSchema),
+  idsProductos: z.array(listaPreciosCodExtSchema),
 });
 
-export const idsProductosSchema = z.array(uuidSchema);
+export const idsProductosSchema = z.array(listaPreciosCodExtSchema);
 
 /** Solo presentacionId para lectura. */
 export const presentacionIdSchema = comparacionIdSchema;
 
 export const actualizarDtoExtraComparacionSchema = z.object({
-  listaPrecioProveedorId: uuidSchema,
+  listaPrecioProveedorId: listaPreciosCodExtSchema,
   dtoExtra: z.number().int().min(0).max(99).nullable(),
 });

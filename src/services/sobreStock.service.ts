@@ -105,7 +105,6 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
   const tiendas = await prisma.listaPrecioTienda.findMany({
     where: { codTienda: { in: codTiendas } },
     select: {
-      id: true,
       codExt: true,
       codTienda: true,
       proveedor: true,
@@ -136,7 +135,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
             codExt: true,
             idProveedor: true,
             descripcionProveedor: true,
-            idListaPrecioTienda: true,
+            codTiendaVinculo: true,
             proveedor: { select: { prefijo: true, nombre: true } },
           },
           orderBy: [{ idProveedor: "asc" }],

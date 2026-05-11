@@ -163,23 +163,23 @@ export async function getTiendaPageData(params: {
   if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
 
   /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final_sin_iva < costo_compra. */
-  let idsMenorCxDisponible: string[] = [];
+  let codTiendasMenorCxDisponible: string[] = [];
   if (mejorPrecio === "true") {
-    const rows = await prisma.$queryRaw<{ id: string }[]>`
-      SELECT lpt.id
+    const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
+      SELECT lpt.cod_tienda AS cod_tienda
       FROM prod_precios_tienda lpt
-      WHERE (SELECT COUNT(*) FROM prod_precios_provee lpp WHERE lpp.id_lista_precios_tienda = lpt.id) >= 2
+      WHERE (SELECT COUNT(*) FROM prod_precios_provee lpp WHERE lpp.cod_tienda = lpt.cod_tienda) >= 2
         AND EXISTS (
           SELECT 1 FROM prod_precios_provee lpp
           INNER JOIN global_proveedores p ON p.id = lpp.id_proveedor
-          WHERE lpp.id_lista_precios_tienda = lpt.id
+          WHERE lpp.cod_tienda = lpt.cod_tienda
             AND LOWER(TRIM(COALESCE(p.nombre, ''))) != LOWER(TRIM(COALESCE(lpt.proveedor, '')))
             AND COALESCE(lpp.px_compra_final_sin_iva, lpp.px_lista_proveedor::numeric) < lpt.costo_compra
         )
     `;
-    idsMenorCxDisponible = rows.map((r) => r.id);
-    if (idsMenorCxDisponible.length === 0) return getTiendaEmptyWithOpciones();
-    andParts.push({ id: { in: idsMenorCxDisponible } });
+    codTiendasMenorCxDisponible = rows.map((r) => r.cod_tienda);
+    if (codTiendasMenorCxDisponible.length === 0) return getTiendaEmptyWithOpciones();
+    andParts.push({ codTienda: { in: codTiendasMenorCxDisponible } });
   }
 
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
@@ -218,9 +218,9 @@ export async function getTiendaPageData(params: {
   const linkedPrices =
     rows.length > 0
       ? await prisma.listaPrecioProveedor.findMany({
-          where: { idListaPrecioTienda: { in: rows.map((r) => r.id) } },
+          where: { codTiendaVinculo: { in: rows.map((r) => r.codTienda) } },
           select: {
-            idListaPrecioTienda: true,
+            codTiendaVinculo: true,
             pxCompraFinalSinIva: true,
             pxListaProveedor: true,
             dtoProveedor: true,
@@ -237,15 +237,15 @@ export async function getTiendaPageData(params: {
   const proveedorOficialPorTienda = new Map<string, string>();
   for (const r of rows) {
     const txt = (r.proveedor ?? "").trim().toLowerCase();
-    proveedorOficialPorTienda.set(r.id, txt);
+    proveedorOficialPorTienda.set(r.codTienda, txt);
   }
 
   // Mínimo px_compra_final_sin_iva solo entre proveedores NO oficiales por ítem tienda.
   // Guardamos también el nombre (normalizado) del mejor proveedor no-oficial para poder resolver su prefijo luego.
   const minPxNoOficialPorTienda = new Map<string, { px: number; mejorProveedorNombre: string | null }>();
   for (const lp of linkedPrices) {
-    if (!lp.idListaPrecioTienda) continue;
-    const oficial = proveedorOficialPorTienda.get(lp.idListaPrecioTienda) ?? "";
+    if (!lp.codTiendaVinculo) continue;
+    const oficial = proveedorOficialPorTienda.get(lp.codTiendaVinculo) ?? "";
     const nombreProveedor = (lp.proveedor?.nombre ?? "").trim().toLowerCase();
     if (nombreProveedor === oficial) continue; // excluir proveedor oficial
     let n: number;
@@ -263,9 +263,9 @@ export async function getTiendaPageData(params: {
         lp.dtoFinanciero
       );
     }
-    const prev = minPxNoOficialPorTienda.get(lp.idListaPrecioTienda);
+    const prev = minPxNoOficialPorTienda.get(lp.codTiendaVinculo);
     if (prev === undefined || n < prev.px) {
-      minPxNoOficialPorTienda.set(lp.idListaPrecioTienda, { px: n, mejorProveedorNombre: nombreProveedor || null });
+      minPxNoOficialPorTienda.set(lp.codTiendaVinculo, { px: n, mejorProveedorNombre: nombreProveedor || null });
     }
   }
 
@@ -280,7 +280,7 @@ export async function getTiendaPageData(params: {
     const proveedorTexto = r.proveedor?.trim() ?? null;
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
     const costo = Number(r.costoCompra);
-    const minData = minPxNoOficialPorTienda.get(r.id);
+    const minData = minPxNoOficialPorTienda.get(r.codTienda);
     const cantidadVinculos = r._count.listaPreciosProveedores;
 
     /* Solo hay mejora si hay ≥2 vinculados y un no-oficial mejora el costo */
@@ -295,7 +295,7 @@ export async function getTiendaPageData(params: {
       : null;
 
     return {
-      id: r.id,
+      id: r.codTienda,
       codItem: r.codTienda,
       descripcion: r.descripcionTienda ?? "",
       rubro: r.rubro,
@@ -461,9 +461,8 @@ export async function cambiarAProveedorMenorCostoAction(
   }
 
   const itemsTienda = await prisma.listaPrecioTienda.findMany({
-    where: { id: { in: ids } },
+    where: { codTienda: { in: ids } },
     select: {
-      id: true,
       codTienda: true,
       proveedor: true,
       codExt: true,
@@ -478,11 +477,11 @@ export async function cambiarAProveedorMenorCostoAction(
 
   const vinculados = await prisma.listaPrecioProveedor.findMany({
     where: {
-      idListaPrecioTienda: { in: itemsTienda.map((i) => i.id) },
+      codTiendaVinculo: { in: itemsTienda.map((i) => i.codTienda) },
       habilitado: true,
     },
     select: {
-      idListaPrecioTienda: true,
+      codTiendaVinculo: true,
       codExt: true,
       pxCompraFinalSinIva: true,
       pxListaProveedor: true,
@@ -498,10 +497,10 @@ export async function cambiarAProveedorMenorCostoAction(
 
   const vinculadosPorItem = new Map<string, typeof vinculados>();
   for (const v of vinculados) {
-    if (!v.idListaPrecioTienda) continue;
-    const lista = vinculadosPorItem.get(v.idListaPrecioTienda) ?? [];
+    if (!v.codTiendaVinculo) continue;
+    const lista = vinculadosPorItem.get(v.codTiendaVinculo) ?? [];
     lista.push(v);
-    vinculadosPorItem.set(v.idListaPrecioTienda, lista);
+    vinculadosPorItem.set(v.codTiendaVinculo, lista);
   }
 
   const updates: Array<{
@@ -515,7 +514,7 @@ export async function cambiarAProveedorMenorCostoAction(
 
   for (const item of itemsTienda) {
     const oficialTexto = normalizarProveedor(item.proveedor);
-    const candidatos = (vinculadosPorItem.get(item.id) ?? [])
+    const candidatos = (vinculadosPorItem.get(item.codTienda) ?? [])
       .filter((v) => !esProveedorOficial(oficialTexto, v.proveedor))
       .map((v) => {
         const costo =
@@ -554,7 +553,7 @@ export async function cambiarAProveedorMenorCostoAction(
     if (margen == null) continue;
 
     updates.push({
-      itemId: item.id,
+      itemId: item.codTienda,
       codigoTienda: item.codTienda,
       codigoExterno: mejor.vinculo.codExt,
       proveedor: proveedorTexto,

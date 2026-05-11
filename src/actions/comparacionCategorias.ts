@@ -246,7 +246,12 @@ export async function createPresentacionAction(
 
 export async function updatePresentacionAction(
   id: string,
-  data: { nombre?: string; subcategoriaId?: string; costoCompraObjetivo?: number | null; idProductoReferencia?: string | null }
+  data: {
+    nombre?: string;
+    subcategoriaId?: string;
+    costoCompraObjetivo?: number | null;
+    productoReferenciaCodExt?: string | null;
+  }
 ): Promise<ActionResult> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = updatePresentacionSchema.safeParse({ id, data });

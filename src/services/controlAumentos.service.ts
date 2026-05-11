@@ -22,11 +22,10 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
   const rows = await prisma.listaPrecioTienda.findMany({
     where: {
       listaPreciosProveedores: {
-        some: { idListaPrecioTienda: { not: null } },
+        some: { codTiendaVinculo: { not: null } },
       },
     },
     select: {
-      id: true,
       codTienda: true,
       codExt: true,
       descripcionTienda: true,
@@ -36,7 +35,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
       proveedor: true,
       costoCompra: true,
       listaPreciosProveedores: {
-        where: { idListaPrecioTienda: { not: null } },
+        where: { codTiendaVinculo: { not: null } },
         select: {
           pxCompraFinalSinIva: true,
           pxListaProveedor: true,
@@ -99,7 +98,7 @@ export async function getControlAumentosData(): Promise<ControlAumentosData> {
     const proveedorNombre = lpOficial.proveedor?.nombre ?? r.proveedor?.trim() ?? null;
 
     individual.push({
-      itemId: r.id,
+      itemId: r.codTienda,
       codItem: r.codTienda,
       descripcion: r.descripcionTienda ?? "",
       marca: r.marca ?? null,

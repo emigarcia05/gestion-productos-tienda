@@ -35,6 +35,7 @@ import {
   getPedidoUrgenteDataParamsSchema,
   getEnviarPedidoTablaParamsSchema,
 } from "@/lib/validations/pedidosLectura";
+import { listaPreciosCodExtSchema } from "@/lib/validations/common";
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;
@@ -81,26 +82,41 @@ export async function getPedidoUrgenteData(params: {
           ? "reposicion"
           : undefined;
   try {
-    const [proveedores, result] = await Promise.all([
-      getProveedoresParaPedidoUrgente(),
-      tieneSucursal && sucursalHabilitada
-        ? getListaPreciosParaPedidoUrgente(
-            sucursalValida,
-            proveedorValido || undefined,
-            pedidoTipo,
-            qValida ? q : undefined,
-            paginaNum,
-            PAGE_SIZE
-          )
-        : Promise.resolve({ items: [], total: 0, totalPaginas: 0 }),
-    ]);
+    const proveedores = await getProveedoresParaPedidoUrgente();
 
-    return {
-      proveedores,
-      productos: result.items,
-      total: result.total,
-      totalPaginas: result.totalPaginas,
-    };
+    if (!tieneSucursal || !sucursalHabilitada) {
+      return {
+        proveedores,
+        productos: [],
+        total: 0,
+        totalPaginas: 0,
+      };
+    }
+
+    try {
+      const result = await getListaPreciosParaPedidoUrgente(
+        sucursalValida,
+        proveedorValido || undefined,
+        pedidoTipo,
+        qValida ? q : undefined,
+        paginaNum,
+        PAGE_SIZE
+      );
+
+      return {
+        proveedores,
+        productos: result.items,
+        total: result.total,
+        totalPaginas: result.totalPaginas,
+      };
+    } catch {
+      return {
+        proveedores,
+        productos: [],
+        total: 0,
+        totalPaginas: 0,
+      };
+    }
   } catch {
     return { proveedores: [], productos: [], total: 0, totalPaginas: 0 };
   }
@@ -337,7 +353,7 @@ export async function syncPedidoUrgenteEnvioAction(
 
 const upsertPedidoUrgenteItemSchema = z.object({
   sucursal: z.enum(["guaymallen", "maipu"]),
-  listaPrecioProveedorId: z.string().uuid("ID inválido"),
+  listaPrecioProveedorId: listaPreciosCodExtSchema,
   cant: z.number().int().min(0),
 });
 

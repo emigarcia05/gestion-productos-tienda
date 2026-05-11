@@ -15,7 +15,7 @@ import type { ActionResult } from "@/lib/types";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import {
-  idsUuidSchema,
+  listaPreciosCodExtListSchema,
   actualizacionMasivaListaPreciosSchema,
   listaPreciosFiltrosLecturaSchema,
 } from "@/lib/validations/listaPrecios";
@@ -140,10 +140,10 @@ export async function actualizarListaPreciosMasivoAction(
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para edición masiva." };
   }
-  const parsedIds = idsUuidSchema.safeParse(ids);
+  const parsedIds = listaPreciosCodExtListSchema.safeParse(ids);
   if (!parsedIds.success) {
     const msg = parsedIds.error.flatten().formErrors[0] ?? parsedIds.error.message;
-    return { ok: false, error: msg ?? "IDs inválidos." };
+    return { ok: false, error: msg ?? "Códigos externos inválidos." };
   }
   const parsedData = actualizacionMasivaListaPreciosSchema.safeParse(data);
   if (!parsedData.success) {
