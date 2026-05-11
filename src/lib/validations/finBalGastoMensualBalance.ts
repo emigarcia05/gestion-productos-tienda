@@ -88,7 +88,7 @@ export const serieHistorialFilaBalanceSchema = z.object({
   columna: columnaSerieHistorialFilaSchema,
   mesFin: z.coerce.number().int().min(1).max(12),
   anioFin: z.coerce.number().int().min(2026).max(2046),
-  cantidadMeses: z.coerce.number().int().min(6).max(60).optional().default(36),
+  cantidadMeses: z.coerce.number().int().min(1).max(60).optional().default(12),
 });
 export type SerieHistorialFilaBalanceInput = z.infer<typeof serieHistorialFilaBalanceSchema>;
 
