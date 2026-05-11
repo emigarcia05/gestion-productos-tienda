@@ -35,9 +35,9 @@ const MENSAJE_SIN_FILTROS =
   "Seleccioná una sucursal para ver los productos.";
 
 interface SugerenciaProveedorMenorCosto {
-  /** `prod_precios_provee.id` del proveedor más barato (sugerencia). */
+  /** `prod_precios_provee.cod_ext` del proveedor recomendado (menor precio comparable). */
   listaPrecioProveedorIdMenorCosto: string;
-  /** `prod_precios_provee.id` de la fila sobre la que el usuario hizo doble clic (proveedor actual / más caro). */
+  /** `prod_precios_provee.cod_ext` de la fila sobre la que el usuario hizo doble clic (proveedor elegido en tabla). */
   listaPrecioProveedorIdOriginal: string;
   proveedorNombre: string;
   costo: number;
@@ -137,8 +137,8 @@ export default function PedidoUrgentePageClient({
     abrirModalCantidadDirecto(fakeProd, s.listaPrecioProveedorIdMenorCosto);
   }
 
-  /** Mantiene la fila que el usuario eligió (proveedor más caro / actual). */
-  function continuarConProveedorActual() {
+  /** Mantiene la fila que el usuario eligió en la tabla (doble clic). */
+  function continuarConProveedorSeleccionado() {
     if (!sugerenciaProveedorMenorCosto) return;
     const origId = sugerenciaProveedorMenorCosto.listaPrecioProveedorIdOriginal;
     setModalSugerenciaOpen(false);
@@ -251,25 +251,31 @@ export default function PedidoUrgentePageClient({
         />
         <Dialog open={modalSugerenciaOpen} onOpenChange={setModalSugerenciaOpen}>
           <AppModal
-            title="Proveedor Con Menor Costo"
+            title="Proveedor Recomendado"
             size="md"
             actions={
               <div className="flex w-full justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setModalSugerenciaOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="button" onClick={continuarConProveedorActual}>
-                  Continuar Con Proveedor Actual
+                <Button type="button" onClick={continuarConProveedorSeleccionado}>
+                  Continuar Con Proveedor Seleccionado
                 </Button>
               </div>
             }
           >
             <div className="flex flex-col gap-4 text-sm text-foreground">
-              <p>Este producto es ofrecido a menor costo por:</p>
-              <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
-                <span className="font-semibold">{sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}</span>
-                <Button type="button" size="sm" onClick={pedirAlProveedorMenorCostoSugerido}>
-                  Pedir A Este Proveedor
+              <p>En estos momentos, para este producto tiene prioridad el proveedor</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-semibold text-foreground">
+                  {sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}
+                </span>
+                <Button
+                  type="button"
+                  className="btn-primario-gestion"
+                  onClick={pedirAlProveedorMenorCostoSugerido}
+                >
+                  Pedir a Este Proveedor
                 </Button>
               </div>
             </div>

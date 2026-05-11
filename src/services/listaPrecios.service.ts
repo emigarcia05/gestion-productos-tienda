@@ -14,7 +14,6 @@ import { IvaProveedor } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
 import {
   pxComparablePedidoUrgenteReposicion,
-  pxFinalCompraConIvaProveedor,
 } from "@/lib/precioComparacionPedidoUrgenteReposicion";
 import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
 
@@ -67,50 +66,6 @@ function ivaProveedorDesdeLista(
   proveedor: { iva?: IvaProveedor | null } | null | undefined
 ): IvaProveedor {
   return proveedor?.iva ?? IvaProveedor.NUNCA;
-}
-
-/** Pedido Urgente / «cualquier» en esa pantalla: mismo vínculo a tienda → comparar por precio final con IVA. */
-function sugerenciaProveedorMenorCostoPorPrecioFinalConIvaMismaTienda(
-  codExtListaActual: string,
-  actual: CamposCostoListaProveedor & { iva: IvaProveedor },
-  alternativas: Array<
-    CamposCostoListaProveedor & {
-      codExt: string;
-      iva: IvaProveedor;
-      nombreProveedor: string;
-    }
-  >
-): { listaPrecioProveedorId: string; proveedorNombre: string; costo: number } | null {
-  const costoSinIvaActual = costoCompraFinalProveedorLista(actual);
-  const comparableActual = pxFinalCompraConIvaProveedor(costoSinIvaActual, actual.iva);
-  const mejor = alternativas
-    .filter((alt) => alt.codExt !== codExtListaActual)
-    .map((alt) => {
-      const costoSinIva = costoCompraFinalProveedorLista(alt);
-      return {
-        codExt: alt.codExt,
-        nombreProveedor: alt.nombreProveedor,
-        costoSinIva,
-        comparable: pxFinalCompraConIvaProveedor(costoSinIva, alt.iva),
-      };
-    })
-    .filter(
-      (x) =>
-        x.nombreProveedor.length > 0 &&
-        Number.isFinite(x.costoSinIva) &&
-        x.costoSinIva > 0 &&
-        Number.isFinite(x.comparable) &&
-        Number.isFinite(comparableActual) &&
-        x.comparable < comparableActual
-    )
-    .sort((x, y) => x.comparable - y.comparable)[0];
-
-  if (!mejor) return null;
-  return {
-    listaPrecioProveedorId: mejor.codExt,
-    proveedorNombre: mejor.nombreProveedor,
-    costo: mejor.costoSinIva,
-  };
 }
 
 /** Elige otro proveedor en la misma tienda con menor precio comparable (IVA SALDO acumulado + política `iva`). */
@@ -677,8 +632,9 @@ export interface PedidoUrgenteItem {
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
   estaVinculadoTienda: boolean;
   /**
-   * Si existe otro proveedor (habilitado) para el mismo producto de tienda con costo menor:
-   * sugerencia para desviar el pedido al proveedor más barato.
+   * Si existe otro proveedor (habilitado) para el mismo producto de tienda con menor precio **comparable**
+   * (`pxComparablePedidoUrgenteReposicion`: balance IVA Posición IVA + política `iva` del proveedor):
+   * sugerencia para desviar el pedido. `costo` sigue siendo compra final **sin IVA** para la UI.
    */
   sugerenciaProveedorMenorCosto: {
     listaPrecioProveedorId: string;
@@ -773,8 +729,8 @@ async function mercaderiaMapsDesdeMerc2(
 /**
  * Pantalla Pedido Urgente (filtros `urgente` o `cualquier`): todas las filas de **`prod_precios_provee`** con **`habilitado = true`**.
  * Cantidades / flags de urgente y reposición se leen de **`prod_ped_merc`** según sucursal.
- * Comparación entre proveedores que comparten el mismo **`cod_tienda`** (`codTiendaVinculo`; mismo vínculo a `prod_precios_tienda`):
- * **precio final con IVA** según **`Proveedor.iva`** (`SIEMPRE` ×1,21; `NUNCA`/`PREGUNTA` ×1).
+ * Comparación entre proveedores que comparten el mismo **`cod_tienda`** (`codTiendaVinculo`): **precio comparable** vía
+ * `pxComparablePedidoUrgenteReposicion` (balance IVA acumulado en Posición IVA + política `Proveedor.iva`; si saldo > 0 se usa factor IVA en la comparación).
  */
 async function getListaPedidoUrgenteDesdeListaPrecios(
   sucursalTrim: string,
@@ -840,6 +796,8 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
   if (filas.length === 0) {
     return { items: [], total, totalPaginas: totalPaginasLista };
   }
+
+  const sumaIvaSaldoAcumulado = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
 
   const codExtsRes = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
@@ -908,7 +866,8 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     const tiendaListaId = f.codTiendaVinculo ?? null;
     const alternativas = tiendaListaId ? alternativasByTienda.get(tiendaListaId) ?? [] : [];
     const sugerencia = tiendaListaId
-      ? sugerenciaProveedorMenorCostoPorPrecioFinalConIvaMismaTienda(
+      ? sugerenciaProveedorMenorCostoComparable(
+          sumaIvaSaldoAcumulado,
           f.codExt,
           {
             pxCompraFinalSinIva: f.pxCompraFinalSinIva,
