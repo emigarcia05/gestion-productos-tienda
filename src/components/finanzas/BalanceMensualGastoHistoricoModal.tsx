@@ -8,13 +8,33 @@ import { Button } from "@/components/ui/button";
 import { fmtPrecio, fmtTituloPalabras } from "@/lib/format";
 import { TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { listarHistoricoMontosGastoFinalBalanceAction } from "@/actions/finBalGastoMensualBalance";
+import {
+  listarHistoricoMontosGastoFinalBalanceAction,
+  listarSerieHistorialFilaBalanceMensualAction,
+} from "@/actions/finBalGastoMensualBalance";
 import type { HistoricoMontoGastoFinalBalanceItem } from "@/services/finBalGastoMensualBalance.service";
+import type { ColumnaSerieHistorialFila } from "@/services/balanceMensualHistorialFila.service";
+import {
+  ETIQUETA_FILA_BALANCE_HISTORIAL,
+  type BalanceMensualFilaHistorialId,
+} from "@/lib/balanceMensualHistorialFila";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   gastoFinalId: string | null;
+  /**
+   * Serie del **total de la fila** de la grilla (misma columna y reglas de resumen).
+   * Excluyente con `gastoFinalId`: la UI abre un modo u otro.
+   */
+  historialFila?: {
+    filaConceptoId: BalanceMensualFilaHistorialId;
+    columna: ColumnaSerieHistorialFila;
+    mesFin: number;
+    anioFin: number;
+  } | null;
+  /** Si viene definido, sustituye el título automático del gasto o de la fila. */
+  tituloOverride?: string | null;
   /** Clasificación del gasto en el balance (título del modal). */
   costoClase?: "fijos" | "variables";
   /** Con acceso desde costo variable/fijo en grilla: clic en barra abre desglose por rubro de ese mes. */
@@ -26,6 +46,14 @@ interface Props {
 function fmtMonto(n: number) {
   if (n === 0) return "—";
   return `$${fmtPrecio(n)}`;
+}
+
+function fmtValorHistorialSerie(n: number, formato: "importe" | "porcentaje") {
+  if (formato === "porcentaje") {
+    if (n === 0) return "—";
+    return `${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+  }
+  return fmtMonto(n);
 }
 
 /** Variación vs. mes anterior; el porcentaje se muestra como entero (`Math.round`). */
@@ -133,6 +161,8 @@ export default function BalanceMensualGastoHistoricoModal({
   open,
   onOpenChange,
   gastoFinalId,
+  historialFila = null,
+  tituloOverride = null,
   costoClase,
   onSeleccionarMesEnGrafico,
   onVolver,
@@ -141,10 +171,43 @@ export default function BalanceMensualGastoHistoricoModal({
   const [serie, setSerie] = useState<HistoricoMontoGastoFinalBalanceItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const formatoValor: "importe" | "porcentaje" =
+    historialFila?.filaConceptoId === "mc" ? "porcentaje" : "importe";
+
   useEffect(() => {
-    if (!open || !gastoFinalId) return undefined;
+    if (!open) return undefined;
 
     let cancelled = false;
+
+    if (historialFila) {
+      startTransition(() => {
+        void listarSerieHistorialFilaBalanceMensualAction({
+          filaConceptoId: historialFila.filaConceptoId,
+          columna: historialFila.columna,
+          mesFin: historialFila.mesFin,
+          anioFin: historialFila.anioFin,
+        }).then((res) => {
+          if (cancelled) return;
+          if (!res.ok) {
+            setError(res.error);
+            setSerie([]);
+            return;
+          }
+          setError(null);
+          setSerie(res.data);
+        });
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!gastoFinalId) {
+      setSerie([]);
+      setError(null);
+      return undefined;
+    }
+
     startTransition(() => {
       void listarHistoricoMontosGastoFinalBalanceAction({ gastoFinalId }).then((res) => {
         if (cancelled) return;
@@ -161,7 +224,7 @@ export default function BalanceMensualGastoHistoricoModal({
     return () => {
       cancelled = true;
     };
-  }, [open, gastoFinalId]);
+  }, [open, gastoFinalId, historialFila]);
 
   /** Siempre cronológico (mes antiguo → reciente); asegura eje del gráfico y variación vs. mes anterior. */
   const serieCronologica = useMemo(
@@ -187,10 +250,19 @@ export default function BalanceMensualGastoHistoricoModal({
 
   const maxMonto = serieCronologica.reduce((m, p) => Math.max(m, p.monto), 0);
 
+  const tituloModal =
+    tituloOverride?.trim() ||
+    (historialFila
+      ? fmtTituloPalabras(
+          `Historial por mes — ${ETIQUETA_FILA_BALANCE_HISTORIAL[historialFila.filaConceptoId]}` +
+            (historialFila.filaConceptoId === "mc" ? " (%)" : ""),
+        )
+      : tituloHistorialGasto(costoClase));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        title={tituloHistorialGasto(costoClase)}
+        title={tituloModal}
         size="xl"
         className="max-w-4xl"
         bodyClassName="flex flex-col min-h-0 max-h-[min(28rem,72vh)]"
@@ -217,13 +289,13 @@ export default function BalanceMensualGastoHistoricoModal({
           {pending && serie.length === 0 && !error ? (
             <p className="text-xs text-muted-foreground">Cargando…</p>
           ) : null}
-          {serie.length === 0 && !pending && !error ? (
+          {serie.length === 0 && !pending && !error && !historialFila ? (
             <p className="text-xs text-muted-foreground">No hay otros meses imputados para este gasto.</p>
           ) : null}
           {serieCronologica.length > 0 ? (
             <div className="flex min-h-[14rem] min-w-0 flex-1 flex-col gap-3">
               <div className="text-center text-[10px] font-medium uppercase tracking-wide text-black">
-                Monto por mes
+                {formatoValor === "porcentaje" ? "Porcentaje por mes" : "Monto por mes"}
               </div>
               <div className="flex min-h-[11rem] items-end gap-1.5 overflow-x-auto border-b border-border px-1 pb-1">
                 {serieConVariacion.map((p) => {
@@ -243,7 +315,7 @@ export default function BalanceMensualGastoHistoricoModal({
                           type="button"
                           className="flex h-36 w-full items-end justify-center rounded-sm bg-muted/25 px-0.5 outline-none transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           aria-label={`Ver desglose por rubro en ${p.etiquetaMes} de ${p.anio}`}
-                          title={`${p.etiquetaMes}: ${fmtMonto(p.monto)} — Clic para desglose`}
+                          title={`${p.etiquetaMes}: ${fmtValorHistorialSerie(p.monto, formatoValor)} — Clic para desglose`}
                           onClick={() => void onSeleccionarMesEnGrafico?.(p.mes, p.anio)}
                         >
                           <div
@@ -263,7 +335,7 @@ export default function BalanceMensualGastoHistoricoModal({
                               p.monto > 0 ? "bg-[#0072BB]" : "bg-muted-foreground/20",
                             )}
                             style={{ height: `${alturaPx}px` }}
-                            title={`${p.etiquetaMes}: ${fmtMonto(p.monto)}`}
+                            title={`${p.etiquetaMes}: ${fmtValorHistorialSerie(p.monto, formatoValor)}`}
                           />
                         </div>
                       )}
@@ -271,7 +343,7 @@ export default function BalanceMensualGastoHistoricoModal({
                         {p.etiquetaMes}
                       </span>
                       <span className="text-center text-[9px] tabular-nums text-foreground">
-                        {fmtMonto(p.monto)}
+                        {fmtValorHistorialSerie(p.monto, formatoValor)}
                       </span>
                       <div className="flex min-h-[1rem] items-start justify-center">
                         <CeldaVariacionPct variacion={p.variacion} />

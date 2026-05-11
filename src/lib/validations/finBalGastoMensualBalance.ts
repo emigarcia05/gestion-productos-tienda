@@ -64,6 +64,34 @@ export type HistoricoMontosGastoFinalBalanceInput = z.infer<
   typeof historicoMontosGastoFinalBalanceSchema
 >;
 
+const filaConceptoHistorialBalanceEnum = z.enum([
+  "ventas",
+  "cv",
+  "ro",
+  "cf",
+  "re",
+  "mc",
+  "pe",
+]);
+
+const columnaSerieHistorialFilaSchema = z.discriminatedUnion("ambito", [
+  z.object({ ambito: z.literal("global") }),
+  z.object({
+    ambito: z.literal("sucursal"),
+    nombre: z.string().min(1).max(200),
+  }),
+]);
+
+/** Serie agregada por fila de la grilla (misma lógica que el resumen del balance). */
+export const serieHistorialFilaBalanceSchema = z.object({
+  filaConceptoId: filaConceptoHistorialBalanceEnum,
+  columna: columnaSerieHistorialFilaSchema,
+  mesFin: z.coerce.number().int().min(1).max(12),
+  anioFin: z.coerce.number().int().min(2026).max(2046),
+  cantidadMeses: z.coerce.number().int().min(6).max(60).optional().default(36),
+});
+export type SerieHistorialFilaBalanceInput = z.infer<typeof serieHistorialFilaBalanceSchema>;
+
 export const crearImputacionGastoUnicoBalanceSchema = z
   .object({
     gastoFinalId: prismaCuidSchema,

@@ -10,6 +10,7 @@ import {
   editarMontoFinBalGastoMensualSchema,
   eliminarFinBalGastoMensualSchema,
   historicoMontosGastoFinalBalanceSchema,
+  serieHistorialFilaBalanceSchema,
   listarGastosFinalesNoMensualesParamsSchema,
   mesAnioQuerySchema,
   obtenerMontoMesAnteriorSchema,
@@ -32,6 +33,7 @@ import {
   type HistoricoMontoGastoFinalBalanceItem,
   type PendienteDiscriminaIvaCargaMesItem,
 } from "@/services/finBalGastoMensualBalance.service";
+import { listarSerieHistorialFilaBalanceMensual } from "@/services/balanceMensualHistorialFila.service";
 import {
   listarFinBalVtasPorMesAnio,
 } from "@/services/finBalVtas.service";
@@ -225,6 +227,28 @@ export async function listarHistoricoMontosGastoFinalBalanceAction(
   } catch (e: unknown) {
     const msg =
       e instanceof Error ? e.message : "No se pudo cargar el histórico de montos del gasto.";
+    return { ok: false, error: msg };
+  }
+}
+
+/** Serie mensual del total de una fila de la grilla (columna global o sucursal), misma regla que el resumen. */
+export async function listarSerieHistorialFilaBalanceMensualAction(
+  raw: unknown,
+): Promise<ActionResult<HistoricoMontoGastoFinalBalanceItem[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  const parsed = serieHistorialFilaBalanceSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+
+  try {
+    const data = await listarSerieHistorialFilaBalanceMensual(parsed.data);
+    return { ok: true, data };
+  } catch (e: unknown) {
+    const msg =
+      e instanceof Error ? e.message : "No se pudo cargar el histórico de la fila del balance.";
     return { ok: false, error: msg };
   }
 }

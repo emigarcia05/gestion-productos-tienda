@@ -21,10 +21,14 @@ import {
 } from "@/components/ui/select";
 import { fmtPrecio } from "@/lib/format";
 import {
+  ETIQUETA_FILA_BALANCE_HISTORIAL,
+  esFilaBalanceConHistorialAgregado,
+  type BalanceMensualFilaHistorialId,
+} from "@/lib/balanceMensualHistorialFila";
+import {
   type BalanceMensualBloque,
   type BalanceMensualResumen,
   fmtMargenContribucionPct,
-  partCostosVariablesFijos,
   puntoEquilibrioVentasPesos,
   resumenBalanceMensualDesdeFilas,
 } from "@/lib/balanceMensual";
@@ -101,20 +105,12 @@ type ColumnaBalance = {
   sucursalId: string | null;
 };
 
-type HistoricoGastoTarget = {
-  gastoFinalId: string;
-  etiqueta: string;
-};
-
 /** Contexto de columna/tipo de costo al abrir historial desde la grilla (clic en barra → desglose). */
 type HistoricoDetalleCostosOrigen = {
   tipoCosto: "variables" | "fijos";
   columna: BalanceMensualColumnaDetalle;
   etiquetaColumna: string;
 };
-
-/** Payload al abrir el historial desde costo variable/fijo (incluye contexto para desglose por rubro desde el gráfico). */
-type AbrirHistoricoDesdeGrillaPayload = HistoricoGastoTarget & HistoricoDetalleCostosOrigen;
 
 /** Fondo más claro que el encabezado #0072BB, para filas de resultado. */
 const BG_FILA_RESULTADO = "#a9d6f1";
@@ -221,15 +217,14 @@ const FILAS_BALANCE: FilaBalance[] = [
 
 function TablaBalanceMensualAlineada({
   columnas,
-  onAbrirHistoricoGastoResolver,
-  onAbrirHistoricoGasto,
+  onAbrirHistoricoFila,
 }: {
   columnas: ColumnaBalance[];
-  onAbrirHistoricoGastoResolver: (params: {
-    filaId: string;
-    columna: ColumnaBalance;
-  }) => HistoricoGastoTarget | null;
-  onAbrirHistoricoGasto?: (payload: AbrirHistoricoDesdeGrillaPayload) => void;
+  onAbrirHistoricoFila?: (payload: {
+    filaId: BalanceMensualFilaHistorialId;
+    columna: BalanceMensualColumnaDetalle;
+    etiquetaColumna: string;
+  }) => void;
 }) {
   const nDatos = columnas.length;
   const gridTemplateColumns = `minmax(10.5rem, 1.05fr) repeat(${nDatos}, minmax(6.75rem, 1fr))`;
@@ -305,15 +300,11 @@ function TablaBalanceMensualAlineada({
                   const txt =
                     fila.tipo === "monto" ? fmtMonto(fila.get(c.bloque)) : fila.valor(c.bloque);
                   const mostrarColumnaConHistorico = Boolean(c.sucursalId) || c.key === "global";
-                  const historicoGasto =
-                    fila.tipo === "monto" && onAbrirHistoricoGasto
-                      ? fila.id === "cv" || fila.id === "cf"
-                        ? onAbrirHistoricoGastoResolver({
-                            filaId: fila.id,
-                            columna: c,
-                          })
-                        : null
-                      : null;
+                  const filaConHistorialAgregado =
+                    onAbrirHistoricoFila && esFilaBalanceConHistorialAgregado(fila.id);
+                  const etiquetaFilaHistorial = esFilaBalanceConHistorialAgregado(fila.id)
+                    ? ETIQUETA_FILA_BALANCE_HISTORIAL[fila.id]
+                    : fila.id.toUpperCase();
 
                   return (
                     <div
@@ -333,19 +324,18 @@ function TablaBalanceMensualAlineada({
                                 variant="ghost"
                                 size="icon"
                                 className={CLASE_BOTON_ACCION_BALANCE_MENSUAL}
-                                aria-label={`Ver histórico — ${fila.etiquetaConcepto} — ${c.titulo}`}
+                                aria-label={`Ver histórico — ${etiquetaFilaHistorial} — ${c.titulo}`}
                                 title={
-                                  historicoGasto
-                                    ? "Ver Evolución Mensual Del Gasto"
-                                    : "Sin gasto individual para historial"
+                                  filaConHistorialAgregado
+                                    ? "Ver Evolución Mensual De La Fila"
+                                    : "Sin historial para esta fila"
                                 }
                                 onClick={() => {
-                                  if (!historicoGasto || fila.tipo !== "monto") return;
-                                  if (fila.id !== "cv" && fila.id !== "cf") return;
-                                  onAbrirHistoricoGasto?.({
-                                    gastoFinalId: historicoGasto.gastoFinalId,
-                                    etiqueta: historicoGasto.etiqueta,
-                                    tipoCosto: fila.id === "cv" ? "variables" : "fijos",
+                                  if (!filaConHistorialAgregado || !esFilaBalanceConHistorialAgregado(fila.id)) {
+                                    return;
+                                  }
+                                  onAbrirHistoricoFila?.({
+                                    filaId: fila.id,
                                     columna:
                                       c.key === "global"
                                         ? { ambito: "global" }
@@ -353,7 +343,7 @@ function TablaBalanceMensualAlineada({
                                     etiquetaColumna: c.titulo,
                                   });
                                 }}
-                                disabled={!historicoGasto}
+                                disabled={!filaConHistorialAgregado}
                               >
                                 <BarChart2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
@@ -429,6 +419,11 @@ export default function FinanzasBalanceMensualPageClient({
     useState<DetalleLineasGastoModalCtx | null>(null);
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoGastoFinalId, setHistoricoGastoFinalId] = useState<string | null>(null);
+  const [historicoFilaGrilla, setHistoricoFilaGrilla] = useState<{
+    filaId: BalanceMensualFilaHistorialId;
+    columna: BalanceMensualColumnaDetalle;
+    etiquetaColumna: string;
+  } | null>(null);
   /** Origen del historial para ofrecer «Volver» al modal de líneas cuando aplica. */
   const [historicoAbiertoDesde, setHistoricoAbiertoDesde] = useState<
     "grilla" | "lineas" | "rubros" | "gastos_por_rubro" | null
@@ -443,35 +438,6 @@ export default function FinanzasBalanceMensualPageClient({
   } | null>(null);
 
   const filasEfectivasDetalle = filasParaModalesDetalle ?? filas;
-
-  const onAbrirHistoricoGastoResolver = useMemo(() => {
-    return (params: { filaId: string; columna: ColumnaBalance }): HistoricoGastoTarget | null => {
-      const tipoCosto =
-        params.filaId === "cv" ? "variables" : params.filaId === "cf" ? "fijos" : null;
-      if (!tipoCosto) return null;
-
-      const candidatos = filas
-        .map((f) => {
-          const partes = partCostosVariablesFijos(f.tipoGastoNombre, f.monto);
-          const montoTipo = tipoCosto === "variables" ? partes.costosVariables : partes.costosFijos;
-          return { fila: f, montoTipo };
-        })
-        .filter(({ fila, montoTipo }) => {
-          if (montoTipo <= 0) return false;
-          if (params.columna.key === "global") return true;
-          return fila.sucursalGeneraBalance && fila.sucursalNombre === params.columna.titulo;
-        })
-        .sort((a, b) => b.montoTipo - a.montoTipo);
-
-      const top = candidatos[0];
-      if (!top) return null;
-
-      return {
-        gastoFinalId: top.fila.gastoFinalId,
-        etiqueta: `${top.fila.gastoNombre} — ${top.fila.proveedorNombre} · ${top.fila.sucursalNombre}`,
-      };
-    };
-  }, [filas]);
 
   const seccionesTiposRubros = useMemo(() => {
     if (!detalleRubrosCtx) return [];
@@ -537,6 +503,7 @@ export default function FinanzasBalanceMensualPageClient({
     setHistoricoOpen(nextOpen);
     if (!nextOpen) {
       setHistoricoGastoFinalId(null);
+      setHistoricoFilaGrilla(null);
       setHistoricoDetalleCostosOrigen(null);
       setHistoricoAbiertoDesde(null);
     }
@@ -660,15 +627,23 @@ export default function FinanzasBalanceMensualPageClient({
                 sucursalId: s.sucursalId || null,
               })),
             ]}
-            onAbrirHistoricoGastoResolver={onAbrirHistoricoGastoResolver}
-            onAbrirHistoricoGasto={(payload) => {
-              setHistoricoDetalleCostosOrigen({
-                tipoCosto: payload.tipoCosto,
+            onAbrirHistoricoFila={(payload) => {
+              setHistoricoFilaGrilla({
+                filaId: payload.filaId,
                 columna: payload.columna,
                 etiquetaColumna: payload.etiquetaColumna,
               });
-              setHistoricoGastoFinalId(payload.gastoFinalId);
+              setHistoricoGastoFinalId(null);
               setHistoricoAbiertoDesde("grilla");
+              setHistoricoDetalleCostosOrigen(
+                payload.filaId === "cv" || payload.filaId === "cf"
+                  ? {
+                      tipoCosto: payload.filaId === "cv" ? "variables" : "fijos",
+                      columna: payload.columna,
+                      etiquetaColumna: payload.etiquetaColumna,
+                    }
+                  : null,
+              );
               setHistoricoOpen(true);
             }}
           />
@@ -735,6 +710,7 @@ export default function FinanzasBalanceMensualPageClient({
             return;
           }
           setHistoricoDetalleCostosOrigen(null);
+          setHistoricoFilaGrilla(null);
           setHistoricoGastoFinalId(id);
           setHistoricoAbiertoDesde("rubros");
           setHistoricoOpen(true);
@@ -780,6 +756,7 @@ export default function FinanzasBalanceMensualPageClient({
         }}
         onAbrirHistorico={({ gastoFinalId }) => {
           setHistoricoDetalleCostosOrigen(null);
+          setHistoricoFilaGrilla(null);
           setHistoricoGastoFinalId(gastoFinalId);
           setHistoricoAbiertoDesde("gastos_por_rubro");
           setHistoricoOpen(true);
@@ -827,6 +804,7 @@ export default function FinanzasBalanceMensualPageClient({
         }
         onAbrirHistorico={({ gastoFinalId }) => {
           setHistoricoDetalleCostosOrigen(null);
+          setHistoricoFilaGrilla(null);
           setHistoricoGastoFinalId(gastoFinalId);
           setHistoricoAbiertoDesde("lineas");
           setHistoricoOpen(true);
@@ -837,10 +815,20 @@ export default function FinanzasBalanceMensualPageClient({
         }}
       />
       <BalanceMensualGastoHistoricoModal
-        key={historicoGastoFinalId ?? "sin-gasto"}
+        key={`${historicoGastoFinalId ?? ""}-${historicoFilaGrilla?.filaId ?? ""}-${historicoFilaGrilla?.etiquetaColumna ?? ""}`}
         open={historicoOpen}
         onOpenChange={handleHistoricoOpenChange}
-        gastoFinalId={historicoGastoFinalId}
+        gastoFinalId={historicoFilaGrilla ? null : historicoGastoFinalId}
+        historialFila={
+          historicoFilaGrilla
+            ? {
+                filaConceptoId: historicoFilaGrilla.filaId,
+                columna: historicoFilaGrilla.columna,
+                mesFin: mes,
+                anioFin: anio,
+              }
+            : null
+        }
         costoClase={
           historicoDetalleCostosOrigen?.tipoCosto ??
           (historicoAbiertoDesde === "lineas" ? detalleLineasGastoCtx?.tipo : undefined) ??

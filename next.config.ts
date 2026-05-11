@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/",
-        destination: "/gestion-productos/proveedores",
+        destination: "/gestion-productos/proveedores/sugeridos",
         permanent: true,
       },
       {

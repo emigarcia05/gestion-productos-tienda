@@ -1,6 +1,10 @@
 import { getIronSession, IronSession } from "iron-session";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { Rol } from "./permisos";
+import {
+  SESION_FORZAR_ROL_SIMPLE_HEADER,
+  SESION_ROL_IRON_COOKIE,
+} from "./sesion-arranque";
 
 export interface SesionData {
   rol: Rol;
@@ -65,7 +69,7 @@ function getSessionOptions() {
   if (!sessionOptionsCached) {
     sessionOptionsCached = {
       password: getSessionPassword(),
-      cookieName: "gestion-rol",
+      cookieName: SESION_ROL_IRON_COOKIE,
       cookieOptions: {
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 8, // 8 horas
@@ -89,6 +93,10 @@ export async function getSesion(): Promise<IronSession<SesionData>> {
  * sin dejar rastro útil. Ahora caemos a "simple" y dejamos un log grepeable.
  */
 export async function getRol(): Promise<Rol> {
+  const h = await headers();
+  if (h.get(SESION_FORZAR_ROL_SIMPLE_HEADER) === "1") {
+    return "simple";
+  }
   try {
     const sesion = await getSesion();
     return sesion.rol ?? "simple";
