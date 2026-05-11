@@ -20,9 +20,9 @@ export const ETIQUETA_FILA_BALANCE_HISTORIAL: Record<
   string
 > = {
   ventas: "Ventas",
-  cv: "Costo variable",
+  cv: "Costos Variables",
   ro: "Resultado operativo",
-  cf: "Costo fijo",
+  cf: "Costos Fijos",
   re: "Resultado del ejercicio",
   mc: "Margen contribución",
   pe: "Punto de equilibrio",

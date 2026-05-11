@@ -15,13 +15,22 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { BalanceMensualGastoAgregado } from "@/lib/balanceMensualDetalle";
 
 const TH_CENTER = "text-center whitespace-nowrap";
 const TD_MONTO = "celda-datos tabular-nums";
 const CELL_MIN = "min-w-0";
+
+const COL_HISTORIAL = "border-l border-border bg-muted/35";
+const TH_HISTORIAL = cn(
+  COL_HISTORIAL,
+  "w-11 min-w-11 max-w-11 p-0 text-center align-middle text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground",
+);
+const TD_HISTORIAL = cn(COL_HISTORIAL, "w-11 min-w-11 max-w-11 p-0 align-middle");
+const BTN_HISTORIAL_SEC = cn(
+  "h-7 w-7 shrink-0 border-border bg-card/80 text-muted-foreground hover:bg-muted hover:text-foreground [&_svg]:size-3.5",
+);
 
 /** Mismo patrón que `BalanceMensualDetallePorRubroModal` (% centrado + barra debajo, relleno alineado a la izquierda). */
 function CeldaPorcentajeConBarra({
@@ -110,13 +119,14 @@ function TablaGastosRubro({
     <Table
       variant="compact"
       scrollX={false}
-      className="tabla-gestion-compacta table-fixed w-full min-w-[40rem]"
+      className="tabla-gestion-compacta table-fixed w-full min-w-[42rem]"
     >
       <colgroup>
-        <col className="w-[36%]" />
-        <col className="w-[22%]" />
-        <col className="w-[21%]" />
-        <col className="w-[21%]" />
+        <col className="w-[34%]" />
+        <col className="w-[20%]" />
+        <col className="w-[19%]" />
+        <col className="w-[19%]" />
+        <col className="w-11" />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
@@ -135,11 +145,14 @@ function TablaGastosRubro({
           >
             <span className="block">{etiquetaPctCf}</span>
           </TableHead>
+          <TableHead className={TH_HISTORIAL} scope="col" title="Evolución mensual">
+            <span className="inline-block px-0.5">Hist.</span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {gastos.length === 0 ? (
-          <EmptyTableRow colSpan={4} message="No hay gastos para este rubro." />
+          <EmptyTableRow colSpan={5} message="No hay gastos para este rubro." />
         ) : (
           gastos.map((g) => {
             const activa = filaGastoPuedeAbrirDetalle(g);
@@ -165,35 +178,8 @@ function TablaGastosRubro({
                 <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                   <span className="font-medium text-foreground">{g.gastoNombre}</span>
                 </TableCell>
-                <TableCell className={cn(TD_MONTO, "align-middle px-2")}>
-                  <div className="grid w-full grid-cols-[2.25rem_1fr] items-center gap-x-2">
-                    <div className="flex justify-center">
-                      {g.tieneHistorialDisponible && g.gastoFinalId ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                            "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
-                          )}
-                          aria-label={`Ver evolución mensual — ${g.gastoNombre}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAbrirHistorico({
-                              gastoFinalId: g.gastoFinalId,
-                              etiqueta: g.gastoNombre,
-                            });
-                          }}
-                        >
-                          <ChartNoAxesColumn className="size-3.5" aria-hidden />
-                        </Button>
-                      ) : null}
-                    </div>
-                    <span className="min-w-0 text-right tabular-nums text-foreground">
-                      {fmtMonto(g.monto)}
-                    </span>
-                  </div>
+                <TableCell className={cn(TD_MONTO, "align-middle px-2 text-right")}>
+                  <span className="tabular-nums text-foreground">{fmtMonto(g.monto)}</span>
                 </TableCell>
                 <TableCell
                   className={cn(
@@ -210,6 +196,28 @@ function TablaGastosRubro({
                   )}
                 >
                   <CeldaPorcentajeConBarra parte={g.monto} denominador={totalTipoCelda} />
+                </TableCell>
+                <TableCell className={TD_HISTORIAL}>
+                  <div className="flex justify-center py-0.5">
+                    {g.tieneHistorialDisponible && g.gastoFinalId ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className={BTN_HISTORIAL_SEC}
+                        aria-label={`Ver evolución mensual — ${g.gastoNombre}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAbrirHistorico({
+                            gastoFinalId: g.gastoFinalId,
+                            etiqueta: g.gastoNombre,
+                          });
+                        }}
+                      >
+                        <ChartNoAxesColumn aria-hidden />
+                      </Button>
+                    ) : null}
+                  </div>
                 </TableCell>
               </TableRow>
             );

@@ -16,7 +16,6 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type {
   BalanceMensualSeccionTipoRubros,
@@ -26,6 +25,17 @@ import type {
 const TH_CENTER = "text-center whitespace-nowrap";
 const TD_MONTO = "celda-datos tabular-nums";
 const CELL_MIN = "min-w-0";
+
+/** Columna fija a la derecha: historial con estética secundaria (no compite con datos de la grilla). */
+const COL_HISTORIAL = "border-l border-border bg-muted/35";
+const TH_HISTORIAL = cn(
+  COL_HISTORIAL,
+  "w-11 min-w-11 max-w-11 p-0 text-center align-middle text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground",
+);
+const TD_HISTORIAL = cn(COL_HISTORIAL, "w-11 min-w-11 max-w-11 p-0 align-middle");
+const BTN_HISTORIAL_SEC = cn(
+  "h-7 w-7 shrink-0 border-border bg-card/80 text-muted-foreground hover:bg-muted hover:text-foreground [&_svg]:size-3.5",
+);
 
 function CeldaPorcentajeConBarra({
   parte,
@@ -140,9 +150,10 @@ export default function BalanceMensualDetallePorRubroModal({
                 className="tabla-gestion-compacta table-fixed w-full min-w-[32rem]"
               >
                 <colgroup>
-                  <col className="w-[44%]" />
-                  <col className="w-[28%]" />
-                  <col className="w-[28%]" />
+                  <col className="w-[40%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-11" />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -154,13 +165,16 @@ export default function BalanceMensualDetallePorRubroModal({
                     >
                       <span className="block">{etiquetaPctBase}</span>
                     </TableHead>
+                    <TableHead className={TH_HISTORIAL} scope="col" title="Evolución mensual">
+                      <span className="inline-block px-0.5">Hist.</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {secciones.length === 0 ||
                   secciones.every((s) => s.rubros.length === 0) ? (
                     <EmptyTableRow
-                      colSpan={3}
+                      colSpan={4}
                       message="No hay imputaciones para este concepto en el periodo."
                     />
                   ) : (
@@ -168,7 +182,7 @@ export default function BalanceMensualDetallePorRubroModal({
                       <Fragment key={`${sec.etiquetaTipo}-${sec.tipoGastoNombre ?? "pool"}`}>
                         <TableRow className="bg-muted/45 hover:bg-muted/45">
                           <TableCell
-                            colSpan={3}
+                            colSpan={4}
                             className="celda-datos py-2 text-xs font-semibold uppercase tracking-wide text-foreground"
                           >
                             {fmtTituloPalabras(sec.etiquetaTipo.toLowerCase())}
@@ -196,30 +210,8 @@ export default function BalanceMensualDetallePorRubroModal({
                             <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                               <span className="font-medium text-foreground">{r.etiqueta}</span>
                             </TableCell>
-                            <TableCell className={cn(TD_MONTO, "align-middle px-2")}>
-                              <div className="grid w-full grid-cols-[2.25rem_1fr] items-center gap-x-2">
-                                <div className="flex justify-center">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                      TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                                      "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
-                                    )}
-                                    aria-label={`Ver evolución mensual — ${r.etiqueta}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onAbrirHistoricoRubro(r.clave);
-                                    }}
-                                  >
-                                    <ChartNoAxesColumn className="size-3.5" aria-hidden />
-                                  </Button>
-                                </div>
-                                <span className="min-w-0 text-right tabular-nums text-foreground">
-                                  {fmtMonto(r.monto)}
-                                </span>
-                              </div>
+                            <TableCell className={cn(TD_MONTO, "align-middle px-2 text-right")}>
+                              <span className="tabular-nums text-foreground">{fmtMonto(r.monto)}</span>
                             </TableCell>
                             <TableCell
                               className={cn(
@@ -228,6 +220,23 @@ export default function BalanceMensualDetallePorRubroModal({
                               )}
                             >
                               <CeldaPorcentajeConBarra parte={r.monto} totalTipoCelda={totalTipoCelda} />
+                            </TableCell>
+                            <TableCell className={TD_HISTORIAL}>
+                              <div className="flex justify-center py-0.5">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className={BTN_HISTORIAL_SEC}
+                                  aria-label={`Ver evolución mensual — ${r.etiqueta}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAbrirHistoricoRubro(r.clave);
+                                  }}
+                                >
+                                  <ChartNoAxesColumn aria-hidden />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                           );

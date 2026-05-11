@@ -158,7 +158,7 @@ const FILAS_BALANCE: FilaBalance[] = [
   {
     id: "cv",
     tipo: "monto",
-    etiquetaConcepto: "Costo variable",
+    etiquetaConcepto: "Costos Variables",
     get: (b) => b.costosVariables,
     valorNegrita: false,
   },
@@ -173,7 +173,7 @@ const FILAS_BALANCE: FilaBalance[] = [
   {
     id: "cf",
     tipo: "monto",
-    etiquetaConcepto: "Costo fijo",
+    etiquetaConcepto: "Costos Fijos",
     get: (b) => b.costosFijos,
     valorNegrita: false,
   },
@@ -662,8 +662,8 @@ export default function FinanzasBalanceMensualPageClient({
         titulo={
           detalleRubrosCtx
             ? detalleRubrosCtx.tipo === "variables"
-              ? "Detalle costo variable por rubro"
-              : "Detalle costo fijo por rubro"
+              ? "Detalle costos variables por rubro"
+              : "Detalle costos fijos por rubro"
             : "Detalle por rubro"
         }
         subtitulo={

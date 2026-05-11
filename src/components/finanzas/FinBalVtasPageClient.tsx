@@ -145,7 +145,7 @@ export default function FinBalVtasPageClient({
     <>
       <ClassicFilteredTableLayout
         title="FINANZAS"
-        subtitle="Balance · Ventas"
+        subtitle="Ventas Mensuales"
         contentWidth="full"
         actions={
           esEditor ? (

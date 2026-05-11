@@ -164,7 +164,7 @@ const FINANZAS_MODULES: {
       },
       {
         href: "/finanzas/balance/vtas",
-        label: "Balance Vtas",
+        label: "Ventas Mensuales",
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
