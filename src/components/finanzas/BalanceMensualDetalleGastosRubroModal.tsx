@@ -93,8 +93,6 @@ export default function BalanceMensualDetalleGastosRubroModal({
   onAbrirHistorico,
   onVolver,
 }: Props) {
-  const etiquetaPctTipo = "% SOBRE TIPO";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -104,16 +102,16 @@ export default function BalanceMensualDetalleGastosRubroModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(36rem,70vh)]"
         scrollBody={false}
         actions={
-          <>
-            {onVolver ? (
-              <Button type="button" variant="outline" onClick={onVolver}>
-                Volver
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
-          </>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (onVolver) onVolver();
+              else onOpenChange(false);
+            }}
+          >
+            Volver
+          </Button>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
@@ -161,9 +159,12 @@ export default function BalanceMensualDetalleGastosRubroModal({
                     </TableHead>
                     <TableHead
                       className={cn(TH_PCT, CELL_MIN, "text-[10px] leading-tight")}
-                      title={`Participación sobre el total del tipo de gasto en esta columna (${tipo === "variables" ? "variables + reparto proporcional del pool" : "fijos + reparto proporcional del pool"} en sucursal).`}
+                      title={`Participación sobre el total de ${tipo === "variables" ? "costos variables" : "costos fijos"} de esta columna del balance (incluye reparto proporcional del pool en sucursal).`}
                     >
-                      <span className="block">{etiquetaPctTipo}</span>
+                      <span className="block">% SOBRE</span>
+                      <span className="block">
+                        {tipo === "variables" ? "COSTOS VARIABLES" : "COSTOS FIJOS"}
+                      </span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -176,31 +177,35 @@ export default function BalanceMensualDetalleGastosRubroModal({
                       return (
                         <TableRow key={r.imputacionId}>
                           <TableCell className={cn(CELL_MIN, "celda-datos align-middle")}>
-                            <span className="block text-xs text-muted-foreground">
+                            <span className="block text-xs text-black">
                               {r.proveedorNombre} · {r.sucursalNombre}
                             </span>
                           </TableCell>
-                          <TableCell className={cn(TD_NUM, "align-middle")}>
-                            <div className="flex w-full items-center justify-end gap-1.5">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={cn(
-                                  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                                  "!h-8 !w-8 shrink-0 !p-0 [&_svg]:size-4",
-                                )}
-                                aria-label={`Ver evolución mensual — ${r.gastoNombre}`}
-                                onClick={() =>
-                                  onAbrirHistorico({
-                                    gastoFinalId: r.gastoFinalId,
-                                    etiqueta: `${r.gastoNombre} — ${r.proveedorNombre} · ${r.sucursalNombre}`,
-                                  })
-                                }
-                              >
-                                <ChartNoAxesColumn className="h-4 w-4" aria-hidden />
-                              </Button>
-                              <span>{fmtMonto(r.monto)}</span>
+                          <TableCell className={cn(TD_NUM, "align-middle px-2")}>
+                            <div className="grid w-full grid-cols-[2.25rem_1fr] items-center gap-x-2">
+                              <div className="flex justify-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                                    "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
+                                  )}
+                                  aria-label={`Ver evolución mensual — ${r.gastoNombre}`}
+                                  onClick={() =>
+                                    onAbrirHistorico({
+                                      gastoFinalId: r.gastoFinalId,
+                                      etiqueta: `${r.gastoNombre} — ${r.proveedorNombre} · ${r.sucursalNombre}`,
+                                    })
+                                  }
+                                >
+                                  <ChartNoAxesColumn className="size-3.5" aria-hidden />
+                                </Button>
+                              </div>
+                              <span className="min-w-0 text-right tabular-nums text-foreground">
+                                {fmtMonto(r.monto)}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell

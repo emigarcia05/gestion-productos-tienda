@@ -196,16 +196,16 @@ export default function BalanceMensualGastoHistoricoModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(28rem,72vh)]"
         scrollBody={false}
         actions={
-          <>
-            {onVolver ? (
-              <Button type="button" variant="outline" onClick={onVolver}>
-                Volver
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
-          </>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (onVolver) onVolver();
+              else onOpenChange(false);
+            }}
+          >
+            Volver
+          </Button>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">

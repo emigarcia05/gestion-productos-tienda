@@ -357,6 +357,11 @@ export interface BalanceMensualGastoAgregado {
   cantidadLineas: number;
   /** Al menos una línea tiene gasto final vinculado (permite evolución / histórico). */
   tieneHistorialDisponible: boolean;
+  /**
+   * `gastoFinalId` representativo para evolución mensual (línea con mayor monto entre las del mismo nombre).
+   * Vacío si no hay historial.
+   */
+  gastoFinalId: string;
 }
 
 /** Gastos agregados por nombre para un rubro (y tipo, salvo reparto CC). Orden: mayor monto primero. */
@@ -372,17 +377,32 @@ export function listarGastosAgregadosPorRubroTipo(
   });
   const mapa = new Map<
     string,
-    { monto: number; cantidadLineas: number; tieneHistorialDisponible: boolean }
+    {
+      monto: number;
+      cantidadLineas: number;
+      tieneHistorialDisponible: boolean;
+      gastoFinalId: string;
+      maxMontoHistorial: number;
+    }
   >();
   for (const L of lineas) {
     const cur = mapa.get(L.gastoNombre) ?? {
       monto: 0,
       cantidadLineas: 0,
       tieneHistorialDisponible: false,
+      gastoFinalId: "",
+      maxMontoHistorial: -1,
     };
     cur.monto += L.monto;
     cur.cantidadLineas += 1;
-    if (L.gastoFinalId.trim() !== "") cur.tieneHistorialDisponible = true;
+    const gid = L.gastoFinalId.trim();
+    if (gid) {
+      cur.tieneHistorialDisponible = true;
+      if (L.monto > cur.maxMontoHistorial) {
+        cur.maxMontoHistorial = L.monto;
+        cur.gastoFinalId = L.gastoFinalId.trim();
+      }
+    }
     mapa.set(L.gastoNombre, cur);
   }
   const out: BalanceMensualGastoAgregado[] = [];
@@ -393,6 +413,7 @@ export function listarGastosAgregadosPorRubroTipo(
       monto: v.monto,
       cantidadLineas: v.cantidadLineas,
       tieneHistorialDisponible: v.tieneHistorialDisponible,
+      gastoFinalId: v.tieneHistorialDisponible ? v.gastoFinalId : "",
     });
   }
   ordenarDetalleBalancePorMontoDesc(out, (a, b) =>
@@ -506,4 +527,28 @@ export function listarGastosDetalleRubro(
     ),
   );
   return out;
+}
+
+/**
+ * `gastoFinalId` de la línea con mayor monto (entre las que tienen id) dentro del rubro,
+ * para abrir evolución mensual desde el modal por rubro.
+ */
+export function resolverGastoFinalIdHistorialRubro(
+  filas: BalanceGastoMensualFila[],
+  columna: BalanceMensualColumnaDetalle,
+  tipoCosto: "variables" | "fijos",
+  rubroClave: string,
+): string | null {
+  const lineas = listarGastosDetalleRubro(filas, columna, tipoCosto, rubroClave, {});
+  let bestId: string | null = null;
+  let bestMonto = -1;
+  for (const L of lineas) {
+    const id = L.gastoFinalId?.trim() ?? "";
+    if (!id) continue;
+    if (L.monto > bestMonto) {
+      bestMonto = L.monto;
+      bestId = id;
+    }
+  }
+  return bestId;
 }

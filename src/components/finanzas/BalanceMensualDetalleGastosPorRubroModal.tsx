@@ -1,6 +1,7 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
+import { ChartNoAxesColumn } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { BalanceMensualGastoAgregado } from "@/lib/balanceMensualDetalle";
 
@@ -74,6 +76,7 @@ interface Props {
   totalRubroSeccion: number;
   gastos: BalanceMensualGastoAgregado[];
   onElegirGasto: (g: BalanceMensualGastoAgregado) => void;
+  onAbrirHistorico: (payload: { gastoFinalId: string; etiqueta: string }) => void;
   onVolver?: () => void;
 }
 
@@ -84,6 +87,7 @@ function TablaGastosRubro({
   etiquetaPctCf,
   gastos,
   onElegirGasto,
+  onAbrirHistorico,
 }: {
   tipo: "variables" | "fijos";
   totalTipoCelda: number;
@@ -91,10 +95,12 @@ function TablaGastosRubro({
   etiquetaPctCf: string;
   gastos: BalanceMensualGastoAgregado[];
   onElegirGasto: (g: BalanceMensualGastoAgregado) => void;
+  onAbrirHistorico: (payload: { gastoFinalId: string; etiqueta: string }) => void;
 }) {
   function onFilaKeyDown(e: KeyboardEvent<HTMLTableRowElement>, g: BalanceMensualGastoAgregado) {
     if (!filaGastoPuedeAbrirDetalle(g)) return;
     if (e.key === "Enter" || e.key === " ") {
+      if ((e.target as HTMLElement).closest("button")) return;
       e.preventDefault();
       onElegirGasto(g);
     }
@@ -149,13 +155,46 @@ function TablaGastosRubro({
                 aria-label={
                   activa ? `Abrir detalle e historial — ${g.gastoNombre}` : undefined
                 }
-                onClick={() => activa && onElegirGasto(g)}
+                onClick={(ev) => {
+                  if (!activa) return;
+                  if ((ev.target as HTMLElement).closest("button")) return;
+                  onElegirGasto(g);
+                }}
                 onKeyDown={(e) => onFilaKeyDown(e, g)}
               >
                 <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                   <span className="font-medium text-foreground">{g.gastoNombre}</span>
                 </TableCell>
-                <TableCell className={cn(TD_MONTO, "align-middle")}>{fmtMonto(g.monto)}</TableCell>
+                <TableCell className={cn(TD_MONTO, "align-middle px-2")}>
+                  <div className="grid w-full grid-cols-[2.25rem_1fr] items-center gap-x-2">
+                    <div className="flex justify-center">
+                      {g.tieneHistorialDisponible && g.gastoFinalId ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                            "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
+                          )}
+                          aria-label={`Ver evolución mensual — ${g.gastoNombre}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAbrirHistorico({
+                              gastoFinalId: g.gastoFinalId,
+                              etiqueta: g.gastoNombre,
+                            });
+                          }}
+                        >
+                          <ChartNoAxesColumn className="size-3.5" aria-hidden />
+                        </Button>
+                      ) : null}
+                    </div>
+                    <span className="min-w-0 text-right tabular-nums text-foreground">
+                      {fmtMonto(g.monto)}
+                    </span>
+                  </div>
+                </TableCell>
                 <TableCell
                   className={cn(
                     TD_MONTO,
@@ -192,6 +231,7 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
   totalRubroSeccion,
   gastos,
   onElegirGasto,
+  onAbrirHistorico,
   onVolver,
 }: Props) {
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
@@ -207,16 +247,16 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(32rem,62vh)]"
         scrollBody={false}
         actions={
-          <>
-            {onVolver ? (
-              <Button type="button" variant="outline" onClick={onVolver}>
-                Volver
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
-          </>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (onVolver) onVolver();
+              else onOpenChange(false);
+            }}
+          >
+            Volver
+          </Button>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
@@ -234,6 +274,7 @@ export default function BalanceMensualDetalleGastosPorRubroModal({
                 etiquetaPctCf={etiquetaPctCf}
                 gastos={gastos}
                 onElegirGasto={onElegirGasto}
+                onAbrirHistorico={onAbrirHistorico}
               />
             </div>
           </div>

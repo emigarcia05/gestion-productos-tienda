@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { Fragment } from "react";
+import { ChartNoAxesColumn } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type {
   BalanceMensualSeccionTipoRubros,
@@ -73,6 +75,8 @@ interface Props {
   totalCfCelda: number;
   secciones: BalanceMensualSeccionTipoRubros[];
   onElegirRubro: (payload: ElegirRubroBalancePayload) => void;
+  /** Evolución mensual por rubro (id representativo de mayor impacto en el rubro). */
+  onAbrirHistoricoRubro: (rubroClave: string) => void;
   onVolver?: () => void;
 }
 
@@ -86,6 +90,7 @@ export default function BalanceMensualDetallePorRubroModal({
   totalCfCelda,
   secciones,
   onElegirRubro,
+  onAbrirHistoricoRubro,
   onVolver,
 }: Props) {
   const totalTipoCelda = tipo === "variables" ? totalCvCelda : totalCfCelda;
@@ -94,6 +99,7 @@ export default function BalanceMensualDetallePorRubroModal({
 
   function onFilaRubroKeyDown(e: KeyboardEvent<HTMLTableRowElement>, payload: ElegirRubroBalancePayload) {
     if (e.key === "Enter" || e.key === " ") {
+      if ((e.target as HTMLElement).closest("button")) return;
       e.preventDefault();
       onElegirRubro(payload);
     }
@@ -108,16 +114,16 @@ export default function BalanceMensualDetallePorRubroModal({
         bodyClassName="flex flex-col min-h-0 max-h-[min(32rem,62vh)]"
         scrollBody={false}
         actions={
-          <>
-            {onVolver ? (
-              <Button type="button" variant="outline" onClick={onVolver}>
-                Volver
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
-          </>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (onVolver) onVolver();
+              else onOpenChange(false);
+            }}
+          >
+            Volver
+          </Button>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 text-sm">
@@ -181,14 +187,39 @@ export default function BalanceMensualDetallePorRubroModal({
                             tabIndex={0}
                             className="cursor-pointer hover:bg-muted/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             aria-label={`Ver gastos del rubro — ${r.etiqueta}`}
-                            onClick={() => onElegirRubro(payload)}
+                            onClick={(ev) => {
+                              if ((ev.target as HTMLElement).closest("button")) return;
+                              onElegirRubro(payload);
+                            }}
                             onKeyDown={(e) => onFilaRubroKeyDown(e, payload)}
                           >
                             <TableCell className={cn(CELL_MIN, "celda-datos align-middle !text-left")}>
                               <span className="font-medium text-foreground">{r.etiqueta}</span>
                             </TableCell>
-                            <TableCell className={cn(TD_MONTO, "align-middle")}>
-                              {fmtMonto(r.monto)}
+                            <TableCell className={cn(TD_MONTO, "align-middle px-2")}>
+                              <div className="grid w-full grid-cols-[2.25rem_1fr] items-center gap-x-2">
+                                <div className="flex justify-center">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                      TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                                      "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
+                                    )}
+                                    aria-label={`Ver evolución mensual — ${r.etiqueta}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAbrirHistoricoRubro(r.clave);
+                                    }}
+                                  >
+                                    <ChartNoAxesColumn className="size-3.5" aria-hidden />
+                                  </Button>
+                                </div>
+                                <span className="min-w-0 text-right tabular-nums text-foreground">
+                                  {fmtMonto(r.monto)}
+                                </span>
+                              </div>
                             </TableCell>
                             <TableCell
                               className={cn(
