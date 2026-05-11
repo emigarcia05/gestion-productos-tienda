@@ -16,6 +16,7 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type {
   BalanceMensualSeccionTipoRubros,
@@ -26,15 +27,16 @@ const TH_CENTER = "text-center whitespace-nowrap";
 const TD_MONTO = "celda-datos tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** Columna fija a la derecha: historial con estética secundaria (no compite con datos de la grilla). */
-const COL_HISTORIAL = "border-l border-border bg-muted/35";
+/** Columna fija a la derecha: fondo suave + divisor alineado al azul de informe (#0072BB). */
+const COL_HISTORIAL = "border-l-2 border-[#0072BB] bg-muted/35";
 const TH_HISTORIAL = cn(
   COL_HISTORIAL,
   "w-11 min-w-11 max-w-11 p-0 text-center align-middle text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground",
 );
 const TD_HISTORIAL = cn(COL_HISTORIAL, "w-11 min-w-11 max-w-11 p-0 align-middle");
-const BTN_HISTORIAL_SEC = cn(
-  "h-7 w-7 shrink-0 border-border bg-card/80 text-muted-foreground hover:bg-muted hover:text-foreground [&_svg]:size-3.5",
+const CLASE_BOTON_HISTORIAL_MODAL = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
 );
 
 function CeldaPorcentajeConBarra({
@@ -225,9 +227,9 @@ export default function BalanceMensualDetallePorRubroModal({
                               <div className="flex justify-center py-0.5">
                                 <Button
                                   type="button"
-                                  variant="outline"
+                                  variant="ghost"
                                   size="icon"
-                                  className={BTN_HISTORIAL_SEC}
+                                  className={CLASE_BOTON_HISTORIAL_MODAL}
                                   aria-label={`Ver evolución mensual — ${r.etiqueta}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
