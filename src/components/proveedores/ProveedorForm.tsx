@@ -93,12 +93,12 @@ export default function ProveedorForm({
     } else {
       setProveedorMercaderia(proveedor.proveedorMercaderia === false ? "no" : "si");
     }
-  }, [modalOpen, proveedor?.id, proveedor?.proveedorMercaderia]);
+  }, [modalOpen, proveedor]);
 
   useEffect(() => {
     if (!modalOpen) return;
     setIva(proveedor?.iva ?? "PREGUNTA");
-  }, [modalOpen, proveedor?.id, proveedor?.iva]);
+  }, [modalOpen, proveedor]);
 
   useEffect(() => {
     onProveedorMercaderiaListoChange?.(proveedorMercaderia !== "");

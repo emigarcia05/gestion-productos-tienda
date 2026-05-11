@@ -113,7 +113,6 @@ export async function syncListaPrecioTiendaFromDux(
       )
     );
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     await assertListaPrecioTiendaSyncNotCancelled();
     const { results, total, hasMore } = await Promise.race([

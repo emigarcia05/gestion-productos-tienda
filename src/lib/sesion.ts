@@ -6,33 +6,78 @@ export interface SesionData {
   rol: Rol;
 }
 
-// En producción SESSION_SECRET debe estar definido en .env (mín. 32 caracteres).
-// En desarrollo, si no existe, se usa un valor por defecto para evitar "Missing password".
-const SESSION_PASSWORD =
-  process.env.SESSION_SECRET ||
-  (process.env.NODE_ENV === "production"
-    ? ""
-    : "dev-secret-min-32-chars-para-iron-session");
+/** Fallback dev (≥32) para iron-session. */
+const DEV_SESSION_PASSWORD = "dev-secret-min-32-chars-para-iron-session";
+/** Solo para `next build` con NODE_ENV=production y sin secret válido (collect static). */
+const BUILD_PLACEHOLDER_PASSWORD =
+  "next-build-placeholder-use-real-SESSION_SECRET-in-.env";
 
-if (!SESSION_PASSWORD || SESSION_PASSWORD.length < 32) {
+function isLikelyNextBuildProcess(): boolean {
+  // Next.js fija esto en el proceso principal y en workers durante `next build`.
+  if (process.env.NEXT_PHASE === "phase-production-build") return true;
+  if (process.env.npm_lifecycle_event === "build") return true;
+  const args = process.argv;
+  if (!args.includes("build")) return false;
+  return args.some((arg) => {
+    const n = arg.replace(/\\/g, "/");
+    return (
+      n.endsWith("/next") ||
+      n.endsWith("/next.js") ||
+      n.includes("/next/dist/") ||
+      n.includes("node_modules/next/")
+    );
+  });
+}
+
+/**
+ * Resuelve la contraseña de iron-session. No ejecutar en top-level: `next build`
+ * corre con NODE_ENV=production y aún así debe poder importar este módulo.
+ */
+function getSessionPassword(): string {
+  const secret = process.env.SESSION_SECRET?.trim();
+  if (secret && secret.length >= 32) {
+    return secret;
+  }
+  if (process.env.NODE_ENV !== "production") {
+    return DEV_SESSION_PASSWORD;
+  }
+  if (isLikelyNextBuildProcess()) {
+    return BUILD_PLACEHOLDER_PASSWORD;
+  }
   throw new Error(
     "SESSION_SECRET no configurado o demasiado corto. Añade SESSION_SECRET en .env con al menos 32 caracteres. " +
       "Puedes copiar .env.example a .env y editar SESSION_SECRET."
   );
 }
 
-const SESSION_OPTIONS = {
-  password: SESSION_PASSWORD,
-  cookieName: "gestion-rol",
-  cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 8, // 8 horas
-  },
-};
+let sessionOptionsCached:
+  | {
+      password: string;
+      cookieName: string;
+      cookieOptions: {
+        secure: boolean;
+        maxAge: number;
+      };
+    }
+  | undefined;
+
+function getSessionOptions() {
+  if (!sessionOptionsCached) {
+    sessionOptionsCached = {
+      password: getSessionPassword(),
+      cookieName: "gestion-rol",
+      cookieOptions: {
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 8, // 8 horas
+      },
+    };
+  }
+  return sessionOptionsCached;
+}
 
 export async function getSesion(): Promise<IronSession<SesionData>> {
   const cookieStore = await cookies();
-  return getIronSession<SesionData>(cookieStore, SESSION_OPTIONS);
+  return getIronSession<SesionData>(cookieStore, getSessionOptions());
 }
 
 /**
@@ -49,6 +94,10 @@ export async function getRol(): Promise<Rol> {
     return sesion.rol ?? "simple";
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    // Intentos de prerender donde `cookies()` fuerza ruta dinámica; no es cookie corrupta.
+    if (msg.includes("Dynamic server usage") && msg.includes("cookies")) {
+      return "simple";
+    }
     console.error("[sesion][getRol] cookie inválida o sesion no recuperable:", msg);
     return "simple";
   }

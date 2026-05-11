@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
@@ -24,6 +24,7 @@ export default function BuscadorSimple({
   extraParams,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const {
     q,
@@ -43,7 +44,7 @@ export default function BuscadorSimple({
       if (extraParams) {
         for (const [k, v] of Object.entries(extraParams)) if (v) params.set(k, v);
       }
-      window.location.href = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      router.push(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`);
     },
   });
 
@@ -55,7 +56,7 @@ export default function BuscadorSimple({
     if (extraParams) {
       for (const [k, v] of Object.entries(extraParams)) if (v) params.set(k, v);
     }
-    window.location.href = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    router.push(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   return (

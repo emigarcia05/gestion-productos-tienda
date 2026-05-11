@@ -115,10 +115,10 @@ export default function AcreditarChequeTesoreriaModal({
           <div className="max-h-[min(22rem,45vh)] overflow-auto rounded-md border border-border">
             <Table variant="compact" scrollX={false} className="table-fixed w-full">
               <colgroup>
-                <col style={{ width: "28%" }} />
-                <col style={{ width: "28%" }} />
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "22%" }} />
+                <col className="w-[28%]" />
+                <col className="w-[28%]" />
+                <col className="w-[22%]" />
+                <col className="w-[22%]" />
               </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -52,9 +51,8 @@ interface Props {
   productos: ProductoPedidoUrgente[];
   sinFiltros?: boolean;
   mensajeSinSucursal?: string;
-  /** Estado de cantidades controlado desde el padre (PedidoUrgentePageClient). */
-  cantPorId?: Record<string, string>;
-  setCantPorId?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  /** Cantidades mostradas (controlado desde PedidoUrgentePageClient). */
+  cantPorId: Record<string, string>;
   /** Callback al hacer doble click en una fila para abrir el modal de edición de cantidad. */
   onRowDoubleClick?: (producto: ProductoPedidoUrgente) => void;
   onRowDeleteClick?: (producto: ProductoPedidoUrgente) => void;
@@ -64,14 +62,10 @@ export default function TablaPedidoUrgente({
   productos,
   sinFiltros = false,
   mensajeSinSucursal = "Seleccioná una sucursal para ver los productos.",
-  cantPorId: cantPorIdProp,
-  setCantPorId: setCantPorIdProp,
+  cantPorId,
   onRowDoubleClick,
   onRowDeleteClick,
 }: Props) {
-  const [cantPorIdInternal, setCantPorIdInternal] = useState<Record<string, string>>({});
-  const cantPorId = cantPorIdProp ?? cantPorIdInternal;
-  const setCantPorId = setCantPorIdProp ?? setCantPorIdInternal;
 
   const visibleProductos = productos;
 

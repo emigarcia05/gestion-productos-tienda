@@ -271,11 +271,11 @@ export default function PosicionIvaBalanceClient({
                   className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
                 >
                   <colgroup>
-                    <col style={{ width: "22%" }} />
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "24%" }} />
+                    <col className="w-[22%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[24%]" />
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">

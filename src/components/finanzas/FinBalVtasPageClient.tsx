@@ -264,11 +264,11 @@ export default function FinBalVtasPageClient({
             <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
               <Table variant="compact" scrollX={false} className="tabla-gestion-compacta w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "24%" }} />
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: esEditor ? "24%" : "36%" }} />
-                  {esEditor ? <col style={{ width: "12%" }} /> : null}
+                  <col className="w-[20%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[20%]" />
+                  <col className={cn(esEditor ? "w-[24%]" : "w-[36%]")} />
+                  {esEditor ? <col className="w-[12%]" /> : null}
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">

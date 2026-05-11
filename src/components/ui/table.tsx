@@ -23,7 +23,7 @@ interface TableProps extends React.ComponentProps<"table"> {
 
 /** Diseño único de tablas (referencia: Comp. Proveedores). Aplica .tabla-gestion-compacta (globals.css).
  * Encabezado fijo: `TableHeader` / `TableHead` + `globals.css`; el scroll lo define el ancestro, no `data-slot="table-container"`. */
-function Table({ className, variant, scrollX = true, ...props }: TableProps) {
+function Table({ className, variant: _variant, scrollX = true, ...props }: TableProps) {
   const tableClass = cn("tabla-gestion-compacta", className)
   return (
     <div

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import { usePathname } from "next/navigation";
+import { useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -54,6 +54,7 @@ export default function FiltrosHistorialPedidos({
   total,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const qLocalRef = useRef(q);
 
   function applyNavigate(
@@ -77,7 +78,7 @@ export default function FiltrosHistorialPedidos({
     if (nextSucursal) search.set("sucursal", nextSucursal);
     search.set("estado", nextEstado);
     if (nextQ.trim()) search.set("q", nextQ.trim());
-    window.location.href = `${pathname}?${search.toString()}`;
+    router.push(`${pathname}?${search.toString()}`);
   }
 
   const {
@@ -97,7 +98,9 @@ export default function FiltrosHistorialPedidos({
     },
   });
 
-  qLocalRef.current = qLocal;
+  useEffect(() => {
+    qLocalRef.current = qLocal;
+  }, [qLocal]);
 
   const hayFiltros =
     !!proveedorId.trim() ||

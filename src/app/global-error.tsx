@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { cn } from "@/lib/utils";
+import "./globals.css";
 
 /**
  * Boundary GLOBAL: captura cualquier excepción no atrapada que ocurra durante el
@@ -16,6 +18,7 @@ import { useEffect } from "react";
  * Notas obligatorias de Next.js para `global-error.tsx`:
  *  - DEBE ser Client Component.
  *  - DEBE renderizar sus propios `<html>` y `<body>` (reemplaza al root layout).
+ *  - Se importa `globals.css` para poder usar tokens (`bg-background`, `border-border`, etc.).
  */
 export default function GlobalError({
   error,
@@ -36,91 +39,44 @@ export default function GlobalError({
   return (
     <html lang="es">
       <body
-        style={{
-          margin: 0,
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f6f7f8",
-          color: "#0f172a",
-          fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-        }}
+        className={cn(
+          "m-0 min-h-screen flex items-center justify-center p-4",
+          "bg-background font-sans text-foreground antialiased"
+        )}
       >
         <div
-          style={{
-            maxWidth: 480,
-            width: "calc(100% - 2rem)",
-            background: "#ffffff",
-            border: "1px solid #e2e8f0",
-            borderRadius: 12,
-            padding: "1.5rem 1.5rem 1.25rem",
-            boxShadow:
-              "0 1px 2px 0 rgba(0,0,0,0.04), 0 1px 3px 0 rgba(0,0,0,0.06)",
-            textAlign: "left",
-          }}
+          className={cn(
+            "w-full max-w-[30rem] rounded-xl border border-border bg-card p-6 text-left shadow-sm"
+          )}
         >
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+          <h1 className="m-0 text-lg font-semibold text-foreground">
             Algo salió mal
           </h1>
-          <p style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>
+          <p className="mt-2 text-sm text-muted-foreground">
             Ocurrió un error inesperado al renderizar la página. Reintentá la
             operación; si el problema persiste, contactá a soporte con el código
             indicado abajo.
           </p>
           {error.digest ? (
-            <p
-              style={{
-                marginTop: 12,
-                fontFamily:
-                  "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                fontSize: 12,
-                color: "#334155",
-                wordBreak: "break-all",
-              }}
-            >
+            <p className="mt-3 break-all font-mono text-xs text-muted-foreground">
               digest: {error.digest}
             </p>
           ) : null}
-          <div
-            style={{
-              marginTop: 16,
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => reset()}
-              style={{
-                cursor: "pointer",
-                padding: "0.5rem 0.875rem",
-                fontSize: 14,
-                fontWeight: 500,
-                color: "#ffffff",
-                background: "#0072bb",
-                border: "1px solid #0072bb",
-                borderRadius: 8,
-              }}
+              className={cn(
+                "cursor-pointer rounded-lg border border-primary bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground"
+              )}
             >
               Reintentar
             </button>
             <a
               href="/gestion-productos/proveedores"
-              style={{
-                padding: "0.5rem 0.875rem",
-                fontSize: 14,
-                fontWeight: 500,
-                color: "#0f172a",
-                background: "#ffffff",
-                border: "1px solid #cbd5e1",
-                borderRadius: 8,
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
+              className={cn(
+                "inline-flex items-center rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground no-underline"
+              )}
             >
               Ir al inicio
             </a>

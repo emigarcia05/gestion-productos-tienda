@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from "react";
+import { useState, useImperativeHandle, forwardRef, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import {
@@ -103,10 +103,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
   {
     data,
     sucursalActual,
-    qActual,
-    marcaActual,
-    rubroActual,
-    soloNegativoActual,
+    qActual: _qActual,
+    marcaActual: _marcaActual,
+    rubroActual: _rubroActual,
+    soloNegativoActual: _soloNegativoActual,
     onFiltradosCountChange,
   },
   ref
@@ -135,34 +135,40 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
   useEffect(() => {
     if (data.items.length === 0) return;
-    setStocksEditados((prev) => {
-      let hasNew = false;
-      const next = { ...prev };
-      for (const i of data.items) {
-        if (next[i.id] === undefined) {
-          hasNew = true;
-          next[i.id] = Number.isInteger(i.stock)
-            ? i.stock.toFixed(0)
-            : i.stock.toFixed(2);
+    queueMicrotask(() => {
+      setStocksEditados((prev) => {
+        let hasNew = false;
+        const next = { ...prev };
+        for (const i of data.items) {
+          if (next[i.id] === undefined) {
+            hasNew = true;
+            next[i.id] = Number.isInteger(i.stock)
+              ? i.stock.toFixed(0)
+              : i.stock.toFixed(2);
+          }
         }
-      }
-      return hasNew ? next : prev;
+        return hasNew ? next : prev;
+      });
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `idsKey` acota cambios al conjunto de filas
   }, [idsKey]);
 
   useEffect(() => {
     if (data.items.length === 0) return;
-    setExportaciones((prev) => {
-      let hasNew = false;
-      const next = { ...prev };
-      for (const i of data.items) {
-        if (i.ultimaExportacionExcel && next[i.id] === undefined) {
-          hasNew = true;
-          next[i.id] = new Date(i.ultimaExportacionExcel);
+    queueMicrotask(() => {
+      setExportaciones((prev) => {
+        let hasNew = false;
+        const next = { ...prev };
+        for (const i of data.items) {
+          if (i.ultimaExportacionExcel && next[i.id] === undefined) {
+            hasNew = true;
+            next[i.id] = new Date(i.ultimaExportacionExcel);
+          }
         }
-      }
-      return hasNew ? next : prev;
+        return hasNew ? next : prev;
+      });
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `idsKey` acota cambios al conjunto de filas
   }, [idsKey]);
 
   function handleCambioStock(id: string, value: string) {
@@ -186,10 +192,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
     if (onFiltradosCountChange) onFiltradosCountChange(items.length);
   }, [items.length, onFiltradosCountChange]);
 
-  async function handleImprimir() {
+  const handleImprimir = useCallback(async () => {
     setImprimiendo(true);
     // Imprimir no registra fecha en DB (solo abre la vista de impresión).
-  }
+  }, []);
 
   const handleImprimirRef = useRef(handleImprimir);
   useEffect(() => {
@@ -197,7 +203,9 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
   }, [handleImprimir]);
 
   const stocksEditadosRef = useRef(stocksEditados);
-  stocksEditadosRef.current = stocksEditados;
+  useEffect(() => {
+    stocksEditadosRef.current = stocksEditados;
+  }, [stocksEditados]);
 
   useImperativeHandle(ref, () => ({
     openPrint: () => handleImprimirRef.current(),

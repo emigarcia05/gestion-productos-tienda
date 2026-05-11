@@ -15,7 +15,6 @@ import CantidadPedidoUrgenteModal, {
 } from "@/components/pedidos/CantidadPedidoUrgenteModal";
 import { toast } from "sonner";
 import { upsertPedidoUrgenteMercaderiaItemAction } from "@/actions/pedidos";
-import { cn } from "@/lib/utils";
 
 interface Props {
   filters: React.ReactNode;
@@ -68,14 +67,16 @@ export default function PedidoUrgentePageClient({
 
   useEffect(() => {
     if (productos.length === 0) return;
-    setCantPorId((prev) => {
-      const next = { ...prev };
-      for (const p of productos) {
-        if (next[p.id] !== undefined) continue;
-        const cant = Math.max(0, Math.floor(Number(p.cantPedidaUrgente) || 0));
-        next[p.id] = cant > 0 ? String(cant) : "";
-      }
-      return next;
+    queueMicrotask(() => {
+      setCantPorId((prev) => {
+        const next = { ...prev };
+        for (const p of productos) {
+          if (next[p.id] !== undefined) continue;
+          const cant = Math.max(0, Math.floor(Number(p.cantPedidaUrgente) || 0));
+          next[p.id] = cant > 0 ? String(cant) : "";
+        }
+        return next;
+      });
     });
   }, [productos]);
 
@@ -221,7 +222,6 @@ export default function PedidoUrgentePageClient({
             sinFiltros={sinFiltros}
             mensajeSinSucursal={MENSAJE_SIN_FILTROS}
             cantPorId={cantPorId}
-            setCantPorId={setCantPorId}
             onRowDoubleClick={abrirModalCantidad}
             onRowDeleteClick={borrarCantidad}
           />

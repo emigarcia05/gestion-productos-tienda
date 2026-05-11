@@ -93,6 +93,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 | `shadow-[0_4px_12px_rgba(0,0,0,0.05)]` en `Card` de tabla | `className={cn("card-tabla-envoltorio", …)}` + variable **`--card-tabla-envoltorio-shadow`** |
 | `<div className="flex h-screen min-h-0 flex-col overflow-hidden">` (cascarón de página de área) | `<div className="area-page-shell">` |
 | `<col style={{ width: "20%" }}>` con valor estático | `<col className="w-[20%]">` (solo usar `style` para anchos **dinámicos**) |
+| `window.location.href = …` (navegación interna App Router) | `useRouter().push(url)` desde `next/navigation` |
 | Utilidades duplicadas en una misma `className` (`px-2 px-3`, `min-w-[a] min-w-[b]`) | Mantener **una sola** utilidad por eje; el último valor gana en CSS y la duplicación oculta intención |
 
 ---
@@ -107,6 +108,23 @@ La auditoría de frontend se considera **terminada**. Se han aplicado:
 - **Documentación**: esta guía y `.cursorrules` alineados con los criterios anteriores.
 
 Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patrones de la sección 1.
+
+### Revisión anti-código muerto (mantenimiento)
+
+Registro de simplificaciones y reglas para que no reaparezcan patrones inútiles:
+
+- **Estado no leído en UI**: si un `useState` solo recibe asignaciones y nunca se usa en el JSX (ni en props derivadas visibles), eliminarlo o exponer el valor (p. ej. bloque colapsable “Detalle técnico”, `toast` con acción copiar). Evita ruido en lint y confusión sobre la fuente de verdad del error (p. ej. `toast` + `errorMsg` ya cubren al usuario).
+- **`useTransition`**: no duplicar un `pendingId` local si ningún `disabled`/estilo depende de la fila en curso; basta con `isPending` del hook cuando la UI no diferencia por ítem.
+- **CVA sin uso**: borrar bloques `cva(...)` y tipos asociados si no hay referencias en el mismo módulo (revisar antes de commit).
+- **Imports**: quitar imports de módulos no referenciados (`next/cache`, íconos, `cn`, constantes de `FilterBar`, etc.).
+- **`LimpiarFiltrosButton`**: la prop `visible` está deprecada; mantenerla opcional en el tipo por compatibilidad pero **no** enlazarla en el cuerpo del componente (evita variables `_visible` no usadas).
+- **`<colgroup>` / `<col>`**: anchos **porcentuales fijos** → `className="w-[20%]"` (o el porcentaje que corresponda); **conservar** `style={{ width: \`${pct}%\` }}` solo cuando el ancho es **dinámico** (barras, sync, pie sincronizado, etc.), como ya documenta la tabla de equivalencias en la “Guía para IA”.
+- **`global-error.tsx`**: al reemplazar el root layout, debe importar **`./globals.css`** y componer UI con **`cn()`** y tokens (`bg-background`, `bg-card`, `border-border`, `text-muted-foreground`, `bg-primary`, etc.); no usar objetos `style={{}}` con hex sueltos salvo excepción documentada en otro módulo.
+- **ESLint / React Compiler (Next.js 16):** reglas como `react-hooks/set-state-in-effect`, `react-hooks/immutability` (asignación a `window.location`) y `react-hooks/refs` (escribir `.current` en render) están activas. En este repo:
+  - Tras abrir modal o sincronizar desde props/URL, si hace falta **`setState` dentro de `useEffect`**, envolver la actualización en **`queueMicrotask(() => { ... })`** para cumplir el linter sin cambiar el comportamiento observable.
+  - Para cambiar la query de la app usar **`useRouter().push(\`${pathname}?${search}\`)`** en componentes cliente, no **`window.location.href`**.
+  - Callbacks y refs “espejo” (p. ej. `onCompletoRef.current = onCompleto`) van en un **`useEffect`** dependiente del valor, no en el cuerpo del render.
+  - Props o variables reservadas por API pero no usadas en el cuerpo: prefijo **`_`** (p. ej. `_total`, `_qActual`). `eslint.config.mjs` declara `argsIgnorePattern` / `varsIgnorePattern: "^_"` para `no-unused-vars`.
 
 ---
 
@@ -133,7 +151,7 @@ Para nuevas funcionalidades, seguir el checklist de PR (sección 4) y los patron
    - **Finanzas — barra de filtros en página:** en **Balance · Gastos**, **Balance · Ventas**, **Balance mensual**, **Tesorería**, **Flujo de fondo** y **Control Comprobantes**, cada `Select` (y en Control Comprobantes el trigger de **rango de fechas** cuando hay fechas aplicadas) va envuelto en `FiltroIndividualContainer` además de `LimpiarFiltrosButton`. Para **AÑO** / **MES** en Balance · Gastos y Balance mensual, la referencia de “filtro activo” es el calendario actual en Argentina (`dateToIsoYmdArgentina`): limpiar **año** navega al año de hoy manteniendo el mes elegido; limpiar **mes** navega al mes de hoy manteniendo el año. **Balance mensual** añade cesto global que navega al periodo completo actual AR.
 
 3. **Input de búsqueda en filtros (reutilización)**
-  - **Hook:** `useFiltrosConBusqueda` en `@/lib/hooks/useFiltrosConBusqueda.ts`: estado `q`, debounce, restauración de foco (opcional con `focusStorageKey`) y `isDebouncing`. Llamar `prepareNavigate()` antes de `window.location.href` cuando se use `focusStorageKey`. El hook agrega un **commit diferido cancelable** (`commitDelayMs`) para evitar carreras: si el usuario vuelve a escribir mientras hay navegación pendiente, se cancela la búsqueda anterior.
+  - **Hook:** `useFiltrosConBusqueda` en `@/lib/hooks/useFiltrosConBusqueda.ts`: estado `q`, debounce, restauración de foco (opcional con `focusStorageKey`) y `isDebouncing`. Llamar `prepareNavigate()` antes de `router.push` / navegación que recargue la vista cuando se use `focusStorageKey`. El hook agrega un **commit diferido cancelable** (`commitDelayMs`) para evitar carreras: si el usuario vuelve a escribir mientras hay navegación pendiente, se cancela la búsqueda anterior.
   - **Regla UX anti-race (typing + recarga):** al sincronizar `qActual` desde URL, si el input de búsqueda sigue enfocado y el usuario ya escribió un valor más nuevo localmente, **no** sobrescribir ese texto con el valor de una navegación previa. Esto evita que se borre lo tipeado cuando el usuario hace una pausa corta y vuelve a escribir.
    - **Componente:** `FiltroBusquedaInput` en `@/components/shared/FiltroBusquedaInput.tsx`: icono Search, input con estilo unificado, botón X y Loader. Usar junto al hook para nueva pantallas con filtro de búsqueda (ej. FiltrosProductos, FiltrosTienda, FiltrosStock).
    - **Nota**: Si la página ya usa filtros por URL (Server Component) y necesitás una segunda fila con búsqueda (ej. “Generar Pedido”), agregá `q` en `searchParams`, pasalo al componente de filtros, y debounceá la navegación con `useFiltrosConBusqueda` (placeholder en MAYÚSCULAS).

@@ -25,7 +25,9 @@ export function useSyncComprasProveedorDuxStatusPoll(
 
   useEffect(() => {
     if (!enabled) {
-      setState({ running: false, processed: 0, total: 0 });
+      queueMicrotask(() => {
+        setState({ running: false, processed: 0, total: 0 });
+      });
       return;
     }
 

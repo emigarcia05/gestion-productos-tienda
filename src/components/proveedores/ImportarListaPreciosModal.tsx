@@ -160,7 +160,6 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
     resetForm();
   }
 
-  const proveedorSeleccionado = proveedores.find((p) => p.id === proveedorId);
   const colLabels = encabezados ?? filasCrudas[0]?.map((_, i) => `Columna ${i + 1}`) ?? [];
   const filaEjemplo = filasCrudas[0] ?? [];
 

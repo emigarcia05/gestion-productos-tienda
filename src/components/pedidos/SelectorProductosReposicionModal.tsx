@@ -61,7 +61,7 @@ export default function SelectorProductosReposicionModal({
   }, [sucursal, debouncedQ]);
 
   useEffect(() => {
-    if (open) load();
+    if (open) queueMicrotask(() => void load());
   }, [open, load]);
 
   const toggle = (item: ItemSelectorReposicion) => {

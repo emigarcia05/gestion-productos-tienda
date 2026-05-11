@@ -45,18 +45,6 @@ const areaTitleVariants = cva("text-sm font-semibold leading-tight", {
   },
 });
 
-const areaStatusVariants = cva("text-xs leading-tight", {
-  variants: {
-    context: {
-      sidebar: "text-sidebar-foreground/75",
-      modal: "text-muted-foreground",
-    },
-  },
-  defaultVariants: {
-    context: "modal",
-  },
-});
-
 type AreaTitleContext = NonNullable<VariantProps<typeof areaTitleVariants>["context"]>;
 
 const areaIcons: Record<MainAppAreaId, LucideIcon> = {

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

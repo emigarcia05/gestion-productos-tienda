@@ -33,7 +33,16 @@ function buildHref(
   return `${basePath}?${params.toString()}`;
 }
 
-export default function PaginacionProductos({ paginaActual, totalPaginas, total, pageSize, q, proveedor, basePath, extraParams }: Props) {
+export default function PaginacionProductos({
+  paginaActual,
+  totalPaginas,
+  total: _total,
+  pageSize: _pageSize,
+  q,
+  proveedor,
+  basePath,
+  extraParams,
+}: Props) {
   if (totalPaginas <= 1) return null;
 
   const paginas: (number | "...")[] = [];

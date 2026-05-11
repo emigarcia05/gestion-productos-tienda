@@ -7,12 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum TipoMovimientoFinanzas {
-  EFECTIVO
-  BANCO
-  CHEQUE
-}
-
 enum TipoCajaTesoreria {
   DIGITAL
   EFECTIVO
@@ -123,45 +117,11 @@ model Sucursal {
 
   itemsProdPedMerc2    ProdPedMerc2[]
   pedidosHistoria     PedidoHistoria[]
-  movimientosFinanzas MovimientoFinanzas[]
   finBalGastoFinal    FinBalGastoFinal[]
   finBalGastoMensualImputaciones FinBalGastoMensual[] @relation("FinBalGastoMensualImputacionSucursal")
   finBalVtas          FinBalVtas[]
 
   @@map("global_sucursales")
-}
-
-// Movimiento financiero por sucursal.
-// Si tipo = CHEQUE, puede tener múltiples cheques asociados (vencimientos / cobros).
-model MovimientoFinanzas {
-  id         String   @id @default(cuid())
-  nombre     String
-  tipoGasto  TipoMovimientoFinanzas @map("tipo_gasto")
-  sucursalId String   @map("sucursal_id")
-  monto      Decimal  @db.Decimal(14, 2)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  sucursal Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
-  cheques  MovimientoFinanzasCheque[]
-
-  @@index([sucursalId, tipoGasto])
-  @@map("movimientos_finanzas")
-}
-
-// Cheques asociados a un movimiento financiero de tipo CHEQUE.
-model MovimientoFinanzasCheque {
-  id                  String   @id @default(cuid())
-  movimientoFinanzasId String   @map("movimiento_finanzas_id")
-  fechaCobro          DateTime @map("fecha_cobro") @db.Date
-  monto               Decimal  @db.Decimal(14, 2)
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-
-  movimientoFinanzas MovimientoFinanzas @relation(fields: [movimientoFinanzasId], references: [id], onDelete: Cascade)
-
-  @@index([movimientoFinanzasId, fechaCobro])
-  @@map("movimientos_finanzas_cheques")
 }
 
 // Cajas de tesorería con saldo actual y marca temporal del último cambio de saldo.
@@ -359,19 +319,20 @@ model FinBalVtas {
 /**
  * Líneas importadas desde CSV AFIP (ventas / liquidación). Posición de IVA · débito:
  * se agrupa `imp_total` por mes de `fecha_emision` y se aplica `round(bruto − bruto/1,21)` al total mensual.
+ * Tabla física **`fin_bal_pos_iva_final`** (histórico: `fin_bal_iva_deb_import_line`).
  */
 model FinBalIvaDebImportLine {
   id                   String   @id @default(cuid())
   /** Hash estable por fila para no duplicar al reimportar el mismo comprobante. */
-  dedupeKey            String   @unique @map("dedupe_key") @db.VarChar(64)
+  dedupeKey            String   @unique(map: "fin_bal_pos_iva_final_dedupe_key_key") @map("dedupe_key") @db.VarChar(64)
   fechaEmision         DateTime @map("fecha_emision") @db.Date
   denominacionReceptor String   @map("denominacion_receptor") @db.VarChar(512)
   impTotal             Decimal  @map("imp_total") @db.Decimal(14, 2)
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 
-  @@index([fechaEmision])
-  @@map("fin_bal_iva_deb_import_line")
+  @@index([fechaEmision], map: "fin_bal_pos_iva_final_fecha_emision_idx")
+  @@map("fin_bal_pos_iva_final")
 }
 
 /**

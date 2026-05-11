@@ -97,12 +97,14 @@ export default function PedidoTintometricoPageClient({
   );
 
   useEffect(() => {
-    setItems(
-      initialItems.map((i) => ({
-        ...i,
-        key: claveItemTintometrico(i),
-      }))
-    );
+    queueMicrotask(() => {
+      setItems(
+        initialItems.map((i) => ({
+          ...i,
+          key: claveItemTintometrico(i),
+        }))
+      );
+    });
   }, [initialItems]);
   const [filtroSucursal, setFiltroSucursal] = useState<string>("");
   const [filtroProveedor, setFiltroProveedor] = useState<string>("");
@@ -305,11 +307,11 @@ export default function PedidoTintometricoPageClient({
         <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
           <Table variant="compact" className="tabla-gestion-compacta w-full table-fixed">
             <colgroup>
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "8%" }} />
-              <col style={{ width: "64%" }} />
-              <col style={{ width: "8%" }} />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[8%]" />
+              <col className="w-[64%]" />
+              <col className="w-[8%]" />
             </colgroup>
             <TableHeader>
               <TableRow>

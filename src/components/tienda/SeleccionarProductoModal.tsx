@@ -83,11 +83,13 @@ export default function SeleccionarProductoModal({
     if (!open) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!hayFiltros) {
-      setLoading(false);
-      setRows([]);
+      queueMicrotask(() => {
+        setLoading(false);
+        setRows([]);
+      });
       return;
     }
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     const run = async () => {
       const result = await listarProductosParaVincular(
         proveedorId || undefined,

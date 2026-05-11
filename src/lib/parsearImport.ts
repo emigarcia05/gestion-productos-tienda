@@ -171,7 +171,7 @@ function dividirLinea(linea: string, sep: string): string[] {
 export function aplicarMapeo(filas: string[][], mapeo: MapeoColumnas): FilaProducto[] {
   const numColsEsperadas = Math.max(...Object.keys(mapeo).map(Number)) + 1;
 
-  return filas.map((colsOriginales, rowIdx) => {
+  return filas.map((colsOriginales) => {
     // Si hay más columnas de las esperadas, unir las extras en el campo descripción
     let cols = colsOriginales;
     if (cols.length > numColsEsperadas) {

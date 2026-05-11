@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarFinBalGastosJerarquia } from "@/services/finBalGastosCatalogo.service";
-import { listarSucursalesParaGastos } from "@/services/movimientosFinanzas.service";
+import { listarSucursalesParaGastos } from "@/services/finBalGastoMensualBalance.service";
 import { getProveedoresNoMercaderia } from "@/services/proveedor.service";
 import FinBalGastosCatalogoPageClient from "@/components/finanzas/FinBalGastosCatalogoPageClient";
 

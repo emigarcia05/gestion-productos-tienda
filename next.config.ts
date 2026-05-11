@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /** Evita fallos de TLS al descargar Geist en `next/font` durante `next build` (p. ej. entornos corporativos). */
+  experimental: {
+    turbopackUseSystemTlsCerts: true,
+  },
   async redirects() {
     return [
       {

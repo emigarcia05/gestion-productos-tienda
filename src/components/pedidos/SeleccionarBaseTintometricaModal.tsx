@@ -47,10 +47,12 @@ export default function SeleccionarBaseTintometricaModal({
 
   useEffect(() => {
     if (!open) return;
-    setQ("");
-    setData(EMPTY);
-    setErrorMsg(null);
-    fetch("");
+    queueMicrotask(() => {
+      setQ("");
+      setData(EMPTY);
+      setErrorMsg(null);
+      fetch("");
+    });
   }, [open, fetch, setQ]);
 
   const columns: ColumnaModalTabla<BaseTintometricaRow>[] = useMemo(

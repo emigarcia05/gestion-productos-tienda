@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import FilterBar, {
-  FILTER_COUNT_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FiltroIndividualContainer,

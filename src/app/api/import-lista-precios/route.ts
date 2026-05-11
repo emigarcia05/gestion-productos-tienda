@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { guardListaPreciosImportarEsEditor } from "@/lib/apiRouteAuth";
 import { aplicarMapeoListaPrecios, type MapeoColumnasListaPrecios } from "@/lib/parsearImport";
 import * as proveedorService from "@/services/proveedor.service";
 import * as listaPreciosService from "@/services/listaPrecios.service";
@@ -26,9 +26,8 @@ interface ImportBody {
  * El cliente puede cerrar el modal y ver el progreso en la sidebar (GET .../status).
  */
 export async function POST(request: Request) {
-  if (!(await esEditor())) {
-    return NextResponse.json({ ok: false, error: "Sin permisos de editor." }, { status: 403 });
-  }
+  const denied = await guardListaPreciosImportarEsEditor();
+  if (denied) return denied;
 
   let body: ImportBody;
   try {

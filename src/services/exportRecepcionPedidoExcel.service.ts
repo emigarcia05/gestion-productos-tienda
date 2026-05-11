@@ -280,7 +280,6 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       }))
       .filter((it) => Number.isFinite(it.cantRecibida) && it.cantRecibida > 0);
 
-    const sumCantRecibida = itemsRecibidos.reduce((s, it) => s + it.cantRecibida, 0);
     if (itemsRecibidos.length === 0) {
       return {
         success: false,

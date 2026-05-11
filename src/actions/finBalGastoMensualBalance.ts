@@ -111,8 +111,14 @@ export async function listarFinBalGastosFinalesNoMensualesAction(
   const parsed = listarGastosFinalesNoMensualesParamsSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
-  const data = await listarGastosFinalesNoMensualesConEstadoPeriodo(parsed.data);
-  return { ok: true, data };
+  try {
+    const data = await listarGastosFinalesNoMensualesConEstadoPeriodo(parsed.data);
+    return { ok: true, data };
+  } catch (e: unknown) {
+    const msg =
+      e instanceof Error ? e.message : "No se pudieron listar los gastos únicos del período.";
+    return { ok: false, error: msg };
+  }
 }
 
 /** Alta de imputación mensual para un gasto único (`gasto_mensual = false`) en el periodo. */
@@ -192,8 +198,13 @@ export async function obtenerMontoMesAnteriorFinBalGastoMensualAction(
   const parsed = obtenerMontoMesAnteriorSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
-  const monto = await obtenerMontoImputacionMesAnterior(parsed.data);
-  return { ok: true, data: { monto } };
+  try {
+    const monto = await obtenerMontoImputacionMesAnterior(parsed.data);
+    return { ok: true, data: { monto } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo obtener el monto del mes anterior.";
+    return { ok: false, error: msg };
+  }
 }
 
 /** Serie mensual de imputaciones de un gasto final (balance mensual · gráfico). */
@@ -208,8 +219,14 @@ export async function listarHistoricoMontosGastoFinalBalanceAction(
   const parsed = historicoMontosGastoFinalBalanceSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
-  const data = await listarHistoricoMontosGastoFinalBalance(parsed.data.gastoFinalId);
-  return { ok: true, data };
+  try {
+    const data = await listarHistoricoMontosGastoFinalBalance(parsed.data.gastoFinalId);
+    return { ok: true, data };
+  } catch (e: unknown) {
+    const msg =
+      e instanceof Error ? e.message : "No se pudo cargar el histórico de montos del gasto.";
+    return { ok: false, error: msg };
+  }
 }
 
 /** Imputaciones del mes y ventas `fin_bal_vtas` para armar el mismo resumen que la página (p. ej. desglose al elegir una barra del historial). */
@@ -230,13 +247,19 @@ export async function cargarFilasBalanceMensualPeriodoAction(
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
 
   const { mes, anio } = parsed.data;
-  const [filas, vtasMes] = await Promise.all([
-    listarImputacionesMensualesBalance({ mes, anio }),
-    listarFinBalVtasPorMesAnio(mes, anio),
-  ]);
-  const ventasPorSucursalNombre: Record<string, number> = {};
-  for (const v of vtasMes) {
-    ventasPorSucursalNombre[v.sucursal.nombre] = v.monto;
+  try {
+    const [filas, vtasMes] = await Promise.all([
+      listarImputacionesMensualesBalance({ mes, anio }),
+      listarFinBalVtasPorMesAnio(mes, anio),
+    ]);
+    const ventasPorSucursalNombre: Record<string, number> = {};
+    for (const v of vtasMes) {
+      ventasPorSucursalNombre[v.sucursal.nombre] = v.monto;
+    }
+    return { ok: true, data: { filas, ventasPorSucursalNombre } };
+  } catch (e: unknown) {
+    const msg =
+      e instanceof Error ? e.message : "No se pudo cargar el balance del período seleccionado.";
+    return { ok: false, error: msg };
   }
-  return { ok: true, data: { filas, ventasPorSucursalNombre } };
 }

@@ -32,8 +32,8 @@ interface Props {
 
 export default function StockPageWithActions({
   data,
-  esEditor,
-  proveedores,
+  esEditor: _esEditor,
+  proveedores: _proveedores,
   sucursalValida,
   q,
   marca,

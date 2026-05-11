@@ -27,7 +27,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
   - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas (no controla si el campo se expone).
   - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` y `getProveedoresNoMercaderia` su complemento (`= false`). Ambos reutilizan el índice `global_proveedores_proveedor_mercaderia_idx` (ver §1.11c).
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)`; IDs de ítem tienda con `uuidSchema`; filtros de búsqueda acotados con Zod en la Action.
-  - **Sincronización DUX lista tienda** (`sincronizarListaPrecioTiendaDux` y `GET`/`POST` de `/api/sync-lista-precios-tienda`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)`. En la matriz actual **`simple` y `editor`** tienen `sincronizar: true` (slidenav y cualquier cliente autenticado con sesión válida). El `GET` de estado (`/api/sync-lista-precios-tienda/status`) sigue sin chequeo de rol explícito en el route: cualquier sesión que pueda llamar la API ve el mismo progreso global. **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”).
+  - **Sincronización DUX lista tienda** (`GET`/`POST` `/api/sync-lista-precios-tienda`, más `syncProgressStore` / jobs internos que llaman `syncListaPrecioTiendaFromDux`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` en **POST**, **GET** bloqueante, **cancel**, **`GET …/status`** (helpers en `@/lib/apiRouteAuth`). En la matriz actual **`simple` y `editor`** tienen `sincronizar: true`. Sin sesión válida o sin permiso → `403` en todas esas rutas (no hay “progreso global” público por URL). **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”). **No** existe Server Action paralela para el mismo trabajo (evitar superficie invocable desde el cliente sin uso en UI). **Eliminado** el mock **`/api/sync-tienda`**: la UI usa solo `syncListaPrecioTiendaFromDux` mediante `/api/sync-lista-precios-tienda` (`useListaPreciosTiendaModalSync`).
 - **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos, comprobantes proveedor).
 - **`global_proveedores.id_proveedor_dux`**: índice **único** (`global_proveedores_id_proveedor_dux_key`). PostgreSQL permite varios `NULL`; cada valor no nulo debe ser único. Sirve como **FK referenciada** por `fin_compras_comprobante.id_proveedor` (mismo valor DUX; `onDelete: Restrict`): no se puede borrar un proveedor si tiene comprobantes vinculados.
 - **Lecturas de listados con filtros** (pedidos urgente/enviar, reposición, stock, tienda): además del permiso de módulo, validar el objeto de parámetros con esquemas dedicados (`@/lib/validations/pedidosLectura`, `reposicion`, `stock`, `tienda`) para acotar `q`, `pagina`, sucursales y arrays (`tipos`).
@@ -50,7 +50,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 ### 1.2.3 Gate doble: módulo + editor (mutaciones críticas)
 
 - **Historial de pedidos — mutaciones** (`pedidosHistoria.ts`): con `puede(rol, PERMISOS.pedidos.acceso)` se habilitan para `simple` y `editor`: actualizar cantidad recibida, agregar ítem, marcar registrado, guardar recepción, reabrir recepción y eliminar cabecera. Lecturas/detalle/PDF conservan el mismo permiso `pedidos.acceso`.
-- **Integraciones DUX / compras** (`comprobantesProveedor.ts`, `duxCompras.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo (misma sensibilidad que otras escrituras financieras).
+- **Integraciones DUX / compras** (`comprobantesProveedor.ts`; correlativos vía **servidor** `getSiguienteComprobanteDuxCompra` en `duxCompras.service.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo desde **Server Actions** (misma sensibilidad que otras escrituras financieras). El correlativo de comprobante **no** se expone como Action invocable desde el cliente; solo flujos server-side (p. ej. export Excel recepción) lo invocan.
 - **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
 
 ### 1.2.4 Acciones mock o legacy (`productos.ts`)
@@ -76,7 +76,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 **C. IDs validados por modelo Prisma**
 - En filtros de listado (`q`/paginación/IDs opcionales), **`proveedorId`** debe usar `prismaCuidSchema.optional()` (Prisma `Proveedor` usa `cuid()`) — no `z.string().min(1).max(128)`. Aplicado en `listarPedidosHistoriaSchema` (`src/actions/pedidosHistoria.ts`).
 - Reglas vigentes (referencia rápida):
-  - **CUID** (`Proveedor`, `PedidoHistoria`, `PedidoHistoriaItem`, `Marca`, `Sucursal`, `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `CajaTesoreria`, `ComprobanteProveedor`, `MovimientoFinanzas`, `FinTesoreriaCheque`): `prismaCuidSchema`.
+  - **CUID** (`Proveedor`, `PedidoHistoria`, `PedidoHistoriaItem`, `Marca`, `Sucursal`, `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `CajaTesoreria`, `ComprobanteProveedor`, `FinTesoreriaCheque`): `prismaCuidSchema`.
   - **UUID** (`ListaPrecioTienda`, `ListaPrecioProveedor`, `ProdPedMerc2`, `prod_rendimientos`): `uuidSchema`.
   - **Mixto / FK legacy / sucursal seed**: `prismaCuidOrUuidSchema` o `globalSucursalIdSchema`.
 
@@ -92,6 +92,14 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 **F. Helpers de gate compartidos**
 - Cuando un archivo tiene varias Actions con el mismo gate, definir un helper local que devuelva `{ ok: false; error: string } | null` (ej. `requireEditorFinanzas` en `finBalGastosCatalogo.ts` y `finBalGastoMensualBalance.ts`).
 - **Anti-patrón**: helpers tipo `canEdit() => () => Promise<boolean>` (doble función arrow). Se reemplazó por `tienePermisoEditar(): Promise<boolean>` en `comparacionCategorias.ts`.
+
+### 1.2.6 Superficie mínima y variables de entorno (post-auditoría 2026-05-10)
+
+- **Server Actions huérfanas**: si una Action no tiene call sites (`grep`/`tsserver`), **eliminarla** o integrarla de inmediato. Duplicar la misma operación ya cubierta por **Route Handler** (`app/api/…`) aumenta vectores CSRF/UI sin beneficio — preferir una sola entrada con el mismo gate (`getRol` + `puede`).
+- **Lógica solo servidor**: integraciones sensibles que **no** deben exponerse como Server Actions invocables desde el navegador (p. ej. correlativo DUX para Excel) se mantienen en `src/services/`; solo otros servicios o Actions ya autorizados las llaman (caso típico: `getSiguienteComprobanteDuxCompra` desde `exportRecepcionPedidoExcel.service.ts` tras gates en `exportRecepcionPedidoExcel.ts`). **No** re-exportar esquemas Zod desde archivos `"use server"` (usar `@/lib/validations/*` o el servicio que ya define `siguienteComprobanteDuxParamsSchema`).
+- **Catálogo de ENV**: todas las lecturas documentadas `process.env.*` deben estar listadas en **`.env.example`** (aunque sean opcionales), con una línea corta por variable. Valores obligatorios en producción (`SESSION_SECRET`, `DATABASE_URL`) deben estar comentados como tales al lado del ejemplo.
+- **`z.record` con IDs**: mapas cliente→servidor cuyas claves sean FK Prisma (`cuid`) deben tiparse con `z.record(prismaCuidSchema, …)` más un tope de cardinalidad (`superRefine` / `max`) para evitar payloads enormes (aplicado en `cargarImputacionesMesParamsSchema.ivaPorGastoFinalId`).
+- **Route Handlers (`app/api/…`)**: compartir gates con `src/lib/apiRouteAuth.ts` (`guardTiendaListaPreciosSincronizar`, `guardFinanzasLectura`, `guardListaPreciosImportarEsEditor`) para que **GET de estado** y **POST** usen el mismo criterio (evita filtrar solo mutaciones y dejar el poll expuesto).
 
 ### 1.3 Integridad de datos
 
@@ -206,7 +214,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 - Persistencia: `global_proveedores.iva` (`enum IvaProveedor`, **`NOT NULL`**, **default DB `'PREGUNTA'`**). Prisma: `iva IvaProveedor @default(PREGUNTA) @map("iva")`. Sin índice (cardinalidad = 3; mismo criterio que `global_sucursales.centro_costo`).
 - **El enum `IvaProveedor` es transversal**, no exclusivo del modelo `Proveedor`. Otras tablas pueden persistir su propia política reutilizando el mismo tipo Postgres. Hoy lo consume `fin_bal_gasto_final.iva` (ver §2.5e). Si se agrega un nuevo consumidor: **no** crear un enum hermano; reutilizar `IvaProveedor` y documentarlo en esta sección.
-- Enum PostgreSQL/Prisma `IvaProveedor` (consistente con `TipoMovimientoFinanzas`, `TipoCajaTesoreria`, `TipoChequeTesoreria`):
+- Enum PostgreSQL/Prisma `IvaProveedor` (enumeración cerrada, misma familia conceptual que otros enums financieros p. ej. `TipoCajaTesoreria`, `TipoChequeTesoreria`):
   - `SIEMPRE` — el proveedor **siempre** factura con IVA.
   - `NUNCA` — el proveedor **nunca** factura con IVA.
   - `PREGUNTA` — política indefinida; la UI/flujo debe **preguntar** caso por caso. Es el default semántico (no asume política comercial sobre proveedores nuevos ni preexistentes).
@@ -493,7 +501,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Unicidad** (`fin_compras_comprobante_natural_ux`): `(id_sucursal_empresa, tipo_comp, comprobante, fecha_comp, id_proveedor)` — idempotencia del sync (`upsert`).
 - **Índices**: `fecha_comp`, `id_proveedor`.
 - **Sync** (`comprobantesProveedorDuxSync.service.ts`):
-  - **Progreso en UI:** durante `sincronizarComprobantesProveedorDesdeDux` se actualiza la fila **`sync_dux_status.id = compras-proveedor-dux`** (`start` → `processed`/`total` por sucursal completada → `success` o `error`). El cliente hace polling con **`GET /api/sync-compras-proveedor-dux/status`** (sin auth explícito en el route, alineado a **`/api/sync-lista-precios-tienda/status`**). Los valores **X de Y** representan **sucursales DUX ya procesadas / total de sucursales** con `id_dux` numérico (no cantidad de comprobantes por página).
+  - **Progreso en UI:** durante `sincronizarComprobantesProveedorDesdeDux` se actualiza la fila **`sync_dux_status.id = compras-proveedor-dux`** (`start` → `processed`/`total` por sucursal completada → `success` o `error`). El cliente hace polling con **`GET /api/sync-compras-proveedor-dux/status`**, con **`guardFinanzasLectura()`** (`PERMISOS.finanzas.acceso`) en el route. Los valores **X de Y** representan **sucursales DUX ya procesadas / total de sucursales** con `id_dux` numérico (no cantidad de comprobantes por página).
   - **Una petición (o ráfaga paginada) por cada** `global_sucursales.id_dux` numérico; entre sucursales respeta `DUX_COMPRAS_MIN_INTERVAL_MS` (igual que `getSiguienteComprobanteDuxCompra`).
   - **Ventana fija de consulta por sync**: `fechaDesde = hoy AR − 150 días` y `fechaHasta = hoy AR + 1 día` (sin depender de `MAX(fecha_comp)` persistida).
   - **Purga al finalizar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt;= `fechaDesde` (purga inclusiva del borde de ventana para evitar arrastre de registros desactualizados); el conteo vuelve en `data.eliminadosAntiguos`.
@@ -510,33 +518,13 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - Escritura: `actualizarControladoComprobanteAction(raw)` en `src/actions/controlComprobantes.ts` valida `{ id, controlado }` con Zod (`id` CUID), exige `getRol()+puede(PERMISOS.finanzas.acceso)` y `esEditor()`, delega en `actualizarControladoComprobante()`, y revalida `/finanzas` + `/finanzas/control-comprobantes`.
 - **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_fin_compras_comprobante_dux_campos` (renombres + `id_sucursal_empresa` + unique) y `20260417123000_add_controlado_to_fin_compras_comprobante` (`controlado BOOLEAN NOT NULL DEFAULT FALSE`). **Histórico**: la migración `20260418260000_rename_prod_comp_y_comprobantes` incluyó inicialmente `fin_compras_comprobante → prod_comp_provee`, pero fue **revertida** por `20260418270000_revert_rename_fin_compras_comprobante` manteniendo el nombre original — el prefijo `prod_comp_*` queda reservado exclusivamente al dominio "Comparación por Categoría".
 
-### 2.5b Movimientos de finanzas por sucursal (`movimientos_finanzas`) + cheques (`movimientos_finanzas_cheques`)
+### 2.5b Histórico: tabla `movimientos_finanzas` (**eliminada 2026-05-12**)
 
-Modelo de datos para registrar movimientos con monto y sucursal:
-
-- **Cabecera** (`MovimientoFinanzas` → tabla `movimientos_finanzas`):
-  - `nombre`: texto del movimiento.
-  - `tipo_gasto` (Prisma `tipoGasto`): enum `TipoMovimientoFinanzas` = `EFECTIVO | BANCO | CHEQUE`.
-  - `sucursal_id`: FK a `global_sucursales.id`.
-  - `monto`: `DECIMAL(14,2)`.
-- **Detalle de cheques** (`MovimientoFinanzasCheque` → tabla `movimientos_finanzas_cheques`):
-  - relación 1:N por `movimiento_finanzas_id` (FK con `ON DELETE CASCADE`).
-  - `fecha_cobro`: `DATE`.
-  - `monto`: `DECIMAL(14,2)` (permite múltiples cheques con importes distintos por movimiento).
-- **Índices**:
-  - `movimientos_finanzas(sucursal_id, tipo_gasto)` — índice `movimientos_finanzas_sucursal_id_tipo_gasto_idx` (migración `20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto`; antes `tipo`).
-  - `movimientos_finanzas_cheques(movimiento_finanzas_id, fecha_cobro)`
-- **Migración**: `prisma/migrations/20260402110000_add_movimientos_finanzas_y_cheques/migration.sql` + `prisma/migrations/20260418140000_rename_movimientos_finanzas_tipo_to_tipo_gasto/migration.sql`.
+- Existió como modelo Prisma **`MovimientoFinanzas`** con enum **`TipoMovimientoFinanzas`** (`EFECTIVO | BANCO | CHEQUE`) para gastos simples por sucursal; quedó **sin uso activo** al consolidar **`fin_bal_gasto_mensual`** en Balance · Gastos.
+- **Baja**: migración **`20260512210000_drop_movimientos_finanzas`** (`DROP TABLE "movimientos_finanzas";` + `DROP TYPE "TipoMovimientoFinanzas"`). Migraciones previas de alta/rename/consolidado de cheques: `20260402110000_*`, `20260418140000_*`, **`20260512203000_drop_movimientos_finanzas_cheques`**.
+- **`listarSucursalesParaGastos()`** (sucursales con `global_sucursales.centro_costo = true`) vive ahora en **`src/services/finBalGastoMensualBalance.service.ts`** junto al resto del flujo de `/finanzas/balance/gastos`; **tipo** exportado **`SucursalOption`**.
 - **Sucursal "CORPORATIVO"**: suele vivir en `global_sucursales` con `codigo = 'corporativo'`, `pedido = FALSE` e `id_dux = NULL` para imputaciones sin sucursal física. Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`duxCompras.service.ts`, `comprobantesProveedorDuxSync.service.ts`). Migración histórica `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` insertó un id fijo `'suc_corporativo'`; **`listarSucursalesParaGastos()`** incluye esa fila cuando tiene **`centro_costo = true`**. Zod: `globalSucursalIdSchema` en `@/lib/validations/common.ts` acepta UUID, CUID o el literal `suc_corporativo` para `sucursalId` en gastos / gasto final.
 - **Flag `global_sucursales.centro_costo`** (Prisma: `Sucursal.centroCosto`, `BOOLEAN NOT NULL DEFAULT FALSE`): marca si la sucursal se considera **centro de costo** para reportes de balance / imputación contable. **Ortogonal a `pedido`**: `pedido` rige la participación en flujos de pedidos de mercadería; `centro_costo` sólo tiñe lecturas contables. Una sucursal puede ser `pedido = true, centro_costo = true` (ej. GUAYMALLEN / MAIPU si corresponde), `pedido = false, centro_costo = true` (ej. CORPORATIVO si se decide imputar contra él) o combinaciones opuestas. No hay UI de edición de sucursales: el flag se gestiona por **seed / UPDATE manual** en la DB (mismo canal que el resto de atributos de `global_sucursales`). Sin índice (cardinalidad = 2; se lee como payload, no como predicado masivo). Registros preexistentes quedan en `false` al aplicar la migración; marcar con `UPDATE global_sucursales SET centro_costo = TRUE WHERE codigo IN (...);` cuando se defina la política funcional. Migración: `prisma/migrations/20260418250000_add_sucursales_centro_costo/migration.sql` (SQL histórico sobre tabla `sucursales`, hoy `global_sucursales`).
-- **Servicio**: `src/services/movimientosFinanzas.service.ts`
-  - `listarMovimientosFinanzas()`: lista ordenada por `createdAt` descendente, con `include: { sucursal: { select: { nombre: true } } }`; `nombre` se devuelve en MAYÚSCULAS; `monto` convertido a `number`.
-  - `listarSucursalesParaGastos()`: `prisma.sucursal.findMany({ where: { centroCosto: true }, select: { id, nombre }, orderBy: { nombre: "asc" } })` — usa `global_sucursales.centro_costo`. Alta/edición de **gasto final** **mensual** en `finBalGastosCatalogo.service.ts` valida **`centroCosto`** vía `sucursalEsCentroDeCosto`; con **`gasto_mensual = false`** (eventual) **`sucursal_id`** se persiste **NULL** y no aplica esa validación. El cliente del catálogo puede **fusionar** la sucursal actual al editar una fila mensual cuya sucursal ya no esté en el listado, para que el `Select` siga mostrando el valor hasta migrar datos.
-  - `crearMovimientoFinanzas(input)`: alta con `nombre` normalizado a MAYÚSCULAS y `monto` `Decimal(14,2)`; maneja `P2003` (sucursal inválida) como `ServiceResult.error`.
-- **Actions**: `src/actions/movimientosFinanzas.ts`
-  - `crearMovimientoFinanzasAction(raw)`: gate `PERMISOS.finanzas.acceso` + `esEditor()`; Zod `crearMovimientoFinanzasSchema`; revalida `/finanzas` y `/finanzas/balance/gastos`.
-  - Validación con Zod en `src/lib/validations/movimientosFinanzas.ts` (`tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`, `crearMovimientoFinanzasSchema`; `nombre` `trim + toUpperCase`, `sucursalId` **`globalSucursalIdSchema`** (UUID, CUID o literal `suc_corporativo`), `monto` numérico finito con tope `< 1e12`).
-- **Página Balance · Gastos** (`/finanzas/balance/gastos`): ver en §2.5e la rama **`fin_bal_gasto_mensual`** + `finBalGastoMensualBalance.service.ts`. El modelo `movimientos_finanzas` y `crearMovimientoFinanzasAction` siguen disponibles para otros flujos; la grilla principal de esa página ya no los usa.
 
 ### 2.5f Balance mensual (`/finanzas/balance/mensual`) y ventas de balance (`fin_bal_vtas`)
 
@@ -623,12 +611,12 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - Unicidad compuesta `@@unique([rubroId, nombre])` (map `fin_bal_cat_gasto_rubro_nombre_ux`): el nombre del gasto es **único por rubro**.
   - Índice en `rubro_id` (`fin_bal_cat_gasto_rubro_id_idx`).
   - **Bajas (2026-04-21)**: se eliminaron `proveedor_id` y `gasto_mensual` del catálogo hoja; el detalle por proveedor y sucursal vive en **`fin_bal_gasto_final`**.
-  - **Baja `repite_monto` (2026-04-18)**: ver migraciones `20260418220000` / `20260418240000`; el comportamiento previsto pasa a `movimientos_finanzas`.
+  - **Baja `repite_monto` (2026-04-18)**: ver migraciones `20260418220000` / `20260418240000`; campo retirado sin reemplazo automático equivalente en otra tabla.
 - **Tabla** `fin_bal_gasto_final` (Prisma: `FinBalGastoFinal`):
   - `id` (`TEXT`, PK), `gasto_id` → `fin_bal_cat_gasto.id` (`onDelete: Cascade`), `proveedor_id` → `global_proveedores.id` (`onDelete: Restrict`), `sucursal_id` → `global_sucursales.id` (`onDelete: Restrict`, **columna nullable** desde migración **`20260509120000_fin_bal_gasto_final_sucursal_nullable`**): en negocio es obligatoria solo si `gasto_mensual = true` (validación en servicio: **`centro_costo`** vía `sucursalEsCentroDeCosto`); si `gasto_mensual = false` (gasto eventual), debe guardarse **NULL**.
   - `gasto_mensual` (`BOOLEAN NOT NULL DEFAULT FALSE`).
   - Varias filas pueden compartir la misma terna lógica `gasto_id` + `proveedor_id` + `sucursal_id` (**incluido `NULL`** para eventuales: varias filas eventuales del mismo proveedor comparten sucursal nula a efectos de la regla de comentarios). Migraciones `20260423120000_drop_fin_bal_gasto_final_gasto_proveedor_sucursal_ux` y **`20260425180000_ensure_drop_fin_bal_gasto_final_unique_triple`** (idempotente: `DROP INDEX` + `ALTER TABLE … DROP CONSTRAINT IF EXISTS`) eliminan el índice/constraint único previo. **COMENTARIOS** es opcional (incluido vacío) aunque existan hermanas con la misma terna. **Regla de negocio:** solo se rechaza alta/edición si **COMENTARIOS** no vacío (trim + mayúsculas `es-AR`, misma normalización que Zod) coincide con otra fila hermana; comentario vacío no se valida contra duplicados. `validarComentariosParaTriplaGastoFinalRepetida` en `finBalGastosCatalogo.service.ts` (`crearFinBalGastoFinal` / `editarFinBalGastoFinal`).
-  - Índices en `gasto_id`, `proveedor_id`, `sucursal_id`. La columna **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` sigue siendo CRUD autónomo de `global_proveedores` (`proveedor_mercaderia = false`); los gastos finales consumen ese listado y **`listarSucursalesParaGastos()`** (sucursales con `centro_costo = true`) para el select de sucursal en **mensual**.
+  - Índices en `gasto_id`, `proveedor_id`, `sucursal_id`. La columna **PROVEEDORES** en `/finanzas/balance/gastos/catalogo` sigue siendo CRUD autónomo de `global_proveedores` (`proveedor_mercaderia = false`); los gastos finales consumen ese listado y **`listarSucursalesParaGastos()`** en **`finBalGastoMensualBalance.service.ts`** (sucursales con `centro_costo = true`) para el select de sucursal en **mensual**.
   - `dia_devengado` (`INTEGER NULL`) y `plazo_pago_dias` (`INTEGER NULL`) son condicionales:
     - **Persistencia en servicio**: `crearFinBalGastoFinal` y `editarFinBalGastoFinal` guardan **`dia_devengado`/`plazo_pago_dias` sólo para MENSUAL** (valores validados por Zod, fallback defensivo `1`/`0`). Para **EVENTUAL** ambos deben persistir **`NULL`** (el cliente envía `null`); **no** coercer con `(valor ?? 1)` porque viola `fin_bal_gasto_final_campos_mensual_eventual_chk`.
     - **MENSUAL** (`gasto_mensual = true`): ambos obligatorios (`dia_devengado` 1..28, `plazo_pago_dias` 0..30).
@@ -650,7 +638,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - **Venc. Provee. Gastos** (`/finanzas/vencimientos-gastos`): lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso` (igual que otras pantallas de Finanzas). **`listarObligacionesGastoVencidasNoMercaderia()`** en `finBalGastoMensualBalance.service.ts` devuelve `hoyIso` (calendario Argentina), `proveedores` (agregado por nombre de proveedor con `proveedorMercaderia === false`, solo imputaciones con **fecha de vencimiento** estrictamente anterior a hoy y **pendiente a hoy** &gt; 0) y `detalleLineas` (`FlujoFondoDetalleDiaFila` con `fechaDevengadaIso`, `fechaVencimientoIso`, `proveedor`, `detalle`, `monto`, `sortFecha`, `sortId`) para **`TablaFlujoDeFondoDetalleDia`**. Sin Action dedicada: el servicio se invoca solo desde el Server Component.
 - **Integridad referencial**:
   - `onDelete: Restrict` en ambas FKs: no se puede borrar un tipo con rubros asociados ni un rubro con gastos asociados. Si se necesita baja en cascada, cambiar explícitamente a `Cascade` en la migración correspondiente y documentarlo.
-- **Convención de normalización**: al persistir desde service/action, aplicar `trim + toUpperCase` sobre `nombre` (alineado a `fin_tesoreria_cajas`, `movimientos_finanzas.nombre`).
+- **Convención de normalización**: al persistir desde service/action, aplicar `trim + toUpperCase` sobre `nombre` (alineado a `fin_tesoreria_cajas` y nombres de catálogo `fin_bal_*`).
 - **Errores a mapear** (Prisma → `ServiceResult`):
   - `P2002` (unique violation): “Ya existe un rubro con ese nombre para el tipo seleccionado.” / para gasto: “Ya existe un gasto con ese nombre en ese rubro.”
   - `P2003` (FK violation): “Tipo/Rubro inválido.” En `gasto`, si el meta apunta a `rubro`, “El rubro seleccionado no existe.”
@@ -698,11 +686,11 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - Delegan en el servicio y mapean `ServiceResult` → `ActionResult`.
   - Tras cada mutación exitosa, llaman a `revalidateBalancePaths()` que ejecuta `revalidatePath('/finanzas')`, `revalidatePath('/finanzas/balance/gastos')` y `revalidatePath('/finanzas/balance/gastos/catalogo')`.
   - Exportan: `crearFinBalGastoTipoAction`, `editarFinBalGastoTipoAction`, `eliminarFinBalGastoTipoAction`, `crearFinBalGastoRubroAction`, `editarFinBalGastoRubroAction`, `eliminarFinBalGastoRubroAction`, `crearFinBalGastoAction`, `editarFinBalGastoAction`, `eliminarFinBalGastoAction`, `crearFinBalGastoFinalAction`, `editarFinBalGastoFinalAction`, `eliminarFinBalGastoFinalAction`.
-  - Las **lecturas** NO son Actions: se consumen directamente desde Server Components importando el servicio (mismo patrón que `listarMovimientosFinanzas` / `listarCajasTesoreria`).
+  - Las **lecturas** NO son Actions: se consumen directamente desde Server Components importando el servicio (mismo patrón que `listarImputacionesMensualesBalance` / `listarCajasTesoreria`).
 
 ### 2.5d Catálogo finanzas — rubros y gastos (ELIMINADO 2026-04-18)
 
-> **Baja**: las tablas `finanzas_rubros` y `finanzas_gastos`, junto con el enum PostgreSQL `TipoCostoGasto`, fueron **eliminadas** el 2026-04-18 sin reemplazo. El catálogo no se estaba usando como FK desde `movimientos_finanzas` (los nombres de gasto vivían como texto libre en `movimientos_finanzas.nombre`), por lo que la baja no impacta datos existentes de Balance.
+> **Baja**: las tablas `finanzas_rubros` y `finanzas_gastos`, junto con el enum PostgreSQL `TipoCostoGasto`, fueron **eliminadas** el 2026-04-18 sin reemplazo (histórico: no había FK desde ese catálogo hacia el flujo actual de Balance; los nombres de gastos viven en **`fin_bal_cat_gasto` / jerarquía**).
 >
 > - **Migración de baja**: `prisma/migrations/20260418160000_drop_finanzas_rubros_y_gastos_catalogo/migration.sql` — `DROP TABLE IF EXISTS "finanzas_gastos" CASCADE; DROP TABLE IF EXISTS "finanzas_rubros" CASCADE; DROP TYPE IF EXISTS "TipoCostoGasto";` (idempotente). La migración original de alta (`20260418120000_add_finanzas_rubros_y_gastos_catalogo`) se conserva por inmutabilidad del historial Prisma.
 > - **Código eliminado**:
@@ -712,7 +700,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 >   - Validaciones `src/lib/validations/finanzasGastosCatalogo.ts` (`tipoCostoGastoSchema`, `crearGastoCatalogoSchema`).
 >   - Componente `src/components/finanzas/CrearGastoCatalogoModal.tsx`.
 >   - Prop `rubros` y botón **Crear Gasto** en `src/app/finanzas/balance/gastos/page.tsx` y `src/components/finanzas/FinanzasBalanceGastosPageClient.tsx`.
-> - **Consecuencia histórica**: la vista `/finanzas/balance/gastos` dejó de usar solo `movimientos_finanzas`; hoy lista **`fin_bal_gasto_mensual`** del mes (Argentina) y el botón **Cargar Datos Mes.** genera filas desde `fin_bal_gasto_final` con `gasto_mensual = true` (ver §2.5e).
+> - **Consecuencia histórica**: la vista `/finanzas/balance/gastos` consolidó **`fin_bal_gasto_mensual`** del mes (Argentina) y el botón **Cargar Datos Mes.** genera filas desde `fin_bal_gasto_final` con `gasto_mensual = true` (ver §2.5e).
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
@@ -885,10 +873,11 @@ Contrato (SSOT de lógica de negocio + integración externa):
    - Salida:
      - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
    - Errores:
-     - Si DUX no devuelve resultados o el comprobante no es un formato ordenable conocido (`parseComprobanteDuxSortKey`), lanza error en la service y la Action lo transforma a `ActionResult`.
+     - Si DUX no devuelve resultados o el comprobante no es un formato ordenable conocido (`parseComprobanteDuxSortKey`), lanza error en la service; los llamadores **solo servidor** (p. ej. `exportRecepcionPedidoExcel.service.ts`) capturan y devuelven `ServiceResult` / mensaje seguro sin propagar stack al navegador.
 
-Acceso desde UI/cliente:
-- La `server action` `src/actions/duxCompras.ts#getSiguienteComprobanteDuxCompraAction` exige `esEditor()` y valida parámetros con el mismo esquema Zod.
+Acceso desde el cliente:
+
+- No hay exposición mediante Server Action para este método. El contrato válido es **solo backend**: `exportRecepcionPedidoExcel.ts` valida sesión/pedidos y delega en el servicio de Excel que llama a `getSiguienteComprobanteDuxCompra`. Para payloads compartidos, importar **`siguienteComprobanteDuxParamsSchema`** desde `@/services/duxCompras.service` únicamente en módulos **sin** `"use server"`.
 
 Persistencia de listados completos de `/compras` (campos extendidos en `duxComprasApi.mapCompra`): ver **§2.5a** y `sincronizarComprobantesProveedorDesdeDux` en `comprobantesProveedorDuxSync.service.ts`.
 
@@ -948,7 +937,6 @@ Notas:
 | `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema`, `eliminarCajaTesoreriaSchema`, `tipoCajaTesoreriaSchema`. |
-| `@/lib/validations/movimientosFinanzas.ts` | `crearMovimientoFinanzasSchema`, `tipoMovimientoFinanzasSchema`, `montoMovimientoFinanzasSchema`; `sucursalId` → `globalSucursalIdSchema`. |
 | `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto` + `fin_bal_gasto_final`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` (incluye `*FinBalGastoFinal*`). `nombre` con `trim + toUpperCase`; jerarquía con `prismaCuidSchema`; gasto final: `gastoId`/`proveedorId` con `prismaCuidOrUuidSchema`; **`sucursalId`** con `globalSucursalIdSchema` solo si `gastoMensual === true`, si no se normaliza a `null`; `gastoMensual` boolean; `diaDevengado` / `vencimiento` condicionales al tipo; `iva` (`ivaPoliticaFormSchema`). |
 | `@/lib/validations/finBalGastoMensualBalance.ts` | `fin_bal_gasto_mensual`: `mesAnioQuerySchema`, `cargarImputacionesMesParamsSchema`, `editarMontoFinBalGastoMensualSchema`, `eliminarFinBalGastoMensualSchema`, `obtenerMontoMesAnteriorSchema`. |
 
@@ -1010,7 +998,8 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/services/pedidosEnvio.service.ts`, `src/services/sobreStock.service.ts`, `src/services/listaPrecios.service.ts` | **Circuito REPOSICIÓN por `cod_tienda` (2026-04-28):** no se persiste el `cod_ext` **comercial** de catálogo en reposición; la clave de negocio es `cod_tienda`. Por el unique de BD `(id_proveedor, tipo, sucursal, cod_ext)`, cada fila guarda un **surrogado** estable `REPO_TIENDA:{cod_tienda}` (no es el `cod_ext` de `prod_precios_tienda`). La resolución para PDF/envío usa `cod_tienda` → catálogo vigente. `getItemsYProveedorParaEnviar` recompone filas REPOSICIÓN con proveedor/código vigentes, `getSobreStockOtraSucursalParaPedidoEnviar` usa topes por `cod_tienda`, y `getListaPreciosParaPedidoUrgente` filtra reposición por `cod_tienda`. Migración `20260429120000_reposicion_cod_ext_surrogate`: dedupe + normalización de filas ya existentes. |
 | `prisma/migrations/20260429001000_reposicion_sync_por_cod_tienda/migration.sql` | (Histórico: aplicaba sobre la tabla legada `prod_ped_merc`.) Se redefine `sync_pedidos_mercaderia_cant_pedir` y el trigger `trg_sync_reposicion_on_precios_tienda_stock` para que REPOSICIÓN recalcule por `cod_tienda` (no por `cod_ext`) en `BEFORE INSERT/UPDATE` de pedidos mercadería y en cambios de stock en `prod_precios_tienda`. Tras `20260430103000_drop_prod_ped_merc_legacy` la función/trigger asociados a la tabla legada se eliminan; la lógica equivalente en runtime usa **`prod_ped_merc`**. |
 | `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: validación de `reposicion_punto_pedido` admite `0` (solo rechaza `< 0`). Persistencia REPOSICIÓN por `cod_tienda`: `prod_precios_tienda.cod_tienda` → `cod_ext` + proveedor vigentes; al guardar se eliminan otras filas **`prod_ped_merc`** `REPOSICION` para la misma `sucursal + cod_tienda` con proveedor/cod_ext obsoletos. |
-| `src/actions/syncListaPrecioTienda.ts` | Comprobación `esEditor()` al inicio; si no hay permiso, se devuelve resultado vacío con `errores: ["Sin permisos de editor."]`. |
+| `src/actions/syncListaPrecioTienda.ts` | **Eliminado (2026-05-10):** redundante con `/api/sync-lista-precios-tienda` + `syncListaPrecioTiendaFromDux` (superficie invocable desde cliente sin uso). Histórico: comprobación `PERMISOS.tienda.acciones.sincronizar`; no llegó a usar `esEditor()` en código final. |
+| `src/actions/duxCompras.ts` | **Eliminado (2026-05-10):** sin call sites; correlativo DUX sólo servidor vía `duxCompras.service.ts` dentro del flujo de export recepción. Ver §1.2.6 y §2.8. |
 | `src/actions/importar.ts` | `importarProductos` e `importarListaPreciosProveedor` devuelven `ImportActionResult` (éxito con `data` o error con `error`) en lugar de lanzar; try/catch en importar lista para devolver error controlado. |
 | `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: validación con `idsUuidSchema` y `actualizacionMasivaListaPreciosSchema` antes de llamar al servicio. |
 | `src/lib/validations/listaPrecios.ts` | Nuevo: esquemas `idsUuidSchema` y `actualizacionMasivaListaPreciosSchema` para edición masiva. |
@@ -1051,7 +1040,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/lib/syncDuxStatusDb.ts` | Helper tipado de persistencia de estado DUX (start/progress/success/error + lectura) usando Prisma. `last_completed_at` se actualiza **solo en sync OK**; en error se mantiene `processed/total` (no se resetean al hacer update por conflicto). |
 | `src/app/api/sync-lista-precios-tienda/route.ts` | `GET` y `POST` validan `puede(rol, PERMISOS.tienda.acciones.sincronizar)` (simple y editor); evitan doble ejecución y persisten progreso/resultado vía helper. Ante `SyncListaPrecioTiendaCancelledError` limpia estado con `clearListaPrecioTiendaSyncRunningStateInDb` y responde `200` con `cancelled: true` **sin** tocar `lastCompletedAt`. |
 | `src/app/api/sync-lista-precios-tienda/cancel/route.ts` | `POST`: mismo permiso; `requestCancelListaPrecioTiendaSyncInDb` (solo si `running`) para señalar cancelación sin actualizar `lastCompletedAt`. |
-| `src/app/api/sync-lista-precios-tienda/status/route.ts` | `GET` lee estado desde BD y expone `lastCompletedAt` para UI de sidebar. |
+| `src/app/api/sync-lista-precios-tienda/status/route.ts` | `GET`: mismo gate que POST (`guardTiendaListaPreciosSincronizar`); expone `lastCompletedAt`, `remainingMinutes`, etc., para sidebar y hooks. |
 
 ---
 
@@ -1081,7 +1070,13 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
-*Última actualización (2026-05-07): **Auditoría de seguridad cerrada** — todos los Server Actions revisados (26/26) cumplen los gates documentados. Patrones nuevos consolidados en §1.2.5 (firma `unknown` para payloads de cliente, gate doble módulo+editor, IDs por modelo Prisma, no anidar Actions, sin throw al cliente, helpers de gate compartidos) + checklist actualizada en §4 + tabla de cambios en §5.11. Correcciones aplicadas: gate doble en `vinculos.vincularProducto` y `tiposPinturaRendimientos.{upsert,delete}`; `proveedorId` con `prismaCuidSchema` en `pedidosHistoria`; refactor `canEdit() => tienePermisoEditar()` y `try/catch` en lecturas de `comparacionCategorias`; `comprobarItemsParaGenerarPedidoAction` deja de invocar Action vecina y delega al servicio; firmas `raw: unknown` en `pedidos.ts` y `reposicion.ts`; `try/catch` adicional en `pedidos.getPedidoUrgenteData`, `stock.registrarExportacionExcelStock` y mutaciones de `vinculos.ts`.*
+*Última actualización (2026-05-12): **Rename** tabla **`fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`** (modelo Prisma **`FinBalIvaDebImportLine`** sin cambio de nombre TS). Migración **`20260512220000_rename_fin_bal_iva_deb_import_line_to_fin_bal_pos_iva_final`** (rename de tabla, PK `fin_bal_pos_iva_final_pkey`, índices `fin_bal_pos_iva_final_dedupe_key_key`, `fin_bal_pos_iva_final_fecha_emision_idx`). Servicio **`finBalIvaDeb.service.ts`**. Ver `@@map("fin_bal_pos_iva_final")` en `schema.prisma`.*
+
+*Última actualización (2026-05-12): **Dominio gastos Balance** — migración **`20260512203000_drop_movimientos_finanzas_cheques`** (tabla hija huérfana) y **`20260512210000_drop_movimientos_finanzas`** con enum **`TipoMovimientoFinanzas`**; modelo Prisma **`MovimientoFinanzas`** fuera del schema; eliminados `movimientosFinanzas.service.ts`, **`actions/movimientosFinanzas.ts`**, **`validations/movimientosFinanzas.ts`**, **`NuevoGastoModal`**. **`listarSucursalesParaGastos`** + **`SucursalOption`** en **`finBalGastoMensualBalance.service.ts`**. Ver §2.5b.*
+
+*Última actualización (2026-05-10): **Superficie API** — Gates en `GET` de `/api/sync-lista-precios-tienda/status`, `/api/sync-compras-proveedor-dux/status`, `/api/import-lista-precios/status` y refuerzo de `POST` import lista (`listaPrecios.importarLista` + editor) vía `@/lib/apiRouteAuth`. Eliminados mock `/api/sync-tienda` y `useSyncDux`; cliente unificado en `useListaPreciosTiendaModalSync`. **[Histórico misma fecha]** **Limpieza de superficie** — eliminados `src/actions/duxCompras.ts` y `src/actions/syncListaPrecioTienda.ts` (sin call sites); correlativo DUX solo por `exportRecepcionPedidoExcel` + servicio; `finBalGastoMensualBalance.ts` endurece lecturas Prisma con `try/catch`; `ivaPorGastoFinalId` con claves `cuid` + tope en Zod (§1.2.6); `.env.example` ampliado.*
+
+*Última actualización (2026-05-07): **Auditoría de seguridad cerrada** — todas las Server Actions vigentes revisadas cumplen los gates documentados. Patrones consolidados en §1.2.5 (firma `unknown` para payloads de cliente, gate doble módulo+editor, IDs por modelo Prisma, no anidar Actions, sin throw al cliente, helpers de gate compartidos) + checklist en §4 + tabla en §5.11.*
 
 *Última actualización (2026-04-24): **Balance mensual** y **`fin_bal_vtas`** (resumen, upsert, unique, revalidaciones, helpers `fmtMargenContribucionPct` / `puntoEquilibrioVentasPesos`) — ver **§2.5f**.*
 
@@ -1115,8 +1110,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/services/proveedor.service.ts` | `deleteProveedor` con `ServiceResult` y errores FK. |
 | `src/lib/validations/common.ts` | `prismaCuidSchema`. |
 | `src/actions/vinculos.ts` | `getVinculos` / `listarProductosParaVincular`: `PERMISOS.tienda.acceso` + Zod. |
-| `src/actions/syncListaPrecioTienda.ts` | `PERMISOS.tienda.acciones.sincronizar` (simple + editor desde 2026-03-25). |
-| `src/app/api/sync-lista-precios-tienda/route.ts` | Misma comprobación que la Action. |
+| `src/app/api/sync-lista-precios-tienda/route.ts` | `PERMISOS.tienda.acciones.sincronizar` (simple + editor desde 2026-03-25). Única entrada HTTP para disparar sync lista tienda; no existe Action paralela. |
 | `src/actions/tienda.ts` | `getTiendaPageData`: `getTiendaPageParamsSchema`; `convertirEnProveedor`: también `puede(tienda.acceso)`. |
 | `src/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `src/actions/reposicion.ts` | Zod sucursal/params selector; `upsertReglaReposicion`: `idProveedor` con `prismaCuidSchema` y `codTienda` como clave de entrada; `puntoReposicion` entero **≥ 0**; `cant` entero **≥ 1**. |
@@ -1149,7 +1143,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ### 5.11 Auditoría de seguridad — cierre 2026-05 (Server Actions)
 
-Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: backend 100% alineado con los gates documentados en §1.2.x.
+Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` (dos archivos redundantes fueron eliminados el 2026-05-10; ver §1.2.6). Resultado: backend alineado con los gates documentados en §1.2.x.
 
 | Área | Cambio |
 |------|--------|
@@ -1161,7 +1155,7 @@ Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: b
 | `src/actions/reposicion.ts` | `upsertReglaReposicion` y `deleteReglaReposicion`: firma `raw: unknown` (antes `z.infer<...>`). |
 | `src/actions/stock.ts` | `registrarExportacionExcelStock`: `try/catch` alrededor del `updateMany` para no propagar errores Prisma al cliente. |
 
-**Estado por archivo (26/26 cumplen gates):**
+**Estado por archivo (cumplen gates los módulos listados):**
 
 | Action | Gate | Zod | ActionResult | Servicio | Estado |
 |--------|------|-----|--------------|----------|--------|
@@ -1169,15 +1163,16 @@ Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: b
 | `comparacionCategorias.ts` | comparacionCategorias.{acceso,editar} | ✓ | ✓ | ✓ | ✅ |
 | `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
 | `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `duxCompras.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
 | `exportRecepcionPedidoExcel.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |
+| `finBalIvaDeb.ts` | finanzas + editor (import CSV) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
+| `finBalPosicionIva.ts` | finanzas | ✓ | ✓ | ✓ | ✅ |
+| `finBalPosicionIvaSaldoManual.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
 | `finBalVtas.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `finTesoreriaCheques.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `importar.ts` | importar + editor | ✓ | ✓ | ✓ | ✅ |
 | `listaPrecios.ts` | listaPrecios.* | ✓ | ✓ | ✓ | ✅ |
-| `movimientosFinanzas.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
 | `pedidos.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
 | `pedidosHistoria.ts` | pedidos.acceso | ✓ (CUIDs) | ✓ | ✓ | ✅ |
 | `productos.ts` (mock) | listaPrecios.acciones.edicionMasiva | ✓ | ✓ | n/a | ✅ |
@@ -1186,7 +1181,6 @@ Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: b
 | `reposicion.ts` | pedidos.acceso | ✓ | ✓ | ✓ (parcial) | ✅ |
 | `sesion.ts` | n/a (entrada para activar editor) | ✓ | n/a | n/a | ✅ |
 | `stock.ts` | stock.acceso | ✓ | ✓ | n/a (legacy con Prisma directa) | ✅ |
-| `syncListaPrecioTienda.ts` | tienda.acciones.sincronizar | n/a | shape específico | ✓ | ✅ |
 | `tienda.ts` | tienda.{acceso,controlAumentos,tintoLts} | ✓ | ✓ | n/a (legacy con Prisma directa) | ✅ |
 | `tintometrico.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
 | `tiposPinturaRendimientos.ts` | tienda.tintoLts + editor (mutaciones) | ✓ | ✓ | n/a (raw SQL inline) | ✅ |
@@ -1196,7 +1190,7 @@ Auditoría integral de las 26 Server Actions de `src/actions/*.ts`. Resultado: b
 - `tienda.ts`, `stock.ts`, `tiposPinturaRendimientos.ts`: lógica de Prisma / raw SQL inline en la Action en lugar de delegar a un servicio. Funcional y con Zod + `try/catch` correcto; mover a `src/services/` queda como evolución arquitectural (§5.2).
 - `vinculos.ts` y `reposicion.ts`: una parte de la lógica vive en la Action (Prisma directa) — aceptable por simplicidad y volumen de SQL, pero candidato a extracción a servicio si crece.
 
-**Auditoría = COMPLETADA.** Cualquier nueva Server Action o cambio de gate debe documentarse aquí o en una sub-sección 5.x dedicada y respetar el patrón de §1.2.5.
+**Auditoría = COMPLETADA.** Cualquier nueva Server Action o cambio de gate debe documentarse aquí o en una sub-sección 5.x dedicada y respetar los patrones de §1.2.5 y §1.2.6.
 
 ### 5.12 Triage y fix — error genérico de Server Components en Recepción Pedido (2026-05-08)
 

@@ -106,10 +106,10 @@ function TablaGastosRubro({
       className="tabla-gestion-compacta table-fixed w-full min-w-[40rem]"
     >
       <colgroup>
-        <col style={{ width: "36%" }} />
-        <col style={{ width: "22%" }} />
-        <col style={{ width: "21%" }} />
-        <col style={{ width: "21%" }} />
+        <col className="w-[36%]" />
+        <col className="w-[22%]" />
+        <col className="w-[21%]" />
+        <col className="w-[21%]" />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">

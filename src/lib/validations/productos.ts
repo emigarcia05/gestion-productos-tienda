@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-const uuidSchema = z.string().uuid("ID inválido.");
-
 /** IDs de producto en flujos mock o futuros registros con identificador string acotado. */
 const productoIdSchema = z.string().min(1).max(128);
 

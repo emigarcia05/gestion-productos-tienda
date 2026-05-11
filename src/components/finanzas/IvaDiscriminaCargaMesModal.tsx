@@ -28,7 +28,9 @@ export default function IvaDiscriminaCargaMesModal({ open, onOpenChange, items, 
     if (!open) return;
     const init: Record<string, "none" | "si" | "no"> = {};
     for (const it of items) init[it.gastoFinalId] = "none";
-    setDecisiones(init);
+    queueMicrotask(() => {
+      setDecisiones(init);
+    });
   }, [open, items]);
 
   const completo = useMemo(() => {

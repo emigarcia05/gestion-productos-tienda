@@ -106,8 +106,10 @@ export default function SobreStockReposicionAdvertenciaModal({
       nextDraft[item.idItemPedidoEnvio] = String(Math.max(0, Math.floor(item.cantPedir)));
       nextConfirmado[item.idItemPedidoEnvio] = false;
     }
-    setCantPedirDraftByItem(nextDraft);
-    setConfirmadoByItem(nextConfirmado);
+    queueMicrotask(() => {
+      setCantPedirDraftByItem(nextDraft);
+      setConfirmadoByItem(nextConfirmado);
+    });
   }, [items, open]);
 
   const todasConfirmadas = useMemo(() => {

@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import FilterBar, {
   FilterRowSelection,
   FilterRowSearch,
@@ -95,20 +94,24 @@ export default function SugeridosTablaConFiltros({
 
   useEffect(() => {
     if (!hasFilterActive) {
-      setProveedoresOptions(proveedores);
-      setMarcasOptions(marcas);
+      queueMicrotask(() => {
+        setProveedoresOptions(proveedores);
+        setMarcasOptions(marcas);
+      });
     }
   }, [hasFilterActive, proveedores, marcas]);
 
   useEffect(() => {
     if (!hasFilterActive) {
-      setFilasData([]);
-      setTotal(0);
-      setTotalPaginas(1);
+      queueMicrotask(() => {
+        setFilasData([]);
+        setTotal(0);
+        setTotalPaginas(1);
+      });
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     fetchListaPreciosConOpcionesAction(
       proveedorId || undefined,
       marcaNombre || undefined,
@@ -149,7 +152,7 @@ export default function SugeridosTablaConFiltros({
   }, [hasFilterActive, proveedorId, marcaNombre, busqueda, pagina, fetchListaPreciosConOpcionesAction]);
 
   useEffect(() => {
-    setPagina(1);
+    queueMicrotask(() => setPagina(1));
   }, [proveedorId, marcaNombre, busqueda]);
 
   const filteredFilas = filasData;

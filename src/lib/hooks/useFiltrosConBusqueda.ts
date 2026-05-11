@@ -16,8 +16,8 @@ export interface UseFiltrosConBusquedaOptions {
   commitDelayMs?: number;
   /**
    * Si se define, al montar se restaura el foco en el input cuando la clave en sessionStorage es "1".
-   * Útil cuando la navegación es por window.location.href (recarga). El padre debe llamar
-   * prepareNavigate() antes de asignar window.location.href para guardar el foco.
+   * Útil cuando la navegación implica nueva carga de la página (p. ej. `router.push` con recarga efectiva). El padre debe llamar
+   * `prepareNavigate()` antes de navegar si se usa `focusStorageKey`.
    */
   focusStorageKey?: string;
 }
@@ -32,7 +32,7 @@ export interface UseFiltrosConBusquedaResult {
   handleQChange: (value: string) => void;
   /** true mientras hay un debounce pendiente (mostrar Loader en el input). */
   isDebouncing: boolean;
-  /** Llamar antes de navegar (window.location.href) si se usa focusStorageKey. */
+  /** Llamar antes de navegar (`router.push` / recarga) si se usa focusStorageKey. */
   prepareNavigate: () => void;
 }
 
@@ -62,8 +62,10 @@ export function useFiltrosConBusqueda({
     const isInputFocused = document.activeElement === inputRef.current;
     const userTypingNewerValue = isInputFocused && q !== qActual;
     if (userTypingNewerValue) return;
-    setQ(qActual);
-    setIsDebouncing(false);
+    queueMicrotask(() => {
+      setQ(qActual);
+      setIsDebouncing(false);
+    });
   }, [q, qActual]);
 
   // Restaurar foco en el input tras recarga cuando el usuario venía del buscador.

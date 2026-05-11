@@ -3,7 +3,6 @@
 import { useState, useTransition, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,

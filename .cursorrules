@@ -55,6 +55,7 @@ No inventes convenciones de estilos ni estructuras que no estén documentadas en
 1. **Al revisar una carpeta o archivo:** listar inconsistencias, proponer código corregido.
 2. **Cambios estructurales grandes:** preguntar antes de aplicar.
 3. **Tras correcciones:** confirmar actualización de la documentación técnica.
+4. **`npm run lint`** debe pasar sin errores ni advertencias (configuración local: `npx eslint src --max-warnings 0`). Si se introducen props reservadas no usadas, prefijo `_` según `FRONTEND_GUIDELINES.md`.
 
 ---
 

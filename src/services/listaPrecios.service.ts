@@ -845,7 +845,7 @@ async function getListaPedidoUrgenteDesdeMerc2(
     idProveedor: x.f.idProveedor,
     codExt: x.f.codExt,
   }));
-  const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
+  const maps =
     pairs.length > 0
       ? await mercaderiaMapsDesdeMerc2(
           sucursalTrim,
@@ -859,9 +859,9 @@ async function getListaPedidoUrgenteDesdeMerc2(
           mercaderiaRepoSet: new Set<string>(),
           mercaderiaMapRepo: new Map<string, number>(),
         };
+  const { mercaderiaRepoSet, mercaderiaMapRepo } = maps;
 
   const items: PedidoUrgenteItem[] = filasResueltas.map(({ f, cantUrgente }) => {
-    const key = `${f.idProveedor}:${f.codExt}`;
     const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
     const cantUrgenteUi = cantUrgente;
     const tiendaId = tiendaIdPorListaPrecioProveedorId.get(f.id) ?? null;

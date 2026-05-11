@@ -122,9 +122,9 @@ export default function BalanceMensualDetallePorRubroModal({
                 className="tabla-gestion-compacta table-fixed w-full min-w-[32rem]"
               >
                 <colgroup>
-                  <col style={{ width: "44%" }} />
-                  <col style={{ width: "28%" }} />
-                  <col style={{ width: "28%" }} />
+                  <col className="w-[44%]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[28%]" />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">

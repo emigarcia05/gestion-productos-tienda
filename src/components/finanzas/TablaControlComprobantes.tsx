@@ -73,7 +73,6 @@ export default function TablaControlComprobantes({
   esEditor: boolean;
 }) {
   const router = useRouter();
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [filtroProveedor, setFiltroProveedor] = useState("");
   const [filtroSucursal, setFiltroSucursal] = useState("");
@@ -115,14 +114,12 @@ export default function TablaControlComprobantes({
 
   function onConfirmarControlado(fila: ControlComprobanteRow) {
     if (!esEditor) return;
-    setPendingId(fila.id);
     startTransition(async () => {
       const nuevoEstado = !fila.controlado;
       const res = await actualizarControladoComprobanteAction({
         id: fila.id,
         controlado: nuevoEstado,
       });
-      setPendingId(null);
       if (!res.ok) {
         toast.error(res.error);
         return;

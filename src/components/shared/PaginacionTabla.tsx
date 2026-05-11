@@ -34,8 +34,8 @@ export default function PaginacionTabla({
   params,
   paginaActual,
   totalPaginas,
-  total,
-  pageSize,
+  total: _total,
+  pageSize: _pageSize,
 }: Props) {
   if (totalPaginas <= 1) return null;
 

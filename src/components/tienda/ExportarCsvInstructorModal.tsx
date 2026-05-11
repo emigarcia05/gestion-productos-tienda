@@ -26,7 +26,9 @@ export default function ExportarCsvInstructorModal({ open, onOpenChange }: Props
   const paso = PASOS[pasoActual];
 
   useEffect(() => {
-    if (open) setPasoActual(0);
+    if (open) {
+      queueMicrotask(() => setPasoActual(0));
+    }
   }, [open]);
 
   const irAtras = () => setPasoActual((p) => (p > 0 ? p - 1 : p));

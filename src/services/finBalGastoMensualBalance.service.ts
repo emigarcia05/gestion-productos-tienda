@@ -22,6 +22,20 @@ export function discriminaIvaDesdePoliticaGastoFinal(
   return { success: true, data: respuestaUsuario };
 }
 
+/** Sucursales con `centro_costo` — selectores en Balance · Gastos y catálogo de gastos. */
+export interface SucursalOption {
+  id: string;
+  nombre: string;
+}
+
+export async function listarSucursalesParaGastos(): Promise<SucursalOption[]> {
+  return prisma.sucursal.findMany({
+    where: { centroCosto: true },
+    select: { id: true, nombre: true },
+    orderBy: [{ nombre: "asc" }],
+  });
+}
+
 export interface BalanceGastoMensualFila {
   id: string;
   /** FK `fin_bal_gasto_final`. */

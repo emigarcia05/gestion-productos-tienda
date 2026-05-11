@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SyncModal from "@/components/shared/SyncModal";
 import MensajeProceso from "@/components/shared/MensajeProceso";
 import { cn } from "@/lib/utils";
-
-const STATUS_POLL_MS = 1500;
+import { useListaPreciosTiendaModalSync } from "@/hooks/useListaPreciosTiendaModalSync";
 
 /**
  * Botón "Importar Datos Dux": abre modal de confirmación y, al confirmar,
@@ -19,47 +18,22 @@ const STATUS_POLL_MS = 1500;
 export default function SyncDuxHeaderButton() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [processed, setProcessed] = useState(0);
-  const [total, setTotal] = useState(0);
-  const hadRunningRef = useRef(false);
 
-  // Al confirmar: cerrar modal, disparar POST y marcar que estamos sincronizando
+  const { syncing, progreso, iniciarSync } = useListaPreciosTiendaModalSync(() => {
+    router.refresh();
+  });
+
   function handleConfirm() {
     setShowModal(false);
-    setSyncing(true);
-    setProcessed(0);
-    setTotal(0);
-    hadRunningRef.current = false;
-    fetch("/api/sync-lista-precios-tienda", { method: "POST" }).catch(() => {});
+    iniciarSync();
   }
-
-  // Poll al status: actualizar progreso y detectar cuándo terminó para refrescar
-  useEffect(() => {
-    if (!syncing) return;
-    const t = setInterval(() => {
-      fetch("/api/sync-lista-precios-tienda/status")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (!data) return;
-          if (data.running) {
-            hadRunningRef.current = true;
-            setProcessed(data.processed ?? 0);
-            setTotal(data.total ?? 0);
-          }
-          if (hadRunningRef.current && !data.running) {
-            setSyncing(false);
-            router.refresh();
-          }
-        })
-        .catch(() => {});
-    }, STATUS_POLL_MS);
-    return () => clearInterval(t);
-  }, [syncing, router]);
 
   function handleCancel() {
     if (!syncing) setShowModal(false);
   }
+
+  const processed = progreso?.procesados ?? 0;
+  const total = progreso?.total ?? 0;
 
   return (
     <>
@@ -72,9 +46,7 @@ export default function SyncDuxHeaderButton() {
           onClick={() => setShowModal(true)}
           disabled={syncing}
         >
-          <RefreshCw
-            className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")}
-          />
+          <RefreshCw className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")} />
           {syncing ? "Importando…" : "Importar Datos Dux"}
         </Button>
         {syncing && (

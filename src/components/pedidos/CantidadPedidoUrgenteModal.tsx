@@ -28,7 +28,9 @@ export default function CantidadPedidoUrgenteModal({
 
   useEffect(() => {
     if (open && producto) {
-      setValor("");
+      queueMicrotask(() => {
+        setValor("");
+      });
     }
   }, [open, producto]);
 

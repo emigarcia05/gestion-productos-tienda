@@ -101,7 +101,6 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       return { ok: false, error: "El producto no tiene cod_ext en prod_precios_tienda." };
     }
 
-    const proveedorTiendaNorm = (tienda.proveedor ?? "").trim().toUpperCase();
     const provRows = await prisma.listaPrecioProveedor.findMany({
       where: { codExt: codExtResuelto },
       select: {
@@ -115,15 +114,6 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
     if (provRows.length === 0) {
       return { ok: false, error: "No se encontró el ítem en prod_precios_provee." };
     }
-    const provRow =
-      provRows.find((r) => {
-        const pref = (r.proveedor.prefijo ?? "").trim().toUpperCase();
-        const nom = (r.proveedor.nombre ?? "").trim().toUpperCase();
-        return (
-          proveedorTiendaNorm.length > 0 &&
-          (pref === proveedorTiendaNorm || nom === proveedorTiendaNorm)
-        );
-      }) ?? provRows[0]!;
 
     const stock =
       sucursal === "maipu"

@@ -72,7 +72,7 @@ export default function EditarMontoFinBalGastoMensualModal({
     return () => {
       cancelled = true;
     };
-  }, [open, fila?.id, fila?.gastoFinalId, mes, anio]);
+  }, [open, fila, mes, anio]);
 
   const montoPesosInt = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
 

@@ -62,15 +62,6 @@ function mensajeErrorDesconocido(e: unknown): string {
   }
 }
 
-function armarDiagnosticoUsuario(contexto: string, mensaje: string): string {
-  const marca = new Date().toISOString();
-  return (
-    `[Recepcion Pedido · ${contexto} · ${marca}]\n\n` +
-    `${mensaje.trim()}\n\n` +
-    `(Copiá este bloque completo para soporte o desarrollo.)`
-  );
-}
-
 function parseIntSafe(value: string): number {
   const n = Math.max(0, Math.floor(Number(value) || 0));
   return Number.isFinite(n) ? n : 0;
@@ -134,8 +125,6 @@ export default function PedidoHistoriaDetalleModal({
   const [loading, setLoading] = useState(false);
   const [guardando, setGuardando] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  /** Mensaje técnico listo para copiar (contexto + ISO + texto). */
-  const [errorDiagnostico, setErrorDiagnostico] = useState<string | null>(null);
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
@@ -189,7 +178,6 @@ export default function PedidoHistoriaDetalleModal({
       setDetalle(null);
       const userLine = res.error ?? "Error al cargar detalle.";
       setErrorMsg(userLine);
-      setErrorDiagnostico(armarDiagnosticoUsuario("cargar detalle", userLine));
       return null;
     }
     const detalleNormalizado = res.data;
@@ -217,7 +205,6 @@ export default function PedidoHistoriaDetalleModal({
       if (d) setFechaRecepcion(dateToIsoYmdArgentina(d));
     }
     setErrorMsg(null);
-    setErrorDiagnostico(null);
     return detalleNormalizado;
   }
 
@@ -227,7 +214,6 @@ export default function PedidoHistoriaDetalleModal({
     queueMicrotask(() => {
       setDetalle(null);
       setErrorMsg(null);
-      setErrorDiagnostico(null);
       setLoading(true);
       setEditingItemId(null);
       setEditingValue("");
@@ -253,7 +239,6 @@ export default function PedidoHistoriaDetalleModal({
       } catch (e) {
         const raw = mensajeErrorDesconocido(e);
         setErrorMsg(raw);
-        setErrorDiagnostico(armarDiagnosticoUsuario("cargar detalle (excepción)", raw));
       } finally {
         setLoading(false);
       }
@@ -482,15 +467,11 @@ export default function PedidoHistoriaDetalleModal({
       if (!res.ok) {
         const line = res.error ?? "Error al guardar la recepción.";
         toast.error(line);
-        setErrorDiagnostico(armarDiagnosticoUsuario("guardar recepción", line));
         return false;
       }
-      setErrorDiagnostico(null);
       return true;
-    } catch (e) {
-      const raw = mensajeErrorDesconocido(e);
+    } catch {
       toast.error("Error inesperado al guardar la recepción.");
-      setErrorDiagnostico(armarDiagnosticoUsuario("guardar recepción (excepción)", raw));
       return false;
     }
   }
@@ -527,17 +508,13 @@ export default function PedidoHistoriaDetalleModal({
       if (!excelRes.ok) {
         const line = excelRes.error ?? "Error al generar el Excel.";
         toast.error(line);
-        setErrorDiagnostico(armarDiagnosticoUsuario("exportar Excel de recepción", line));
         return false;
       }
       descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
       setTimeout(() => setShowExportInstructor(true), INSTRUCTOR_DELAY_MS);
-      setErrorDiagnostico(null);
       return true;
-    } catch (e) {
-      const raw = mensajeErrorDesconocido(e);
+    } catch {
       toast.error("Error inesperado al generar el Excel.");
-      setErrorDiagnostico(armarDiagnosticoUsuario("exportar Excel de recepción (excepción)", raw));
       return false;
     } finally {
       setGuardando(null);
@@ -614,12 +591,6 @@ export default function PedidoHistoriaDetalleModal({
                         const line =
                           excelRes.error ?? "Error al generar el Excel.";
                         toast.error(line);
-                        setErrorDiagnostico(
-                          armarDiagnosticoUsuario(
-                            "exportar Excel · flujo registrar en DUX",
-                            line
-                          )
-                        );
                         return;
                       }
                       descargarExcelBase64(
@@ -638,23 +609,12 @@ export default function PedidoHistoriaDetalleModal({
                       if (!res.ok) {
                         const line = res.error ?? "Error al registrar en DUX.";
                         toast.error(line);
-                        setErrorDiagnostico(
-                          armarDiagnosticoUsuario("marcar registrado en DUX", line)
-                        );
                         return;
                       }
                       toast.success("Pedido registrado en DUX.");
-                      setErrorDiagnostico(null);
                       handleModalOpenChange(false);
-                    } catch (e) {
-                      const raw = mensajeErrorDesconocido(e);
+                    } catch {
                       toast.error("Error inesperado al registrar la recepción.");
-                      setErrorDiagnostico(
-                        armarDiagnosticoUsuario(
-                          "flujo completo registrar en DUX (excepción)",
-                          raw
-                        )
-                      );
                     } finally {
                       setGuardando(null);
                     }

@@ -62,10 +62,12 @@ export default function FiltroRangoFechasCalendarioModal({
 
   useEffect(() => {
     if (!open) return;
-    setDraftDesde(fechaDesde);
-    setDraftHasta(fechaHasta);
-    const base = parseIsoYmd(fechaDesde) ?? parseIsoYmd(fechaHasta) ?? new Date();
-    setMesCursor(new Date(base.getFullYear(), base.getMonth(), 1));
+    queueMicrotask(() => {
+      setDraftDesde(fechaDesde);
+      setDraftHasta(fechaHasta);
+      const base = parseIsoYmd(fechaDesde) ?? parseIsoYmd(fechaHasta) ?? new Date();
+      setMesCursor(new Date(base.getFullYear(), base.getMonth(), 1));
+    });
   }, [open, fechaDesde, fechaHasta]);
 
   const celdasMes = useMemo(() => {

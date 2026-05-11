@@ -14,7 +14,7 @@ export interface ImportarIvaDebCsvResultado {
   ignoradasInvalidas: number;
 }
 
-/** Línea de detalle IVA débito · importadas desde CSV (`fin_bal_iva_deb_import_line`). */
+/** Línea de detalle IVA débito · importadas desde CSV (`fin_bal_pos_iva_final`). */
 export interface DetalleLineaIvaDebitoBalance {
   id: string;
   fechaEmisionIso: string;

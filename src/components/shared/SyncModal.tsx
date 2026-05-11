@@ -2,11 +2,11 @@
 
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SyncDuxProgreso } from "@/hooks/useSyncDux";
+import type { ListaPreciosTiendaModalProgreso } from "@/hooks/listaPreciosTiendaSync.types";
 
 interface Props {
   syncing: boolean;
-  progreso: SyncDuxProgreso | null;
+  progreso: ListaPreciosTiendaModalProgreso | null;
   onConfirm: () => void;
   onCancel: () => void;
 }

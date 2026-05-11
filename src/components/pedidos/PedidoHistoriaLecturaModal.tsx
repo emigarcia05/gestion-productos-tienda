@@ -71,9 +71,11 @@ export default function PedidoHistoriaLecturaModal({
     if (!open || !pedidoHistoriaId) return;
 
     let cancelled = false;
-    setLoading(true);
-    setErrorMsg(null);
-    setDetalle(null);
+    queueMicrotask(() => {
+      setLoading(true);
+      setErrorMsg(null);
+      setDetalle(null);
+    });
 
     void (async () => {
       const res = await fetchPedidoHistoriaDetalle(pedidoHistoriaId);
@@ -95,9 +97,11 @@ export default function PedidoHistoriaLecturaModal({
 
   useEffect(() => {
     if (!open) {
-      setDetalle(null);
-      setErrorMsg(null);
-      setLoading(false);
+      queueMicrotask(() => {
+        setDetalle(null);
+        setErrorMsg(null);
+        setLoading(false);
+      });
     }
   }, [open]);
 

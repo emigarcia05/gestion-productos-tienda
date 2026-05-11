@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -56,6 +56,7 @@ export default function FiltrosEnviarPedido({
   q: qActual,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const multiRef = useRef<HTMLDivElement>(null);
   const [multiOpen, setMultiOpen] = useState(false);
 
@@ -80,7 +81,7 @@ export default function FiltrosEnviarPedido({
     if (next.proveedor) search.set("proveedor", next.proveedor);
     if (next.tipos.length > 0) search.set("tipo", next.tipos.join(","));
     if (next.q.trim()) search.set("q", next.q.trim());
-    window.location.href = `${pathname}?${search.toString()}`;
+    router.push(`${pathname}?${search.toString()}`);
   }
 
   function toggleTipo(t: TipoPedido) {

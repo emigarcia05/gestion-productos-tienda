@@ -41,7 +41,7 @@ interface Props {
 export default function ElegirProductoReferenciaModal({
   open,
   onOpenChange,
-  presentacionId,
+  presentacionId: _presentacionId,
   labelCompleto,
   onElegido,
 }: Props) {
@@ -57,13 +57,13 @@ export default function ElegirProductoReferenciaModal({
   useEffect(() => {
     if (!open) return;
     getProveedores().then(setProveedores);
-    setSelectedRow(null);
+    queueMicrotask(() => setSelectedRow(null));
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     const run = async () => {
       const result = await buscarProductosParaAsignarAction(
         proveedorId || undefined,

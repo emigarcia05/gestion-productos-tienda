@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { globalSucursalIdSchema, prismaCuidSchema } from "@/lib/validations/common";
 
+const IVA_POR_GASTO_MAX_KEYS = 500;
+
 /** Periodo calendario para Balance · Gastos y acciones relacionadas (`fin_bal_gasto_mensual`). */
 export const mesAnioQuerySchema = z.object({
   mes: z.coerce.number().int().min(1).max(12),
@@ -8,10 +10,22 @@ export const mesAnioQuerySchema = z.object({
 });
 export type MesAnioQuery = z.infer<typeof mesAnioQuerySchema>;
 
-export const cargarImputacionesMesParamsSchema = mesAnioQuerySchema.extend({
-  /** Decisiones de discrimina IVA para gastos finales con política `PREGUNTA` al cargar el mes. */
-  ivaPorGastoFinalId: z.record(z.string(), z.boolean()).optional(),
-});
+export const cargarImputacionesMesParamsSchema = mesAnioQuerySchema
+  .extend({
+    /** Decisiones de discrimina IVA para gastos finales con política `PREGUNTA` al cargar el mes. */
+    ivaPorGastoFinalId: z.record(prismaCuidSchema, z.boolean()).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const rec = data.ivaPorGastoFinalId;
+    if (!rec) return;
+    if (Object.keys(rec).length > IVA_POR_GASTO_MAX_KEYS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Demasiadas decisiones de IVA en un solo envío.",
+        path: ["ivaPorGastoFinalId"],
+      });
+    }
+  });
 export type CargarImputacionesMesParams = z.infer<typeof cargarImputacionesMesParamsSchema>;
 
 export const editarMontoFinBalGastoMensualSchema = z.object({
