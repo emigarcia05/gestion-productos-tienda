@@ -15,10 +15,8 @@ import CantidadPedidoUrgenteModal, {
 } from "@/components/pedidos/CantidadPedidoUrgenteModal";
 import { toast } from "sonner";
 import { upsertPedidoUrgenteMercaderiaItemAction } from "@/actions/pedidos";
-import { fmtPrecio } from "@/lib/format";
 import {
   ordenarMiembrosPedidoUrgentePorMenorCostoComparable,
-  pxFinalCompraConIvaProveedor,
 } from "@/lib/precioComparacionPedidoUrgenteReposicion";
 
 interface Props {
@@ -40,6 +38,14 @@ interface Props {
 
 const MENSAJE_SIN_FILTROS =
   "Seleccioná una sucursal para ver los productos.";
+
+const TITULO_PROVEEDOR_PRIORIDAD_COSTO = "Proveedor Con Prioridad Por Costo";
+const TITULO_ALTERNATIVAS_PROVEEDOR =
+  "Alternativa Por Stock o Conveniencia Logística";
+
+type MiembroAgrupacionPedidoUrgente = NonNullable<
+  ProductoPedidoUrgente["miembrosAgrupacion"]
+>[number];
 
 export default function PedidoUrgentePageClient({
   filters,
@@ -69,10 +75,17 @@ export default function PedidoUrgentePageClient({
     return ordenarMiembrosPedidoUrgentePorMenorCostoComparable(m, ivaSaldoAcumuladoComparacion);
   }, [grupoParaElegirProveedor, ivaSaldoAcumuladoComparacion]);
 
-  const textoCriterioComparacionPrecios =
-    ivaSaldoAcumuladoComparacion > 0
-      ? "IVA saldo acumulado > 0: se ordena por menor precio final sin IVA."
-      : "IVA saldo acumulado ≤ 0: se ordena por menor precio final con IVA (según política IVA del proveedor).";
+  const { prioritarioElegirProveedor, alternativasElegirProveedor } = useMemo(() => {
+    const arr = miembrosElegirProveedorOrdenados;
+    if (arr.length === 0) {
+      return {
+        prioritarioElegirProveedor: null as MiembroAgrupacionPedidoUrgente | null,
+        alternativasElegirProveedor: [] as MiembroAgrupacionPedidoUrgente[],
+      };
+    }
+    const [prioritario, ...alternativas] = arr;
+    return { prioritarioElegirProveedor: prioritario, alternativasElegirProveedor: alternativas };
+  }, [miembrosElegirProveedorOrdenados]);
 
   useEffect(() => {
     if (productos.length === 0) return;
@@ -289,62 +302,83 @@ export default function PedidoUrgentePageClient({
                 Elegí proveedor para cargar o editar la cantidad pedida. Los proveedores aparecen del
                 menor al mayor costo según el criterio vigente.
               </p>
-              <p className="text-xs text-muted-foreground leading-snug">
-                {textoCriterioComparacionPrecios} Acum. referencia IVA saldo: $
-                {fmtPrecio(Math.round(ivaSaldoAcumuladoComparacion))}.
-              </p>
-              <ul className="flex flex-col divide-y divide-border border border-border rounded-md overflow-hidden">
-                {miembrosElegirProveedorOrdenados.map((m, idx) => {
-                  const px = m.pxCompraFinalSinIva;
-                  const tienePx = px != null && Number.isFinite(px);
-                  const pxConIva = tienePx
-                    ? pxFinalCompraConIvaProveedor(px, m.ivaProveedor)
-                    : Number.NaN;
-                  return (
-                    <li key={m.codExt} className="bg-card">
-                      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-foreground">
-                              {m.prefijo?.trim() || `Proveedor ${idx + 1}`}
-                            </span>
-                            {idx === 0 && miembrosElegirProveedorOrdenados.length > 1 ? (
-                              <span className="rounded bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
-                                Menor costo (criterio)
+              {prioritarioElegirProveedor ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="text-sm font-semibold text-foreground leading-tight">
+                      {TITULO_PROVEEDOR_PRIORIDAD_COSTO}
+                    </h3>
+                    <ul className="flex flex-col divide-y divide-border border border-border rounded-md overflow-hidden">
+                      <li key={prioritarioElegirProveedor.codExt} className="bg-card">
+                        <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-foreground">
+                                {prioritarioElegirProveedor.prefijo?.trim() || "Proveedor 1"}
                               </span>
-                            ) : null}
+                              {miembrosElegirProveedorOrdenados.length > 1 ? (
+                                <span className="rounded bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+                                  Menor costo (criterio)
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                            <div className="truncate">{m.codExt}</div>
-                            {tienePx ? (
-                              <div className="tabular-nums">
-                                Sin IVA: ${fmtPrecio(px)} · Con IVA: $
-                                {Number.isFinite(pxConIva) ? fmtPrecio(pxConIva) : "—"} · IVA:{" "}
-                                {m.ivaProveedor}
-                              </div>
-                            ) : (
-                              <div>Precio lista: —</div>
-                            )}
-                          </div>
+                          <Button
+                            type="button"
+                            className="btn-primario-gestion shrink-0"
+                            onClick={() => {
+                              const g = grupoParaElegirProveedor;
+                              setModalElegirProveedorOpen(false);
+                              setGrupoParaElegirProveedor(null);
+                              if (!g) return;
+                              abrirModalCantidadDirecto(
+                                productoDesdeMiembroGrupo(g, prioritarioElegirProveedor)
+                              );
+                            }}
+                          >
+                            Pedir A Este Proveedor
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          className="btn-primario-gestion shrink-0"
-                          onClick={() => {
-                            const g = grupoParaElegirProveedor;
-                            setModalElegirProveedorOpen(false);
-                            setGrupoParaElegirProveedor(null);
-                            if (!g) return;
-                            abrirModalCantidadDirecto(productoDesdeMiembroGrupo(g, m));
-                          }}
-                        >
-                          Pedir A Este Proveedor
-                        </Button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                      </li>
+                    </ul>
+                  </div>
+                  {alternativasElegirProveedor.length > 0 ? (
+                    <div className="flex flex-col gap-1.5">
+                      <h3 className="text-sm font-semibold text-foreground leading-tight">
+                        {TITULO_ALTERNATIVAS_PROVEEDOR}
+                      </h3>
+                      <ul className="flex flex-col divide-y divide-border border border-border rounded-md overflow-hidden">
+                        {alternativasElegirProveedor.map((m, altIdx) => (
+                          <li key={m.codExt} className="bg-card">
+                            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-semibold text-foreground">
+                                    {m.prefijo?.trim() || `Proveedor ${altIdx + 2}`}
+                                  </span>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                className="btn-primario-gestion shrink-0"
+                                onClick={() => {
+                                  const g = grupoParaElegirProveedor;
+                                  setModalElegirProveedorOpen(false);
+                                  setGrupoParaElegirProveedor(null);
+                                  if (!g) return;
+                                  abrirModalCantidadDirecto(productoDesdeMiembroGrupo(g, m));
+                                }}
+                              >
+                                Pedir A Este Proveedor
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </AppModal>
         </Dialog>
