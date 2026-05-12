@@ -5,6 +5,7 @@ import {
   parsearCsvIvaDebitoAfip,
   type FilaCsvIvaDebParseada,
 } from "@/lib/finBalIvaDebCsv";
+import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import type { ServiceResult } from "@/types";
 
 export interface ImportarIvaDebCsvResultado {
@@ -149,6 +150,8 @@ export async function importarCsvIvaDebitoMes(params: {
     const msg = e instanceof Error ? e.message : "No se pudo guardar el CSV.";
     return { success: false, error: msg };
   }
+
+  revalidatePedidoUrgenteTrasCambioIvaSaldo();
 
   return {
     success: true,

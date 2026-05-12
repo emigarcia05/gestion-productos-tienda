@@ -9,6 +9,7 @@ import {
   startSyncComprasProveedorDuxInDb,
 } from "@/lib/syncComprasProveedorDuxStatusDb";
 import { prisma } from "@/lib/prisma";
+import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import type { ServiceResult } from "@/types";
 
 const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
@@ -331,6 +332,8 @@ export async function sincronizarComprobantesProveedorDesdeDux(params?: {
 
     await setSyncComprasProveedorDuxSuccessInDb(totalSucursales, totalSucursales);
     comprasSyncEnCurso = false;
+
+    revalidatePedidoUrgenteTrasCambioIvaSaldo();
 
     return {
       success: true,

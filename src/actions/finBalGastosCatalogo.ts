@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
@@ -77,6 +78,7 @@ function revalidateBalancePaths(): void {
   revalidatePath("/finanzas");
   revalidatePath("/finanzas/balance/gastos");
   revalidatePath("/finanzas/balance/gastos/catalogo");
+  revalidatePedidoUrgenteTrasCambioIvaSaldo();
 }
 
 // ─── Tipo (raíz) ──────────────────────────────────────────────────────────

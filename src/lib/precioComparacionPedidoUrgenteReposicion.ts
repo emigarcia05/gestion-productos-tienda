@@ -14,8 +14,8 @@ export function pxFinalCompraConIvaProveedor(pxSinIva: number, ivaProveedor: Iva
 /**
  * Precio comparable para ranking de proveedores cuando se compara **mismo ítem de tienda** entre listas:
  * regla según suma acumulada **IVA SALDO** en Posición IVA (`sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido`).
- * - **IVA SALDO > 0**: comparable = **precio final con IVA** (`pxFinalCompraConIvaProveedor`: `SIEMPRE` × 1,21; `NUNCA` / `PREGUNTA` × 1).
- * - **IVA SALDO ≤ 0**: comparable = **`px_compra_final_sin_iva`**.
+ * - **IVA SALDO > 0**: comparable = **`px_compra_final_sin_iva`**.
+ * - **IVA SALDO ≤ 0**: comparable = **precio final con IVA** (`pxFinalCompraConIvaProveedor`: `SIEMPRE` × 1,21; `NUNCA` / `PREGUNTA` × 1).
  */
 export function pxComparablePedidoUrgenteReposicion(
   pxSinIva: number,
@@ -24,9 +24,9 @@ export function pxComparablePedidoUrgenteReposicion(
 ): number {
   if (!Number.isFinite(pxSinIva)) return Number.NaN;
   if (sumaIvaSaldoAcumulado > 0) {
-    return pxFinalCompraConIvaProveedor(pxSinIva, ivaProveedor);
+    return pxSinIva;
   }
-  return pxSinIva;
+  return pxFinalCompraConIvaProveedor(pxSinIva, ivaProveedor);
 }
 
 /** Mínimo tipo para ordenar filas de proveedor en Pedido Urgente (mismo `cod_tienda`). */

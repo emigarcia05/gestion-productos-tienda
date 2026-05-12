@@ -147,7 +147,7 @@ export default function TablaReposicion({
               const isSaving = savingId === key;
               const tieneRegla = item.idReposicion != null;
               const puntoVal = tieneRegla ? item.puntoReposicion : "";
-              const cantVal = tieneRegla ? item.cant : "";
+              const cantVal = tieneRegla ? item.cantPedidaReposicion : "";
               const cantAPedirVal = tieneRegla ? item.cantPedir : "";
 
               return (

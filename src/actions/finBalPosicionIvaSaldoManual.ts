@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import { z } from "zod";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -58,6 +59,7 @@ export async function guardarFinBalPosicionIvaSaldoManualAction(
   }
 
   revalidatePath("/finanzas/balance/posicion-iva");
+  revalidatePedidoUrgenteTrasCambioIvaSaldo();
   return { ok: true, data: { saldoPesos } };
 }
 
@@ -77,5 +79,6 @@ export async function eliminarFinBalPosicionIvaSaldoManualAction(
   }
 
   revalidatePath("/finanzas/balance/posicion-iva");
+  revalidatePedidoUrgenteTrasCambioIvaSaldo();
   return { ok: true, data: undefined };
 }

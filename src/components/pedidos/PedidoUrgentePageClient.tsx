@@ -71,8 +71,8 @@ export default function PedidoUrgentePageClient({
 
   const textoCriterioComparacionPrecios =
     ivaSaldoAcumuladoComparacion > 0
-      ? "IVA saldo acumulado > 0: se ordena por menor precio final con IVA (según política IVA del proveedor)."
-      : "IVA saldo acumulado ≤ 0: se ordena por menor precio final sin IVA.";
+      ? "IVA saldo acumulado > 0: se ordena por menor precio final sin IVA."
+      : "IVA saldo acumulado ≤ 0: se ordena por menor precio final con IVA (según política IVA del proveedor).";
 
   useEffect(() => {
     if (productos.length === 0) return;

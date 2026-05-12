@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
@@ -41,6 +42,7 @@ import {
 function revalidateGastosPaths(): void {
   revalidatePath("/finanzas");
   revalidatePath("/finanzas/balance/gastos");
+  revalidatePedidoUrgenteTrasCambioIvaSaldo();
 }
 
 function firstZodErrorMessage(error: {

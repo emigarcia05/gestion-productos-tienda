@@ -37,7 +37,11 @@ export interface ItemReposicion {
   idReposicion: string | null;
   formaPedir: FormaPedirReposicionOption;
   puntoReposicion: number;
+  /** `reposicion_cant_conf` (regla: cant. fija / tope máximo). */
   cant: number;
+  /** `reposicion_cant_pedir` en `prod_ped_merc2` (cantidad pedida del pedido Reposición). */
+  cantPedidaReposicion: number;
+  /** Cantidad a pedir recalculada (stock / forma); misma regla que Generar pedido. */
   cantPedir: number;
 }
 
@@ -233,6 +237,7 @@ export async function getReposicionData(
       formaPedir: FormaPedirReposicionOption;
       puntoReposicion: number;
       cant: number;
+      cantPedidaReposicion: number;
     }
   >();
   if (codTiendasRows.length > 0) {
@@ -249,6 +254,7 @@ export async function getReposicionData(
         reposicionFormaPedido: true,
         reposicionPuntoPedido: true,
         reposicionCantConf: true,
+        reposicionCantPedir: true,
       },
     });
     for (const r of reglasMerc2) {
@@ -262,6 +268,7 @@ export async function getReposicionData(
         formaPedir: (r.reposicionFormaPedido as FormaPedirReposicionOption) ?? "",
         puntoReposicion: Math.max(0, Math.floor(Number(r.reposicionPuntoPedido ?? 0))),
         cant: Math.max(0, Math.floor(Number(r.reposicionCantConf ?? 0))),
+        cantPedidaReposicion: Math.max(0, Math.floor(Number(r.reposicionCantPedir ?? 0))),
       });
     }
 
@@ -278,6 +285,7 @@ export async function getReposicionData(
     const forma = regla?.formaPedir ?? "";
     const punto = regla?.puntoReposicion ?? 0;
     const cantCfg = regla?.cant ?? 0;
+    const cantPedidaDb = regla?.cantPedidaReposicion ?? 0;
     const cantAPedir = cantPedirReposicionMerc2({
       forma,
       punto,
@@ -297,6 +305,7 @@ export async function getReposicionData(
       formaPedir: forma,
       puntoReposicion: punto,
       cant: cantCfg,
+      cantPedidaReposicion: cantPedidaDb,
       cantPedir: cantAPedir,
     };
   });
