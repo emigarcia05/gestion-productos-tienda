@@ -13,7 +13,7 @@ interface Props {
     subRubro?: string;
     marca?: string;
     proveedor?: string;
-    mejorPrecio?: string;
+    vinculado?: string;
     pagina?: string;
   }>;
 }
@@ -22,15 +22,18 @@ export default async function TiendaPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/gestion-productos/tienda/control-stock");
 
+  const sp = await searchParams;
   const {
     q = "",
     rubro = "",
     subRubro = "",
     marca = "",
     proveedor = "",
-    mejorPrecio = "",
     pagina = "1",
-  } = await searchParams;
+  } = sp;
+  const vRaw = sp.vinculado ?? "";
+  const vLower = vRaw.toLowerCase();
+  const vinculado = vLower === "no" || vLower === "si" ? vLower : "";
 
   const { items, total, totalPaginas, proveedores, marcas, rubros, subRubros } =
     await getTiendaPageData({
@@ -39,10 +42,10 @@ export default async function TiendaPage({ searchParams }: Props) {
       subRubro,
       marca,
       proveedor,
-      mejorPrecio,
+      vinculado: vinculado || undefined,
       pagina,
     });
-  const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || mejorPrecio);
+  const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || vinculado);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   return (
@@ -61,7 +64,7 @@ export default async function TiendaPage({ searchParams }: Props) {
       subRubro={subRubro}
       marca={marca}
       proveedor={proveedor}
-      mejorPrecio={mejorPrecio}
+      vinculado={vinculado}
       paginaNum={paginaNum}
     />
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,11 @@ interface Props {
   excluirItemTiendaId: string;
   /** IDs de proveedor (`global_proveedores`) ya vinculados; se excluyen filas de esos proveedores. */
   idsProveedoresYaVinculados?: string[];
+  /** Mismo encabezado que en **Vínculos Con Proveedores** (`VincularModal`). */
+  itemDescripcion: string;
+  marca?: string | null;
+  rubro?: string | null;
+  subRubro?: string | null;
 }
 
 export default function SeleccionarProductoModal({
@@ -64,6 +69,10 @@ export default function SeleccionarProductoModal({
   onSeleccionar,
   excluirItemTiendaId: _excluirItemTiendaId,
   idsProveedoresYaVinculados = [],
+  itemDescripcion,
+  marca,
+  rubro,
+  subRubro,
 }: Props) {
   const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
   const [proveedorId, setProveedorId] = useState("");
@@ -78,6 +87,15 @@ export default function SeleccionarProductoModal({
   }, [open]);
 
   const hayFiltros = !!proveedorId || !!q.trim();
+
+  const lineaMarcaRubroSub = useMemo(
+    () =>
+      [marca, rubro, subRubro]
+        .map((s) => (s ?? "").trim())
+        .filter(Boolean)
+        .join(" - "),
+    [marca, rubro, subRubro]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -148,6 +166,13 @@ export default function SeleccionarProductoModal({
         <div className="modal-app__content flex-1 min-h-0">
           {/* Cuerpo: Filtro Proveedor (fijo) + Filtro Descripción (fijo) + Encabezado (fijo) + Tabla (scroll) */}
           <div className="modal-app__body flex flex-col flex-1 min-h-0 overflow-hidden px-6 pt-4 pb-0">
+            <div className="flex shrink-0 flex-col gap-1 pb-2 text-center">
+              <p className="text-sm font-semibold text-foreground break-words">{itemDescripcion}</p>
+              {lineaMarcaRubroSub ? (
+                <p className="text-xs text-muted-foreground break-words">{lineaMarcaRubroSub}</p>
+              ) : null}
+            </div>
+
             {/* Mismo ancho que la tabla: contenedor y filtros a ancho completo */}
             <div className="shrink-0 w-full flex flex-col gap-2 pb-3 border-b border-border">
               {/* Filtro Proveedor (fijo) */}

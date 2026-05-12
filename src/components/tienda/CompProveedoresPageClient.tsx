@@ -29,7 +29,7 @@ interface Props {
   subRubro: string;
   marca: string;
   proveedor: string;
-  mejorPrecio: string;
+  vinculado: string;
   paginaNum: number;
 }
 
@@ -112,7 +112,7 @@ export default function CompProveedoresPageClient({
   subRubro,
   marca,
   proveedor,
-  mejorPrecio,
+  vinculado,
   paginaNum,
 }: Props) {
   const [isPending, startTransition] = useTransition();
@@ -208,18 +208,13 @@ export default function CompProveedoresPageClient({
       rubroActual={rubro}
       subRubroActual={subRubro}
       proveedorActual={proveedor}
-      mejorPrecioActual={mejorPrecio}
+      vinculadoActual={vinculado}
     />
   );
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
-      <ClassicFilteredTableLayout
-        title="Lista Tienda"
-        subtitle="Comp. Proveedores"
-        actions={actions}
-        filters={filters}
-      >
+      <ClassicFilteredTableLayout title="Vinculacion Con Prov." actions={actions} filters={filters}>
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
             <TablaTienda
@@ -236,7 +231,7 @@ export default function CompProveedoresPageClient({
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
                 basePath="/gestion-productos/tienda/comp-proveedores"
-                params={{ q, rubro, subRubro, marca, proveedor, mejorPrecio }}
+                params={{ q, rubro, subRubro, marca, proveedor, vinculado }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}

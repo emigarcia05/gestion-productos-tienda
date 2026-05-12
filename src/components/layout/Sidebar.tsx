@@ -124,7 +124,7 @@ const MODULES: {
     label: "LISTA TIENDA",
     icon: <ShoppingBag className={iconClass} />,
     submodules: [
-      { href: "/gestion-productos/tienda/comp-proveedores", label: "Comp. Proveedores", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
+      { href: "/gestion-productos/tienda/comp-proveedores", label: "Vinculacion Con Prov.", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
       { href: "/gestion-productos/tienda/control-aumento", label: "Control Aumento", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
       { href: "/gestion-productos/tienda/control-stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
       { href: "/gestion-productos/tienda/calc-tintometrico", label: "Calc. Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },

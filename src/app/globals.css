@@ -191,9 +191,9 @@
   /** Sombra de la tarjeta que envuelve la tabla principal (p. ej. Comp. Proveedores, Generar Pedido, Pedido Urgente). Evitar `shadow-[0_4px_12px_rgba(...)]` en JSX. */
   --card-tabla-envoltorio-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
-  /* ─── Tablas: altura oficial (referencia: módulo Comp. Proveedores / TablaTienda). SSOT para todas las tablas. */
+  /* ─── Tablas: altura oficial (referencia: módulo Vinculacion Con Prov. / TablaTienda). SSOT para todas las tablas. */
   /* Encabezado global: altura fija para 2 líneas de texto (se aplica siempre, aunque el título use 1 línea). */
-  /* Valor de referencia tomado de Comp. Proveedores: 2.125rem. */
+  /* Valor de referencia tomado de Vinculacion Con Prov.: 2.125rem. */
   --tabla-thead-lines: 2;
   --tabla-thead-line-height: 1.15;
   --tabla-thead-padding-y: 0.2rem;
@@ -793,7 +793,7 @@
   justify-content: center !important;
   gap: 0 !important;
 }
-/* Botón de selección en encabezado (Comp. Proveedores): superficie blanca con tilde azul visible. */
+/* Botón de selección en encabezado (Vinculacion Con Prov.): superficie blanca con tilde azul visible. */
 .tabla-gestion-compacta thead th .tabla-head-toggle {
   width: calc(var(--tabla-thead-height) - 0.7rem) !important;
   height: calc(var(--tabla-thead-height) - 0.7rem) !important;
@@ -1062,35 +1062,27 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
-/* Tabla Tienda / Comp. Proveedores: base sin tilde + variante con tilde de selección al inicio. */
+/* Tabla Tienda / Vinculacion Con Prov.: TILDE 5% + COD. TIENDA 12% + DESCRIPCIÓN 58% + VINCULACIÓN 15%. */
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
 }
 .tabla-tienda-listado thead th:nth-child(1),
-.tabla-tienda-listado tbody td:nth-child(1) { width: 10%; }
+.tabla-tienda-listado tbody td:nth-child(1) {
+  width: 5%;
+}
 .tabla-tienda-listado thead th:nth-child(2),
-.tabla-tienda-listado tbody td:nth-child(2) { width: 55%; }
+.tabla-tienda-listado tbody td:nth-child(2) {
+  width: 12%;
+}
 .tabla-tienda-listado thead th:nth-child(3),
-.tabla-tienda-listado tbody td:nth-child(3) { width: 10%; }
+.tabla-tienda-listado tbody td:nth-child(3) {
+  width: 58%;
+}
 .tabla-tienda-listado thead th:nth-child(4),
-.tabla-tienda-listado tbody td:nth-child(4) { width: 10%; }
-.tabla-tienda-listado thead th:nth-child(5),
-.tabla-tienda-listado tbody td:nth-child(5) { width: 10%; }
-
-/* Con selección: TILDE 5% + COD. TIENDA 10% + DESCRIPCIÓN 55% + PX. COMPRA FINAL 10% + MEJOR PROV. 10% + MARGEN S/ IVA 10%. */
-.tabla-tienda-listado--with-select thead th:nth-child(1),
-.tabla-tienda-listado--with-select tbody td:nth-child(1) { width: 5%; }
-.tabla-tienda-listado--with-select thead th:nth-child(2),
-.tabla-tienda-listado--with-select tbody td:nth-child(2) { width: 10%; }
-.tabla-tienda-listado--with-select thead th:nth-child(3),
-.tabla-tienda-listado--with-select tbody td:nth-child(3) { width: 55%; }
-.tabla-tienda-listado--with-select thead th:nth-child(4),
-.tabla-tienda-listado--with-select tbody td:nth-child(4) { width: 10%; }
-.tabla-tienda-listado--with-select thead th:nth-child(5),
-.tabla-tienda-listado--with-select tbody td:nth-child(5) { width: 10%; }
-.tabla-tienda-listado--with-select thead th:nth-child(6),
-.tabla-tienda-listado--with-select tbody td:nth-child(6) { width: 10%; }
+.tabla-tienda-listado tbody td:nth-child(4) {
+  width: 15%;
+}
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */
 .card-contenedor-tabla {

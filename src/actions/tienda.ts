@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 
-/** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y mejorPrecio sin resultados. */
+/** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y filtro `vinculado` sin resultados. */
 async function getTiendaEmptyWithOpciones() {
   const [proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
     prisma.proveedor.findMany({
@@ -131,7 +131,7 @@ export async function getTiendaPageData(params: {
   subRubro?: string;
   marca?: string;
   proveedor?: string;
-  mejorPrecio?: string;
+  vinculado?: string;
   pagina?: string;
 }) {
   const rol = await getRol();
@@ -149,9 +149,12 @@ export async function getTiendaPageData(params: {
     subRubro = "",
     marca = "",
     proveedor = "",
-    mejorPrecio = "",
+    vinculado: vinculadoRaw = "",
     pagina = "1",
   } = parsedParams.data;
+
+  const vNorm = (vinculadoRaw ?? "").toLowerCase();
+  const vinculado = vNorm === "no" || vNorm === "si" ? vNorm : "";
 
   const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
@@ -162,24 +165,11 @@ export async function getTiendaPageData(params: {
   // Filtro por proveedor: solo proveedores oficiales (columna proveedor en prod_precios_tienda). Los vinculados son solo para comparación en la tabla.
   if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
 
-  /* Filtro "Menor Cx Disponible": ≥2 proveedores vinculados y al menos un no oficial con px_compra_final_sin_iva < costo_compra. */
-  let codTiendasMenorCxDisponible: string[] = [];
-  if (mejorPrecio === "true") {
-    const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
-      SELECT lpt.cod_tienda AS cod_tienda
-      FROM prod_precios_tienda lpt
-      WHERE (SELECT COUNT(*) FROM prod_precios_provee lpp WHERE lpp.cod_tienda = lpt.cod_tienda) >= 2
-        AND EXISTS (
-          SELECT 1 FROM prod_precios_provee lpp
-          INNER JOIN global_proveedores p ON p.id = lpp.id_proveedor
-          WHERE lpp.cod_tienda = lpt.cod_tienda
-            AND LOWER(TRIM(COALESCE(p.nombre, ''))) != LOWER(TRIM(COALESCE(lpt.proveedor, '')))
-            AND COALESCE(lpp.px_compra_final_sin_iva, lpp.px_lista_proveedor::numeric) < lpt.costo_compra
-        )
-    `;
-    codTiendasMenorCxDisponible = rows.map((r) => r.cod_tienda);
-    if (codTiendasMenorCxDisponible.length === 0) return getTiendaEmptyWithOpciones();
-    andParts.push({ codTienda: { in: codTiendasMenorCxDisponible } });
+  /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. */
+  if (vinculado === "no") {
+    andParts.push({ listaPreciosProveedores: { none: {} } });
+  } else if (vinculado === "si") {
+    andParts.push({ listaPreciosProveedores: { some: {} } });
   }
 
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};

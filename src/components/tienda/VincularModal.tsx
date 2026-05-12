@@ -367,6 +367,10 @@ export default function VincularModal({
         onSeleccionar={handleSeleccionar}
         excluirItemTiendaId={itemTiendaId}
         idsProveedoresYaVinculados={vinculados.map((p) => p.proveedorId)}
+        itemDescripcion={itemDescripcion}
+        marca={marca}
+        rubro={rubro}
+        subRubro={subRubro}
       />
     </>
   );

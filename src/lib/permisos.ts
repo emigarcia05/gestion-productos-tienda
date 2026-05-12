@@ -54,7 +54,7 @@ export const PERMISOS = {
 
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
-    /** Comp. Proveedores (/tienda). */
+    /** Vinculacion Con Prov. (/tienda). */
     acceso: { simple: false, editor: true },
     /** Control Aumentos (/tienda/aumentos). */
     controlAumentos: { simple: false, editor: true },
@@ -71,7 +71,7 @@ export const PERMISOS = {
       proveedorDux: { simple: false, editor: true },
       rubro:        { simple: true,  editor: true },
       subRubro:     { simple: true,  editor: true },
-      mejorPrecio:  { simple: false, editor: true },
+      vinculado: { simple: false, editor: true },
       vinculos:     { simple: false, editor: true },
     },
   },

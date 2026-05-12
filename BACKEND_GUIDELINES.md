@@ -155,14 +155,15 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
 
-- En `getTiendaPageData` (listado “Comp. Proveedores”), cuando hay mejora por un proveedor **no-oficial**:
+- Filtro de URL **`vinculado`**: en `getTiendaPageData`, `vinculado=no` aplica `listaPreciosProveedores: { none: {} }` (ningún registro en `prod_precios_provee` con `cod_tienda` del ítem); `vinculado=si` aplica `{ some: {} }` (al menos un vínculo). Otros valores se ignoran. Reemplaza al antiguo `mejorPrecio=true` (menor costo disponible vía SQL).
+- En `getTiendaPageData` (listado **Vinculacion Con Prov.**), cuando hay mejora por un proveedor **no-oficial**:
   - el “mejor proveedor” se define por el menor `px_compra_final_sin_iva` entre proveedores no-oficiales **con `habilitado = true`** en `prod_precios_provee`;
   - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);
   - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
 
-### 1.10 Margen sin IVA (Comp. Proveedores, `/tienda`)
+### 1.10 Margen sin IVA (Vinculacion Con Prov., modal y export `/tienda`)
 
-- La columna **MARGEN S/ IVA** en la tabla usa `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
+- La columna **MARGEN S/ IVA** en el modal de vínculos y los cálculos de export usan `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
 
 ### 1.11 Coeficiente Tintométrico por proveedor
 
@@ -1066,7 +1067,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 | Archivo / Área | Cambio |
 |----------------|--------|
-| `src/lib/permisos.ts` | Nuevo permiso `PERMISOS.tienda.tintoLts` (`simple: true`, `editor: true`) para habilitar el submódulo sin abrir acceso a `Comp. Proveedores`. |
+| `src/lib/permisos.ts` | Nuevo permiso `PERMISOS.tienda.tintoLts` (`simple: true`, `editor: true`) para habilitar el submódulo sin abrir acceso a **Vinculacion Con Prov.** |
 | `src/actions/tienda.ts` | Nueva action de lectura `getProveedoresTintoLts()` con `getRol()` + `puede(rol, PERMISOS.tienda.tintoLts)`; devuelve `nombre`, `prefijo`, `coeficienteTintometrico` para cálculo frontend sin persistencia. |
 
 ## 6. Organización en Cursor (prompts y reglas persistentes)

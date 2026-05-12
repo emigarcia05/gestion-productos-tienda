@@ -34,7 +34,7 @@ interface Props {
   rubroActual: string;
   subRubroActual: string;
   proveedorActual: string;
-  mejorPrecioActual: string;
+  vinculadoActual: string;
 }
 
 export default function FiltrosTienda({
@@ -48,7 +48,7 @@ export default function FiltrosTienda({
   rubroActual,
   subRubroActual,
   proveedorActual,
-  mejorPrecioActual,
+  vinculadoActual,
 }: Props) {
   const pathname = usePathname();
 
@@ -75,7 +75,7 @@ export default function FiltrosTienda({
     rubroActual ||
     subRubroActual ||
     proveedorActual ||
-    mejorPrecioActual
+    vinculadoActual
   );
 
   function navigate(updates: {
@@ -84,7 +84,7 @@ export default function FiltrosTienda({
     rubro?: string;
     subRubro?: string;
     proveedor?: string;
-    mejorPrecio?: string;
+    vinculado?: string;
   }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
@@ -94,16 +94,14 @@ export default function FiltrosTienda({
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
     const proveedorVal =
       updates.proveedor !== undefined ? updates.proveedor : proveedorActual;
-    const mejorVal =
-      updates.mejorPrecio !== undefined
-        ? updates.mejorPrecio
-        : mejorPrecioActual;
+    const vincVal =
+      updates.vinculado !== undefined ? updates.vinculado : vinculadoActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
     if (proveedorVal) p.set("proveedor", proveedorVal);
-    if (mejorVal) p.set("mejorPrecio", mejorVal);
+    if (vincVal) p.set("vinculado", vincVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
 
@@ -119,8 +117,8 @@ export default function FiltrosTienda({
   function handleProveedor(value: string) {
     navigate({ proveedor: value });
   }
-  function handleMejorPrecio(value: string) {
-    navigate({ mejorPrecio: value });
+  function handleVinculado(value: string) {
+    navigate({ vinculado: value });
   }
 
   function limpiarFiltros() {
@@ -255,18 +253,18 @@ export default function FiltrosTienda({
           </FiltroIndividualContainer>
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={Boolean(mejorPrecioActual)}
-            onLimpiar={() => handleMejorPrecio("")}
+            activo={Boolean(vinculadoActual)}
+            onLimpiar={() => handleVinculado("")}
           >
             <Select
-              value={mejorPrecioActual || "none"}
-              onValueChange={(v) => handleMejorPrecio(v === "none" ? "" : v)}
+              value={vinculadoActual || "none"}
+              onValueChange={(v) => handleVinculado(v === "none" ? "" : v)}
             >
               <SelectTrigger
-                id="filtro-tienda-mejor-precio"
+                id="filtro-tienda-vinculado"
                 className="input-filtro-unificado"
               >
-                <SelectValue placeholder="COSTO" />
+                <SelectValue placeholder="VINCULADO" />
               </SelectTrigger>
               <SelectContent
                 position="popper"
@@ -274,8 +272,9 @@ export default function FiltrosTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">COSTO</SelectItem>
-                <SelectItem value="true">MENOR DISPONIBLE</SelectItem>
+                <SelectItem value="none">VINCULADO</SelectItem>
+                <SelectItem value="no">NO — NINGÚN PRODUCTO VINCULADO</SelectItem>
+                <SelectItem value="si">SÍ — AL MENOS UN PRODUCTO VINCULADO</SelectItem>
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>
