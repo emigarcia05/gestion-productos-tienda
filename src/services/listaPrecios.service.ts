@@ -1078,7 +1078,8 @@ export async function getListaPreciosParaPedidoUrgente(
   const takeSize = pageSize ?? 100;
   const paginaNum = Math.max(1, pagina ?? 1);
 
-  if (pedidoTipo === "urgente" || pedidoTipo === "cualquier") {
+  /** Sin filtro de tipo (`pedido` vacío en URL): mismo listado completo que "cualquier", con agrupación por `codTiendaVinculo`. */
+  if (pedidoTipo === "urgente" || pedidoTipo === "cualquier" || pedidoTipo === undefined) {
     return getListaPedidoUrgenteDesdeListaPrecios(sucursalTrim, prov, busqueda, takeSize, paginaNum);
   }
 
