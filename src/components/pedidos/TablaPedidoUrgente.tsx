@@ -1,5 +1,6 @@
 "use client";
 
+import type { IvaProveedor } from "@prisma/client";
 import {
   Table,
   TableBody,
@@ -27,11 +28,13 @@ export interface ProductoPedidoUrgente {
   descripcion: string;
   /** `px_compra_final_sin_iva` desde prod_precios_provee (null si no está disponible). */
   pxCompraFinalSinIva: number | null;
+  /** Política IVA del proveedor; solo en filas 1:1 o en cada miembro del grupo. */
+  ivaProveedor?: IvaProveedor;
   /** Cantidad pedida (URGENTE) desde `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
   /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda` del ítem. */
   confReposicion: boolean;
-  /** `reposicion_cant_conf` en `prod_ped_merc` (0 si no hay). */
+  /** `reposicion_cant_pedir` en `prod_ped_merc2` para pedido Reposición (0 si no hay). */
   cantReposicion: number;
   /**
    * `true` si hay vínculo a **`prod_precios_tienda`** (catálogo tienda sincronizado con Dux). La tabla
@@ -43,6 +46,7 @@ export interface ProductoPedidoUrgente {
     codExt: string;
     prefijo: string;
     pxCompraFinalSinIva: number | null;
+    ivaProveedor: IvaProveedor;
     cantPedidaUrgente: number;
     estaVinculadoTienda: boolean;
   }>;

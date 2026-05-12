@@ -14,8 +14,8 @@ export function pxFinalCompraConIvaProveedor(pxSinIva: number, ivaProveedor: Iva
 /**
  * Precio comparable para ranking de proveedores cuando se compara **mismo ítem de tienda** entre listas:
  * regla según suma acumulada **IVA SALDO** en Posición IVA (`sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido`).
- * - **IVA SALDO ≥ 0**: comparable = **`px_compra_final_sin_iva`**.
- * - **IVA SALDO < 0**: comparable = **precio final con IVA** (`pxFinalCompraConIvaProveedor`: `SIEMPRE` × 1,21; `NUNCA` / `PREGUNTA` × 1).
+ * - **IVA SALDO > 0**: comparable = **precio final con IVA** (`pxFinalCompraConIvaProveedor`: `SIEMPRE` × 1,21; `NUNCA` / `PREGUNTA` × 1).
+ * - **IVA SALDO ≤ 0**: comparable = **`px_compra_final_sin_iva`**.
  */
 export function pxComparablePedidoUrgenteReposicion(
   pxSinIva: number,
@@ -23,8 +23,41 @@ export function pxComparablePedidoUrgenteReposicion(
   sumaIvaSaldoAcumulado: number
 ): number {
   if (!Number.isFinite(pxSinIva)) return Number.NaN;
-  if (sumaIvaSaldoAcumulado < 0) {
+  if (sumaIvaSaldoAcumulado > 0) {
     return pxFinalCompraConIvaProveedor(pxSinIva, ivaProveedor);
   }
   return pxSinIva;
+}
+
+/** Mínimo tipo para ordenar filas de proveedor en Pedido Urgente (mismo `cod_tienda`). */
+export type MiembroPrecioComparablePedidoUrgente = {
+  pxCompraFinalSinIva: number | null;
+  ivaProveedor: IvaProveedor;
+  prefijo?: string;
+  codExt: string;
+};
+
+function valorComparablePedidoUrgenteOrInf(
+  m: MiembroPrecioComparablePedidoUrgente,
+  sumaIvaSaldoAcumulado: number
+): number {
+  const px = m.pxCompraFinalSinIva;
+  if (px == null || !Number.isFinite(px)) return Number.POSITIVE_INFINITY;
+  const c = pxComparablePedidoUrgenteReposicion(px, m.ivaProveedor, sumaIvaSaldoAcumulado);
+  return Number.isFinite(c) ? c : Number.POSITIVE_INFINITY;
+}
+
+/** Orden ascendente por precio comparable; empates por prefijo y `cod_ext`. */
+export function ordenarMiembrosPedidoUrgentePorMenorCostoComparable<T extends MiembroPrecioComparablePedidoUrgente>(
+  miembros: T[],
+  sumaIvaSaldoAcumulado: number
+): T[] {
+  return [...miembros].sort((a, b) => {
+    const va = valorComparablePedidoUrgenteOrInf(a, sumaIvaSaldoAcumulado);
+    const vb = valorComparablePedidoUrgenteOrInf(b, sumaIvaSaldoAcumulado);
+    if (va !== vb) return va - vb;
+    const pa = (a.prefijo ?? "").trim().localeCompare((b.prefijo ?? "").trim(), "es");
+    if (pa !== 0) return pa;
+    return a.codExt.localeCompare(b.codExt);
+  });
 }

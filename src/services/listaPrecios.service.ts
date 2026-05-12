@@ -5,6 +5,7 @@
  */
 
 import type { FilaListaPrecio } from "@/lib/parsearImport";
+import { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
 import { calcPxCompraFinal, clampPercent } from "@/lib/calculos";
@@ -514,11 +515,13 @@ export interface PedidoUrgenteItem {
   descripcion: string;
   /** `px_compra_final_sin_iva` desde prod_precios_provee (modal de cantidad). */
   pxCompraFinalSinIva: number | null;
+  /** En filas 1:1; ausente en fila agrupada por `cod_tienda`. */
+  ivaProveedor?: IvaProveedor;
   /** Cantidad pedida (URGENTE): `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
   /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda`. */
   confReposicion: boolean;
-  /** `reposicion_cant_conf` desde `prod_ped_merc` (reposición). */
+  /** `reposicion_cant_pedir` (cant. a pedir reposición) desde `prod_ped_merc2`. */
   cantReposicion: number;
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
   estaVinculadoTienda: boolean;
@@ -530,6 +533,8 @@ export interface PedidoUrgenteItem {
     codExt: string;
     prefijo: string;
     pxCompraFinalSinIva: number | null;
+    /** Política IVA del proveedor (`global_proveedores.iva`). */
+    ivaProveedor: IvaProveedor;
     cantPedidaUrgente: number;
     estaVinculadoTienda: boolean;
   }>;
@@ -587,7 +592,7 @@ async function mercaderiaMapsDesdeMerc2(
       urgenteCodExt: true,
       urgenteCantPedir: true,
       reposicionCodTienda: true,
-      reposicionCantConf: true,
+      reposicionCantPedir: true,
     },
   });
 
@@ -603,7 +608,7 @@ async function mercaderiaMapsDesdeMerc2(
       const k = (r.reposicionCodTienda ?? "").trim();
       if (!k) continue;
       mercaderiaRepoSet.add(k);
-      mercaderiaMapRepo.set(k, Math.max(0, Number(r.reposicionCantConf ?? 0)));
+      mercaderiaMapRepo.set(k, Math.max(0, Number(r.reposicionCantPedir ?? 0)));
     }
   }
 
@@ -704,7 +709,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     listaWhereParts.length === 1 ? listaWhereParts[0]! : { AND: listaWhereParts };
 
   const includeListaPedidoUrgente = {
-    proveedor: { select: { id: true, nombre: true, prefijo: true } },
+    proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
     listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
   } as const;
 
@@ -803,6 +808,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       prefijo: f.proveedor?.prefijo ?? "",
       descripcion: (descTienda && descTienda) || f.descripcionProveedor,
       pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
+      ivaProveedor: f.proveedor.iva,
       cantPedidaUrgente: Math.max(0, Math.floor(cantUrgenteUi)),
       confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
       cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
@@ -847,6 +853,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
         codExt: i.codExt,
         prefijo: i.prefijo,
         pxCompraFinalSinIva: i.pxCompraFinalSinIva,
+      ivaProveedor: i.ivaProveedor ?? IvaProveedor.PREGUNTA,
         cantPedidaUrgente: i.cantPedidaUrgente,
         estaVinculadoTienda: i.estaVinculadoTienda,
       })),

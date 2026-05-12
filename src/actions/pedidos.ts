@@ -6,6 +6,7 @@ import {
   getListaPreciosParaPedidoUrgente,
   getProveedoresParaPedidoUrgente,
 } from "@/services/listaPrecios.service";
+import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
 import {
   syncPedidoUrgenteEnvio,
   getItemsTablaEnviarPedido,
@@ -51,6 +52,7 @@ export async function getPedidoUrgenteData(params: {
       productos: [],
       total: 0,
       totalPaginas: 0,
+      ivaSaldoAcumuladoComparacion: 0,
     };
   }
 
@@ -61,6 +63,7 @@ export async function getPedidoUrgenteData(params: {
       productos: [],
       total: 0,
       totalPaginas: 0,
+      ivaSaldoAcumuladoComparacion: 0,
     };
   }
   const { sucursal = "", q = "", pagina = "1", proveedor = "", pedido = "" } = parsedParams.data;
@@ -90,35 +93,48 @@ export async function getPedidoUrgenteData(params: {
         productos: [],
         total: 0,
         totalPaginas: 0,
+        ivaSaldoAcumuladoComparacion: 0,
       };
     }
 
     try {
-      const result = await getListaPreciosParaPedidoUrgente(
-        sucursalValida,
-        proveedorValido || undefined,
-        pedidoTipo,
-        qValida ? q : undefined,
-        paginaNum,
-        PAGE_SIZE
-      );
+      const [result, ivaSaldoAcumuladoComparacion] = await Promise.all([
+        getListaPreciosParaPedidoUrgente(
+          sucursalValida,
+          proveedorValido || undefined,
+          pedidoTipo,
+          qValida ? q : undefined,
+          paginaNum,
+          PAGE_SIZE
+        ),
+        sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(),
+      ]);
 
       return {
         proveedores,
         productos: result.items,
         total: result.total,
         totalPaginas: result.totalPaginas,
+        ivaSaldoAcumuladoComparacion,
       };
     } catch {
+      const ivaSaldoAcumuladoComparacion = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
       return {
         proveedores,
         productos: [],
         total: 0,
         totalPaginas: 0,
+        ivaSaldoAcumuladoComparacion,
       };
     }
   } catch {
-    return { proveedores: [], productos: [], total: 0, totalPaginas: 0 };
+    return {
+      proveedores: [],
+      productos: [],
+      total: 0,
+      totalPaginas: 0,
+      ivaSaldoAcumuladoComparacion: 0,
+    };
   }
 }
 

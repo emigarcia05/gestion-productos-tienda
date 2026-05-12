@@ -48,13 +48,14 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
           ? "reposicion"
           : "";
 
-  const { proveedores, productos, total, totalPaginas } = await getPedidoUrgenteData({
-    sucursal: sucursalValida,
-    q,
-    pagina,
-    proveedor,
-    pedido: pedidoValida,
-  });
+  const { proveedores, productos, total, totalPaginas, ivaSaldoAcumuladoComparacion } =
+    await getPedidoUrgenteData({
+      sucursal: sucursalValida,
+      q,
+      pagina,
+      proveedor,
+      pedido: pedidoValida,
+    });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const tieneSucursalSeleccionada = !!sucursalValida;
 
@@ -83,6 +84,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       paginaNum={paginaNum}
       proveedor={proveedor}
       q={q}
+      ivaSaldoAcumuladoComparacion={ivaSaldoAcumuladoComparacion}
     />
   );
 }
