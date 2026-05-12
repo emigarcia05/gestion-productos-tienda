@@ -22,7 +22,7 @@ export interface ProductoPedidoUrgente {
   id: string;
   /** Código externo lista-precios proveedor. */
   codExt: string;
-  /** Prefijo proveedor en fila 1:1; vacío en fila agrupada por tienda (payload); con varios miembros Dux la tabla muestra el recuento en la columna PROVEEDOR. */
+  /** Prefijo proveedor en fila 1:1; vacío en fila agrupada por tienda (payload); con varios miembros Dux la columna PROVEEDOR muestra solo el número de miembros. */
   prefijo: string;
   descripcion: string;
   /** `px_compra_final_sin_iva` desde prod_precios_provee (null si no está disponible). */
@@ -53,7 +53,7 @@ export type PedidoFilterValor = "urgente" | "reposicion" | "";
 const COLUMNS = 7;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
 /** PROVEEDOR, DESCRIPCIÓN, bloque pedido (CANT. PED., PROV. PED., cesto), bloque reposición (CONF., CANT.). */
-const COL_WIDTHS_PCT = [12, 40, 9, 10, 8, 9, 12] as const;
+const COL_WIDTHS_PCT = [10, 60, 6, 6, 6, 6, 6] as const;
 const CELL_MIN = "min-w-0";
 const TEXTO_SUBENCABEZADO_REGISTRADOS_DUX = "Productos Registrados en Dux";
 const TEXTO_SUBENCABEZADO_SIN_REGISTRAR_DUX = "Productos Sin Registrar en Dux";
@@ -90,14 +90,14 @@ function textoProvPedidaUrgente(prod: ProductoPedidoUrgente, cantPorId: Record<s
   return (prod.prefijo ?? "").trim();
 }
 
-/** Columna PROVEEDOR: en Dux, un solo vínculo lista prefijo; varios listan la cantidad de proveedores vinculados. */
+/** Columna PROVEEDOR: en Dux, un solo vínculo lista prefijo; varios solo el número (ej. "2", "3"). */
 function textoProveedorCeldaPedidoUrgente(prod: ProductoPedidoUrgente): string {
   const miembros = prod.miembrosAgrupacion;
   const nMiembros = miembros?.length ?? 0;
 
   if (prod.estaVinculadoTienda) {
     if (nMiembros > 1) {
-      return `${nMiembros} proveedores disponibles`;
+      return String(nMiembros);
     }
     return (prod.prefijo ?? "").trim();
   }
@@ -145,7 +145,7 @@ function FilaDatosPedidoUrgente({
       }
       onDoubleClick={() => onRowDoubleClick?.(prod)}
     >
-      <TableCell className="celda-datos min-w-0 truncate text-center">{textoProveedor}</TableCell>
+      <TableCell className="celda-datos min-w-0 truncate text-center tabular-nums">{textoProveedor}</TableCell>
       <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
         {prod.descripcion}
       </TableCell>
@@ -154,7 +154,7 @@ function FilaDatosPedidoUrgente({
       </TableCell>
       <TableCell
         className={cn(
-          "celda-datos min-w-0 truncate text-center tabla-bloque-secundario-cell-divider",
+          "celda-datos min-w-0 truncate text-center tabla-bloque-secundario-cell",
           textoProvPedida && "font-medium"
         )}
         title={textoProvPedida || undefined}
@@ -163,7 +163,7 @@ function FilaDatosPedidoUrgente({
       </TableCell>
       <TableCell
         className={cn(
-          "celda-datos text-center celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider",
+          "celda-datos text-center celda-datos--accion-relleno-fila tabla-bloque-secundario-cell",
           CELL_MIN
         )}
       >
