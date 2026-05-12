@@ -150,7 +150,9 @@ export default function TablaPedidoUrgente({
               }
               onDoubleClick={() => onRowDoubleClick?.(prod)}
             >
-              <TableCell className="celda-datos">{prod.prefijo}</TableCell>
+              <TableCell className="celda-datos">
+                {(prod.miembrosAgrupacion?.length ?? 0) > 1 ? "" : prod.prefijo}
+              </TableCell>
               <TableCell className="celda-datos text-center">
                 {prod.estaVinculadoTienda ? (
                   <Check

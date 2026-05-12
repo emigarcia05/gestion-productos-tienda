@@ -743,9 +743,44 @@ async function mercaderiaMapsDesdeMerc2(
 }
 
 /**
+ * Una sola descripción de **tienda** para la fila agrupada: toma `descripcion_tienda` de la relación
+ * y del mapa por `cod_ext`; si hay textos distintos, se usa el **más largo** (suele ser la ficha completa).
+ * Solo si no hay ninguna descripción de tienda se recurre a `descripcion_proveedor`.
+ */
+function descripcionTiendaUnificadaParaGrupoPedidoUrgente(
+  memberFilas: Array<{
+    codExt: string;
+    descripcionProveedor: string;
+    listaPrecioTienda: { descripcionTienda: string | null } | null;
+  }>,
+  descripcionTiendaPorCodExt: Map<string, string>
+): string {
+  const candidates: string[] = [];
+  for (const f of memberFilas) {
+    const rel = f.listaPrecioTienda?.descripcionTienda?.trim();
+    const mapped = descripcionTiendaPorCodExt.get(f.codExt)?.trim();
+    if (rel) candidates.push(rel);
+    if (mapped) candidates.push(mapped);
+  }
+  const uniqTienda = [...new Set(candidates.filter((c) => c.length > 0))];
+  if (uniqTienda.length > 0) {
+    return [...uniqTienda].sort((a, b) => b.length - a.length)[0]!;
+  }
+  const provDescs = memberFilas
+    .map((f) => f.descripcionProveedor?.trim())
+    .filter((d): d is string => Boolean(d));
+  const uniqProv = [...new Set(provDescs)];
+  if (uniqProv.length > 0) {
+    return [...uniqProv].sort((a, b) => b.length - a.length)[0]!;
+  }
+  return "";
+}
+
+/**
  * Pantalla Pedido Urgente (filtros `urgente` o `cualquier`): filas **`prod_precios_provee`** con **`habilitado = true`**.
  * Varias filas con el mismo **`codTiendaVinculo`** se agrupan en **una sola fila** de UI (`id` `agrup-tienda:{cod_tienda}`, `miembrosAgrupacion`);
  * la paginación y el **`total`** cuentan **grupos** (fila vista), no filas crudas. Filas sin vínculo a tienda siguen 1:1 por `cod_ext`.
+ * `prefijo` vacío en la fila agrupada; **`descripcion`** unifica **`descripcion_tienda`** entre miembros.
  * Cantidades / flags de urgente y reposición se leen de **`prod_ped_merc`** según sucursal.
  * Comparación entre proveedores que comparten el mismo **`cod_tienda`** (`codTiendaVinculo`): **precio comparable** vía
  * `pxComparablePedidoUrgenteReposicion`: si **IVA SALDO ≥ 0** compara por `px_compra_final_sin_iva`; si **< 0** por precio final con IVA según `Proveedor.iva`.
@@ -986,11 +1021,15 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       continue;
     }
     const memberItems = memberFilas.map(itemDesdeFila);
+    const descripcionGrupo = descripcionTiendaUnificadaParaGrupoPedidoUrgente(
+      memberFilas,
+      descripcionTiendaPorCodExt
+    );
     items.push({
       id: `agrup-tienda:${codTienda}`,
       codExt: memberItems[0]!.codExt,
-      prefijo: `Varios (${memberItems.length})`,
-      descripcion: memberItems[0]!.descripcion,
+      prefijo: "",
+      descripcion: descripcionGrupo,
       pxCompraFinalSinIva: null,
       cantPedidaUrgente: memberItems.reduce((s, x) => s + x.cantPedidaUrgente, 0),
       confReposicion: memberItems[0]!.confReposicion,
