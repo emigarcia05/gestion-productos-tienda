@@ -38,14 +38,46 @@ export interface ProductoPedidoUrgente {
     proveedorNombre: string;
     costo: number;
   } | null;
+  /** Mismo vínculo tienda (`cod_tienda`): varios proveedores en una fila; cantidades por `codExt` de cada miembro. */
+  miembrosAgrupacion?: Array<{
+    codExt: string;
+    prefijo: string;
+    pxCompraFinalSinIva: number | null;
+    cantPedidaUrgente: number;
+    estaVinculadoTienda: boolean;
+    sugerenciaProveedorMenorCosto: {
+      listaPrecioProveedorId: string;
+      proveedorNombre: string;
+      costo: number;
+    } | null;
+  }>;
 }
 
 export type PedidoFilterValor = "urgente" | "reposicion" | "";
 
-const COLUMNS = 6;
+const COLUMNS = 7;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
-const COL_WIDTHS_PCT = [12, 52, 10, 10, 8, 8] as const;
+const COL_WIDTHS_PCT = [11, 7, 44, 10, 10, 9, 9] as const;
 const CELL_MIN = "min-w-0";
+
+function cantPedidaUrgenteMostrada(prod: ProductoPedidoUrgente, cantPorId: Record<string, string>): string {
+  if (prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 0) {
+    const sum = prod.miembrosAgrupacion.reduce(
+      (s, m) => s + Math.max(0, Math.floor(Number(cantPorId[m.codExt] || 0) || 0)),
+      0
+    );
+    return sum > 0 ? String(sum) : "";
+  }
+  const v = cantPorId[prod.id];
+  return v && Number(v) > 0 ? v : "";
+}
+
+function hayCantidadPedidaUrgente(prod: ProductoPedidoUrgente, cantPorId: Record<string, string>): boolean {
+  if (prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 0) {
+    return prod.miembrosAgrupacion.some((m) => Number(cantPorId[m.codExt] || 0) > 0);
+  }
+  return Number(cantPorId[prod.id] || 0) > 0;
+}
 
 interface Props {
   productos: ProductoPedidoUrgente[];
@@ -85,6 +117,7 @@ export default function TablaPedidoUrgente({
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className={cn(CELL_MIN, "text-center")}>PROVEEDOR</TableHead>
+          <TableHead className={cn(CELL_MIN, "text-center")}>VINC.</TableHead>
           <TableHead className={CELL_MIN}>DESCRIPCIÓN</TableHead>
           <TableHead className={cn(CELL_MIN, "text-center")}>CANT. PED.</TableHead>
           <TableHead className={cn(CELL_MIN, "text-center")} aria-label="Eliminar">
@@ -110,16 +143,29 @@ export default function TablaPedidoUrgente({
             <TableRow
               key={prod.id}
               className="cursor-pointer"
+              title={
+                prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 1
+                  ? prod.miembrosAgrupacion.map((m) => m.prefijo).filter(Boolean).join(" · ")
+                  : undefined
+              }
               onDoubleClick={() => onRowDoubleClick?.(prod)}
             >
               <TableCell className="celda-datos">{prod.prefijo}</TableCell>
+              <TableCell className="celda-datos text-center">
+                {prod.estaVinculadoTienda ? (
+                  <Check
+                    className="h-4 w-4 mx-auto text-primary"
+                    aria-label="Vinculado a tienda"
+                  />
+                ) : (
+                  ""
+                )}
+              </TableCell>
               <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
                 {prod.descripcion}
               </TableCell>
               <TableCell className="celda-datos text-center tabular-nums">
-                {cantPorId[prod.id] && Number(cantPorId[prod.id]) > 0
-                  ? cantPorId[prod.id]
-                  : ""}
+                {cantPedidaUrgenteMostrada(prod, cantPorId)}
               </TableCell>
               <TableCell
                 className={cn(
@@ -127,7 +173,7 @@ export default function TablaPedidoUrgente({
                   CELL_MIN
                 )}
               >
-                {Number(cantPorId[prod.id] || 0) > 0 ? (
+                {hayCantidadPedidaUrgente(prod, cantPorId) ? (
                   <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                     <Button
                       type="button"

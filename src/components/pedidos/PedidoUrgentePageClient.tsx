@@ -64,6 +64,9 @@ export default function PedidoUrgentePageClient({
   const [modalSugerenciaOpen, setModalSugerenciaOpen] = useState(false);
   const [sugerenciaProveedorMenorCosto, setSugerenciaProveedorMenorCosto] =
     useState<SugerenciaProveedorMenorCosto | null>(null);
+  const [modalElegirProveedorOpen, setModalElegirProveedorOpen] = useState(false);
+  const [grupoParaElegirProveedor, setGrupoParaElegirProveedor] =
+    useState<ProductoPedidoUrgente | null>(null);
 
   useEffect(() => {
     if (productos.length === 0) return;
@@ -71,9 +74,21 @@ export default function PedidoUrgentePageClient({
       setCantPorId((prev) => {
         const next = { ...prev };
         for (const p of productos) {
-          if (next[p.id] !== undefined) continue;
-          const cant = Math.max(0, Math.floor(Number(p.cantPedidaUrgente) || 0));
-          next[p.id] = cant > 0 ? String(cant) : "";
+          const ids =
+            p.miembrosAgrupacion && p.miembrosAgrupacion.length > 0
+              ? p.miembrosAgrupacion.map((m) => m.codExt)
+              : [p.id];
+          for (const id of ids) {
+            if (next[id] !== undefined) continue;
+            let cant = 0;
+            if (p.miembrosAgrupacion && p.miembrosAgrupacion.length > 0) {
+              const miembro = p.miembrosAgrupacion.find((m) => m.codExt === id);
+              cant = Math.max(0, Math.floor(Number(miembro?.cantPedidaUrgente) || 0));
+            } else {
+              cant = Math.max(0, Math.floor(Number(p.cantPedidaUrgente) || 0));
+            }
+            next[id] = cant > 0 ? String(cant) : "";
+          }
         }
         return next;
       });
@@ -90,6 +105,24 @@ export default function PedidoUrgentePageClient({
     />
   );
 
+  function productoDesdeMiembroGrupo(
+    grupo: ProductoPedidoUrgente,
+    miembro: NonNullable<ProductoPedidoUrgente["miembrosAgrupacion"]>[number]
+  ): ProductoPedidoUrgente {
+    return {
+      id: miembro.codExt,
+      codExt: miembro.codExt,
+      prefijo: miembro.prefijo,
+      descripcion: grupo.descripcion,
+      pxCompraFinalSinIva: miembro.pxCompraFinalSinIva,
+      cantPedidaUrgente: miembro.cantPedidaUrgente,
+      confReposicion: grupo.confReposicion,
+      cantReposicion: grupo.cantReposicion,
+      estaVinculadoTienda: miembro.estaVinculadoTienda,
+      sugerenciaProveedorMenorCosto: miembro.sugerenciaProveedorMenorCosto,
+    };
+  }
+
   function abrirModalCantidadDirecto(
     prod: ProductoPedidoUrgente,
     listaPrecioProveedorIdOverride?: string
@@ -102,6 +135,11 @@ export default function PedidoUrgentePageClient({
   }
 
   function abrirModalCantidad(prod: ProductoPedidoUrgente) {
+    if (prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 1) {
+      setGrupoParaElegirProveedor(prod);
+      setModalElegirProveedorOpen(true);
+      return;
+    }
     const sugerencia = prod.sugerenciaProveedorMenorCosto;
     if (prod.estaVinculadoTienda && sugerencia) {
       setSugerenciaProveedorMenorCosto({
@@ -168,21 +206,45 @@ export default function PedidoUrgentePageClient({
       toast.error("Seleccioná una sucursal para guardar.");
       return;
     }
-    const id = prod.id;
-    const prevValue = cantPorId[id];
-    setCantPorId((prev) => ({ ...prev, [id]: "" }));
+    const codExtsABorrar =
+      prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 0
+        ? prod.miembrosAgrupacion
+            .map((m) => m.codExt)
+            .filter((ce) => Number(cantPorId[ce] || 0) > 0)
+        : [prod.id];
+    if (codExtsABorrar.length === 0) return;
 
-    const res = await upsertPedidoUrgenteMercaderiaItemAction({
-      sucursal: sucursalValida,
-      listaPrecioProveedorId: id,
-      cant: 0,
-    });
-    if (!res.ok) {
-      setCantPorId((prev) => ({ ...prev, [id]: prevValue ?? "" }));
-      toast.error(res.error ?? "Error al borrar.");
-      return;
+    const prevValues: Record<string, string> = {};
+    for (const ce of codExtsABorrar) {
+      prevValues[ce] = cantPorId[ce] ?? "";
     }
-    toast.success("Ítem borrado.");
+    setCantPorId((prev) => {
+      const next = { ...prev };
+      for (const ce of codExtsABorrar) {
+        next[ce] = "";
+      }
+      return next;
+    });
+
+    for (const ce of codExtsABorrar) {
+      const res = await upsertPedidoUrgenteMercaderiaItemAction({
+        sucursal: sucursalValida,
+        listaPrecioProveedorId: ce,
+        cant: 0,
+      });
+      if (!res.ok) {
+        setCantPorId((prev) => {
+          const next = { ...prev };
+          for (const c of codExtsABorrar) {
+            next[c] = prevValues[c] ?? "";
+          }
+          return next;
+        });
+        toast.error(res.error ?? "Error al borrar.");
+        return;
+      }
+    }
+    toast.success(codExtsABorrar.length > 1 ? "Ítems borrados." : "Ítem borrado.");
   }
 
   async function confirmarCantidad(cantidad: number) {
@@ -249,6 +311,64 @@ export default function PedidoUrgentePageClient({
           producto={productoSeleccionado}
           onConfirmar={confirmarCantidad}
         />
+        <Dialog
+          open={modalElegirProveedorOpen}
+          onOpenChange={(open) => {
+            setModalElegirProveedorOpen(open);
+            if (!open) setGrupoParaElegirProveedor(null);
+          }}
+        >
+          <AppModal
+            title="Elegir Proveedor"
+            size="md"
+            actions={
+              <div className="flex w-full justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setModalElegirProveedorOpen(false);
+                    setGrupoParaElegirProveedor(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            }
+          >
+            <div className="flex flex-col gap-3 text-sm text-foreground">
+              <p className="text-muted-foreground">
+                Varias listas de precios comparten el mismo producto de tienda. Elegí proveedor para
+                cargar la cantidad.
+              </p>
+              <ul className="flex flex-col gap-2">
+                {grupoParaElegirProveedor?.miembrosAgrupacion?.map((m) => (
+                  <li key={m.codExt}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto w-full justify-between gap-3 py-2 whitespace-normal text-left"
+                      onClick={() => {
+                        const g = grupoParaElegirProveedor;
+                        setModalElegirProveedorOpen(false);
+                        setGrupoParaElegirProveedor(null);
+                        if (!g) return;
+                        abrirModalCantidad(productoDesdeMiembroGrupo(g, m));
+                      }}
+                    >
+                      <span className="font-semibold text-foreground">{m.prefijo || m.codExt}</span>
+                      {m.pxCompraFinalSinIva != null ? (
+                        <span className="tabular-nums text-muted-foreground shrink-0">
+                          Px. {m.pxCompraFinalSinIva.toLocaleString("es-AR", { maximumFractionDigits: 4 })}
+                        </span>
+                      ) : null}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </AppModal>
+        </Dialog>
         <Dialog open={modalSugerenciaOpen} onOpenChange={setModalSugerenciaOpen}>
           <AppModal
             title="Proveedor Recomendado"

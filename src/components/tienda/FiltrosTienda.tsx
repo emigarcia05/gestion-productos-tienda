@@ -273,8 +273,8 @@ export default function FiltrosTienda({
                 className="select-content-filtro"
               >
                 <SelectItem value="none">VINCULADO</SelectItem>
-                <SelectItem value="no">NO — NINGÚN PRODUCTO VINCULADO</SelectItem>
-                <SelectItem value="si">SÍ — AL MENOS UN PRODUCTO VINCULADO</SelectItem>
+                <SelectItem value="no">NO</SelectItem>
+                <SelectItem value="si">SI</SelectItem>
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>
