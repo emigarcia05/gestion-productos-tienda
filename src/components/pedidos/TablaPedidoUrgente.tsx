@@ -22,6 +22,7 @@ export interface ProductoPedidoUrgente {
   id: string;
   /** Código externo lista-precios proveedor. */
   codExt: string;
+  /** Prefijo proveedor en fila 1:1; vacío en fila agrupada por tienda (payload); con varios miembros Dux la tabla muestra el recuento en la columna PROVEEDOR. */
   prefijo: string;
   descripcion: string;
   /** `px_compra_final_sin_iva` desde prod_precios_provee (null si no está disponible). */
@@ -51,7 +52,8 @@ export type PedidoFilterValor = "urgente" | "reposicion" | "";
 
 const COLUMNS = 7;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
-const COL_WIDTHS_PCT = [11, 7, 44, 10, 10, 9, 9] as const;
+/** PROVEEDOR, DESCRIPCIÓN, bloque pedido (CANT. PED., PROV. PED., cesto), bloque reposición (CONF., CANT.). */
+const COL_WIDTHS_PCT = [12, 40, 9, 10, 8, 9, 12] as const;
 const CELL_MIN = "min-w-0";
 const TEXTO_SUBENCABEZADO_REGISTRADOS_DUX = "Productos Registrados en Dux";
 const TEXTO_SUBENCABEZADO_SIN_REGISTRAR_DUX = "Productos Sin Registrar en Dux";
@@ -73,6 +75,35 @@ function hayCantidadPedidaUrgente(prod: ProductoPedidoUrgente, cantPorId: Record
     return prod.miembrosAgrupacion.some((m) => Number(cantPorId[m.codExt] || 0) > 0);
   }
   return Number(cantPorId[prod.id] || 0) > 0;
+}
+
+/** Prefijos de proveedor con cantidad pedida > 0 (`cantPorId` por `cod_ext` de lista precios). */
+function textoProvPedidaUrgente(prod: ProductoPedidoUrgente, cantPorId: Record<string, string>): string {
+  if (!hayCantidadPedidaUrgente(prod, cantPorId)) return "";
+  if (prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 0) {
+    const prefs = prod.miembrosAgrupacion
+      .filter((m) => Number(cantPorId[m.codExt] || 0) > 0)
+      .map((m) => (m.prefijo ?? "").trim())
+      .filter(Boolean);
+    return prefs.join(" · ");
+  }
+  return (prod.prefijo ?? "").trim();
+}
+
+/** Columna PROVEEDOR: en Dux, un solo vínculo lista prefijo; varios listan la cantidad de proveedores vinculados. */
+function textoProveedorCeldaPedidoUrgente(prod: ProductoPedidoUrgente): string {
+  const miembros = prod.miembrosAgrupacion;
+  const nMiembros = miembros?.length ?? 0;
+
+  if (prod.estaVinculadoTienda) {
+    if (nMiembros > 1) {
+      return `${nMiembros} proveedores disponibles`;
+    }
+    return (prod.prefijo ?? "").trim();
+  }
+
+  if (nMiembros > 1) return "";
+  return (prod.prefijo ?? "").trim();
 }
 
 function SubencabezadoSeccionPedidoUrgente({ titulo }: { titulo: string }) {
@@ -101,6 +132,9 @@ function FilaDatosPedidoUrgente({
   onRowDoubleClick?: (producto: ProductoPedidoUrgente) => void;
   onRowDeleteClick?: (producto: ProductoPedidoUrgente) => void;
 }) {
+  const textoProveedor = textoProveedorCeldaPedidoUrgente(prod);
+  const textoProvPedida = textoProvPedidaUrgente(prod, cantPorId);
+
   return (
     <TableRow
       className="cursor-pointer"
@@ -111,27 +145,27 @@ function FilaDatosPedidoUrgente({
       }
       onDoubleClick={() => onRowDoubleClick?.(prod)}
     >
-      <TableCell className="celda-datos">
-        {(prod.miembrosAgrupacion?.length ?? 0) > 1 ? "" : prod.prefijo}
-      </TableCell>
-      <TableCell className="celda-datos text-center">
-        {prod.estaVinculadoTienda ? (
-          <Check
-            className="h-4 w-4 mx-auto text-primary"
-            aria-label="Vinculado a tienda"
-          />
-        ) : (
-          ""
-        )}
-      </TableCell>
+      <TableCell className="celda-datos min-w-0 truncate text-center">{textoProveedor}</TableCell>
       <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
         {prod.descripcion}
       </TableCell>
-      <TableCell className="celda-datos text-center tabular-nums">
+      <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell-divider">
         {cantPedidaUrgenteMostrada(prod, cantPorId)}
       </TableCell>
       <TableCell
-        className={cn("celda-datos text-center celda-datos--accion-relleno-fila", CELL_MIN)}
+        className={cn(
+          "celda-datos min-w-0 truncate text-center tabla-bloque-secundario-cell-divider",
+          textoProvPedida && "font-medium"
+        )}
+        title={textoProvPedida || undefined}
+      >
+        {textoProvPedida}
+      </TableCell>
+      <TableCell
+        className={cn(
+          "celda-datos text-center celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider",
+          CELL_MIN
+        )}
       >
         {hayCantidadPedidaUrgente(prod, cantPorId) ? (
           <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
@@ -210,10 +244,17 @@ export default function TablaPedidoUrgente({
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className={cn(CELL_MIN, "text-center")}>PROVEEDOR</TableHead>
-          <TableHead className={cn(CELL_MIN, "text-center")}>VINC.</TableHead>
           <TableHead className={CELL_MIN}>DESCRIPCIÓN</TableHead>
-          <TableHead className={cn(CELL_MIN, "text-center")}>CANT. PED.</TableHead>
-          <TableHead className={cn(CELL_MIN, "text-center")} aria-label="Eliminar">
+          <TableHead className={cn(CELL_MIN, "text-center tabla-bloque-secundario-head-divider")}>
+            CANT. PED.
+          </TableHead>
+          <TableHead className={cn(CELL_MIN, "text-center tabla-bloque-secundario-head")}>
+            PROV. PED.
+          </TableHead>
+          <TableHead
+            className={cn(CELL_MIN, "text-center tabla-bloque-secundario-head")}
+            aria-label="Eliminar cantidad pedida"
+          >
             <div className="flex items-center justify-center w-full">
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </div>
