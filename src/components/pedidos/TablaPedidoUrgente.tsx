@@ -112,7 +112,7 @@ function SubencabezadoSeccionPedidoUrgente({ titulo }: { titulo: string }) {
       <TableCell
         colSpan={COLUMNS}
         className={cn(
-          "celda-datos bg-muted/70 py-2 text-xs font-semibold text-foreground tracking-wide"
+          "celda-datos bg-muted/70 py-2 text-xs font-semibold text-foreground tracking-wide uppercase"
         )}
       >
         {titulo}
