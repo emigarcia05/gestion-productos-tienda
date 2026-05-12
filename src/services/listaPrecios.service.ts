@@ -10,118 +10,9 @@ import { buildCodExt } from "@/lib/codigos";
 import { calcPxCompraFinal, clampPercent } from "@/lib/calculos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
-import { IvaProveedor } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
-import {
-  pxComparablePedidoUrgenteReposicion,
-} from "@/lib/precioComparacionPedidoUrgenteReposicion";
-import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
-
-function costoCompraFinalProveedorLista(params: {
-  pxCompraFinalSinIva: Prisma.Decimal | null;
-  pxListaProveedor: Prisma.Decimal;
-  dtoRubro: number;
-  dtoCantidad: number;
-  cxTransporte: number;
-  dtoProveedor: number;
-  dtoMarca: number;
-  dtoFinanciero: number;
-}): number {
-  const {
-    pxCompraFinalSinIva,
-    pxListaProveedor,
-    dtoRubro,
-    dtoCantidad,
-    cxTransporte,
-    dtoProveedor,
-    dtoMarca,
-    dtoFinanciero,
-  } = params;
-  if (pxCompraFinalSinIva != null) return Number(pxCompraFinalSinIva);
-  return calcPxCompraFinal(
-    Number(pxListaProveedor),
-    dtoRubro,
-    dtoCantidad,
-    cxTransporte,
-    dtoProveedor,
-    dtoMarca,
-    dtoFinanciero
-  );
-}
-
-type CamposCostoListaProveedor = {
-  pxCompraFinalSinIva: Prisma.Decimal | null;
-  pxListaProveedor: Prisma.Decimal;
-  dtoRubro: number;
-  dtoCantidad: number;
-  cxTransporte: number;
-  dtoProveedor: number;
-  dtoMarca: number;
-  dtoFinanciero: number;
-};
-
-function ivaProveedorDesdeLista(
-  proveedor: { iva?: IvaProveedor | null } | null | undefined
-): IvaProveedor {
-  return proveedor?.iva ?? IvaProveedor.NUNCA;
-}
-
-/** Elige otro proveedor en la misma tienda con menor precio comparable (IVA SALDO acumulado + política `iva`). */
-function sugerenciaProveedorMenorCostoComparable(
-  sumaIvaSaldoAcumulado: number,
-  codExtListaActual: string,
-  actual: CamposCostoListaProveedor & { iva: IvaProveedor },
-  alternativas: Array<
-    CamposCostoListaProveedor & {
-      codExt: string;
-      iva: IvaProveedor;
-      nombreProveedor: string;
-    }
-  >
-): { listaPrecioProveedorId: string; proveedorNombre: string; costo: number } | null {
-  const costoSinIvaActual = costoCompraFinalProveedorLista(actual);
-  const comparableActual = pxComparablePedidoUrgenteReposicion(
-    costoSinIvaActual,
-    actual.iva,
-    sumaIvaSaldoAcumulado
-  );
-  const mejor = alternativas
-    .filter((alt) => alt.codExt !== codExtListaActual)
-    .map((alt) => {
-      const costoSinIva = costoCompraFinalProveedorLista(alt);
-      return {
-        codExt: alt.codExt,
-        nombreProveedor: alt.nombreProveedor,
-        costoSinIva,
-        comparable: pxComparablePedidoUrgenteReposicion(
-          costoSinIva,
-          alt.iva,
-          sumaIvaSaldoAcumulado
-        ),
-      };
-    })
-    .filter(
-      (x) =>
-        x.nombreProveedor.length > 0 &&
-        Number.isFinite(x.costoSinIva) &&
-        x.costoSinIva > 0 &&
-        Number.isFinite(x.comparable) &&
-        Number.isFinite(comparableActual) &&
-        x.comparable < comparableActual
-    )
-    .sort((x, y) => x.comparable - y.comparable)[0];
-
-  if (!mejor) return null;
-  return {
-    listaPrecioProveedorId: mejor.codExt,
-    proveedorNombre: mejor.nombreProveedor,
-    costo: mejor.costoSinIva,
-  };
-}
-
-/** Fila para el cliente (lista-precios / sugeridos): proveedor + descripción tienda si existe. */
 export interface FilaListaPrecioParaCliente {
   id: string;
   codExt: string;
@@ -621,7 +512,7 @@ export interface PedidoUrgenteItem {
   codExt: string;
   prefijo: string;
   descripcion: string;
-  /** `px_compra_final_sin_iva` desde prod_precios_provee para lógica de opción de compra. */
+  /** `px_compra_final_sin_iva` desde prod_precios_provee (modal de cantidad). */
   pxCompraFinalSinIva: number | null;
   /** Cantidad pedida (URGENTE): `prod_ped_merc.urgente_cant_pedir`. */
   cantPedidaUrgente: number;
@@ -632,16 +523,6 @@ export interface PedidoUrgenteItem {
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
   estaVinculadoTienda: boolean;
   /**
-   * Si existe otro proveedor (habilitado) para el mismo producto de tienda con menor precio **comparable**
-   * (`pxComparablePedidoUrgenteReposicion`: **IVA SALDO ≥ 0** → sin IVA; **< 0** → con IVA según `iva`):
-   * sugerencia para desviar el pedido. `costo` sigue siendo compra final **sin IVA** para la UI.
-   */
-  sugerenciaProveedorMenorCosto: {
-    listaPrecioProveedorId: string;
-    proveedorNombre: string;
-    costo: number;
-  } | null;
-  /**
    * Varias filas `prod_precios_provee` con el mismo `codTiendaVinculo`: la UI muestra una sola fila;
    * cada miembro conserva su `cod_ext` para persistir cantidades. Ausente en filas no agrupadas.
    */
@@ -651,11 +532,6 @@ export interface PedidoUrgenteItem {
     pxCompraFinalSinIva: number | null;
     cantPedidaUrgente: number;
     estaVinculadoTienda: boolean;
-    sugerenciaProveedorMenorCosto: {
-      listaPrecioProveedorId: string;
-      proveedorNombre: string;
-      costo: number;
-    } | null;
   }>;
 }
 
@@ -782,8 +658,6 @@ function descripcionTiendaUnificadaParaGrupoPedidoUrgente(
  * la paginación y el **`total`** cuentan **grupos** (fila vista), no filas crudas. Filas sin vínculo a tienda siguen 1:1 por `cod_ext`.
  * `prefijo` vacío en la fila agrupada; **`descripcion`** unifica **`descripcion_tienda`** entre miembros.
  * Cantidades / flags de urgente y reposición se leen de **`prod_ped_merc`** según sucursal.
- * Comparación entre proveedores que comparten el mismo **`cod_tienda`** (`codTiendaVinculo`): **precio comparable** vía
- * `pxComparablePedidoUrgenteReposicion`: si **IVA SALDO ≥ 0** compara por `px_compra_final_sin_iva`; si **< 0** por precio final con IVA según `Proveedor.iva`.
  */
 async function getListaPedidoUrgenteDesdeListaPrecios(
   sucursalTrim: string,
@@ -830,7 +704,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     listaWhereParts.length === 1 ? listaWhereParts[0]! : { AND: listaWhereParts };
 
   const includeListaPedidoUrgente = {
-    proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
+    proveedor: { select: { id: true, nombre: true, prefijo: true } },
     listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
   } as const;
 
@@ -883,8 +757,6 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     return { items: [], total, totalPaginas: totalPaginasLista };
   }
 
-  const sumaIvaSaldoAcumulado = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
-
   const codExtsRes = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
     codExtsRes.length > 0
@@ -899,37 +771,6 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       .filter((t) => t.descripcionTienda != null && t.descripcionTienda.trim() !== "")
       .map((t) => [t.codExt, t.descripcionTienda as string])
   );
-
-  const tiendaIdsUniq = [...new Set(filas.map((f) => f.codTiendaVinculo).filter((v): v is string => Boolean(v)))];
-  const alternativasPorTienda =
-    tiendaIdsUniq.length > 0
-      ? await prisma.listaPrecioProveedor.findMany({
-          where: {
-            habilitado: true,
-            codTiendaVinculo: { in: tiendaIdsUniq },
-          },
-          select: {
-            codExt: true,
-            codTiendaVinculo: true,
-            pxCompraFinalSinIva: true,
-            pxListaProveedor: true,
-            dtoProveedor: true,
-            dtoMarca: true,
-            dtoRubro: true,
-            dtoCantidad: true,
-            dtoFinanciero: true,
-            cxTransporte: true,
-            proveedor: { select: { nombre: true, prefijo: true, iva: true } },
-          },
-        })
-      : [];
-  const alternativasByTienda = new Map<string, (typeof alternativasPorTienda)[number][]>();
-  for (const alt of alternativasPorTienda) {
-    if (!alt.codTiendaVinculo) continue;
-    const list = alternativasByTienda.get(alt.codTiendaVinculo) ?? [];
-    list.push(alt);
-    alternativasByTienda.set(alt.codTiendaVinculo, list);
-  }
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
   const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
@@ -955,38 +796,6 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     const descTienda = descRel || descTiendaMap || null;
     const cantUrgenteUi = mercaderiaMapUrgente.get(key) ?? 0;
     const tiendaListaId = f.codTiendaVinculo ?? null;
-    const alternativas = tiendaListaId ? alternativasByTienda.get(tiendaListaId) ?? [] : [];
-    const sugerencia = tiendaListaId
-      ? sugerenciaProveedorMenorCostoComparable(
-          sumaIvaSaldoAcumulado,
-          f.codExt,
-          {
-            pxCompraFinalSinIva: f.pxCompraFinalSinIva,
-            pxListaProveedor: f.pxListaProveedor,
-            dtoRubro: f.dtoRubro,
-            dtoCantidad: f.dtoCantidad,
-            cxTransporte: f.cxTransporte,
-            dtoProveedor: f.dtoProveedor,
-            dtoMarca: f.dtoMarca,
-            dtoFinanciero: f.dtoFinanciero,
-            iva: ivaProveedorDesdeLista(f.proveedor),
-          },
-          alternativas.map((a) => ({
-            codExt: a.codExt,
-            pxCompraFinalSinIva: a.pxCompraFinalSinIva,
-            pxListaProveedor: a.pxListaProveedor,
-            dtoRubro: a.dtoRubro,
-            dtoCantidad: a.dtoCantidad,
-            cxTransporte: a.cxTransporte,
-            dtoProveedor: a.dtoProveedor,
-            dtoMarca: a.dtoMarca,
-            dtoFinanciero: a.dtoFinanciero,
-            iva: ivaProveedorDesdeLista(a.proveedor),
-            nombreProveedor:
-              a.proveedor?.nombre?.trim() || a.proveedor?.prefijo?.trim() || "",
-          }))
-        )
-      : null;
 
     return {
       id: f.codExt,
@@ -998,7 +807,6 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
       cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
       estaVinculadoTienda: tiendaListaId != null,
-      sugerenciaProveedorMenorCosto: sugerencia,
     };
   }
 
@@ -1035,14 +843,12 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       confReposicion: memberItems[0]!.confReposicion,
       cantReposicion: memberItems[0]!.cantReposicion,
       estaVinculadoTienda: true,
-      sugerenciaProveedorMenorCosto: null,
       miembrosAgrupacion: memberItems.map((i) => ({
         codExt: i.codExt,
         prefijo: i.prefijo,
         pxCompraFinalSinIva: i.pxCompraFinalSinIva,
         cantPedidaUrgente: i.cantPedidaUrgente,
         estaVinculadoTienda: i.estaVinculadoTienda,
-        sugerenciaProveedorMenorCosto: i.sugerenciaProveedorMenorCosto,
       })),
     });
   }
@@ -1054,7 +860,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
  * Ítems de lista precios para la pantalla Pedido Urgente.
  * Solo devuelve datos si sucursal está informada.
  * descripcion = descripcion_tienda si existe; si no, descripcion_proveedor.
- * incluye pxCompraFinalSinIva para lógica de ranking en opción de compra.
+ * incluye `pxCompraFinalSinIva` para el modal de cantidad.
  */
 export async function getListaPreciosParaPedidoUrgente(
   sucursal: string,
@@ -1141,7 +947,7 @@ export async function getListaPreciosParaPedidoUrgente(
     prisma.listaPrecioProveedor.findMany({
       where,
       include: {
-        proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
+        proveedor: { select: { id: true, nombre: true, prefijo: true } },
         listaPrecioTienda: { select: { codTienda: true } },
       },
       orderBy: { codExt: "asc" },
@@ -1155,8 +961,6 @@ export async function getListaPreciosParaPedidoUrgente(
   if (filas.length === 0) {
     return { items: [], total, totalPaginas: totalPaginasListaGeneral };
   }
-
-  const sumaIvaSaldoAcumulado = await sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
 
   const codExts = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
@@ -1172,44 +976,6 @@ export async function getListaPreciosParaPedidoUrgente(
       .filter((t) => t.descripcionTienda != null && t.descripcionTienda.trim() !== "")
       .map((t) => [t.codExt, t.descripcionTienda as string])
   );
-
-  const tiendaCodVincPorCodExtLista = new Map<string, string>();
-  for (const f of filas) {
-    if (f.codTiendaVinculo) {
-      tiendaCodVincPorCodExtLista.set(f.codExt, f.codTiendaVinculo);
-    }
-  }
-
-  const tiendaIds = [...new Set(filas.map((f) => f.codTiendaVinculo).filter((v): v is string => Boolean(v)))];
-  const alternativasPorTienda =
-    tiendaIds.length > 0
-      ? await prisma.listaPrecioProveedor.findMany({
-          where: {
-            habilitado: true,
-            codTiendaVinculo: { in: tiendaIds },
-          },
-          select: {
-            codExt: true,
-            codTiendaVinculo: true,
-            pxCompraFinalSinIva: true,
-            pxListaProveedor: true,
-            dtoProveedor: true,
-            dtoMarca: true,
-            dtoRubro: true,
-            dtoCantidad: true,
-            dtoFinanciero: true,
-            cxTransporte: true,
-            proveedor: { select: { nombre: true, prefijo: true, iva: true } },
-          },
-        })
-      : [];
-  const alternativasByTienda = new Map<string, typeof alternativasPorTienda>();
-  for (const alt of alternativasPorTienda) {
-    if (!alt.codTiendaVinculo) continue;
-    const list = alternativasByTienda.get(alt.codTiendaVinculo) ?? [];
-    list.push(alt);
-    alternativasByTienda.set(alt.codTiendaVinculo, list);
-  }
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
   const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
@@ -1231,37 +997,7 @@ export async function getListaPreciosParaPedidoUrgente(
     const key = `${f.idProveedor}:${f.codExt}`;
     const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
     const cantUrgente = mercaderiaMapUrgente.get(key) ?? 0;
-    const tiendaId = tiendaCodVincPorCodExtLista.get(f.codExt) ?? null;
-    const alternativas = tiendaId ? alternativasByTienda.get(tiendaId) ?? [] : [];
-    const sugerencia = sugerenciaProveedorMenorCostoComparable(
-      sumaIvaSaldoAcumulado,
-      f.codExt,
-      {
-        pxCompraFinalSinIva: f.pxCompraFinalSinIva,
-        pxListaProveedor: f.pxListaProveedor,
-        dtoRubro: f.dtoRubro,
-        dtoCantidad: f.dtoCantidad,
-        cxTransporte: f.cxTransporte,
-        dtoProveedor: f.dtoProveedor,
-        dtoMarca: f.dtoMarca,
-        dtoFinanciero: f.dtoFinanciero,
-        iva: ivaProveedorDesdeLista(f.proveedor),
-      },
-      alternativas.map((a) => ({
-        codExt: a.codExt,
-        pxCompraFinalSinIva: a.pxCompraFinalSinIva,
-        pxListaProveedor: a.pxListaProveedor,
-        dtoRubro: a.dtoRubro,
-        dtoCantidad: a.dtoCantidad,
-        cxTransporte: a.cxTransporte,
-        dtoProveedor: a.dtoProveedor,
-        dtoMarca: a.dtoMarca,
-        dtoFinanciero: a.dtoFinanciero,
-        iva: ivaProveedorDesdeLista(a.proveedor),
-        nombreProveedor:
-          a.proveedor?.nombre?.trim() || a.proveedor?.prefijo?.trim() || "",
-      }))
-    );
+    const tiendaListaId = f.codTiendaVinculo ?? null;
 
     return {
       id: f.codExt,
@@ -1272,8 +1008,7 @@ export async function getListaPreciosParaPedidoUrgente(
       cantPedidaUrgente: cantUrgente,
       confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
       cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
-      estaVinculadoTienda: tiendaId != null,
-      sugerenciaProveedorMenorCosto: sugerencia,
+      estaVinculadoTienda: tiendaListaId != null,
     };
   });
 

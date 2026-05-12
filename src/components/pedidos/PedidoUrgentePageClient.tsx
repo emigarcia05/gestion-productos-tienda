@@ -34,16 +34,6 @@ interface Props {
 const MENSAJE_SIN_FILTROS =
   "Seleccioná una sucursal para ver los productos.";
 
-interface SugerenciaProveedorMenorCosto {
-  /** `prod_precios_provee.cod_ext` del proveedor recomendado (menor precio comparable). */
-  listaPrecioProveedorIdMenorCosto: string;
-  /** `prod_precios_provee.cod_ext` de la fila sobre la que el usuario hizo doble clic (proveedor elegido en tabla). */
-  listaPrecioProveedorIdOriginal: string;
-  proveedorNombre: string;
-  costo: number;
-  descripcion: string;
-}
-
 export default function PedidoUrgentePageClient({
   filters,
   productos,
@@ -61,9 +51,6 @@ export default function PedidoUrgentePageClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<ProductoPedidoUrgenteModal | null>(null);
-  const [modalSugerenciaOpen, setModalSugerenciaOpen] = useState(false);
-  const [sugerenciaProveedorMenorCosto, setSugerenciaProveedorMenorCosto] =
-    useState<SugerenciaProveedorMenorCosto | null>(null);
   const [modalElegirProveedorOpen, setModalElegirProveedorOpen] = useState(false);
   const [grupoParaElegirProveedor, setGrupoParaElegirProveedor] =
     useState<ProductoPedidoUrgente | null>(null);
@@ -119,7 +106,6 @@ export default function PedidoUrgentePageClient({
       confReposicion: grupo.confReposicion,
       cantReposicion: grupo.cantReposicion,
       estaVinculadoTienda: miembro.estaVinculadoTienda,
-      sugerenciaProveedorMenorCosto: miembro.sugerenciaProveedorMenorCosto,
     };
   }
 
@@ -140,65 +126,7 @@ export default function PedidoUrgentePageClient({
       setModalElegirProveedorOpen(true);
       return;
     }
-    const sugerencia = prod.sugerenciaProveedorMenorCosto;
-    if (prod.estaVinculadoTienda && sugerencia) {
-      setSugerenciaProveedorMenorCosto({
-        listaPrecioProveedorIdMenorCosto: sugerencia.listaPrecioProveedorId,
-        listaPrecioProveedorIdOriginal: prod.id,
-        proveedorNombre: sugerencia.proveedorNombre,
-        costo: sugerencia.costo,
-        descripcion: prod.descripcion,
-      });
-      setModalSugerenciaOpen(true);
-      return;
-    }
     abrirModalCantidadDirecto(prod);
-  }
-
-  /** Abre cantidad para el proveedor sugerido (menor costo). */
-  function pedirAlProveedorMenorCostoSugerido() {
-    if (!sugerenciaProveedorMenorCosto) return;
-    const s = sugerenciaProveedorMenorCosto;
-    const fakeProd: ProductoPedidoUrgente = {
-      id: s.listaPrecioProveedorIdMenorCosto,
-      codExt: "",
-      prefijo: "",
-      descripcion: s.descripcion,
-      pxCompraFinalSinIva: s.costo,
-      cantPedidaUrgente: 0,
-      confReposicion: false,
-      cantReposicion: 0,
-      estaVinculadoTienda: true,
-      sugerenciaProveedorMenorCosto: null,
-    };
-    setModalSugerenciaOpen(false);
-    abrirModalCantidadDirecto(fakeProd, s.listaPrecioProveedorIdMenorCosto);
-  }
-
-  /** Mantiene la fila que el usuario eligió en la tabla (doble clic). */
-  function continuarConProveedorSeleccionado() {
-    if (!sugerenciaProveedorMenorCosto) return;
-    const origId = sugerenciaProveedorMenorCosto.listaPrecioProveedorIdOriginal;
-    setModalSugerenciaOpen(false);
-    const prodOriginal = productos.find((p) => p.id === origId);
-    if (prodOriginal) {
-      abrirModalCantidadDirecto(prodOriginal);
-      return;
-    }
-    const s = sugerenciaProveedorMenorCosto;
-    const fakeProd: ProductoPedidoUrgente = {
-      id: origId,
-      codExt: "",
-      prefijo: "",
-      descripcion: s.descripcion,
-      pxCompraFinalSinIva: null,
-      cantPedidaUrgente: 0,
-      confReposicion: false,
-      cantReposicion: 0,
-      estaVinculadoTienda: true,
-      sugerenciaProveedorMenorCosto: null,
-    };
-    abrirModalCantidadDirecto(fakeProd);
   }
 
   async function borrarCantidad(prod: ProductoPedidoUrgente) {
@@ -358,7 +286,7 @@ export default function PedidoUrgentePageClient({
                           setModalElegirProveedorOpen(false);
                           setGrupoParaElegirProveedor(null);
                           if (!g) return;
-                          abrirModalCantidad(productoDesdeMiembroGrupo(g, m));
+                          abrirModalCantidadDirecto(productoDesdeMiembroGrupo(g, m));
                         }}
                       >
                         Pedir A Este Proveedor
@@ -367,38 +295,6 @@ export default function PedidoUrgentePageClient({
                   </li>
                 ))}
               </ul>
-            </div>
-          </AppModal>
-        </Dialog>
-        <Dialog open={modalSugerenciaOpen} onOpenChange={setModalSugerenciaOpen}>
-          <AppModal
-            title="Proveedor Recomendado"
-            size="md"
-            actions={
-              <div className="flex w-full justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setModalSugerenciaOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="button" onClick={continuarConProveedorSeleccionado}>
-                  Continuar Con Proveedor Seleccionado
-                </Button>
-              </div>
-            }
-          >
-            <div className="flex flex-col gap-4 text-sm text-foreground">
-              <p>En estos momentos, para este producto tiene prioridad el proveedor</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="font-semibold text-foreground">
-                  {sugerenciaProveedorMenorCosto?.proveedorNombre ?? ""}
-                </span>
-                <Button
-                  type="button"
-                  className="btn-primario-gestion"
-                  onClick={pedirAlProveedorMenorCostoSugerido}
-                >
-                  Pedir a Este Proveedor
-                </Button>
-              </div>
             </div>
           </AppModal>
         </Dialog>

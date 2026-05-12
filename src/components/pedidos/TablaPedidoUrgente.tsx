@@ -32,12 +32,11 @@ export interface ProductoPedidoUrgente {
   confReposicion: boolean;
   /** `reposicion_cant_conf` en `prod_ped_merc` (0 si no hay). */
   cantReposicion: number;
+  /**
+   * `true` si hay vínculo a **`prod_precios_tienda`** (catálogo tienda sincronizado con Dux). La tabla
+   * muestra primero **Productos Registrados en Dux** y luego **Productos Sin Registrar en Dux**.
+   */
   estaVinculadoTienda: boolean;
-  sugerenciaProveedorMenorCosto: {
-    listaPrecioProveedorId: string;
-    proveedorNombre: string;
-    costo: number;
-  } | null;
   /** Mismo vínculo tienda (`cod_tienda`): varios proveedores en una fila; cantidades por `codExt` de cada miembro. */
   miembrosAgrupacion?: Array<{
     codExt: string;
@@ -45,11 +44,6 @@ export interface ProductoPedidoUrgente {
     pxCompraFinalSinIva: number | null;
     cantPedidaUrgente: number;
     estaVinculadoTienda: boolean;
-    sugerenciaProveedorMenorCosto: {
-      listaPrecioProveedorId: string;
-      proveedorNombre: string;
-      costo: number;
-    } | null;
   }>;
 }
 
@@ -59,6 +53,8 @@ const COLUMNS = 7;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
 const COL_WIDTHS_PCT = [11, 7, 44, 10, 10, 9, 9] as const;
 const CELL_MIN = "min-w-0";
+const TEXTO_SUBENCABEZADO_REGISTRADOS_DUX = "Productos Registrados en Dux";
+const TEXTO_SUBENCABEZADO_SIN_REGISTRAR_DUX = "Productos Sin Registrar en Dux";
 
 function cantPedidaUrgenteMostrada(prod: ProductoPedidoUrgente, cantPorId: Record<string, string>): string {
   if (prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 0) {
@@ -77,6 +73,101 @@ function hayCantidadPedidaUrgente(prod: ProductoPedidoUrgente, cantPorId: Record
     return prod.miembrosAgrupacion.some((m) => Number(cantPorId[m.codExt] || 0) > 0);
   }
   return Number(cantPorId[prod.id] || 0) > 0;
+}
+
+function SubencabezadoSeccionPedidoUrgente({ titulo }: { titulo: string }) {
+  return (
+    <TableRow className="hover:bg-transparent cursor-default border-b border-border">
+      <TableCell
+        colSpan={COLUMNS}
+        className={cn(
+          "celda-datos bg-muted/70 py-2 text-xs font-semibold text-foreground tracking-wide"
+        )}
+      >
+        {titulo}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function FilaDatosPedidoUrgente({
+  prod,
+  cantPorId,
+  onRowDoubleClick,
+  onRowDeleteClick,
+}: {
+  prod: ProductoPedidoUrgente;
+  cantPorId: Record<string, string>;
+  onRowDoubleClick?: (producto: ProductoPedidoUrgente) => void;
+  onRowDeleteClick?: (producto: ProductoPedidoUrgente) => void;
+}) {
+  return (
+    <TableRow
+      className="cursor-pointer"
+      title={
+        prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 1
+          ? prod.miembrosAgrupacion.map((m) => m.prefijo).filter(Boolean).join(" · ")
+          : undefined
+      }
+      onDoubleClick={() => onRowDoubleClick?.(prod)}
+    >
+      <TableCell className="celda-datos">
+        {(prod.miembrosAgrupacion?.length ?? 0) > 1 ? "" : prod.prefijo}
+      </TableCell>
+      <TableCell className="celda-datos text-center">
+        {prod.estaVinculadoTienda ? (
+          <Check
+            className="h-4 w-4 mx-auto text-primary"
+            aria-label="Vinculado a tienda"
+          />
+        ) : (
+          ""
+        )}
+      </TableCell>
+      <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
+        {prod.descripcion}
+      </TableCell>
+      <TableCell className="celda-datos text-center tabular-nums">
+        {cantPedidaUrgenteMostrada(prod, cantPorId)}
+      </TableCell>
+      <TableCell
+        className={cn("celda-datos text-center celda-datos--accion-relleno-fila", CELL_MIN)}
+      >
+        {hayCantidadPedidaUrgente(prod, cantPorId) ? (
+          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRowDeleteClick?.(prod);
+              }}
+              aria-label="Eliminar cantidad pedida"
+            >
+              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+            </Button>
+          </div>
+        ) : (
+          ""
+        )}
+      </TableCell>
+      <TableCell className="celda-datos text-center tabla-bloque-secundario-cell-divider">
+        {prod.confReposicion ? (
+          <Check
+            className="h-4 w-4 mx-auto text-primary"
+            aria-label="Configurado en reposición"
+          />
+        ) : (
+          ""
+        )}
+      </TableCell>
+      <TableCell className="celda-datos text-center tabla-bloque-secundario-cell tabular-nums">
+        {prod.confReposicion ? prod.cantReposicion : ""}
+      </TableCell>
+    </TableRow>
+  );
 }
 
 interface Props {
@@ -100,6 +191,8 @@ export default function TablaPedidoUrgente({
 }: Props) {
 
   const visibleProductos = productos;
+  const productosRegistradosDux = visibleProductos.filter((p) => p.estaVinculadoTienda);
+  const productosSinRegistrarDux = visibleProductos.filter((p) => !p.estaVinculadoTienda);
 
   const mensajeVacio = sinFiltros ? mensajeSinSucursal : MENSAJE_SIN_RESULTADOS;
 
@@ -139,77 +232,42 @@ export default function TablaPedidoUrgente({
         {visibleProductos.length === 0 ? (
           <EmptyTableRow colSpan={COLUMNS} message={mensajeVacio} />
         ) : (
-          visibleProductos.map((prod) => (
-            <TableRow
-              key={prod.id}
-              className="cursor-pointer"
-              title={
-                prod.miembrosAgrupacion && prod.miembrosAgrupacion.length > 1
-                  ? prod.miembrosAgrupacion.map((m) => m.prefijo).filter(Boolean).join(" · ")
-                  : undefined
-              }
-              onDoubleClick={() => onRowDoubleClick?.(prod)}
-            >
-              <TableCell className="celda-datos">
-                {(prod.miembrosAgrupacion?.length ?? 0) > 1 ? "" : prod.prefijo}
-              </TableCell>
-              <TableCell className="celda-datos text-center">
-                {prod.estaVinculadoTienda ? (
-                  <Check
-                    className="h-4 w-4 mx-auto text-primary"
-                    aria-label="Vinculado a tienda"
+          <>
+            {productosRegistradosDux.length > 0 ? (
+              <>
+                <SubencabezadoSeccionPedidoUrgente
+                  key="subheader-dux-registrados"
+                  titulo={TEXTO_SUBENCABEZADO_REGISTRADOS_DUX}
+                />
+                {productosRegistradosDux.map((prod) => (
+                  <FilaDatosPedidoUrgente
+                    key={prod.id}
+                    prod={prod}
+                    cantPorId={cantPorId}
+                    onRowDoubleClick={onRowDoubleClick}
+                    onRowDeleteClick={onRowDeleteClick}
                   />
-                ) : (
-                  ""
-                )}
-              </TableCell>
-              <TableCell className="celda-datos min-w-0 truncate" title={prod.descripcion}>
-                {prod.descripcion}
-              </TableCell>
-              <TableCell className="celda-datos text-center tabular-nums">
-                {cantPedidaUrgenteMostrada(prod, cantPorId)}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "celda-datos text-center celda-datos--accion-relleno-fila",
-                  CELL_MIN
-                )}
-              >
-                {hayCantidadPedidaUrgente(prod, cantPorId) ? (
-                  <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRowDeleteClick?.(prod);
-                      }}
-                      aria-label="Eliminar cantidad pedida"
-                    >
-                      <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                    </Button>
-                  </div>
-                ) : (
-                  ""
-                )}
-              </TableCell>
-              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell-divider">
-                {prod.confReposicion ? (
-                  <Check
-                    className="h-4 w-4 mx-auto text-primary"
-                    aria-label="Configurado en reposición"
+                ))}
+              </>
+            ) : null}
+            {productosSinRegistrarDux.length > 0 ? (
+              <>
+                <SubencabezadoSeccionPedidoUrgente
+                  key="subheader-dux-sin-registrar"
+                  titulo={TEXTO_SUBENCABEZADO_SIN_REGISTRAR_DUX}
+                />
+                {productosSinRegistrarDux.map((prod) => (
+                  <FilaDatosPedidoUrgente
+                    key={prod.id}
+                    prod={prod}
+                    cantPorId={cantPorId}
+                    onRowDoubleClick={onRowDoubleClick}
+                    onRowDeleteClick={onRowDeleteClick}
                   />
-                ) : (
-                  ""
-                )}
-              </TableCell>
-              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell tabular-nums">
-                {prod.confReposicion ? prod.cantReposicion : ""}
-              </TableCell>
-            </TableRow>
-          ))
+                ))}
+              </>
+            ) : null}
+          </>
         )}
       </TableBody>
     </Table>
