@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import { fmtPrecio } from "@/lib/format";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
-import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
+import {
+  chequePuedeAcreditarsePorFechaArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+} from "@/lib/fechaArgentina";
+import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -23,6 +28,9 @@ export default function DestinoChequeTesoreriaModal({
   onAcreditarCuentaPropia,
   onPagoProveedor,
 }: Props) {
+  const permiteAcreditarEnCuentaPropia =
+    cheque != null && chequePuedeAcreditarsePorFechaArgentina(cheque.fechaAcreditacionIso);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -50,19 +58,28 @@ export default function DestinoChequeTesoreriaModal({
               </p>
             </div>
           ) : null}
+          {cheque && !permiteAcreditarEnCuentaPropia ? (
+            <p className={cn(CALLOUT_WARNING_CLASS, "text-sm")}>
+              Este cheque está diferido: solo podés registrar{" "}
+              <span className="font-semibold">pago a proveedor</span> hasta la fecha de acreditación (
+              {formatIsoYmdDdMmYyyyArgentina(cheque.fechaAcreditacionIso)}).
+            </p>
+          ) : null}
           <div className="flex flex-col gap-2">
             <ModalMicroLabel>Destino Cheque</ModalMicroLabel>
-            <Button
-              type="button"
-              className="h-11 w-full"
-              disabled={!cheque}
-              onClick={() => {
-                onAcreditarCuentaPropia();
-                onOpenChange(false);
-              }}
-            >
-              Acreditar En Cuenta Propia
-            </Button>
+            {permiteAcreditarEnCuentaPropia ? (
+              <Button
+                type="button"
+                className="h-11 w-full"
+                disabled={!cheque}
+                onClick={() => {
+                  onAcreditarCuentaPropia();
+                  onOpenChange(false);
+                }}
+              >
+                Acreditar En Cuenta Propia
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="secondary"

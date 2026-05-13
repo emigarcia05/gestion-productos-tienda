@@ -228,7 +228,7 @@ export default function TablaTesoreriaCajas({
                         )}
                       >
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={f.ultActualizacion}>
-                          <div className="flex w-full min-w-0 items-center gap-2">
+                          <div className="flex w-full min-w-0 items-center gap-0">
                             <span
                               className={cn(
                                 "inline-flex size-9 shrink-0 items-center justify-center rounded-md border-2",

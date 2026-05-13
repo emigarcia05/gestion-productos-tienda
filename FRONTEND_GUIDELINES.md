@@ -834,7 +834,7 @@ Aplicada en archivos recién agregados al árbol y pantallas adyacentes para man
 - **`TablaFlujoDeFondo.tsx`** (`/finanzas/venc-por-fecha`, modal de Detalle de día reutilizado por **Venc. Provee. Merc.** y **Venc. Provee. Gastos**):
   - `<col style={{ width: "20%" }}>` reemplazado por **`<col className="w-[20%]">`** (anchos estáticos) usando arreglos `COL_WIDTH_CLASSES_MAIN` / `COL_WIDTH_CLASSES_MODAL`. El `style` queda reservado para casos verdaderamente dinámicos.
   - Limpieza de utilidades redundantes con `.contenedor-tabla-gestion` (`rounded-md border border-border bg-card flex flex-col` quedan en la clase global).
-- **`TablaTesoreriaCajas.tsx`** (`/finanzas/tesoreria`): alerta por desactualización — **`TriangleAlert`** en recuadro sólido **`accent2`** + trazo blanco (`text-white`, `strokeWidth`); columna **ÚLT. ACTUALIZACIÓN** primera (ver §1 **`/finanzas/tesoreria`**).
+- **`TablaTesoreriaCajas.tsx`** (`/finanzas/tesoreria`): alerta por desactualización — **`TriangleAlert`** en recuadro sólido **`accent2`** + trazo blanco (`text-white`, `strokeWidth`); columna **ÚLT. ACTUALIZACIÓN** primera; **`ColgroupAnchos`** + **`COL_WIDTHS_PCT_CON_ACCIONES`** / **`COL_WIDTHS_PCT_SIN_ACCIONES`** (anchos en % por `<col>`, suma 100); celda **ÚLT. ACT.**: **`gap-0`** entre recuadro del ícono y el texto de fecha (ver §1 **`/finanzas/tesoreria`**).
 - **Cascarón de página de área** (nueva clase global **`.area-page-shell`** en `globals.css`): reemplaza la cadena duplicada `flex h-screen min-h-0 flex-col overflow-hidden` en:
   - `src/app/finanzas/flujo-de-fondo/page.tsx`
   - `src/app/finanzas/venc-por-fecha/page.tsx`
@@ -894,7 +894,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización (2026-05-11): **`ChequesCajaTesoreriaModal`** — antes de **Acreditar Cheque**, modal **Destino Cheque** (**Acreditar En Cuenta Propia** → **`AcreditarChequeTesoreriaModal`** sin selector de proveedor; la transferencia envía `entregaProveedorId` ya guardado en el cheque) o **Pago Proveedor** → **`PagoProveedorChequeTesoreriaModal`** + `marcarEntregaProveedorFinTesoreriaChequeAction`. Alta/edición de cheque siguen con **Entrega Proveedor**.*
+*Última actualización (2026-05-11): **`ChequesCajaTesoreriaModal`** — ícono **Acreditar** siempre habilitado en vista **ACTUALES**; modal **Destino Cheque**: si el cheque está **al día** (`chequePuedeAcreditarsePorFechaArgentina`) se ofrecen **Acreditar En Cuenta Propia** y **Pago Proveedor**; si está **diferido**, aviso **`CALLOUT_WARNING_CLASS`** y solo **Pago Proveedor**. **Acreditar En Cuenta Propia** → **`AcreditarChequeTesoreriaModal`** (transferencia con `entregaProveedorId` del cheque). **Pago Proveedor** → **`PagoProveedorChequeTesoreriaModal`** + `marcarEntregaProveedorFinTesoreriaChequeAction`. Alta/edición siguen con **Entrega Proveedor**. **Detalles De Cheques**: `AppModal` `xl` sin `max-w` extra; contenedor tabla `w-full min-w-0`; `colgroup` porcentajes (ACTUALES+editor: TIPO 15, TEN/EMIS 19, MONTO 15, ACRED./PROV. 6/6, DÍAS 5, ACC. 15; lectura 7 col.; entregados 8 col.).*
 
 *Última actualización (2026-05-16): **`ChequesCajaTesoreriaModal`** — columna **PROV. MERC.**; **Entrega Proveedor** en alta/edición/acreditación (proveedores mercadería).*
 

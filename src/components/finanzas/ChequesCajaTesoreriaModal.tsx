@@ -50,12 +50,12 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** TIPO, TENEDOR, EMISOR, MONTO, ACREDITACION, PROV. MERC., DÍAS, [ACCIONES] */
-const COL_ANCHOS_CON_ACCIONES = [11, 12, 12, 11, 10, 13, 6, 8, 17] as const;
-/** Sin ACCIONES (8 columnas). */
-const COL_ANCHOS_SIN_ACCIONES = [12, 13, 13, 12, 11, 14, 10, 15] as const;
+/** Vista ACTUALES + editor (8 col). Objetivo: TIPO 15, MONTO 15, DÍAS 5, ACCIONES 15; TEN/EMIS 19 c/u; ACRED + PROV. MERC. 6+6. */
+const COL_ANCHOS_ACTUALES_EDITOR = [15, 19, 19, 15, 6, 6, 5, 15] as const;
+/** Vista ACTUALES sin editor (7 col). */
+const COL_ANCHOS_ACTUALES_LECTURA = [15, 22, 22, 15, 8, 8, 10] as const;
 /** ENTREGADOS: TIPO, TENEDOR, EMISOR, MONTO, ACREDITACION, PROV. MERC., ENTREGA., DESTINO. */
-const COL_ANCHOS_ENTREGADOS = [10, 11, 11, 10, 10, 13, 13, 22] as const;
+const COL_ANCHOS_ENTREGADOS = [12, 18, 18, 12, 9, 10, 11, 10] as const;
 
 interface Props {
   open: boolean;
@@ -126,12 +126,12 @@ export default function ChequesCajaTesoreriaModal({
     setFilas([]);
   }
 
-  const colCount = !esVistaActuales ? 8 : esEditor ? 9 : 8;
+  const colCount = !esVistaActuales ? 8 : esEditor ? 8 : 7;
   const anchos = !esVistaActuales
     ? COL_ANCHOS_ENTREGADOS
     : esEditor
-      ? COL_ANCHOS_CON_ACCIONES
-      : COL_ANCHOS_SIN_ACCIONES;
+      ? COL_ANCHOS_ACTUALES_EDITOR
+      : COL_ANCHOS_ACTUALES_LECTURA;
 
   const mensajeVacio = esVistaActuales
     ? "No hay cheques actuales para esta caja."
@@ -146,7 +146,6 @@ export default function ChequesCajaTesoreriaModal({
           padding="sm"
           scrollBody={false}
           bodyClassName="min-h-0 overflow-hidden flex flex-col"
-          className="max-w-[calc(48rem*1.15)]"
           actions={
             <div className="flex w-full flex-wrap items-center justify-between gap-2">
               {esEditor ? (
@@ -168,7 +167,7 @@ export default function ChequesCajaTesoreriaModal({
             </div>
           }
         >
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+          <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="flex shrink-0 flex-wrap items-end gap-3 border-b border-border bg-muted/40 px-3 py-2">
               <label className="flex min-w-[12rem] flex-col gap-1">
                 <ModalMicroLabel>Vista</ModalMicroLabel>
@@ -197,7 +196,7 @@ export default function ChequesCajaTesoreriaModal({
                 </Select>
               </label>
             </div>
-            <div className="contenedor-tabla-gestion--pie-fijo-scroll max-h-[min(28rem,55vh)] min-h-[12rem] flex-1">
+            <div className="contenedor-tabla-gestion--pie-fijo-scroll max-h-[min(28rem,55vh)] min-h-[12rem] w-full min-w-0 flex-1">
               <Table variant="compact" scrollX={false} className="table-fixed w-full">
                 <colgroup>
                   {anchos.map((pct, i) => (
@@ -305,17 +304,12 @@ export default function ChequesCajaTesoreriaModal({
                                   size="icon"
                                   variant="ghost"
                                   className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                  disabled={!puedeAcreditar}
                                   onClick={() => setChequeParaDestino(row)}
-                                  aria-label={
-                                    puedeAcreditar
-                                      ? "Acreditar cheque"
-                                      : "Acreditar cheque (disponible desde la fecha de acreditación)"
-                                  }
+                                  aria-label="Acreditar cheque"
                                   title={
                                     puedeAcreditar
-                                      ? "Acreditar cheque"
-                                      : "Solo se puede acreditar desde la fecha de acreditación (calendario Argentina)."
+                                      ? "Elegir destino: acreditar en cuenta propia o pago a proveedor."
+                                      : "Cheque diferido: en destino solo podés registrar pago a proveedor hasta la fecha de acreditación."
                                   }
                                 >
                                   <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
