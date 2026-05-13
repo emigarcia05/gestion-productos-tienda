@@ -9,6 +9,7 @@ import {
   crearFinTesoreriaChequeSchema,
   eliminarFinTesoreriaChequeSchema,
   listarFinTesoreriaChequesPorCajaSchema,
+  marcarEntregaProveedorChequeSchema,
   transferirFinTesoreriaChequeSchema,
 } from "@/lib/validations/finTesoreriaCheques";
 import {
@@ -16,10 +17,12 @@ import {
   crearFinTesoreriaCheque,
   eliminarFinTesoreriaCheque,
   listarChequesPorCajaId,
+  marcarEntregaProveedorFinTesoreriaCheque,
   transferirChequeFinTesoreria,
   type FinTesoreriaChequeItem,
   type TransferirChequeFinTesoreriaResultado,
 } from "@/services/finTesoreriaCheques.service";
+import { prisma } from "@/lib/prisma";
 
 function revalidateFinTesoreriaChequesMutations(): void {
   revalidatePath("/finanzas");
@@ -51,10 +54,35 @@ export async function listarChequesPorCajaAction(
   }
 
   try {
-    const items = await listarChequesPorCajaId(parsed.data.cajaId);
+    const items = await listarChequesPorCajaId(parsed.data.cajaId, parsed.data.vista);
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar los cheques.";
+    return { ok: false, error: message };
+  }
+}
+
+export type ProveedorMercaderiaChequeTesoreriaOpcion = { id: string; nombre: string };
+
+/** Listado mínimo para selects de cheques; gate `finanzas.acceso` (no exige permisos de catálogo proveedores). */
+export async function listarProveedoresMercaderiaParaChequeTesoreriaAction(): Promise<
+  ActionResult<ProveedorMercaderiaChequeTesoreriaOpcion[]>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  try {
+    const rows = await prisma.proveedor.findMany({
+      where: { proveedorMercaderia: true },
+      select: { id: true, nombre: true },
+      orderBy: { nombre: "asc" },
+    });
+    return { ok: true, data: rows };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "No se pudo listar proveedores de mercadería.";
     return { ok: false, error: message };
   }
 }
@@ -95,6 +123,27 @@ export async function transferirFinTesoreriaChequeAction(
   }
 
   const res = await transferirChequeFinTesoreria(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateFinTesoreriaChequesMutations();
+  return { ok: true, data: res.data };
+}
+
+export async function marcarEntregaProveedorFinTesoreriaChequeAction(
+  raw: unknown
+): Promise<ActionResult<FinTesoreriaChequeItem>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = marcarEntregaProveedorChequeSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await marcarEntregaProveedorFinTesoreriaCheque(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidateFinTesoreriaChequesMutations();

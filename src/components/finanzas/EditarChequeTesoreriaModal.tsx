@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
@@ -17,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { TipoChequeTesoreria } from "@prisma/client";
-import { actualizarFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
+import { actualizarFinTesoreriaChequeAction, listarProveedoresMercaderiaParaChequeTesoreriaAction } from "@/actions/finTesoreriaCheques";
+import type { ProveedorMercaderiaChequeTesoreriaOpcion } from "@/actions/finTesoreriaCheques";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import {
   TITULARES_CAJA_TESORERIA,
@@ -54,6 +56,23 @@ export default function EditarChequeTesoreriaModal({
   const [montoNorm, setMontoNorm] = useState("");
   const [fechaIso, setFechaIso] = useState("");
   const [saving, setSaving] = useState(false);
+  const [proveedores, setProveedores] = useState<ProveedorMercaderiaChequeTesoreriaOpcion[]>([]);
+  const [entregaProveedorId, setEntregaProveedorId] = useState<string | null>(null);
+
+  const cargarProveedores = useCallback(async () => {
+    const res = await listarProveedoresMercaderiaParaChequeTesoreriaAction();
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudieron cargar los proveedores.");
+      setProveedores([]);
+      return;
+    }
+    setProveedores(res.data);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    void cargarProveedores();
+  }, [open, cargarProveedores]);
 
   useEffect(() => {
     if (!open || !cheque) return;
@@ -62,6 +81,7 @@ export default function EditarChequeTesoreriaModal({
     setFechaIso(cheque.fechaAcreditacionIso);
     setTipo(tipoChequeValido(cheque.tipo) ? cheque.tipo : "FISICO");
     setTenedor(tenedorValido(cheque.tenedor) ? cheque.tenedor : "");
+    setEntregaProveedorId(cheque.entregaProveedorId);
   }, [open, cheque]);
 
   const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
@@ -81,6 +101,7 @@ export default function EditarChequeTesoreriaModal({
         emisor: emisor.trim(),
         monto: parsedMonto,
         fechaAcreditacion: fechaIso,
+        entregaProveedorId,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar el cheque.");
@@ -163,6 +184,31 @@ export default function EditarChequeTesoreriaModal({
                 {TITULARES_CAJA_TESORERIA.map((opt) => (
                   <SelectItem key={opt} value={opt}>
                     {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <ModalMicroLabel>Entrega Proveedor</ModalMicroLabel>
+            <Select
+              value={entregaProveedorId ?? "none"}
+              onValueChange={(v) => setEntregaProveedorId(v === "none" ? null : v)}
+              disabled={saving || !cheque}
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="PROVEEDOR MERC." />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">SIN PROVEEDOR</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>

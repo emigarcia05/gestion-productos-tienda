@@ -62,6 +62,7 @@ model Proveedor {
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
   finBalGastoFinal   FinBalGastoFinal[]
+  finTesoreriaChequesEntregaProveedor FinTesoreriaCheque[] @relation("FinTesoreriaChequeEntregaProveedor")
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -135,7 +136,8 @@ model CajaTesoreria {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
-  cheques FinTesoreriaCheque[]
+  cheques                        FinTesoreriaCheque[]
+  chequesAcreditadosComoDestino FinTesoreriaCheque[] @relation("FinTesoreriaChequeCajaDestino")
 
   @@unique([nombreCaja, titular], map: "fin_tesoreria_nombre_titular_ux")
   @@index([tipoCaja], map: "fin_tesoreria_tipo_caja_idx")
@@ -143,7 +145,8 @@ model CajaTesoreria {
 }
 
 // Cheques asociados a una caja de tesorería tipo CHEQUE. El disponible para totales
-// (hoy en calendario Argentina) suma solo filas con fecha_acreditacion <= hoy.
+// (hoy en calendario Argentina) suma solo filas con fecha_acreditacion <= hoy y sin transferencia.
+// Tras acreditar a una caja DIGITAL, la fila conserva `fecha_transferencia` hasta 500 días (purge en servicio).
 model FinTesoreriaCheque {
   id                  String               @id @default(cuid())
   cajaId              String               @map("caja_id")
@@ -153,13 +156,22 @@ model FinTesoreriaCheque {
   tenedor             String               @map("tenedor")
   monto               Int
   fechaAcreditacion   DateTime             @map("fecha_acreditacion") @db.Date
+  /** Si no es null, el importe ya se acreditó en `cajaDestinoId`; no suma al disponible de la caja CHEQUE. */
+  fechaTransferencia DateTime?            @map("fecha_transferencia")
+  cajaDestinoId       String?              @map("caja_destino_id")
+  /** FK opcional a proveedor con `proveedor_mercaderia = true` (solo registro informativo). */
+  entregaProveedorId  String?              @map("entrega_proveedor")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
-  caja CajaTesoreria @relation(fields: [cajaId], references: [id], onDelete: Cascade)
+  caja              CajaTesoreria  @relation(fields: [cajaId], references: [id], onDelete: Cascade)
+  cajaDestino       CajaTesoreria? @relation("FinTesoreriaChequeCajaDestino", fields: [cajaDestinoId], references: [id], onDelete: SetNull)
+  entregaProveedor Proveedor?     @relation("FinTesoreriaChequeEntregaProveedor", fields: [entregaProveedorId], references: [id], onDelete: SetNull)
 
   @@index([cajaId], map: "fin_tesoreria_cheques_caja_id_idx")
   @@index([cajaId, fechaAcreditacion], map: "fin_tesoreria_cheques_caja_id_fecha_acreditacion_idx")
+  @@index([cajaId, fechaTransferencia], map: "fin_tesoreria_cheques_caja_id_fecha_transferencia_idx")
+  @@index([entregaProveedorId], map: "fin_tesoreria_cheques_entrega_proveedor_idx")
   @@map("fin_tesoreria_cheques")
 }
 

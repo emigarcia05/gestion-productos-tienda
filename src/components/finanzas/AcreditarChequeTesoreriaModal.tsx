@@ -42,16 +42,16 @@ export default function AcreditarChequeTesoreriaModal({
   const [loading, setLoading] = useState(false);
   const [pendingDestinoId, setPendingDestinoId] = useState<string | null>(null);
 
-  const cargarCajas = useCallback(async () => {
+  const cargarDatos = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await listarCajasTesoreriaTipoDigitalAction();
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudieron cargar las cajas.");
+      const resCajas = await listarCajasTesoreriaTipoDigitalAction();
+      if (!resCajas.ok) {
+        toast.error(resCajas.error ?? "No se pudieron cargar las cajas.");
         setCajas([]);
-        return;
+      } else {
+        setCajas(resCajas.data);
       }
-      setCajas(res.data);
     } finally {
       setLoading(false);
     }
@@ -59,8 +59,8 @@ export default function AcreditarChequeTesoreriaModal({
 
   useEffect(() => {
     if (!open) return;
-    void cargarCajas();
-  }, [open, cargarCajas]);
+    void cargarDatos();
+  }, [open, cargarDatos]);
 
   async function ejecutarTransferencia(cajaDestinoId: string) {
     if (!cheque || pendingDestinoId) return;
@@ -69,6 +69,7 @@ export default function AcreditarChequeTesoreriaModal({
       const res = await transferirFinTesoreriaChequeAction({
         chequeId: cheque.id,
         cajaDestinoId,
+        entregaProveedorId: cheque.entregaProveedorId ?? null,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo acreditar el cheque.");

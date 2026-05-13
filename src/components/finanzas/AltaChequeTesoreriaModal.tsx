@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
-import { crearFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
+import { crearFinTesoreriaChequeAction, listarProveedoresMercaderiaParaChequeTesoreriaAction } from "@/actions/finTesoreriaCheques";
+import type { ProveedorMercaderiaChequeTesoreriaOpcion } from "@/actions/finTesoreriaCheques";
 import {
   dateToIsoYmdArgentina,
   formatIsoYmdDdMmYyyyArgentina,
@@ -61,6 +63,23 @@ export default function AltaChequeTesoreriaModal({
   const [montoNorm, setMontoNorm] = useState("");
   const [fechaDdMmYyyy, setFechaDdMmYyyy] = useState("");
   const [saving, setSaving] = useState(false);
+  const [proveedores, setProveedores] = useState<ProveedorMercaderiaChequeTesoreriaOpcion[]>([]);
+  const [entregaProveedorId, setEntregaProveedorId] = useState<string | null>(null);
+
+  const cargarProveedores = useCallback(async () => {
+    const res = await listarProveedoresMercaderiaParaChequeTesoreriaAction();
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudieron cargar los proveedores.");
+      setProveedores([]);
+      return;
+    }
+    setProveedores(res.data);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    void cargarProveedores();
+  }, [open, cargarProveedores]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,6 +87,7 @@ export default function AltaChequeTesoreriaModal({
     setTenedor(tenedorInicialDesdeTitularCaja(titularCaja ?? null));
     setEmisor("");
     setMontoNorm("");
+    setEntregaProveedorId(null);
     setFechaDdMmYyyy(formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date())));
   }, [open, titularCaja]);
 
@@ -98,6 +118,7 @@ export default function AltaChequeTesoreriaModal({
         emisor: emisor.trim(),
         monto: parsedMonto,
         fechaAcreditacion: fechaAcreditacionIso,
+        entregaProveedorId,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo registrar el cheque.");
@@ -177,6 +198,31 @@ export default function AltaChequeTesoreriaModal({
                 {TITULARES_CAJA_TESORERIA.map((opt) => (
                   <SelectItem key={opt} value={opt}>
                     {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <ModalMicroLabel>Entrega Proveedor</ModalMicroLabel>
+            <Select
+              value={entregaProveedorId ?? "none"}
+              onValueChange={(v) => setEntregaProveedorId(v === "none" ? null : v)}
+              disabled={saving || !cajaId}
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="PROVEEDOR MERC." />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">SIN PROVEEDOR</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>

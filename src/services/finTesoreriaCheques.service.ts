@@ -1,16 +1,21 @@
 import type { TipoChequeTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA } from "@/lib/finTesoreriaChequesRetencion";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
 import type {
   ActualizarFinTesoreriaChequeInput,
   CrearFinTesoreriaChequeInput,
+  FinTesoreriaChequesVista,
+  MarcarEntregaProveedorChequeInput,
   TransferirFinTesoreriaChequeInput,
 } from "@/lib/validations/finTesoreriaCheques";
 
 /** Límite alineado con `montoCajaTesoreriaSchema` (cajas tesorería). */
 const MONTO_CAJA_MAX = 999_999_999;
 const MONTO_CAJA_MIN = -999_999_999;
+
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
 export interface TransferirChequeFinTesoreriaResultado {
   chequeId: string;
@@ -28,8 +33,22 @@ export interface FinTesoreriaChequeItem {
   emisor: string;
   monto: number;
   fechaAcreditacionIso: string;
+  /** ISO instante UTC de la transferencia; null si sigue en caja CHEQUE. */
+  fechaTransferenciaIso: string | null;
+  /** Etiqueta de caja destino tras transferir; null si aún no se transfirió o se perdió la FK. */
+  cajaDestinoEtiqueta: string | null;
+  /** FK opcional a proveedor de mercadería (`entrega_proveedor`). */
+  entregaProveedorId: string | null;
+  entregaProveedorNombre: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+function etiquetaCajaDestino(
+  dest: { nombreCaja: string; titular: string } | null | undefined
+): string | null {
+  if (!dest) return null;
+  return `${dest.nombreCaja} · ${dest.titular}`;
 }
 
 function mapCheque(row: {
@@ -40,8 +59,12 @@ function mapCheque(row: {
   emisor: string;
   monto: number;
   fechaAcreditacion: Date;
+  fechaTransferencia: Date | null;
+  entregaProveedorId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  cajaDestino?: { nombreCaja: string; titular: string } | null;
+  entregaProveedor?: { nombre: string } | null;
 }): FinTesoreriaChequeItem {
   return {
     id: row.id,
@@ -51,9 +74,35 @@ function mapCheque(row: {
     emisor: row.emisor,
     monto: row.monto,
     fechaAcreditacionIso: dateToIsoYmdArgentina(row.fechaAcreditacion),
+    fechaTransferenciaIso: row.fechaTransferencia ? row.fechaTransferencia.toISOString() : null,
+    cajaDestinoEtiqueta: row.fechaTransferencia ? etiquetaCajaDestino(row.cajaDestino ?? null) : null,
+    entregaProveedorId: row.entregaProveedorId,
+    entregaProveedorNombre: row.entregaProveedor?.nombre ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+async function assertEntregaProveedorMercaderia(
+  proveedorId: string | null
+): Promise<ServiceResult<void>> {
+  if (proveedorId === null) {
+    return { success: true, data: undefined };
+  }
+  const p = await prisma.proveedor.findUnique({
+    where: { id: proveedorId },
+    select: { proveedorMercaderia: true },
+  });
+  if (!p) {
+    return { success: false, error: "Proveedor no encontrado." };
+  }
+  if (!p.proveedorMercaderia) {
+    return {
+      success: false,
+      error: "El proveedor de entrega debe ser de mercadería (proveedor_mercaderia = true).",
+    };
+  }
+  return { success: true, data: undefined };
 }
 
 function mapDbError(error: unknown, fallback: string): string {
@@ -69,14 +118,27 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-/** Suma `monto` por caja con `fecha_acreditacion` <= `hoyIso` (comparación en DATE). */
+/** Elimina filas transferidas más antiguas que la retención configurada (500 días). */
+export async function eliminarChequesTransferidosVencidos(): Promise<void> {
+  const limite = new Date(
+    Date.now() - CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA * MS_POR_DIA
+  );
+  await prisma.finTesoreriaCheque.deleteMany({
+    where: {
+      fechaTransferencia: { not: null, lt: limite },
+    },
+  });
+}
+
+/** Suma `monto` por caja con `fecha_acreditacion` <= `hoyIso` (comparación en DATE). Solo cheques no transferidos. */
 export async function sumarMontosChequesAcreditadosHasta(
   hoyIso: string
 ): Promise<Map<string, number>> {
   const rows = await prisma.$queryRaw<Array<{ caja_id: string; suma: bigint }>>`
     SELECT "caja_id", COALESCE(SUM("monto"), 0)::bigint AS suma
     FROM "fin_tesoreria_cheques"
-    WHERE "fecha_acreditacion" <= ${hoyIso}::date
+    WHERE "fecha_transferencia" IS NULL
+      AND "fecha_acreditacion" <= ${hoyIso}::date
     GROUP BY "caja_id"
   `;
   const map = new Map<string, number>();
@@ -86,14 +148,15 @@ export async function sumarMontosChequesAcreditadosHasta(
   return map;
 }
 
-/** Suma `monto` por caja con `fecha_acreditacion` > `hoyIso` (cheques diferidos; comparación en DATE). */
+/** Suma `monto` por caja con `fecha_acreditacion` > `hoyIso` (cheques diferidos; comparación en DATE). Solo no transferidos. */
 export async function sumarMontosChequesDiferidosPorCaja(
   hoyIso: string
 ): Promise<Map<string, number>> {
   const rows = await prisma.$queryRaw<Array<{ caja_id: string; suma: bigint }>>`
     SELECT "caja_id", COALESCE(SUM("monto"), 0)::bigint AS suma
     FROM "fin_tesoreria_cheques"
-    WHERE "fecha_acreditacion" > ${hoyIso}::date
+    WHERE "fecha_transferencia" IS NULL
+      AND "fecha_acreditacion" > ${hoyIso}::date
     GROUP BY "caja_id"
   `;
   const map = new Map<string, number>();
@@ -114,7 +177,8 @@ export async function sumarMontosChequesDiferidosPorFechaAcreditacion(
     SELECT to_char("fecha_acreditacion", 'YYYY-MM-DD') AS fecha,
            COALESCE(SUM("monto"), 0)::bigint AS suma
     FROM "fin_tesoreria_cheques"
-    WHERE "fecha_acreditacion" > ${hoyIso}::date
+    WHERE "fecha_transferencia" IS NULL
+      AND "fecha_acreditacion" > ${hoyIso}::date
     GROUP BY "fecha_acreditacion"
   `;
   const map = new Map<string, number>();
@@ -124,10 +188,29 @@ export async function sumarMontosChequesDiferidosPorFechaAcreditacion(
   return map;
 }
 
-export async function listarChequesPorCajaId(cajaId: string): Promise<FinTesoreriaChequeItem[]> {
+export async function listarChequesPorCajaId(
+  cajaId: string,
+  vista: FinTesoreriaChequesVista
+): Promise<FinTesoreriaChequeItem[]> {
+  await eliminarChequesTransferidosVencidos();
+
+  const where =
+    vista === "actuales"
+      ? { cajaId, fechaTransferencia: null }
+      : { cajaId, fechaTransferencia: { not: null } };
+
+  const orderBy =
+    vista === "actuales"
+      ? [{ fechaAcreditacion: "desc" as const }, { createdAt: "desc" as const }]
+      : [{ fechaTransferencia: "desc" as const }, { createdAt: "desc" as const }];
+
   const rows = await prisma.finTesoreriaCheque.findMany({
-    where: { cajaId },
-    orderBy: [{ fechaAcreditacion: "desc" }, { createdAt: "desc" }],
+    where,
+    orderBy,
+    include: {
+      cajaDestino: { select: { nombreCaja: true, titular: true } },
+      entregaProveedor: { select: { nombre: true } },
+    },
   });
   return rows.map(mapCheque);
 }
@@ -146,6 +229,12 @@ export async function crearFinTesoreriaCheque(
     return { success: false, error: "Solo se pueden registrar cheques en cajas tipo CHEQUE." };
   }
 
+  const entregaId = input.entregaProveedorId ?? null;
+  const valEntrega = await assertEntregaProveedorMercaderia(entregaId);
+  if (!valEntrega.success) {
+    return { success: false, error: valEntrega.error };
+  }
+
   try {
     const row = await prisma.finTesoreriaCheque.create({
       data: {
@@ -155,9 +244,18 @@ export async function crearFinTesoreriaCheque(
         emisor: input.emisor.trim(),
         monto: input.monto,
         fechaAcreditacion: new Date(`${input.fechaAcreditacion}T12:00:00.000Z`),
+        entregaProveedorId: entregaId,
       },
+      include: { entregaProveedor: { select: { nombre: true } } },
     });
-    return { success: true, data: mapCheque(row) };
+    return {
+      success: true,
+      data: mapCheque({
+        ...row,
+        fechaTransferencia: null,
+        cajaDestino: null,
+      }),
+    };
   } catch (error: unknown) {
     const msg = mapDbError(error, "No se pudo registrar el cheque.");
     if (typeof error === "object" && error !== null && "message" in error) {
@@ -183,6 +281,18 @@ export async function actualizarFinTesoreriaCheque(
   if (existente.caja.tipoCaja !== "CHEQUE") {
     return { success: false, error: "Solo se pueden editar cheques de cajas tipo CHEQUE." };
   }
+  if (existente.fechaTransferencia != null) {
+    return { success: false, error: "No se puede editar un cheque ya transferido a una cuenta." };
+  }
+
+  const entregaId =
+    input.entregaProveedorId !== undefined ? (input.entregaProveedorId ?? null) : undefined;
+  if (entregaId !== undefined) {
+    const valEntrega = await assertEntregaProveedorMercaderia(entregaId);
+    if (!valEntrega.success) {
+      return { success: false, error: valEntrega.error };
+    }
+  }
 
   try {
     const row = await prisma.finTesoreriaCheque.update({
@@ -193,22 +303,36 @@ export async function actualizarFinTesoreriaCheque(
         emisor: input.emisor.trim(),
         monto: input.monto,
         fechaAcreditacion: new Date(`${input.fechaAcreditacion}T12:00:00.000Z`),
+        ...(entregaId !== undefined ? { entregaProveedorId: entregaId } : {}),
+      },
+      include: {
+        cajaDestino: { select: { nombreCaja: true, titular: true } },
+        entregaProveedor: { select: { nombre: true } },
       },
     });
-    return { success: true, data: mapCheque(row) };
+    return {
+      success: true,
+      data: mapCheque(row),
+    };
   } catch (error: unknown) {
     return { success: false, error: mapDbError(error, "No se pudo actualizar el cheque.") };
   }
 }
 
 /**
- * Transfiere el importe del cheque a otra caja (`fin_tesoreria.monto`) y elimina el registro del cheque.
+ * Transfiere el importe del cheque a otra caja (`fin_tesoreria.monto`) y marca el cheque como transferido.
+ * El registro se conserva en BD durante {@link CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA} días y luego se purga.
  * Requiere `fecha_acreditacion` ≤ hoy (calendario Argentina).
  */
 export async function transferirChequeFinTesoreria(
   input: TransferirFinTesoreriaChequeInput
 ): Promise<ServiceResult<TransferirChequeFinTesoreriaResultado>> {
   const hoyIso = dateToIsoYmdArgentina(new Date());
+
+  const valEntrega = await assertEntregaProveedorMercaderia(input.entregaProveedorId);
+  if (!valEntrega.success) {
+    return { success: false, error: valEntrega.error };
+  }
 
   try {
     const resultado = await prisma.$transaction(async (tx) => {
@@ -217,6 +341,9 @@ export async function transferirChequeFinTesoreria(
       });
       if (!cheque) {
         throw new Error("CHEQUE_NOT_FOUND");
+      }
+      if (cheque.fechaTransferencia != null) {
+        throw new Error("CHEQUE_YA_TRANSFERIDO");
       }
 
       const fechaChequeIso = dateToIsoYmdArgentina(cheque.fechaAcreditacion);
@@ -248,7 +375,14 @@ export async function transferirChequeFinTesoreria(
         data: { monto: { increment: cheque.monto } },
       });
 
-      await tx.finTesoreriaCheque.delete({ where: { id: cheque.id } });
+      await tx.finTesoreriaCheque.update({
+        where: { id: cheque.id },
+        data: {
+          fechaTransferencia: new Date(),
+          cajaDestinoId: input.cajaDestinoId,
+          entregaProveedorId: input.entregaProveedorId,
+        },
+      });
 
       return {
         chequeId: cheque.id,
@@ -259,11 +393,16 @@ export async function transferirChequeFinTesoreria(
       };
     });
 
+    await eliminarChequesTransferidosVencidos();
+
     return { success: true, data: resultado };
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === "CHEQUE_NOT_FOUND") {
         return { success: false, error: "Cheque no encontrado." };
+      }
+      if (error.message === "CHEQUE_YA_TRANSFERIDO") {
+        return { success: false, error: "Este cheque ya fue transferido." };
       }
       if (error.message === "CHEQUE_NO_ACREDITADO") {
         return {
@@ -301,7 +440,62 @@ export async function transferirChequeFinTesoreria(
   }
 }
 
+/**
+ * Registra pago a proveedor de mercadería: persiste `entrega_proveedor` sin transferir el cheque
+ * ni modificar saldos de caja.
+ */
+export async function marcarEntregaProveedorFinTesoreriaCheque(
+  input: MarcarEntregaProveedorChequeInput
+): Promise<ServiceResult<FinTesoreriaChequeItem>> {
+  const valEntrega = await assertEntregaProveedorMercaderia(input.entregaProveedorId);
+  if (!valEntrega.success) {
+    return { success: false, error: valEntrega.error };
+  }
+
+  const existente = await prisma.finTesoreriaCheque.findUnique({
+    where: { id: input.chequeId },
+    select: { fechaTransferencia: true },
+  });
+  if (!existente) {
+    return { success: false, error: "Cheque no encontrado." };
+  }
+  if (existente.fechaTransferencia != null) {
+    return {
+      success: false,
+      error: "No se puede registrar pago a proveedor en un cheque ya transferido.",
+    };
+  }
+
+  try {
+    const row = await prisma.finTesoreriaCheque.update({
+      where: { id: input.chequeId },
+      data: { entregaProveedorId: input.entregaProveedorId },
+      include: {
+        cajaDestino: { select: { nombreCaja: true, titular: true } },
+        entregaProveedor: { select: { nombre: true } },
+      },
+    });
+    return { success: true, data: mapCheque(row) };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: mapDbError(error, "No se pudo registrar el pago a proveedor."),
+    };
+  }
+}
+
 export async function eliminarFinTesoreriaCheque(id: string): Promise<ServiceResult<void>> {
+  const row = await prisma.finTesoreriaCheque.findUnique({
+    where: { id },
+    select: { fechaTransferencia: true },
+  });
+  if (!row) {
+    return { success: false, error: "Cheque no encontrado." };
+  }
+  if (row.fechaTransferencia != null) {
+    return { success: false, error: "No se puede eliminar un cheque ya transferido a una cuenta." };
+  }
+
   try {
     await prisma.finTesoreriaCheque.delete({ where: { id } });
     return { success: true, data: undefined };

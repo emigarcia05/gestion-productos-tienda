@@ -18,7 +18,6 @@ import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 
 export interface TesoreriaCajaFila {
@@ -47,9 +46,12 @@ interface Props {
 
 const COLS = 5;
 
-/** Ancho relativo por columna; suma 100 (con/sin ACCIONES). */
-const COL_WIDTHS_PCT_CON_ACCIONES = [18, 18, 12, 12, 22, 18] as const;
-const COL_WIDTHS_PCT_SIN_ACCIONES = [22, 22, 14, 14, 28] as const;
+/** Ancho relativo por columna (orden: ÚLT. ACT., CAJA, TITULAR, TIPO, MONTO [, ACCIONES]); suma 100. */
+const COL_WIDTHS_PCT_CON_ACCIONES = [22, 16, 16, 11, 14, 21] as const;
+const COL_WIDTHS_PCT_SIN_ACCIONES = [24, 18, 18, 12, 28] as const;
+
+/** Columna ÚLT. ACT.: recuadro sólido `accent2` + ícono blanco (solo si hay alerta). */
+const TESORERIA_ALERTA_CAJA_ACTIVA_CLASS = "border-accent2 bg-accent2 shadow-sm";
 
 const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
@@ -178,13 +180,11 @@ export default function TablaTesoreriaCajas({
             <ColgroupAnchos anchos={anchosColPct} />
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead className={CELL_MIN}>ÚLT. ACTUALIZACIÓN</TableHead>
                 <TableHead className={CELL_MIN}>CAJA</TableHead>
                 <TableHead className={CELL_MIN}>TITULAR</TableHead>
                 <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                <TableHead className={cn("tabla-bloque-secundario-head-divider", CELL_MIN)}>
-                  ÚLT. ACTUALIZACIÓN
-                </TableHead>
                 {esEditor ? (
                   <TableHead className={cn("text-center tabla-bloque-secundario-head-divider", CELL_MIN)}>
                     ACCIONES
@@ -227,6 +227,41 @@ export default function TablaTesoreriaCajas({
                           (puedeEditarMontoDblClick || abrirListaChequesDblClick) && "cursor-pointer"
                         )}
                       >
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.ultActualizacion}>
+                          <div className="flex w-full min-w-0 items-center gap-2">
+                            <span
+                              className={cn(
+                                "inline-flex size-9 shrink-0 items-center justify-center rounded-md border-2",
+                                estaDesactualizada
+                                  ? TESORERIA_ALERTA_CAJA_ACTIVA_CLASS
+                                  : "border-transparent"
+                              )}
+                              aria-hidden={estaDesactualizada ? undefined : true}
+                              role={estaDesactualizada ? "img" : undefined}
+                              aria-label={
+                                estaDesactualizada && diasSinActualizar != null
+                                  ? `Alerta: monto sin actualizar hace más de cinco días, más ${diasSinActualizar} días`
+                                  : undefined
+                              }
+                              title={
+                                estaDesactualizada && diasSinActualizar != null
+                                  ? `Sin actualizar el monto hace más de 5 días (+${diasSinActualizar} d.)`
+                                  : undefined
+                              }
+                            >
+                              {estaDesactualizada ? (
+                                <TriangleAlert
+                                  className="size-5 shrink-0 text-white"
+                                  strokeWidth={2.5}
+                                  aria-hidden
+                                />
+                              ) : null}
+                            </span>
+                            <span className="min-w-0 flex-1 text-right tabular-nums whitespace-nowrap truncate">
+                              {f.ultActualizacion}
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={f.nombreCaja}>
                           <span className="celda-destacado truncate block">{f.nombreCaja}</span>
                         </TableCell>
@@ -238,23 +273,6 @@ export default function TablaTesoreriaCajas({
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                           ${fmtPrecio(f.montoDisponible)}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "celda-datos tabular-nums whitespace-nowrap tabla-bloque-secundario-cell-divider",
-                            CELL_MIN
-                          )}
-                          title={f.ultActualizacion}
-                        >
-                          <span className="inline-flex items-center gap-1.5">
-                            {f.ultActualizacion}
-                            {estaDesactualizada ? (
-                              <TriangleAlert
-                                className={cn("h-4 w-4 shrink-0", TEXT_WARNING_CLASS)}
-                                aria-hidden
-                              />
-                            ) : null}
-                          </span>
                         </TableCell>
                         {esEditor ? (
                           <TableCell
