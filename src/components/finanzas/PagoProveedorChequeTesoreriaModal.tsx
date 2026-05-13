@@ -160,7 +160,7 @@ export default function PagoProveedorChequeTesoreriaModal({
                             aria-busy={busy}
                             onClick={() => void seleccionarProveedor(p.id)}
                           >
-                            {busy ? "GUARDANDO…" : "SELECCIONAR"}
+                            {busy ? "Guardando…" : "Seleccionar"}
                           </Button>
                         </TableCell>
                       </TableRow>
