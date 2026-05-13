@@ -261,7 +261,7 @@ export default function PosicionIvaBalanceClient({
 
   return (
     <div className="area-page-shell">
-      <ClassicFilteredTableLayout title="Balance" subtitle="Posición de IVA" contentWidth="full">
+      <ClassicFilteredTableLayout title="Finanzas" subtitle="Posición de IVA" contentWidth="full">
         <div className="flex flex-1 min-h-0 flex-col pb-4">
           <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">

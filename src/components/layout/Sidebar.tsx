@@ -168,12 +168,6 @@ const FINANZAS_MODULES: {
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
-      {
-        href: "/finanzas/balance/posicion-iva",
-        label: "Posición de IVA",
-        icon: <Percent className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.finanzas.acceso,
-      },
     ],
   },
   {
@@ -185,6 +179,12 @@ const FINANZAS_MODULES: {
         href: "/finanzas/tesoreria",
         label: "Tesorería",
         icon: <Banknote className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
+        href: "/finanzas/posicion-iva",
+        label: "Posición de IVA",
+        icon: <Percent className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.finanzas.acceso,
       },
       {
@@ -239,6 +239,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/finanzas/vencimientos-gastos") return pathname === "/finanzas/vencimientos-gastos";
   if (href === "/finanzas/venc-por-fecha") return pathname === "/finanzas/venc-por-fecha";
   if (href === "/finanzas/control-comprobantes") return pathname === "/finanzas/control-comprobantes";
+  if (href === "/finanzas/posicion-iva")
+    return pathname === "/finanzas/posicion-iva" || pathname === "/finanzas/balance/posicion-iva";
   if (href === "/finanzas/balance/mensual")
     return pathname === "/finanzas/balance/mensual" || pathname === "/finanzas/balance";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";

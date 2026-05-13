@@ -58,7 +58,7 @@ export async function guardarFinBalPosicionIvaSaldoManualAction(
     return { ok: false, error: "No se pudo guardar el saldo." };
   }
 
-  revalidatePath("/finanzas/balance/posicion-iva");
+  revalidatePath("/finanzas/posicion-iva");
   revalidatePedidoUrgenteTrasCambioIvaSaldo();
   return { ok: true, data: { saldoPesos } };
 }
@@ -78,7 +78,7 @@ export async function eliminarFinBalPosicionIvaSaldoManualAction(
     return { ok: false, error: "No se pudo restaurar el cálculo automático." };
   }
 
-  revalidatePath("/finanzas/balance/posicion-iva");
+  revalidatePath("/finanzas/posicion-iva");
   revalidatePedidoUrgenteTrasCambioIvaSaldo();
   return { ok: true, data: undefined };
 }

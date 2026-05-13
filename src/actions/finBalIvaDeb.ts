@@ -80,7 +80,7 @@ export async function importarFinBalIvaDebCsvAction(formData: FormData): Promise
   const res = await importarCsvIvaDebitoMes({ textoCsv, mes, anio });
   if (!res.success) return { ok: false, error: res.error };
 
-  revalidatePath("/finanzas/balance/posicion-iva");
+  revalidatePath("/finanzas/posicion-iva");
   return { ok: true, data: res.data };
 }
 

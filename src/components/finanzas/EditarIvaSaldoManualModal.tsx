@@ -136,12 +136,8 @@ export default function EditarIvaSaldoManualModal({
         }
       >
         <div className="flex flex-col gap-3 text-sm">
-          <p className="text-muted-foreground">
-            Si guardás un importe, el saldo mostrado será ese valor y las columnas IVA débito e IVA crédito
-            aparecerán vacías para este mes.
-          </p>
           <div className="space-y-2">
-            <Label htmlFor="iva-saldo-manual-importe">Importe IVA saldo ($)</Label>
+            <Label htmlFor="iva-saldo-manual-importe">Importe IVA saldo</Label>
             <Input
               id="iva-saldo-manual-importe"
               inputMode="numeric"
