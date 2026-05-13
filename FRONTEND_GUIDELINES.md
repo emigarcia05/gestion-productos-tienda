@@ -187,7 +187,7 @@ Registro de simplificaciones y reglas para que no reaparezcan patrones inútiles
 - Patrón pensado para tablas donde hay **datos principales** (configuración, acciones) y un **bloque de resumen secundario** (stock, métricas) en la misma fila.
 - Referencia: módulo **Pedido Reposición** (`TablaReposicion`).
 - Estructura:
-  - Columnas principales a la izquierda: DESCRIPCIÓN, FORMA PEDIR, PUNTO REPOSICIÓN, CANT. REPOSICIÓN, acciones (botón de basura).
+  - Columnas principales a la izquierda: DESCRIPCIÓN, FORMA PEDIR, PUNTO REPOSIC., **CANT. REPOSIC.** (valor persistido `prod_ped_merc.reposicion_cant_conf`, campo **`ItemReposicion.cant`** en `getReposicionData`), acciones (botón de basura).
   - Bloque secundario a la derecha: STOCK, CANT. A PEDIR.
 - Clases globales:
   - Encabezados secundarios: `tabla-bloque-secundario-head` / `tabla-bloque-secundario-head-divider` (misma tipografía que el resto del encabezado; `*-divider` añade **solo** borde izquierdo entre sub-grupos).
@@ -894,7 +894,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-*Última actualización (2026-05-11): **`ChequesCajaTesoreriaModal`** — ícono **Acreditar** siempre habilitado en vista **ACTUALES**; modal **Destino Cheque**: si el cheque está **al día** (`chequePuedeAcreditarsePorFechaArgentina`) se ofrecen **Acreditar En Cuenta Propia** y **Pago Proveedor**; si está **diferido**, aviso **`CALLOUT_WARNING_CLASS`** y solo **Pago Proveedor**. **Acreditar En Cuenta Propia** → **`AcreditarChequeTesoreriaModal`** (transferencia con `entregaProveedorId` del cheque). **Pago Proveedor** → **`PagoProveedorChequeTesoreriaModal`** + `marcarEntregaProveedorFinTesoreriaChequeAction`. Alta/edición siguen con **Entrega Proveedor**. **Detalles De Cheques**: `AppModal` `xl` sin `max-w` extra; contenedor tabla `w-full min-w-0`; `colgroup` porcentajes (ACTUALES+editor: TIPO 15, TEN/EMIS 19, MONTO 15, ACRED./PROV. 6/6, DÍAS 5, ACC. 15; lectura 7 col.; entregados 8 col.).*
+*Última actualización (2026-05-11): **`ChequesCajaTesoreriaModal`** — ícono **Acreditar** siempre habilitado en vista **ACTUALES**; modal **Destino Cheque** (`DestinoChequeTesoreriaModal`): ambos botones CTA **`Button`** **default** (formato primario clásico); si el cheque está **al día** (`chequePuedeAcreditarsePorFechaArgentina`) se ofrecen **Acreditar En Cuenta Propia** y **Pago Proveedor**; si está **diferido**, aviso **`CALLOUT_WARNING_CLASS`** y solo **Pago Proveedor**. **Acreditar En Cuenta Propia** → **`AcreditarChequeTesoreriaModal`** (tabla solo **CAJA** y **TITULAR**; doble clic en fila para acreditar; **Loader2** en fila si ocupado; transferencia con `entregaProveedorId` del cheque). **Pago Proveedor** → **`PagoProveedorChequeTesoreriaModal`** + `marcarEntregaProveedorFinTesoreriaChequeAction`. Alta/edición siguen con **Entrega Proveedor**. **Detalles De Cheques**: `AppModal` `xl` + **`className="max-w-[calc(48rem*1.3)]"`** (+30% sobre `max-w-3xl` / 48rem); contenedor tabla `w-full min-w-0`; `colgroup` porcentajes (ACTUALES+editor: TIPO 15, TEN/EMIS 19, MONTO 15, ACRED./PROV. 6/6, DÍAS 5, ACC. 15; lectura 7 col.; entregados 8 col.).*
 
 *Última actualización (2026-05-16): **`ChequesCajaTesoreriaModal`** — columna **PROV. MERC.**; **Entrega Proveedor** en alta/edición/acreditación (proveedores mercadería).*
 

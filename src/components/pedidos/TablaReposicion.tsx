@@ -147,7 +147,7 @@ export default function TablaReposicion({
               const isSaving = savingId === key;
               const tieneRegla = item.idReposicion != null;
               const puntoVal = tieneRegla ? item.puntoReposicion : "";
-              const cantVal = tieneRegla ? item.cantPedidaReposicion : "";
+              const cantReposicVal = tieneRegla ? item.cant : "";
               const cantAPedirVal = tieneRegla ? item.cantPedir : "";
 
               return (
@@ -170,7 +170,7 @@ export default function TablaReposicion({
                     {puntoVal === "" ? "" : puntoVal}
                   </TableCell>
                   <TableCell className="celda-datos tabular-nums">
-                    {cantVal === "" ? "" : cantVal}
+                    {cantReposicVal === "" ? "" : cantReposicVal}
                   </TableCell>
                   <TableCell
                     className={cn(

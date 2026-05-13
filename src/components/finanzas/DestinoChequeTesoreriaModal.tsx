@@ -82,7 +82,6 @@ export default function DestinoChequeTesoreriaModal({
             ) : null}
             <Button
               type="button"
-              variant="secondary"
               className="h-11 w-full"
               disabled={!cheque}
               onClick={() => {

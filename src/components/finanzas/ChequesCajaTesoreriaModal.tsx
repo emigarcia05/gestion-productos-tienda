@@ -143,6 +143,7 @@ export default function ChequesCajaTesoreriaModal({
         <AppModal
           title="Detalles De Cheques"
           size="xl"
+          className="max-w-[calc(48rem*1.3)]"
           padding="sm"
           scrollBody={false}
           bodyClassName="min-h-0 overflow-hidden flex flex-col"
