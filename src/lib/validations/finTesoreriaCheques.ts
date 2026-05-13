@@ -41,10 +41,6 @@ export const crearFinTesoreriaChequeSchema = z.object({
   entregaProveedorId: entregaProveedorMercaderiaIdChequeSchema,
 });
 
-export const finTesoreriaChequesVistaSchema = z.enum(["actuales", "entregados"]);
-
-export type FinTesoreriaChequesVista = z.infer<typeof finTesoreriaChequesVistaSchema>;
-
 /** Filtro de custodia en detalle de cheques: en tienda vs. ya depositado o entregado a proveedor. */
 export const finTesoreriaChequesTenenciaFiltroSchema = z.enum(["actuales", "depositados"]);
 
@@ -52,7 +48,6 @@ export type FinTesoreriaChequesTenenciaFiltro = z.infer<typeof finTesoreriaChequ
 
 export const listarFinTesoreriaChequesPorCajaSchema = z.object({
   cajaId: prismaCuidSchema,
-  vista: finTesoreriaChequesVistaSchema.default("actuales"),
   tenenciaFiltro: finTesoreriaChequesTenenciaFiltroSchema.default("actuales"),
 });
 

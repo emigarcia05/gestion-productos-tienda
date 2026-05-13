@@ -26,14 +26,10 @@ import { listarChequesPorCajaAction } from "@/actions/finTesoreriaCheques";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import type { TenenciaChequeTesoreria } from "@prisma/client";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
-import type {
-  FinTesoreriaChequesTenenciaFiltro,
-  FinTesoreriaChequesVista,
-} from "@/lib/validations/finTesoreriaCheques";
+import type { FinTesoreriaChequesTenenciaFiltro } from "@/lib/validations/finTesoreriaCheques";
 import { fmtPrecio } from "@/lib/format";
 import {
   chequePuedeAcreditarsePorFechaArgentina,
-  formatFechaHoraCompletaArgentina,
   formatIsoYmdDdMmYyyyArgentina,
   textoDiasFaltantesAcreditacionCheque,
 } from "@/lib/fechaArgentina";
@@ -54,12 +50,10 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** Vista ACTUALES + editor (9 col): TIPO, TENENCIA, TENEDOR, …, ACCIONES. */
-const COL_ANCHOS_ACTUALES_EDITOR = [11, 8, 17, 17, 13, 6, 6, 5, 17] as const;
-/** Vista ACTUALES sin editor (8 col). */
-const COL_ANCHOS_ACTUALES_LECTURA = [12, 9, 18, 18, 15, 7, 7, 14] as const;
-/** ENTREGADOS + TENENCIA (9 col). */
-const COL_ANCHOS_ENTREGADOS = [11, 8, 16, 16, 12, 9, 10, 10, 8] as const;
+/** Detalle cheques + editor (9 col): TIPO, TENENCIA, TENEDOR, …, ACCIONES. */
+const COL_ANCHOS_EDITOR = [11, 8, 17, 17, 13, 6, 6, 5, 17] as const;
+/** Detalle cheques sin editor (8 col). */
+const COL_ANCHOS_LECTURA = [12, 9, 18, 18, 15, 7, 7, 14] as const;
 
 function etiquetaTenenciaCheque(t: TenenciaChequeTesoreria): string {
   switch (t) {
@@ -89,7 +83,6 @@ export default function ChequesCajaTesoreriaModal({
   esEditor,
   onChequesChanged,
 }: Props) {
-  const [vistaCheques, setVistaCheques] = useState<FinTesoreriaChequesVista>("actuales");
   const [tenenciaFiltro, setTenenciaFiltro] = useState<FinTesoreriaChequesTenenciaFiltro>("actuales");
   const [filas, setFilas] = useState<FinTesoreriaChequeItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -100,15 +93,12 @@ export default function ChequesCajaTesoreriaModal({
   const [chequeParaPagoProveedor, setChequeParaPagoProveedor] =
     useState<FinTesoreriaChequeItem | null>(null);
 
-  const esVistaActuales = vistaCheques === "actuales";
-
   const cargar = useCallback(async () => {
     if (!caja) return;
     setLoading(true);
     try {
       const res = await listarChequesPorCajaAction({
         cajaId: caja.id,
-        vista: vistaCheques,
         tenenciaFiltro,
       });
       if (!res.ok) {
@@ -120,7 +110,7 @@ export default function ChequesCajaTesoreriaModal({
     } finally {
       setLoading(false);
     }
-  }, [caja, vistaCheques, tenenciaFiltro]);
+  }, [caja, tenenciaFiltro]);
 
   useEffect(() => {
     if (!open || !caja) return;
@@ -144,24 +134,18 @@ export default function ChequesCajaTesoreriaModal({
     setChequeParaDestino(null);
     setChequeParaAcreditar(null);
     setChequeParaPagoProveedor(null);
-    setVistaCheques("actuales");
     setTenenciaFiltro("actuales");
     onOpenChange(false);
     setFilas([]);
   }
 
-  const colCount = !esVistaActuales ? 9 : esEditor ? 9 : 8;
-  const anchos = !esVistaActuales
-    ? COL_ANCHOS_ENTREGADOS
-    : esEditor
-      ? COL_ANCHOS_ACTUALES_EDITOR
-      : COL_ANCHOS_ACTUALES_LECTURA;
+  const colCount = esEditor ? 9 : 8;
+  const anchos = esEditor ? COL_ANCHOS_EDITOR : COL_ANCHOS_LECTURA;
 
-  const mensajeVacio = esVistaActuales
-    ? tenenciaFiltro === "actuales"
+  const mensajeVacio =
+    tenenciaFiltro === "actuales"
       ? "No hay cheques en custodia de tienda para esta caja."
-      : "No hay cheques depositados o entregados a proveedor pendientes en esta vista."
-    : "No hay cheques entregados en el historial de esta caja.";
+      : "No hay cheques depositados o entregados a proveedor para esta caja.";
 
   return (
     <>
@@ -196,33 +180,6 @@ export default function ChequesCajaTesoreriaModal({
         >
           <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="flex shrink-0 flex-wrap items-end gap-3 border-b border-border bg-muted/40 px-3 py-2">
-              <label className="flex min-w-[12rem] flex-col gap-1">
-                <ModalMicroLabel>Vista</ModalMicroLabel>
-                <Select
-                  value={vistaCheques}
-                  onValueChange={(valor) => {
-                    setVistaCheques(valor as FinTesoreriaChequesVista);
-                    setTenenciaFiltro("actuales");
-                    setChequeEliminando(null);
-                    setChequeParaDestino(null);
-                    setChequeParaAcreditar(null);
-                    setChequeParaPagoProveedor(null);
-                  }}
-                >
-                  <SelectTrigger className="input-filtro-unificado h-9 min-h-9" aria-label="Vista de cheques">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    className="select-content-filtro"
-                  >
-                    <SelectItem value="actuales">ACTUALES</SelectItem>
-                    <SelectItem value="entregados">ENTREGADOS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
               <label className="flex min-w-[12rem] flex-col gap-1">
                 <ModalMicroLabel>Tenencia</ModalMicroLabel>
                 <Select
@@ -269,15 +226,8 @@ export default function ChequesCajaTesoreriaModal({
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>ACREDITACION</TableHead>
                     <TableHead className={cn(CELL_MIN)}>PROV. MERC.</TableHead>
-                    {esVistaActuales ? (
-                      <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
-                    ) : (
-                      <>
-                        <TableHead className={cn(TH_NUM, CELL_MIN)}>ENTREGA.</TableHead>
-                        <TableHead className={cn(CELL_MIN)}>DESTINO.</TableHead>
-                      </>
-                    )}
-                    {esVistaActuales && esEditor ? (
+                    <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
+                    {esEditor ? (
                       <TableHead
                         className={cn(
                           "text-center tabla-bloque-secundario-head-divider",
@@ -332,27 +282,10 @@ export default function ChequesCajaTesoreriaModal({
                           >
                             <span className="block truncate">{row.entregaProveedorNombre ?? "—"}</span>
                           </TableCell>
-                          {esVistaActuales ? (
-                            <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                              {textoDiasFaltantesAcreditacionCheque(row.fechaAcreditacionIso)}
-                            </TableCell>
-                          ) : (
-                            <>
-                              <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                                {row.fechaTransferenciaIso
-                                  ? formatFechaHoraCompletaArgentina(
-                                      new Date(row.fechaTransferenciaIso)
-                                    )
-                                  : "—"}
-                              </TableCell>
-                              <TableCell className={cn("celda-datos", CELL_MIN)} title={row.cajaDestinoEtiqueta ?? undefined}>
-                                <span className="block truncate">
-                                  {row.cajaDestinoEtiqueta ?? "—"}
-                                </span>
-                              </TableCell>
-                            </>
-                          )}
-                          {esVistaActuales && esEditor ? (
+                          <TableCell className={cn(TD_NUM, CELL_MIN)}>
+                            {textoDiasFaltantesAcreditacionCheque(row.fechaAcreditacionIso)}
+                          </TableCell>
+                          {esEditor ? (
                             <TableCell
                               className={cn(
                                 "celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider",

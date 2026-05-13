@@ -7,7 +7,6 @@ import type {
   ActualizarFinTesoreriaChequeInput,
   CrearFinTesoreriaChequeInput,
   FinTesoreriaChequesTenenciaFiltro,
-  FinTesoreriaChequesVista,
   MarcarEntregaProveedorChequeInput,
   TransferirFinTesoreriaChequeInput,
 } from "@/lib/validations/finTesoreriaCheques";
@@ -194,25 +193,17 @@ export async function sumarMontosChequesDiferidosPorFechaAcreditacion(
 
 export async function listarChequesPorCajaId(
   cajaId: string,
-  vista: FinTesoreriaChequesVista,
   tenenciaFiltro: FinTesoreriaChequesTenenciaFiltro = "actuales"
 ): Promise<FinTesoreriaChequeItem[]> {
   await eliminarChequesTransferidosVencidos();
 
-  const baseWhere =
-    vista === "actuales"
-      ? { cajaId, fechaTransferencia: null }
-      : { cajaId, fechaTransferencia: { not: null } };
-
-  const tenenciaWhere =
+  const where =
     tenenciaFiltro === "actuales"
-      ? { tenencia: "TIENDA" as const }
-      : { tenencia: { in: ["DEPOSITADO" as const, "PROVEEDOR" as const] } };
-
-  const where = { ...baseWhere, ...tenenciaWhere };
+      ? { cajaId, fechaTransferencia: null, tenencia: "TIENDA" as const }
+      : { cajaId, tenencia: { in: ["DEPOSITADO" as const, "PROVEEDOR" as const] } };
 
   const orderBy =
-    vista === "actuales"
+    tenenciaFiltro === "actuales"
       ? [{ fechaAcreditacion: "desc" as const }, { createdAt: "desc" as const }]
       : [{ fechaTransferencia: "desc" as const }, { createdAt: "desc" as const }];
 
