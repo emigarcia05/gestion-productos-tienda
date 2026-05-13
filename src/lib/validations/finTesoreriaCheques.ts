@@ -38,8 +38,8 @@ export const crearFinTesoreriaChequeSchema = z.object({
   fechaRecibido: isoYmdSchema,
 });
 
-/** Filtro de custodia en detalle de cheques: en tienda vs. ya depositado o entregado a proveedor. */
-export const finTesoreriaChequesTenenciaFiltroSchema = z.enum(["actuales", "depositados"]);
+/** Filtro de custodia en detalle de cheques: en tienda vs. transferidos a cuenta o entregados a proveedor. */
+export const finTesoreriaChequesTenenciaFiltroSchema = z.enum(["actuales", "transferidos"]);
 
 export type FinTesoreriaChequesTenenciaFiltro = z.infer<typeof finTesoreriaChequesTenenciaFiltroSchema>;
 

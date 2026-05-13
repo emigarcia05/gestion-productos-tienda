@@ -217,15 +217,25 @@ export function diasCalendarioDesdeHastaIsoYmdArgentina(
 
 /**
  * Días calendario (Argentina): fecha de acreditación menos hoy (`YYYY-MM-DD`).
- * Positivo si la acreditación es futura; `0` si es hoy; negativo (prefijo `-`) si ya pasó.
+ * Positivo si la acreditación es futura; `0` si es hoy; negativo si ya pasó.
+ * `NaN` si `fechaAcreditacionIso` no es una fecha válida.
  */
-export function diasTextoAcreditacionMenosHoyArgentina(fechaAcreditacionIso: string): string {
+export function diasNumericosAcreditacionMenosHoyArgentina(fechaAcreditacionIso: string): number {
   const hoy = dateToIsoYmdArgentina(new Date());
   const futuroHasta = diasCalendarioDesdeHastaIsoYmdArgentina(hoy, fechaAcreditacionIso);
-  if (futuroHasta !== null) return String(futuroHasta);
+  if (futuroHasta !== null) return futuroHasta;
   const diasPasados = diasCalendarioDesdeHastaIsoYmdArgentina(fechaAcreditacionIso, hoy);
-  if (diasPasados === null) return "";
-  return diasPasados === 0 ? "0" : `-${diasPasados}`;
+  if (diasPasados === null) return Number.NaN;
+  return diasPasados === 0 ? 0 : -diasPasados;
+}
+
+/**
+ * Igual que {@link diasNumericosAcreditacionMenosHoyArgentina} en texto; vacío si no es fecha válida.
+ */
+export function diasTextoAcreditacionMenosHoyArgentina(fechaAcreditacionIso: string): string {
+  const n = diasNumericosAcreditacionMenosHoyArgentina(fechaAcreditacionIso);
+  if (!Number.isFinite(n)) return "";
+  return String(n);
 }
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -22,14 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BadgeCheck, Pencil, Plus, Trash2 } from "lucide-react";
-import { listarChequesPorCajaAction } from "@/actions/finTesoreriaCheques";
+import { listarChequesPorCajaAction, marcarEntregaProveedorFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
-import type { TipoChequeTesoreria } from "@prisma/client";
+import type { TenenciaChequeTesoreria, TipoChequeTesoreria } from "@prisma/client";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import type { FinTesoreriaChequesTenenciaFiltro } from "@/lib/validations/finTesoreriaCheques";
 import { fmtPrecio } from "@/lib/format";
 import {
   chequePuedeAcreditarsePorFechaArgentina,
+  dateToIsoYmdArgentina,
+  diasNumericosAcreditacionMenosHoyArgentina,
   diasTextoAcreditacionMenosHoyArgentina,
   formatIsoYmdDdMmYyyyArgentina,
 } from "@/lib/fechaArgentina";
@@ -39,7 +41,6 @@ import EditarChequeTesoreriaModal from "@/components/finanzas/EditarChequeTesore
 import EliminarChequeTesoreriaModal from "@/components/finanzas/EliminarChequeTesoreriaModal";
 import AcreditarChequeTesoreriaModal from "@/components/finanzas/AcreditarChequeTesoreriaModal";
 import DestinoChequeTesoreriaModal from "@/components/finanzas/DestinoChequeTesoreriaModal";
-import PagoProveedorChequeTesoreriaModal from "@/components/finanzas/PagoProveedorChequeTesoreriaModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -51,13 +52,35 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** Detalle cheques + editor (8 col): RECIBIDO, TIPO, TENEDOR, EMISOR, MONTO, ACREDITACION, DÍAS, ACCIONES. */
+/** Detalle cheques + editor (8 col), filtro ACTUALES. */
 const COL_ANCHOS_EDITOR = [10, 8, 16, 18, 10, 11, 7, 20] as const;
-/** Detalle cheques sin editor (7 col). */
+/** Detalle cheques sin editor (7 col), filtro ACTUALES. */
 const COL_ANCHOS_LECTURA = [11, 9, 18, 22, 11, 12, 17] as const;
+/** Filtro TRANSFERIDOS + editor (6 col). */
+const COL_ANCHOS_TRANSFERIDOS_EDITOR = [12, 22, 18, 14, 14, 20] as const;
+/** Filtro TRANSFERIDOS sin editor (5 col). */
+const COL_ANCHOS_TRANSFERIDOS_LECTURA = [14, 28, 20, 16, 22] as const;
 
 function etiquetaTipoCheque(t: TipoChequeTesoreria): string {
   return t === "ECHEQUE" ? "E-CHEQUE" : "FÍSICO";
+}
+
+function etiquetaTenenciaCheque(t: TenenciaChequeTesoreria): string {
+  switch (t) {
+    case "TIENDA":
+      return "TIENDA";
+    case "DEPOSITADO":
+      return "DEPOSITADO";
+    case "PROVEEDOR":
+      return "PROVEEDOR";
+    default:
+      return t;
+  }
+}
+
+function etiquetaFechaTransferenciaDdMmYyyy(isoUtc: string | null): string {
+  if (!isoUtc) return "—";
+  return formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date(isoUtc)));
 }
 
 interface Props {
@@ -82,8 +105,6 @@ export default function ChequesCajaTesoreriaModal({
   const [chequeEliminando, setChequeEliminando] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaDestino, setChequeParaDestino] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaAcreditar, setChequeParaAcreditar] = useState<FinTesoreriaChequeItem | null>(null);
-  const [chequeParaPagoProveedor, setChequeParaPagoProveedor] =
-    useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaEditar, setChequeParaEditar] = useState<FinTesoreriaChequeItem | null>(null);
 
   const cargar = useCallback(async () => {
@@ -116,7 +137,6 @@ export default function ChequesCajaTesoreriaModal({
       setChequeEliminando(null);
       setChequeParaDestino(null);
       setChequeParaAcreditar(null);
-      setChequeParaPagoProveedor(null);
       setChequeParaEditar(null);
       setTenenciaFiltro("actuales");
     }
@@ -127,20 +147,54 @@ export default function ChequesCajaTesoreriaModal({
     setChequeEliminando(null);
     setChequeParaDestino(null);
     setChequeParaAcreditar(null);
-    setChequeParaPagoProveedor(null);
     setChequeParaEditar(null);
     setTenenciaFiltro("actuales");
     onOpenChange(false);
     setFilas([]);
   }
 
-  const colCount = esEditor ? 8 : 7;
-  const anchos = esEditor ? COL_ANCHOS_EDITOR : COL_ANCHOS_LECTURA;
+  const esVistaTransferidos = tenenciaFiltro === "transferidos";
+  const colCount =
+    esVistaTransferidos ? (esEditor ? 6 : 5) : esEditor ? 8 : 7;
+  const anchos = esVistaTransferidos
+    ? esEditor
+      ? COL_ANCHOS_TRANSFERIDOS_EDITOR
+      : COL_ANCHOS_TRANSFERIDOS_LECTURA
+    : esEditor
+      ? COL_ANCHOS_EDITOR
+      : COL_ANCHOS_LECTURA;
 
   const mensajeVacio =
     tenenciaFiltro === "actuales"
       ? "No hay cheques en custodia de tienda para esta caja."
-      : "No hay cheques depositados o entregados a proveedor para esta caja.";
+      : "No hay cheques transferidos a cuenta o entregados a proveedor para esta caja.";
+
+  const filasParaTabla = useMemo(() => {
+    const copia = [...filas];
+    if (tenenciaFiltro === "transferidos") {
+      return copia.sort((a, b) => {
+        const ta = a.fechaTransferenciaIso;
+        const tb = b.fechaTransferenciaIso;
+        if (ta && tb) {
+          if (tb !== ta) return tb.localeCompare(ta);
+          return a.id.localeCompare(b.id);
+        }
+        if (ta && !tb) return -1;
+        if (!ta && tb) return 1;
+        return a.id.localeCompare(b.id);
+      });
+    }
+    return copia.sort((a, b) => {
+      const da = diasNumericosAcreditacionMenosHoyArgentina(a.fechaAcreditacionIso);
+      const db = diasNumericosAcreditacionMenosHoyArgentina(b.fechaAcreditacionIso);
+      const aOk = Number.isFinite(da);
+      const bOk = Number.isFinite(db);
+      if (aOk && bOk && da !== db) return da - db;
+      if (aOk && !bOk) return -1;
+      if (!aOk && bOk) return 1;
+      return a.id.localeCompare(b.id);
+    });
+  }, [filas, tenenciaFiltro]);
 
   return (
     <>
@@ -159,7 +213,12 @@ export default function ChequesCajaTesoreriaModal({
                   type="button"
                   className="gap-2"
                   onClick={() => setOpenAlta(true)}
-                  disabled={!caja}
+                  disabled={!caja || esVistaTransferidos}
+                  title={
+                    esVistaTransferidos
+                      ? "Cambiá a ACTUALES para registrar un cheque nuevo."
+                      : undefined
+                  }
                 >
                   <Plus className="h-4 w-4 shrink-0" aria-hidden />
                   Registrar Cheque
@@ -184,7 +243,6 @@ export default function ChequesCajaTesoreriaModal({
                     setChequeEliminando(null);
                     setChequeParaDestino(null);
                     setChequeParaAcreditar(null);
-                    setChequeParaPagoProveedor(null);
                     setChequeParaEditar(null);
                   }}
                 >
@@ -201,7 +259,7 @@ export default function ChequesCajaTesoreriaModal({
                     className="select-content-filtro"
                   >
                     <SelectItem value="actuales">ACTUALES</SelectItem>
-                    <SelectItem value="depositados">DEPOSITADOS</SelectItem>
+                    <SelectItem value="transferidos">TRANSFERIDOS</SelectItem>
                   </SelectContent>
                 </Select>
               </label>
@@ -210,28 +268,50 @@ export default function ChequesCajaTesoreriaModal({
               <Table variant="compact" scrollX={false} className="table-fixed w-full">
                 <colgroup>
                   {anchos.map((pct, i) => (
-                    <col key={i} style={{ width: `${pct}%` }} />
+                    <col key={`${tenenciaFiltro}-${i}`} style={{ width: `${pct}%` }} />
                   ))}
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>RECIBIDO</TableHead>
-                    <TableHead className={CELL_MIN}>TIPO</TableHead>
-                    <TableHead className={CELL_MIN}>TENEDOR</TableHead>
-                    <TableHead className={CELL_MIN}>EMISOR</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>ACREDITACION</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
-                    {esEditor ? (
-                      <TableHead
-                        className={cn(
-                          "text-center tabla-bloque-secundario-head-divider",
-                          CELL_MIN
-                        )}
-                      >
-                        ACCIONES
-                      </TableHead>
-                    ) : null}
+                    {esVistaTransferidos ? (
+                      <>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>RECIBIDO</TableHead>
+                        <TableHead className={CELL_MIN}>EMISOR</TableHead>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>TRANSFERENCIA</TableHead>
+                        <TableHead className={CELL_MIN}>TENEDOR</TableHead>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+                        {esEditor ? (
+                          <TableHead
+                            className={cn(
+                              "text-center tabla-bloque-secundario-head-divider",
+                              CELL_MIN
+                            )}
+                          >
+                            ACCIONES
+                          </TableHead>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>RECIBIDO</TableHead>
+                        <TableHead className={CELL_MIN}>TIPO</TableHead>
+                        <TableHead className={CELL_MIN}>TENEDOR</TableHead>
+                        <TableHead className={CELL_MIN}>EMISOR</TableHead>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>ACREDITACION</TableHead>
+                        <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
+                        {esEditor ? (
+                          <TableHead
+                            className={cn(
+                              "text-center tabla-bloque-secundario-head-divider",
+                              CELL_MIN
+                            )}
+                          >
+                            ACCIONES
+                          </TableHead>
+                        ) : null}
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -247,11 +327,77 @@ export default function ChequesCajaTesoreriaModal({
                   ) : filas.length === 0 ? (
                     <EmptyTableRow colSpan={colCount} message={mensajeVacio} />
                   ) : (
-                    filas.map((row) => {
+                    filasParaTabla.map((row) => {
+                      const transferido = row.fechaTransferenciaIso != null;
+                      if (esVistaTransferidos) {
+                        return (
+                          <TableRow key={row.id} className="h-10 min-h-10 max-h-10">
+                            <TableCell className={cn(TD_NUM, CELL_MIN)}>
+                              {formatIsoYmdDdMmYyyyArgentina(row.fechaRecibidoIso)}
+                            </TableCell>
+                            <TableCell className={cn("celda-datos", CELL_MIN)} title={row.emisor}>
+                              <span className="block truncate">{row.emisor}</span>
+                            </TableCell>
+                            <TableCell className={cn(TD_NUM, CELL_MIN)}>
+                              {etiquetaFechaTransferenciaDdMmYyyy(row.fechaTransferenciaIso)}
+                            </TableCell>
+                            <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
+                              {etiquetaTenenciaCheque(row.tenencia)}
+                            </TableCell>
+                            <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
+                              ${fmtPrecio(row.monto)}
+                            </TableCell>
+                            {esEditor ? (
+                              <TableCell
+                                className={cn(
+                                  "celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider",
+                                  CELL_MIN
+                                )}
+                              >
+                                <div
+                                  className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "h-full")}
+                                >
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                    disabled={transferido}
+                                    onClick={() => setChequeParaEditar(row)}
+                                    aria-label="Editar cheque"
+                                    title={
+                                      transferido
+                                        ? "No se puede editar un cheque ya transferido."
+                                        : "Editar cheque"
+                                    }
+                                  >
+                                    <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                    disabled={transferido}
+                                    onClick={() => setChequeEliminando(row)}
+                                    aria-label="Eliminar cheque"
+                                    title={
+                                      transferido
+                                        ? "No se puede eliminar un cheque ya transferido."
+                                        : "Eliminar cheque"
+                                    }
+                                  >
+                                    <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            ) : null}
+                          </TableRow>
+                        );
+                      }
                       const puedeAcreditar = chequePuedeAcreditarsePorFechaArgentina(
                         row.fechaAcreditacionIso
                       );
-                      const transferido = row.fechaTransferenciaIso != null;
                       const ofreceAcreditar = row.tenencia === "TIENDA" && !transferido;
                       return (
                         <TableRow key={row.id} className="h-10 min-h-10 max-h-10">
@@ -283,59 +429,61 @@ export default function ChequesCajaTesoreriaModal({
                                 CELL_MIN
                               )}
                             >
-                              <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "h-full")}>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                  disabled={transferido}
-                                  onClick={() => setChequeParaEditar(row)}
-                                  aria-label="Editar cheque"
-                                  title={
-                                    transferido
-                                      ? "No se puede editar un cheque ya transferido."
-                                      : "Editar cheque"
-                                  }
+                              <div
+                                  className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "h-full")}
                                 >
-                                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                                </Button>
-                                {ofreceAcreditar ? (
+                                  {ofreceAcreditar ? (
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                      onClick={() => setChequeParaDestino(row)}
+                                      aria-label="Transferir cheque"
+                                      title={
+                                        puedeAcreditar
+                                          ? "Elegir destino: transferir a cuenta propia o pago a proveedor."
+                                          : "Cheque diferido: en destino solo podés registrar pago a proveedor hasta la fecha de acreditación."
+                                      }
+                                    >
+                                      <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                    </Button>
+                                  ) : (
+                                    <span className="inline-flex w-9 shrink-0" aria-hidden />
+                                  )}
                                   <Button
                                     type="button"
                                     size="icon"
                                     variant="ghost"
                                     className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                    onClick={() => setChequeParaDestino(row)}
-                                    aria-label="Acreditar cheque"
+                                    disabled={transferido}
+                                    onClick={() => setChequeParaEditar(row)}
+                                    aria-label="Editar cheque"
                                     title={
-                                      puedeAcreditar
-                                        ? "Elegir destino: acreditar en cuenta propia o pago a proveedor."
-                                        : "Cheque diferido: en destino solo podés registrar pago a proveedor hasta la fecha de acreditación."
+                                      transferido
+                                        ? "No se puede editar un cheque ya transferido."
+                                        : "Editar cheque"
                                     }
                                   >
-                                    <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                    <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                   </Button>
-                                ) : (
-                                  <span className="inline-flex w-9 shrink-0" aria-hidden />
-                                )}
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                  disabled={transferido}
-                                  onClick={() => setChequeEliminando(row)}
-                                  aria-label="Eliminar cheque"
-                                  title={
-                                    transferido
-                                      ? "No se puede eliminar un cheque ya transferido."
-                                      : "Eliminar cheque"
-                                  }
-                                >
-                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                                </Button>
-                              </div>
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                    disabled={transferido}
+                                    onClick={() => setChequeEliminando(row)}
+                                    aria-label="Eliminar cheque"
+                                    title={
+                                      transferido
+                                        ? "No se puede eliminar un cheque ya transferido."
+                                        : "Eliminar cheque"
+                                    }
+                                  >
+                                    <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                  </Button>
+                                </div>
                             </TableCell>
                           ) : null}
                         </TableRow>
@@ -397,7 +545,18 @@ export default function ChequesCajaTesoreriaModal({
           if (chequeParaDestino) setChequeParaAcreditar(chequeParaDestino);
         }}
         onPagoProveedor={() => {
-          if (chequeParaDestino) setChequeParaPagoProveedor(chequeParaDestino);
+          const c = chequeParaDestino;
+          if (!c) return;
+          void (async () => {
+            const res = await marcarEntregaProveedorFinTesoreriaChequeAction({ chequeId: c.id });
+            if (!res.ok) {
+              toast.error(res.error ?? "No se pudo registrar el pago a proveedor.");
+              return;
+            }
+            toast.success("Custodia actualizada a proveedor.");
+            void cargar();
+            onChequesChanged?.();
+          })();
         }}
       />
 
@@ -414,18 +573,6 @@ export default function ChequesCajaTesoreriaModal({
         }}
       />
 
-      <PagoProveedorChequeTesoreriaModal
-        open={chequeParaPagoProveedor != null}
-        onOpenChange={(next) => {
-          if (!next) setChequeParaPagoProveedor(null);
-        }}
-        cheque={chequeParaPagoProveedor}
-        onGuardado={() => {
-          void cargar();
-          onChequesChanged?.();
-          setChequeParaPagoProveedor(null);
-        }}
-      />
     </>
   );
 }
