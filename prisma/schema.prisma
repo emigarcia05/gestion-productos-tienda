@@ -18,6 +18,13 @@ enum TipoChequeTesoreria {
   ECHEQUE
 }
 
+/** Custodia del cheque en tesorería (detalle de cheques). */
+enum TenenciaChequeTesoreria {
+  TIENDA
+  DEPOSITADO
+  PROVEEDOR
+}
+
 /**
  * Política de IVA por proveedor (`global_proveedores.iva`).
  * - SIEMPRE  : el proveedor siempre factura con IVA.
@@ -153,7 +160,9 @@ model FinTesoreriaCheque {
   tipo                TipoChequeTesoreria  @map("tipo")
   emisor              String
   /** Misma lista cerrada que `fin_tesoreria.titular` (titulares de caja). */
-  tenedor             String               @map("tenedor")
+  tenedor             String                 @map("tenedor")
+  /** Custodia: en tienda (alta), depositado (transferido a cuenta DIGITAL), proveedor (pago a proveedor mercadería). */
+  tenencia            TenenciaChequeTesoreria @default(TIENDA) @map("tenencia")
   monto               Int
   fechaAcreditacion   DateTime             @map("fecha_acreditacion") @db.Date
   /** Si no es null, el importe ya se acreditó en `cajaDestinoId`; no suma al disponible de la caja CHEQUE. */

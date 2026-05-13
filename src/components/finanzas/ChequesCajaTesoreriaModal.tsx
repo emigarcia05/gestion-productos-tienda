@@ -24,8 +24,12 @@ import {
 import { BadgeCheck, Plus, Trash2 } from "lucide-react";
 import { listarChequesPorCajaAction } from "@/actions/finTesoreriaCheques";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
+import type { TenenciaChequeTesoreria } from "@prisma/client";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
-import type { FinTesoreriaChequesVista } from "@/lib/validations/finTesoreriaCheques";
+import type {
+  FinTesoreriaChequesTenenciaFiltro,
+  FinTesoreriaChequesVista,
+} from "@/lib/validations/finTesoreriaCheques";
 import { fmtPrecio } from "@/lib/format";
 import {
   chequePuedeAcreditarsePorFechaArgentina,
@@ -50,12 +54,25 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** Vista ACTUALES + editor (8 col). Objetivo: TIPO 15, MONTO 15, DÍAS 5, ACCIONES 15; TEN/EMIS 19 c/u; ACRED + PROV. MERC. 6+6. */
-const COL_ANCHOS_ACTUALES_EDITOR = [15, 19, 19, 15, 6, 6, 5, 15] as const;
-/** Vista ACTUALES sin editor (7 col). */
-const COL_ANCHOS_ACTUALES_LECTURA = [15, 22, 22, 15, 8, 8, 10] as const;
-/** ENTREGADOS: TIPO, TENEDOR, EMISOR, MONTO, ACREDITACION, PROV. MERC., ENTREGA., DESTINO. */
-const COL_ANCHOS_ENTREGADOS = [12, 18, 18, 12, 9, 10, 11, 10] as const;
+/** Vista ACTUALES + editor (9 col): TIPO, TENENCIA, TENEDOR, …, ACCIONES. */
+const COL_ANCHOS_ACTUALES_EDITOR = [11, 8, 17, 17, 13, 6, 6, 5, 17] as const;
+/** Vista ACTUALES sin editor (8 col). */
+const COL_ANCHOS_ACTUALES_LECTURA = [12, 9, 18, 18, 15, 7, 7, 14] as const;
+/** ENTREGADOS + TENENCIA (9 col). */
+const COL_ANCHOS_ENTREGADOS = [11, 8, 16, 16, 12, 9, 10, 10, 8] as const;
+
+function etiquetaTenenciaCheque(t: TenenciaChequeTesoreria): string {
+  switch (t) {
+    case "TIENDA":
+      return "TIENDA";
+    case "DEPOSITADO":
+      return "DEPOSITADO";
+    case "PROVEEDOR":
+      return "PROVEEDOR";
+    default:
+      return t;
+  }
+}
 
 interface Props {
   open: boolean;
@@ -73,6 +90,7 @@ export default function ChequesCajaTesoreriaModal({
   onChequesChanged,
 }: Props) {
   const [vistaCheques, setVistaCheques] = useState<FinTesoreriaChequesVista>("actuales");
+  const [tenenciaFiltro, setTenenciaFiltro] = useState<FinTesoreriaChequesTenenciaFiltro>("actuales");
   const [filas, setFilas] = useState<FinTesoreriaChequeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [openAlta, setOpenAlta] = useState(false);
@@ -88,7 +106,11 @@ export default function ChequesCajaTesoreriaModal({
     if (!caja) return;
     setLoading(true);
     try {
-      const res = await listarChequesPorCajaAction({ cajaId: caja.id, vista: vistaCheques });
+      const res = await listarChequesPorCajaAction({
+        cajaId: caja.id,
+        vista: vistaCheques,
+        tenenciaFiltro,
+      });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo cargar los cheques.");
         setFilas([]);
@@ -98,7 +120,7 @@ export default function ChequesCajaTesoreriaModal({
     } finally {
       setLoading(false);
     }
-  }, [caja, vistaCheques]);
+  }, [caja, vistaCheques, tenenciaFiltro]);
 
   useEffect(() => {
     if (!open || !caja) return;
@@ -112,6 +134,7 @@ export default function ChequesCajaTesoreriaModal({
       setChequeParaDestino(null);
       setChequeParaAcreditar(null);
       setChequeParaPagoProveedor(null);
+      setTenenciaFiltro("actuales");
     }
   }, [open]);
 
@@ -122,11 +145,12 @@ export default function ChequesCajaTesoreriaModal({
     setChequeParaAcreditar(null);
     setChequeParaPagoProveedor(null);
     setVistaCheques("actuales");
+    setTenenciaFiltro("actuales");
     onOpenChange(false);
     setFilas([]);
   }
 
-  const colCount = !esVistaActuales ? 8 : esEditor ? 8 : 7;
+  const colCount = !esVistaActuales ? 9 : esEditor ? 9 : 8;
   const anchos = !esVistaActuales
     ? COL_ANCHOS_ENTREGADOS
     : esEditor
@@ -134,7 +158,9 @@ export default function ChequesCajaTesoreriaModal({
       : COL_ANCHOS_ACTUALES_LECTURA;
 
   const mensajeVacio = esVistaActuales
-    ? "No hay cheques actuales para esta caja."
+    ? tenenciaFiltro === "actuales"
+      ? "No hay cheques en custodia de tienda para esta caja."
+      : "No hay cheques depositados o entregados a proveedor pendientes en esta vista."
     : "No hay cheques entregados en el historial de esta caja.";
 
   return (
@@ -176,6 +202,7 @@ export default function ChequesCajaTesoreriaModal({
                   value={vistaCheques}
                   onValueChange={(valor) => {
                     setVistaCheques(valor as FinTesoreriaChequesVista);
+                    setTenenciaFiltro("actuales");
                     setChequeEliminando(null);
                     setChequeParaDestino(null);
                     setChequeParaAcreditar(null);
@@ -196,6 +223,35 @@ export default function ChequesCajaTesoreriaModal({
                   </SelectContent>
                 </Select>
               </label>
+              <label className="flex min-w-[12rem] flex-col gap-1">
+                <ModalMicroLabel>Tenencia</ModalMicroLabel>
+                <Select
+                  value={tenenciaFiltro}
+                  onValueChange={(valor) => {
+                    setTenenciaFiltro(valor as FinTesoreriaChequesTenenciaFiltro);
+                    setChequeEliminando(null);
+                    setChequeParaDestino(null);
+                    setChequeParaAcreditar(null);
+                    setChequeParaPagoProveedor(null);
+                  }}
+                >
+                  <SelectTrigger
+                    className="input-filtro-unificado h-9 min-h-9"
+                    aria-label="Filtro de tenencia del cheque"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="actuales">ACTUALES</SelectItem>
+                    <SelectItem value="depositados">DEPOSITADOS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
             </div>
             <div className="contenedor-tabla-gestion--pie-fijo-scroll max-h-[min(28rem,55vh)] min-h-[12rem] w-full min-w-0 flex-1">
               <Table variant="compact" scrollX={false} className="table-fixed w-full">
@@ -207,6 +263,7 @@ export default function ChequesCajaTesoreriaModal({
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className={CELL_MIN}>TIPO</TableHead>
+                    <TableHead className={CELL_MIN}>TENENCIA</TableHead>
                     <TableHead className={CELL_MIN}>TENEDOR</TableHead>
                     <TableHead className={CELL_MIN}>EMISOR</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
@@ -254,6 +311,9 @@ export default function ChequesCajaTesoreriaModal({
                           <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                             {row.tipo}
                           </TableCell>
+                          <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
+                            {etiquetaTenenciaCheque(row.tenencia)}
+                          </TableCell>
                           <TableCell className={cn("celda-datos", CELL_MIN)} title={row.tenedor}>
                             <span className="celda-destacado block truncate">{row.tenedor}</span>
                           </TableCell>
@@ -300,21 +360,25 @@ export default function ChequesCajaTesoreriaModal({
                               )}
                             >
                               <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "h-full")}>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                  onClick={() => setChequeParaDestino(row)}
-                                  aria-label="Acreditar cheque"
-                                  title={
-                                    puedeAcreditar
-                                      ? "Elegir destino: acreditar en cuenta propia o pago a proveedor."
-                                      : "Cheque diferido: en destino solo podés registrar pago a proveedor hasta la fecha de acreditación."
-                                  }
-                                >
-                                  <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                                </Button>
+                                {row.tenencia === "TIENDA" ? (
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                    onClick={() => setChequeParaDestino(row)}
+                                    aria-label="Acreditar cheque"
+                                    title={
+                                      puedeAcreditar
+                                        ? "Elegir destino: acreditar en cuenta propia o pago a proveedor."
+                                        : "Cheque diferido: en destino solo podés registrar pago a proveedor hasta la fecha de acreditación."
+                                    }
+                                  >
+                                    <BadgeCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                  </Button>
+                                ) : (
+                                  <span className="inline-flex w-9 shrink-0" aria-hidden />
+                                )}
                                 <Button
                                   type="button"
                                   size="icon"

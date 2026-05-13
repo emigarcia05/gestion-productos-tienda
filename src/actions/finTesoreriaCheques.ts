@@ -54,7 +54,11 @@ export async function listarChequesPorCajaAction(
   }
 
   try {
-    const items = await listarChequesPorCajaId(parsed.data.cajaId, parsed.data.vista);
+    const items = await listarChequesPorCajaId(
+      parsed.data.cajaId,
+      parsed.data.vista,
+      parsed.data.tenenciaFiltro
+    );
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar los cheques.";

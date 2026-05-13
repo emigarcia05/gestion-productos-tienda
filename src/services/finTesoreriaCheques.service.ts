@@ -1,4 +1,4 @@
-import type { TipoChequeTesoreria } from "@prisma/client";
+import type { TipoChequeTesoreria, TenenciaChequeTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA } from "@/lib/finTesoreriaChequesRetencion";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
@@ -6,6 +6,7 @@ import type { ServiceResult } from "@/types";
 import type {
   ActualizarFinTesoreriaChequeInput,
   CrearFinTesoreriaChequeInput,
+  FinTesoreriaChequesTenenciaFiltro,
   FinTesoreriaChequesVista,
   MarcarEntregaProveedorChequeInput,
   TransferirFinTesoreriaChequeInput,
@@ -29,6 +30,7 @@ export interface FinTesoreriaChequeItem {
   id: string;
   cajaId: string;
   tipo: TipoChequeTesoreria;
+  tenencia: TenenciaChequeTesoreria;
   tenedor: string;
   emisor: string;
   monto: number;
@@ -55,6 +57,7 @@ function mapCheque(row: {
   id: string;
   cajaId: string;
   tipo: TipoChequeTesoreria;
+  tenencia: TenenciaChequeTesoreria;
   tenedor: string;
   emisor: string;
   monto: number;
@@ -70,6 +73,7 @@ function mapCheque(row: {
     id: row.id,
     cajaId: row.cajaId,
     tipo: row.tipo,
+    tenencia: row.tenencia,
     tenedor: row.tenedor,
     emisor: row.emisor,
     monto: row.monto,
@@ -190,14 +194,22 @@ export async function sumarMontosChequesDiferidosPorFechaAcreditacion(
 
 export async function listarChequesPorCajaId(
   cajaId: string,
-  vista: FinTesoreriaChequesVista
+  vista: FinTesoreriaChequesVista,
+  tenenciaFiltro: FinTesoreriaChequesTenenciaFiltro = "actuales"
 ): Promise<FinTesoreriaChequeItem[]> {
   await eliminarChequesTransferidosVencidos();
 
-  const where =
+  const baseWhere =
     vista === "actuales"
       ? { cajaId, fechaTransferencia: null }
       : { cajaId, fechaTransferencia: { not: null } };
+
+  const tenenciaWhere =
+    tenenciaFiltro === "actuales"
+      ? { tenencia: "TIENDA" as const }
+      : { tenencia: { in: ["DEPOSITADO" as const, "PROVEEDOR" as const] } };
+
+  const where = { ...baseWhere, ...tenenciaWhere };
 
   const orderBy =
     vista === "actuales"
@@ -381,6 +393,7 @@ export async function transferirChequeFinTesoreria(
           fechaTransferencia: new Date(),
           cajaDestinoId: input.cajaDestinoId,
           entregaProveedorId: input.entregaProveedorId,
+          tenencia: "DEPOSITADO",
         },
       });
 
@@ -469,7 +482,10 @@ export async function marcarEntregaProveedorFinTesoreriaCheque(
   try {
     const row = await prisma.finTesoreriaCheque.update({
       where: { id: input.chequeId },
-      data: { entregaProveedorId: input.entregaProveedorId },
+      data: {
+        entregaProveedorId: input.entregaProveedorId,
+        tenencia: "PROVEEDOR",
+      },
       include: {
         cajaDestino: { select: { nombreCaja: true, titular: true } },
         entregaProveedor: { select: { nombre: true } },
