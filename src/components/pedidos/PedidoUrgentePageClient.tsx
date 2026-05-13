@@ -298,10 +298,6 @@ export default function PedidoUrgentePageClient({
             }
           >
             <div className="flex flex-col gap-3 text-sm text-foreground">
-              <p className="text-muted-foreground">
-                Elegí proveedor para cargar o editar la cantidad pedida. Los proveedores aparecen del
-                menor al mayor costo según el criterio vigente.
-              </p>
               {prioritarioElegirProveedor ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
@@ -312,7 +308,7 @@ export default function PedidoUrgentePageClient({
                       <li key={prioritarioElegirProveedor.codExt} className="bg-card">
                         <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
                           <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-2 text-center">
                               <span className="font-semibold text-foreground">
                                 {prioritarioElegirProveedor.prefijo?.trim() || "Proveedor 1"}
                               </span>
@@ -336,7 +332,7 @@ export default function PedidoUrgentePageClient({
                               );
                             }}
                           >
-                            Pedir A Este Proveedor
+                            SELECCIONAR PROVEEDOR
                           </Button>
                         </div>
                       </li>
@@ -352,7 +348,7 @@ export default function PedidoUrgentePageClient({
                           <li key={m.codExt} className="bg-card">
                             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
                               <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex flex-wrap items-center justify-center gap-2 text-center">
                                   <span className="font-semibold text-foreground">
                                     {m.prefijo?.trim() || `Proveedor ${altIdx + 2}`}
                                   </span>
@@ -369,7 +365,7 @@ export default function PedidoUrgentePageClient({
                                   abrirModalCantidadDirecto(productoDesdeMiembroGrupo(g, m));
                                 }}
                               >
-                                Pedir A Este Proveedor
+                                SELECCIONAR PROVEEDOR
                               </Button>
                             </div>
                           </li>

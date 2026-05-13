@@ -12,6 +12,7 @@ import { calcPxCompraFinal, clampPercent } from "@/lib/calculos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { cantPedirReposicionMerc2 } from "@/services/pedidosEnvio.service";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
 export interface FilaListaPrecioParaCliente {
@@ -521,7 +522,10 @@ export interface PedidoUrgenteItem {
   cantPedidaUrgente: number;
   /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda`. */
   confReposicion: boolean;
-  /** `reposicion_cant_pedir` (cant. a pedir reposición) desde `prod_ped_merc2`. */
+  /**
+   * Cantidad a pedir por reposición (columna **CANT. REPO.**): misma regla que **CANT. A PEDIR**
+   * en Pedido Reposición (`cantPedirReposicionMerc2`: forma, punto, conf., stock sucursal, stockeable).
+   */
   cantReposicion: number;
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
   estaVinculadoTienda: boolean;
@@ -587,14 +591,22 @@ async function mercaderiaMapsDesdeMerc2(
       sucursalId: suc.id,
       OR: orParts,
     },
+    orderBy: [{ id: "desc" }],
     select: {
       tipoDePedido: true,
       urgenteCodExt: true,
       urgenteCantPedir: true,
       reposicionCodTienda: true,
-      reposicionCantPedir: true,
+      reposicionFormaPedido: true,
+      reposicionPuntoPedido: true,
+      reposicionCantConf: true,
     },
   });
+
+  const reposicionReglaPorCodTienda = new Map<
+    string,
+    { forma: string | null; punto: number; cantConf: number }
+  >();
 
   const cantUrgentePorCodExt = new Map<string, number>();
   for (const r of rows) {
@@ -606,10 +618,51 @@ async function mercaderiaMapsDesdeMerc2(
     }
     if (r.tipoDePedido === "REPOSICION") {
       const k = (r.reposicionCodTienda ?? "").trim();
-      if (!k) continue;
+      if (!k || reposicionReglaPorCodTienda.has(k)) continue;
       mercaderiaRepoSet.add(k);
-      mercaderiaMapRepo.set(k, Math.max(0, Number(r.reposicionCantPedir ?? 0)));
+      reposicionReglaPorCodTienda.set(k, {
+        forma: r.reposicionFormaPedido,
+        punto: Math.max(0, Math.floor(Number(r.reposicionPuntoPedido ?? 0))),
+        cantConf: Math.max(0, Math.floor(Number(r.reposicionCantConf ?? 0))),
+      });
     }
+  }
+
+  const codTiendasRepo = [...mercaderiaRepoSet];
+  const tiendaRowsRepo =
+    codTiendasRepo.length > 0
+      ? await prisma.listaPrecioTienda.findMany({
+          where: { codTienda: { in: codTiendasRepo } },
+          select: {
+            codTienda: true,
+            stockMaipu: true,
+            stockGuaymallen: true,
+            stockeable: true,
+          },
+        })
+      : [];
+  const tiendaRepoPorCod = new Map(
+    tiendaRowsRepo.map((t) => [t.codTienda.trim(), t])
+  );
+  const esMaipu = sucursalTrim.trim().toLowerCase() === "maipu";
+
+  for (const k of mercaderiaRepoSet) {
+    const regla = reposicionReglaPorCodTienda.get(k);
+    const tienda = tiendaRepoPorCod.get(k);
+    let cant = 0;
+    if (regla && tienda) {
+      const stock = esMaipu
+        ? Number(tienda.stockMaipu ?? 0)
+        : Number(tienda.stockGuaymallen ?? 0);
+      cant = cantPedirReposicionMerc2({
+        forma: regla.forma,
+        punto: regla.punto,
+        cantConf: regla.cantConf,
+        stock,
+        stockeable: tienda.stockeable,
+      });
+    }
+    mercaderiaMapRepo.set(k, cant);
   }
 
   for (const p of pairs) {

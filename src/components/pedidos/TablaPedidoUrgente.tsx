@@ -34,7 +34,7 @@ export interface ProductoPedidoUrgente {
   cantPedidaUrgente: number;
   /** true si hay regla REPOSICIÓN en `prod_ped_merc` para el `cod_tienda` del ítem. */
   confReposicion: boolean;
-  /** `reposicion_cant_pedir` en `prod_ped_merc2` para pedido Reposición (0 si no hay). */
+  /** Misma cantidad que **CANT. A PEDIR** en Pedido Reposición (regla forma/punto/stock/stockeable). */
   cantReposicion: number;
   /**
    * `true` si hay vínculo a **`prod_precios_tienda`** (catálogo tienda sincronizado con Dux). La tabla
