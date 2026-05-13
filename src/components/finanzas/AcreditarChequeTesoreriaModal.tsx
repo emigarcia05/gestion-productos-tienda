@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 
 const CELL_MIN = "min-w-0";
 
-const COL_SPAN = 2;
+const COL_SPAN = 3;
 
 interface Props {
   open: boolean;
@@ -110,80 +110,73 @@ export default function AcreditarChequeTesoreriaModal({
           </div>
         }
       >
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">
-            Elegí la caja destino con doble clic en la fila.
-          </p>
-          <div className="max-h-[min(22rem,45vh)] overflow-auto rounded-md border border-border">
-            <Table variant="compact" scrollX={false} className="table-fixed w-full">
-              <colgroup>
-                <col className="w-[50%]" />
-                <col className="w-[50%]" />
-              </colgroup>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className={CELL_MIN}>CAJA</TableHead>
-                  <TableHead className={CELL_MIN}>TITULAR</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={COL_SPAN}
-                      className="celda-datos text-center text-muted-foreground"
-                    >
-                      Cargando cajas…
-                    </TableCell>
-                  </TableRow>
-                ) : cajas.length === 0 ? (
-                  <EmptyTableRow
+        <div className="max-h-[min(22rem,45vh)] overflow-auto rounded-md border border-border">
+          <Table variant="compact" scrollX={false} className="table-fixed w-full">
+            <colgroup>
+              <col className="w-[42.5%]" />
+              <col className="w-[42.5%]" />
+              <col className="w-[15%]" />
+            </colgroup>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className={CELL_MIN}>CAJA</TableHead>
+                <TableHead className={CELL_MIN}>TITULAR</TableHead>
+                <TableHead className="text-center">ACCIÓN</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
                     colSpan={COL_SPAN}
-                    message="No hay cajas tipo DIGITAL. Creá una desde Tesorería con tipo DIGITAL."
-                  />
-                ) : (
-                  cajas.map((c) => {
-                    const busy = pendingDestinoId === c.id;
-                    const puedeDblClick = Boolean(cheque) && !pendingDestinoId;
-                    return (
-                      <TableRow
-                        key={c.id}
-                        className={cn(puedeDblClick && "cursor-pointer")}
-                        onDoubleClick={() => {
-                          if (!puedeDblClick) return;
-                          void ejecutarTransferencia(c.id);
-                        }}
-                        title={
-                          busy
-                            ? "Acreditando cheque en esta caja."
-                            : puedeDblClick
-                              ? "Doble clic para acreditar el cheque en esta caja."
-                              : pendingDestinoId
-                                ? "Esperá a que termine la acreditación."
-                                : undefined
-                        }
-                      >
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={c.nombreCaja}>
-                          <div className="flex min-w-0 items-center gap-2">
-                            {busy ? (
-                              <Loader2
-                                className="h-4 w-4 shrink-0 animate-spin text-muted-foreground"
-                                aria-hidden
-                              />
-                            ) : null}
-                            <span className="celda-destacado min-w-0 flex-1 truncate">{c.nombreCaja}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={c.titular}>
-                          <span className="block truncate">{c.titular}</span>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                    className="celda-datos text-center text-muted-foreground"
+                  >
+                    Cargando cajas…
+                  </TableCell>
+                </TableRow>
+              ) : cajas.length === 0 ? (
+                <EmptyTableRow
+                  colSpan={COL_SPAN}
+                  message="No hay cajas tipo DIGITAL. Creá una desde Tesorería con tipo DIGITAL."
+                />
+              ) : (
+                cajas.map((c) => {
+                  const busy = pendingDestinoId === c.id;
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className={cn("celda-datos", CELL_MIN)} title={c.nombreCaja}>
+                        <span className="celda-destacado block truncate">{c.nombreCaja}</span>
+                      </TableCell>
+                      <TableCell className={cn("celda-datos", CELL_MIN)} title={c.titular}>
+                        <span className="block truncate">{c.titular}</span>
+                      </TableCell>
+                      <TableCell className="celda-datos p-1 text-center">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 w-full min-w-0 max-w-full px-2"
+                          disabled={!cheque || !!pendingDestinoId}
+                          aria-busy={busy}
+                          aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.nombreCaja}`}
+                          title="Acreditar el importe del cheque en esta caja DIGITAL."
+                          onClick={() => void ejecutarTransferencia(c.id)}
+                        >
+                          {busy ? (
+                            <span className="inline-flex items-center justify-center gap-1.5">
+                              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                              <span className="truncate">Acreditando…</span>
+                            </span>
+                          ) : (
+                            "Acreditar"
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </div>
       </AppModal>
     </Dialog>
