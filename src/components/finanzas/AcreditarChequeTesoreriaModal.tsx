@@ -18,7 +18,7 @@ import { listarCajasTesoreriaTipoDigitalAction } from "@/actions/cajasTesoreria"
 import { transferirFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import type { CajaTesoreriaItem } from "@/services/cajasTesoreria.service";
-import { Loader2 } from "lucide-react";
+import { BadgeCheck, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CELL_MIN = "min-w-0";
@@ -69,7 +69,6 @@ export default function AcreditarChequeTesoreriaModal({
       const res = await transferirFinTesoreriaChequeAction({
         chequeId: cheque.id,
         cajaDestinoId,
-        entregaProveedorId: cheque.entregaProveedorId ?? null,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo acreditar el cheque.");
@@ -150,26 +149,25 @@ export default function AcreditarChequeTesoreriaModal({
                       <TableCell className={cn("celda-datos", CELL_MIN)} title={c.titular}>
                         <span className="block truncate">{c.titular}</span>
                       </TableCell>
-                      <TableCell className="celda-datos p-1 text-center">
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="h-8 w-full min-w-0 max-w-full px-2"
-                          disabled={!cheque || !!pendingDestinoId}
-                          aria-busy={busy}
-                          aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.nombreCaja}`}
-                          title="Acreditar el importe del cheque en esta caja DIGITAL."
-                          onClick={() => void ejecutarTransferencia(c.id)}
-                        >
-                          {busy ? (
-                            <span className="inline-flex items-center justify-center gap-1.5">
-                              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                              <span className="truncate">Acreditando…</span>
-                            </span>
-                          ) : (
-                            "Acreditar"
-                          )}
-                        </Button>
+                      <TableCell className="celda-datos p-1">
+                        <div className="flex justify-center">
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            className="shrink-0"
+                            disabled={!cheque || !!pendingDestinoId}
+                            aria-busy={busy}
+                            aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.nombreCaja}`}
+                            title="Acreditar el importe del cheque en esta caja DIGITAL."
+                            onClick={() => void ejecutarTransferencia(c.id)}
+                          >
+                            {busy ? (
+                              <Loader2 className="size-4 animate-spin" aria-hidden />
+                            ) : (
+                              <BadgeCheck className="size-4" aria-hidden />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

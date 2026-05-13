@@ -22,7 +22,6 @@ import {
   type FinTesoreriaChequeItem,
   type TransferirChequeFinTesoreriaResultado,
 } from "@/services/finTesoreriaCheques.service";
-import { prisma } from "@/lib/prisma";
 
 function revalidateFinTesoreriaChequesMutations(): void {
   revalidatePath("/finanzas");
@@ -58,31 +57,6 @@ export async function listarChequesPorCajaAction(
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar los cheques.";
-    return { ok: false, error: message };
-  }
-}
-
-export type ProveedorMercaderiaChequeTesoreriaOpcion = { id: string; nombre: string };
-
-/** Listado mínimo para selects de cheques; gate `finanzas.acceso` (no exige permisos de catálogo proveedores). */
-export async function listarProveedoresMercaderiaParaChequeTesoreriaAction(): Promise<
-  ActionResult<ProveedorMercaderiaChequeTesoreriaOpcion[]>
-> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-
-  try {
-    const rows = await prisma.proveedor.findMany({
-      where: { proveedorMercaderia: true },
-      select: { id: true, nombre: true },
-      orderBy: { nombre: "asc" },
-    });
-    return { ok: true, data: rows };
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "No se pudo listar proveedores de mercadería.";
     return { ok: false, error: message };
   }
 }

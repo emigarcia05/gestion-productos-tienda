@@ -24,9 +24,6 @@ export const montoChequeTesoreriaSchema = z
 
 export const tipoChequeTesoreriaSchema = z.enum(["FISICO", "ECHEQUE"]);
 
-/** FK opcional a `global_proveedores` con `proveedor_mercaderia = true`. */
-export const entregaProveedorMercaderiaIdChequeSchema = z.union([prismaCuidSchema, z.null()]).optional();
-
 export const crearFinTesoreriaChequeSchema = z.object({
   cajaId: prismaCuidSchema,
   tipo: tipoChequeTesoreriaSchema,
@@ -38,7 +35,7 @@ export const crearFinTesoreriaChequeSchema = z.object({
     .max(500, "Emisor demasiado largo."),
   monto: montoChequeTesoreriaSchema,
   fechaAcreditacion: isoYmdSchema,
-  entregaProveedorId: entregaProveedorMercaderiaIdChequeSchema,
+  fechaRecibido: isoYmdSchema,
 });
 
 /** Filtro de custodia en detalle de cheques: en tienda vs. ya depositado o entregado a proveedor. */
@@ -62,7 +59,7 @@ export const actualizarFinTesoreriaChequeSchema = z.object({
     .max(500, "Emisor demasiado largo."),
   monto: montoChequeTesoreriaSchema,
   fechaAcreditacion: isoYmdSchema,
-  entregaProveedorId: entregaProveedorMercaderiaIdChequeSchema,
+  fechaRecibido: isoYmdSchema,
 });
 
 export const eliminarFinTesoreriaChequeSchema = z.object({
@@ -72,14 +69,11 @@ export const eliminarFinTesoreriaChequeSchema = z.object({
 export const transferirFinTesoreriaChequeSchema = z.object({
   chequeId: prismaCuidSchema,
   cajaDestinoId: prismaCuidSchema,
-  /** Registro opcional; `null` = sin proveedor de entrega. */
-  entregaProveedorId: z.union([prismaCuidSchema, z.null()]),
 });
 
-/** Solo actualiza `entrega_proveedor` en cheque no transferido (proveedor de mercadería obligatorio). */
+/** Marca custodia PROVEEDOR sin transferir el cheque (sin FK a proveedor). */
 export const marcarEntregaProveedorChequeSchema = z.object({
   chequeId: prismaCuidSchema,
-  entregaProveedorId: prismaCuidSchema,
 });
 
 export type CrearFinTesoreriaChequeInput = z.infer<typeof crearFinTesoreriaChequeSchema>;

@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
-import { crearFinTesoreriaChequeAction, listarProveedoresMercaderiaParaChequeTesoreriaAction } from "@/actions/finTesoreriaCheques";
-import type { ProveedorMercaderiaChequeTesoreriaOpcion } from "@/actions/finTesoreriaCheques";
+import { crearFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import {
   dateToIsoYmdArgentina,
   formatIsoYmdDdMmYyyyArgentina,
@@ -62,24 +60,8 @@ export default function AltaChequeTesoreriaModal({
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
   const [fechaDdMmYyyy, setFechaDdMmYyyy] = useState("");
+  const [fechaRecibidoDdMmYyyy, setFechaRecibidoDdMmYyyy] = useState("");
   const [saving, setSaving] = useState(false);
-  const [proveedores, setProveedores] = useState<ProveedorMercaderiaChequeTesoreriaOpcion[]>([]);
-  const [entregaProveedorId, setEntregaProveedorId] = useState<string | null>(null);
-
-  const cargarProveedores = useCallback(async () => {
-    const res = await listarProveedoresMercaderiaParaChequeTesoreriaAction();
-    if (!res.ok) {
-      toast.error(res.error ?? "No se pudieron cargar los proveedores.");
-      setProveedores([]);
-      return;
-    }
-    setProveedores(res.data);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    void cargarProveedores();
-  }, [open, cargarProveedores]);
 
   useEffect(() => {
     if (!open) return;
@@ -87,14 +69,19 @@ export default function AltaChequeTesoreriaModal({
     setTenedor(tenedorInicialDesdeTitularCaja(titularCaja ?? null));
     setEmisor("");
     setMontoNorm("");
-    setEntregaProveedorId(null);
-    setFechaDdMmYyyy(formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date())));
+    const hoy = formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date()));
+    setFechaDdMmYyyy(hoy);
+    setFechaRecibidoDdMmYyyy(hoy);
   }, [open, titularCaja]);
 
   const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
   const fechaAcreditacionIso = useMemo(
     () => parseDdMmYyyyToIsoYmdArgentina(fechaDdMmYyyy),
     [fechaDdMmYyyy]
+  );
+  const fechaRecibidoIso = useMemo(
+    () => parseDdMmYyyyToIsoYmdArgentina(fechaRecibidoDdMmYyyy),
+    [fechaRecibidoDdMmYyyy]
   );
 
   const disabledSubmit = useMemo(() => {
@@ -103,9 +90,10 @@ export default function AltaChequeTesoreriaModal({
       !cajaId ||
       emisor.trim().length === 0 ||
       parsedMonto < 0 ||
-      fechaAcreditacionIso === ""
+      fechaAcreditacionIso === "" ||
+      fechaRecibidoIso === ""
     );
-  }, [saving, cajaId, emisor, parsedMonto, fechaAcreditacionIso]);
+  }, [saving, cajaId, emisor, parsedMonto, fechaAcreditacionIso, fechaRecibidoIso]);
 
   async function handleSubmit() {
     if (disabledSubmit || !cajaId) return;
@@ -118,7 +106,7 @@ export default function AltaChequeTesoreriaModal({
         emisor: emisor.trim(),
         monto: parsedMonto,
         fechaAcreditacion: fechaAcreditacionIso,
-        entregaProveedorId,
+        fechaRecibido: fechaRecibidoIso,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo registrar el cheque.");
@@ -135,7 +123,7 @@ export default function AltaChequeTesoreriaModal({
   return (
     <Dialog open={open} onOpenChange={(next) => (!saving ? onOpenChange(next) : undefined)}>
       <AppModal
-        title="Registrar cheque"
+        title="Registrar Cheque"
         size="sm"
         className="max-w-md"
         scrollBody={false}
@@ -204,31 +192,6 @@ export default function AltaChequeTesoreriaModal({
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <ModalMicroLabel>Entrega Proveedor</ModalMicroLabel>
-            <Select
-              value={entregaProveedorId ?? "none"}
-              onValueChange={(v) => setEntregaProveedorId(v === "none" ? null : v)}
-              disabled={saving || !cajaId}
-            >
-              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                <SelectValue placeholder="PROVEEDOR MERC." />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">SIN PROVEEDOR</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               EMISOR
             </span>
@@ -249,6 +212,24 @@ export default function AltaChequeTesoreriaModal({
               onValueNormalizedChange={setMontoNorm}
               disabled={saving}
               aria-label="Monto del cheque"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              FECHA RECIBIDO
+            </span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="dd/mm/aaaa"
+              value={fechaRecibidoDdMmYyyy}
+              onChange={(e) =>
+                setFechaRecibidoDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
+              }
+              disabled={saving}
+              className="tabular-nums"
+              aria-label="Fecha en que se recibió el cheque (dd/mm/aaaa)"
             />
           </label>
           <label className="flex flex-col gap-1">

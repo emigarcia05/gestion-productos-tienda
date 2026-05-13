@@ -69,7 +69,6 @@ model Proveedor {
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
   finBalGastoFinal   FinBalGastoFinal[]
-  finTesoreriaChequesEntregaProveedor FinTesoreriaCheque[] @relation("FinTesoreriaChequeEntregaProveedor")
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -168,19 +167,19 @@ model FinTesoreriaCheque {
   /** Si no es null, el importe ya se acreditó en `cajaDestinoId`; no suma al disponible de la caja CHEQUE. */
   fechaTransferencia DateTime?            @map("fecha_transferencia")
   cajaDestinoId       String?              @map("caja_destino_id")
-  /** FK opcional a proveedor con `proveedor_mercaderia = true` (solo registro informativo). */
-  entregaProveedorId  String?              @map("entrega_proveedor")
+  /** Día en que la tienda recibió el cheque (calendario Argentina). */
+  fechaRecibido       DateTime             @map("fecha_recibido") @db.Date
+  /** Día en que se depositó en cuenta DIGITAL; null si aún no se transfirió. */
+  fechaDepositado     DateTime?            @map("fecha_depositado") @db.Date
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
   caja              CajaTesoreria  @relation(fields: [cajaId], references: [id], onDelete: Cascade)
   cajaDestino       CajaTesoreria? @relation("FinTesoreriaChequeCajaDestino", fields: [cajaDestinoId], references: [id], onDelete: SetNull)
-  entregaProveedor Proveedor?     @relation("FinTesoreriaChequeEntregaProveedor", fields: [entregaProveedorId], references: [id], onDelete: SetNull)
 
   @@index([cajaId], map: "fin_tesoreria_cheques_caja_id_idx")
   @@index([cajaId, fechaAcreditacion], map: "fin_tesoreria_cheques_caja_id_fecha_acreditacion_idx")
   @@index([cajaId, fechaTransferencia], map: "fin_tesoreria_cheques_caja_id_fecha_transferencia_idx")
-  @@index([entregaProveedorId], map: "fin_tesoreria_cheques_entrega_proveedor_idx")
   @@map("fin_tesoreria_cheques")
 }
 

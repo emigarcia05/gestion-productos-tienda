@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
@@ -18,8 +17,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { TipoChequeTesoreria } from "@prisma/client";
-import { actualizarFinTesoreriaChequeAction, listarProveedoresMercaderiaParaChequeTesoreriaAction } from "@/actions/finTesoreriaCheques";
-import type { ProveedorMercaderiaChequeTesoreriaOpcion } from "@/actions/finTesoreriaCheques";
+import { actualizarFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import {
   TITULARES_CAJA_TESORERIA,
@@ -55,43 +53,35 @@ export default function EditarChequeTesoreriaModal({
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
   const [fechaIso, setFechaIso] = useState("");
+  const [fechaRecibidoIso, setFechaRecibidoIso] = useState("");
   const [saving, setSaving] = useState(false);
-  const [proveedores, setProveedores] = useState<ProveedorMercaderiaChequeTesoreriaOpcion[]>([]);
-  const [entregaProveedorId, setEntregaProveedorId] = useState<string | null>(null);
-
-  const cargarProveedores = useCallback(async () => {
-    const res = await listarProveedoresMercaderiaParaChequeTesoreriaAction();
-    if (!res.ok) {
-      toast.error(res.error ?? "No se pudieron cargar los proveedores.");
-      setProveedores([]);
-      return;
-    }
-    setProveedores(res.data);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    void cargarProveedores();
-  }, [open, cargarProveedores]);
 
   useEffect(() => {
     if (!open || !cheque) return;
     setEmisor(cheque.emisor.toLocaleUpperCase("es-AR"));
     setMontoNorm(montoArPesosEnterosToNormalizedString(cheque.monto));
     setFechaIso(cheque.fechaAcreditacionIso);
+    setFechaRecibidoIso(cheque.fechaRecibidoIso);
     setTipo(tipoChequeValido(cheque.tipo) ? cheque.tipo : "FISICO");
     setTenedor(tenedorValido(cheque.tenedor) ? cheque.tenedor : "");
-    setEntregaProveedorId(cheque.entregaProveedorId);
   }, [open, cheque]);
 
   const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
 
   const disabledSubmit = useMemo(() => {
-    return saving || !cheque || emisor.trim().length === 0 || parsedMonto < 0 || !tenedor;
-  }, [saving, cheque, emisor, parsedMonto, tenedor]);
+    return (
+      saving ||
+      !cheque ||
+      emisor.trim().length === 0 ||
+      parsedMonto < 0 ||
+      !tenedor ||
+      fechaIso.length === 0 ||
+      fechaRecibidoIso.length === 0
+    );
+  }, [saving, cheque, emisor, parsedMonto, tenedor, fechaIso, fechaRecibidoIso]);
 
   async function handleSubmit() {
-    if (disabledSubmit || !cheque || !fechaIso || !tenedor) return;
+    if (disabledSubmit || !cheque || !tenedor) return;
     setSaving(true);
     try {
       const res = await actualizarFinTesoreriaChequeAction({
@@ -101,7 +91,7 @@ export default function EditarChequeTesoreriaModal({
         emisor: emisor.trim(),
         monto: parsedMonto,
         fechaAcreditacion: fechaIso,
-        entregaProveedorId,
+        fechaRecibido: fechaRecibidoIso,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar el cheque.");
@@ -190,31 +180,6 @@ export default function EditarChequeTesoreriaModal({
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <ModalMicroLabel>Entrega Proveedor</ModalMicroLabel>
-            <Select
-              value={entregaProveedorId ?? "none"}
-              onValueChange={(v) => setEntregaProveedorId(v === "none" ? null : v)}
-              disabled={saving || !cheque}
-            >
-              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                <SelectValue placeholder="PROVEEDOR MERC." />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">SIN PROVEEDOR</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               EMISOR
             </span>
@@ -235,6 +200,18 @@ export default function EditarChequeTesoreriaModal({
               onValueNormalizedChange={setMontoNorm}
               disabled={saving}
               aria-label="Monto del cheque"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              FECHA RECIBIDO
+            </span>
+            <Input
+              type="date"
+              value={fechaRecibidoIso}
+              onChange={(e) => setFechaRecibidoIso(e.target.value)}
+              disabled={saving}
+              aria-label="Fecha en que se recibió el cheque"
             />
           </label>
           <label className="flex flex-col gap-1">

@@ -50,10 +50,10 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** Detalle cheques + editor (9 col): TIPO, TENENCIA, TENEDOR, …, ACCIONES. */
-const COL_ANCHOS_EDITOR = [11, 8, 17, 17, 13, 6, 6, 5, 17] as const;
-/** Detalle cheques sin editor (8 col). */
-const COL_ANCHOS_LECTURA = [12, 9, 18, 18, 15, 7, 7, 14] as const;
+/** Detalle cheques + editor (10 col): … RECIBIDO, DEPOSITADO, DÍAS, ACCIONES. */
+const COL_ANCHOS_EDITOR = [10, 7, 14, 14, 12, 6, 6, 7, 7, 17] as const;
+/** Detalle cheques sin editor (9 col). */
+const COL_ANCHOS_LECTURA = [13, 8, 16, 16, 14, 7, 7, 7, 9] as const;
 
 function etiquetaTenenciaCheque(t: TenenciaChequeTesoreria): string {
   switch (t) {
@@ -139,7 +139,7 @@ export default function ChequesCajaTesoreriaModal({
     setFilas([]);
   }
 
-  const colCount = esEditor ? 9 : 8;
+  const colCount = esEditor ? 10 : 9;
   const anchos = esEditor ? COL_ANCHOS_EDITOR : COL_ANCHOS_LECTURA;
 
   const mensajeVacio =
@@ -167,7 +167,7 @@ export default function ChequesCajaTesoreriaModal({
                   disabled={!caja}
                 >
                   <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                  Registrar cheque
+                  Registrar Cheque
                 </Button>
               ) : (
                 <span />
@@ -225,7 +225,8 @@ export default function ChequesCajaTesoreriaModal({
                     <TableHead className={CELL_MIN}>EMISOR</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>ACREDITACION</TableHead>
-                    <TableHead className={cn(CELL_MIN)}>PROV. MERC.</TableHead>
+                    <TableHead className={cn(TH_NUM, CELL_MIN)}>RECIBIDO</TableHead>
+                    <TableHead className={cn(TH_NUM, CELL_MIN)}>DEPOSITADO</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
                     {esEditor ? (
                       <TableHead
@@ -274,13 +275,12 @@ export default function ChequesCajaTesoreriaModal({
                             ${fmtPrecio(row.monto)}
                           </TableCell>
                           <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                            {formatIsoYmdDdMmYyyyArgentina(row.fechaAcreditacionIso)}
+                            {formatIsoYmdDdMmYyyyArgentina(row.fechaRecibidoIso)}
                           </TableCell>
-                          <TableCell
-                            className={cn("celda-datos", CELL_MIN)}
-                            title={row.entregaProveedorNombre ?? undefined}
-                          >
-                            <span className="block truncate">{row.entregaProveedorNombre ?? "—"}</span>
+                          <TableCell className={cn(TD_NUM, CELL_MIN)}>
+                            {row.fechaDepositadoIso
+                              ? formatIsoYmdDdMmYyyyArgentina(row.fechaDepositadoIso)
+                              : "—"}
                           </TableCell>
                           <TableCell className={cn(TD_NUM, CELL_MIN)}>
                             {textoDiasFaltantesAcreditacionCheque(row.fechaAcreditacionIso)}
