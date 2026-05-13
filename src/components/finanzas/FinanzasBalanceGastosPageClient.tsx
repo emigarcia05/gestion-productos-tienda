@@ -64,7 +64,8 @@ function aplicarFiltroEstadoFilas(
   if (!filtroEstado) return rows;
   switch (filtroEstado) {
     case "con_monto_sin_pago":
-      return rows.filter((r) => r.monto > 0 && r.pagado === 0);
+      // Pendiente de la imputación = monto − pagado: sin pagar, parcial o con "PAGADO" en —; excluye pagado = monto.
+      return rows.filter((r) => r.monto > 0 && r.pagado < r.monto);
     case "con_monto_con_pago":
       return rows.filter((r) => r.monto > 0 && r.pagado > 0);
     case "sin_monto":
