@@ -301,7 +301,7 @@ export default function PedidoUrgentePageClient({
               {prioritarioElegirProveedor ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <h3 className="text-sm font-semibold text-foreground leading-tight">
+                    <h3 className="text-center text-sm font-semibold text-foreground leading-tight">
                       {TITULO_PROVEEDOR_PRIORIDAD_COSTO}
                     </h3>
                     <ul className="flex flex-col divide-y divide-border border border-border rounded-md overflow-hidden">
@@ -312,11 +312,6 @@ export default function PedidoUrgentePageClient({
                               <span className="font-semibold text-foreground">
                                 {prioritarioElegirProveedor.prefijo?.trim() || "Proveedor 1"}
                               </span>
-                              {miembrosElegirProveedorOrdenados.length > 1 ? (
-                                <span className="rounded bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
-                                  Menor costo (criterio)
-                                </span>
-                              ) : null}
                             </div>
                           </div>
                           <Button
@@ -340,7 +335,7 @@ export default function PedidoUrgentePageClient({
                   </div>
                   {alternativasElegirProveedor.length > 0 ? (
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="text-sm font-semibold text-foreground leading-tight">
+                      <h3 className="text-center text-sm font-semibold text-foreground leading-tight">
                         {TITULO_ALTERNATIVAS_PROVEEDOR}
                       </h3>
                       <ul className="flex flex-col divide-y divide-border border border-border rounded-md overflow-hidden">
