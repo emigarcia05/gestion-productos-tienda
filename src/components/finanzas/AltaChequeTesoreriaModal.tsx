@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -32,6 +32,15 @@ import type { TipoChequeTesoreria } from "@prisma/client";
 
 const TIPOS_CHEQUE: readonly TipoChequeTesoreria[] = ["FISICO", "ECHEQUE"];
 
+function abrirSelectorFechaNativo(el: HTMLInputElement | null) {
+  if (!el) return;
+  try {
+    void el.showPicker?.();
+  } catch {
+    el.click();
+  }
+}
+
 function tenedorInicialDesdeTitularCaja(raw: string | null | undefined): TitularCajaTesoreria {
   if (raw && TITULARES_CAJA_TESORERIA.includes(raw as TitularCajaTesoreria)) {
     return raw as TitularCajaTesoreria;
@@ -62,6 +71,8 @@ export default function AltaChequeTesoreriaModal({
   const [fechaDdMmYyyy, setFechaDdMmYyyy] = useState("");
   const [fechaRecibidoDdMmYyyy, setFechaRecibidoDdMmYyyy] = useState("");
   const [saving, setSaving] = useState(false);
+  const hiddenFechaRecibidoRef = useRef<HTMLInputElement>(null);
+  const hiddenFechaAcreditacionRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -83,6 +94,22 @@ export default function AltaChequeTesoreriaModal({
     () => parseDdMmYyyyToIsoYmdArgentina(fechaRecibidoDdMmYyyy),
     [fechaRecibidoDdMmYyyy]
   );
+
+  const isoRecibidoParaPicker = useMemo(
+    () => (fechaRecibidoIso !== "" ? fechaRecibidoIso : dateToIsoYmdArgentina(new Date())),
+    [fechaRecibidoIso]
+  );
+  const isoAcreditacionParaPicker = useMemo(
+    () => (fechaAcreditacionIso !== "" ? fechaAcreditacionIso : dateToIsoYmdArgentina(new Date())),
+    [fechaAcreditacionIso]
+  );
+
+  const abrirPickerRecibido = useCallback(() => {
+    if (!saving) abrirSelectorFechaNativo(hiddenFechaRecibidoRef.current);
+  }, [saving]);
+  const abrirPickerAcreditacion = useCallback(() => {
+    if (!saving) abrirSelectorFechaNativo(hiddenFechaAcreditacionRef.current);
+  }, [saving]);
 
   const disabledSubmit = useMemo(() => {
     return (
@@ -227,9 +254,26 @@ export default function AltaChequeTesoreriaModal({
               onChange={(e) =>
                 setFechaRecibidoDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
               }
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                abrirPickerRecibido();
+              }}
               disabled={saving}
               className="tabular-nums"
-              aria-label="Fecha en que se recibió el cheque (dd/mm/aaaa)"
+              title="Doble clic para abrir el calendario"
+              aria-label="Fecha en que se recibió el cheque (dd/mm/aaaa). Doble clic para calendario."
+            />
+            <input
+              ref={hiddenFechaRecibidoRef}
+              type="date"
+              tabIndex={-1}
+              aria-hidden
+              className="sr-only"
+              value={isoRecibidoParaPicker}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v) setFechaRecibidoDdMmYyyy(formatIsoYmdDdMmYyyyArgentina(v));
+              }}
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -245,9 +289,26 @@ export default function AltaChequeTesoreriaModal({
               onChange={(e) =>
                 setFechaDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
               }
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                abrirPickerAcreditacion();
+              }}
               disabled={saving}
               className="tabular-nums"
-              aria-label="Fecha de acreditación del cheque (dd/mm/aaaa)"
+              title="Doble clic para abrir el calendario"
+              aria-label="Fecha de acreditación del cheque (dd/mm/aaaa). Doble clic para calendario."
+            />
+            <input
+              ref={hiddenFechaAcreditacionRef}
+              type="date"
+              tabIndex={-1}
+              aria-hidden
+              className="sr-only"
+              value={isoAcreditacionParaPicker}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v) setFechaDdMmYyyy(formatIsoYmdDdMmYyyyArgentina(v));
+              }}
             />
           </label>
         </div>

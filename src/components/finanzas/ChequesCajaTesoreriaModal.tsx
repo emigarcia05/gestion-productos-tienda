@@ -21,20 +21,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BadgeCheck, Plus, Trash2 } from "lucide-react";
+import { BadgeCheck, Pencil, Plus, Trash2 } from "lucide-react";
 import { listarChequesPorCajaAction } from "@/actions/finTesoreriaCheques";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
-import type { TenenciaChequeTesoreria } from "@prisma/client";
+import type { TipoChequeTesoreria } from "@prisma/client";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import type { FinTesoreriaChequesTenenciaFiltro } from "@/lib/validations/finTesoreriaCheques";
 import { fmtPrecio } from "@/lib/format";
 import {
   chequePuedeAcreditarsePorFechaArgentina,
+  diasTextoAcreditacionMenosHoyArgentina,
   formatIsoYmdDdMmYyyyArgentina,
-  textoDiasFaltantesAcreditacionCheque,
 } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 import AltaChequeTesoreriaModal from "@/components/finanzas/AltaChequeTesoreriaModal";
+import EditarChequeTesoreriaModal from "@/components/finanzas/EditarChequeTesoreriaModal";
 import EliminarChequeTesoreriaModal from "@/components/finanzas/EliminarChequeTesoreriaModal";
 import AcreditarChequeTesoreriaModal from "@/components/finanzas/AcreditarChequeTesoreriaModal";
 import DestinoChequeTesoreriaModal from "@/components/finanzas/DestinoChequeTesoreriaModal";
@@ -50,22 +51,13 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 
-/** Detalle cheques + editor (10 col): … RECIBIDO, DEPOSITADO, DÍAS, ACCIONES. */
-const COL_ANCHOS_EDITOR = [10, 7, 14, 14, 12, 6, 6, 7, 7, 17] as const;
-/** Detalle cheques sin editor (9 col). */
-const COL_ANCHOS_LECTURA = [13, 8, 16, 16, 14, 7, 7, 7, 9] as const;
+/** Detalle cheques + editor (8 col): RECIBIDO, TIPO, TENEDOR, EMISOR, MONTO, ACREDITACION, DÍAS, ACCIONES. */
+const COL_ANCHOS_EDITOR = [10, 8, 16, 18, 10, 11, 7, 20] as const;
+/** Detalle cheques sin editor (7 col). */
+const COL_ANCHOS_LECTURA = [11, 9, 18, 22, 11, 12, 17] as const;
 
-function etiquetaTenenciaCheque(t: TenenciaChequeTesoreria): string {
-  switch (t) {
-    case "TIENDA":
-      return "TIENDA";
-    case "DEPOSITADO":
-      return "DEPOSITADO";
-    case "PROVEEDOR":
-      return "PROVEEDOR";
-    default:
-      return t;
-  }
+function etiquetaTipoCheque(t: TipoChequeTesoreria): string {
+  return t === "ECHEQUE" ? "E-CHEQUE" : "FÍSICO";
 }
 
 interface Props {
@@ -92,6 +84,7 @@ export default function ChequesCajaTesoreriaModal({
   const [chequeParaAcreditar, setChequeParaAcreditar] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaPagoProveedor, setChequeParaPagoProveedor] =
     useState<FinTesoreriaChequeItem | null>(null);
+  const [chequeParaEditar, setChequeParaEditar] = useState<FinTesoreriaChequeItem | null>(null);
 
   const cargar = useCallback(async () => {
     if (!caja) return;
@@ -124,6 +117,7 @@ export default function ChequesCajaTesoreriaModal({
       setChequeParaDestino(null);
       setChequeParaAcreditar(null);
       setChequeParaPagoProveedor(null);
+      setChequeParaEditar(null);
       setTenenciaFiltro("actuales");
     }
   }, [open]);
@@ -134,12 +128,13 @@ export default function ChequesCajaTesoreriaModal({
     setChequeParaDestino(null);
     setChequeParaAcreditar(null);
     setChequeParaPagoProveedor(null);
+    setChequeParaEditar(null);
     setTenenciaFiltro("actuales");
     onOpenChange(false);
     setFilas([]);
   }
 
-  const colCount = esEditor ? 10 : 9;
+  const colCount = esEditor ? 8 : 7;
   const anchos = esEditor ? COL_ANCHOS_EDITOR : COL_ANCHOS_LECTURA;
 
   const mensajeVacio =
@@ -190,6 +185,7 @@ export default function ChequesCajaTesoreriaModal({
                     setChequeParaDestino(null);
                     setChequeParaAcreditar(null);
                     setChequeParaPagoProveedor(null);
+                    setChequeParaEditar(null);
                   }}
                 >
                   <SelectTrigger
@@ -219,14 +215,12 @@ export default function ChequesCajaTesoreriaModal({
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
+                    <TableHead className={cn(TH_NUM, CELL_MIN)}>RECIBIDO</TableHead>
                     <TableHead className={CELL_MIN}>TIPO</TableHead>
-                    <TableHead className={CELL_MIN}>TENENCIA</TableHead>
                     <TableHead className={CELL_MIN}>TENEDOR</TableHead>
                     <TableHead className={CELL_MIN}>EMISOR</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>ACREDITACION</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>RECIBIDO</TableHead>
-                    <TableHead className={cn(TH_NUM, CELL_MIN)}>DEPOSITADO</TableHead>
                     <TableHead className={cn(TH_NUM, CELL_MIN)}>DÍAS</TableHead>
                     {esEditor ? (
                       <TableHead
@@ -257,13 +251,15 @@ export default function ChequesCajaTesoreriaModal({
                       const puedeAcreditar = chequePuedeAcreditarsePorFechaArgentina(
                         row.fechaAcreditacionIso
                       );
+                      const transferido = row.fechaTransferenciaIso != null;
+                      const ofreceAcreditar = row.tenencia === "TIENDA" && !transferido;
                       return (
                         <TableRow key={row.id} className="h-10 min-h-10 max-h-10">
-                          <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
-                            {row.tipo}
+                          <TableCell className={cn(TD_NUM, CELL_MIN)}>
+                            {formatIsoYmdDdMmYyyyArgentina(row.fechaRecibidoIso)}
                           </TableCell>
                           <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
-                            {etiquetaTenenciaCheque(row.tenencia)}
+                            {etiquetaTipoCheque(row.tipo)}
                           </TableCell>
                           <TableCell className={cn("celda-datos", CELL_MIN)} title={row.tenedor}>
                             <span className="celda-destacado block truncate">{row.tenedor}</span>
@@ -275,15 +271,10 @@ export default function ChequesCajaTesoreriaModal({
                             ${fmtPrecio(row.monto)}
                           </TableCell>
                           <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                            {formatIsoYmdDdMmYyyyArgentina(row.fechaRecibidoIso)}
+                            {formatIsoYmdDdMmYyyyArgentina(row.fechaAcreditacionIso)}
                           </TableCell>
                           <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                            {row.fechaDepositadoIso
-                              ? formatIsoYmdDdMmYyyyArgentina(row.fechaDepositadoIso)
-                              : "—"}
-                          </TableCell>
-                          <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                            {textoDiasFaltantesAcreditacionCheque(row.fechaAcreditacionIso)}
+                            {diasTextoAcreditacionMenosHoyArgentina(row.fechaAcreditacionIso)}
                           </TableCell>
                           {esEditor ? (
                             <TableCell
@@ -293,7 +284,23 @@ export default function ChequesCajaTesoreriaModal({
                               )}
                             >
                               <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "h-full")}>
-                                {row.tenencia === "TIENDA" ? (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                  disabled={transferido}
+                                  onClick={() => setChequeParaEditar(row)}
+                                  aria-label="Editar cheque"
+                                  title={
+                                    transferido
+                                      ? "No se puede editar un cheque ya transferido."
+                                      : "Editar cheque"
+                                  }
+                                >
+                                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                </Button>
+                                {ofreceAcreditar ? (
                                   <Button
                                     type="button"
                                     size="icon"
@@ -317,9 +324,14 @@ export default function ChequesCajaTesoreriaModal({
                                   size="icon"
                                   variant="ghost"
                                   className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                  disabled={transferido}
                                   onClick={() => setChequeEliminando(row)}
                                   aria-label="Eliminar cheque"
-                                  title="Eliminar cheque"
+                                  title={
+                                    transferido
+                                      ? "No se puede eliminar un cheque ya transferido."
+                                      : "Eliminar cheque"
+                                  }
                                 >
                                   <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 </Button>
@@ -345,6 +357,19 @@ export default function ChequesCajaTesoreriaModal({
         onCreated={() => {
           void cargar();
           onChequesChanged?.();
+        }}
+      />
+
+      <EditarChequeTesoreriaModal
+        open={chequeParaEditar != null}
+        onOpenChange={(next) => {
+          if (!next) setChequeParaEditar(null);
+        }}
+        cheque={chequeParaEditar}
+        onUpdated={() => {
+          void cargar();
+          onChequesChanged?.();
+          setChequeParaEditar(null);
         }}
       />
 

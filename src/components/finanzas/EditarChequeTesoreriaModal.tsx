@@ -108,7 +108,7 @@ export default function EditarChequeTesoreriaModal({
   return (
     <Dialog open={open} onOpenChange={(next) => (!saving ? onOpenChange(next) : undefined)}>
       <AppModal
-        title="Editar cheque"
+        title="Editar Cheque"
         size="sm"
         className="max-w-md"
         scrollBody={false}

@@ -216,14 +216,16 @@ export function diasCalendarioDesdeHastaIsoYmdArgentina(
 }
 
 /**
- * Para cheques de tesorería: días que restan hasta la fecha de acreditación (calendario Argentina).
- * Vacío si la fecha de acreditación ya pasó respecto de hoy en AR.
+ * Días calendario (Argentina): fecha de acreditación menos hoy (`YYYY-MM-DD`).
+ * Positivo si la acreditación es futura; `0` si es hoy; negativo (prefijo `-`) si ya pasó.
  */
-export function textoDiasFaltantesAcreditacionCheque(fechaAcreditacionIso: string): string {
+export function diasTextoAcreditacionMenosHoyArgentina(fechaAcreditacionIso: string): string {
   const hoy = dateToIsoYmdArgentina(new Date());
-  const n = diasCalendarioDesdeHastaIsoYmdArgentina(hoy, fechaAcreditacionIso);
-  if (n === null) return "";
-  return String(n);
+  const futuroHasta = diasCalendarioDesdeHastaIsoYmdArgentina(hoy, fechaAcreditacionIso);
+  if (futuroHasta !== null) return String(futuroHasta);
+  const diasPasados = diasCalendarioDesdeHastaIsoYmdArgentina(fechaAcreditacionIso, hoy);
+  if (diasPasados === null) return "";
+  return diasPasados === 0 ? "0" : `-${diasPasados}`;
 }
 
 /**
