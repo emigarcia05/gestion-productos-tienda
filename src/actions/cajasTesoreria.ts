@@ -20,6 +20,7 @@ import {
   eliminarCajaTesoreria,
   eliminarFinTesoreriaEntidad,
   listarCajasTesoreria,
+  listarCajasTesoreriaPorTipoCaja,
   listarCajasTesoreriaPorTipoValor,
   listarEntidadesFinTesoreria,
   listarFinTesoreriaTipoCaja,
@@ -151,7 +152,7 @@ export async function eliminarFinTesoreriaEntidadAction(raw: unknown): Promise<A
   return { ok: true, data: undefined };
 }
 
-/** Cajas con `tipo_valor = DIGITAL` (banco o billetera digital; destino de acreditación de cheques). */
+/** Cajas con `tipo_valor = DIGITAL` (incluye **BANCO**, **BILLETERA_DIGITAL**, **TARJETAS A COBRAR**, etc.). */
 export async function listarCajasTesoreriaTipoDigitalAction(): Promise<ActionResult<CajaTesoreriaItem[]>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
@@ -160,6 +161,22 @@ export async function listarCajasTesoreriaTipoDigitalAction(): Promise<ActionRes
 
   try {
     const items = await listarCajasTesoreriaPorTipoValor("DIGITAL");
+    return { ok: true, data: items };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";
+    return { ok: false, error: message };
+  }
+}
+
+/** Cajas con `tipo_caja = BANCO` (único destino permitido al **Acreditar cheque** en cuenta propia). */
+export async function listarCajasTesoreriaTipoBancoAction(): Promise<ActionResult<CajaTesoreriaItem[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  try {
+    const items = await listarCajasTesoreriaPorTipoCaja("BANCO");
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";

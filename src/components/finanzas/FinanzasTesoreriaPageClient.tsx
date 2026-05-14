@@ -9,7 +9,6 @@ import TablaTesoreriaCajas, { type TesoreriaCajaFila } from "@/components/finanz
 import NuevaCajaTesoreriaModal from "@/components/finanzas/NuevaCajaTesoreriaModal";
 import ActualizarMontoCajaTesoreriaModal from "@/components/finanzas/ActualizarMontoCajaTesoreriaModal";
 import EditarCajaTesoreriaModal from "@/components/finanzas/EditarCajaTesoreriaModal";
-import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesoreriaModal";
 import ChequesCajaTesoreriaModal from "@/components/finanzas/ChequesCajaTesoreriaModal";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
@@ -43,7 +42,6 @@ export default function FinanzasTesoreriaPageClient({
   const [openNuevaCaja, setOpenNuevaCaja] = useState(false);
   const [cajaParaEditarMonto, setCajaParaEditarMonto] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
-  const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
   const [cajaChequeSeleccionada, setCajaChequeSeleccionada] = useState<TesoreriaCajaFila | null>(null);
   const [filtroEntidad, setFiltroEntidad] = useState("");
   const [filtroTitular, setFiltroTitular] = useState("");
@@ -88,33 +86,6 @@ export default function FinanzasTesoreriaPageClient({
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection>
               <FilaFiltrosDesplegables>
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={Boolean(filtroTipoCaja)}
-                  onLimpiar={() => setFiltroTipoCaja("")}
-                >
-                  <Select
-                    value={filtroTipoCaja || "none"}
-                    onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
-                  >
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="TIPO CAJA" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro"
-                    >
-                      <SelectItem value="none">TIPO CAJA</SelectItem>
-                      {tiposCajaOptions.map((tipo) => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {etiquetaTipoCajaEnPantalla(tipo as TipoCajaTesoreria)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={Boolean(filtroEntidad)}
@@ -166,6 +137,33 @@ export default function FinanzasTesoreriaPageClient({
                     </SelectContent>
                   </Select>
                 </FiltroIndividualContainer>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroTipoCaja)}
+                  onLimpiar={() => setFiltroTipoCaja("")}
+                >
+                  <Select
+                    value={filtroTipoCaja || "none"}
+                    onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="TIPO CAJA" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TIPO CAJA</SelectItem>
+                      {tiposCajaOptions.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {etiquetaTipoCajaEnPantalla(tipo as TipoCajaTesoreria)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
                 <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2")}>
                   <LimpiarFiltrosButton onClick={limpiarFiltros} />
                 </div>
@@ -192,7 +190,6 @@ export default function FinanzasTesoreriaPageClient({
           onEditMontoClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
           onChequeRowClick={(fila) => setCajaChequeSeleccionada(fila)}
           onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}
-          onDeleteClick={esEditor ? (fila) => setCajaParaEliminar(fila) : undefined}
         />
         <NuevaCajaTesoreriaModal
           open={openNuevaCaja}
@@ -214,14 +211,6 @@ export default function FinanzasTesoreriaPageClient({
           }}
           caja={cajaParaEditarDatos}
           onUpdated={() => router.refresh()}
-        />
-        <EliminarCajaTesoreriaModal
-          open={cajaParaEliminar != null}
-          onOpenChange={(open) => {
-            if (!open) setCajaParaEliminar(null);
-          }}
-          caja={cajaParaEliminar}
-          onDeleted={() => router.refresh()}
         />
         <ChequesCajaTesoreriaModal
           open={cajaChequeSeleccionada != null}

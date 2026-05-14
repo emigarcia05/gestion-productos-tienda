@@ -19,6 +19,12 @@ import { listarProveedoresMercaderiaParaPagoChequeTesoreriaAction } from "@/acti
 import type { FinTesoreriaChequeItem, ProveedorMercaderiaChequeTesoreriaItem } from "@/services/finTesoreriaCheques.service";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Check, Loader2 } from "lucide-react";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 
 interface Props {
   open: boolean;
@@ -104,30 +110,35 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value.toLocaleUpperCase("es-AR"))}
               disabled={cargando || !!enviandoId}
-              placeholder="BUSCAR POR NOMBRE O PREFIJO…"
+              placeholder="BUSCAR POR NOMBRE…"
               aria-label="Buscar proveedor de mercadería"
               className="h-9"
             />
           </label>
           <div className="contenedor-tabla-gestion max-h-[min(22rem,45vh)] min-h-[10rem] w-full min-w-0 overflow-hidden">
-            <Table variant="compact" scrollX={false} className="w-full">
+            <Table variant="compact" scrollX={false} className="table-fixed w-full">
+              <colgroup>
+                <col className="min-w-0" />
+                <col className="w-[3.25rem]" />
+              </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="min-w-0">PROVEEDOR</TableHead>
-                  <TableHead className="w-[7rem] whitespace-nowrap">PREF.</TableHead>
-                  <TableHead className="w-[9rem] text-center">ACCIÓN</TableHead>
+                  <TableHead className="w-[3.25rem] text-center tabla-bloque-secundario-head-divider">
+                    ACCIONES
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cargando ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="celda-datos text-center text-muted-foreground">
+                    <TableCell colSpan={2} className="celda-datos text-center text-muted-foreground">
                       Cargando…
                     </TableCell>
                   </TableRow>
                 ) : filas.length === 0 ? (
                   <EmptyTableRow
-                    colSpan={3}
+                    colSpan={2}
                     message={
                       proveedores.length === 0
                         ? "No hay proveedores de mercadería."
@@ -140,27 +151,37 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
                       <TableCell className={cn("celda-datos min-w-0")} title={p.nombre}>
                         <span className="celda-destacado block truncate">{p.nombre}</span>
                       </TableCell>
-                      <TableCell className="celda-datos whitespace-nowrap text-muted-foreground">
-                        {p.prefijo ?? "—"}
-                      </TableCell>
-                      <TableCell className="celda-datos text-center">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={!!enviandoId}
-                          className="h-8"
-                          onClick={async () => {
-                            if (!cheque) return;
-                            setEnviandoId(p.id);
-                            try {
-                              await onSeleccion({ chequeId: cheque.id, proveedorId: p.id });
-                            } finally {
-                              setEnviandoId(null);
-                            }
-                          }}
-                        >
-                          Seleccionar
-                        </Button>
+                      <TableCell
+                        className={cn(
+                          "celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider min-w-0"
+                        )}
+                      >
+                        <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "flex justify-center")}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={!!enviandoId || !cheque}
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label={`Seleccionar proveedor ${p.nombre}`}
+                            title="Seleccionar"
+                            onClick={async () => {
+                              if (!cheque) return;
+                              setEnviandoId(p.id);
+                              try {
+                                await onSeleccion({ chequeId: cheque.id, proveedorId: p.id });
+                              } finally {
+                                setEnviandoId(null);
+                              }
+                            }}
+                          >
+                            {enviandoId === p.id ? (
+                              <Loader2 className={cn(TABLE_ROW_ACTION_ICON_CLASS, "animate-spin")} aria-hidden />
+                            ) : (
+                              <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

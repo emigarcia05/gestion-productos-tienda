@@ -14,7 +14,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { listarCajasTesoreriaTipoDigitalAction } from "@/actions/cajasTesoreria";
+import { listarCajasTesoreriaTipoBancoAction } from "@/actions/cajasTesoreria";
 import { transferirFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
 import type { CajaTesoreriaItem } from "@/services/cajasTesoreria.service";
@@ -45,7 +45,7 @@ export default function AcreditarChequeTesoreriaModal({
   const cargarDatos = useCallback(async () => {
     setLoading(true);
     try {
-      const resCajas = await listarCajasTesoreriaTipoDigitalAction();
+      const resCajas = await listarCajasTesoreriaTipoBancoAction();
       if (!resCajas.ok) {
         toast.error(resCajas.error ?? "No se pudieron cargar las cajas.");
         setCajas([]);
@@ -136,7 +136,7 @@ export default function AcreditarChequeTesoreriaModal({
               ) : cajas.length === 0 ? (
                 <EmptyTableRow
                   colSpan={COL_SPAN}
-                  message="No hay cajas con tipo de valor DIGITAL (banco o billetera digital). Creá una en Tesorería."
+                  message="No hay cajas con tipo BANCO. Creá una en Tesorería."
                 />
               ) : (
                 cajas.map((c) => {
@@ -158,7 +158,7 @@ export default function AcreditarChequeTesoreriaModal({
                             disabled={!cheque || !!pendingDestinoId}
                             aria-busy={busy}
                             aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.entidadNombre}`}
-                            title="Acreditar el importe del cheque en esta caja (tipo de valor DIGITAL)."
+                            title="Acreditar el importe del cheque en esta caja (tipo BANCO)."
                             onClick={() => void ejecutarTransferencia(c.id)}
                           >
                             {busy ? (

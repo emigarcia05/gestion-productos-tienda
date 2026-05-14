@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
-import { Banknote, Pencil, ScrollText, TriangleAlert, Trash2 } from "lucide-react";
+import { Banknote, Pencil, ScrollText, TriangleAlert } from "lucide-react";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -47,21 +47,13 @@ interface Props {
   /** Cajas no CHEQUE: abrir modal de actualización de monto. */
   onEditMontoClick?: (fila: TesoreriaCajaFila) => void;
   onEditDataClick?: (fila: TesoreriaCajaFila) => void;
-  onDeleteClick?: (fila: TesoreriaCajaFila) => void;
 }
 
-/** Columnas: ÚLT. ACT., texto tipo+entidad+titular, MONTO [, ACCIONES]. */
-const COLS = 3;
+/** Orden: ÚLT. ACT., TIPO CAJA, ENTIDAD, TITULAR, MONTO [, ACCIONES]. Con acciones suma 100%. */
+const COLS = 5;
 
-/** Con ACCIONES: suma 100 %. */
-const COL_WIDTHS_PCT_CON_ACCIONES = [18, 52, 20, 10] as const;
-/** Sin ACCIONES: MONTO absorbe el 10 %. */
-const COL_WIDTHS_PCT_SIN_ACCIONES = [20, 55, 25] as const;
-
-function textoTipoEntidadTitular(fila: TesoreriaCajaFila): string {
-  const tipo = etiquetaTipoCajaEnPantalla(fila.tipoCaja as TipoCajaTesoreria);
-  return `${tipo} ${fila.entidadNombre} ${fila.titular}`.replace(/\s+/g, " ").trim();
-}
+const COL_WIDTHS_PCT_CON_ACCIONES = [15, 15, 20, 20, 20, 10] as const;
+const COL_WIDTHS_PCT_SIN_ACCIONES = [15, 15, 20, 20, 30] as const;
 
 /** Columna ÚLT. ACT.: recuadro sólido `accent2` + ícono blanco (solo si hay alerta). */
 const TESORERIA_ALERTA_CAJA_ACTIVA_CLASS = "border-accent2 bg-accent2 shadow-sm";
@@ -180,7 +172,6 @@ export default function TablaTesoreriaCajas({
   onChequeRowClick,
   onEditMontoClick,
   onEditDataClick,
-  onDeleteClick,
 }: Props) {
   const { efectivoTipoValor, digitalTipoValor, chequeTipoValor, inmediato, diferido } =
     totalesPieResumenTesoreria(filas);
@@ -196,7 +187,9 @@ export default function TablaTesoreriaCajas({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className={CELL_MIN}>ÚLT. ACTUALIZACIÓN</TableHead>
-                <TableHead className={CELL_MIN}>TIPO · ENTIDAD · TITULAR</TableHead>
+                <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
+                <TableHead className={CELL_MIN}>ENTIDAD</TableHead>
+                <TableHead className={CELL_MIN}>TITULAR</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                 {esEditor ? (
                   <TableHead className={cn("text-center tabla-bloque-secundario-head-divider", CELL_MIN)}>
@@ -213,7 +206,6 @@ export default function TablaTesoreriaCajas({
                   (() => {
                     const diasSinActualizar = getDiasSinActualizar(f.ultActualizacionIso);
                     const estaDesactualizada = diasSinActualizar !== null && diasSinActualizar > 5;
-                    const textoCaja = textoTipoEntidadTitular(f);
 
                     return (
                       <TableRow
@@ -267,8 +259,14 @@ export default function TablaTesoreriaCajas({
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={textoCaja}>
-                          <span className="celda-destacado block truncate">{textoCaja}</span>
+                        <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
+                          {etiquetaTipoCajaEnPantalla(f.tipoCaja as TipoCajaTesoreria)}
+                        </TableCell>
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.entidadNombre}>
+                          <span className="celda-destacado block truncate">{f.entidadNombre}</span>
+                        </TableCell>
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.titular}>
+                          <span className="block truncate">{f.titular}</span>
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                           ${fmtPrecio(f.montoDisponible)}
@@ -325,20 +323,6 @@ export default function TablaTesoreriaCajas({
                                 title="Editar caja"
                               >
                                 <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              </Button>
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  onDeleteClick?.(f);
-                                }}
-                                aria-label="Eliminar caja"
-                                title="Eliminar caja"
-                              >
-                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
                             </div>
                           </TableCell>

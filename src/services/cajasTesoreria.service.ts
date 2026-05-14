@@ -261,6 +261,29 @@ export async function listarCajasTesoreriaPorTipoValor(
   });
 }
 
+/** Cajas con un `tipo_caja` dado (p. ej. **BANCO** como destino de acreditación de cheques). */
+export async function listarCajasTesoreriaPorTipoCaja(
+  tipoCaja: TipoCajaTesoreria
+): Promise<CajaTesoreriaItem[]> {
+  const rows = await prisma.cajaTesoreria.findMany({
+    where: { tipoCaja },
+    include: CAJA_TESORERIA_LIST_INCLUDE,
+    orderBy: [{ entidad: { nombre: "asc" } }],
+  });
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+  const [sumasCheque, sumasDiferido] = await Promise.all([
+    sumarMontosChequesAcreditadosHasta(hoyIso),
+    sumarMontosChequesDiferidosPorCaja(hoyIso),
+  ]);
+  return rows.map((row) => {
+    const disponible =
+      row.tipoCaja === "CHEQUE" ? (sumasCheque.get(row.id) ?? 0) : row.monto;
+    const diferido =
+      row.tipoCaja === "CHEQUE" ? (sumasDiferido.get(row.id) ?? 0) : 0;
+    return mapCaja(row, disponible, diferido);
+  });
+}
+
 export async function crearCajaTesoreria(
   input: CrearCajaTesoreriaInput
 ): Promise<ServiceResult<CajaTesoreriaItem>> {

@@ -323,6 +323,7 @@ export async function listarProveedoresMercaderiaParaPagoChequeTesoreria(): Prom
  * Transfiere el importe del cheque a otra caja (`fin_tesoreria.monto`) y marca el cheque como transferido.
  * El registro se conserva en BD durante {@link CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA} días y luego se purga.
  * Requiere `fecha_acreditacion` ≤ hoy (calendario Argentina).
+ * Destino: `tipo_valor = DIGITAL` y `tipo_caja = BANCO`.
  */
 export async function transferirChequeFinTesoreria(
   input: TransferirFinTesoreriaChequeInput
@@ -359,6 +360,9 @@ export async function transferirChequeFinTesoreria(
       }
       if (destino.tipoValor !== "DIGITAL") {
         throw new Error("DESTINO_NO_TIPO_VALOR_DIGITAL");
+      }
+      if (destino.tipoCaja !== "BANCO") {
+        throw new Error("DESTINO_NO_TIPO_CAJA_BANCO");
       }
 
       const nuevoSaldo = destino.monto + cheque.monto;
@@ -421,7 +425,13 @@ export async function transferirChequeFinTesoreria(
         return {
           success: false,
           error:
-            "La acreditación solo puede hacerse hacia una caja con tipo de valor DIGITAL (banco o billetera digital).",
+            "La acreditación solo puede hacerse hacia una caja con tipo de valor DIGITAL.",
+        };
+      }
+      if (error.message === "DESTINO_NO_TIPO_CAJA_BANCO") {
+        return {
+          success: false,
+          error: "La acreditación solo puede hacerse hacia una caja con tipo BANCO.",
         };
       }
       if (error.message === "SALDO_DESTINO_FUERA_DE_RANGO") {
