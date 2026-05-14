@@ -1,13 +1,8 @@
 import { z } from "zod";
-import { IvaProveedor } from "@prisma/client";
+import { IvaProveedor, Prisma } from "@prisma/client";
 import type { ServiceResult } from "@/types";
-import { getSiguienteComprobanteDuxCompra } from "@/services/duxCompras.service";
 import { prisma } from "@/lib/prisma";
-import {
-  dateToIsoYmdArgentina,
-  formatDdMmHhMmGuionesBajosArchivoArgentina,
-} from "@/lib/fechaArgentina";
-import { incrementarComprobanteDux } from "@/lib/duxComprobanteCorrelativo";
+import { formatDdMmHhMmGuionesBajosArchivoArgentina } from "@/lib/fechaArgentina";
 
 /** Prefijo de log uniforme. Loggear en el catch evita que los errores queden
  *  opacos detrás de "An error occurred in the Server Components render…". */
@@ -21,12 +16,6 @@ function logServiceError(scope: string, err: unknown): void {
 export const fechaFacturaIsoSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida. Formato esperado: YYYY-MM-DD");
-
-export const duxIdEmpresaComprasSchema = z
-  .number()
-  .int()
-  .positive()
-  .max(99999999);
 
 /**
  * Valor permitido en la columna "TIPO COMPROBANTE" del Excel de recepción.
@@ -81,10 +70,48 @@ export interface ExportRecepcionPedidoExcelPayload {
   rows: RecepcionPedidoExcelRow[];
 }
 
-const DUX_ID_EMPRESA_COMPRAS_DEFAULT = 2482;
-const RANGO_DIAS_CONSULTA_COMPROBANTE_DUX = 15;
 const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
 const TOLERANCIA_TOTAL_EXPORTACION = 0.1; // diferencia máxima permitida contra total ingresado
+
+/** Fila única en `prod_ped_ult_comp` (ver migración `20260518120000_add_prod_ped_ult_comp`). */
+const PROD_PED_ULT_COMP_ROW_ID = 1;
+
+/**
+ * Incrementa en 1 el último comprobante (texto sólo dígitos) y devuelve el **nuevo** valor
+ * en una sola sentencia SQL (sin carrera entre peticiones).
+ */
+async function reservarSiguienteComprobanteRecepcion(): Promise<ServiceResult<string>> {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ ult_comprobante: string }>>(
+      Prisma.sql`
+        UPDATE "prod_ped_ult_comp"
+        SET "ult_comprobante" = ((btrim("ult_comprobante"))::bigint + 1)::text
+        WHERE "id" = ${PROD_PED_ULT_COMP_ROW_ID}
+        RETURNING "ult_comprobante" AS ult_comprobante
+      `
+    );
+    const v = rows[0]?.ult_comprobante?.trim();
+    if (!v) {
+      return {
+        success: false,
+        error:
+          "No se pudo obtener el correlativo de comprobante (falta la fila en prod_ped_ult_comp; ejecutá migraciones).",
+      };
+    }
+    return { success: true, data: v };
+  } catch (e) {
+    logServiceError("reservarSiguienteComprobanteRecepcion", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/invalid input syntax for type bigint/i.test(msg)) {
+      return {
+        success: false,
+        error:
+          "El correlativo en prod_ped_ult_comp debe ser sólo dígitos; corregilo en base de datos.",
+      };
+    }
+    return { success: false, error: "No se pudo asignar el correlativo de comprobante." };
+  }
+}
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -96,17 +123,8 @@ function parseIsoYmdParts(iso: string): { y: number; m: number; d: number } {
   return { y: Number(ys), m: Number(ms), d: Number(ds) };
 }
 
-function formatDuxDdMmYyyy(y: number, m: number, d: number): string {
-  return `${pad2(d)}/${pad2(m)}/${y}`;
-}
-
 function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
   return `${pad2(d)}-${pad2(m)}-${y}`;
-}
-
-function sumarComprobante(baseComprobante: string, incremento: number): string {
-  const inc = Math.max(0, Math.floor(incremento));
-  return incrementarComprobanteDux(baseComprobante, inc);
 }
 
 function sumarDiasYmd(
@@ -205,7 +223,6 @@ function distribuirPreciosDiferenciales(params: {
 export async function getExportRecepcionPedidoExcelPayload(params: {
   pedidoHistoriaId: string;
   fechaFacturaIso: string; // YYYY-MM-DD
-  idEmpresaCompras?: number;
   totalPedidoIngreso?: number;
   /**
    * SI/NO del modal "¿La compra genera comprobante fiscal?".
@@ -221,24 +238,12 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     return { success: false, error: "Fecha de factura inválida." };
   }
 
-  const idEmpresaCompras =
-    params.idEmpresaCompras ??
-    (process.env.DUX_ID_EMPRESA_COMPRAS
-      ? Number(process.env.DUX_ID_EMPRESA_COMPRAS)
-      : DUX_ID_EMPRESA_COMPRAS_DEFAULT);
-
-  const idEmpresaParsed = duxIdEmpresaComprasSchema.safeParse(idEmpresaCompras);
-  if (!idEmpresaParsed.success) {
-    return { success: false, error: "ID Empresa (DUX) inválido." };
-  }
-
   try {
     const pedido = await prisma.pedidoHistoria.findUnique({
       where: { id: pedidoHistoriaId },
       select: {
         total: true,
         estado: true,
-        recepcionNumero: true,
         proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } },
         sucursal: { select: { deposito: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
@@ -294,55 +299,22 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     const fechaFacturaExcel = formatExcelDdMmYyyyDash(yMasUno, mMasUno, dMasUno);
     const fechaImputacionContableExcel = formatExcelDdMmYyyyDash(y, m, d);
 
-    // La numeración de comprobante siempre se consulta con "hoy" (Argentina),
-    // independiente de la fecha de recepción/factura cargada en el modal.
-    const hoyIsoArgentina = dateToIsoYmdArgentina(new Date());
-    const { y: yHoy, m: mHoy, d: dHoy } = parseIsoYmdParts(hoyIsoArgentina);
-
-    const hoyUtc = new Date(Date.UTC(yHoy, mHoy - 1, dHoy));
-    const desdeUtc = new Date(hoyUtc);
-    desdeUtc.setUTCDate(hoyUtc.getUTCDate() - RANGO_DIAS_CONSULTA_COMPROBANTE_DUX);
-    const fechaDesdeComprobante = formatDuxDdMmYyyy(
-      desdeUtc.getUTCFullYear(),
-      desdeUtc.getUTCMonth() + 1,
-      desdeUtc.getUTCDate()
-    );
-    const hastaUtc = new Date(hoyUtc);
-    hastaUtc.setUTCDate(hoyUtc.getUTCDate() + 1);
-    const fechaHastaComprobante = formatDuxDdMmYyyy(
-      hastaUtc.getUTCFullYear(),
-      hastaUtc.getUTCMonth() + 1,
-      hastaUtc.getUTCDate()
-    );
-
-    const tipoCompDux: "FACTURA" | "COMPROBANTE_COMPRA" =
-      tipoComprobante === "FACTURA" ? "FACTURA" : "COMPROBANTE_COMPRA";
-
-    const { ultimoComprobante, totalImporte } =
-      await getSiguienteComprobanteDuxCompra({
-        fechaDesde: fechaDesdeComprobante,
-        fechaHasta: fechaHastaComprobante,
-        idEmpresa: idEmpresaParsed.data,
-        tipoComp: tipoCompDux,
-      });
-    /**
-     * Correlativo Excel sobre el último comprobante DUX del tipo: 1ª recepción = último + 1,
-     * 2ª = último + 2, etc. (`incrementarComprobanteDux`).
-     * `recepcionNumero` cuenta cierres: sube en `marcarPedidoHistoriaRegistrado` y en cada
-     * `guardarRecepcionPedidoHistoria` con pedido ya RECEPCIONADO; mientras el pedido está
-     * PENDIENTE el contador aún no refleja el cierre en curso → se usa `n + 1`.
-     */
-    const deltaComprobantePorRecepcion: number =
-      pedido.estado === "RECEPCIONADO" ? pedido.recepcionNumero : pedido.recepcionNumero + 1;
-    const comprobanteExport = sumarComprobante(ultimoComprobante, deltaComprobantePorRecepcion);
-
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
       totalPedidoIngreso != null && Number.isFinite(totalPedidoIngreso) && totalPedidoIngreso > 0
         ? totalPedidoIngreso
         : totalPersistido != null && Number.isFinite(totalPersistido) && totalPersistido > 0
           ? totalPersistido
-          : totalImporte;
+          : null;
+
+    if (totalParaPrecio == null) {
+      return {
+        success: false,
+        error:
+          "Falta un total válido para calcular precios en el Excel (ingresá TOTAL PEDIDO o registrá la recepción con total).",
+      };
+    }
+
     const cantidades = itemsRecibidos.map((it) => it.cantRecibida);
     const { precios, diferencia } = distribuirPreciosDiferenciales({
       cantidades,
@@ -355,6 +327,10 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
           "No se pudo ajustar el total del Excel dentro de la tolerancia permitida (0,10).",
       };
     }
+
+    const compRes = await reservarSiguienteComprobanteRecepcion();
+    if (!compRes.success) return compRes;
+    const comprobanteExport = compRes.data;
 
     const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it, index) => ({
       "TIPO COMPROBANTE": tipoComprobante,
@@ -388,4 +364,3 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
     return { success: false, error: msg };
   }
 }
-

@@ -52,7 +52,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 ### 1.2.3 Gate doble: módulo + editor (mutaciones críticas)
 
 - **Historial de pedidos — mutaciones** (`pedidosHistoria.ts`): con `puede(rol, PERMISOS.pedidos.acceso)` se habilitan para `simple` y `editor`: actualizar cantidad recibida, agregar ítem, marcar registrado, guardar recepción, reabrir recepción y eliminar cabecera. Lecturas/detalle/PDF conservan el mismo permiso `pedidos.acceso`.
-- **Integraciones DUX / compras** (`comprobantesProveedor.ts`; correlativos vía **servidor** `getSiguienteComprobanteDuxCompra` en `duxCompras.service.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo desde **Server Actions** (misma sensibilidad que otras escrituras financieras). El correlativo de comprobante **no** se expone como Action invocable desde el cliente; solo flujos server-side (p. ej. export Excel recepción) lo invocan.
+- **Integraciones DUX / compras** (`comprobantesProveedor.ts`; sync masivo vía `comprobantesProveedorDuxSync.service.ts` + `duxComprasApi.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo desde **Server Actions** (misma sensibilidad que otras escrituras financieras).
 - **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
 
 ### 1.2.4 Acciones mock o legacy (`productos.ts`)
@@ -99,7 +99,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 ### 1.2.6 Superficie mínima y variables de entorno (post-auditoría 2026-05-10)
 
 - **Server Actions huérfanas**: si una Action no tiene call sites (`grep`/`tsserver`), **eliminarla** o integrarla de inmediato. Duplicar la misma operación ya cubierta por **Route Handler** (`app/api/…`) aumenta vectores CSRF/UI sin beneficio — preferir una sola entrada con el mismo gate (`getRol` + `puede`).
-- **Lógica solo servidor**: integraciones sensibles que **no** deben exponerse como Server Actions invocables desde el navegador (p. ej. correlativo DUX para Excel) se mantienen en `src/services/`; solo otros servicios o Actions ya autorizados las llaman (caso típico: `getSiguienteComprobanteDuxCompra` desde `exportRecepcionPedidoExcel.service.ts` tras gates en `exportRecepcionPedidoExcel.ts`). **No** re-exportar esquemas Zod desde archivos `"use server"` (usar `@/lib/validations/*` o el servicio que ya define `siguienteComprobanteDuxParamsSchema`).
+- **Lógica solo servidor**: integraciones sensibles que **no** deben exponerse como Server Actions invocables desde el navegador se mantienen en `src/services/` y solo las invocan Actions ya autorizadas. **No** re-exportar valores de runtime desde archivos `"use server"` (usar `@/lib/validations/*` o servicios sin `"use server"`).
 - **Catálogo de ENV**: todas las lecturas documentadas `process.env.*` deben estar listadas en **`.env.example`** (aunque sean opcionales), con una línea corta por variable. Valores obligatorios en producción (`SESSION_SECRET`, `DATABASE_URL`) deben estar comentados como tales al lado del ejemplo.
 - **`z.record` con IDs**: mapas cliente→servidor cuyas claves sean FK Prisma (`cuid`) deben tiparse con `z.record(prismaCuidSchema, …)` más un tope de cardinalidad (`superRefine` / `max`) para evitar payloads enormes (aplicado en `cargarImputacionesMesParamsSchema.ivaPorGastoFinalId`).
 - **Route Handlers (`app/api/…`)**: compartir gates con `src/lib/apiRouteAuth.ts` (`guardTiendaListaPreciosSincronizar`, `guardFinanzasLectura`, `guardListaPreciosImportarEsEditor`) para que **GET de estado** y **POST** usen el mismo criterio (evita filtrar solo mutaciones y dejar el poll expuesto).
@@ -269,7 +269,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - `ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL"` — constante exportada sólo desde **`exportRecepcionPedidoExcel.service.ts`**. Un archivo **`"use server"`** (p. ej. `actions/exportRecepcionPedidoExcel.ts`) **no** puede `export`-ar strings, objetos ni funciones síncronas: sólo **async functions** como Server Actions; re-exportar esa constante provocaba `invalid-use-server-value` en runtime.
 - **Servicio** (`exportRecepcionPedidoExcel.service.ts`):
   - El `findUnique` de `pedidoHistoria` incluye `proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } }`.
-  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }` sin tocar la API DUX. Tras resolver **`FACTURA`** vs **`Comprobante_Compra`** (literal en Excel), llama a `getSiguienteComprobanteDuxCompra` con **`tipoComp: "FACTURA"`** o **`"COMPROBANTE_COMPRA"`** según el caso: DUX filtra por `tipo_comp` y toma el **mayor** `comprobante` sólo entre ítems de ese tipo (correlativos independientes por tipo).
+  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }`. La columna Excel **COMPROBANTE** sale del correlativo global **`prod_ped_ult_comp.ult_comprobante`** (ver §2.8).
 - **Action** (`actions/exportRecepcionPedidoExcel.ts`):
   - Schema Zod agrega `decisionFiscal: z.boolean().optional()` (cliente envía `boolean` o no envía nada).
   - La Action propaga `decisionFiscal` al servicio sin reinterpretar la regla. Si el servicio devuelve el marker `REQUIERE_DECISION_FISCAL`, viaja hasta el cliente como `error` para que el modal SI/NO se abra.
@@ -488,7 +488,7 @@ Constraint:
 
 ### 2.5a Comprobantes de compra DUX (`fin_compras_comprobante`, Prisma: `ComprobanteProveedor`)
 
-Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasApi.ts` / `duxCompras.service.ts`). La columna `id_proveedor` guarda el **mismo valor** que `global_proveedores.id_proveedor_dux` (FK).
+Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasApi.ts`). La columna `id_proveedor` guarda el **mismo valor** que `global_proveedores.id_proveedor_dux` (FK).
 
 | Columna (BD)           | Prisma               | API DUX (snake_case)   | Notas |
 |------------------------|----------------------|-------------------------|--------|
@@ -508,7 +508,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Índices**: `fecha_comp`, `id_proveedor`.
 - **Sync** (`comprobantesProveedorDuxSync.service.ts`):
   - **Progreso en UI:** durante `sincronizarComprobantesProveedorDesdeDux` se actualiza la fila **`sync_dux_status.id = compras-proveedor-dux`** (`start` → `processed`/`total` por sucursal completada → `success` o `error`). El cliente hace polling con **`GET /api/sync-compras-proveedor-dux/status`**, con **`guardFinanzasLectura()`** (`PERMISOS.finanzas.acceso`) en el route. Los valores **X de Y** representan **sucursales DUX ya procesadas / total de sucursales** con `id_dux` numérico (no cantidad de comprobantes por página).
-  - **Una petición (o ráfaga paginada) por cada** `global_sucursales.id_dux` numérico; entre sucursales respeta `DUX_COMPRAS_MIN_INTERVAL_MS` (igual que `getSiguienteComprobanteDuxCompra`).
+  - **Una petición (o ráfaga paginada) por cada** `global_sucursales.id_dux` numérico; entre sucursales respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
   - **Ventana fija de consulta por sync**: `fechaDesde = hoy AR − 150 días` y `fechaHasta = hoy AR + 1 día` (sin depender de `MAX(fecha_comp)` persistida).
   - **Purga al finalizar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt;= `fechaDesde` (purga inclusiva del borde de ventana para evitar arrastre de registros desactualizados); el conteo vuelve en `data.eliminadosAntiguos`.
   - **Paginación `/compras`**: la API DUX devuelve **como máximo 50** filas por GET (`DUX_COMPRAS_API_PAGE_LIMIT` en `duxComprasApi.ts`). `fetchComprasPagesAcumulado` usa `limit=50` y `offset=0,50,100…` hasta vacío o menos de 50 resultados. `DUX_COMPRAS_SYNC_LIMIT` (opcional) acota 1..50; `DUX_COMPRAS_SYNC_MAX_PAGES` default **500** (techo de seguridad, configurable). Entre páginas y entre sucursales se respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
@@ -529,7 +529,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - Existió como modelo Prisma **`MovimientoFinanzas`** con enum **`TipoMovimientoFinanzas`** (`EFECTIVO | BANCO | CHEQUE`) para gastos simples por sucursal; quedó **sin uso activo** al consolidar **`fin_bal_gasto_mensual`** en Balance · Gastos.
 - **Baja**: migración **`20260512210000_drop_movimientos_finanzas`** (`DROP TABLE "movimientos_finanzas";` + `DROP TYPE "TipoMovimientoFinanzas"`). Migraciones previas de alta/rename/consolidado de cheques: `20260402110000_*`, `20260418140000_*`, **`20260512203000_drop_movimientos_finanzas_cheques`**.
 - **`listarSucursalesParaGastos()`** (sucursales con `global_sucursales.centro_costo = true`) vive ahora en **`src/services/finBalGastoMensualBalance.service.ts`** junto al resto del flujo de `/finanzas/balance/gastos`; **tipo** exportado **`SucursalOption`**.
-- **Sucursal "CORPORATIVO"**: suele vivir en `global_sucursales` con `codigo = 'corporativo'`, `pedido = FALSE` e `id_dux = NULL` para imputaciones sin sucursal física. Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`duxCompras.service.ts`, `comprobantesProveedorDuxSync.service.ts`). Migración histórica `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` insertó un id fijo `'suc_corporativo'`; **`listarSucursalesParaGastos()`** incluye esa fila cuando tiene **`centro_costo = true`**. Zod: `globalSucursalIdSchema` en `@/lib/validations/common.ts` acepta UUID, CUID o el literal `suc_corporativo` para `sucursalId` en gastos / gasto final.
+- **Sucursal "CORPORATIVO"**: suele vivir en `global_sucursales` con `codigo = 'corporativo'`, `pedido = FALSE` e `id_dux = NULL` para imputaciones sin sucursal física. Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`comprobantesProveedorDuxSync.service.ts`). Migración histórica `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` insertó un id fijo `'suc_corporativo'`; **`listarSucursalesParaGastos()`** incluye esa fila cuando tiene **`centro_costo = true`**. Zod: `globalSucursalIdSchema` en `@/lib/validations/common.ts` acepta UUID, CUID o el literal `suc_corporativo` para `sucursalId` en gastos / gasto final.
 - **Flag `global_sucursales.centro_costo`** (Prisma: `Sucursal.centroCosto`, `BOOLEAN NOT NULL DEFAULT FALSE`): marca si la sucursal se considera **centro de costo** para reportes de balance / imputación contable. **Ortogonal a `pedido`**: `pedido` rige la participación en flujos de pedidos de mercadería; `centro_costo` sólo tiñe lecturas contables. Una sucursal puede ser `pedido = true, centro_costo = true` (ej. GUAYMALLEN / MAIPU si corresponde), `pedido = false, centro_costo = true` (ej. CORPORATIVO si se decide imputar contra él) o combinaciones opuestas. No hay UI de edición de sucursales: el flag se gestiona por **seed / UPDATE manual** en la DB (mismo canal que el resto de atributos de `global_sucursales`). Sin índice (cardinalidad = 2; se lee como payload, no como predicado masivo). Registros preexistentes quedan en `false` al aplicar la migración; marcar con `UPDATE global_sucursales SET centro_costo = TRUE WHERE codigo IN (...);` cuando se defina la política funcional. Migración: `prisma/migrations/20260418250000_add_sucursales_centro_costo/migration.sql` (SQL histórico sobre tabla `sucursales`, hoy `global_sucursales`).
 
 ### 2.5f Balance mensual (`/finanzas/balance/mensual`) y ventas de balance (`fin_bal_vtas`)
@@ -863,35 +863,13 @@ Función:
 
 ---
 
-### 2.8 Servicio `duxCompras.service.ts` (DUX compras / comprobante)
+### 2.8 Recepción pedidos — correlativo COMPROBANTE (Excel)
 
-Objetivo: resolver el “próximo comprobante” para la integración con DUX vía la API REST `WSERP/.../compras`.
-
-Contrato (SSOT de lógica de negocio + integración externa):
-
-1. `getSiguienteComprobanteDuxCompra({ fechaDesde, fechaHasta, idEmpresa, tipoComp? })`
-   - Entrada (validada con Zod):
-     - `fechaDesde`: `string` formato `DD/MM/YYYY`
-     - `fechaHasta`: `string` formato `DD/MM/YYYY`
-     - `idEmpresa`: `number` entero positivo
-     - `tipoComp` (opcional): `"FACTURA"` | `"COMPROBANTE_COMPRA"`. Si se informa, sólo participan en el máximo las filas cuyo `tipo_comp`/`tipo_comprobante` (normalizado mayúsculas y espacios → `_`) coincide. **Recepción pedidos / Excel** siempre envía este campo acorde a la columna **TIPO COMPROBANTE**. Si se omite, el comportamiento es el histórico (máximo entre todos los tipos en el rango).
-   - Proceso:
-     - Lee de DB las sucursales y resuelve `global_sucursales.id_dux` (columna `Sucursal.idDux` en Prisma).
-     - Para cada sucursal válida (id_dux numérico), llama a DUX `compras` **en serie** (no en paralelo) con:
-       - `fechaDesde`, `fechaHasta`, `idEmpresa`, `idSucursal=<id_dux>` y `limit` = **`DUX_COMPRAS_API_PAGE_LIMIT` (50)**, igual que el máximo que admite la API (evita descartar el correlativo FACTURA más reciente cuando hay muchas líneas **COMPROBANTE_COMPRA** antes en la página).
-     - Entre cada petición a `/compras` y la siguiente espera **al menos 5 s** (DUX responde `429` si se supera la frecuencia). Intervalo configurable con `DUX_COMPRAS_MIN_INTERVAL_MS` (ms; por defecto `5000`; `0` desactiva la espera solo para entornos de prueba).
-     - Si tras recorrer sucursales no hay comprobantes válidos y se usa el fallback sin `idSucursal`, también espera ese intervalo **después** de la última consulta por sucursal.
-     - **Formato `comprobante`:** con `tipoComp = COMPROBANTE_COMPRA` sólo participan ítems cuyo comprobante es **sólo dígitos**. Con **`tipoComp = FACTURA`** (recepción Excel) también se aceptan comprobantes **AFIP típicos** `L-#####-########` (p. ej. `A-00000-00000001`), porque DUX devuelve así las facturas; el máximo se calcula en `@/lib/duxComprobanteCorrelativo` y **`siguienteComprobante = incremento(+5)`** sobre ese texto (dígitos como `BigInt`; AFIP incrementa el último tramo numérico).
-   - Salida:
-     - `{ ultimoComprobante: string, siguienteComprobante: string, totalImporte: number, fechaComp? }`
-   - Errores:
-     - Si DUX no devuelve resultados o el comprobante no es un formato ordenable conocido (`parseComprobanteDuxSortKey`), lanza error en la service; los llamadores **solo servidor** (p. ej. `exportRecepcionPedidoExcel.service.ts`) capturan y devuelven `ServiceResult` / mensaje seguro sin propagar stack al navegador.
-
-Acceso desde el cliente:
-
-- No hay exposición mediante Server Action para este método. El contrato válido es **solo backend**: `exportRecepcionPedidoExcel.ts` valida sesión/pedidos y delega en el servicio de Excel que llama a `getSiguienteComprobanteDuxCompra`. Para payloads compartidos, importar **`siguienteComprobanteDuxParamsSchema`** desde `@/services/duxCompras.service` únicamente en módulos **sin** `"use server"`.
-
-Persistencia de listados completos de `/compras` (campos extendidos en `duxComprasApi.mapCompra`): ver **§2.5a** y `sincronizarComprobantesProveedorDesdeDux` en `comprobantesProveedorDuxSync.service.ts`.
+- **Eliminado (histórico):** consulta DUX `/compras` por sucursal (`duxCompras.service.ts`, `duxComprobanteCorrelativo.ts`) y columna `recepcion_numero` en `prod_ped_historial` (migración `20260517100000_drop_recepcion_numero_prod_ped_historial`).
+- **Vigente:** tabla **`prod_ped_ult_comp`** (Prisma `ProdPedUltComp`), **una sola fila** `id = 1`, columna **`ult_comprobante`** (`TEXT`; correlativo numérico como texto, sólo dígitos). Seed inicial: migración **`20260518120000_add_prod_ped_ult_comp`** con valor **`1234568959`**.
+- En **`getExportRecepcionPedidoExcelPayload`**, tras validar pedido, ítems, total y distribución de precios (tolerancia **0,10**), se ejecuta **`UPDATE prod_ped_ult_comp SET ult_comprobante = ((btrim(ult_comprobante))::bigint + 1)::text WHERE id = 1 RETURNING ult_comprobante`** (una sentencia, atómica). El valor **retornado** es el que se escribe en la columna **COMPROBANTE** de todas las filas del Excel y queda guardado como último correlativo.
+- **Cada export exitoso** incrementa el contador (p. ej. **Descargar Recepción**, **Registrar En Dux**, **Guardar Corrección** si vuelve a generar Excel). Si en el futuro hubiera que reservar número sólo en un disparador, acotar en servicio y actualizar esta guía.
+- **Sync masivo** de compras DUX: **`comprobantesProveedorDuxSync.service.ts`** + **`duxComprasApi.ts`** (§2.5a), independiente de este correlativo.
 
 ---
 
@@ -901,33 +879,29 @@ Objetivo: construir el payload (filas + filename) del Excel 97-2003 con formato 
 
 Contrato (SSOT de integración + armado de filas):
 
-1. `getExportRecepcionPedidoExcelPayload({ pedidoHistoriaId, fechaFacturaIso, idEmpresaCompras? })`
+1. `getExportRecepcionPedidoExcelPayload({ pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso?, decisionFiscal? })`
    - Entrada:
      - `pedidoHistoriaId`: `cuid()` del snapshot en `prod_ped_historial`
      - `fechaFacturaIso`: `YYYY-MM-DD` (FECHA DE FACTURA desde el modal)
-     - `idEmpresaCompras`: opcional; si no se pasa, se toma de `process.env.DUX_ID_EMPRESA_COMPRAS` o fallback `2482`.
+     - `totalPedidoIngreso`: opcional; si falta o no es válido, se usa `prod_ped_historial.total` **solo** si ya fue persistido al registrar recepción (**> 0**). Si ninguno sirve, error: *«Falta un total válido…»* (ya no hay respaldo desde DUX).
    - Proceso:
      - Lee desde DB:
        - `prod_ped_historial.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
        - `prod_ped_historial.sucursal.deposito` => columna `DEPOSITO`
        - `prod_ped_historial_merc.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
      - En el Excel, `FECHA` se exporta en formato `DD-MM-AAAA` con **fecha ingresada + 1 día** (si el usuario carga `2026-04-14`, `FECHA` sale `15-04-2026`). `FECHA IMPUTACION CONTABLE` se exporta con la fecha ingresada original (`14-04-2026` en el ejemplo).
-     - Para resolver `COMPROBANTE` (DUX `/compras`), usar ventana fija en Argentina: `fechaHasta = hoy AR + 1 día` y `fechaDesde = hoy AR - 15 días`, sin usar `fechaFacturaIso`.
-     - **Numeración Excel (regla de negocio):** sobre el **último** comprobante DUX del tipo en el rango: **1ª recepción = último + 1**, **2ª = último + 2**, **3ª = último + 3**, etc. (`incrementarComprobanteDux` con ese entero como delta). El entero se deriva de `prod_ped_historial.recepcion_numero`: si el pedido está **PENDIENTE**, se usa `recepcion_numero + 1` (el cierre en curso aún no incrementó el contador); si está **RECEPCIONADO**, se usa `recepcion_numero` (ya refleja la última recepción/corrección guardada). El contador sube en `marcarPedidoHistoriaRegistrado` (primer cierre) y en `guardarRecepcionPedidoHistoria` cuando el pedido ya está `RECEPCIONADO` (cada corrección guardada).
-     - La resolución del comprobante en DUX: una consulta por sucursal válida (`id_dux`) y `limit = DUX_COMPRAS_API_PAGE_LIMIT` por consulta. **No** confundir con el campo auxiliar `siguienteComprobante` del servicio DUX (`último + 5` para otros usos); la **columna Excel** usa sólo **último + nº de recepción** como arriba.
+     - Columna **`COMPROBANTE`**: correlativo global vía **`prod_ped_ult_comp`** (§2.8), **después** de validar totales/precios para no consumir número si el export falla.
+     - **`TIPO COMPROBANTE`**: sigue `resolverTipoComprobantePorIva` + modal **PREGUNTA** (`ERROR_REQUIERE_DECISION_FISCAL`).
      - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
      - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** en todas las filas del Excel de recepción.
-     - Consulta DUX `compras` para obtener el **último** comprobante del tipo (y `totalImporte` como respaldo para `PRECIO`). El `siguienteComprobante` (`último + 5`) en la respuesta del servicio no es el que pobla la columna Excel de recepción.
-     - Para recepción de pedido, calcula `PRECIO` con: `totalPedidoIngreso / sum(cant_recibida)` usando el monto del input **TOTAL PEDIDO** del modal.
-     - Si no se recibe `totalPedidoIngreso`, usa fallback en este orden:
-      1) `prod_ped_historial.total` persistido al registrar recepción;
-      2) `totalImporte` devuelto por DUX `/compras`.
+     - Calcula `PRECIO` distribuyendo el total elegido entre cantidades recibidas (tolerancia **0,10**).
    - Salida:
      - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.
 
 Notas:
 - Este servicio prepara el payload; la generación binaria del `.xls` vive en la Action `src/actions/exportRecepcionPedidoExcel.ts` (usa `xlsx` con `bookType: "xls"`).
 - Requiere la columna `global_sucursales.deposito` (TEXT), agregada en la migración `20260323090000_add_sucursales_deposito_column` (SQL histórico sobre `sucursales`).
+- La columna **`recepcion_numero`** fue **eliminada** de `prod_ped_historial` (migración `20260517100000_drop_recepcion_numero_prod_ped_historial`); el correlativo Excel ya no depende de ella.
 
 ---
 
@@ -1011,7 +985,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `prisma/migrations/20260429001000_reposicion_sync_por_cod_tienda/migration.sql` | (Histórico: aplicaba sobre la tabla legada `prod_ped_merc`.) Se redefine `sync_pedidos_mercaderia_cant_pedir` y el trigger `trg_sync_reposicion_on_precios_tienda_stock` para que REPOSICIÓN recalcule por `cod_tienda` (no por `cod_ext`) en `BEFORE INSERT/UPDATE` de pedidos mercadería y en cambios de stock en `prod_precios_tienda`. Tras `20260430103000_drop_prod_ped_merc_legacy` la función/trigger asociados a la tabla legada se eliminan; la lógica equivalente en runtime usa **`prod_ped_merc`**. |
 | `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: validación de `reposicion_punto_pedido` admite `0` (solo rechaza `< 0`). Persistencia REPOSICIÓN por `cod_tienda`: `prod_precios_tienda.cod_tienda` → `cod_ext` + proveedor vigentes; al guardar se eliminan otras filas **`prod_ped_merc`** `REPOSICION` para la misma `sucursal + cod_tienda` con proveedor/cod_ext obsoletos. |
 | `src/actions/syncListaPrecioTienda.ts` | **Eliminado (2026-05-10):** redundante con `/api/sync-lista-precios-tienda` + `syncListaPrecioTiendaFromDux` (superficie invocable desde cliente sin uso). Histórico: comprobación `PERMISOS.tienda.acciones.sincronizar`; no llegó a usar `esEditor()` en código final. |
-| `src/actions/duxCompras.ts` | **Eliminado (2026-05-10):** sin call sites; correlativo DUX sólo servidor vía `duxCompras.service.ts` dentro del flujo de export recepción. Ver §1.2.6 y §2.8. |
+| `src/actions/duxCompras.ts` | **Eliminado (2026-05-10):** sin call sites; histórico: correlativo DUX para recepción. **2026-05-08:** removidos también `src/services/duxCompras.service.ts` y `src/lib/duxComprobanteCorrelativo.ts`; ver §2.8 y §2.9. |
 | `src/actions/importar.ts` | `importarProductos` e `importarListaPreciosProveedor` devuelven `ImportActionResult` (éxito con `data` o error con `error`) en lugar de lanzar; try/catch en importar lista para devolver error controlado. |
 | `prisma/migrations/20260508140000_precios_natural_pk_cod_tienda_cod_ext/migration.sql` | **`prod_precios_tienda`** PK = **`cod_tienda`**; **`prod_precios_provee`** PK = **`cod_ext`**; vínculo **`prod_precios_provee.cod_tienda`**; satélites comparación (`prod_comp_*`) referencian `cod_ext`. |
 | `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: validación con `listaPreciosCodExtListSchema` (`@/lib/validations/common`, reexport en `listaPrecios.ts`) + `actualizacionMasivaListaPreciosSchema`. |
@@ -1096,7 +1070,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 *Última actualización (2026-05-12): **Dominio gastos Balance** — migración **`20260512203000_drop_movimientos_finanzas_cheques`** (tabla hija huérfana) y **`20260512210000_drop_movimientos_finanzas`** con enum **`TipoMovimientoFinanzas`**; modelo Prisma **`MovimientoFinanzas`** fuera del schema; eliminados `movimientosFinanzas.service.ts`, **`actions/movimientosFinanzas.ts`**, **`validations/movimientosFinanzas.ts`**, **`NuevoGastoModal`**. **`listarSucursalesParaGastos`** + **`SucursalOption`** en **`finBalGastoMensualBalance.service.ts`**. Ver §2.5b.*
 
-*Última actualización (2026-05-10): **Superficie API** — Gates en `GET` de `/api/sync-lista-precios-tienda/status`, `/api/sync-compras-proveedor-dux/status`, `/api/import-lista-precios/status` y refuerzo de `POST` import lista (`listaPrecios.importarLista` + editor) vía `@/lib/apiRouteAuth`. Eliminados mock `/api/sync-tienda` y `useSyncDux`; cliente unificado en `useListaPreciosTiendaModalSync`. **[Histórico misma fecha]** **Limpieza de superficie** — eliminados `src/actions/duxCompras.ts` y `src/actions/syncListaPrecioTienda.ts` (sin call sites); correlativo DUX solo por `exportRecepcionPedidoExcel` + servicio; `finBalGastoMensualBalance.ts` endurece lecturas Prisma con `try/catch`; `ivaPorGastoFinalId` con claves `cuid` + tope en Zod (§1.2.6); `.env.example` ampliado.*
+*Última actualización (2026-05-10): **Superficie API** — Gates en `GET` de `/api/sync-lista-precios-tienda/status`, `/api/sync-compras-proveedor-dux/status`, `/api/import-lista-precios/status` y refuerzo de `POST` import lista (`listaPrecios.importarLista` + editor) vía `@/lib/apiRouteAuth`. Eliminados mock `/api/sync-tienda` y `useSyncDux`; cliente unificado en `useListaPreciosTiendaModalSync`. **[Histórico misma fecha]** **Limpieza de superficie** — eliminados `src/actions/duxCompras.ts` y `src/actions/syncListaPrecioTienda.ts` (sin call sites). **[2026-05-08]** Excel recepción: sin consulta DUX para **COMPROBANTE**; ver §2.8–§2.9. `finBalGastoMensualBalance.ts` endurece lecturas Prisma con `try/catch`; `ivaPorGastoFinalId` con claves `cuid` + tope en Zod (§1.2.6); `.env.example` ampliado.*
 
 *Última actualización (2026-05-07): **Auditoría de seguridad cerrada** — todas las Server Actions vigentes revisadas cumplen los gates documentados. Patrones consolidados en §1.2.5 (firma `unknown` para payloads de cliente, gate doble módulo+editor, IDs por modelo Prisma, no anidar Actions, sin throw al cliente, helpers de gate compartidos) + checklist en §4 + tabla en §5.11.*
 

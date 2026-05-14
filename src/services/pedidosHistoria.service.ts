@@ -613,15 +613,6 @@ export async function guardarRecepcionPedidoHistoria(params: {
           },
         });
       }
-
-      // Corrección de recepción: al guardar sobre un pedido ya recepcionado
-      // contamos una nueva recepción para el cálculo de COMPROBANTE en Excel.
-      if (pedido.estado === "RECEPCIONADO") {
-        await tx.pedidoHistoria.update({
-          where: { id },
-          data: { recepcionNumero: { increment: 1 } },
-        });
-      }
     });
 
     return { success: true, data: undefined };
@@ -650,7 +641,6 @@ export async function marcarPedidoHistoriaRegistrado(params: {
     await prisma.pedidoHistoria.update({
       where: { id },
       data: {
-        recepcionNumero: { increment: 1 },
         estado: "RECEPCIONADO",
         registradoAt: new Date(),
         total: new Prisma.Decimal(totalPedido.toFixed(2)),
