@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmtPrecio } from "@/lib/format";
-import { Pencil, TriangleAlert, Trash2 } from "lucide-react";
+import { Banknote, Pencil, ScrollText, TriangleAlert, Trash2 } from "lucide-react";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -42,18 +42,20 @@ export interface TesoreriaCajaFila {
 interface Props {
   filas: TesoreriaCajaFila[];
   esEditor?: boolean;
-  /** Caja tipo CHEQUE: doble clic abre el detalle de cheques. */
+  /** Caja tipo CHEQUE: abrir detalle de cheques (botón en ACCIONES). */
   onChequeRowClick?: (fila: TesoreriaCajaFila) => void;
-  onRowDoubleClick?: (fila: TesoreriaCajaFila) => void;
+  /** Cajas no CHEQUE: abrir modal de actualización de monto. */
+  onEditMontoClick?: (fila: TesoreriaCajaFila) => void;
   onEditDataClick?: (fila: TesoreriaCajaFila) => void;
   onDeleteClick?: (fila: TesoreriaCajaFila) => void;
 }
 
-const COLS = 7;
+const COLS = 6;
 
-/** Ancho relativo por columna (orden: ÚLT. ACT., ENTIDAD, TITULAR, TIPO CAJA, TIPO VALOR, DISPONIBILIDAD, MONTO [, ACCIONES]); suma 100. */
-const COL_WIDTHS_PCT_CON_ACCIONES = [16, 13, 12, 10, 9, 9, 11, 20] as const;
-const COL_WIDTHS_PCT_SIN_ACCIONES = [17, 14, 13, 11, 10, 10, 25] as const;
+/** Orden: ÚLT. ACT., TIPO CAJA, ENTIDAD, TITULAR, MONTO [, ACCIONES]. Con acciones suma 100%. */
+const COL_WIDTHS_PCT_CON_ACCIONES = [15, 15, 20, 20, 20, 10] as const;
+/** Sin columna ACCIONES: mismas proporciones de datos, MONTO absorbe el 10%. */
+const COL_WIDTHS_PCT_SIN_ACCIONES = [15, 15, 20, 20, 30] as const;
 
 /** Columna ÚLT. ACT.: recuadro sólido `accent2` + ícono blanco (solo si hay alerta). */
 const TESORERIA_ALERTA_CAJA_ACTIVA_CLASS = "border-accent2 bg-accent2 shadow-sm";
@@ -162,7 +164,7 @@ export default function TablaTesoreriaCajas({
   filas,
   esEditor = false,
   onChequeRowClick,
-  onRowDoubleClick,
+  onEditMontoClick,
   onEditDataClick,
   onDeleteClick,
 }: Props) {
@@ -186,11 +188,9 @@ export default function TablaTesoreriaCajas({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className={CELL_MIN}>ÚLT. ACTUALIZACIÓN</TableHead>
+                <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
                 <TableHead className={CELL_MIN}>ENTIDAD</TableHead>
                 <TableHead className={CELL_MIN}>TITULAR</TableHead>
-                <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
-                <TableHead className={CELL_MIN}>TIPO VALOR</TableHead>
-                <TableHead className={CELL_MIN}>DISPONIBILIDAD</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                 {esEditor ? (
                   <TableHead className={cn("text-center tabla-bloque-secundario-head-divider", CELL_MIN)}>
@@ -208,30 +208,21 @@ export default function TablaTesoreriaCajas({
                     const diasSinActualizar = getDiasSinActualizar(f.ultActualizacionIso);
                     const estaDesactualizada = diasSinActualizar !== null && diasSinActualizar > 5;
 
-                    const puedeEditarMontoDblClick =
-                      onRowDoubleClick != null && f.tipoCaja !== "CHEQUE";
-                    const abrirListaChequesDblClick =
-                      f.tipoCaja === "CHEQUE" && onChequeRowClick
-                        ? () => onChequeRowClick(f)
-                        : undefined;
-
                     return (
                       <TableRow
                         key={f.id}
                         onDoubleClick={
-                          puedeEditarMontoDblClick
-                            ? () => onRowDoubleClick!(f)
-                            : abrirListaChequesDblClick
+                          !esEditor && f.tipoCaja === "CHEQUE" && onChequeRowClick
+                            ? () => onChequeRowClick(f)
+                            : undefined
                         }
                         title={
-                          abrirListaChequesDblClick
+                          !esEditor && f.tipoCaja === "CHEQUE" && onChequeRowClick
                             ? "Doble clic para ver los cheques de esta caja"
-                            : puedeEditarMontoDblClick
-                              ? "Doble clic para actualizar el monto"
-                              : undefined
+                            : undefined
                         }
                         className={cn(
-                          (puedeEditarMontoDblClick || abrirListaChequesDblClick) && "cursor-pointer"
+                          !esEditor && f.tipoCaja === "CHEQUE" && onChequeRowClick && "cursor-pointer"
                         )}
                       >
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={f.ultActualizacion}>
@@ -269,20 +260,14 @@ export default function TablaTesoreriaCajas({
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.entidadNombre}>
-                          <span className="celda-destacado truncate block">{f.entidadNombre}</span>
-                        </TableCell>
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.titular}>
-                          <span className="truncate block">{f.titular}</span>
-                        </TableCell>
                         <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
                           {etiquetaTipoCajaEnPantalla(f.tipoCaja as TipoCajaTesoreria)}
                         </TableCell>
-                        <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
-                          {f.tipoValor}
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.entidadNombre}>
+                          <span className="celda-destacado block truncate">{f.entidadNombre}</span>
                         </TableCell>
-                        <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
-                          {f.disponibilidad}
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.titular}>
+                          <span className="block truncate">{f.titular}</span>
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                           ${fmtPrecio(f.montoDisponible)}
@@ -294,7 +279,38 @@ export default function TablaTesoreriaCajas({
                               CELL_MIN
                             )}
                           >
-                            <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                            <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "flex-wrap justify-center gap-1")}>
+                              {f.tipoCaja === "CHEQUE" && onChequeRowClick ? (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onChequeRowClick(f);
+                                  }}
+                                  aria-label="Ver cheques de la caja"
+                                  title="Ver cheques"
+                                >
+                                  <ScrollText className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                </Button>
+                              ) : onEditMontoClick ? (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onEditMontoClick(f);
+                                  }}
+                                  aria-label="Editar monto"
+                                  title="Editar monto"
+                                >
+                                  <Banknote className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                </Button>
+                              ) : null}
                               <Button
                                 type="button"
                                 size="icon"

@@ -189,7 +189,7 @@ export default function FinanzasTesoreriaPageClient({
         <TablaTesoreriaCajas
           filas={filasFiltradas}
           esEditor={esEditor}
-          onRowDoubleClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
+          onEditMontoClick={esEditor ? (fila) => setCajaParaEditarMonto(fila) : undefined}
           onChequeRowClick={(fila) => setCajaChequeSeleccionada(fila)}
           onEditDataClick={esEditor ? (fila) => setCajaParaEditarDatos(fila) : undefined}
           onDeleteClick={esEditor ? (fila) => setCajaParaEliminar(fila) : undefined}
