@@ -71,10 +71,11 @@ export const transferirFinTesoreriaChequeSchema = z.object({
   cajaDestinoId: prismaCuidSchema,
 });
 
-/** Marca custodia PROVEEDOR sin transferir el cheque (FK a proveedor de mercadería). */
+/** Marca custodia PROVEEDOR y registra `fecha_transferencia` (día de negocio; FK a proveedor de mercadería). */
 export const marcarEntregaProveedorChequeSchema = z.object({
   chequeId: prismaCuidSchema,
   proveedorId: prismaCuidSchema,
+  fechaTransferencia: isoYmdSchema,
 });
 
 export type CrearFinTesoreriaChequeInput = z.infer<typeof crearFinTesoreriaChequeSchema>;

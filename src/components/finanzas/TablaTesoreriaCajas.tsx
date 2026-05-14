@@ -84,7 +84,7 @@ function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
 /**
  * Pie de resumen (filas ya filtradas en cliente).
  * - Fila 1: subtotales por `tipoValor` (**CHEQUE** = disponible + diferido por caja).
- * - Fila 2: **INMEDIATO** / **DIFERIDO** — no cheque según `disponibilidad`; cheque según
+ * - Fila 2: **INMEDIATO** / **DIFERIDO** / **TOTAL** (= inmediato + diferido) — no cheque según `disponibilidad`; cheque según
  *   `montoDisponible` / `montoChequesDiferidos` (misma regla que backend: `fecha_acreditacion`
  *   ≤ hoy AR vs &gt; hoy en cheques no transferidos).
  */
@@ -175,6 +175,7 @@ export default function TablaTesoreriaCajas({
 }: Props) {
   const { efectivoTipoValor, digitalTipoValor, chequeTipoValor, inmediato, diferido } =
     totalesPieResumenTesoreria(filas);
+  const totalInmediatoDiferido = inmediato + diferido;
   const colCount = esEditor ? COLS + 1 : COLS;
   const anchosColPct = esEditor ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
@@ -361,13 +362,17 @@ export default function TablaTesoreriaCajas({
                 </TarjetaResumenTesoreria>
               </div>
               <div className="grid w-full grid-cols-3 items-stretch gap-2">
-                <div className="min-w-0" aria-hidden />
                 <TarjetaResumenTesoreria etiqueta="INMEDIATO" compact>
                   ${fmtPrecio(inmediato)}
                 </TarjetaResumenTesoreria>
                 <TarjetaResumenTesoreria etiqueta="DIFERIDO" compact>
                   ${fmtPrecio(diferido)}
                 </TarjetaResumenTesoreria>
+                <div className="min-w-0" title="INMEDIATO + DIFERIDO">
+                  <TarjetaResumenTesoreria etiqueta="TOTAL" compact>
+                    ${fmtPrecio(totalInmediatoDiferido)}
+                  </TarjetaResumenTesoreria>
+                </div>
               </div>
             </div>
           </div>

@@ -95,6 +95,20 @@ export function dateToIsoYmdArgentina(d: Date): string {
 }
 
 /**
+ * `YYYY-MM-DD` desde un `Date` de Prisma para columnas `@db.Date`.
+ * El driver suele exponer el día de calendario persistido como medianoche **UTC**
+ * (p. ej. `2026-05-15` en PostgreSQL → `2026-05-15T00:00:00.000Z`).
+ * **No** usar {@link dateToIsoYmdArgentina} sobre ese valor: en Argentina (UTC−3) serían
+ * las 21:00 del día **anterior** y el resultado sería un día menos (bug en inputs `type="date"`).
+ */
+export function isoYmdFromPrismaDateOnly(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  return `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
  * Día del mes en calendario Argentina (1–31), acotado a **28** para `fin_bal_gasto_final.dia_devengado` (CHECK 1–28 en BD).
  * Uso típico: alta de **gasto único** (`gasto_mensual = false`) con devengo el día de la carga.
  */

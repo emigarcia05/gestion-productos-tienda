@@ -1,7 +1,10 @@
 import type { TipoChequeTesoreria, TenenciaChequeTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA } from "@/lib/finTesoreriaChequesRetencion";
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import {
+  dateToIsoYmdArgentina,
+  isoYmdFromPrismaDateOnly,
+} from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
 import type {
   ActualizarFinTesoreriaChequeInput,
@@ -80,9 +83,9 @@ function mapCheque(row: {
     tenedor: row.tenedor,
     emisor: row.emisor,
     monto: row.monto,
-    fechaAcreditacionIso: dateToIsoYmdArgentina(row.fechaAcreditacion),
-    fechaRecibidoIso: dateToIsoYmdArgentina(row.fechaRecibido),
-    fechaTransferidoIso: row.fechaTransferido ? dateToIsoYmdArgentina(row.fechaTransferido) : null,
+    fechaAcreditacionIso: isoYmdFromPrismaDateOnly(row.fechaAcreditacion),
+    fechaRecibidoIso: isoYmdFromPrismaDateOnly(row.fechaRecibido),
+    fechaTransferidoIso: row.fechaTransferido ? isoYmdFromPrismaDateOnly(row.fechaTransferido) : null,
     fechaTransferenciaIso: row.fechaTransferencia ? row.fechaTransferencia.toISOString() : null,
     cajaDestinoEtiqueta: row.fechaTransferencia ? etiquetaCajaDestino(row.cajaDestino ?? null) : null,
     proveedorId: row.proveedorId ?? null,
@@ -343,7 +346,7 @@ export async function transferirChequeFinTesoreria(
         throw new Error("CHEQUE_YA_TRANSFERIDO");
       }
 
-      const fechaChequeIso = dateToIsoYmdArgentina(cheque.fechaAcreditacion);
+      const fechaChequeIso = isoYmdFromPrismaDateOnly(cheque.fechaAcreditacion);
       if (fechaChequeIso > hoyIso) {
         throw new Error("CHEQUE_NO_ACREDITADO");
       }
@@ -449,12 +452,20 @@ export async function transferirChequeFinTesoreria(
 }
 
 /**
- * Marca custodia PROVEEDOR sin transferir el cheque ni modificar saldos de caja.
- * Persiste el proveedor de mercadería elegido (`proveedor_id`).
+ * Marca custodia PROVEEDOR, asigna proveedor y persiste **`fecha_transferencia`**
+ * (no modifica saldos de caja; el cheque deja de sumar en disponibilidad/diferidos al tener transferencia).
  */
 export async function marcarEntregaProveedorFinTesoreriaCheque(
   input: MarcarEntregaProveedorChequeInput
 ): Promise<ServiceResult<FinTesoreriaChequeItem>> {
+  const hoyIso = dateToIsoYmdArgentina(new Date());
+  if (input.fechaTransferencia > hoyIso) {
+    return {
+      success: false,
+      error: "La fecha de transferencia no puede ser posterior a hoy.",
+    };
+  }
+
   const existente = await prisma.finTesoreriaCheque.findUnique({
     where: { id: input.chequeId },
     select: { fechaTransferencia: true },
@@ -489,6 +500,7 @@ export async function marcarEntregaProveedorFinTesoreriaCheque(
       data: {
         tenencia: "PROVEEDOR",
         proveedorId: input.proveedorId,
+        fechaTransferencia: new Date(`${input.fechaTransferencia}T12:00:00.000Z`),
       },
       include: {
         cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
@@ -513,7 +525,10 @@ export async function eliminarFinTesoreriaCheque(id: string): Promise<ServiceRes
     return { success: false, error: "Cheque no encontrado." };
   }
   if (row.fechaTransferencia != null) {
-    return { success: false, error: "No se puede eliminar un cheque ya transferido a una cuenta." };
+    return {
+      success: false,
+      error: "No se puede eliminar un cheque con fecha de transferencia registrada.",
+    };
   }
 
   try {

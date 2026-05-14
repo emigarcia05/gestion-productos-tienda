@@ -73,6 +73,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 9. **Zona horaria (Argentina)**  
    - Para mostrar **fecha/hora de negocio** (pedidos, historial, impresión stock, nombres de export) usar `@/lib/fechaArgentina` (misma regla que backend: `America/Argentina/Buenos_Aires`). No depender de la zona del navegador si el dato es un instante UTC (p. ej. `generadoAt` serializado como ISO).
+   - Valores **solo día** persistidos como `@db.Date` (Prisma `Date` en medianoche UTC del calendario guardado): exponer `YYYY-MM-DD` con **`isoYmdFromPrismaDateOnly`**, no con **`dateToIsoYmdArgentina`** sobre ese `Date` (en Argentina quedaría el día anterior; afecta inputs `type="date"`, p. ej. **Editar Cheque**).
 
 10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
@@ -894,6 +895,8 @@ Pasada de consistencia **desktop-only** y tokens/`AppModal` / `ModalMicroLabel`:
 No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` en `src/`. No quedan `className={\`...\`}` en componentes. Estados de éxito/advertencia no deben usar paletas genéricas (`emerald-*`, `amber-*`, `blue-*`): usar `@/lib/ui-classes` y tokens de tema. Anchos de `<col>` en tablas fijas: preferir `className="w-[x%]"` en lugar de `style` salvo casos dinámicos. Las tarjetas que envuelven la tabla principal en páginas estándar usan **`card-tabla-envoltorio`** (sin **`shadow-[0_4px_12px_rgba(...)]`** duplicado). Nuevas pantallas o filtros deben seguir esta guía y el checklist de PR.
 
 ---
+
+*Última actualización (2026-05-11): **Cheques tesorería — `@db.Date` en UI:** el API arma `fechaRecibidoIso` / `fechaAcreditacionIso` / `fechaTransferidoIso` con **`isoYmdFromPrismaDateOnly`** (`fechaArgentina.ts`); **`EditarChequeTesoreriaModal`** y la grilla muestran el mismo día que en BD. Ver §9 zona horaria y `BACKEND_GUIDELINES` §2.5c.*
 
 *Última actualización (2026-05-11): **`TablaTesoreriaCajas`** — sin ícono **Eliminar** en la grilla; **Eliminar caja** solo desde **`EditarCajaTesoreriaModal`** (`FinanzasTesoreriaPageClient` ya no monta **`EliminarCajaTesoreriaModal`** a nivel página). Ver §1 **`/finanzas/tesoreria`**.*
 

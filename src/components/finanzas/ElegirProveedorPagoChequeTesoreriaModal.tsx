@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -19,18 +19,30 @@ import { listarProveedoresMercaderiaParaPagoChequeTesoreriaAction } from "@/acti
 import type { FinTesoreriaChequeItem, ProveedorMercaderiaChequeTesoreriaItem } from "@/services/finTesoreriaCheques.service";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Check, Loader2 } from "lucide-react";
+import { Check, CalendarDays, Loader2 } from "lucide-react";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cheque: FinTesoreriaChequeItem | null;
-  onSeleccion: (payload: { chequeId: string; proveedorId: string }) => void | Promise<void>;
+  onSeleccion: (
+    payload: { chequeId: string; proveedorId: string; fechaTransferencia: string }
+  ) => void | Promise<void>;
+}
+
+function abrirSelectorFechaNativo(el: HTMLInputElement | null) {
+  if (!el) return;
+  try {
+    void el.showPicker?.();
+  } catch {
+    el.click();
+  }
 }
 
 export default function ElegirProveedorPagoChequeTesoreriaModal({
@@ -43,6 +55,8 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
   const [proveedores, setProveedores] = useState<ProveedorMercaderiaChequeTesoreriaItem[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [enviandoId, setEnviandoId] = useState<string | null>(null);
+  const [fechaTransferenciaIso, setFechaTransferenciaIso] = useState("");
+  const fechaTransferenciaPickerRef = useRef<HTMLInputElement>(null);
 
   const cargarLista = useCallback(async () => {
     setCargando(true);
@@ -64,10 +78,16 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
       setBusqueda("");
       setProveedores([]);
       setEnviandoId(null);
+      setFechaTransferenciaIso("");
       return;
     }
+    setFechaTransferenciaIso(dateToIsoYmdArgentina(new Date()));
     void cargarLista();
   }, [open, cargarLista]);
+
+  const abrirPickerTransferencia = useCallback(() => {
+    if (!cargando && !enviandoId) abrirSelectorFechaNativo(fechaTransferenciaPickerRef.current);
+  }, [cargando, enviandoId]);
 
   const filas = useMemo(() => {
     const t = busqueda.trim().toLocaleUpperCase("es-AR");
