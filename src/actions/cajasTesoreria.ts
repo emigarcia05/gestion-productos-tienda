@@ -22,7 +22,9 @@ import {
   listarCajasTesoreria,
   listarCajasTesoreriaPorTipoValor,
   listarEntidadesFinTesoreria,
+  listarFinTesoreriaTipoCaja,
   type CajaTesoreriaItem,
+  type FinTesoreriaTipoCajaItem,
 } from "@/services/cajasTesoreria.service";
 import type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
 
@@ -68,6 +70,22 @@ export async function listarEntidadesFinTesoreriaAction(): Promise<ActionResult<
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar las entidades.";
+    return { ok: false, error: message };
+  }
+}
+
+/** Catálogo `fin_tesoreria_tipo_caja` (tipos de caja y etiquetas de UI). */
+export async function listarFinTesoreriaTipoCajaAction(): Promise<ActionResult<FinTesoreriaTipoCajaItem[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  try {
+    const items = await listarFinTesoreriaTipoCaja();
+    return { ok: true, data: items };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "No se pudo listar los tipos de caja.";
     return { ok: false, error: message };
   }
 }

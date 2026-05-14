@@ -90,6 +90,33 @@ export default function FinanzasTesoreriaPageClient({
               <FilaFiltrosDesplegables>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroTipoCaja)}
+                  onLimpiar={() => setFiltroTipoCaja("")}
+                >
+                  <Select
+                    value={filtroTipoCaja || "none"}
+                    onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="TIPO CAJA" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="none">TIPO CAJA</SelectItem>
+                      {tiposCajaOptions.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {etiquetaTipoCajaEnPantalla(tipo as TipoCajaTesoreria)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={Boolean(filtroEntidad)}
                   onLimpiar={() => setFiltroEntidad("")}
                 >
@@ -134,33 +161,6 @@ export default function FinanzasTesoreriaPageClient({
                       {titularesOptions.map((titular) => (
                         <SelectItem key={titular} value={titular}>
                           {titular}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={Boolean(filtroTipoCaja)}
-                  onLimpiar={() => setFiltroTipoCaja("")}
-                >
-                  <Select
-                    value={filtroTipoCaja || "none"}
-                    onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
-                  >
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="TIPO CAJA" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro"
-                    >
-                      <SelectItem value="none">TIPO CAJA</SelectItem>
-                      {tiposCajaOptions.map((tipo) => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {etiquetaTipoCajaEnPantalla(tipo as TipoCajaTesoreria)}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -116,6 +116,27 @@ export async function listarEntidadesFinTesoreria(): Promise<FinTesoreriaEntidad
   return rows.map((r) => ({ id: r.id, nombre: r.nombre.toUpperCase() }));
 }
 
+export interface FinTesoreriaTipoCajaItem {
+  id: string;
+  codigo: TipoCajaTesoreria;
+  nombre: string;
+  orden: number;
+}
+
+/** Catálogo `fin_tesoreria_tipo_caja` (semilla + orden estable). */
+export async function listarFinTesoreriaTipoCaja(): Promise<FinTesoreriaTipoCajaItem[]> {
+  const rows = await prisma.finTesoreriaTipoCaja.findMany({
+    orderBy: { orden: "asc" },
+    select: { id: true, codigo: true, nombre: true, orden: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    codigo: r.codigo as TipoCajaTesoreria,
+    nombre: r.nombre,
+    orden: r.orden,
+  }));
+}
+
 function mapDbErrorEntidad(error: unknown, fallback: string): string {
   if (
     error &&

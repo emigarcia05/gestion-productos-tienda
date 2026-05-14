@@ -7,6 +7,7 @@ export const tipoCajaTesoreriaSchema = z.enum([
   "BILLETERA_DIGITAL",
   "CHEQUE",
   "EFECTIVO",
+  "TARJETAS_A_COBRAR",
 ]);
 
 export const tipoValorTesoreriaSchema = z.enum(["DIGITAL", "EFECTIVO", "CHEQUE"]);

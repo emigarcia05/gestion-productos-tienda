@@ -12,6 +12,7 @@ enum TipoCajaTesoreria {
   BILLETERA_DIGITAL
   CHEQUE
   EFECTIVO
+  TARJETAS_A_COBRAR
 }
 
 /** Agrupación para totales / destino de transferencia de cheques (no confundir con `TipoCajaTesoreria`). */
@@ -155,6 +156,19 @@ model FinTesoreriaEntidad {
   cajas CajaTesoreria[]
 
   @@map("fin_tesoreria_entidades")
+}
+
+/** Catálogo de tipos de caja (`codigo` = literal de enum `TipoCajaTesoreria`; `nombre` para UI). */
+model FinTesoreriaTipoCaja {
+  id        String   @id @default(cuid())
+  codigo    String   @unique
+  nombre    String
+  orden     Int      @map("orden")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([orden], map: "fin_tesoreria_tipo_caja_orden_idx")
+  @@map("fin_tesoreria_tipo_caja")
 }
 
 // Cajas de tesorería con saldo actual y marca temporal del último cambio de saldo.

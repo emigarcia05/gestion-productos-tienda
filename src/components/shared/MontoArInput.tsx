@@ -33,11 +33,17 @@ export type MontoArInputProps = Omit<
   VariantProps<typeof montoArInputVariants> & {
     valueNormalized: string;
     onValueNormalizedChange: (next: string) => void;
+    /**
+     * Si es `true`, cuando `valueNormalized` es `""` el input se muestra vacío (no `$0,00`);
+     * al borrar hasta 0 centavos se emite `""`. Default `false` (comportamiento histórico).
+     */
+    treatEmptyNormalizedAsBlank?: boolean;
   };
 
 export default function MontoArInput({
   valueNormalized,
   onValueNormalizedChange,
+  treatEmptyNormalizedAsBlank = false,
   variant,
   className,
   disabled,
@@ -45,7 +51,10 @@ export default function MontoArInput({
 }: MontoArInputProps) {
   const centsValue = useMemo(() => montoArNormalizedStringToCents(valueNormalized), [valueNormalized]);
 
-  const display = useMemo(() => montoArCentsToDisplayWithCurrency(centsValue, "$"), [centsValue]);
+  const display = useMemo(() => {
+    if (treatEmptyNormalizedAsBlank && valueNormalized.trim() === "") return "";
+    return montoArCentsToDisplayWithCurrency(centsValue, "$");
+  }, [centsValue, treatEmptyNormalizedAsBlank, valueNormalized]);
 
   return (
     <Input
@@ -82,7 +91,11 @@ export default function MontoArInput({
         if (key === "Backspace" || key === "Delete") {
           event.preventDefault();
           const next = Math.floor(centsValue / 10);
-          onValueNormalizedChange(montoArCentsToNormalizedString(next));
+          const normalized =
+            treatEmptyNormalizedAsBlank && next === 0
+              ? ""
+              : montoArCentsToNormalizedString(next);
+          onValueNormalizedChange(normalized);
           return;
         }
 

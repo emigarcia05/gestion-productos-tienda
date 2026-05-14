@@ -9,10 +9,7 @@ import { Input } from "@/components/ui/input";
 import MontoArInput from "@/components/shared/MontoArInput";
 import { editarCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
-import {
-  montoArNormalizedStringToPesosIntRounded,
-  montoArPesosEnterosToNormalizedString,
-} from "@/lib/montoArMask";
+import { montoArNormalizedStringToPesosIntRounded } from "@/lib/montoArMask";
 
 interface Props {
   open: boolean;
@@ -31,15 +28,23 @@ export default function ActualizarMontoCajaTesoreriaModal({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open || !caja) return;
-    setMontoNorm(montoArPesosEnterosToNormalizedString(caja.monto));
+    if (!open) {
+      setMontoNorm("");
+      return;
+    }
+    if (!caja) return;
+    setMontoNorm("");
   }, [open, caja]);
 
   const parsedMonto = useMemo(() => montoArNormalizedStringToPesosIntRounded(montoNorm), [montoNorm]);
 
   const disabledSubmit = useMemo(
-    () => saving || !caja || parsedMonto === caja.monto,
-    [saving, caja, parsedMonto]
+    () =>
+      saving ||
+      !caja ||
+      montoNorm.trim() === "" ||
+      parsedMonto === caja.monto,
+    [saving, caja, montoNorm, parsedMonto]
   );
 
   async function handleSubmit() {
@@ -111,6 +116,7 @@ export default function ActualizarMontoCajaTesoreriaModal({
             <MontoArInput
               valueNormalized={montoNorm}
               onValueNormalizedChange={setMontoNorm}
+              treatEmptyNormalizedAsBlank
               disabled={saving}
               aria-label="Monto de la caja"
             />

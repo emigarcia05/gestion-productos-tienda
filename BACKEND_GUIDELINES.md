@@ -552,25 +552,28 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.
 
+- **Tabla catálogo**: `fin_tesoreria_tipo_caja` (Prisma `FinTesoreriaTipoCaja`): `id` (`TEXT`, PK), `codigo` (`TEXT` **único**, alineado al enum `TipoCajaTesoreria`), `nombre` (`TEXT`, etiqueta en UI; **EFECTIVO** → **CAJA LOCAL** en semilla), `orden` (`INTEGER`, listado estable). Semilla en migración **`20260521150000_fin_tesoreria_tipo_caja`**: **BANCO**, **BILLETERA_DIGITAL**, **CHEQUE**, **EFECTIVO**, **TARJETAS_A_COBRAR** (`nombre` **TARJETAS A COBRAR**). Lectura: `listarFinTesoreriaTipoCaja()` / `listarFinTesoreriaTipoCajaAction` (`PERMISOS.finanzas.acceso`). Altas de filas nuevas hoy solo por migración/SQL (sin CRUD en UI).
 - **Tabla catálogo**: `fin_tesoreria_entidades` (Prisma `FinTesoreriaEntidad`): `id` (`TEXT`, PK; `cuid()` en altas por app), `nombre` (`TEXT` **único**, MAYÚSCULAS al persistir). CRUD desde UI: modal **Crear Entidad** (`CrearEntidadTesoreriaModal`) vía `crearFinTesoreriaEntidadAction` / `editarFinTesoreriaEntidadAction` / `eliminarFinTesoreriaEntidadAction` (solo `esEditor()` + `PERMISOS.finanzas.acceso`); baja bloqueada si existen cajas con esa `entidad_id` (precheck en servicio). Migración semilla: **`20260520140000_fin_tesoreria_entidades`**.
 - **Tabla**: `fin_tesoreria`
   - `id` (`TEXT`, PK; Prisma `cuid()` o UUID según fila).
   - `entidad_id` (`TEXT`, **NOT NULL**, FK → `fin_tesoreria_entidades.id`, `onDelete: Restrict`).
   - `titular` (`TEXT`, obligatorio).
-  - `tipo_caja` (enum `TipoCajaTesoreria`: **`BANCO` | `BILLETERA_DIGITAL` | `CHEQUE` | `EFECTIVO`**).
-  - `tipo_valor` / `disponibilidad`: en **alta** el cliente envía valores explícitos; el servicio exige que coincidan con la derivación desde `tipo_caja` (`tipoValorDesdeTipoCaja` / `disponibilidadDesdeTipoCaja` en `src/lib/cajasTesoreriaTipos.ts`). En **edición** el cliente envía valores explícitos (validación Zod; coherencia operativa en UI).
+  - `tipo_caja` (enum `TipoCajaTesoreria`: **`BANCO` | `BILLETERA_DIGITAL` | `CHEQUE` | `EFECTIVO` | `TARJETAS_A_COBRAR`** — en UI **`EFECTIVO`** → **CAJA LOCAL**; **`TARJETAS_A_COBRAR`** → **TARJETAS A COBRAR**; ver `etiquetaTipoCajaEnPantalla` / catálogo `fin_tesoreria_tipo_caja` / `OPCIONES_TIPO_CAJA_TESORERIA_UI` en `src/lib/cajasTesoreriaTipos.ts`).
+  - `tipo_valor` / `disponibilidad`: en **alta** el cliente envía valores explícitos; el servicio exige que coincidan con la derivación desde `tipo_caja` (`tipoValorDesdeTipoCaja` / `disponibilidadDesdeTipoCaja` en `src/lib/cajasTesoreriaTipos.ts`; **`TARJETAS_A_COBRAR`** → **DIGITAL** / **DIFERIDO**). En **edición** el cliente envía valores explícitos (validación Zod; coherencia operativa en UI).
   - `monto` (`INTEGER`, default `0`; saldo sin decimales).
   - `ult_actualizacion`, `created_at`, `updated_at`.
 - **Índices**: único (`entidad_id`, `titular`); índices `tipo_caja`, `tipo_valor`, `entidad_id`.
 - **Regla de negocio en BD**: trigger `fin_tesoreria_set_timestamps` + función `set_cajas_tesoreria_timestamps()`: siempre actualiza `updated_at` en `UPDATE`; actualiza `ult_actualizacion` **solo** si `monto` cambia (`IS DISTINCT FROM`).
-- **Migraciones relevantes**: `20260519120000_fin_tesoreria_tipo_caja_valor_disponibilidad`; **`20260520140000_fin_tesoreria_entidades`** (catálogo + columna `entidad_id`, baja `nombre_caja`).
+- **Migraciones relevantes**: `20260519120000_fin_tesoreria_tipo_caja_valor_disponibilidad`; **`20260520140000_fin_tesoreria_entidades`** (catálogo + columna `entidad_id`, baja `nombre_caja`); **`20260521150000_fin_tesoreria_tipo_caja`** (tabla + semilla tipos de caja + enum **`TARJETAS_A_COBRAR`**).
 - **Servicio**: `src/services/cajasTesoreria.service.ts`
   - `listarEntidadesFinTesoreria()`: catálogo ordenado por `nombre` (MAYÚSCULAS en respuesta).
-  - `listarCajasTesoreria()` / `listarCajasTesoreriaPorTipoValor`: incluyen `entidad`; orden por `entidad.nombre`; DTO `entidadId` + `entidadNombre`.
+  - `listarFinTesoreriaTipoCaja()`: catálogo `fin_tesoreria_tipo_caja` por `orden`.
+  - `listarCajasTesoreria()` / `listarCajasTesoreriaPorTipoValor`: incluyen `entidad`; orden por `entidad.nombre`; DTO `entidadId` + `entidadNombre`. En UI, el pie de **`TablaTesoreriaCajas`** arma **INMEDIATO** / **DIFERIDO** con los mismos criterios que `montoDisponible` / `montoChequesDiferidos` (cheques: `sumarMontosChequesAcreditadosHasta` ≤ hoy AR vs `sumarMontosChequesDiferidosPorCaja` &gt; hoy AR; solo no transferidos).
   - `crearCajaTesoreria` / `editarCajaTesoreria`: `titular` en MAYÚSCULAS; `entidadId` FK válida; **alta** valida coherencia `tipo_caja` ↔ `tipo_valor` ↔ `disponibilidad`.
   - `eliminarCajaTesoreria(id)`.
 - **Actions**: `src/actions/cajasTesoreria.ts`
   - `listarEntidadesFinTesoreriaAction`: lectura del catálogo (`PERMISOS.finanzas.acceso`).
+  - `listarFinTesoreriaTipoCajaAction`: lectura del catálogo de tipos de caja (`PERMISOS.finanzas.acceso`).
   - `crearFinTesoreriaEntidadAction`, `editarFinTesoreriaEntidadAction`, `eliminarFinTesoreriaEntidadAction`: mutaciones del catálogo (`esEditor()` + finanzas); Zod `crearFinTesoreriaEntidadSchema` / `editarFinTesoreriaEntidadSchema` / `eliminarFinTesoreriaEntidadSchema`.
   - `listarCajasTesoreriaAction`, `listarCajasTesoreriaTipoDigitalAction`, mutaciones de caja con `esEditor()` donde aplique.
   - Validación Zod caja: `entidadId` = `prismaCuidOrUuidSchema`; **`crearCajaTesoreriaSchema`** incluye `tipoValor` y `disponibilidad`.
