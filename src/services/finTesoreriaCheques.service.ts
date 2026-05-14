@@ -35,11 +35,14 @@ export interface FinTesoreriaChequeItem {
   monto: number;
   fechaAcreditacionIso: string;
   fechaRecibidoIso: string;
-  fechaDepositadoIso: string | null;
+  fechaTransferidoIso: string | null;
   /** ISO instante UTC de la transferencia; null si sigue en caja CHEQUE. */
   fechaTransferenciaIso: string | null;
-  /** Etiqueta de caja destino tras transferir; null si aún no se transfirió o se perdió la FK. */
+  /** Tras transferir a cuenta: `nombreCaja - titular` de la caja destino; null si no hay destino o FK borrada. */
   cajaDestinoEtiqueta: string | null;
+  /** Proveedor de mercadería al registrar pago a proveedor; null si no aplica. */
+  proveedorId: string | null;
+  proveedorNombre: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,7 +51,7 @@ function etiquetaCajaDestino(
   dest: { nombreCaja: string; titular: string } | null | undefined
 ): string | null {
   if (!dest) return null;
-  return `${dest.nombreCaja} · ${dest.titular}`;
+  return `${dest.nombreCaja} - ${dest.titular}`;
 }
 
 function mapCheque(row: {
@@ -61,11 +64,13 @@ function mapCheque(row: {
   monto: number;
   fechaAcreditacion: Date;
   fechaRecibido: Date;
-  fechaDepositado: Date | null;
+  fechaTransferido: Date | null;
   fechaTransferencia: Date | null;
+  proveedorId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   cajaDestino?: { nombreCaja: string; titular: string } | null;
+  proveedor?: { nombre: string } | null;
 }): FinTesoreriaChequeItem {
   return {
     id: row.id,
@@ -77,9 +82,11 @@ function mapCheque(row: {
     monto: row.monto,
     fechaAcreditacionIso: dateToIsoYmdArgentina(row.fechaAcreditacion),
     fechaRecibidoIso: dateToIsoYmdArgentina(row.fechaRecibido),
-    fechaDepositadoIso: row.fechaDepositado ? dateToIsoYmdArgentina(row.fechaDepositado) : null,
+    fechaTransferidoIso: row.fechaTransferido ? dateToIsoYmdArgentina(row.fechaTransferido) : null,
     fechaTransferenciaIso: row.fechaTransferencia ? row.fechaTransferencia.toISOString() : null,
     cajaDestinoEtiqueta: row.fechaTransferencia ? etiquetaCajaDestino(row.cajaDestino ?? null) : null,
+    proveedorId: row.proveedorId ?? null,
+    proveedorNombre: row.proveedor?.nombre ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -189,6 +196,7 @@ export async function listarChequesPorCajaId(
     orderBy,
     include: {
       cajaDestino: { select: { nombreCaja: true, titular: true } },
+      proveedor: { select: { nombre: true } },
     },
   });
   return rows.map(mapCheque);
@@ -221,6 +229,7 @@ export async function crearFinTesoreriaCheque(
       },
       include: {
         cajaDestino: { select: { nombreCaja: true, titular: true } },
+        proveedor: { select: { nombre: true } },
       },
     });
     return {
@@ -228,8 +237,10 @@ export async function crearFinTesoreriaCheque(
       data: mapCheque({
         ...row,
         fechaTransferencia: null,
-        fechaDepositado: null,
+        fechaTransferido: null,
         cajaDestino: null,
+        proveedorId: null,
+        proveedor: null,
       }),
     };
   } catch (error: unknown) {
@@ -274,6 +285,7 @@ export async function actualizarFinTesoreriaCheque(
       },
       include: {
         cajaDestino: { select: { nombreCaja: true, titular: true } },
+        proveedor: { select: { nombre: true } },
       },
     });
     return {
@@ -285,6 +297,28 @@ export async function actualizarFinTesoreriaCheque(
   }
 }
 
+export interface ProveedorMercaderiaChequeTesoreriaItem {
+  id: string;
+  nombre: string;
+  prefijo: string | null;
+}
+
+/** Proveedores con `proveedor_mercaderia` para elegir en pago de cheque (tesorería). */
+export async function listarProveedoresMercaderiaParaPagoChequeTesoreria(): Promise<
+  ProveedorMercaderiaChequeTesoreriaItem[]
+> {
+  const rows = await prisma.proveedor.findMany({
+    where: { proveedorMercaderia: true },
+    select: { id: true, nombre: true, prefijo: true },
+    orderBy: { nombre: "asc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    nombre: r.nombre,
+    prefijo: r.prefijo,
+  }));
+}
+
 /**
  * Transfiere el importe del cheque a otra caja (`fin_tesoreria.monto`) y marca el cheque como transferido.
  * El registro se conserva en BD durante {@link CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA} días y luego se purga.
@@ -294,7 +328,7 @@ export async function transferirChequeFinTesoreria(
   input: TransferirFinTesoreriaChequeInput
 ): Promise<ServiceResult<TransferirChequeFinTesoreriaResultado>> {
   const hoyIso = dateToIsoYmdArgentina(new Date());
-  const fechaDeposito = new Date(`${hoyIso}T12:00:00.000Z`);
+  const fechaTransferidoDia = new Date(`${hoyIso}T12:00:00.000Z`);
 
   try {
     const resultado = await prisma.$transaction(async (tx) => {
@@ -343,7 +377,7 @@ export async function transferirChequeFinTesoreria(
           fechaTransferencia: new Date(),
           cajaDestinoId: input.cajaDestinoId,
           tenencia: "DEPOSITADO",
-          fechaDepositado: fechaDeposito,
+          fechaTransferido: fechaTransferidoDia,
         },
       });
 
@@ -405,6 +439,7 @@ export async function transferirChequeFinTesoreria(
 
 /**
  * Marca custodia PROVEEDOR sin transferir el cheque ni modificar saldos de caja.
+ * Persiste el proveedor de mercadería elegido (`proveedor_id`).
  */
 export async function marcarEntregaProveedorFinTesoreriaCheque(
   input: MarcarEntregaProveedorChequeInput
@@ -423,14 +458,30 @@ export async function marcarEntregaProveedorFinTesoreriaCheque(
     };
   }
 
+  const prov = await prisma.proveedor.findUnique({
+    where: { id: input.proveedorId },
+    select: { proveedorMercaderia: true },
+  });
+  if (!prov) {
+    return { success: false, error: "Proveedor no encontrado." };
+  }
+  if (!prov.proveedorMercaderia) {
+    return {
+      success: false,
+      error: "Solo se pueden asignar proveedores de mercadería.",
+    };
+  }
+
   try {
     const row = await prisma.finTesoreriaCheque.update({
       where: { id: input.chequeId },
       data: {
         tenencia: "PROVEEDOR",
+        proveedorId: input.proveedorId,
       },
       include: {
         cajaDestino: { select: { nombreCaja: true, titular: true } },
+        proveedor: { select: { nombre: true } },
       },
     });
     return { success: true, data: mapCheque(row) };

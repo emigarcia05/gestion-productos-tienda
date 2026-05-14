@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   TITULARES_CAJA_TESORERIA,
@@ -245,24 +246,43 @@ export default function AltaChequeTesoreriaModal({
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               FECHA RECIBIDO
             </span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="dd/mm/aaaa"
-              value={fechaRecibidoDdMmYyyy}
-              onChange={(e) =>
-                setFechaRecibidoDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
-              }
-              onDoubleClick={(e) => {
-                e.preventDefault();
-                abrirPickerRecibido();
-              }}
-              disabled={saving}
-              className="tabular-nums"
-              title="Doble clic para abrir el calendario"
-              aria-label="Fecha en que se recibió el cheque (dd/mm/aaaa). Doble clic para calendario."
-            />
+            <div className="relative w-full">
+              <Input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="dd/mm/aaaa"
+                value={fechaRecibidoDdMmYyyy}
+                onChange={(e) =>
+                  setFechaRecibidoDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
+                }
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  abrirPickerRecibido();
+                }}
+                disabled={saving}
+                className={cn("tabular-nums", "pr-10")}
+                title="Ícono de calendario o doble clic para abrir el calendario"
+                aria-label="Fecha en que se recibió el cheque (dd/mm/aaaa). Ícono de calendario o doble clic para calendario."
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={saving}
+                className={cn(
+                  "absolute right-0 top-0 h-9 w-9 shrink-0 rounded-r-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  abrirPickerRecibido();
+                }}
+                aria-label="Abrir calendario para fecha recibido"
+                title="Abrir calendario"
+              >
+                <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+              </Button>
+            </div>
             <input
               ref={hiddenFechaRecibidoRef}
               type="date"
@@ -280,24 +300,43 @@ export default function AltaChequeTesoreriaModal({
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               FECHA ACREDITACIÓN
             </span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="dd/mm/aaaa"
-              value={fechaDdMmYyyy}
-              onChange={(e) =>
-                setFechaDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
-              }
-              onDoubleClick={(e) => {
-                e.preventDefault();
-                abrirPickerAcreditacion();
-              }}
-              disabled={saving}
-              className="tabular-nums"
-              title="Doble clic para abrir el calendario"
-              aria-label="Fecha de acreditación del cheque (dd/mm/aaaa). Doble clic para calendario."
-            />
+            <div className="relative w-full">
+              <Input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="dd/mm/aaaa"
+                value={fechaDdMmYyyy}
+                onChange={(e) =>
+                  setFechaDdMmYyyy(maskDigitsToDdMmYyyyDisplay(e.target.value))
+                }
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  abrirPickerAcreditacion();
+                }}
+                disabled={saving}
+                className={cn("tabular-nums", "pr-10")}
+                title="Ícono de calendario o doble clic para abrir el calendario"
+                aria-label="Fecha de acreditación del cheque (dd/mm/aaaa). Ícono de calendario o doble clic para calendario."
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={saving}
+                className={cn(
+                  "absolute right-0 top-0 h-9 w-9 shrink-0 rounded-r-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  abrirPickerAcreditacion();
+                }}
+                aria-label="Abrir calendario para fecha de acreditación"
+                title="Abrir calendario"
+              >
+                <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+              </Button>
+            </div>
             <input
               ref={hiddenFechaAcreditacionRef}
               type="date"

@@ -15,9 +15,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+
+const WRAPPER_CESTO_URGENTE =
+  "flex h-full min-h-0 max-h-full w-full items-center justify-center overflow-hidden p-0";
 
 export interface ProductoPedidoUrgente {
   id: string;
@@ -172,12 +174,15 @@ function FilaDatosPedidoUrgente({
         )}
       >
         {hayCantidadPedidaUrgente(prod, cantPorId) ? (
-          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+          <div className={WRAPPER_CESTO_URGENTE}>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+              className={cn(
+                TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                "!size-7 min-h-0 max-h-7 shrink-0 !p-0 [&_svg]:size-3.5",
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 onRowDeleteClick?.(prod);

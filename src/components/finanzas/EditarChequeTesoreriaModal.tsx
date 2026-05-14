@@ -52,7 +52,7 @@ export default function EditarChequeTesoreriaModal({
   const [tenedor, setTenedor] = useState<TitularCajaTesoreria | "">("");
   const [emisor, setEmisor] = useState("");
   const [montoNorm, setMontoNorm] = useState("");
-  const [fechaIso, setFechaIso] = useState("");
+  const [fechaAcreditacionIso, setFechaAcreditacionIso] = useState("");
   const [fechaRecibidoIso, setFechaRecibidoIso] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -60,7 +60,7 @@ export default function EditarChequeTesoreriaModal({
     if (!open || !cheque) return;
     setEmisor(cheque.emisor.toLocaleUpperCase("es-AR"));
     setMontoNorm(montoArPesosEnterosToNormalizedString(cheque.monto));
-    setFechaIso(cheque.fechaAcreditacionIso);
+    setFechaAcreditacionIso(cheque.fechaAcreditacionIso);
     setFechaRecibidoIso(cheque.fechaRecibidoIso);
     setTipo(tipoChequeValido(cheque.tipo) ? cheque.tipo : "FISICO");
     setTenedor(tenedorValido(cheque.tenedor) ? cheque.tenedor : "");
@@ -75,10 +75,10 @@ export default function EditarChequeTesoreriaModal({
       emisor.trim().length === 0 ||
       parsedMonto < 0 ||
       !tenedor ||
-      fechaIso.length === 0 ||
+      fechaAcreditacionIso.length === 0 ||
       fechaRecibidoIso.length === 0
     );
-  }, [saving, cheque, emisor, parsedMonto, tenedor, fechaIso, fechaRecibidoIso]);
+  }, [saving, cheque, emisor, parsedMonto, tenedor, fechaAcreditacionIso, fechaRecibidoIso]);
 
   async function handleSubmit() {
     if (disabledSubmit || !cheque || !tenedor) return;
@@ -90,7 +90,7 @@ export default function EditarChequeTesoreriaModal({
         tenedor,
         emisor: emisor.trim(),
         monto: parsedMonto,
-        fechaAcreditacion: fechaIso,
+        fechaAcreditacion: fechaAcreditacionIso,
         fechaRecibido: fechaRecibidoIso,
       });
       if (!res.ok) {
@@ -208,6 +208,7 @@ export default function EditarChequeTesoreriaModal({
             </span>
             <Input
               type="date"
+              name="fecha_recibido"
               value={fechaRecibidoIso}
               onChange={(e) => setFechaRecibidoIso(e.target.value)}
               disabled={saving}
@@ -220,8 +221,9 @@ export default function EditarChequeTesoreriaModal({
             </span>
             <Input
               type="date"
-              value={fechaIso}
-              onChange={(e) => setFechaIso(e.target.value)}
+              name="fecha_acreditacion"
+              value={fechaAcreditacionIso}
+              onChange={(e) => setFechaAcreditacionIso(e.target.value)}
               disabled={saving}
               aria-label="Fecha de acreditación del cheque"
             />

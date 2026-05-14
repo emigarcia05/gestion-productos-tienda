@@ -69,6 +69,7 @@ model Proveedor {
   pedidosHistoria     PedidoHistoria[]
   comprobantesProveedor ComprobanteProveedor[]
   finBalGastoFinal   FinBalGastoFinal[]
+  finTesoreriaChequesPago FinTesoreriaCheque[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -169,17 +170,21 @@ model FinTesoreriaCheque {
   cajaDestinoId       String?              @map("caja_destino_id")
   /** Día en que la tienda recibió el cheque (calendario Argentina). */
   fechaRecibido       DateTime             @map("fecha_recibido") @db.Date
-  /** Día en que se depositó en cuenta DIGITAL; null si aún no se transfirió. */
-  fechaDepositado     DateTime?            @map("fecha_depositado") @db.Date
+  /** Día (calendario Argentina) en que se transfirió a cuenta DIGITAL; null si aún no se transfirió. */
+  fechaTransferido    DateTime?            @map("fecha_transferido") @db.Date
+  /** Proveedor de mercadería al registrar pago a proveedor (`tenencia = PROVEEDOR`). */
+  proveedorId         String?              @map("proveedor_id")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
   caja              CajaTesoreria  @relation(fields: [cajaId], references: [id], onDelete: Cascade)
   cajaDestino       CajaTesoreria? @relation("FinTesoreriaChequeCajaDestino", fields: [cajaDestinoId], references: [id], onDelete: SetNull)
+  proveedor         Proveedor?     @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
 
   @@index([cajaId], map: "fin_tesoreria_cheques_caja_id_idx")
   @@index([cajaId, fechaAcreditacion], map: "fin_tesoreria_cheques_caja_id_fecha_acreditacion_idx")
   @@index([cajaId, fechaTransferencia], map: "fin_tesoreria_cheques_caja_id_fecha_transferencia_idx")
+  @@index([proveedorId], map: "fin_tesoreria_cheques_proveedor_id_idx")
   @@map("fin_tesoreria_cheques")
 }
 

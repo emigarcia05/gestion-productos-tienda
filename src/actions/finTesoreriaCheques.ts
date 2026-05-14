@@ -17,9 +17,11 @@ import {
   crearFinTesoreriaCheque,
   eliminarFinTesoreriaCheque,
   listarChequesPorCajaId,
+  listarProveedoresMercaderiaParaPagoChequeTesoreria,
   marcarEntregaProveedorFinTesoreriaCheque,
   transferirChequeFinTesoreria,
   type FinTesoreriaChequeItem,
+  type ProveedorMercaderiaChequeTesoreriaItem,
   type TransferirChequeFinTesoreriaResultado,
 } from "@/services/finTesoreriaCheques.service";
 
@@ -101,6 +103,25 @@ export async function transferirFinTesoreriaChequeAction(
 
   revalidateFinTesoreriaChequesMutations();
   return { ok: true, data: res.data };
+}
+
+export async function listarProveedoresMercaderiaParaPagoChequeTesoreriaAction(): Promise<
+  ActionResult<ProveedorMercaderiaChequeTesoreriaItem[]>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  try {
+    const items = await listarProveedoresMercaderiaParaPagoChequeTesoreria();
+    return { ok: true, data: items };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "No se pudo listar los proveedores.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function marcarEntregaProveedorFinTesoreriaChequeAction(

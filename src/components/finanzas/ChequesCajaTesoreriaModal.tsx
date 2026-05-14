@@ -41,6 +41,7 @@ import EditarChequeTesoreriaModal from "@/components/finanzas/EditarChequeTesore
 import EliminarChequeTesoreriaModal from "@/components/finanzas/EliminarChequeTesoreriaModal";
 import AcreditarChequeTesoreriaModal from "@/components/finanzas/AcreditarChequeTesoreriaModal";
 import DestinoChequeTesoreriaModal from "@/components/finanzas/DestinoChequeTesoreriaModal";
+import ElegirProveedorPagoChequeTesoreriaModal from "@/components/finanzas/ElegirProveedorPagoChequeTesoreriaModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -83,6 +84,13 @@ function etiquetaFechaTransferenciaDdMmYyyy(isoUtc: string | null): string {
   return formatIsoYmdDdMmYyyyArgentina(dateToIsoYmdArgentina(new Date(isoUtc)));
 }
 
+function etiquetaTenedorVistaTransferidos(row: FinTesoreriaChequeItem): string {
+  if (row.cajaDestinoEtiqueta) return row.cajaDestinoEtiqueta;
+  const nom = row.proveedorNombre?.trim();
+  if (nom) return nom;
+  return etiquetaTenenciaCheque(row.tenencia);
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -106,6 +114,9 @@ export default function ChequesCajaTesoreriaModal({
   const [chequeParaDestino, setChequeParaDestino] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaAcreditar, setChequeParaAcreditar] = useState<FinTesoreriaChequeItem | null>(null);
   const [chequeParaEditar, setChequeParaEditar] = useState<FinTesoreriaChequeItem | null>(null);
+  const [chequeElegirProveedorPago, setChequeElegirProveedorPago] = useState<FinTesoreriaChequeItem | null>(
+    null
+  );
 
   const cargar = useCallback(async () => {
     if (!caja) return;
@@ -341,8 +352,13 @@ export default function ChequesCajaTesoreriaModal({
                             <TableCell className={cn(TD_NUM, CELL_MIN)}>
                               {etiquetaFechaTransferenciaDdMmYyyy(row.fechaTransferenciaIso)}
                             </TableCell>
-                            <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
-                              {etiquetaTenenciaCheque(row.tenencia)}
+                            <TableCell
+                              className={cn("celda-datos", CELL_MIN)}
+                              title={etiquetaTenedorVistaTransferidos(row)}
+                            >
+                              <span className="celda-destacado block truncate">
+                                {etiquetaTenedorVistaTransferidos(row)}
+                              </span>
                             </TableCell>
                             <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                               ${fmtPrecio(row.monto)}
@@ -547,16 +563,29 @@ export default function ChequesCajaTesoreriaModal({
         onPagoProveedor={() => {
           const c = chequeParaDestino;
           if (!c) return;
-          void (async () => {
-            const res = await marcarEntregaProveedorFinTesoreriaChequeAction({ chequeId: c.id });
-            if (!res.ok) {
-              toast.error(res.error ?? "No se pudo registrar el pago a proveedor.");
-              return;
-            }
-            toast.success("Custodia actualizada a proveedor.");
-            void cargar();
-            onChequesChanged?.();
-          })();
+          setChequeElegirProveedorPago(c);
+        }}
+      />
+
+      <ElegirProveedorPagoChequeTesoreriaModal
+        open={chequeElegirProveedorPago != null}
+        onOpenChange={(next) => {
+          if (!next) setChequeElegirProveedorPago(null);
+        }}
+        cheque={chequeElegirProveedorPago}
+        onSeleccion={async ({ chequeId, proveedorId }) => {
+          const res = await marcarEntregaProveedorFinTesoreriaChequeAction({
+            chequeId,
+            proveedorId,
+          });
+          if (!res.ok) {
+            toast.error(res.error ?? "No se pudo registrar el pago a proveedor.");
+            return;
+          }
+          toast.success("Custodia actualizada a proveedor.");
+          setChequeElegirProveedorPago(null);
+          void cargar();
+          onChequesChanged?.();
         }}
       />
 
