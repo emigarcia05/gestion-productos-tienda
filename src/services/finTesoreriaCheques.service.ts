@@ -192,7 +192,7 @@ export async function listarChequesPorCajaId(
   const orderBy =
     tenenciaFiltro === "actuales"
       ? [{ fechaAcreditacion: "desc" as const }, { createdAt: "desc" as const }]
-      : [{ fechaTransferencia: "desc" as const }, { createdAt: "desc" as const }];
+      : [{ fechaAcreditacion: "desc" as const }, { createdAt: "desc" as const }];
 
   const rows = await prisma.finTesoreriaCheque.findMany({
     where,

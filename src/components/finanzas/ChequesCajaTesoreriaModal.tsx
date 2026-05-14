@@ -57,10 +57,10 @@ const CELL_MIN = "min-w-0";
 const COL_ANCHOS_EDITOR = [10, 8, 16, 18, 10, 11, 7, 20] as const;
 /** Detalle cheques sin editor (7 col), filtro ACTUALES. */
 const COL_ANCHOS_LECTURA = [11, 9, 18, 22, 11, 12, 17] as const;
-/** Filtro TRANSFERIDOS + editor (6 col). */
-const COL_ANCHOS_TRANSFERIDOS_EDITOR = [12, 22, 18, 14, 14, 20] as const;
+/** Filtro TRANSFERIDOS + editor (6 col): RECIBIDO, EMISOR, TRANSFERENCIA, TENEDOR, MONTO, ACCIONES. */
+const COL_ANCHOS_TRANSFERIDOS_EDITOR = [10, 25, 10, 25, 20, 10] as const;
 /** Filtro TRANSFERIDOS sin editor (5 col). */
-const COL_ANCHOS_TRANSFERIDOS_LECTURA = [14, 28, 20, 16, 22] as const;
+const COL_ANCHOS_TRANSFERIDOS_LECTURA = [10, 28, 10, 28, 24] as const;
 
 function etiquetaTipoCheque(t: TipoChequeTesoreria): string {
   return t === "ECHEQUE" ? "E-CHEQUE" : "FÍSICO";
@@ -184,14 +184,9 @@ export default function ChequesCajaTesoreriaModal({
     const copia = [...filas];
     if (tenenciaFiltro === "transferidos") {
       return copia.sort((a, b) => {
-        const ta = a.fechaTransferenciaIso;
-        const tb = b.fechaTransferenciaIso;
-        if (ta && tb) {
-          if (tb !== ta) return tb.localeCompare(ta);
-          return a.id.localeCompare(b.id);
-        }
-        if (ta && !tb) return -1;
-        if (!ta && tb) return 1;
+        const fa = a.fechaAcreditacionIso;
+        const fb = b.fechaAcreditacionIso;
+        if (fb !== fa) return fb.localeCompare(fa);
         return a.id.localeCompare(b.id);
       });
     }
