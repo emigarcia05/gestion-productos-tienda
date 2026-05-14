@@ -17,7 +17,8 @@ export default async function FinanzasTesoreriaPage() {
   const items = await listarCajasTesoreria();
   const filas = items.map((c) => ({
     id: c.id,
-    nombreCaja: c.nombreCaja,
+    entidadId: c.entidadId,
+    entidadNombre: c.entidadNombre,
     titular: c.titular,
     tipoCaja: c.tipoCaja,
     tipoValor: c.tipoValor,

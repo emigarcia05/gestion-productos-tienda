@@ -145,10 +145,23 @@ model Sucursal {
   @@map("global_sucursales")
 }
 
+/** Catálogo de entidades de caja (`nombre` único en MAYÚSCULAS). */
+model FinTesoreriaEntidad {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cajas CajaTesoreria[]
+
+  @@map("fin_tesoreria_entidades")
+}
+
 // Cajas de tesorería con saldo actual y marca temporal del último cambio de saldo.
 model CajaTesoreria {
   id               String            @id @default(cuid())
-  nombreCaja       String            @map("nombre_caja")
+  entidadId        String            @map("entidad_id")
+  entidad          FinTesoreriaEntidad @relation(fields: [entidadId], references: [id], onDelete: Restrict)
   titular          String            @map("titular")
   tipoCaja         TipoCajaTesoreria @map("tipo_caja")
   tipoValor        TipoValorTesoreria @map("tipo_valor")
@@ -161,9 +174,10 @@ model CajaTesoreria {
   cheques                        FinTesoreriaCheque[]
   chequesAcreditadosComoDestino FinTesoreriaCheque[] @relation("FinTesoreriaChequeCajaDestino")
 
-  @@unique([nombreCaja, titular], map: "fin_tesoreria_nombre_titular_ux")
+  @@unique([entidadId, titular], map: "fin_tesoreria_entidad_titular_ux")
   @@index([tipoCaja], map: "fin_tesoreria_tipo_caja_idx")
   @@index([tipoValor], map: "fin_tesoreria_tipo_valor_idx")
+  @@index([entidadId], map: "fin_tesoreria_entidad_id_idx")
   @@map("fin_tesoreria")
 }
 

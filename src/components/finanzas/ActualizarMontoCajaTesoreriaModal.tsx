@@ -48,9 +48,11 @@ export default function ActualizarMontoCajaTesoreriaModal({
     try {
       const res = await editarCajaTesoreriaAction({
         id: caja.id,
-        nombreCaja: caja.nombreCaja,
+        entidadId: caja.entidadId,
         titular: caja.titular,
         tipoCaja: caja.tipoCaja,
+        tipoValor: caja.tipoValor,
+        disponibilidad: caja.disponibilidad,
         monto: parsedMonto,
       });
 
@@ -92,9 +94,9 @@ export default function ActualizarMontoCajaTesoreriaModal({
         <div className="grid grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              NOMBRE CAJA
+              ENTIDAD
             </span>
-            <Input value={caja?.nombreCaja ?? ""} disabled readOnly />
+            <Input value={caja?.entidadNombre ?? ""} disabled readOnly />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">

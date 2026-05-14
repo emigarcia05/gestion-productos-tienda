@@ -38,7 +38,7 @@ export interface FinTesoreriaChequeItem {
   fechaTransferidoIso: string | null;
   /** ISO instante UTC de la transferencia; null si sigue en caja CHEQUE. */
   fechaTransferenciaIso: string | null;
-  /** Tras transferir a cuenta: `nombreCaja - titular` de la caja destino; null si no hay destino o FK borrada. */
+  /** Tras transferir a cuenta: `entidad - titular` de la caja destino; null si no hay destino o FK borrada. */
   cajaDestinoEtiqueta: string | null;
   /** Proveedor de mercadería al registrar pago a proveedor; null si no aplica. */
   proveedorId: string | null;
@@ -48,10 +48,10 @@ export interface FinTesoreriaChequeItem {
 }
 
 function etiquetaCajaDestino(
-  dest: { nombreCaja: string; titular: string } | null | undefined
+  dest: { titular: string; entidad: { nombre: string } } | null | undefined
 ): string | null {
   if (!dest) return null;
-  return `${dest.nombreCaja} - ${dest.titular}`;
+  return `${dest.entidad.nombre} - ${dest.titular}`;
 }
 
 function mapCheque(row: {
@@ -69,7 +69,7 @@ function mapCheque(row: {
   proveedorId?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  cajaDestino?: { nombreCaja: string; titular: string } | null;
+  cajaDestino?: { titular: string; entidad: { nombre: string } } | null;
   proveedor?: { nombre: string } | null;
 }): FinTesoreriaChequeItem {
   return {
@@ -195,7 +195,7 @@ export async function listarChequesPorCajaId(
     where,
     orderBy,
     include: {
-      cajaDestino: { select: { nombreCaja: true, titular: true } },
+      cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
       proveedor: { select: { nombre: true } },
     },
   });
@@ -228,7 +228,7 @@ export async function crearFinTesoreriaCheque(
         fechaRecibido: new Date(`${input.fechaRecibido}T12:00:00.000Z`),
       },
       include: {
-        cajaDestino: { select: { nombreCaja: true, titular: true } },
+        cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
         proveedor: { select: { nombre: true } },
       },
     });
@@ -284,7 +284,7 @@ export async function actualizarFinTesoreriaCheque(
         fechaRecibido: new Date(`${input.fechaRecibido}T12:00:00.000Z`),
       },
       include: {
-        cajaDestino: { select: { nombreCaja: true, titular: true } },
+        cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
         proveedor: { select: { nombre: true } },
       },
     });
@@ -481,7 +481,7 @@ export async function marcarEntregaProveedorFinTesoreriaCheque(
         proveedorId: input.proveedorId,
       },
       include: {
-        cajaDestino: { select: { nombreCaja: true, titular: true } },
+        cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
         proveedor: { select: { nombre: true } },
       },
     });

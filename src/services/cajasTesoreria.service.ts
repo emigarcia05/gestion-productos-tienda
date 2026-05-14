@@ -1,4 +1,9 @@
-import type { DisponibilidadCajaTesoreria, TipoCajaTesoreria, TipoValorTesoreria } from "@prisma/client";
+import type {
+  DisponibilidadCajaTesoreria,
+  Prisma,
+  TipoCajaTesoreria,
+  TipoValorTesoreria,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
@@ -7,10 +12,23 @@ import {
   sumarMontosChequesDiferidosPorCaja,
 } from "@/services/finTesoreriaCheques.service";
 import { disponibilidadDesdeTipoCaja, tipoValorDesdeTipoCaja } from "@/lib/cajasTesoreriaTipos";
+import type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
+
+export type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
+
+const CAJA_TESORERIA_LIST_INCLUDE = {
+  entidad: { select: { id: true, nombre: true } },
+} as const;
+
+type CajaTesoreriaRowLista = Prisma.CajaTesoreriaGetPayload<{
+  include: typeof CAJA_TESORERIA_LIST_INCLUDE;
+}>;
 
 export interface CajaTesoreriaItem {
   id: string;
-  nombreCaja: string;
+  entidadId: string;
+  /** Texto del catálogo `fin_tesoreria_entidades.nombre` (MAYÚSCULAS). */
+  entidadNombre: string;
   titular: string;
   tipoCaja: TipoCajaTesoreria;
   tipoValor: TipoValorTesoreria;
@@ -32,35 +50,31 @@ export interface CajaTesoreriaItem {
 }
 
 export interface CrearCajaTesoreriaInput {
-  nombreCaja: string;
+  entidadId: string;
   titular: string;
   tipoCaja: TipoCajaTesoreria;
   monto: number;
 }
 
-export interface EditarCajaTesoreriaInput extends CrearCajaTesoreriaInput {
+export interface EditarCajaTesoreriaInput {
   id: string;
+  entidadId: string;
+  titular: string;
+  tipoCaja: TipoCajaTesoreria;
+  tipoValor: TipoValorTesoreria;
+  disponibilidad: DisponibilidadCajaTesoreria;
+  monto: number;
 }
 
 function mapCaja(
-  row: {
-    id: string;
-    nombreCaja: string;
-    titular: string;
-    tipoCaja: TipoCajaTesoreria;
-    tipoValor: TipoValorTesoreria;
-    disponibilidad: DisponibilidadCajaTesoreria;
-    monto: number;
-    ultActualizacion: Date;
-    createdAt: Date;
-    updatedAt: Date;
-  },
+  row: CajaTesoreriaRowLista,
   montoDisponible: number,
   montoChequesDiferidos: number
 ): CajaTesoreriaItem {
   return {
     id: row.id,
-    nombreCaja: row.nombreCaja.toUpperCase(),
+    entidadId: row.entidadId,
+    entidadNombre: row.entidad.nombre.toUpperCase(),
     titular: row.titular.toUpperCase(),
     tipoCaja: row.tipoCaja,
     tipoValor: row.tipoValor,
@@ -82,15 +96,24 @@ function mapDbError(error: unknown, fallback: string): string {
     typeof (error as { code?: unknown }).code === "string"
   ) {
     const code = (error as { code: string }).code;
-    if (code === "P2002") return "Ya existe una caja con ese nombre y titular.";
+    if (code === "P2002") return "Ya existe una caja con esa entidad y titular.";
     if (code === "P2025") return "Caja no encontrada.";
   }
   return error instanceof Error ? error.message : fallback;
 }
 
+export async function listarEntidadesFinTesoreria(): Promise<FinTesoreriaEntidadItem[]> {
+  const rows = await prisma.finTesoreriaEntidad.findMany({
+    orderBy: [{ nombre: "asc" }],
+    select: { id: true, nombre: true },
+  });
+  return rows.map((r) => ({ id: r.id, nombre: r.nombre.toUpperCase() }));
+}
+
 export async function listarCajasTesoreria(): Promise<CajaTesoreriaItem[]> {
   const rows = await prisma.cajaTesoreria.findMany({
-    orderBy: [{ nombreCaja: "asc" }],
+    include: CAJA_TESORERIA_LIST_INCLUDE,
+    orderBy: [{ entidad: { nombre: "asc" } }],
   });
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const [sumasCheque, sumasDiferido] = await Promise.all([
@@ -112,7 +135,8 @@ export async function listarCajasTesoreriaPorTipoValor(
 ): Promise<CajaTesoreriaItem[]> {
   const rows = await prisma.cajaTesoreria.findMany({
     where: { tipoValor },
-    orderBy: [{ nombreCaja: "asc" }],
+    include: CAJA_TESORERIA_LIST_INCLUDE,
+    orderBy: [{ entidad: { nombre: "asc" } }],
   });
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const [sumasCheque, sumasDiferido] = await Promise.all([
@@ -134,13 +158,14 @@ export async function crearCajaTesoreria(
   try {
     const row = await prisma.cajaTesoreria.create({
       data: {
-        nombreCaja: input.nombreCaja.trim().toUpperCase(),
+        entidadId: input.entidadId,
         titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
         tipoValor: tipoValorDesdeTipoCaja(input.tipoCaja),
         disponibilidad: disponibilidadDesdeTipoCaja(input.tipoCaja),
         monto: input.monto,
       },
+      include: CAJA_TESORERIA_LIST_INCLUDE,
     });
     return {
       success: true,
@@ -178,13 +203,14 @@ export async function editarCajaTesoreria(
     const row = await prisma.cajaTesoreria.update({
       where: { id: input.id },
       data: {
-        nombreCaja: input.nombreCaja.trim().toUpperCase(),
+        entidadId: input.entidadId,
         titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
-        tipoValor: tipoValorDesdeTipoCaja(input.tipoCaja),
-        disponibilidad: disponibilidadDesdeTipoCaja(input.tipoCaja),
+        tipoValor: input.tipoValor,
+        disponibilidad: input.disponibilidad,
         monto: input.monto,
       },
+      include: CAJA_TESORERIA_LIST_INCLUDE,
     });
     const hoyIso = dateToIsoYmdArgentina(new Date());
     const [sumasCheque, sumasDiferido] = await Promise.all([

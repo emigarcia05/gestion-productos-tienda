@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismaCuidSchema } from "@/lib/validations/common";
+import { prismaCuidOrUuidSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { TITULARES_CAJA_TESORERIA } from "@/lib/cajasTesoreriaTitulares";
 
 export const tipoCajaTesoreriaSchema = z.enum([
@@ -9,6 +9,10 @@ export const tipoCajaTesoreriaSchema = z.enum([
   "EFECTIVO",
 ]);
 
+export const tipoValorTesoreriaSchema = z.enum(["DIGITAL", "EFECTIVO", "CHEQUE"]);
+
+export const disponibilidadCajaTesoreriaSchema = z.enum(["INMEDIATA", "DIFERIDO"]);
+
 export const montoCajaTesoreriaSchema = z
   .coerce
   .number()
@@ -17,12 +21,7 @@ export const montoCajaTesoreriaSchema = z
   .max(999_999_999, "El monto es demasiado alto.");
 
 export const crearCajaTesoreriaSchema = z.object({
-  nombreCaja: z
-    .string()
-    .trim()
-    .min(1, "El nombre de caja es obligatorio.")
-    .max(120, "El nombre de caja es demasiado largo.")
-    .transform((value) => value.toUpperCase()),
+  entidadId: prismaCuidOrUuidSchema,
   titular: z.enum(TITULARES_CAJA_TESORERIA, "Seleccioná un titular válido."),
   tipoCaja: tipoCajaTesoreriaSchema,
   monto: montoCajaTesoreriaSchema.optional().default(0),
@@ -30,6 +29,8 @@ export const crearCajaTesoreriaSchema = z.object({
 
 export const editarCajaTesoreriaSchema = crearCajaTesoreriaSchema.extend({
   id: prismaCuidSchema,
+  tipoValor: tipoValorTesoreriaSchema,
+  disponibilidad: disponibilidadCajaTesoreriaSchema,
 });
 
 export const eliminarCajaTesoreriaSchema = z.object({

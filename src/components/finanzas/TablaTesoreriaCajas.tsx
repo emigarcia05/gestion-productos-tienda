@@ -24,7 +24,8 @@ import { etiquetaTipoCajaEnPantalla } from "@/lib/cajasTesoreriaTipos";
 
 export interface TesoreriaCajaFila {
   id: string;
-  nombreCaja: string;
+  entidadId: string;
+  entidadNombre: string;
   titular: string;
   tipoCaja: string;
   tipoValor: string;
@@ -50,7 +51,7 @@ interface Props {
 
 const COLS = 7;
 
-/** Ancho relativo por columna (orden: ÚLT. ACT., CAJA, TITULAR, TIPO CAJA, TIPO VALOR, DISPONIBILIDAD, MONTO [, ACCIONES]); suma 100. */
+/** Ancho relativo por columna (orden: ÚLT. ACT., ENTIDAD, TITULAR, TIPO CAJA, TIPO VALOR, DISPONIBILIDAD, MONTO [, ACCIONES]); suma 100. */
 const COL_WIDTHS_PCT_CON_ACCIONES = [16, 13, 12, 10, 9, 9, 11, 20] as const;
 const COL_WIDTHS_PCT_SIN_ACCIONES = [17, 14, 13, 11, 10, 10, 25] as const;
 
@@ -185,7 +186,7 @@ export default function TablaTesoreriaCajas({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className={CELL_MIN}>ÚLT. ACTUALIZACIÓN</TableHead>
-                <TableHead className={CELL_MIN}>CAJA</TableHead>
+                <TableHead className={CELL_MIN}>ENTIDAD</TableHead>
                 <TableHead className={CELL_MIN}>TITULAR</TableHead>
                 <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
                 <TableHead className={CELL_MIN}>TIPO VALOR</TableHead>
@@ -268,8 +269,8 @@ export default function TablaTesoreriaCajas({
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.nombreCaja}>
-                          <span className="celda-destacado truncate block">{f.nombreCaja}</span>
+                        <TableCell className={cn("celda-datos", CELL_MIN)} title={f.entidadNombre}>
+                          <span className="celda-destacado truncate block">{f.entidadNombre}</span>
                         </TableCell>
                         <TableCell className={cn("celda-datos", CELL_MIN)} title={f.titular}>
                           <span className="truncate block">{f.titular}</span>

@@ -143,8 +143,8 @@ export default function AcreditarChequeTesoreriaModal({
                   const busy = pendingDestinoId === c.id;
                   return (
                     <TableRow key={c.id}>
-                      <TableCell className={cn("celda-datos", CELL_MIN)} title={c.nombreCaja}>
-                        <span className="celda-destacado block truncate">{c.nombreCaja}</span>
+                      <TableCell className={cn("celda-datos", CELL_MIN)} title={c.entidadNombre}>
+                        <span className="celda-destacado block truncate">{c.entidadNombre}</span>
                       </TableCell>
                       <TableCell className={cn("celda-datos", CELL_MIN)} title={c.titular}>
                         <span className="block truncate">{c.titular}</span>
@@ -157,7 +157,7 @@ export default function AcreditarChequeTesoreriaModal({
                             className="shrink-0"
                             disabled={!cheque || !!pendingDestinoId}
                             aria-busy={busy}
-                            aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.nombreCaja}`}
+                            aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.entidadNombre}`}
                             title="Acreditar el importe del cheque en esta caja (tipo de valor DIGITAL)."
                             onClick={() => void ejecutarTransferencia(c.id)}
                           >

@@ -45,12 +45,12 @@ export default function FinanzasTesoreriaPageClient({
   const [cajaParaEditarDatos, setCajaParaEditarDatos] = useState<TesoreriaCajaFila | null>(null);
   const [cajaParaEliminar, setCajaParaEliminar] = useState<TesoreriaCajaFila | null>(null);
   const [cajaChequeSeleccionada, setCajaChequeSeleccionada] = useState<TesoreriaCajaFila | null>(null);
-  const [filtroCaja, setFiltroCaja] = useState("");
+  const [filtroEntidad, setFiltroEntidad] = useState("");
   const [filtroTitular, setFiltroTitular] = useState("");
   const [filtroTipoCaja, setFiltroTipoCaja] = useState("");
 
-  const cajasOptions = useMemo(
-    () => [...new Set(filas.map((f) => f.nombreCaja))].sort((a, b) => a.localeCompare(b, "es")),
+  const entidadesOptions = useMemo(
+    () => [...new Set(filas.map((f) => f.entidadNombre))].sort((a, b) => a.localeCompare(b, "es")),
     [filas]
   );
   const titularesOptions = useMemo(
@@ -65,16 +65,16 @@ export default function FinanzasTesoreriaPageClient({
   const filasFiltradas = useMemo(
     () =>
       filas.filter((fila) => {
-        if (filtroCaja && fila.nombreCaja !== filtroCaja) return false;
+        if (filtroEntidad && fila.entidadNombre !== filtroEntidad) return false;
         if (filtroTitular && fila.titular !== filtroTitular) return false;
         if (filtroTipoCaja && fila.tipoCaja !== filtroTipoCaja) return false;
         return true;
       }),
-    [filas, filtroCaja, filtroTitular, filtroTipoCaja]
+    [filas, filtroEntidad, filtroTitular, filtroTipoCaja]
   );
 
   function limpiarFiltros() {
-    setFiltroCaja("");
+    setFiltroEntidad("");
     setFiltroTitular("");
     setFiltroTipoCaja("");
   }
@@ -90,12 +90,12 @@ export default function FinanzasTesoreriaPageClient({
               <FilaFiltrosDesplegables>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={Boolean(filtroCaja)}
-                  onLimpiar={() => setFiltroCaja("")}
+                  activo={Boolean(filtroEntidad)}
+                  onLimpiar={() => setFiltroEntidad("")}
                 >
-                  <Select value={filtroCaja || "none"} onValueChange={(v) => setFiltroCaja(v === "none" ? "" : v)}>
+                  <Select value={filtroEntidad || "none"} onValueChange={(v) => setFiltroEntidad(v === "none" ? "" : v)}>
                     <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="CAJA" />
+                      <SelectValue placeholder="ENTIDAD" />
                     </SelectTrigger>
                     <SelectContent
                       position="popper"
@@ -103,10 +103,10 @@ export default function FinanzasTesoreriaPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">CAJA</SelectItem>
-                      {cajasOptions.map((caja) => (
-                        <SelectItem key={caja} value={caja}>
-                          {caja}
+                      <SelectItem value="none">ENTIDAD</SelectItem>
+                      {entidadesOptions.map((nombre) => (
+                        <SelectItem key={nombre} value={nombre}>
+                          {nombre}
                         </SelectItem>
                       ))}
                     </SelectContent>

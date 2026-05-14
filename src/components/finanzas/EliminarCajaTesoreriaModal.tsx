@@ -59,7 +59,7 @@ export default function EliminarCajaTesoreriaModal({
       >
         <p className="text-sm text-muted-foreground">
           {caja
-            ? `¿Estás seguro de eliminar la caja ${caja.nombreCaja}? Esta acción no se puede deshacer.`
+            ? `¿Estás seguro de eliminar la caja ${caja.entidadNombre} (${caja.titular})? Esta acción no se puede deshacer.`
             : "Seleccioná una caja para eliminar."}
         </p>
       </AppModal>

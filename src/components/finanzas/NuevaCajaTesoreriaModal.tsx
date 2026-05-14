@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
   Select,
@@ -14,10 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { crearCajaTesoreriaAction } from "@/actions/cajasTesoreria";
+import { crearCajaTesoreriaAction, listarEntidadesFinTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
 import { OPCIONES_TIPO_CAJA_TESORERIA_UI } from "@/lib/cajasTesoreriaTipos";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
+import type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
 import type { TipoCajaTesoreria } from "@prisma/client";
 
 interface Props {
@@ -26,27 +26,39 @@ interface Props {
   onCreated?: () => void;
 }
 
-export default function NuevaCajaTesoreriaModal({
-  open,
-  onOpenChange,
-  onCreated,
-}: Props) {
-  const [nombreCaja, setNombreCaja] = useState("");
+export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated }: Props) {
+  const [entidades, setEntidades] = useState<FinTesoreriaEntidadItem[]>([]);
+  const [entidadId, setEntidadId] = useState("");
   const [titular, setTitular] = useState<TitularCajaTesoreria | "">("");
   const [tipoCaja, setTipoCaja] = useState<TipoCajaTesoreria>("EFECTIVO");
   const [saving, setSaving] = useState(false);
 
+  const cargarEntidades = useCallback(async () => {
+    const res = await listarEntidadesFinTesoreriaAction();
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudieron cargar las entidades.");
+      setEntidades([]);
+      return;
+    }
+    setEntidades(res.data);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    void cargarEntidades();
+  }, [open, cargarEntidades]);
+
   const disabledSubmit = useMemo(
     () =>
       saving ||
-      nombreCaja.trim().length === 0 ||
+      entidadId.trim().length === 0 ||
       titular.trim().length === 0 ||
       tipoCaja.trim().length === 0,
-    [saving, nombreCaja, titular, tipoCaja]
+    [saving, entidadId, titular, tipoCaja]
   );
 
   function resetForm() {
-    setNombreCaja("");
+    setEntidadId("");
     setTitular("");
     setTipoCaja("EFECTIVO");
   }
@@ -56,7 +68,7 @@ export default function NuevaCajaTesoreriaModal({
     setSaving(true);
     try {
       const res = await crearCajaTesoreriaAction({
-        nombreCaja,
+        entidadId,
         titular,
         tipoCaja,
       });
@@ -109,15 +121,30 @@ export default function NuevaCajaTesoreriaModal({
         <div className="grid min-h-0 grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              NOMBRE CAJA
+              ENTIDAD
             </span>
-            <Input
-              value={nombreCaja}
-              onChange={(e) => setNombreCaja(e.target.value.toUpperCase())}
-              placeholder="INGRESAR NOMBRE DE CAJA"
-              maxLength={120}
+            <Select
+              value={entidadId || "none"}
+              onValueChange={(value) => setEntidadId(value === "none" ? "" : value)}
               disabled={saving}
-            />
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="SELECCIONAR ENTIDAD" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">SELECCIONAR ENTIDAD</SelectItem>
+                {entidades.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="flex flex-col gap-1">
@@ -174,7 +201,6 @@ export default function NuevaCajaTesoreriaModal({
               </SelectContent>
             </Select>
           </label>
-
         </div>
       </AppModal>
     </Dialog>

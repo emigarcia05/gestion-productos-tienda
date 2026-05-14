@@ -15,8 +15,10 @@ import {
   eliminarCajaTesoreria,
   listarCajasTesoreria,
   listarCajasTesoreriaPorTipoValor,
+  listarEntidadesFinTesoreria,
   type CajaTesoreriaItem,
 } from "@/services/cajasTesoreria.service";
+import type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
 
 function firstZodErrorMessage(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
@@ -44,6 +46,22 @@ export async function listarCajasTesoreriaAction(): Promise<ActionResult<CajaTes
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";
+    return { ok: false, error: message };
+  }
+}
+
+/** Catálogo `fin_tesoreria_entidades` para alta/edición de cajas. */
+export async function listarEntidadesFinTesoreriaAction(): Promise<ActionResult<FinTesoreriaEntidadItem[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+
+  try {
+    const items = await listarEntidadesFinTesoreria();
+    return { ok: true, data: items };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "No se pudo listar las entidades.";
     return { ok: false, error: message };
   }
 }
