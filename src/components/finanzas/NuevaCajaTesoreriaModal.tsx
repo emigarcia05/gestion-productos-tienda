@@ -15,10 +15,18 @@ import {
 } from "@/components/ui/select";
 import { crearCajaTesoreriaAction, listarEntidadesFinTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
-import { OPCIONES_TIPO_CAJA_TESORERIA_UI } from "@/lib/cajasTesoreriaTipos";
+import {
+  OPCIONES_DISPONIBILIDAD_CAJA_UI,
+  OPCIONES_TIPO_CAJA_TESORERIA_UI,
+  OPCIONES_TIPO_VALOR_TESORERIA_UI,
+  disponibilidadDesdeTipoCaja,
+  tipoValorDesdeTipoCaja,
+} from "@/lib/cajasTesoreriaTipos";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
 import type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
-import type { TipoCajaTesoreria } from "@prisma/client";
+import type { DisponibilidadCajaTesoreria, TipoCajaTesoreria, TipoValorTesoreria } from "@prisma/client";
+import CrearEntidadTesoreriaModal from "@/components/finanzas/CrearEntidadTesoreriaModal";
+import { Plus } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -31,7 +39,11 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
   const [entidadId, setEntidadId] = useState("");
   const [titular, setTitular] = useState<TitularCajaTesoreria | "">("");
   const [tipoCaja, setTipoCaja] = useState<TipoCajaTesoreria>("EFECTIVO");
+  const [tipoValor, setTipoValor] = useState<TipoValorTesoreria>("EFECTIVO");
+  const [disponibilidad, setDisponibilidad] =
+    useState<DisponibilidadCajaTesoreria>("INMEDIATA");
   const [saving, setSaving] = useState(false);
+  const [openEntidades, setOpenEntidades] = useState(false);
 
   const cargarEntidades = useCallback(async () => {
     const res = await listarEntidadesFinTesoreriaAction();
@@ -48,6 +60,25 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
     void cargarEntidades();
   }, [open, cargarEntidades]);
 
+  useEffect(() => {
+    if (!open) setOpenEntidades(false);
+  }, [open]);
+
+  useEffect(() => {
+    setTipoValor(tipoValorDesdeTipoCaja(tipoCaja));
+    setDisponibilidad(disponibilidadDesdeTipoCaja(tipoCaja));
+  }, [tipoCaja]);
+
+  const opcionesTipoValor = useMemo(
+    () => OPCIONES_TIPO_VALOR_TESORERIA_UI.filter((o) => o.value === tipoValorDesdeTipoCaja(tipoCaja)),
+    [tipoCaja]
+  );
+
+  const opcionesDisponibilidad = useMemo(
+    () => OPCIONES_DISPONIBILIDAD_CAJA_UI.filter((o) => o.value === disponibilidadDesdeTipoCaja(tipoCaja)),
+    [tipoCaja]
+  );
+
   const disabledSubmit = useMemo(
     () =>
       saving ||
@@ -61,6 +92,8 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
     setEntidadId("");
     setTitular("");
     setTipoCaja("EFECTIVO");
+    setTipoValor(tipoValorDesdeTipoCaja("EFECTIVO"));
+    setDisponibilidad(disponibilidadDesdeTipoCaja("EFECTIVO"));
   }
 
   async function handleSubmit() {
@@ -71,6 +104,8 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
         entidadId,
         titular,
         tipoCaja,
+        tipoValor,
+        disponibilidad,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo crear la caja.");
@@ -87,122 +122,198 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next && !saving) resetForm();
-        onOpenChange(next);
-      }}
-    >
-      <AppModal
-        title="Crear Caja"
-        size="md"
-        className="max-w-xl"
-        actions={
-          <div className="flex w-full justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => {
-                if (saving) return;
-                resetForm();
-                onOpenChange(false);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="button" disabled={disabledSubmit} onClick={handleSubmit}>
-              Guardar
-            </Button>
-          </div>
-        }
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && !saving) resetForm();
+          onOpenChange(next);
+        }}
       >
-        <div className="grid min-h-0 grid-cols-1 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              ENTIDAD
-            </span>
-            <Select
-              value={entidadId || "none"}
-              onValueChange={(value) => setEntidadId(value === "none" ? "" : value)}
-              disabled={saving}
-            >
-              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                <SelectValue placeholder="SELECCIONAR ENTIDAD" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
+        <AppModal
+          title="Crear Caja"
+          size="md"
+          className="max-w-xl"
+          actions={
+            <div className="flex w-full justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving}
+                onClick={() => {
+                  if (saving) return;
+                  resetForm();
+                  onOpenChange(false);
+                }}
               >
-                <SelectItem value="none">SELECCIONAR ENTIDAD</SelectItem>
-                {entidades.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
+                Cancelar
+              </Button>
+              <Button type="button" disabled={disabledSubmit} onClick={handleSubmit}>
+                Guardar
+              </Button>
+            </div>
+          }
+        >
+          <div className="grid min-h-0 grid-cols-1 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                TIPO CAJA
+              </span>
+              <Select
+                value={tipoCaja}
+                onValueChange={(value) => setTipoCaja(value as TipoCajaTesoreria)}
+                disabled={saving}
+              >
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue placeholder="SELECCIONAR TIPO CAJA" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {OPCIONES_TIPO_CAJA_TESORERIA_UI.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TITULAR
-            </span>
-            <Select
-              value={titular || "none"}
-              onValueChange={(value) => setTitular(value === "none" ? "" : (value as TitularCajaTesoreria))}
-              disabled={saving}
-            >
-              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                <SelectValue placeholder="SELECCIONAR TITULAR" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">SELECCIONAR TITULAR</SelectItem>
-                {TITULARES_CAJA_TESORERIA.map((titularOption) => (
-                  <SelectItem key={titularOption} value={titularOption}>
-                    {titularOption}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                ENTIDAD
+              </span>
+              <div className="flex gap-2">
+                <Select
+                  value={entidadId || "none"}
+                  onValueChange={(value) => setEntidadId(value === "none" ? "" : value)}
+                  disabled={saving}
+                >
+                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "min-w-0 flex-1")}>
+                    <SelectValue placeholder="SELECCIONAR ENTIDAD" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    <SelectItem value="none">SELECCIONAR ENTIDAD</SelectItem>
+                    {entidades.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  aria-label="Gestionar entidades"
+                  disabled={saving}
+                  onClick={() => setOpenEntidades(true)}
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+            </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TIPO CAJA
-            </span>
-            <Select
-              value={tipoCaja}
-              onValueChange={(value) => setTipoCaja(value as TipoCajaTesoreria)}
-              disabled={saving}
-            >
-              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                <SelectValue placeholder="SELECCIONAR TIPO" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                TITULAR
+              </span>
+              <Select
+                value={titular || "none"}
+                onValueChange={(value) => setTitular(value === "none" ? "" : (value as TitularCajaTesoreria))}
+                disabled={saving}
               >
-                {OPCIONES_TIPO_CAJA_TESORERIA_UI.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-        </div>
-      </AppModal>
-    </Dialog>
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue placeholder="SELECCIONAR TITULAR" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">SELECCIONAR TITULAR</SelectItem>
+                  {TITULARES_CAJA_TESORERIA.map((titularOption) => (
+                    <SelectItem key={titularOption} value={titularOption}>
+                      {titularOption}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                TIPO VALOR
+              </span>
+              <Select
+                value={tipoValor}
+                onValueChange={(value) => setTipoValor(value as TipoValorTesoreria)}
+                disabled={saving}
+              >
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue placeholder="SELECCIONAR TIPO VALOR" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {opcionesTipoValor.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                DISPONIBILIDAD
+              </span>
+              <Select
+                value={disponibilidad}
+                onValueChange={(value) => setDisponibilidad(value as DisponibilidadCajaTesoreria)}
+                disabled={saving}
+              >
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue placeholder="SELECCIONAR DISPONIBILIDAD" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {opcionesDisponibilidad.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+        </AppModal>
+      </Dialog>
+
+      <CrearEntidadTesoreriaModal
+        open={openEntidades}
+        onOpenChange={setOpenEntidades}
+        onCatalogoChanged={() => void cargarEntidades()}
+        onEntidadCreadaSeleccion={(id) => setEntidadId(id)}
+      />
+    </>
   );
 }

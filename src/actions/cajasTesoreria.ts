@@ -6,13 +6,19 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
   crearCajaTesoreriaSchema,
+  crearFinTesoreriaEntidadSchema,
   editarCajaTesoreriaSchema,
+  editarFinTesoreriaEntidadSchema,
   eliminarCajaTesoreriaSchema,
+  eliminarFinTesoreriaEntidadSchema,
 } from "@/lib/validations/cajasTesoreria";
 import {
   crearCajaTesoreria,
+  crearFinTesoreriaEntidad,
   editarCajaTesoreria,
+  editarFinTesoreriaEntidad,
   eliminarCajaTesoreria,
+  eliminarFinTesoreriaEntidad,
   listarCajasTesoreria,
   listarCajasTesoreriaPorTipoValor,
   listarEntidadesFinTesoreria,
@@ -64,6 +70,67 @@ export async function listarEntidadesFinTesoreriaAction(): Promise<ActionResult<
     const message = error instanceof Error ? error.message : "No se pudo listar las entidades.";
     return { ok: false, error: message };
   }
+}
+
+export async function crearFinTesoreriaEntidadAction(
+  raw: unknown
+): Promise<ActionResult<FinTesoreriaEntidadItem>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = crearFinTesoreriaEntidadSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await crearFinTesoreriaEntidad(parsed.data.nombre);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateCajasTesoreriaPaths();
+  return { ok: true, data: res.data };
+}
+
+export async function editarFinTesoreriaEntidadAction(
+  raw: unknown
+): Promise<ActionResult<FinTesoreriaEntidadItem>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = editarFinTesoreriaEntidadSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await editarFinTesoreriaEntidad(parsed.data.id, parsed.data.nombre);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateCajasTesoreriaPaths();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarFinTesoreriaEntidadAction(raw: unknown): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+
+  const parsed = eliminarFinTesoreriaEntidadSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await eliminarFinTesoreriaEntidad(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidateCajasTesoreriaPaths();
+  return { ok: true, data: undefined };
 }
 
 /** Cajas con `tipo_valor = DIGITAL` (banco o billetera digital; destino de acreditación de cheques). */

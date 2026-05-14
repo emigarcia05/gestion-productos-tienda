@@ -53,6 +53,8 @@ export interface CrearCajaTesoreriaInput {
   entidadId: string;
   titular: string;
   tipoCaja: TipoCajaTesoreria;
+  tipoValor: TipoValorTesoreria;
+  disponibilidad: DisponibilidadCajaTesoreria;
   monto: number;
 }
 
@@ -102,12 +104,98 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+function normalizarNombreEntidadFinTesoreria(nombre: string): string {
+  return nombre.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
+}
+
 export async function listarEntidadesFinTesoreria(): Promise<FinTesoreriaEntidadItem[]> {
   const rows = await prisma.finTesoreriaEntidad.findMany({
     orderBy: [{ nombre: "asc" }],
     select: { id: true, nombre: true },
   });
   return rows.map((r) => ({ id: r.id, nombre: r.nombre.toUpperCase() }));
+}
+
+function mapDbErrorEntidad(error: unknown, fallback: string): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof (error as { code?: unknown }).code === "string"
+  ) {
+    const code = (error as { code: string }).code;
+    if (code === "P2002") return "Ya existe una entidad con ese nombre.";
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
+export async function crearFinTesoreriaEntidad(
+  nombre: string
+): Promise<ServiceResult<FinTesoreriaEntidadItem>> {
+  const norm = normalizarNombreEntidadFinTesoreria(nombre);
+  if (!norm) {
+    return { success: false, error: "El nombre no puede quedar vacío." };
+  }
+  try {
+    const row = await prisma.finTesoreriaEntidad.create({
+      data: { nombre: norm },
+      select: { id: true, nombre: true },
+    });
+    return {
+      success: true,
+      data: { id: row.id, nombre: row.nombre.toUpperCase() },
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: mapDbErrorEntidad(error, "No se pudo crear la entidad."),
+    };
+  }
+}
+
+export async function editarFinTesoreriaEntidad(
+  id: string,
+  nombre: string
+): Promise<ServiceResult<FinTesoreriaEntidadItem>> {
+  const norm = normalizarNombreEntidadFinTesoreria(nombre);
+  if (!norm) {
+    return { success: false, error: "El nombre no puede quedar vacío." };
+  }
+  try {
+    const row = await prisma.finTesoreriaEntidad.update({
+      where: { id },
+      data: { nombre: norm },
+      select: { id: true, nombre: true },
+    });
+    return {
+      success: true,
+      data: { id: row.id, nombre: row.nombre.toUpperCase() },
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: mapDbErrorEntidad(error, "No se pudo editar la entidad."),
+    };
+  }
+}
+
+export async function eliminarFinTesoreriaEntidad(id: string): Promise<ServiceResult<void>> {
+  const n = await prisma.cajaTesoreria.count({ where: { entidadId: id } });
+  if (n > 0) {
+    return {
+      success: false,
+      error: "No se puede eliminar: hay cajas de tesorería que usan esta entidad.",
+    };
+  }
+  try {
+    await prisma.finTesoreriaEntidad.delete({ where: { id } });
+    return { success: true, data: undefined };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: mapDbErrorEntidad(error, "No se pudo eliminar la entidad."),
+    };
+  }
 }
 
 export async function listarCajasTesoreria(): Promise<CajaTesoreriaItem[]> {
@@ -155,14 +243,23 @@ export async function listarCajasTesoreriaPorTipoValor(
 export async function crearCajaTesoreria(
   input: CrearCajaTesoreriaInput
 ): Promise<ServiceResult<CajaTesoreriaItem>> {
+  const esperadoTv = tipoValorDesdeTipoCaja(input.tipoCaja);
+  const esperadoDisp = disponibilidadDesdeTipoCaja(input.tipoCaja);
+  if (input.tipoValor !== esperadoTv || input.disponibilidad !== esperadoDisp) {
+    return {
+      success: false,
+      error:
+        "La combinación tipo de caja / tipo de valor / disponibilidad no es válida para las reglas de tesorería.",
+    };
+  }
   try {
     const row = await prisma.cajaTesoreria.create({
       data: {
         entidadId: input.entidadId,
         titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
-        tipoValor: tipoValorDesdeTipoCaja(input.tipoCaja),
-        disponibilidad: disponibilidadDesdeTipoCaja(input.tipoCaja),
+        tipoValor: input.tipoValor,
+        disponibilidad: input.disponibilidad,
         monto: input.monto,
       },
       include: CAJA_TESORERIA_LIST_INCLUDE,

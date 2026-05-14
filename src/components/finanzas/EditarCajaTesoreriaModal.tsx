@@ -29,6 +29,8 @@ import type {
   TipoValorTesoreria,
 } from "@prisma/client";
 import EliminarCajaTesoreriaModal from "@/components/finanzas/EliminarCajaTesoreriaModal";
+import CrearEntidadTesoreriaModal from "@/components/finanzas/CrearEntidadTesoreriaModal";
+import { Plus } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -52,6 +54,7 @@ export default function EditarCajaTesoreriaModal({
     useState<DisponibilidadCajaTesoreria>("INMEDIATA");
   const [saving, setSaving] = useState(false);
   const [openEliminar, setOpenEliminar] = useState(false);
+  const [openEntidades, setOpenEntidades] = useState(false);
 
   const cargarEntidades = useCallback(async () => {
     const res = await listarEntidadesFinTesoreriaAction();
@@ -67,6 +70,10 @@ export default function EditarCajaTesoreriaModal({
     if (!open) return;
     void cargarEntidades();
   }, [open, cargarEntidades]);
+
+  useEffect(() => {
+    if (!open) setOpenEntidades(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !caja) return;
@@ -195,28 +202,41 @@ export default function EditarCajaTesoreriaModal({
               </Select>
             </label>
 
-            <label className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 ENTIDAD
               </span>
-              <Select
-                value={entidadId || "none"}
-                onValueChange={(value) => setEntidadId(value === "none" ? "" : value)}
-                disabled={saving}
-              >
-                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
-                  <SelectValue placeholder="SELECCIONAR ENTIDAD" />
-                </SelectTrigger>
-                <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                  <SelectItem value="none">SELECCIONAR ENTIDAD</SelectItem>
-                  {entidades.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
+              <div className="flex gap-2">
+                <Select
+                  value={entidadId || "none"}
+                  onValueChange={(value) => setEntidadId(value === "none" ? "" : value)}
+                  disabled={saving}
+                >
+                  <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "min-w-0 flex-1")}>
+                    <SelectValue placeholder="SELECCIONAR ENTIDAD" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                    <SelectItem value="none">SELECCIONAR ENTIDAD</SelectItem>
+                    {entidades.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  aria-label="Gestionar entidades"
+                  disabled={saving}
+                  onClick={() => setOpenEntidades(true)}
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+            </div>
 
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
@@ -297,6 +317,13 @@ export default function EditarCajaTesoreriaModal({
           resetForm();
           onUpdated?.();
         }}
+      />
+
+      <CrearEntidadTesoreriaModal
+        open={openEntidades}
+        onOpenChange={setOpenEntidades}
+        onCatalogoChanged={() => void cargarEntidades()}
+        onEntidadCreadaSeleccion={(id) => setEntidadId(id)}
       />
     </>
   );

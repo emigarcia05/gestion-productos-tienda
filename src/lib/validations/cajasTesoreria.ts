@@ -20,17 +20,36 @@ export const montoCajaTesoreriaSchema = z
   .min(-999_999_999, "El monto es demasiado bajo.")
   .max(999_999_999, "El monto es demasiado alto.");
 
+const nombreFinTesoreriaEntidadSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresá un nombre.")
+  .max(200, "El nombre es demasiado largo.");
+
+export const crearFinTesoreriaEntidadSchema = z.object({
+  nombre: nombreFinTesoreriaEntidadSchema,
+});
+
+export const editarFinTesoreriaEntidadSchema = z.object({
+  id: prismaCuidOrUuidSchema,
+  nombre: nombreFinTesoreriaEntidadSchema,
+});
+
+export const eliminarFinTesoreriaEntidadSchema = z.object({
+  id: prismaCuidOrUuidSchema,
+});
+
 export const crearCajaTesoreriaSchema = z.object({
   entidadId: prismaCuidOrUuidSchema,
   titular: z.enum(TITULARES_CAJA_TESORERIA, "Seleccioná un titular válido."),
   tipoCaja: tipoCajaTesoreriaSchema,
+  tipoValor: tipoValorTesoreriaSchema,
+  disponibilidad: disponibilidadCajaTesoreriaSchema,
   monto: montoCajaTesoreriaSchema.optional().default(0),
 });
 
 export const editarCajaTesoreriaSchema = crearCajaTesoreriaSchema.extend({
   id: prismaCuidSchema,
-  tipoValor: tipoValorTesoreriaSchema,
-  disponibilidad: disponibilidadCajaTesoreriaSchema,
 });
 
 export const eliminarCajaTesoreriaSchema = z.object({
