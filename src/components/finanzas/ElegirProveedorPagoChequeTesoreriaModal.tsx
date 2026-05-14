@@ -124,6 +124,42 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
           ) : null}
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              FECHA TRANSFERENCIA
+            </span>
+            <div className="relative w-full">
+              <Input
+                type="date"
+                ref={fechaTransferenciaPickerRef}
+                value={fechaTransferenciaIso}
+                onChange={(e) => setFechaTransferenciaIso(e.target.value)}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  abrirPickerTransferencia();
+                }}
+                disabled={cargando || !!enviandoId}
+                className="h-9 pr-10"
+                title="Ícono de calendario o doble clic para abrir el calendario"
+                aria-label="Fecha de transferencia del pago a proveedor"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={cargando || !!enviandoId}
+                className="absolute right-0 top-0 h-9 w-9 shrink-0 rounded-r-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  abrirPickerTransferencia();
+                }}
+                aria-label="Abrir calendario para fecha de transferencia"
+                title="Abrir calendario"
+              >
+                <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+              </Button>
+            </div>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               Buscar
             </span>
             <Input
@@ -187,9 +223,17 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
                             title="Seleccionar"
                             onClick={async () => {
                               if (!cheque) return;
+                              if (!fechaTransferenciaIso) {
+                                toast.error("Indicá la fecha de transferencia.");
+                                return;
+                              }
                               setEnviandoId(p.id);
                               try {
-                                await onSeleccion({ chequeId: cheque.id, proveedorId: p.id });
+                                await onSeleccion({
+                                  chequeId: cheque.id,
+                                  proveedorId: p.id,
+                                  fechaTransferencia: fechaTransferenciaIso,
+                                });
                               } finally {
                                 setEnviandoId(null);
                               }

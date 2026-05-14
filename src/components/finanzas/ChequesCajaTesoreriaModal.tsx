@@ -573,10 +573,11 @@ export default function ChequesCajaTesoreriaModal({
           if (!next) setChequeElegirProveedorPago(null);
         }}
         cheque={chequeElegirProveedorPago}
-        onSeleccion={async ({ chequeId, proveedorId }) => {
+        onSeleccion={async ({ chequeId, proveedorId, fechaTransferencia }) => {
           const res = await marcarEntregaProveedorFinTesoreriaChequeAction({
             chequeId,
             proveedorId,
+            fechaTransferencia,
           });
           if (!res.ok) {
             toast.error(res.error ?? "No se pudo registrar el pago a proveedor.");
