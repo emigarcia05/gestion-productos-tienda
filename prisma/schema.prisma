@@ -8,9 +8,22 @@ datasource db {
 }
 
 enum TipoCajaTesoreria {
+  BANCO
+  BILLETERA_DIGITAL
+  CHEQUE
+  EFECTIVO
+}
+
+/** Agrupación para totales / destino de transferencia de cheques (no confundir con `TipoCajaTesoreria`). */
+enum TipoValorTesoreria {
   DIGITAL
   EFECTIVO
   CHEQUE
+}
+
+enum DisponibilidadCajaTesoreria {
+  INMEDIATA
+  DIFERIDO
 }
 
 enum TipoChequeTesoreria {
@@ -138,6 +151,8 @@ model CajaTesoreria {
   nombreCaja       String            @map("nombre_caja")
   titular          String            @map("titular")
   tipoCaja         TipoCajaTesoreria @map("tipo_caja")
+  tipoValor        TipoValorTesoreria @map("tipo_valor")
+  disponibilidad   DisponibilidadCajaTesoreria @map("disponibilidad")
   monto            Int               @default(0)
   ultActualizacion DateTime          @map("ult_actualizacion") @default(now())
   createdAt        DateTime          @default(now()) @map("created_at")
@@ -148,12 +163,13 @@ model CajaTesoreria {
 
   @@unique([nombreCaja, titular], map: "fin_tesoreria_nombre_titular_ux")
   @@index([tipoCaja], map: "fin_tesoreria_tipo_caja_idx")
+  @@index([tipoValor], map: "fin_tesoreria_tipo_valor_idx")
   @@map("fin_tesoreria")
 }
 
 // Cheques asociados a una caja de tesorería tipo CHEQUE. El disponible para totales
 // (hoy en calendario Argentina) suma solo filas con fecha_acreditacion <= hoy y sin transferencia.
-// Tras acreditar a una caja DIGITAL, la fila conserva `fecha_transferencia` hasta 500 días (purge en servicio).
+// Tras acreditar a una caja con tipo_valor DIGITAL, la fila conserva `fecha_transferencia` hasta 500 días (purge en servicio).
 model FinTesoreriaCheque {
   id                  String               @id @default(cuid())
   cajaId              String               @map("caja_id")
@@ -161,7 +177,7 @@ model FinTesoreriaCheque {
   emisor              String
   /** Misma lista cerrada que `fin_tesoreria.titular` (titulares de caja). */
   tenedor             String                 @map("tenedor")
-  /** Custodia: en tienda (alta), depositado (transferido a cuenta DIGITAL), proveedor (pago a proveedor mercadería). */
+  /** Custodia: en tienda (alta), depositado (transferido a caja con tipo_valor DIGITAL), proveedor (pago a proveedor mercadería). */
   tenencia            TenenciaChequeTesoreria @default(TIENDA) @map("tenencia")
   monto               Int
   fechaAcreditacion   DateTime             @map("fecha_acreditacion") @db.Date
@@ -170,7 +186,7 @@ model FinTesoreriaCheque {
   cajaDestinoId       String?              @map("caja_destino_id")
   /** Día en que la tienda recibió el cheque (calendario Argentina). */
   fechaRecibido       DateTime             @map("fecha_recibido") @db.Date
-  /** Día (calendario Argentina) en que se transfirió a cuenta DIGITAL; null si aún no se transfirió. */
+  /** Día (calendario Argentina) en que se transfirió a caja con tipo_valor DIGITAL; null si aún no se transfirió. */
   fechaTransferido    DateTime?            @map("fecha_transferido") @db.Date
   /** Proveedor de mercadería al registrar pago a proveedor (`tenencia = PROVEEDOR`). */
   proveedorId         String?              @map("proveedor_id")

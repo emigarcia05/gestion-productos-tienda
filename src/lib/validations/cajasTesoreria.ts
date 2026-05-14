@@ -2,7 +2,12 @@ import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { TITULARES_CAJA_TESORERIA } from "@/lib/cajasTesoreriaTitulares";
 
-export const tipoCajaTesoreriaSchema = z.enum(["DIGITAL", "EFECTIVO", "CHEQUE"]);
+export const tipoCajaTesoreriaSchema = z.enum([
+  "BANCO",
+  "BILLETERA_DIGITAL",
+  "CHEQUE",
+  "EFECTIVO",
+]);
 
 export const montoCajaTesoreriaSchema = z
   .coerce

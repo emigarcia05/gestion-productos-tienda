@@ -19,12 +19,16 @@ import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+import type { TipoCajaTesoreria } from "@prisma/client";
+import { etiquetaTipoCajaEnPantalla } from "@/lib/cajasTesoreriaTipos";
 
 export interface TesoreriaCajaFila {
   id: string;
   nombreCaja: string;
   titular: string;
   tipoCaja: string;
+  tipoValor: string;
+  disponibilidad: string;
   /** Valor persistido en BD (p. ej. edición de caja); no usar para totales si existe `montoDisponible`. */
   monto: number;
   /** Monto que cuenta hoy para totales y columna MONTO (cajas CHEQUE: cheques con fecha de acreditación ≤ hoy AR). */
@@ -44,11 +48,11 @@ interface Props {
   onDeleteClick?: (fila: TesoreriaCajaFila) => void;
 }
 
-const COLS = 5;
+const COLS = 7;
 
-/** Ancho relativo por columna (orden: ÚLT. ACT., CAJA, TITULAR, TIPO, MONTO [, ACCIONES]); suma 100. */
-const COL_WIDTHS_PCT_CON_ACCIONES = [22, 16, 16, 11, 14, 21] as const;
-const COL_WIDTHS_PCT_SIN_ACCIONES = [24, 18, 18, 12, 28] as const;
+/** Ancho relativo por columna (orden: ÚLT. ACT., CAJA, TITULAR, TIPO CAJA, TIPO VALOR, DISPONIBILIDAD, MONTO [, ACCIONES]); suma 100. */
+const COL_WIDTHS_PCT_CON_ACCIONES = [16, 13, 12, 10, 9, 9, 11, 20] as const;
+const COL_WIDTHS_PCT_SIN_ACCIONES = [17, 14, 13, 11, 10, 10, 25] as const;
 
 /** Columna ÚLT. ACT.: recuadro sólido `accent2` + ícono blanco (solo si hay alerta). */
 const TESORERIA_ALERTA_CAJA_ACTIVA_CLASS = "border-accent2 bg-accent2 shadow-sm";
@@ -76,8 +80,8 @@ function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
   );
 }
 
-/** Suma por `tipoCaja` y totales (misma lógica que filtros del padre: recibe `filas` ya filtradas). */
-function totalesPorTipoCaja(filas: TesoreriaCajaFila[]): {
+/** Suma por `tipoValor` y totales (misma lógica que filtros del padre: recibe `filas` ya filtradas). */
+function totalesPorTipoValor(filas: TesoreriaCajaFila[]): {
   efectivo: number;
   digital: number;
   chequeAlDia: number;
@@ -91,9 +95,9 @@ function totalesPorTipoCaja(filas: TesoreriaCajaFila[]): {
   let chequeDiferido = 0;
   for (const f of filas) {
     const m = f.montoDisponible;
-    if (f.tipoCaja === "EFECTIVO") efectivo += m;
-    else if (f.tipoCaja === "DIGITAL") digital += m;
-    else if (f.tipoCaja === "CHEQUE") {
+    if (f.tipoValor === "EFECTIVO") efectivo += m;
+    else if (f.tipoValor === "DIGITAL") digital += m;
+    else if (f.tipoValor === "CHEQUE") {
       chequeAlDia += m;
       chequeDiferido += f.montoChequesDiferidos;
     }
@@ -168,7 +172,7 @@ export default function TablaTesoreriaCajas({
     total,
     chequeDiferido,
     totalConChequeDiferido,
-  } = totalesPorTipoCaja(filas);
+  } = totalesPorTipoValor(filas);
   const colCount = esEditor ? COLS + 1 : COLS;
   const anchosColPct = esEditor ? COL_WIDTHS_PCT_CON_ACCIONES : COL_WIDTHS_PCT_SIN_ACCIONES;
 
@@ -184,6 +188,8 @@ export default function TablaTesoreriaCajas({
                 <TableHead className={CELL_MIN}>CAJA</TableHead>
                 <TableHead className={CELL_MIN}>TITULAR</TableHead>
                 <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
+                <TableHead className={CELL_MIN}>TIPO VALOR</TableHead>
+                <TableHead className={CELL_MIN}>DISPONIBILIDAD</TableHead>
                 <TableHead className={cn(TH_NUM, CELL_MIN)}>MONTO</TableHead>
                 {esEditor ? (
                   <TableHead className={cn("text-center tabla-bloque-secundario-head-divider", CELL_MIN)}>
@@ -269,7 +275,13 @@ export default function TablaTesoreriaCajas({
                           <span className="truncate block">{f.titular}</span>
                         </TableCell>
                         <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
-                          {f.tipoCaja}
+                          {etiquetaTipoCajaEnPantalla(f.tipoCaja as TipoCajaTesoreria)}
+                        </TableCell>
+                        <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
+                          {f.tipoValor}
+                        </TableCell>
+                        <TableCell className={cn("celda-datos whitespace-nowrap", CELL_MIN)}>
+                          {f.disponibilidad}
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
                           ${fmtPrecio(f.montoDisponible)}
@@ -331,7 +343,7 @@ export default function TablaTesoreriaCajas({
           >
             {/*
               Cuadrícula 4×2:
-              EFECTIVO | DIGITAL | CHEQUE AL DÍA | TOTAL CON CHEQUE AL DÍA
+              EFECTIVO | DIGITAL (tipo valor) | CHEQUE AL DÍA | TOTAL CON CHEQUE AL DÍA
               (vacío)  | (vacío) | CHEQUE DIFERIDO | TOTAL CON CHEQUE DIFERIDO
             */}
             <div

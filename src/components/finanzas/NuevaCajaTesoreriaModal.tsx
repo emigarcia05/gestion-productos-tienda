@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { crearCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
+import { OPCIONES_TIPO_CAJA_TESORERIA_UI } from "@/lib/cajasTesoreriaTipos";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
 import type { TipoCajaTesoreria } from "@prisma/client";
 
@@ -165,9 +166,11 @@ export default function NuevaCajaTesoreriaModal({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="DIGITAL">DIGITAL</SelectItem>
-                <SelectItem value="EFECTIVO">EFECTIVO</SelectItem>
-                <SelectItem value="CHEQUE">CHEQUE</SelectItem>
+                {OPCIONES_TIPO_CAJA_TESORERIA_UI.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </label>

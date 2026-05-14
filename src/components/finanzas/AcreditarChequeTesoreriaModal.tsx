@@ -136,7 +136,7 @@ export default function AcreditarChequeTesoreriaModal({
               ) : cajas.length === 0 ? (
                 <EmptyTableRow
                   colSpan={COL_SPAN}
-                  message="No hay cajas tipo DIGITAL. Creá una desde Tesorería con tipo DIGITAL."
+                  message="No hay cajas con tipo de valor DIGITAL (banco o billetera digital). Creá una en Tesorería."
                 />
               ) : (
                 cajas.map((c) => {
@@ -158,7 +158,7 @@ export default function AcreditarChequeTesoreriaModal({
                             disabled={!cheque || !!pendingDestinoId}
                             aria-busy={busy}
                             aria-label={busy ? "Acreditando…" : `Acreditar cheque en ${c.nombreCaja}`}
-                            title="Acreditar el importe del cheque en esta caja DIGITAL."
+                            title="Acreditar el importe del cheque en esta caja (tipo de valor DIGITAL)."
                             onClick={() => void ejecutarTransferencia(c.id)}
                           >
                             {busy ? (

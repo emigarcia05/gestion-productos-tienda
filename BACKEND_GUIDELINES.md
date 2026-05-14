@@ -548,21 +548,24 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **UI de carga/edición de ventas**: **`src/components/finanzas/CrearFinBalVtasModal.tsx`** y **`FinBalVtasPageClient.tsx`** en `/finanzas/balance/vtas`; persistencia vía **`crearFinBalVtasAction`** / eliminación en las actions de `finBalVtas.ts`. No existe modal de ventas en Balance mensual.
 - **Histórico MC / PE en pantalla**: hoy la UI muestra **—** hasta definir fuente (mes anterior, promedio, tabla nueva, etc.).
 
-### 2.5c Cajas de tesorería (`fin_tesoreria_cajas`, Prisma: `CajaTesoreria`)
+### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.
 
-- **Tabla**: `fin_tesoreria_cajas`
+- **Tabla**: `fin_tesoreria`
   - `id` (`TEXT`, PK; Prisma `cuid()`).
-  - `nombre_caja` (`TEXT`, único).
+  - `nombre_caja` (`TEXT`; único junto con `titular`).
   - `titular` (`TEXT`, obligatorio).
-  - `tipo_caja` (enum PostgreSQL/Prisma `TipoCajaTesoreria`: `DIGITAL | EFECTIVO | CHEQUE`).
+  - `tipo_caja` (enum PostgreSQL/Prisma `TipoCajaTesoreria`: **`BANCO` | `BILLETERA_DIGITAL` | `CHEQUE` | `EFECTIVO`** — detalle operativo en pantalla).
+  - `tipo_valor` (enum `TipoValorTesoreria`: **`DIGITAL` | `EFECTIVO` | `CHEQUE`** — agrupación para totales y reglas de liquidez: **BANCO** y **BILLETERA_DIGITAL** → `DIGITAL`; **EFECTIVO** → `EFECTIVO`; **CHEQUE** → `CHEQUE`). Se persiste y recalcula en **alta/edición** de caja desde `tipo_caja` (`src/lib/cajasTesoreriaTipos.ts`: `tipoValorDesdeTipoCaja`).
+  - `disponibilidad` (enum `DisponibilidadCajaTesoreria`: **`INMEDIATA` | `DIFERIDO`**). Derivada de `tipo_caja` al persistir: **CHEQUE** → `DIFERIDO`; el resto → `INMEDIATA` (`disponibilidadDesdeTipoCaja`). Migración histórica: **`20260519120000_fin_tesoreria_tipo_caja_valor_disponibilidad`** — valores previos `tipo_caja = DIGITAL` pasan a **`BILLETERA_DIGITAL`** + `tipo_valor = DIGITAL` (repartir manualmente a **BANCO** si aplica).
   - `monto` (`INTEGER`, default `0`; saldo sin decimales).
   - `ult_actualizacion` (`TIMESTAMP`): última vez que cambió el saldo.
   - `created_at`, `updated_at` (`TIMESTAMP`).
 - **Índices**:
   - único compuesto en (`nombre_caja`, `titular`) — permite repetir nombre si cambia el titular;
-  - índice por `tipo_caja`.
+  - índice por `tipo_caja`;
+  - índice por `tipo_valor`.
 - **Regla de negocio en BD**:
   - trigger `fin_tesoreria_cajas_set_timestamps` + función `set_fin_tesoreria_cajas_timestamps`:
     - siempre actualiza `updated_at` en `UPDATE`;
@@ -575,11 +578,13 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - Unicidad por nombre+titular: `prisma/migrations/20260414193000_unique_nombre_titular_fin_tesoreria_cajas/migration.sql`.
 - **Servicio**: `src/services/cajasTesoreria.service.ts`
   - `listarCajasTesoreria()`: lectura ordenada por `nombre_caja`.
-  - `crearCajaTesoreria(input)`: alta con validación de unicidad manejada como `ServiceResult`.
-  - `editarCajaTesoreria(input)`: edición de `nombre`, `titular`, `tipo` y `monto`.
+  - `listarCajasTesoreriaPorTipoValor(tipoValor)`: filtro por **`tipo_valor`** (p. ej. destino de acreditación de cheques: **`DIGITAL`**).
+  - `crearCajaTesoreria(input)`: alta con validación de unicidad manejada como `ServiceResult`; persiste `tipo_valor` y `disponibilidad` según `tipo_caja`.
+  - `editarCajaTesoreria(input)`: edición de `nombre`, `titular`, `tipo`, `tipo_valor`, `disponibilidad` y `monto`.
   - `eliminarCajaTesoreria(id)`: baja por ID.
 - **Actions**: `src/actions/cajasTesoreria.ts`
   - Lectura `listarCajasTesoreriaAction`: requiere `getRol()` + `puede(rol, PERMISOS.finanzas.acceso)`.
+  - `listarCajasTesoreriaTipoDigitalAction`: cajas con **`tipo_valor = DIGITAL`** (banco o billetera digital).
   - Mutaciones (`crear`, `editar`, `eliminar`): requieren permiso de finanzas + `esEditor()`.
   - Validación con Zod en `src/lib/validations/cajasTesoreria.ts`.
   - `titular` queda restringido por whitelist (alta y edición): `SUC. GUAYMALLEN`, `SUC. MAIPU`, `WALTER GARCIA`, `FERNANDO PANAIA`, `EMILIANO GARCIA`, `VANESA GARCIA` (constante compartida `src/lib/cajasTesoreriaTitulares.ts`).
@@ -587,7 +592,7 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - Revalidación de rutas: `/finanzas` y `/finanzas/tesoreria`.
 - **Cheques** (`fin_tesoreria_cheques`, Prisma `FinTesoreriaCheque`; migración **`20260511143000_fin_tesoreria_cheques_tenencia`** — enum Postgres `TenenciaChequeTesoreria` (`TIENDA` | `DEPOSITADO` | `PROVEEDOR`), columna `tenencia` NOT NULL default `TIENDA` (custodia del cheque; **no** confundir con el campo texto **tenedor** = titular de caja); migración **`20260515190000_fin_tesoreria_cheques_transferencia_historial`** — `fecha_transferencia`, `caja_destino_id` → `fin_tesoreria`, `onDelete: SetNull`; migración **`20260516140000_fin_tesoreria_cheques_fechas_recibido_depositado`**: **`fecha_recibido`** (`DATE` NOT NULL), DATE nullable de transferencia a cuenta (alta histórica como `fecha_depositado`); migración **`20260518143000_rename_fin_tesoreria_cheques_fecha_depositado_to_fecha_transferido`**: columna canónica **`fecha_transferido`**; elimina **`entrega_proveedor`** y su FK/índice; migración **`20260518160000_fin_tesoreria_cheques_proveedor_pago`**: **`proveedor_id`** (FK opcional → `global_proveedores`); **`ElegirProveedorPagoChequeTesoreriaModal`** (lista mercadería + **`marcarEntregaProveedorFinTesoreriaChequeAction`** con `proveedorId`):
   - Solo filas con **`fecha_transferencia` null** suman en disponibilidad / diferidos (`sumarMontosCheques*` en `finTesoreriaCheques.service.ts`).
-  - **Transferencia** a caja **DIGITAL**: incrementa saldo destino y **marca** `fecha_transferencia` + `caja_destino_id`, **`tenencia = DEPOSITADO`**, **`fecha_transferido`** = día hoy AR (no borra la fila). Retención **500 días** (`CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA` en `src/lib/finTesoreriaChequesRetencion.ts`); **`eliminarChequesTransferidosVencidos()`** purga filas más viejas (se llama al listar y tras transferir).
+  - **Transferencia** a caja con **`tipo_valor = DIGITAL`**: incrementa saldo destino y **marca** `fecha_transferencia` + `caja_destino_id`, **`tenencia = DEPOSITADO`**, **`fecha_transferido`** = día hoy AR (no borra la fila). Retención **500 días** (`CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA` en `src/lib/finTesoreriaChequesRetencion.ts`); **`eliminarChequesTransferidosVencidos()`** purga filas más viejas (se llama al listar y tras transferir).
   - **Listado** `listarChequesPorCajaId(cajaId, tenenciaFiltro)` con `tenenciaFiltro` `actuales` (`tenencia = TIENDA` y `fecha_transferencia` nula) | `transferidos` (`tenencia IN (DEPOSITADO, PROVEEDOR)`), default `actuales` (`listarFinTesoreriaChequesPorCajaSchema` + `finTesoreriaChequesTenenciaFiltroSchema`). En UI (**Detalles De Cheques**), filtro **ACTUALES**: columnas **RECIBIDO** (`fecha_recibido`), **TIPO**, **TENEDOR** (titular de caja del cheque), **EMISOR**, **MONTO**, **ACREDITACION** (`fecha_acreditacion`), **DÍAS** (acreditación − hoy AR; `diasTextoAcreditacionMenosHoyArgentina` / `diasNumericosAcreditacionMenosHoyArgentina`) y **ACCIONES** (transferir si aplica / editar / borrar); orden cliente por **DÍAS** ascendente. Filtro **TRANSFERIDOS**: **RECIBIDO**, **EMISOR**, **TRANSFERENCIA** (`fecha_transferencia`), **TENEDOR** (texto **`nombre_caja - titular`** de la caja destino vía `cajaDestinoEtiqueta`; si custodia **PROVEEDOR**, nombre del proveedor (`proveedorNombre`); si no hay destino ni proveedor, etiqueta de `tenencia`), **MONTO**, **ACCIONES** (editar / borrar); orden cliente por **TRANSFERENCIA** descendente. Editar/eliminar rechazan cheques ya transferidos.
   - **Custodia proveedor (sin transferir)**: `marcarEntregaProveedorFinTesoreriaCheque` + `marcarEntregaProveedorFinTesoreriaChequeAction` + `marcarEntregaProveedorChequeSchema` (`chequeId`, `proveedorId`; FK **`proveedor_id`** → `global_proveedores`, validación **`proveedor_mercaderia = true`**) — cheque con `fecha_transferencia` null; pone **`tenencia = PROVEEDOR`**. **`listarProveedoresMercaderiaParaPagoChequeTesoreria` / `listarProveedoresMercaderiaParaPagoChequeTesoreriaAction`**: catálogo para **`ElegirProveedorPagoChequeTesoreriaModal`** (tras **Pago Proveedor** en **Destino Cheque**).
 
@@ -1056,6 +1061,8 @@ Antes de entregar código nuevo o modificado, verificar:
   - `manuales-obligatorios.mdc`: exige revisar guías frontend/backend antes de modificar código.
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
+
+*Última actualización (2026-05-19): **Cajas tesorería — tipo caja, tipo valor, disponibilidad** — migración **`20260519120000_fin_tesoreria_tipo_caja_valor_disponibilidad`**; `tipo_caja` (`BANCO` \| `BILLETERA_DIGITAL` \| `CHEQUE` \| `EFECTIVO`), columnas `tipo_valor` y `disponibilidad`; destino de acreditación de cheques por `tipo_valor = DIGITAL`. Ver §2.5c.*
 
 *Última actualización (2026-05-11): **Cheques tesorería — tenencia** — migración **`20260511143000_fin_tesoreria_cheques_tenencia`**; `tenencia` en modelo y DTO; listado con `tenenciaFiltro`; transferencia pone `DEPOSITADO`; entrega proveedor pone `PROVEEDOR`. Ver §2.5c (cheques).*
 

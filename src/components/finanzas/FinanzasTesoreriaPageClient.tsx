@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import type { TipoCajaTesoreria } from "@prisma/client";
+import { etiquetaTipoCajaEnPantalla } from "@/lib/cajasTesoreriaTipos";
 
 interface Props {
   filas: TesoreriaCajaFila[];
@@ -158,7 +160,7 @@ export default function FinanzasTesoreriaPageClient({
                       <SelectItem value="none">TIPO CAJA</SelectItem>
                       {tiposCajaOptions.map((tipo) => (
                         <SelectItem key={tipo} value={tipo}>
-                          {tipo}
+                          {etiquetaTipoCajaEnPantalla(tipo as TipoCajaTesoreria)}
                         </SelectItem>
                       ))}
                     </SelectContent>

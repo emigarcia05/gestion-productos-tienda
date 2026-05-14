@@ -357,8 +357,8 @@ export async function transferirChequeFinTesoreria(
       if (!destino) {
         throw new Error("DESTINO_NOT_FOUND");
       }
-      if (destino.tipoCaja !== "DIGITAL") {
-        throw new Error("DESTINO_NO_DIGITAL");
+      if (destino.tipoValor !== "DIGITAL") {
+        throw new Error("DESTINO_NO_TIPO_VALOR_DIGITAL");
       }
 
       const nuevoSaldo = destino.monto + cheque.monto;
@@ -417,10 +417,11 @@ export async function transferirChequeFinTesoreria(
       if (error.message === "DESTINO_NOT_FOUND") {
         return { success: false, error: "Caja destino no encontrada." };
       }
-      if (error.message === "DESTINO_NO_DIGITAL") {
+      if (error.message === "DESTINO_NO_TIPO_VALOR_DIGITAL") {
         return {
           success: false,
-          error: "La acreditación solo puede hacerse hacia una caja tipo DIGITAL.",
+          error:
+            "La acreditación solo puede hacerse hacia una caja con tipo de valor DIGITAL (banco o billetera digital).",
         };
       }
       if (error.message === "SALDO_DESTINO_FUERA_DE_RANGO") {

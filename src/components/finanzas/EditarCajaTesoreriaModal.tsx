@@ -18,6 +18,7 @@ import { editarCajaTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
 import type { TesoreriaCajaFila } from "@/components/finanzas/TablaTesoreriaCajas";
 import { TITULARES_CAJA_TESORERIA, type TitularCajaTesoreria } from "@/lib/cajasTesoreriaTitulares";
+import { OPCIONES_TIPO_CAJA_TESORERIA_UI } from "@/lib/cajasTesoreriaTipos";
 import type { TipoCajaTesoreria } from "@prisma/client";
 
 interface Props {
@@ -171,9 +172,11 @@ export default function EditarCajaTesoreriaModal({
                 <SelectValue placeholder="SELECCIONAR TIPO" />
               </SelectTrigger>
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                <SelectItem value="DIGITAL">DIGITAL</SelectItem>
-                <SelectItem value="EFECTIVO">EFECTIVO</SelectItem>
-                <SelectItem value="CHEQUE">CHEQUE</SelectItem>
+                {OPCIONES_TIPO_CAJA_TESORERIA_UI.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </label>

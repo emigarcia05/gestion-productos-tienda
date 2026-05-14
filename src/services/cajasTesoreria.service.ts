@@ -1,4 +1,4 @@
-import type { TipoCajaTesoreria } from "@prisma/client";
+import type { DisponibilidadCajaTesoreria, TipoCajaTesoreria, TipoValorTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { ServiceResult } from "@/types";
@@ -6,12 +6,15 @@ import {
   sumarMontosChequesAcreditadosHasta,
   sumarMontosChequesDiferidosPorCaja,
 } from "@/services/finTesoreriaCheques.service";
+import { disponibilidadDesdeTipoCaja, tipoValorDesdeTipoCaja } from "@/lib/cajasTesoreriaTipos";
 
 export interface CajaTesoreriaItem {
   id: string;
   nombreCaja: string;
   titular: string;
   tipoCaja: TipoCajaTesoreria;
+  tipoValor: TipoValorTesoreria;
+  disponibilidad: DisponibilidadCajaTesoreria;
   /** Valor persistido en `fin_tesoreria.monto` (para edición legacy; en CHEQUE no alimenta el disponible). */
   monto: number;
   /**
@@ -45,6 +48,8 @@ function mapCaja(
     nombreCaja: string;
     titular: string;
     tipoCaja: TipoCajaTesoreria;
+    tipoValor: TipoValorTesoreria;
+    disponibilidad: DisponibilidadCajaTesoreria;
     monto: number;
     ultActualizacion: Date;
     createdAt: Date;
@@ -58,6 +63,8 @@ function mapCaja(
     nombreCaja: row.nombreCaja.toUpperCase(),
     titular: row.titular.toUpperCase(),
     tipoCaja: row.tipoCaja,
+    tipoValor: row.tipoValor,
+    disponibilidad: row.disponibilidad,
     monto: row.monto,
     montoDisponible,
     montoChequesDiferidos,
@@ -99,12 +106,12 @@ export async function listarCajasTesoreria(): Promise<CajaTesoreriaItem[]> {
   });
 }
 
-/** Cajas de un tipo concreto (ej. **DIGITAL** para acreditar cheques). */
-export async function listarCajasTesoreriaPorTipo(
-  tipo: TipoCajaTesoreria
+/** Cajas con un `tipo_valor` dado (ej. **DIGITAL** = banco o billetera digital; destino de acreditación de cheques). */
+export async function listarCajasTesoreriaPorTipoValor(
+  tipoValor: TipoValorTesoreria
 ): Promise<CajaTesoreriaItem[]> {
   const rows = await prisma.cajaTesoreria.findMany({
-    where: { tipoCaja: tipo },
+    where: { tipoValor },
     orderBy: [{ nombreCaja: "asc" }],
   });
   const hoyIso = dateToIsoYmdArgentina(new Date());
@@ -130,6 +137,8 @@ export async function crearCajaTesoreria(
         nombreCaja: input.nombreCaja.trim().toUpperCase(),
         titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
+        tipoValor: tipoValorDesdeTipoCaja(input.tipoCaja),
+        disponibilidad: disponibilidadDesdeTipoCaja(input.tipoCaja),
         monto: input.monto,
       },
     });
@@ -172,6 +181,8 @@ export async function editarCajaTesoreria(
         nombreCaja: input.nombreCaja.trim().toUpperCase(),
         titular: input.titular.trim().toUpperCase(),
         tipoCaja: input.tipoCaja,
+        tipoValor: tipoValorDesdeTipoCaja(input.tipoCaja),
+        disponibilidad: disponibilidadDesdeTipoCaja(input.tipoCaja),
         monto: input.monto,
       },
     });
