@@ -269,7 +269,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - `ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL"` — constante exportada sólo desde **`exportRecepcionPedidoExcel.service.ts`**. Un archivo **`"use server"`** (p. ej. `actions/exportRecepcionPedidoExcel.ts`) **no** puede `export`-ar strings, objetos ni funciones síncronas: sólo **async functions** como Server Actions; re-exportar esa constante provocaba `invalid-use-server-value` en runtime.
 - **Servicio** (`exportRecepcionPedidoExcel.service.ts`):
   - El `findUnique` de `pedidoHistoria` incluye `proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } }`.
-  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }`. La columna Excel **COMPROBANTE** sale del correlativo global **`prod_ped_ult_comp.ult_comprobante`** (ver §2.8).
+  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }`. La columna Excel **COMPROBANTE** sale de **`prod_ped_ult_comp`** según tipo **FACTURA** vs **Comprobante_Compra** (ver §2.8).
 - **Action** (`actions/exportRecepcionPedidoExcel.ts`):
   - Schema Zod agrega `decisionFiscal: z.boolean().optional()` (cliente envía `boolean` o no envía nada).
   - La Action propaga `decisionFiscal` al servicio sin reinterpretar la regla. Si el servicio devuelve el marker `REQUIERE_DECISION_FISCAL`, viaja hasta el cliente como `error` para que el modal SI/NO se abra.
@@ -861,11 +861,16 @@ Función:
 
 ### 2.8 Recepción pedidos — correlativo COMPROBANTE (Excel)
 
-- **Eliminado (histórico):** consulta DUX `/compras` por sucursal (`duxCompras.service.ts`, `duxComprobanteCorrelativo.ts`) y columna `recepcion_numero` en `prod_ped_historial` (migración `20260517100000_drop_recepcion_numero_prod_ped_historial`).
-- **Vigente:** tabla **`prod_ped_ult_comp`** (Prisma `ProdPedUltComp`), **una sola fila** `id = 1`, columna **`ult_comprobante`** (`TEXT`; correlativo numérico como texto, sólo dígitos). Seed inicial: migración **`20260518120000_add_prod_ped_ult_comp`** con valor **`1234568959`**.
-- En **`getExportRecepcionPedidoExcelPayload`**, tras validar pedido, ítems, total y distribución de precios (tolerancia **0,10**), se ejecuta **`UPDATE prod_ped_ult_comp SET ult_comprobante = ((btrim(ult_comprobante))::bigint + 1)::text WHERE id = 1 RETURNING ult_comprobante`** (una sentencia, atómica). El valor **retornado** es el que se escribe en la columna **COMPROBANTE** de todas las filas del Excel y queda guardado como último correlativo.
-- **Cada export exitoso** incrementa el contador (p. ej. **Descargar Recepción**, **Registrar En Dux**, **Guardar Corrección** si vuelve a generar Excel). Si en el futuro hubiera que reservar número sólo en un disparador, acotar en servicio y actualizar esta guía.
-- **Sync masivo** de compras DUX: **`comprobantesProveedorDuxSync.service.ts`** + **`duxComprasApi.ts`** (§2.5a), independiente de este correlativo.
+- **Eliminado (histórico):** consulta DUX `/compras` por sucursal y columna `recepcion_numero` en `prod_ped_historial` (migración `20260517100000_drop_recepcion_numero_prod_ped_historial`).
+- **Vigente — tabla `prod_ped_ult_comp`** (Prisma `ProdPedUltComp`): **dos filas fijas** con columnas `id`, `tipo_comprobante`, `ult_comprobante` y **único** por `tipo_comprobante` (migración `20260519103000_prod_ped_ult_comp_tipo_dos_filas`):
+  - **`id = 1`**, `tipo_comprobante = Comprobante_Compra`, `ult_comprobante` inicial **`1234569011`** (sólo dígitos).
+  - **`id = 2`**, `tipo_comprobante = FACTURA`, `ult_comprobante` inicial **`A-00000-00000027`** (formato AFIP `L-#####-########`).
+- **`getExportRecepcionPedidoExcelPayload`** (tras validar totales/precios): según **`resolverTipoComprobantePorIva`** (`FACTURA` vs `Comprobante_Compra`):
+  - **Comprobante_Compra:** `UPDATE prod_ped_ult_comp SET ult_comprobante = (btrim(ult_comprobante)::bigint + 1)::text WHERE id = 1 RETURNING ult_comprobante` (atómico).
+  - **FACTURA:** transacción con `SELECT ult_comprobante FROM prod_ped_ult_comp WHERE id = 2 FOR UPDATE`, incremento del último tramo en **`incrementarUltimoComprobanteFacturaAfip`** (`src/lib/prodPedUltComprobanteIncrement.ts`), luego `UPDATE` con el nuevo valor.
+- El valor devuelto es el que se escribe en la columna **COMPROBANTE** del Excel (y queda persistido como último correlativo de ese tipo).
+- **Cada export exitoso** consume correlativo del tipo correspondiente (mismos disparadores que antes: descarga, registrar, corrección con Excel).
+- **Sync masivo** DUX compras: `comprobantesProveedorDuxSync.service.ts` + `duxComprasApi.ts` (§2.5a), independiente de esta tabla.
 
 ---
 
@@ -886,7 +891,7 @@ Contrato (SSOT de integración + armado de filas):
        - `prod_ped_historial.sucursal.deposito` => columna `DEPOSITO`
        - `prod_ped_historial_merc.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
      - En el Excel, `FECHA` se exporta en formato `DD-MM-AAAA` con **fecha ingresada + 1 día** (si el usuario carga `2026-04-14`, `FECHA` sale `15-04-2026`). `FECHA IMPUTACION CONTABLE` se exporta con la fecha ingresada original (`14-04-2026` en el ejemplo).
-     - Columna **`COMPROBANTE`**: correlativo global vía **`prod_ped_ult_comp`** (§2.8), **después** de validar totales/precios para no consumir número si el export falla.
+     - Columna **`COMPROBANTE`**: correlativo por tipo en **`prod_ped_ult_comp`** (§2.8), según **`TIPO COMPROBANTE`** resuelto, **después** de validar totales/precios.
      - **`TIPO COMPROBANTE`**: sigue `resolverTipoComprobantePorIva` + modal **PREGUNTA** (`ERROR_REQUIERE_DECISION_FISCAL`).
      - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
      - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** en todas las filas del Excel de recepción.

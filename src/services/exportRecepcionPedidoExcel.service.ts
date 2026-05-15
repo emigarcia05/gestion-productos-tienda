@@ -3,6 +3,7 @@ import { IvaProveedor, Prisma } from "@prisma/client";
 import type { ServiceResult } from "@/types";
 import { prisma } from "@/lib/prisma";
 import { formatDdMmHhMmGuionesBajosArchivoArgentina } from "@/lib/fechaArgentina";
+import { incrementarUltimoComprobanteFacturaAfip } from "@/lib/prodPedUltComprobanteIncrement";
 
 /** Prefijo de log uniforme. Loggear en el catch evita que los errores queden
  *  opacos detrás de "An error occurred in the Server Components render…". */
@@ -73,43 +74,82 @@ export interface ExportRecepcionPedidoExcelPayload {
 const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
 const TOLERANCIA_TOTAL_EXPORTACION = 0.1; // diferencia máxima permitida contra total ingresado
 
-/** Fila única en `prod_ped_ult_comp` (ver migración `20260518120000_add_prod_ped_ult_comp`). */
-const PROD_PED_ULT_COMP_ROW_ID = 1;
+/** Correlativo **Comprobante_Compra** (sólo dígitos) en `prod_ped_ult_comp`. */
+const PROD_PED_ULT_COMP_ID_COMPROBANTE_COMPRA = 1;
+/** Correlativo **FACTURA** (formato AFIP `L-#####-########`) en `prod_ped_ult_comp`. */
+const PROD_PED_ULT_COMP_ID_FACTURA = 2;
 
 /**
- * Incrementa en 1 el último comprobante (texto sólo dígitos) y devuelve el **nuevo** valor
- * en una sola sentencia SQL (sin carrera entre peticiones).
+ * Reserva el siguiente **COMPROBANTE** según el tipo de Excel (`Comprobante_Compra` vs `FACTURA`).
+ * - Comprobante_Compra: `UPDATE … bigint+1 … RETURNING` (atómico).
+ * - FACTURA: transacción con `SELECT … FOR UPDATE` + incremento en TS + `UPDATE`.
  */
-async function reservarSiguienteComprobanteRecepcion(): Promise<ServiceResult<string>> {
+async function reservarSiguienteComprobanteRecepcion(
+  tipoExcel: TipoComprobanteRecepcion
+): Promise<ServiceResult<string>> {
+  if (tipoExcel === "Comprobante_Compra") {
+    try {
+      const rows = await prisma.$queryRaw<Array<{ ult_comprobante: string }>>(
+        Prisma.sql`
+          UPDATE "prod_ped_ult_comp"
+          SET "ult_comprobante" = ((btrim("ult_comprobante"))::bigint + 1)::text
+          WHERE "id" = ${PROD_PED_ULT_COMP_ID_COMPROBANTE_COMPRA}
+          RETURNING "ult_comprobante" AS ult_comprobante
+        `
+      );
+      const v = rows[0]?.ult_comprobante?.trim();
+      if (!v) {
+        return {
+          success: false,
+          error:
+            "No se pudo obtener el correlativo Comprobante_Compra (falta fila id=1 en prod_ped_ult_comp; ejecutá migraciones).",
+        };
+      }
+      return { success: true, data: v };
+    } catch (e) {
+      logServiceError("reservarSiguienteComprobanteRecepcion[Comprobante_Compra]", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/invalid input syntax for type bigint/i.test(msg)) {
+        return {
+          success: false,
+          error:
+            "El correlativo Comprobante_Compra en prod_ped_ult_comp debe ser sólo dígitos; corregilo en base de datos.",
+        };
+      }
+      return { success: false, error: "No se pudo asignar el correlativo de comprobante." };
+    }
+  }
+
   try {
-    const rows = await prisma.$queryRaw<Array<{ ult_comprobante: string }>>(
-      Prisma.sql`
-        UPDATE "prod_ped_ult_comp"
-        SET "ult_comprobante" = ((btrim("ult_comprobante"))::bigint + 1)::text
-        WHERE "id" = ${PROD_PED_ULT_COMP_ROW_ID}
-        RETURNING "ult_comprobante" AS ult_comprobante
-      `
-    );
-    const v = rows[0]?.ult_comprobante?.trim();
-    if (!v) {
-      return {
-        success: false,
-        error:
-          "No se pudo obtener el correlativo de comprobante (falta la fila en prod_ped_ult_comp; ejecutá migraciones).",
-      };
-    }
-    return { success: true, data: v };
+    const next = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ ult_comprobante: string }>>(
+        Prisma.sql`
+          SELECT "ult_comprobante" FROM "prod_ped_ult_comp"
+          WHERE "id" = ${PROD_PED_ULT_COMP_ID_FACTURA}
+          FOR UPDATE
+        `
+      );
+      const cur = locked[0]?.ult_comprobante?.trim();
+      if (!cur) {
+        throw new Error(
+          "Falta fila id=2 (FACTURA) en prod_ped_ult_comp; ejecutá migraciones."
+        );
+      }
+      const nuevo = incrementarUltimoComprobanteFacturaAfip(cur);
+      await tx.prodPedUltComp.update({
+        where: { id: PROD_PED_ULT_COMP_ID_FACTURA },
+        data: { ultComprobante: nuevo },
+      });
+      return nuevo;
+    });
+    return { success: true, data: next };
   } catch (e) {
-    logServiceError("reservarSiguienteComprobanteRecepcion", e);
+    logServiceError("reservarSiguienteComprobanteRecepcion[FACTURA]", e);
     const msg = e instanceof Error ? e.message : String(e);
-    if (/invalid input syntax for type bigint/i.test(msg)) {
-      return {
-        success: false,
-        error:
-          "El correlativo en prod_ped_ult_comp debe ser sólo dígitos; corregilo en base de datos.",
-      };
+    if (/no soportada|se esperaba/i.test(msg)) {
+      return { success: false, error: msg };
     }
-    return { success: false, error: "No se pudo asignar el correlativo de comprobante." };
+    return { success: false, error: "No se pudo asignar el correlativo de factura." };
   }
 }
 
@@ -328,7 +368,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       };
     }
 
-    const compRes = await reservarSiguienteComprobanteRecepcion();
+    const compRes = await reservarSiguienteComprobanteRecepcion(tipoComprobante);
     if (!compRes.success) return compRes;
     const comprobanteExport = compRes.data;
 

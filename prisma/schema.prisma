@@ -628,11 +628,13 @@ model PedidoHistoriaItem {
   @@map("prod_ped_historial_merc")
 }
 
-/// Fila única (`id = 1`): último comprobante asignado al Excel de recepción; se incrementa con `UPDATE … RETURNING`.
+/// Dos filas fijas (`id` 1 y 2): último **COMPROBANTE** por tipo de Excel de recepción (`Comprobante_Compra` vs `FACTURA`).
 model ProdPedUltComp {
-  id             Int    @id
-  ultComprobante String @map("ult_comprobante")
+  id               Int    @id
+  tipoComprobante  String @map("tipo_comprobante")
+  ultComprobante   String @map("ult_comprobante")
 
+  @@unique([tipoComprobante], map: "prod_ped_ult_comp_tipo_comprobante_key")
   @@map("prod_ped_ult_comp")
 }
 
