@@ -1,5 +1,6 @@
 import type { TipoChequeTesoreria, TenenciaChequeTesoreria } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { touchUltActualizacionCajaTesoreria } from "@/lib/finTesoreriaCajaTouch";
 import { CHEQUE_TESORERIA_DIAS_RETENCION_TRAS_TRANSFERENCIA } from "@/lib/finTesoreriaChequesRetencion";
 import {
   dateToIsoYmdArgentina,
@@ -220,20 +221,24 @@ export async function crearFinTesoreriaCheque(
   }
 
   try {
-    const row = await prisma.finTesoreriaCheque.create({
-      data: {
-        cajaId: input.cajaId,
-        tipo: input.tipo,
-        tenedor: input.tenedor,
-        emisor: input.emisor.trim(),
-        monto: input.monto,
-        fechaAcreditacion: new Date(`${input.fechaAcreditacion}T12:00:00.000Z`),
-        fechaRecibido: new Date(`${input.fechaRecibido}T12:00:00.000Z`),
-      },
-      include: {
-        cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
-        proveedor: { select: { nombre: true } },
-      },
+    const row = await prisma.$transaction(async (tx) => {
+      const created = await tx.finTesoreriaCheque.create({
+        data: {
+          cajaId: input.cajaId,
+          tipo: input.tipo,
+          tenedor: input.tenedor,
+          emisor: input.emisor.trim(),
+          monto: input.monto,
+          fechaAcreditacion: new Date(`${input.fechaAcreditacion}T12:00:00.000Z`),
+          fechaRecibido: new Date(`${input.fechaRecibido}T12:00:00.000Z`),
+        },
+        include: {
+          cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
+          proveedor: { select: { nombre: true } },
+        },
+      });
+      await touchUltActualizacionCajaTesoreria(input.cajaId, tx);
+      return created;
     });
     return {
       success: true,
@@ -388,6 +393,8 @@ export async function transferirChequeFinTesoreria(
         },
       });
 
+      await touchUltActualizacionCajaTesoreria(cheque.cajaId, tx);
+
       return {
         chequeId: cheque.id,
         cajaOrigenId: cheque.cajaId,
@@ -468,7 +475,7 @@ export async function marcarEntregaProveedorFinTesoreriaCheque(
 
   const existente = await prisma.finTesoreriaCheque.findUnique({
     where: { id: input.chequeId },
-    select: { fechaTransferencia: true },
+    select: { fechaTransferencia: true, cajaId: true },
   });
   if (!existente) {
     return { success: false, error: "Cheque no encontrado." };
@@ -495,17 +502,21 @@ export async function marcarEntregaProveedorFinTesoreriaCheque(
   }
 
   try {
-    const row = await prisma.finTesoreriaCheque.update({
-      where: { id: input.chequeId },
-      data: {
-        tenencia: "PROVEEDOR",
-        proveedorId: input.proveedorId,
-        fechaTransferencia: new Date(`${input.fechaTransferencia}T12:00:00.000Z`),
-      },
-      include: {
-        cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
-        proveedor: { select: { nombre: true } },
-      },
+    const row = await prisma.$transaction(async (tx) => {
+      const updated = await tx.finTesoreriaCheque.update({
+        where: { id: input.chequeId },
+        data: {
+          tenencia: "PROVEEDOR",
+          proveedorId: input.proveedorId,
+          fechaTransferencia: new Date(`${input.fechaTransferencia}T12:00:00.000Z`),
+        },
+        include: {
+          cajaDestino: { select: { titular: true, entidad: { select: { nombre: true } } } },
+          proveedor: { select: { nombre: true } },
+        },
+      });
+      await touchUltActualizacionCajaTesoreria(existente.cajaId, tx);
+      return updated;
     });
     return { success: true, data: mapCheque(row) };
   } catch (error: unknown) {

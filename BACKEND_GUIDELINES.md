@@ -563,7 +563,8 @@ Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última
   - `monto` (`INTEGER`, default `0`; saldo sin decimales).
   - `ult_actualizacion`, `created_at`, `updated_at`.
 - **Índices**: único (`entidad_id`, `titular`); índices `tipo_caja`, `tipo_valor`, `entidad_id`.
-- **Regla de negocio en BD**: trigger `fin_tesoreria_set_timestamps` + función `set_cajas_tesoreria_timestamps()`: siempre actualiza `updated_at` en `UPDATE`; actualiza `ult_actualizacion` **solo** si `monto` cambia (`IS DISTINCT FROM`).
+- **Regla de negocio en BD**: trigger `fin_tesoreria_set_timestamps` + función `set_cajas_tesoreria_timestamps()`: siempre actualiza `updated_at` en `UPDATE`; actualiza `ult_actualizacion` a **ahora** si `monto` cambia (`IS DISTINCT FROM`); si `monto` no cambia pero `ult_actualizacion` sí (touch explícito), conserva el valor nuevo. Migración **`20260527120000_fin_tesoreria_touch_ult_actualizacion_cheques`**.
+- **Caja tipo CHEQUE — `ult_actualizacion`**: el saldo visible no usa `fin_tesoreria.monto` sino la suma de cheques; tras **alta**, **acreditación en cuenta** (`transferirChequeFinTesoreria`) o **pago a proveedor** (`marcarEntregaProveedorFinTesoreriaCheque`), el servicio llama `touchUltActualizacionCajaTesoreria(cajaId)` (`src/lib/finTesoreriaCajaTouch.ts`) sobre la caja origen del cheque.
 - **Migraciones relevantes**: `20260519120000_fin_tesoreria_tipo_caja_valor_disponibilidad`; **`20260520140000_fin_tesoreria_entidades`** (catálogo + columna `entidad_id`, baja `nombre_caja`); **`20260521150000_fin_tesoreria_tipo_caja`** (tabla + semilla tipos de caja + enum **`TARJETAS_A_COBRAR`**).
 - **Servicio**: `src/services/cajasTesoreria.service.ts`
   - `listarEntidadesFinTesoreria()`: catálogo ordenado por `nombre` (MAYÚSCULAS en respuesta).
@@ -994,7 +995,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/components/proveedores/ImportarModal.tsx` | Manejo de respuesta: comprueba `res.ok` y usa `res.data` o `res.error` según corresponda. |
 | **Fase 2 (cierre de auditoría)** | |
 | `src/actions/pedidos.ts` | `getPedidoUrgenteData`: comprobación `getRol()` + `puede(rol, PERMISOS.pedidos.acceso)`; si no hay acceso se devuelve estructura vacía (proveedores mock, productos [], total 0). |
-| `src/actions/stock.ts` | `getControlStock`: comprobación `getRol()` + `puede(rol, PERMISOS.stock.acceso)`; retorno vacío si no hay acceso. `registrarExportacionExcelStock`: persiste `ultima_exportacion_excel`, validación con `listaPreciosCodTiendaSchema` por fila (`cod_tienda`), `WHERE cod_tienda IN (...)`. Además `getControlStock`/`ItemStock.id` exponen **`cod_tienda`** como clave estable para la UI. |
+| `src/actions/stock.ts` | `getControlStock`: comprobación `getRol()` + `puede(rol, PERMISOS.stock.acceso)`; retorno vacío si no hay acceso. `registrarExportacionExcelStock`: persiste `ultima_exportacion_excel` (UI **ÚLT. CONTROL**), validación con `listaPreciosCodTiendaSchema` por fila (`cod_tienda`), `WHERE cod_tienda IN (...)` — la UI envía ítems **controlados** en sesión (variación o confirmación con Check, todas las páginas); el Excel solo lleva filas con variación. Además `getControlStock`/`ItemStock.id` exponen **`cod_tienda`** como clave estable para la UI. |
 | `src/actions/vinculos.ts` | `vincularProducto` / `desvincularProducto`: `listaPreciosCodTiendaSchema` + `listaPreciosCodExtSchema` (`@/lib/validations/common`). `desvincularProducto` bloquea eliminar el vínculo oficial cuando el ítem tiene más de un vínculo (oficial + alternativo): primero debe cambiarse el proveedor oficial y recién luego desvincular. |
 | `src/actions/productos.ts` | `editarProducto`: validación con `editarProductoSchema` (id + campos). `aplicarCampoMasivo`: validación con `aplicarCampoMasivoSchema` (proveedorId, campo, valor, q). |
 | `src/actions/comparacionCategorias.ts` | Acciones `ActionResult<T>`; Zod (`comparacionCategorias.ts` + `listaPreciosCodExtSchema`); presentaciones: `productoReferenciaCodExt`; DTO extra: `listaPrecioProveedorId` validado como `cod_ext`. |
@@ -1057,6 +1058,8 @@ Antes de entregar código nuevo o modificado, verificar:
   - `manuales-obligatorios.mdc`: exige revisar guías frontend/backend antes de modificar código.
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
+
+*Última actualización (2026-05-27): **Caja CHEQUE — `ult_actualizacion`** — al registrar, acreditar en cuenta o marcar pago a proveedor se actualiza `ult_actualizacion` de la caja origen (`touchUltActualizacionCajaTesoreria`); trigger ampliado en **`20260527120000_fin_tesoreria_touch_ult_actualizacion_cheques`**. Ver §2.5c.*
 
 *Última actualización (2026-05-26): **Cheques listado transferidos** — `listarChequesPorCajaId` con `tenenciaFiltro = transferidos`: `orderBy` por **`fecha_acreditacion` DESC** (antes `fecha_transferencia` DESC). Ver §2.5c (cheques).*
 
