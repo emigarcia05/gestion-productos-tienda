@@ -21,6 +21,8 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { prisma } from "@/lib/prisma";
+import { getPosicionIvaComparacionRevisionToken } from "@/services/finBalPosicionIvaComparacionRevision.service";
+import PosicionIvaComparacionAutoRefresh from "@/components/pedidos/PosicionIvaComparacionAutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +65,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
   const hayFiltroActivo =
     !!sucursalValida || !!proveedor.trim() || tiposValidos.length > 0 || !!qNorm;
 
-  const [datosIniciales, tablaData] = await Promise.all([
+  const [datosIniciales, tablaData, ivaComparacionRevisionToken] = await Promise.all([
     getEnviarPedidoData(),
     getEnviarPedidoTablaData({
       sucursal: sucursalValida,
@@ -71,6 +73,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
       tipos: tiposValidos,
       q: qNorm,
     }),
+    getPosicionIvaComparacionRevisionToken(),
   ]);
 
   const { proveedores } = datosIniciales;
@@ -98,12 +101,14 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
   );
 
   return (
-    <ClassicFilteredTableLayout
-      title="Pedido Mercadería"
-      subtitle="Generar Pedido"
-      actions={actions}
-      filters={filters}
-    >
+    <>
+      <PosicionIvaComparacionAutoRefresh initialToken={ivaComparacionRevisionToken} />
+      <ClassicFilteredTableLayout
+        title="Pedido Mercadería"
+        subtitle="Generar Pedido"
+        actions={actions}
+        filters={filters}
+      >
       <div className="flex h-full min-h-0 flex-col gap-0">
         <Card className="card-tabla-envoltorio">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
@@ -164,6 +169,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
           </CardContent>
         </Card>
       </div>
-    </ClassicFilteredTableLayout>
+      </ClassicFilteredTableLayout>
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import FiltrosPedidoUrgente from "@/components/pedidos/FiltrosPedidoUrgente";
 import PedidoUrgentePageClient from "@/components/pedidos/PedidoUrgentePageClient";
 import { prisma } from "@/lib/prisma";
+import { getPosicionIvaComparacionRevisionToken } from "@/services/finBalPosicionIvaComparacionRevision.service";
 
 export const dynamic = "force-dynamic";
 
@@ -48,14 +49,17 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
           ? "reposicion"
           : "";
 
-  const { proveedores, productos, total, totalPaginas, ivaSaldoAcumuladoComparacion } =
-    await getPedidoUrgenteData({
-      sucursal: sucursalValida,
-      q,
-      pagina,
-      proveedor,
-      pedido: pedidoValida,
-    });
+  const [{ proveedores, productos, total, totalPaginas, ivaSaldoAcumuladoComparacion }, ivaComparacionRevisionToken] =
+    await Promise.all([
+      getPedidoUrgenteData({
+        sucursal: sucursalValida,
+        q,
+        pagina,
+        proveedor,
+        pedido: pedidoValida,
+      }),
+      getPosicionIvaComparacionRevisionToken(),
+    ]);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const tieneSucursalSeleccionada = !!sucursalValida;
 
@@ -85,6 +89,7 @@ export default async function PedidoUrgentePage({ searchParams }: Props) {
       proveedor={proveedor}
       q={q}
       ivaSaldoAcumuladoComparacion={ivaSaldoAcumuladoComparacion}
+      ivaComparacionRevisionToken={ivaComparacionRevisionToken}
     />
   );
 }

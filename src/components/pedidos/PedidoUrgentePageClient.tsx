@@ -18,6 +18,7 @@ import { upsertPedidoUrgenteMercaderiaItemAction } from "@/actions/pedidos";
 import {
   ordenarMiembrosPedidoUrgentePorMenorCostoComparable,
 } from "@/lib/precioComparacionPedidoUrgenteReposicion";
+import PosicionIvaComparacionAutoRefresh from "@/components/pedidos/PosicionIvaComparacionAutoRefresh";
 
 interface Props {
   filters: React.ReactNode;
@@ -34,6 +35,8 @@ interface Props {
   q: string;
   /** Suma IVA saldo (Posición IVA) para elegir base de comparación entre proveedores. */
   ivaSaldoAcumuladoComparacion: number;
+  /** Token inicial para auto-refresh si otra sesión modifica Posición IVA. */
+  ivaComparacionRevisionToken: string;
 }
 
 const MENSAJE_SIN_FILTROS =
@@ -60,6 +63,7 @@ export default function PedidoUrgentePageClient({
   proveedor,
   q,
   ivaSaldoAcumuladoComparacion,
+  ivaComparacionRevisionToken,
 }: Props) {
   const [cantPorId, setCantPorId] = useState<Record<string, string>>({});
   const [modalOpen, setModalOpen] = useState(false);
@@ -232,11 +236,13 @@ export default function PedidoUrgentePageClient({
   }
 
   return (
-    <ClassicFilteredTableLayout
-      title="Pedido Mercadería"
-      subtitle="Pedido Urgente"
-      actions={actions}
-      filters={filters}
+    <>
+      <PosicionIvaComparacionAutoRefresh initialToken={ivaComparacionRevisionToken} />
+      <ClassicFilteredTableLayout
+        title="Pedido Mercadería"
+        subtitle="Pedido Urgente"
+        actions={actions}
+        filters={filters}
     >
       <div className="flex h-full min-h-0 flex-col gap-0.5">
         <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
@@ -375,5 +381,6 @@ export default function PedidoUrgentePageClient({
         </Dialog>
       </div>
     </ClassicFilteredTableLayout>
+    </>
   );
 }

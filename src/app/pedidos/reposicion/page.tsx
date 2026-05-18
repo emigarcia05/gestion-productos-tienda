@@ -5,6 +5,7 @@ import { getReposicionData, type SucursalReposicion } from "@/actions/reposicion
 import { getEnviarPedidoData } from "@/actions/pedidos";
 import ReposicionPageClient from "@/components/pedidos/ReposicionPageClient";
 import { prisma } from "@/lib/prisma";
+import { getPosicionIvaComparacionRevisionToken } from "@/services/finBalPosicionIvaComparacionRevision.service";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
-  const [data, { proveedores }] = await Promise.all([
+  const [data, { proveedores }, ivaComparacionRevisionToken] = await Promise.all([
     sucursalValida
       ? getReposicionData(sucursalValida, {
           q,
@@ -69,6 +70,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
           subRubros: [],
         }),
     getEnviarPedidoData(),
+    getPosicionIvaComparacionRevisionToken(),
   ]);
 
   const paramsPagina: Record<string, string> = {
@@ -93,6 +95,7 @@ export default async function PedidoReposicionPage({ searchParams }: Props) {
       sucursales={sucursalesDisponibles}
       paginaNum={paginaNum}
       paramsPagina={paramsPagina}
+      ivaComparacionRevisionToken={ivaComparacionRevisionToken}
     />
   );
 }

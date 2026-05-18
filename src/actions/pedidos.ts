@@ -7,6 +7,7 @@ import {
   getProveedoresParaPedidoUrgente,
 } from "@/services/listaPrecios.service";
 import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
+import { getPosicionIvaComparacionRevisionToken } from "@/services/finBalPosicionIvaComparacionRevision.service";
 import {
   syncPedidoUrgenteEnvio,
   getItemsTablaEnviarPedido,
@@ -37,6 +38,22 @@ import {
   getEnviarPedidoTablaParamsSchema,
 } from "@/lib/validations/pedidosLectura";
 import { listaPreciosCodExtSchema } from "@/lib/validations/common";
+
+/** Token liviano para polling en pantallas de pedido (cambios en Posición IVA). */
+export async function getPosicionIvaComparacionRevisionTokenAction(): Promise<{
+  token: string;
+}> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { token: "" };
+  }
+  try {
+    const token = await getPosicionIvaComparacionRevisionToken();
+    return { token };
+  } catch {
+    return { token: "" };
+  }
+}
 
 export async function getPedidoUrgenteData(params: {
   sucursal?: string;

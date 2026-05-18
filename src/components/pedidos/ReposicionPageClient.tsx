@@ -8,6 +8,7 @@ import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import type { ReposicionData, SucursalReposicion } from "@/actions/reposicion";
 import { PAGE_SIZE } from "@/lib/pagination";
+import PosicionIvaComparacionAutoRefresh from "@/components/pedidos/PosicionIvaComparacionAutoRefresh";
 
 interface Props {
   data: ReposicionData;
@@ -21,6 +22,7 @@ interface Props {
   configurado: "" | "si";
   paginaNum: number;
   paramsPagina: Record<string, string>;
+  ivaComparacionRevisionToken: string;
 }
 
 export default function ReposicionPageClient({
@@ -35,6 +37,7 @@ export default function ReposicionPageClient({
   configurado,
   paginaNum,
   paramsPagina,
+  ivaComparacionRevisionToken,
 }: Props) {
   const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
   const tieneSucursal = sucursalValida !== null;
@@ -56,9 +59,11 @@ export default function ReposicionPageClient({
   );
 
   return (
-    <ClassicFilteredTableLayout
-      title="Pedido Mercadería"
-      subtitle="Pedido Reposición"
+    <>
+      <PosicionIvaComparacionAutoRefresh initialToken={ivaComparacionRevisionToken} />
+      <ClassicFilteredTableLayout
+        title="Pedido Mercadería"
+        subtitle="Pedido Reposición"
       actions={
         <GenerarPedidoToolbarButton
           proveedores={proveedores}
@@ -90,6 +95,7 @@ export default function ReposicionPageClient({
           </div>
         )}
       </div>
-    </ClassicFilteredTableLayout>
+      </ClassicFilteredTableLayout>
+    </>
   );
 }
