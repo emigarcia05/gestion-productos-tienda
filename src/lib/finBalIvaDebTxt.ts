@@ -172,11 +172,6 @@ export function parsearTxtIvaDebitoAfip(
   return { ok: true, filas, totalBruto, totalIva, erroresFila };
 }
 
-/** El mes lo define la fila de Posición de IVA desde la que se importa. */
-export function archivoTxtIvaDebCoincideMes(): { ok: true } {
-  return { ok: true };
-}
-
 /** Convierte filas parseadas en entidades persistibles (solo servidor). */
 export function filasTxtConDedupeKey(
   filas: FilaTxtIvaDebSinDedupe[],

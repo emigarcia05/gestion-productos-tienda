@@ -2,6 +2,10 @@ import { createHash } from "crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { FilaCsvIvaDebParseada } from "@/lib/finBalIvaDebCsv";
+import {
+  esErrorColumnaImpIvaFaltante,
+  MSG_MIGRACION_IMP_IVA_FALTANTE,
+} from "@/lib/finBalIvaDebPrisma";
 import { filasTxtConDedupeKey, parsearTxtIvaDebitoAfip } from "@/lib/finBalIvaDebTxt";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import type { ServiceResult } from "@/types";
@@ -36,50 +40,82 @@ export async function listarDetalleIvaDebitoMes(params: {
   anio: number;
 }): Promise<DetalleLineaIvaDebitoBalance[]> {
   const { mes, anio } = params;
-  const rows = await prisma.finBalIvaDebImportLine.findMany({
-    where: {
-      fechaEmision: {
-        gte: new Date(Date.UTC(anio, mes - 1, 1)),
-        lt: new Date(Date.UTC(anio, mes, 1)),
+  try {
+    const rows = await prisma.finBalIvaDebImportLine.findMany({
+      where: {
+        fechaEmision: {
+          gte: new Date(Date.UTC(anio, mes - 1, 1)),
+          lt: new Date(Date.UTC(anio, mes, 1)),
+        },
       },
-    },
-    orderBy: [{ fechaEmision: "asc" }, { id: "asc" }],
-    select: {
-      id: true,
-      fechaEmision: true,
-      denominacionReceptor: true,
-      impTotal: true,
-      impIva: true,
-    },
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    fechaEmisionIso: isoYmdUtcDesdeDbDate(r.fechaEmision),
-    denominacionReceptor: r.denominacionReceptor,
-    impTotal: Number(r.impTotal),
-    impIva: Number(r.impIva),
-  }));
+      orderBy: [{ fechaEmision: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        fechaEmision: true,
+        denominacionReceptor: true,
+        impTotal: true,
+        impIva: true,
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      fechaEmisionIso: isoYmdUtcDesdeDbDate(r.fechaEmision),
+      denominacionReceptor: r.denominacionReceptor,
+      impTotal: Number(r.impTotal),
+      impIva: Number(r.impIva),
+    }));
+  } catch (e: unknown) {
+    if (!esErrorColumnaImpIvaFaltante(e)) throw e;
+    const rows = await prisma.finBalIvaDebImportLine.findMany({
+      where: {
+        fechaEmision: {
+          gte: new Date(Date.UTC(anio, mes - 1, 1)),
+          lt: new Date(Date.UTC(anio, mes, 1)),
+        },
+      },
+      orderBy: [{ fechaEmision: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        fechaEmision: true,
+        denominacionReceptor: true,
+        impTotal: true,
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      fechaEmisionIso: isoYmdUtcDesdeDbDate(r.fechaEmision),
+      denominacionReceptor: r.denominacionReceptor,
+      impTotal: Number(r.impTotal),
+      impIva: 0,
+    }));
+  }
 }
 
 /** Suma `imp_iva` por mes calendario del año (índice 0 = enero). */
 export async function listarIvaDebitoFinBalPorAnio(anio: number): Promise<number[]> {
   const out = Array.from({ length: 12 }, () => 0);
-  const rows = await prisma.finBalIvaDebImportLine.findMany({
-    where: {
-      fechaEmision: {
-        gte: new Date(Date.UTC(anio, 0, 1)),
-        lt: new Date(Date.UTC(anio + 1, 0, 1)),
+  try {
+    const rows = await prisma.finBalIvaDebImportLine.findMany({
+      where: {
+        fechaEmision: {
+          gte: new Date(Date.UTC(anio, 0, 1)),
+          lt: new Date(Date.UTC(anio + 1, 0, 1)),
+        },
       },
-    },
-    select: { fechaEmision: true, impIva: true },
-  });
-  for (const r of rows) {
-    const y = r.fechaEmision.getUTCFullYear();
-    const mes = r.fechaEmision.getUTCMonth() + 1;
-    if (y !== anio || mes < 1 || mes > 12) continue;
-    out[mes - 1] += Number(r.impIva);
+      select: { fechaEmision: true, impIva: true },
+    });
+    for (const r of rows) {
+      const y = r.fechaEmision.getUTCFullYear();
+      const mes = r.fechaEmision.getUTCMonth() + 1;
+      if (y !== anio || mes < 1 || mes > 12) continue;
+      out[mes - 1] += Number(r.impIva);
+    }
+    return out;
+  } catch (e: unknown) {
+    if (!esErrorColumnaImpIvaFaltante(e)) throw e;
+    console.error("[finBalIvaDeb] imp_iva no existe en BD:", MSG_MIGRACION_IMP_IVA_FALTANTE);
+    return out;
   }
-  return out;
 }
 
 /** @deprecated Usar `listarIvaDebitoFinBalPorAnio`. */
@@ -144,6 +180,9 @@ export async function importarTxtIvaDebitoMes(params: {
       }
     });
   } catch (e: unknown) {
+    if (esErrorColumnaImpIvaFaltante(e)) {
+      return { success: false, error: MSG_MIGRACION_IMP_IVA_FALTANTE };
+    }
     const msg = e instanceof Error ? e.message : "No se pudo guardar el TXT.";
     return { success: false, error: msg };
   }
