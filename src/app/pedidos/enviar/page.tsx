@@ -66,7 +66,10 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
     !!sucursalValida || !!proveedor.trim() || tiposValidos.length > 0 || !!qNorm;
 
   const [datosIniciales, tablaData, ivaComparacionRevisionToken] = await Promise.all([
-    getEnviarPedidoData(),
+    getEnviarPedidoData({
+      sucursal: sucursalValida || undefined,
+      tipos: tiposValidos.length > 0 ? tiposValidos : undefined,
+    }),
     getEnviarPedidoTablaData({
       sucursal: sucursalValida,
       proveedor,

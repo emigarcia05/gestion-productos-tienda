@@ -40,6 +40,7 @@ import {
   comprobarItemsParaGenerarPedidoAction,
   generarPdfEnviarPedidoAction,
   getSobreStockReposicionParaModalAction,
+  listarProveedoresConPedidoActivoAction,
 } from "@/actions/pedidos";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import SobreStockReposicionAdvertenciaModal from "@/components/shared/SobreStockReposicionAdvertenciaModal";
@@ -115,7 +116,10 @@ export default function GenerarPedidoToolbarButton({
   const [hayItems, setHayItems] = useState<boolean | null>(null);
   const [verificandoItems, setVerificandoItems] = useState(false);
   const [errorVerificacion, setErrorVerificacion] = useState<string | null>(null);
+  const [proveedoresActivos, setProveedoresActivos] = useState<ProveedorGenerarPedidoOpcion[]>([]);
+  const [cargandoProveedores, setCargandoProveedores] = useState(false);
   const verificarSeqRef = useRef(0);
+  const proveedoresSeqRef = useRef(0);
 
   const aplicarDefaults = useCallback(() => {
     setSucursal(defaultSucursal);
@@ -135,8 +139,44 @@ export default function GenerarPedidoToolbarButton({
       setErrorVerificacion(null);
       setSobreStockOpen(false);
       setSobreStockItems([]);
+      setProveedoresActivos([]);
+      setCargandoProveedores(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !sucursal) {
+      setProveedoresActivos([]);
+      if (!sucursal) setProveedor("");
+      return;
+    }
+
+    const seq = ++proveedoresSeqRef.current;
+    setCargandoProveedores(true);
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        const res = await listarProveedoresConPedidoActivoAction({
+          sucursal,
+          tipos,
+        });
+        if (seq !== proveedoresSeqRef.current) return;
+        setCargandoProveedores(false);
+        if (!res.ok) {
+          setProveedoresActivos([]);
+          return;
+        }
+        const lista = res.data.proveedores;
+        setProveedoresActivos(lista);
+        setProveedor((actual) => {
+          const pid = actual.trim();
+          if (!pid) return "";
+          return lista.some((p) => p.id === pid) ? pid : "";
+        });
+      })();
+    }, 280);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [open, sucursal, tipos]);
 
   const filtrosCompletos =
     !!sucursal && !!proveedor.trim() && tipos.length > 0;
@@ -389,9 +429,20 @@ export default function GenerarPedidoToolbarButton({
               <Select
                 value={proveedor || "none"}
                 onValueChange={(v) => setProveedor(v === "none" ? "" : v)}
+                disabled={!sucursal || cargandoProveedores}
               >
                 <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                  <SelectValue placeholder="PROVEEDOR" />
+                  <SelectValue
+                    placeholder={
+                      !sucursal
+                        ? "PROVEEDOR (elegí sucursal)"
+                        : cargandoProveedores
+                          ? "PROVEEDOR…"
+                          : proveedoresActivos.length === 0
+                            ? "SIN PROVEEDORES CON PEDIDO"
+                            : "PROVEEDOR"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent
                   position="popper"
@@ -400,7 +451,7 @@ export default function GenerarPedidoToolbarButton({
                   className="select-content-filtro"
                 >
                   <SelectItem value="none">PROVEEDOR</SelectItem>
-                  {proveedores.map((p) => (
+                  {proveedoresActivos.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
                     </SelectItem>

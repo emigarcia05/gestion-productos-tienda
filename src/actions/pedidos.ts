@@ -11,6 +11,7 @@ import { getPosicionIvaComparacionRevisionToken } from "@/services/finBalPosicio
 import {
   syncPedidoUrgenteEnvio,
   getItemsTablaEnviarPedido,
+  getProveedoresConPedidoActivo,
   getItemsYProveedorParaEnviar,
   ajustarCantidadesParaGenerarPedido,
   type SucursalPedidoEnvio,
@@ -155,14 +156,57 @@ export async function getPedidoUrgenteData(params: {
   }
 }
 
-/** Datos iniciales para la página Generar Pedido (filtros: proveedores). */
-export async function getEnviarPedidoData() {
+/** Datos iniciales para Generar Pedido: solo proveedores con ítems y cantidad a pedir > 0. */
+export async function getEnviarPedidoData(params?: {
+  sucursal?: string;
+  tipos?: string[];
+}) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { proveedores: [] };
   }
-  const proveedores = await getProveedoresParaPedidoUrgente();
+  const sucursalTrim = params?.sucursal?.trim() ?? "";
+  const sucursalCodigo =
+    sucursalTrim && SUCURSALES_VALIDAS.includes(sucursalTrim as SucursalPedidoEnvio)
+      ? sucursalTrim
+      : undefined;
+  const tipos = params?.tipos && params.tipos.length > 0 ? params.tipos : undefined;
+  const proveedores = await getProveedoresConPedidoActivo({
+    sucursalCodigo: sucursalCodigo,
+    tipos,
+  });
   return { proveedores };
+}
+
+const listarProveedoresPedidoActivoSchema = z.object({
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  tipos: z
+    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
+    .optional()
+    .default([]),
+});
+
+/** Proveedores con pedido activo para el modal Generar Pedido (según sucursal y tipos). */
+export async function listarProveedoresConPedidoActivoAction(
+  raw: unknown
+): Promise<ActionResult<{ proveedores: { id: string; nombre: string; prefijo: string }[] }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+  const parsed = listarProveedoresPedidoActivoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const { sucursal, tipos } = parsed.data;
+  if (!(await sucursalPedidoHabilitada(sucursal))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
+  const proveedores = await getProveedoresConPedidoActivo({
+    sucursalCodigo: sucursal,
+    tipos: tipos.length > 0 ? tipos : undefined,
+  });
+  return { ok: true, data: { proveedores } };
 }
 
 /** Ítem de la tabla Generar Pedido: cant_pedir, proveedor y descripción (descripcion_tienda o descripcion_proveedor). */
