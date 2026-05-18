@@ -1080,6 +1080,8 @@ Antes de entregar código nuevo o modificado, verificar:
 
 *Última actualización (2026-05-13): **Cheques tesorería** — migración **`20260515190000_fin_tesoreria_cheques_transferencia_historial`** (`fecha_transferencia`, `caja_destino_id`); transferencia conserva fila **500 días** (`src/lib/finTesoreriaChequesRetencion.ts` + purge en `finTesoreriaCheques.service.ts`); sumas SQL filtran `fecha_transferencia IS NULL`. Ver §2.5c (cheques).*
 
+*Última actualización (2026-05-27): **Posición IVA — import IVA débito** — `importarFinBalIvaDebCsvAction` acepta **`.csv` y `.txt`**; FormData con `tieneEncabezados` y `mapeo` (Zod `mapeoColumnasIvaDebSchema`). `importarCsvIvaDebitoMes` usa `parsearCSVCrudo` + `parsearFilasIvaDebitoConMapeo` (`finBalIvaDebCsv.ts`); sin mapeo conserva parser AFIP fijo. Campos obligatorios: fecha, denominación, imp. total.*
+
 *Última actualización (2026-05-13): **Rename** tabla **`fin_bal_pos_iva_final` → `fin_bal_iva_deb_import`** (historial CSV IVA débito; modelo Prisma **`FinBalIvaDebImportLine`**, `@@map("fin_bal_iva_deb_import")`). Migración **`20260513130000_rename_fin_bal_pos_iva_final_to_fin_bal_iva_deb_import`**. Antes: `fin_bal_iva_deb_import_line` → … → `fin_bal_pos_iva_final`. Servicio **`finBalIvaDeb.service.ts`**. Ver `schema.prisma`.*
 
 *Última actualización (2026-05-12): **Rename** tabla **`fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`**. Migración **`20260512220000_rename_fin_bal_iva_deb_import_line_to_fin_bal_pos_iva_final`**. Cadena siguiente: ver entrada 2026-05-13 (`fin_bal_iva_deb_import`).*

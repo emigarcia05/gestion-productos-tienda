@@ -1,4 +1,11 @@
 import { createHash } from "crypto";
+import type { CampoDestinoIvaDeb } from "@/lib/validations/finBalIvaDebImport";
+
+export type { CampoDestinoIvaDeb } from "@/lib/validations/finBalIvaDebImport";
+
+export interface MapeoColumnasIvaDeb {
+  [indiceColumna: number]: CampoDestinoIvaDeb;
+}
 
 /** Encabezados esperados del CSV AFIP (exportación estándar con `;`). */
 export const CSV_IVA_DEB_FECHA = "Fecha de Emisión";
@@ -53,15 +60,136 @@ function celdasLinea(line: string): string[] {
   return line.split(";").map(stripQuotes);
 }
 
+const ETIQUETAS_CAMPO_IVA_DEB: Record<
+  Exclude<CampoDestinoIvaDeb, "ignorar">,
+  string
+> = {
+  fechaEmision: "FECHA EMISIÓN",
+  tipoComprobante: "TIPO COMPROBANTE",
+  puntoVenta: "PUNTO DE VENTA",
+  numeroDesde: "NÚMERO DESDE",
+  numeroHasta: "NÚMERO HASTA",
+  codAutorizacion: "CÓD. AUTORIZACIÓN",
+  nroDocReceptor: "NRO. DOC. RECEPTOR",
+  denominacionReceptor: "DENOMINACIÓN RECEPTOR",
+  impTotal: "IMP. TOTAL",
+};
+
 function parseFechaEmision(raw: string): Date | null {
   const s = stripQuotes(raw).trim();
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (!m) return null;
-  const y = Number(m[1]);
-  const mo = Number(m[2]);
-  const d = Number(m[3]);
-  if (!Number.isFinite(y) || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-  return new Date(Date.UTC(y, mo - 1, d));
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (iso) {
+    const y = Number(iso[1]);
+    const mo = Number(iso[2]);
+    const d = Number(iso[3]);
+    if (Number.isFinite(y) && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+      return new Date(Date.UTC(y, mo - 1, d));
+    }
+  }
+  const ar = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  if (ar) {
+    const d = Number(ar[1]);
+    const mo = Number(ar[2]);
+    const y = Number(ar[3]);
+    if (Number.isFinite(y) && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+      return new Date(Date.UTC(y, mo - 1, d));
+    }
+  }
+  return null;
+}
+
+/** Sugiere mapeo cuando los encabezados coinciden con export AFIP. */
+export function mapeoAutomaticoIvaDebAfip(encabezados: string[]): MapeoColumnasIvaDeb {
+  const porNombre: Record<string, CampoDestinoIvaDeb> = {
+    [CSV_IVA_DEB_FECHA]: "fechaEmision",
+    [CSV_IVA_DEB_TIPO]: "tipoComprobante",
+    [CSV_IVA_DEB_PTO_VTA]: "puntoVenta",
+    [CSV_IVA_DEB_NUM_DESDE]: "numeroDesde",
+    [CSV_IVA_DEB_NUM_HASTA]: "numeroHasta",
+    [CSV_IVA_DEB_COD_AUT]: "codAutorizacion",
+    [CSV_IVA_DEB_NRO_DOC_REC]: "nroDocReceptor",
+    [CSV_IVA_DEB_DENOMINACION]: "denominacionReceptor",
+    [CSV_IVA_DEB_IMP_TOTAL]: "impTotal",
+  };
+  const m: MapeoColumnasIvaDeb = {};
+  encabezados.forEach((h, i) => {
+    m[i] = porNombre[h.trim()] ?? "ignorar";
+  });
+  return m;
+}
+
+function getCeldaMapeo(cols: string[], mapeo: MapeoColumnasIvaDeb, campo: CampoDestinoIvaDeb): string {
+  const idx = Object.entries(mapeo).find(([, v]) => v === campo)?.[0];
+  if (idx === undefined) return "";
+  return cols[Number(idx)] ?? "";
+}
+
+/**
+ * Parsea filas tabulares con mapeo elegido por el usuario (CSV/TXT con cualquier separador).
+ */
+export function parsearFilasIvaDebitoConMapeo(
+  filas: string[][],
+  mapeo: MapeoColumnasIvaDeb
+): ParseCsvIvaDebResult | ParseCsvIvaDebError {
+  const requeridos: Exclude<CampoDestinoIvaDeb, "ignorar">[] = [
+    "fechaEmision",
+    "denominacionReceptor",
+    "impTotal",
+  ];
+  for (const c of requeridos) {
+    if (!Object.values(mapeo).includes(c)) {
+      return {
+        ok: false,
+        error: `Asigná la columna obligatoria «${ETIQUETAS_CAMPO_IVA_DEB[c]}».`,
+      };
+    }
+  }
+
+  const filasOk: FilaCsvIvaDebParseada[] = [];
+  let erroresFila = 0;
+
+  for (const cells of filas) {
+    const fechaRaw = getCeldaMapeo(cells, mapeo, "fechaEmision");
+    const fechaEmision = parseFechaEmision(fechaRaw);
+    const impTotal = parseDecimalEsAr(getCeldaMapeo(cells, mapeo, "impTotal"));
+    const denominacionReceptor = stripQuotes(
+      getCeldaMapeo(cells, mapeo, "denominacionReceptor")
+    ).slice(0, 512);
+
+    if (!fechaEmision || impTotal == null || impTotal < 0 || !denominacionReceptor) {
+      erroresFila++;
+      continue;
+    }
+
+    const dedupeKey = buildDedupeKey({
+      fecha: stripQuotes(fechaRaw).trim(),
+      tipo: getCeldaMapeo(cells, mapeo, "tipoComprobante"),
+      ptoVta: getCeldaMapeo(cells, mapeo, "puntoVenta"),
+      numDesde: getCeldaMapeo(cells, mapeo, "numeroDesde"),
+      numHasta: getCeldaMapeo(cells, mapeo, "numeroHasta"),
+      codAut: getCeldaMapeo(cells, mapeo, "codAutorizacion"),
+      nroDocRec: getCeldaMapeo(cells, mapeo, "nroDocReceptor"),
+    });
+
+    filasOk.push({
+      dedupeKey,
+      fechaEmision,
+      denominacionReceptor,
+      impTotal,
+    });
+  }
+
+  if (filasOk.length === 0) {
+    return {
+      ok: false,
+      error:
+        erroresFila > 0
+          ? "No se pudo leer ninguna fila válida (fechas o importes incorrectos)."
+          : "No hay filas de datos en el archivo.",
+    };
+  }
+
+  return { ok: true, filas: filasOk, erroresFila };
 }
 
 function buildDedupeKey(parts: {

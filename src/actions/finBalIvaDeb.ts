@@ -5,6 +5,8 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
+import type { MapeoColumnasIvaDeb } from "@/lib/finBalIvaDebCsv";
+import { mapeoColumnasIvaDebSchema } from "@/lib/validations/finBalIvaDebImport";
 import {
   importarCsvIvaDebitoMes,
   listarDetalleIvaDebitoMes,
@@ -36,7 +38,14 @@ async function parseMesAnioFinanzas(
   return { ok: true, data: parsed.data };
 }
 
-const MAX_CSV_BYTES = 4 * 1024 * 1024;
+const MAX_ARCHIVO_BYTES = 4 * 1024 * 1024;
+
+const EXTENSIONES_IVA_DEB = [".csv", ".txt"] as const;
+
+function extensionArchivoIvaDebPermitida(name: string): boolean {
+  const lower = name.toLowerCase();
+  return EXTENSIONES_IVA_DEB.some((ext) => lower.endsWith(ext));
+}
 
 export async function importarFinBalIvaDebCsvAction(formData: FormData): Promise<
   ActionResult<ImportarIvaDebCsvResultado>
@@ -60,14 +69,35 @@ export async function importarFinBalIvaDebCsvAction(formData: FormData): Promise
     return { ok: false, error: "Año inválido." };
   }
   if (!(file instanceof File)) {
-    return { ok: false, error: "Seleccioná un archivo CSV." };
+    return { ok: false, error: "Seleccioná un archivo." };
   }
-  const name = file.name.toLowerCase();
-  if (!name.endsWith(".csv")) {
-    return { ok: false, error: "Solo se permiten archivos .csv" };
+  if (!extensionArchivoIvaDebPermitida(file.name)) {
+    return { ok: false, error: "Solo se permiten archivos .csv o .txt" };
   }
-  if (file.size > MAX_CSV_BYTES) {
+  if (file.size > MAX_ARCHIVO_BYTES) {
     return { ok: false, error: "El archivo supera el tamaño máximo permitido (4 MB)." };
+  }
+
+  const tieneEncabezados = formData.get("tieneEncabezados") !== "false";
+  const mapeoRaw = formData.get("mapeo");
+
+  let mapeo: MapeoColumnasIvaDeb | undefined;
+  if (mapeoRaw != null && String(mapeoRaw).trim() !== "") {
+    let json: unknown;
+    try {
+      json = JSON.parse(String(mapeoRaw));
+    } catch {
+      return { ok: false, error: "Mapeo de columnas inválido." };
+    }
+    const parsedMapeo = mapeoColumnasIvaDebSchema.safeParse(json);
+    if (!parsedMapeo.success) {
+      return { ok: false, error: firstZodErrorMessage(parsedMapeo.error) };
+    }
+    const normalizado: MapeoColumnasIvaDeb = {};
+    for (const [k, v] of Object.entries(parsedMapeo.data)) {
+      normalizado[Number(k)] = v;
+    }
+    mapeo = normalizado;
   }
 
   let textoCsv: string;
@@ -77,7 +107,13 @@ export async function importarFinBalIvaDebCsvAction(formData: FormData): Promise
     return { ok: false, error: "No se pudo leer el archivo." };
   }
 
-  const res = await importarCsvIvaDebitoMes({ textoCsv, mes, anio });
+  const res = await importarCsvIvaDebitoMes({
+    textoCsv,
+    mes,
+    anio,
+    mapeo,
+    tieneEncabezados,
+  });
   if (!res.success) return { ok: false, error: res.error };
 
   revalidatePath("/finanzas/posicion-iva");

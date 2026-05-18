@@ -3,8 +3,11 @@ import { prisma } from "@/lib/prisma";
 import {
   filaPerteneceMesAnio,
   parsearCsvIvaDebitoAfip,
+  parsearFilasIvaDebitoConMapeo,
   type FilaCsvIvaDebParseada,
+  type MapeoColumnasIvaDeb,
 } from "@/lib/finBalIvaDebCsv";
+import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import type { ServiceResult } from "@/types";
 
@@ -113,13 +116,26 @@ export async function importarCsvIvaDebitoMes(params: {
   textoCsv: string;
   mes: number;
   anio: number;
+  mapeo?: MapeoColumnasIvaDeb;
+  tieneEncabezados?: boolean;
 }): Promise<ServiceResult<ImportarIvaDebCsvResultado>> {
-  const { textoCsv, mes, anio } = params;
+  const { textoCsv, mes, anio, mapeo, tieneEncabezados = true } = params;
   if (mes < 1 || mes > 12 || anio < 2000 || anio > 2100) {
     return { success: false, error: "Período inválido." };
   }
 
-  const parsed = parsearCsvIvaDebitoAfip(textoCsv);
+  let parsed;
+  if (mapeo && Object.keys(mapeo).length > 0) {
+    try {
+      const { filas } = parsearCSVCrudo(textoCsv, tieneEncabezados);
+      parsed = parsearFilasIvaDebitoConMapeo(filas, mapeo);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "No se pudo leer el archivo.";
+      return { success: false, error: msg };
+    }
+  } else {
+    parsed = parsearCsvIvaDebitoAfip(textoCsv);
+  }
   if (!parsed.ok) return { success: false, error: parsed.error };
 
   const delMes = parsed.filas.filter((f) => filaPerteneceMesAnio(f.fechaEmision, mes, anio));
