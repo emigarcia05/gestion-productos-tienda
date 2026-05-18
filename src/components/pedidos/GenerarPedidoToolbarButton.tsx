@@ -90,6 +90,8 @@ interface Props {
   triggerLabel?: string;
   triggerClassName?: string;
   triggerSize?: ComponentProps<typeof Button>["size"];
+  /** Tras generar con éxito (antes del refresh de Next). Útil para limpiar estado local en Pedido Urgente. */
+  onGeneradoExito?: () => void;
 }
 
 export default function GenerarPedidoToolbarButton({
@@ -101,6 +103,7 @@ export default function GenerarPedidoToolbarButton({
   triggerLabel = "Generar Pedido",
   triggerClassName,
   triggerSize = "sm",
+  onGeneradoExito,
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -288,7 +291,7 @@ export default function GenerarPedidoToolbarButton({
         return;
       }
       const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
-      // Refresca inmediatamente para ocultar filas ya limpiadas en backend.
+      onGeneradoExito?.();
       router.refresh();
       if (sentViaWhatsApp) {
         toast.success("Pedido generado y enviado al proveedor.");
@@ -327,7 +330,7 @@ export default function GenerarPedidoToolbarButton({
       }
 
       const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
-      // Refresca inmediatamente para ocultar filas ya limpiadas en backend.
+      onGeneradoExito?.();
       router.refresh();
       setSobreStockOpen(false);
 

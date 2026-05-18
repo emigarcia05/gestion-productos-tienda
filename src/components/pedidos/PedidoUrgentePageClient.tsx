@@ -19,6 +19,10 @@ import {
   ordenarMiembrosPedidoUrgentePorMenorCostoComparable,
 } from "@/lib/precioComparacionPedidoUrgenteReposicion";
 import PosicionIvaComparacionAutoRefresh from "@/components/pedidos/PosicionIvaComparacionAutoRefresh";
+import {
+  cantidadesUrgenteDesdeProductos,
+  limpiarCantidadesUrgenteVisibles,
+} from "@/lib/pedidoUrgenteCantidades";
 
 interface Props {
   filters: React.ReactNode;
@@ -92,26 +96,16 @@ export default function PedidoUrgentePageClient({
   }, [miembrosElegirProveedorOrdenados]);
 
   useEffect(() => {
-    if (productos.length === 0) return;
     queueMicrotask(() => {
+      if (productos.length === 0) {
+        setCantPorId({});
+        return;
+      }
       setCantPorId((prev) => {
+        const fromServer = cantidadesUrgenteDesdeProductos(productos);
         const next = { ...prev };
-        for (const p of productos) {
-          const ids =
-            p.miembrosAgrupacion && p.miembrosAgrupacion.length > 0
-              ? p.miembrosAgrupacion.map((m) => m.codExt)
-              : [p.id];
-          for (const id of ids) {
-            if (next[id] !== undefined) continue;
-            let cant = 0;
-            if (p.miembrosAgrupacion && p.miembrosAgrupacion.length > 0) {
-              const miembro = p.miembrosAgrupacion.find((m) => m.codExt === id);
-              cant = Math.max(0, Math.floor(Number(miembro?.cantPedidaUrgente) || 0));
-            } else {
-              cant = Math.max(0, Math.floor(Number(p.cantPedidaUrgente) || 0));
-            }
-            next[id] = cant > 0 ? String(cant) : "";
-          }
+        for (const [id, val] of Object.entries(fromServer)) {
+          next[id] = val;
         }
         return next;
       });
@@ -125,6 +119,9 @@ export default function PedidoUrgentePageClient({
       defaultProveedor={proveedor}
       defaultTipos={[]}
       modulo="urgente"
+      onGeneradoExito={() => {
+        setCantPorId((prev) => limpiarCantidadesUrgenteVisibles(productos, prev));
+      }}
     />
   );
 

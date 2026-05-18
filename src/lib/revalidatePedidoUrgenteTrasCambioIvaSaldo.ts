@@ -11,4 +11,7 @@ export function revalidatePedidoUrgenteTrasCambioIvaSaldo(): void {
   revalidatePath("/pedidos/urgente");
   revalidatePath("/pedidos/enviar");
   revalidatePath("/pedidos/reposicion");
+  revalidatePath("/gestion-productos/pedidos/urgente");
+  revalidatePath("/gestion-productos/pedidos/generar-pedido");
+  revalidatePath("/gestion-productos/pedidos/reposicion");
 }

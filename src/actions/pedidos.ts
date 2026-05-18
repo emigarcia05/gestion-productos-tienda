@@ -28,7 +28,7 @@ import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidatePedidosMercaderiaListados } from "@/lib/revalidatePedidosMercaderia";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import {
   getSobreStockOtraSucursalParaPedidoEnviar,
@@ -689,11 +689,7 @@ export async function generarPdfEnviarPedidoAction(params: {
     }
 
     // Refrescar listados afectados para que no queden ítems viejos.
-    revalidatePath("/pedidos/enviar");
-    revalidatePath("/pedidos/urgente");
-    revalidatePath("/pedidos/tintometrico");
-    revalidatePath("/pedidos/reposicion");
-    revalidatePath("/pedidos/historial");
+    revalidatePedidosMercaderiaListados();
 
     return {
       ok: true,
