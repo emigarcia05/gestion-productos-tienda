@@ -169,10 +169,10 @@ export async function getEnviarPedidoData(params?: {
   const sucursalCodigo =
     sucursalTrim && SUCURSALES_VALIDAS.includes(sucursalTrim as SucursalPedidoEnvio)
       ? sucursalTrim
-      : undefined;
-  const tipos = params?.tipos && params.tipos.length > 0 ? params.tipos : undefined;
+      : "";
+  const tipos = params?.tipos ?? [];
   const proveedores = await getProveedoresConPedidoActivo({
-    sucursalCodigo: sucursalCodigo,
+    sucursalCodigo: sucursalCodigo || undefined,
     tipos,
   });
   return { proveedores };
@@ -182,8 +182,7 @@ const listarProveedoresPedidoActivoSchema = z.object({
   sucursal: z.enum(["guaymallen", "maipu"]),
   tipos: z
     .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
-    .optional()
-    .default([]),
+    .min(1, "Al menos un tipo de pedido."),
 });
 
 /** Proveedores con pedido activo para el modal Generar Pedido (según sucursal y tipos). */
@@ -204,7 +203,7 @@ export async function listarProveedoresConPedidoActivoAction(
   }
   const proveedores = await getProveedoresConPedidoActivo({
     sucursalCodigo: sucursal,
-    tipos: tipos.length > 0 ? tipos : undefined,
+    tipos,
   });
   return { ok: true, data: { proveedores } };
 }

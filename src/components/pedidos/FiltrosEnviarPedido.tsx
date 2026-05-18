@@ -86,7 +86,10 @@ export default function FiltrosEnviarPedido({
 
   function toggleTipo(t: TipoPedido) {
     const next = tipos.includes(t) ? tipos.filter((k) => k !== t) : [...tipos, t];
-    updateUrl({ tipos: next });
+    updateUrl({
+      tipos: next,
+      ...(next.length === 0 ? { proveedor: "" } : {}),
+    });
   }
 
   useEffect(() => {
@@ -109,8 +112,11 @@ export default function FiltrosEnviarPedido({
     updateUrl({ sucursal: "", proveedor: "", tipos: [], q: "" });
   }
 
-  const labelTipo =
-    tipos.length === 0
+  const proveedorHabilitado = Boolean(sucursal) && tipos.length > 0;
+
+  const labelTipo = !sucursal
+    ? "TIPO DE PEDIDO (elegí sucursal)"
+    : tipos.length === 0
       ? "TIPO DE PEDIDO"
       : tipos.length === TIPOS_PEDIDO.length
         ? "TODOS"
@@ -131,11 +137,17 @@ export default function FiltrosEnviarPedido({
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
             activo={Boolean(sucursal)}
-            onLimpiar={() => updateUrl({ sucursal: "" })}
+            onLimpiar={() => updateUrl({ sucursal: "", tipos: [], proveedor: "" })}
           >
             <Select
               value={sucursal || "none"}
-              onValueChange={(v) => updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })}
+              onValueChange={(v) =>
+                updateUrl({
+                  sucursal: v === "none" ? "" : (v as SucursalPedido),
+                  tipos: [],
+                  proveedor: "",
+                })
+              }
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SUCURSAL" />
@@ -156,47 +168,26 @@ export default function FiltrosEnviarPedido({
             </Select>
           </FiltroIndividualContainer>
           <FiltroIndividualContainer
-            className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={Boolean(proveedor)}
-            onLimpiar={() => updateUrl({ proveedor: "" })}
-          >
-            <Select
-              value={proveedor || "none"}
-              onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
-            >
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="PROVEEDOR" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">PROVEEDOR</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    [{p.prefijo}] {p.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FiltroIndividualContainer>
-          <FiltroIndividualContainer
             className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
             activo={tipos.length > 0}
-            onLimpiar={() => updateUrl({ tipos: [] })}
+            onLimpiar={() => updateUrl({ tipos: [], proveedor: "" })}
           >
           <div className="relative" ref={multiRef}>
             <button
               type="button"
-              onClick={() => setMultiOpen((o) => !o)}
+              disabled={!sucursal}
+              onClick={() => {
+                if (!sucursal) return;
+                setMultiOpen((o) => !o);
+              }}
               className={cn(
                 SELECT_TRIGGER_FILTER_CLASS,
-                "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                "flex w-full items-center justify-between gap-2 text-left font-semibold",
+                !sucursal && "pointer-events-none opacity-50"
               )}
               aria-expanded={multiOpen}
               aria-haspopup="listbox"
+              aria-disabled={!sucursal}
               aria-label="Tipo de pedido (selección múltiple)"
             >
               <span className="truncate">{labelTipo}</span>
@@ -225,6 +216,44 @@ export default function FiltrosEnviarPedido({
               </div>
             )}
           </div>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedor)}
+            onLimpiar={() => updateUrl({ proveedor: "" })}
+          >
+            <Select
+              value={proveedor || "none"}
+              onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
+              disabled={!proveedorHabilitado}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue
+                  placeholder={
+                    !sucursal
+                      ? "PROVEEDOR (elegí sucursal y tipo)"
+                      : tipos.length === 0
+                        ? "PROVEEDOR (elegí tipo de pedido)"
+                        : proveedores.length === 0
+                          ? "SIN PROVEEDORES CON PEDIDO"
+                          : "PROVEEDOR"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PROVEEDOR</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    [{p.prefijo}] {p.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>

@@ -446,9 +446,13 @@ export async function getProveedoresConPedidoActivo(params?: {
   sucursalCodigo?: string;
   tipos?: string[];
 }): Promise<ProveedorPedidoActivoOpcion[]> {
+  const sucursalCodigo = params?.sucursalCodigo?.trim() || "";
+  const tipos = params?.tipos ?? [];
+  if (!sucursalCodigo || tipos.length === 0) return [];
+
   const { items } = await getItemsTablaEnviarPedido({
-    sucursalCodigo: params?.sucursalCodigo?.trim() || undefined,
-    tipos: params?.tipos && params.tipos.length > 0 ? params.tipos : undefined,
+    sucursalCodigo,
+    tipos,
   });
   const ids = [...new Set(items.map((i) => i.proveedorId).filter((id) => id.length > 0))];
   if (ids.length === 0) return [];

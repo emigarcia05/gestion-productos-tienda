@@ -145,9 +145,9 @@ export default function GenerarPedidoToolbarButton({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !sucursal) {
+    if (!open || !sucursal || tipos.length === 0) {
       setProveedoresActivos([]);
-      if (!sucursal) setProveedor("");
+      if (!sucursal || tipos.length === 0) setProveedor("");
       return;
     }
 
@@ -219,8 +219,8 @@ export default function GenerarPedidoToolbarButton({
 
   const faltantes: string[] = [];
   if (!sucursal) faltantes.push("SUCURSAL");
-  if (!proveedor.trim()) faltantes.push("PROVEEDOR");
   if (tipos.length === 0) faltantes.push("TIPO DE PEDIDO");
+  if (!proveedor.trim()) faltantes.push("PROVEEDOR");
 
   const mensajeFaltantes =
     faltantes.length > 0
@@ -230,8 +230,9 @@ export default function GenerarPedidoToolbarButton({
   const puedeGenerar =
     filtrosCompletos && hayItems === true && !verificandoItems && !errorVerificacion;
 
-  const labelTipo =
-    tipos.length === 0
+  const labelTipo = !sucursal
+    ? "TIPO DE PEDIDO (elegí sucursal)"
+    : tipos.length === 0
       ? "TIPO DE PEDIDO"
       : tipos.length === TIPOS_PEDIDO.length
         ? "TODOS"
@@ -402,9 +403,12 @@ export default function GenerarPedidoToolbarButton({
             <div className="w-full min-w-0">
               <Select
                 value={sucursal || "none"}
-                onValueChange={(v) =>
-                  setSucursal(v === "none" ? "" : (v as SucursalPedido))
-                }
+                onValueChange={(v) => {
+                  const next = v === "none" ? "" : (v as SucursalPedido);
+                  setSucursal(next);
+                  setTipos([]);
+                  setProveedor("");
+                }}
               >
                 <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                   <SelectValue placeholder="SUCURSAL" />
@@ -426,55 +430,26 @@ export default function GenerarPedidoToolbarButton({
             </div>
 
             <div className="w-full min-w-0">
-              <Select
-                value={proveedor || "none"}
-                onValueChange={(v) => setProveedor(v === "none" ? "" : v)}
-                disabled={!sucursal || cargandoProveedores}
-              >
-                <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                  <SelectValue
-                    placeholder={
-                      !sucursal
-                        ? "PROVEEDOR (elegí sucursal)"
-                        : cargandoProveedores
-                          ? "PROVEEDOR…"
-                          : proveedoresActivos.length === 0
-                            ? "SIN PROVEEDORES CON PEDIDO"
-                            : "PROVEEDOR"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  <SelectItem value="none">PROVEEDOR</SelectItem>
-                  {proveedoresActivos.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      [{p.prefijo}] {p.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-full min-w-0">
               <DropdownMenu.Root
                 modal={false}
                 open={multiTipoOpen}
-                onOpenChange={setMultiTipoOpen}
+                onOpenChange={(next) => {
+                  if (!sucursal) return;
+                  setMultiTipoOpen(next);
+                }}
               >
                 <DropdownMenu.Trigger asChild>
                   <button
                     type="button"
+                    disabled={!sucursal}
                     className={cn(
                       SELECT_TRIGGER_FILTER_CLASS,
-                      "flex h-auto min-h-9 w-full items-center justify-between gap-2 py-2 text-left font-semibold whitespace-normal"
+                      "flex h-auto min-h-9 w-full items-center justify-between gap-2 py-2 text-left font-semibold whitespace-normal",
+                      !sucursal && "pointer-events-none opacity-50"
                     )}
                     aria-expanded={multiTipoOpen}
                     aria-haspopup="menu"
+                    aria-disabled={!sucursal}
                     aria-label="Tipo de pedido (selección múltiple)"
                   >
                     <span className="min-w-0 flex-1 truncate text-left">
@@ -513,7 +488,11 @@ export default function GenerarPedidoToolbarButton({
                               prev.includes(opt.value) ? prev : [...prev, opt.value]
                             );
                           } else {
-                            setTipos((prev) => prev.filter((k) => k !== opt.value));
+                            setTipos((prev) => {
+                              const next = prev.filter((k) => k !== opt.value);
+                              if (next.length === 0) setProveedor("");
+                              return next;
+                            });
                           }
                         }}
                         onSelect={(e) => e.preventDefault()}
@@ -527,6 +506,43 @@ export default function GenerarPedidoToolbarButton({
                   </DropdownMenu.Content>
                 </DropdownMenu.Portal>
               </DropdownMenu.Root>
+            </div>
+
+            <div className="w-full min-w-0">
+              <Select
+                value={proveedor || "none"}
+                onValueChange={(v) => setProveedor(v === "none" ? "" : v)}
+                disabled={!sucursal || tipos.length === 0 || cargandoProveedores}
+              >
+                <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                  <SelectValue
+                    placeholder={
+                      !sucursal
+                        ? "PROVEEDOR (elegí sucursal y tipo)"
+                        : tipos.length === 0
+                          ? "PROVEEDOR (elegí tipo de pedido)"
+                          : cargandoProveedores
+                            ? "PROVEEDOR…"
+                            : proveedoresActivos.length === 0
+                              ? "SIN PROVEEDORES CON PEDIDO"
+                              : "PROVEEDOR"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">PROVEEDOR</SelectItem>
+                  {proveedoresActivos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      [{p.prefijo}] {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <ModalFeedbackRegion>
