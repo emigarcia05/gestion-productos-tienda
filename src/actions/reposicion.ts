@@ -14,6 +14,12 @@ import {
   upsertPedidoMercaderiaReposicionConfig,
 } from "@/services/pedidosEnvio.service";
 import {
+  cargarListaPrecioReposicionFallbackPorCodExt,
+  cargarListaPrecioReposicionPorCodTiendas,
+  elegirListaPrecioProveedorReposicion,
+  sumarIvaSaldoParaReposicion,
+} from "@/services/pedidosReposicionProveedor.service";
+import {
   getReposicionParamsSchema,
   productosReposicionSelectorSchema,
   reposicionFormaPedidoSchema,
@@ -197,13 +203,6 @@ export async function getReposicionData(
         orderBy: { descripcionTienda: "asc" },
         skip,
         take: PAGE_SIZE,
-        include: {
-          listaPreciosProveedores: {
-            take: 1,
-            orderBy: { idProveedor: "asc" },
-            select: { idProveedor: true, proveedor: { select: { nombre: true } } },
-          },
-        },
       }),
       prisma.listaPrecioTienda.count({ where: whereItems }),
       prisma.listaPrecioTienda.findMany({
@@ -276,11 +275,28 @@ export async function getReposicionData(
 
   const stockField = sucursal === "maipu" ? "stockMaipu" : "stockGuaymallen";
 
+  const codTiendasPage = rows.map((r) => r.codTienda.trim()).filter(Boolean);
+  const [ivaSaldoReposicion, lpPorCodTienda] = await Promise.all([
+    sumarIvaSaldoParaReposicion(),
+    cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
+  ]);
+  const codExtsFallback = rows
+    .map((r) => (r.codExt ?? "").trim())
+    .filter(Boolean);
+  const lpPorCodExt = await cargarListaPrecioReposicionFallbackPorCodExt(codExtsFallback);
+
   const items: ItemReposicion[] = rows.map((r) => {
-    const prov = r.listaPreciosProveedores[0];
-    const regla = reglasMap.get(r.codTienda.trim()) ?? null;
-    const idProveedor = regla?.idProveedor ?? prov?.idProveedor ?? null;
-    const nombreProveedor = regla?.nombreProveedor ?? prov?.proveedor?.nombre ?? null;
+    const codTienda = r.codTienda.trim();
+    const provResuelto = elegirListaPrecioProveedorReposicion({
+      codTienda,
+      tienda: r,
+      lpPorCodTienda,
+      lpPorCodExt,
+      ivaSaldoAcumulado: ivaSaldoReposicion,
+    });
+    const regla = reglasMap.get(codTienda) ?? null;
+    const idProveedor = provResuelto?.idProveedor ?? null;
+    const nombreProveedor = provResuelto?.proveedor?.nombre ?? null;
     const stock = Number(r[stockField] ?? 0);
     const forma = regla?.formaPedir ?? "";
     const punto = regla?.puntoReposicion ?? 0;
@@ -294,9 +310,9 @@ export async function getReposicionData(
       stockeable: r.stockeable,
     });
     return {
-      idListaTienda: r.codTienda,
-      codExt: r.codExt,
-      codTienda: r.codTienda,
+      idListaTienda: codTienda,
+      codExt: provResuelto?.codExt ?? r.codExt,
+      codTienda,
       descripcionTienda: r.descripcionTienda,
       stock,
       idProveedor,

@@ -1,8 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 /**
- * Invalida la página Pedido Urgente para que `getPedidoUrgenteData` vuelva a leer
- * `ivaSaldoAcumuladoComparacion` (Posición IVA) y se actualice el criterio de menor costo entre proveedores.
+ * Invalida pantallas de pedido que resuelven proveedor por menor costo comparable (Posición IVA).
  *
  * Llamar tras cualquier cambio que impacte débito/crédito/saldo manual de IVA.
  * También se invoca desde servicios de persistencia (`importarCsvIvaDebitoMes`, sync compras DUX)
@@ -10,4 +9,6 @@ import { revalidatePath } from "next/cache";
  */
 export function revalidatePedidoUrgenteTrasCambioIvaSaldo(): void {
   revalidatePath("/pedidos/urgente");
+  revalidatePath("/pedidos/enviar");
+  revalidatePath("/pedidos/reposicion");
 }

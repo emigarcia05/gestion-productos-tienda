@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import type { ItemPedidoEnvioRowParaEnviar, SucursalPedidoEnvio } from "@/services/pedidosEnvio.service";
 import {
-  pickListaPrecioProveedorPorCodExtYTienda,
-  type ItemPedidoEnvioRowParaEnviar,
-  type LpRowPick,
-  type SucursalPedidoEnvio,
-} from "@/services/pedidosEnvio.service";
+  cargarListaPrecioReposicionFallbackPorCodExt,
+  cargarListaPrecioReposicionPorCodTiendas,
+  elegirListaPrecioProveedorReposicion,
+  sumarIvaSaldoParaReposicion,
+} from "@/services/pedidosReposicionProveedor.service";
 
 export type OrigenDeteccionSobrestock = "LOCAL" | "OTRA_SUCURSAL";
 
@@ -115,41 +116,20 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     },
   });
 
-  const tiendaPorCodTienda = new Map<
-    string,
-    (typeof tiendas)[number]
-  >();
-  const codExtsParaLp = new Set<string>();
+  const tiendaPorCodTienda = new Map<string, (typeof tiendas)[number]>();
   for (const t of tiendas) {
     const ct = (t.codTienda ?? "").trim();
     if (ct && !tiendaPorCodTienda.has(ct)) tiendaPorCodTienda.set(ct, t);
-    const ce = (t.codExt ?? "").trim();
-    if (ce) codExtsParaLp.add(ce);
   }
 
-  const lpRowsOtra =
-    codExtsParaLp.size > 0
-      ? await prisma.listaPrecioProveedor.findMany({
-          where: { codExt: { in: Array.from(codExtsParaLp) }, habilitado: true },
-          select: {
-            codExt: true,
-            idProveedor: true,
-            descripcionProveedor: true,
-            codTiendaVinculo: true,
-            proveedor: { select: { prefijo: true, nombre: true } },
-          },
-          orderBy: [{ idProveedor: "asc" }],
-        })
-      : [];
-
-  const lpPorCodExtOtra = new Map<string, LpRowPick[]>();
-  for (const row of lpRowsOtra) {
-    const k = (row.codExt ?? "").trim();
-    if (!k) continue;
-    const arr = lpPorCodExtOtra.get(k) ?? [];
-    arr.push(row as LpRowPick);
-    lpPorCodExtOtra.set(k, arr);
-  }
+  const [ivaSaldoReposicion, lpPorCodTiendaOtra] = await Promise.all([
+    sumarIvaSaldoParaReposicion(),
+    cargarListaPrecioReposicionPorCodTiendas(codTiendas),
+  ]);
+  const codExtsFallbackOtra = codTiendas
+    .map((ct) => (tiendaPorCodTienda.get(ct)?.codExt ?? "").trim())
+    .filter(Boolean);
+  const lpPorCodExtOtra = await cargarListaPrecioReposicionFallbackPorCodExt(codExtsFallbackOtra);
 
   const stockFieldOtra = getStockFieldBySucursal(otraCodigo);
   const otherMerc2 = await prisma.prodPedMerc2.findMany({
@@ -185,9 +165,13 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (!codT) continue;
     const tienda = tiendaPorCodTienda.get(codT);
     if (!tienda) continue;
-    const codExtT = (tienda.codExt ?? "").trim();
-    const listaLp = codExtT ? lpPorCodExtOtra.get(codExtT) ?? [] : [];
-    const provRow = pickListaPrecioProveedorPorCodExtYTienda(listaLp, tienda);
+    const provRow = elegirListaPrecioProveedorReposicion({
+      codTienda: codT,
+      tienda,
+      lpPorCodTienda: lpPorCodTiendaOtra,
+      lpPorCodExt: lpPorCodExtOtra,
+      ivaSaldoAcumulado: ivaSaldoReposicion,
+    });
     if (!provRow) continue;
     appendOtra(codT, provRow.idProveedor, r.reposicionCantConf);
   }

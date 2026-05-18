@@ -11,6 +11,14 @@ import {
   parseCodTiendaFromCodExtTintometrico,
 } from "@/lib/pedidosTintometrico";
 import { SUCURSAL_LABEL_PEDIDO } from "@/lib/pedidos";
+import {
+  cargarListaPrecioReposicionFallbackPorCodExt,
+  cargarListaPrecioReposicionPorCodTiendas,
+  elegirListaPrecioProveedorReposicion,
+  existeListaPrecioParaReposicionCodTienda,
+  proveedorEtiquetaPedidoDesdeRow,
+  sumarIvaSaldoParaReposicion,
+} from "@/services/pedidosReposicionProveedor.service";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -96,23 +104,16 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
           "Este producto no es stockeable (DUX: ctd_disponible nulo en algún depósito); no se configura reposición por stock.",
       };
     }
-    const codExtResuelto = (tienda.codExt ?? "").trim();
-    if (!codExtResuelto) {
-      return { ok: false, error: "El producto no tiene cod_ext en prod_precios_tienda." };
-    }
-
-    const provRows = await prisma.listaPrecioProveedor.findMany({
-      where: { codExt: codExtResuelto },
-      select: {
-        idProveedor: true,
-        codProdProveedor: true,
-        descripcionProveedor: true,
-        proveedor: { select: { prefijo: true, nombre: true } },
-      },
-      orderBy: [{ idProveedor: "asc" }],
+    const codT = codTienda.trim();
+    const tieneListaProveedor = await existeListaPrecioParaReposicionCodTienda(codT, {
+      codExt: tienda.codExt,
     });
-    if (provRows.length === 0) {
-      return { ok: false, error: "No se encontró el ítem en prod_precios_provee." };
+    if (!tieneListaProveedor) {
+      return {
+        ok: false,
+        error:
+          "No hay proveedor vinculado al producto en prod_precios_provee (cod_tienda) ni lista por cod_ext.",
+      };
     }
 
     const stock =
@@ -129,8 +130,6 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
           ? cant
           : Math.max(0, cant - stock)
         : 0;
-
-    const codT = codTienda.trim();
 
     await prisma.$transaction(async (tx) => {
       await tx.prodPedMerc2.deleteMany({
@@ -613,9 +612,11 @@ export async function getItemsTablaEnviarPedido(params: {
     if (ce) codExts.add(ce);
   }
 
-  const lpRows =
+  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows] = await Promise.all([
+    sumarIvaSaldoParaReposicion(),
+    cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
     codExts.size > 0
-      ? await prisma.listaPrecioProveedor.findMany({
+      ? prisma.listaPrecioProveedor.findMany({
           where: { codExt: { in: Array.from(codExts) }, habilitado: true },
           select: {
             codExt: true,
@@ -628,7 +629,15 @@ export async function getItemsTablaEnviarPedido(params: {
           },
           orderBy: [{ idProveedor: "asc" }],
         })
-      : [];
+      : Promise.resolve([]),
+  ]);
+
+  const codExtsFallbackRepos = [...codTiendasRepos]
+    .map((ct) => (tiendaByCodTienda.get(ct)?.codExt ?? "").trim())
+    .filter(Boolean);
+  const lpPorCodExtRepos = await cargarListaPrecioReposicionFallbackPorCodExt(
+    codExtsFallbackRepos
+  );
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
   for (const row of lpRows) {
@@ -668,14 +677,18 @@ export async function getItemsTablaEnviarPedido(params: {
       if (!tienda) {
         continue;
       }
-      const codExtT = (tienda.codExt ?? "").trim();
-      const listaLp = codExtT ? lpPorCodExt.get(codExtT) ?? [] : [];
-      const provRow = pickListaPrecioProveedorPorCodExtYTienda(listaLp, tienda);
+      const provRow = elegirListaPrecioProveedorReposicion({
+        codTienda: codTi,
+        tienda,
+        lpPorCodTienda: lpPorCodTiendaRepos,
+        lpPorCodExt: lpPorCodExtRepos,
+        ivaSaldoAcumulado: ivaSaldoReposicion,
+      });
       if (!provRow) {
         continue;
       }
       idProveedorResuelto = provRow.idProveedor;
-      proveedorEtiqueta = proveedorEtiquetaDesdeRow(provRow.proveedor);
+      proveedorEtiqueta = proveedorEtiquetaPedidoDesdeRow(provRow.proveedor);
       descripcion = (tienda.descripcionTienda ?? "").trim();
       const stock = stockTiendaParaSucursalCodigo(codigoSuc || "guaymallen", tienda);
       const computedRepos = cantPedirReposicionMerc2({
@@ -875,9 +888,11 @@ export async function getItemsYProveedorParaEnviar(
     if (ce) codExts.add(ce);
   }
 
-  const lpRows =
+  const [ivaSaldoReposicionPdf, lpPorCodTiendaReposPdf, lpRowsPdf] = await Promise.all([
+    sumarIvaSaldoParaReposicion(),
+    cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
     codExts.size > 0
-      ? await prisma.listaPrecioProveedor.findMany({
+      ? prisma.listaPrecioProveedor.findMany({
           where: { codExt: { in: Array.from(codExts) }, habilitado: true },
           select: {
             codExt: true,
@@ -890,10 +905,18 @@ export async function getItemsYProveedorParaEnviar(
           },
           orderBy: [{ idProveedor: "asc" }],
         })
-      : [];
+      : Promise.resolve([]),
+  ]);
+
+  const codExtsFallbackReposPdf = [...codTiendasRepos]
+    .map((ct) => (tiendaByCodTienda.get(ct)?.codExt ?? "").trim())
+    .filter(Boolean);
+  const lpPorCodExtReposPdf = await cargarListaPrecioReposicionFallbackPorCodExt(
+    codExtsFallbackReposPdf
+  );
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
-  for (const row of lpRows) {
+  for (const row of lpRowsPdf) {
     const k = (row.codExt ?? "").trim();
     if (!k) continue;
     const arr = lpPorCodExt.get(k) ?? [];
@@ -925,11 +948,15 @@ export async function getItemsYProveedorParaEnviar(
       const codTi = (r.reposicionCodTienda ?? "").trim();
       const tienda = codTi ? tiendaByCodTienda.get(codTi) : undefined;
       if (!tienda) continue;
-      const codExtT = (tienda.codExt ?? "").trim();
-      const listaLp = codExtT ? lpPorCodExt.get(codExtT) ?? [] : [];
-      const provRow = pickListaPrecioProveedorPorCodExtYTienda(listaLp, tienda);
+      const provRow = elegirListaPrecioProveedorReposicion({
+        codTienda: codTi,
+        tienda,
+        lpPorCodTienda: lpPorCodTiendaReposPdf,
+        lpPorCodExt: lpPorCodExtReposPdf,
+        ivaSaldoAcumulado: ivaSaldoReposicionPdf,
+      });
       if (!provRow || provRow.idProveedor !== pid) continue;
-      codExtOut = codExtT;
+      codExtOut = provRow.codExt.trim();
       codProveedor = (provRow.codProdProveedor ?? "").trim() || null;
       tintometricoDescripcion = null;
       descripcionProveedor = (provRow.descripcionProveedor ?? "").trim() || null;
