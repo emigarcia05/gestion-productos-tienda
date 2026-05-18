@@ -23,6 +23,7 @@ import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vi
 import { calcPxCompraFinal, calcMargenSinIvaPct } from "@/lib/calculos";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
+import type { Rol } from "@/lib/permisos";
 
 type ProductoConProveedor = {
   id: string;
@@ -56,6 +57,8 @@ interface Props {
   /** Si se pasa, el modal se controla desde afuera (fila clickeable) */
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
+  /** Vincular / desvincular requieren rol editor (mutaciones en servidor). */
+  rol?: Rol;
 }
 
 const UMBRAL_PCT = 1;
@@ -106,7 +109,9 @@ export default function VincularModal({
   prefijoProveedor,
   open: openProp,
   onOpenChange,
+  rol = "editor",
 }: Props) {
+  const puedeEditar = rol === "editor";
   const [openInterno, setOpenInterno] = useState(false);
   const open = openProp !== undefined ? openProp : openInterno;
   const setOpen = onOpenChange !== undefined ? onOpenChange : setOpenInterno;
@@ -247,15 +252,17 @@ export default function VincularModal({
           bodyClassName="flex flex-col min-h-0 overflow-hidden p-2 p-3"
           actions={
             <>
-              <Button
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setAbrirSelector(true)}
-                disabled={isPending}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Vincular Nuevo Producto
-              </Button>
+              {puedeEditar ? (
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setAbrirSelector(true)}
+                  disabled={isPending}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Vincular Nuevo Producto
+                </Button>
+              ) : null}
               <Button variant="default" onClick={() => setOpen(false)}>
                 Cerrar
               </Button>
@@ -285,8 +292,8 @@ export default function VincularModal({
                     <col className="w-[14%]" />
                     <col className="w-[22%]" />
                     <col className="w-[14%]" />
-                    <col className="w-[24%]" />
-                    <col className="w-[10%]" />
+                    <col className={puedeEditar ? "w-[24%]" : "w-[34%]"} />
+                    {puedeEditar ? <col className="w-[10%]" /> : null}
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -295,10 +302,12 @@ export default function VincularModal({
                       <TableHead>PX. FINAL</TableHead>
                       <TableHead>VARIAC.</TableHead>
                       <TableHead>MARGEN</TableHead>
-                      <TableHead>
-                        <span className="sr-only">DESVINC.</span>
-                        <Trash2 className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
-                      </TableHead>
+                      {puedeEditar ? (
+                        <TableHead>
+                          <span className="sr-only">DESVINC.</span>
+                          <Trash2 className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
+                        </TableHead>
+                      ) : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -330,26 +339,28 @@ export default function VincularModal({
                           <TableCell className="celda-datos celda-numero">
                             {margenPct != null ? fmtPctEntero(margenPct) : ""}
                           </TableCell>
-                          <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                            <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDesvincular(p)}
-                                disabled={isPending || bloquearEliminarOficial}
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                title={
-                                  bloquearEliminarOficial
-                                    ? "No se puede desvincular el proveedor oficial mientras exista un alternativo."
-                                    : "Desvincular"
-                                }
-                                aria-label={`Desvincular ${p.proveedor.prefijo}`}
-                              >
-                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {puedeEditar ? (
+                            <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                              <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDesvincular(p)}
+                                  disabled={isPending || bloquearEliminarOficial}
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                  title={
+                                    bloquearEliminarOficial
+                                      ? "No se puede desvincular el proveedor oficial mientras exista un alternativo."
+                                      : "Desvincular"
+                                  }
+                                  aria-label={`Desvincular ${p.proveedor.prefijo}`}
+                                >
+                                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          ) : null}
                         </TableRow>
                       );
                     })}

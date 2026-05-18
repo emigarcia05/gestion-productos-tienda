@@ -1,9 +1,6 @@
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
-import { listarMontosBrutosFinBalIvaDebPorAnio } from "@/services/finBalIvaDeb.service";
-import {
-  sumarIvaCreditoPorMesAnio,
-  ivaCreditoDesdeTotalConIva21,
-} from "@/services/finBalPosicionIva.service";
+import { listarIvaDebitoFinBalPorAnio } from "@/services/finBalIvaDeb.service";
+import { sumarIvaCreditoPorMesAnio } from "@/services/finBalPosicionIva.service";
 import { listarSaldoManualPosicionIvaPorAnio } from "@/services/finBalPosicionIvaSaldoManual.service";
 
 /** Inicio del acumulado «IVA SALDO» usado en `pxComparablePedidoUrgenteReposicion` (Pedido Urgente / reposición). */
@@ -25,8 +22,8 @@ export async function sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(): 
       const mesFin = anio === anioActual ? mesActual : 12;
       if (mesInicio > mesFin) continue;
 
-      const [brutosPorMes, creditoPorMes, manualPorMes] = await Promise.all([
-        listarMontosBrutosFinBalIvaDebPorAnio(anio),
+      const [debitoPorMes, creditoPorMes, manualPorMes] = await Promise.all([
+        listarIvaDebitoFinBalPorAnio(anio),
         sumarIvaCreditoPorMesAnio(anio),
         listarSaldoManualPosicionIvaPorAnio(anio),
       ]);
@@ -34,7 +31,7 @@ export async function sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(): 
       for (let mes = mesInicio; mes <= mesFin; mes++) {
         const ix = mes - 1;
         const manual = manualPorMes[ix];
-        const debito = ivaCreditoDesdeTotalConIva21(brutosPorMes[ix] ?? 0);
+        const debito = debitoPorMes[ix] ?? 0;
         const credito = creditoPorMes[ix] ?? 0;
         const calculado = debito - credito;
         const saldoMes = manual !== null ? manual : calculado;

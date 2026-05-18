@@ -386,8 +386,8 @@ model FinBalVtas {
 }
 
 /**
- * Líneas importadas desde CSV AFIP (ventas / liquidación). Posición de IVA · débito:
- * se agrupa `imp_total` por mes de `fecha_emision` y se aplica `round(bruto − bruto/1,21)` al total mensual.
+ * Líneas importadas desde TXT AFIP (comprobantes emitidos, registro fijo). Posición de IVA · débito:
+ * se agrupa `imp_iva` por mes de `fecha_emision` (importado del TXT · alícuotas AFIP).
  * Tabla física **`fin_bal_iva_deb_import`** (histórico: `fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`).
  */
 model FinBalIvaDebImportLine {
@@ -397,6 +397,7 @@ model FinBalIvaDebImportLine {
   fechaEmision         DateTime @map("fecha_emision") @db.Date
   denominacionReceptor String   @map("denominacion_receptor") @db.VarChar(512)
   impTotal             Decimal  @map("imp_total") @db.Decimal(14, 2)
+  impIva               Decimal  @default(0) @map("imp_iva") @db.Decimal(14, 2)
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 

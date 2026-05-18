@@ -1,25 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertCircle, CheckCircle2, ChevronDown, FileText } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { importarFinBalIvaDebCsvAction } from "@/actions/finBalIvaDeb";
-import { mapeoAutomaticoIvaDebAfip, type MapeoColumnasIvaDeb } from "@/lib/finBalIvaDebCsv";
-import { parsearCSVCrudo } from "@/lib/parsearImport";
-import type { CampoDestinoIvaDeb } from "@/lib/validations/finBalIvaDebImport";
+import {
+  archivoTxtIvaDebCoincideMes,
+  parsearTxtIvaDebitoAfip,
+} from "@/lib/finBalIvaDebTxt";
+import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
 
@@ -30,100 +23,94 @@ interface Props {
   anio: number;
 }
 
-const CAMPOS: { value: CampoDestinoIvaDeb; label: string; required: boolean }[] = [
-  { value: "fechaEmision", label: "FECHA EMISIÓN", required: true },
-  { value: "denominacionReceptor", label: "DENOMINACIÓN RECEPTOR", required: true },
-  { value: "impTotal", label: "IMP. TOTAL", required: true },
-  { value: "tipoComprobante", label: "TIPO COMPROBANTE", required: false },
-  { value: "puntoVenta", label: "PUNTO DE VENTA", required: false },
-  { value: "numeroDesde", label: "NÚMERO DESDE", required: false },
-  { value: "numeroHasta", label: "NÚMERO HASTA", required: false },
-  { value: "codAutorizacion", label: "CÓD. AUTORIZACIÓN", required: false },
-  { value: "nroDocReceptor", label: "NRO. DOC. RECEPTOR", required: false },
-  { value: "ignorar", label: "IGNORAR COLUMNA", required: false },
-];
-
-const EXTENSIONES = /\.(csv|txt)$/i;
+const MESES: Record<number, string> = {
+  1: "ENERO",
+  2: "FEBRERO",
+  3: "MARZO",
+  4: "ABRIL",
+  5: "MAYO",
+  6: "JUNIO",
+  7: "JULIO",
+  8: "AGOSTO",
+  9: "SEPTIEMBRE",
+  10: "OCTUBRE",
+  11: "NOVIEMBRE",
+  12: "DICIEMBRE",
+};
 
 export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, anio }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
-  const [textoArchivo, setTextoArchivo] = useState<string | null>(null);
-  const [tieneEncabezados, setTieneEncabezados] = useState(true);
-  const [encabezados, setEncabezados] = useState<string[] | null>(null);
-  const [filasCrudas, setFilasCrudas] = useState<string[][]>([]);
-  const [mapeo, setMapeo] = useState<MapeoColumnasIvaDeb>({});
   const [guardando, setGuardando] = useState(false);
+  const [errorParseo, setErrorParseo] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{
+    cantidad: number;
+    totalBruto: number;
+    totalIva: number;
+    erroresFila: number;
+    mesOk: boolean;
+    errorMes: string | null;
+  } | null>(null);
 
-  const reprocesarTexto = useCallback((raw: string, conEncabezados: boolean) => {
-    const { encabezados: enc, filas } = parsearCSVCrudo(raw, conEncabezados);
-    setEncabezados(enc);
-    setFilasCrudas(filas);
-    const numCols = enc?.length ?? filas[0]?.length ?? 0;
-    const inicial: MapeoColumnasIvaDeb = {};
-    if (enc && enc.length > 0) {
-      Object.assign(inicial, mapeoAutomaticoIvaDebAfip(enc));
-    } else {
-      for (let i = 0; i < numCols; i++) inicial[i] = "ignorar";
-    }
-    setMapeo(inicial);
-  }, []);
+  const etiquetaMes = MESES[mes] ?? String(mes);
+
+  const puedeImportar =
+    !!archivo &&
+    preview != null &&
+    preview.mesOk &&
+    preview.cantidad > 0 &&
+    preview.totalIva > 0 &&
+    !guardando;
 
   useEffect(() => {
     if (!open) return;
     setArchivo(null);
-    setTextoArchivo(null);
-    setTieneEncabezados(true);
-    setEncabezados(null);
-    setFilasCrudas([]);
-    setMapeo({});
+    setPreview(null);
+    setErrorParseo(null);
     if (inputRef.current) inputRef.current.value = "";
   }, [open]);
 
-  useEffect(() => {
-    if (!textoArchivo) return;
-    try {
-      reprocesarTexto(textoArchivo, tieneEncabezados);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Error al leer el archivo.");
-      setArchivo(null);
-      setTextoArchivo(null);
-      if (inputRef.current) inputRef.current.value = "";
+  function analizarTexto(raw: string) {
+    const parsed = parsearTxtIvaDebitoAfip(raw);
+    if (!parsed.ok) {
+      setPreview(null);
+      setErrorParseo(parsed.error);
+      return;
     }
-  }, [tieneEncabezados, textoArchivo, reprocesarTexto]);
-
-  const camposRequeridosMapeados = CAMPOS.filter((c) => c.required).every((c) =>
-    Object.values(mapeo).includes(c.value)
-  );
+    const mesCheck = archivoTxtIvaDebCoincideMes(parsed.filas, mes, anio);
+    setErrorParseo(null);
+    setPreview({
+      cantidad: parsed.filas.length,
+      totalBruto: parsed.totalBruto,
+      totalIva: parsed.totalIva,
+      erroresFila: parsed.erroresFila,
+      mesOk: mesCheck.ok,
+      errorMes: mesCheck.ok ? null : mesCheck.error,
+    });
+  }
 
   async function handleImportar() {
-    if (!archivo || !camposRequeridosMapeados || guardando) return;
+    if (!archivo || !puedeImportar) return;
     setGuardando(true);
     try {
       const fd = new FormData();
       fd.set("mes", String(mes));
       fd.set("anio", String(anio));
       fd.set("archivo", archivo);
-      fd.set("tieneEncabezados", tieneEncabezados ? "true" : "false");
-      fd.set("mapeo", JSON.stringify(mapeo));
       const r = await importarFinBalIvaDebCsvAction(fd);
       if (!r.ok) {
         toast.error(r.error ?? "No se pudo importar.");
         return;
       }
       const d = r.data;
-      const emitidosPeriodo = d.insertados + d.actualizados;
-      let msg = `Importación lista: ${emitidosPeriodo} comprobante(s) emitidos en el período · ${d.insertados} creado(s) · ${d.actualizados} actualización(es).`;
-      const extras: string[] = [];
-      if (d.ignoradasOtroMes > 0) {
-        extras.push(`${d.ignoradasOtroMes} omitido(s) (otro mes)`);
+      const n = d.insertados + d.actualizados;
+      let msg = `Importación lista: ${n} comprobante(s) · total bruto $${fmtPrecio(d.totalBruto)} · IVA débito $${fmtPrecio(d.totalIva)}.`;
+      if (d.insertados > 0 || d.actualizados > 0) {
+        msg += ` ${d.insertados} creado(s) · ${d.actualizados} actualización(es).`;
       }
       if (d.ignoradasInvalidas > 0) {
-        extras.push(`${d.ignoradasInvalidas} fila(s) inválida(s)`);
-      }
-      if (extras.length > 0) {
-        msg += ` ${extras.join(" · ")}.`;
+        msg += ` ${d.ignoradasInvalidas} línea(s) omitida(s) por formato inválido.`;
       }
       toast.success(msg);
       onOpenChange(false);
@@ -136,13 +123,15 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
   function onPickFile(f: File | null) {
     if (!f) {
       setArchivo(null);
-      setTextoArchivo(null);
+      setPreview(null);
+      setErrorParseo(null);
       return;
     }
-    if (!EXTENSIONES.test(f.name)) {
-      toast.error("Solo se permiten archivos .csv o .txt");
+    if (!f.name.toLowerCase().endsWith(".txt")) {
+      toast.error("Solo se permiten archivos .txt");
       setArchivo(null);
-      setTextoArchivo(null);
+      setPreview(null);
+      setErrorParseo(null);
       if (inputRef.current) inputRef.current.value = "";
       return;
     }
@@ -150,19 +139,22 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
     const reader = new FileReader();
     reader.onload = (e) => {
       const raw = (e.target?.result as string) ?? "";
-      setTextoArchivo(raw);
+      analizarTexto(raw);
     };
     reader.onerror = () => {
       toast.error("No se pudo leer el archivo.");
       setArchivo(null);
-      setTextoArchivo(null);
+      setPreview(null);
+      setErrorParseo(null);
     };
     reader.readAsText(f, "UTF-8");
   }
 
-  const colLabels =
-    encabezados ?? filasCrudas[0]?.map((_, i) => `Columna ${i + 1}`) ?? [];
-  const filaEjemplo = filasCrudas[0] ?? [];
+  const resumenClase = useMemo(() => {
+    if (!preview) return "";
+    if (!preview.mesOk) return "border-destructive/30 bg-destructive/5";
+    return "border-border/50 bg-card/30";
+  }, [preview]);
 
   return (
     <Dialog
@@ -174,8 +166,7 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
     >
       <AppModal
         title="Importar Comprobantes Fiscales Emitidos"
-        size="lg"
-        className="max-w-2xl"
+        size="md"
         actions={
           <>
             <Button
@@ -188,7 +179,7 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
             </Button>
             <Button
               type="button"
-              disabled={!archivo || !camposRequeridosMapeados || guardando}
+              disabled={!puedeImportar}
               onClick={() => void handleImportar()}
             >
               Importar
@@ -197,14 +188,20 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
         }
       >
         <div className="flex flex-col gap-4 text-sm">
+          <p className="text-muted-foreground">
+            Período objetivo: <span className="font-medium text-foreground">{etiquetaMes} {anio}</span>.
+            El TXT es el Libro IVA Digital: cabecera de ventas (266 caracteres) y alícuotas (62 caracteres).
+            Se importa el IVA discriminado del campo «Impuesto liquidado» de las alícuotas.
+          </p>
+
           <div className="space-y-2">
             <input
               ref={inputRef}
               id="fin-bal-iva-deb-archivo"
               type="file"
-              accept=".csv,.txt,text/csv,text/plain"
+              accept=".txt,text/plain"
               className="hidden"
-              aria-label="Archivo comprobantes fiscales emitidos"
+              aria-label="Archivo comprobantes fiscales emitidos TXT"
               disabled={guardando}
               onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
             />
@@ -215,124 +212,67 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
               disabled={guardando}
               onClick={() => inputRef.current?.click()}
             >
-              {archivo ? archivo.name : "Seleccionar archivo .csv o .txt"}
+              {archivo ? archivo.name : "Seleccionar archivo .txt"}
             </Button>
           </div>
 
-          {archivo && (
-            <>
-              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/30 px-3 py-2 min-w-0">
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm truncate">{archivo.name}</span>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  ({filasCrudas.length} fila{filasCrudas.length !== 1 ? "s" : ""})
-                </span>
+          {errorParseo && (
+            <p className="flex items-start gap-2 text-destructive text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
+              {errorParseo}
+            </p>
+          )}
+
+          {archivo && preview && (
+            <div className={cn("rounded-lg border px-3 py-3 space-y-2", resumenClase)}>
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
+                <span className="truncate font-medium">{archivo.name}</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-2 items-center">
-                <span className="text-sm font-medium text-muted-foreground">
-                  LOS DATOS TIENEN ENCABEZADOS
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTieneEncabezados(true)}
-                    className={cn(
-                      "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                      tieneEncabezados
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                    )}
-                  >
-                    SÍ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTieneEncabezados(false)}
-                    className={cn(
-                      "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                      !tieneEncabezados
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                    )}
-                  >
-                    NO
-                  </button>
+              <dl className="grid grid-cols-1 gap-1.5 text-sm">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-muted-foreground">Comprobantes</dt>
+                  <dd className="tabular-nums font-medium">{preview.cantidad}</dd>
                 </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-muted-foreground">Total bruto (con IVA)</dt>
+                  <dd className="tabular-nums font-medium">${fmtPrecio(preview.totalBruto)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-muted-foreground">IVA débito (archivo)</dt>
+                  <dd className="tabular-nums font-semibold text-primary">${fmtPrecio(preview.totalIva)}</dd>
+                </div>
+              </dl>
+
+              {preview.erroresFila > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {preview.erroresFila} línea(s) ignorada(s) por formato inválido.
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+                    preview.mesOk ? BADGE_SUCCESS_TINT_CLASS : "bg-destructive/10 text-destructive border-destructive/20",
+                  )}
+                >
+                  {preview.mesOk ? (
+                    <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden />
+                  ) : (
+                    <AlertCircle className="h-3 w-3 mr-1" aria-hidden />
+                  )}
+                  {preview.mesOk
+                    ? `Mes ${etiquetaMes} ${anio} confirmado`
+                    : "Mes no coincide"}
+                </span>
               </div>
 
-              {colLabels.length > 0 && (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    Asigná cada columna del archivo a los datos del comprobante. El separador
-                    (punto y coma, coma o tabulador) se detecta automáticamente.
-                  </p>
-                  <div className="rounded-lg border border-border/50 overflow-hidden bg-card max-h-[240px] overflow-y-auto w-full min-w-0">
-                    <Table variant="compact" className="table-fixed w-full">
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="py-2 px-3 text-xs w-[45%]">COLUMNA</TableHead>
-                          <TableHead className="py-2 px-3 text-xs w-[55%]">MAPEAR A</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {colLabels.map((label, i) => (
-                          <TableRow key={i}>
-                            <TableCell className="py-2 px-3 font-mono text-xs truncate">
-                              {label?.trim() ? label : (filaEjemplo[i] ?? "—")}
-                            </TableCell>
-                            <TableCell className="py-2 px-3">
-                              <div className="relative">
-                                <select
-                                  value={mapeo[i] ?? "ignorar"}
-                                  onChange={(e) =>
-                                    setMapeo((prev) => ({
-                                      ...prev,
-                                      [i]: e.target.value as CampoDestinoIvaDeb,
-                                    }))
-                                  }
-                                  className="w-full appearance-none rounded border border-input bg-background px-2 py-1.5 pr-6 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                                  disabled={guardando}
-                                >
-                                  {CAMPOS.map((c) => (
-                                    <option key={c.value} value={c.value}>
-                                      {c.required ? `${c.label} *` : c.label}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {CAMPOS.filter((c) => c.required).map((c) => {
-                      const asignado = Object.values(mapeo).includes(c.value);
-                      return (
-                        <Badge
-                          key={c.value}
-                          className={
-                            asignado
-                              ? BADGE_SUCCESS_TINT_CLASS
-                              : "bg-destructive/10 text-destructive border-destructive/20"
-                          }
-                        >
-                          {asignado ? (
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                          ) : (
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                          )}
-                          {c.label}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </>
+              {preview.errorMes && (
+                <p className="text-xs text-destructive">{preview.errorMes}</p>
               )}
-            </>
+            </div>
           )}
         </div>
       </AppModal>

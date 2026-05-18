@@ -119,6 +119,7 @@ export default function TablaTienda({
           modalAbierto === item.id ? (
             <VincularModal
               key={item.id}
+              rol={rol}
               itemTiendaId={item.id}
               itemDescripcion={item.descripcion}
               codigoExterno={item.codigoExterno}

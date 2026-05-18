@@ -27,7 +27,6 @@ import type {
   DetalleLineaIvaCreditoBalance,
   DetalleLineaIvaCreditoCompraMercaderia,
 } from "@/services/finBalPosicionIva.service";
-import { ivaCreditoDesdeTotalConIva21 } from "@/lib/ivaDesdeTotalBruto21";
 import type { DetalleLineaIvaDebitoBalance } from "@/services/finBalIvaDeb.service";
 import ImportarIvaDebitoCsvModal from "@/components/finanzas/ImportarIvaDebitoCsvModal";
 import EditarIvaSaldoManualModal from "@/components/finanzas/EditarIvaSaldoManualModal";
@@ -491,7 +490,7 @@ export default function PosicionIvaBalanceClient({
                             {celdaMontoPesos(f.impTotal)}
                           </TableCell>
                           <TableCell className={TD_NUM}>
-                            {celdaMontoPesos(ivaCreditoDesdeTotalConIva21(f.impTotal))}
+                            {celdaMontoPesos(f.impIva)}
                           </TableCell>
                         </TableRow>
                       ))

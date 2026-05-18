@@ -1,29 +1,30 @@
+import { createHash } from "crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { FilaCsvIvaDebParseada } from "@/lib/finBalIvaDebCsv";
 import {
-  filaPerteneceMesAnio,
-  parsearCsvIvaDebitoAfip,
-  parsearFilasIvaDebitoConMapeo,
-  type FilaCsvIvaDebParseada,
-  type MapeoColumnasIvaDeb,
-} from "@/lib/finBalIvaDebCsv";
-import { parsearCSVCrudo } from "@/lib/parsearImport";
+  archivoTxtIvaDebCoincideMes,
+  filasTxtConDedupeKey,
+  parsearTxtIvaDebitoAfip,
+} from "@/lib/finBalIvaDebTxt";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import type { ServiceResult } from "@/types";
 
-export interface ImportarIvaDebCsvResultado {
+export interface ImportarIvaDebTxtResultado {
   insertados: number;
   actualizados: number;
-  ignoradasOtroMes: number;
+  totalBruto: number;
+  totalIva: number;
   ignoradasInvalidas: number;
 }
 
-/** Línea de detalle IVA débito · importadas desde CSV (`fin_bal_iva_deb_import`). */
+/** Línea de detalle IVA débito · importadas desde TXT (`fin_bal_iva_deb_import`). */
 export interface DetalleLineaIvaDebitoBalance {
   id: string;
   fechaEmisionIso: string;
   denominacionReceptor: string;
   impTotal: number;
+  impIva: number;
 }
 
 function isoYmdUtcDesdeDbDate(d: Date): string {
@@ -52,6 +53,7 @@ export async function listarDetalleIvaDebitoMes(params: {
       fechaEmision: true,
       denominacionReceptor: true,
       impTotal: true,
+      impIva: true,
     },
   });
   return rows.map((r) => ({
@@ -59,11 +61,12 @@ export async function listarDetalleIvaDebitoMes(params: {
     fechaEmisionIso: isoYmdUtcDesdeDbDate(r.fechaEmision),
     denominacionReceptor: r.denominacionReceptor,
     impTotal: Number(r.impTotal),
+    impIva: Number(r.impIva),
   }));
 }
 
-/** Suma bruta `imp_total` por mes calendario del año (índice 0 = enero). */
-export async function listarMontosBrutosFinBalIvaDebPorAnio(anio: number): Promise<number[]> {
+/** Suma `imp_iva` por mes calendario del año (índice 0 = enero). */
+export async function listarIvaDebitoFinBalPorAnio(anio: number): Promise<number[]> {
   const out = Array.from({ length: 12 }, () => 0);
   const rows = await prisma.finBalIvaDebImportLine.findMany({
     where: {
@@ -72,16 +75,19 @@ export async function listarMontosBrutosFinBalIvaDebPorAnio(anio: number): Promi
         lt: new Date(Date.UTC(anio + 1, 0, 1)),
       },
     },
-    select: { fechaEmision: true, impTotal: true },
+    select: { fechaEmision: true, impIva: true },
   });
   for (const r of rows) {
     const y = r.fechaEmision.getUTCFullYear();
     const mes = r.fechaEmision.getUTCMonth() + 1;
     if (y !== anio || mes < 1 || mes > 12) continue;
-    out[mes - 1] += Number(r.impTotal);
+    out[mes - 1] += Number(r.impIva);
   }
   return out;
 }
+
+/** @deprecated Usar `listarIvaDebitoFinBalPorAnio`. */
+export const listarMontosBrutosFinBalIvaDebPorAnio = listarIvaDebitoFinBalPorAnio;
 
 async function upsertLinea(
   tx: Prisma.TransactionClient,
@@ -98,72 +104,55 @@ async function upsertLinea(
       fechaEmision: f.fechaEmision,
       denominacionReceptor: f.denominacionReceptor,
       impTotal: f.impTotal,
+      impIva: f.impIva,
     },
     update: {
       fechaEmision: f.fechaEmision,
       denominacionReceptor: f.denominacionReceptor,
       impTotal: f.impTotal,
+      impIva: f.impIva,
     },
   });
   return existing ? "update" : "insert";
 }
 
 /**
- * Importa filas del CSV; solo persiste comprobantes cuya fecha cae en `mes`/`anio`
- * (coincide con la fila de la tabla desde la que se abrió el modal).
+ * Importa TXT Libro IVA Digital (cabecera + alícuotas).
+ * Valida mes y persiste `imp_iva` discriminado por comprobante.
  */
-export async function importarCsvIvaDebitoMes(params: {
-  textoCsv: string;
+export async function importarTxtIvaDebitoMes(params: {
+  textoTxt: string;
   mes: number;
   anio: number;
-  mapeo?: MapeoColumnasIvaDeb;
-  tieneEncabezados?: boolean;
-}): Promise<ServiceResult<ImportarIvaDebCsvResultado>> {
-  const { textoCsv, mes, anio, mapeo, tieneEncabezados = true } = params;
+}): Promise<ServiceResult<ImportarIvaDebTxtResultado>> {
+  const { textoTxt, mes, anio } = params;
   if (mes < 1 || mes > 12 || anio < 2000 || anio > 2100) {
     return { success: false, error: "Período inválido." };
   }
 
-  let parsed;
-  if (mapeo && Object.keys(mapeo).length > 0) {
-    try {
-      const { filas } = parsearCSVCrudo(textoCsv, tieneEncabezados);
-      parsed = parsearFilasIvaDebitoConMapeo(filas, mapeo);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "No se pudo leer el archivo.";
-      return { success: false, error: msg };
-    }
-  } else {
-    parsed = parsearCsvIvaDebitoAfip(textoCsv);
-  }
+  const parsed = parsearTxtIvaDebitoAfip(textoTxt);
   if (!parsed.ok) return { success: false, error: parsed.error };
 
-  const delMes = parsed.filas.filter((f) => filaPerteneceMesAnio(f.fechaEmision, mes, anio));
-  const ignoradasOtroMes = parsed.filas.length - delMes.length;
+  const mesOk = archivoTxtIvaDebCoincideMes(parsed.filas, mes, anio);
+  if (!mesOk.ok) return { success: false, error: mesOk.error };
 
-  if (delMes.length === 0) {
-    return {
-      success: false,
-      error:
-        ignoradasOtroMes > 0
-          ? `Ninguna fila pertenece a ${mes}/${anio}. Hay ${ignoradasOtroMes} línea(s) de otros meses.`
-          : "No hay filas para importar.",
-    };
-  }
+  const filas = filasTxtConDedupeKey(parsed.filas, (payload) =>
+    createHash("sha256").update(payload, "utf8").digest("hex"),
+  );
 
   let insertados = 0;
   let actualizados = 0;
 
   try {
     await prisma.$transaction(async (tx) => {
-      for (const f of delMes) {
+      for (const f of filas) {
         const r = await upsertLinea(tx, f);
         if (r === "insert") insertados++;
         else actualizados++;
       }
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "No se pudo guardar el CSV.";
+    const msg = e instanceof Error ? e.message : "No se pudo guardar el TXT.";
     return { success: false, error: msg };
   }
 
@@ -174,8 +163,14 @@ export async function importarCsvIvaDebitoMes(params: {
     data: {
       insertados,
       actualizados,
-      ignoradasOtroMes,
+      totalBruto: parsed.totalBruto,
+      totalIva: parsed.totalIva,
       ignoradasInvalidas: parsed.erroresFila,
     },
   };
 }
+
+/** @deprecated Usar `importarTxtIvaDebitoMes`. */
+export const importarCsvIvaDebitoMes = importarTxtIvaDebitoMes;
+
+export type ImportarIvaDebCsvResultado = ImportarIvaDebTxtResultado;

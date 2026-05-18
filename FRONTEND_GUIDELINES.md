@@ -802,7 +802,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 - **Calc. Litros**: cálculo local; card única a ancho completo del contenedor con título **CALCULO DE LTS** + línea `bg-primary` al `70%`; selectores **FORMA DE CÁLCULO** y **TIPO DE PINTURA**; tablas según forma (paredes, módulo, pileta). **EDITAR RENDIMIENTOS** solo `editor` (modal CRUD `prod_rendimientos`, antes `tipos_pintura_rendimientos`). Los campos **LARGO**, **ANCHO**, **ALTO** y **PROFUNDIDAD** (dimensiones en metros) usan `InputDimensionMts` en `TiendaCalcLitrosPageClient.tsx`: `Input` con `pr-10` + sufijo visual **Mts.** (`text-muted-foreground`, `pointer-events-none`, `aria-hidden`); el valor sigue siendo solo el número; `aria-label` incluye «en metros».
 - Sidebar (`LISTA TIENDA`) por rol:  
   - **editor**: `Vinculacion Con Prov.`, `Control Aumento`, `Control Stock`, `Calc. Tintométrico`, `Calc. Litros`
-  - **simple**: `Control Stock`, `Calc. Tintométrico`, `Calc. Litros`
+  - **simple**: `Vinculacion Con Prov.`, `Control Stock`, `Calc. Tintométrico`, `Calc. Litros` (sin contraseña editor; export masivo y vincular/desvincular siguen solo **editor**)
 
 ## 4. Checklist de PR (Cursor / desarrollador)
 
@@ -913,7 +913,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-11): **`ChequesCajaTesoreriaModal`** — solo filtro **Tenencia** (sin **Vista**); ícono **Transferir** (antes “acreditar”) solo en **ACTUALES** con `tenencia === TIENDA` y cheque no transferido; modal **Destino Cheque** (`DestinoChequeTesoreriaModal`): ambos botones CTA **`Button`** **default**; si el cheque está **al día** (`chequePuedeAcreditarsePorFechaArgentina`) se ofrecen **Acreditar En Cuenta Propia** y **Pago Proveedor**; si está **diferido**, aviso **`CALLOUT_WARNING_CLASS`** y solo **Pago Proveedor**. **Acreditar En Cuenta Propia** → **`AcreditarChequeTesoreriaModal`** (listado solo cajas **`tipo_caja = BANCO`**, `listarCajasTesoreriaTipoBancoAction`; columna **ACCIONES**: `Button` **`size="icon"`** con **`BadgeCheck`**, **`Loader2`** al enviar; `transferirFinTesoreriaChequeAction`). **Pago Proveedor** en **Destino Cheque** abre **`ElegirProveedorPagoChequeTesoreriaModal`** (proveedores `proveedor_mercaderia`, búsqueda, **`listarProveedoresMercaderiaParaPagoChequeTesoreriaAction`**); al elegir fila → `marcarEntregaProveedorFinTesoreriaChequeAction` (`chequeId`, `proveedorId`). **Detalles De Cheques**: `AppModal` `xl` + **`max-w-[calc(48rem*1.3)]`**; `colgroup` cinco/seis columnas (**TRANSFERIDOS**) o siete/ocho (**ACTUALES**) según filtro y rol.*
 
-*Última actualización (2026-05-27): **`/finanzas/posicion-iva`** — **Importar Comprobantes Fiscales Emitidos** (`ImportarIvaDebitoCsvModal`): archivos **`.csv` o `.txt`**; toggle **encabezados**; tabla **MAPEAR A** (fecha, denominación, imp. total obligatorios; columnas AFIP opcionales para deduplicar). Separador autodetectado (`parsearCSVCrudo`).*
+*Última actualización (2026-05-27): **Vinculacion Con Prov.** — acceso **simple** (`PERMISOS.tienda.acceso` + `tabla.vinculos`); modal de vínculos en solo lectura para **simple** (sin vincular/desvincular ni export masivo).*
+
+*Última actualización (2026-05-27): **`/finanzas/posicion-iva`** — import TXT: cabecera (266) + alícuotas (62). Vista previa muestra **IVA débito (archivo)** importado (no calculado). Detalle IVA débito: columna **IVA DÉBITO** = `impIva` persistido.*
 
 *Última actualización (2026-05-27): **Control Stock** — botón **Check** en **STOCK** (confirmar sin variación); columna **ÚLT. CONTROL**; export Excel solo con variación; persistencia de control con variación o confirmación al exportar. Ver §1 **Stock — Acciones del encabezado**.*
 

@@ -54,8 +54,8 @@ export const PERMISOS = {
 
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
-    /** Vinculacion Con Prov. (/tienda). */
-    acceso: { simple: false, editor: true },
+    /** Vinculacion Con Prov. (/gestion-productos/tienda/comp-proveedores). */
+    acceso: { simple: true, editor: true },
     /** Control Aumentos (/tienda/aumentos). */
     controlAumentos: { simple: false, editor: true },
     /** Calc. Tintométrico y Calc. Litros (/tienda/tintometrico, /tienda/litros). */
@@ -71,8 +71,9 @@ export const PERMISOS = {
       proveedorDux: { simple: false, editor: true },
       rubro:        { simple: true,  editor: true },
       subRubro:     { simple: true,  editor: true },
-      vinculado: { simple: false, editor: true },
-      vinculos:     { simple: false, editor: true },
+      vinculado: { simple: true, editor: true },
+      /** Abrir modal de vínculos (doble clic). Vincular/desvincular en Action sigue con `esEditor()`. */
+      vinculos: { simple: true, editor: true },
     },
   },
 
