@@ -714,6 +714,7 @@ function descripcionTiendaUnificadaParaGrupoPedidoUrgente(
  * Pantalla Pedido Urgente (filtros `urgente` o `cualquier`): filas **`prod_precios_provee`** con **`habilitado = true`**.
  * Varias filas con el mismo **`codTiendaVinculo`** se agrupan en **una sola fila** de UI (`id` `agrup-tienda:{cod_tienda}`, `miembrosAgrupacion`);
  * la paginación y el **`total`** cuentan **grupos** (fila vista), no filas crudas. Filas sin vínculo a tienda siguen 1:1 por `cod_ext`.
+ * Filtro **`proveedorId`**: solo reduce qué **grupos/filas** entran al listado (al menos un miembro del grupo coincide); **`miembrosAgrupacion`** sigue incluyendo **todos** los proveedores del vínculo para el modal «Elegir Proveedor».
  * `prefijo` vacío en la fila agrupada; **`descripcion`** unifica **`descripcion_tienda`** entre miembros.
  * Cantidades / flags de urgente y reposición se leen de **`prod_ped_merc`** según sucursal.
  */
@@ -736,14 +737,11 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     return { items: [], total: 0, totalPaginas: 1 };
   }
 
-  const listaWhereParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
-  if (prov) {
-    listaWhereParts.push({ idProveedor: prov });
-  }
+  const listaWhereBaseParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
   if (busqueda.length >= 3) {
     const tokens = busqueda.trim().split(/\s+/).filter(Boolean);
     if (tokens.length > 0) {
-      listaWhereParts.push({
+      listaWhereBaseParts.push({
         AND: tokens.map((token) => ({
           OR: [
             { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
@@ -758,22 +756,25 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       });
     }
   }
-  const listaWhere: Prisma.ListaPrecioProveedorWhereInput =
-    listaWhereParts.length === 1 ? listaWhereParts[0]! : { AND: listaWhereParts };
+  const listaWhereBase: Prisma.ListaPrecioProveedorWhereInput =
+    listaWhereBaseParts.length === 1 ? listaWhereBaseParts[0]! : { AND: listaWhereBaseParts };
 
   const includeListaPedidoUrgente = {
     proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
     listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
   } as const;
 
+  /** Meta sin filtro de proveedor: conserva todos los miembros del grupo por `codTiendaVinculo`. */
   const meta = await prisma.listaPrecioProveedor.findMany({
-    where: listaWhere,
-    select: { codExt: true, codTiendaVinculo: true },
+    where: listaWhereBase,
+    select: { codExt: true, codTiendaVinculo: true, idProveedor: true },
     orderBy: [{ codTiendaVinculo: "asc" }, { codExt: "asc" }],
   });
 
+  const codExtToProveedor = new Map<string, string>();
   const groupKeyToCodExts = new Map<string, string[]>();
   for (const row of meta) {
+    codExtToProveedor.set(row.codExt, row.idProveedor);
     const ct = row.codTiendaVinculo?.trim();
     const key = ct ? `T:${ct}` : `E:${row.codExt}`;
     const arr = groupKeyToCodExts.get(key) ?? [];
@@ -784,11 +785,17 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     arr.sort((a, b) => a.localeCompare(b));
   }
 
-  const sortedKeys = [...groupKeyToCodExts.keys()].sort((ka, kb) => {
+  let sortedKeys = [...groupKeyToCodExts.keys()].sort((ka, kb) => {
     const a0 = groupKeyToCodExts.get(ka)![0]!;
     const b0 = groupKeyToCodExts.get(kb)![0]!;
     return a0.localeCompare(b0);
   });
+  if (prov) {
+    sortedKeys = sortedKeys.filter((k) => {
+      const cods = groupKeyToCodExts.get(k)!;
+      return cods.some((ce) => codExtToProveedor.get(ce) === prov);
+    });
+  }
 
   const total = sortedKeys.length;
   const totalPaginasLista = total <= 0 ? 1 : Math.ceil(total / pageSize);
@@ -806,7 +813,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
   }
 
   const filas = await prisma.listaPrecioProveedor.findMany({
-    where: { AND: [listaWhere, { codExt: { in: [...codExtSet] } }] },
+    where: { AND: [{ habilitado: true }, { codExt: { in: [...codExtSet] } }] },
     include: includeListaPedidoUrgente,
     orderBy: [{ codTiendaVinculo: "asc" }, { codExt: "asc" }],
   });
