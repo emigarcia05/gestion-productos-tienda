@@ -8,10 +8,7 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { importarFinBalIvaDebCsvAction } from "@/actions/finBalIvaDeb";
-import {
-  archivoTxtIvaDebCoincideMes,
-  parsearTxtIvaDebitoAfip,
-} from "@/lib/finBalIvaDebTxt";
+import { parsearTxtIvaDebitoAfip } from "@/lib/finBalIvaDebTxt";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
@@ -46,22 +43,14 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
   const [errorParseo, setErrorParseo] = useState<string | null>(null);
   const [preview, setPreview] = useState<{
     cantidad: number;
-    totalBruto: number;
     totalIva: number;
     erroresFila: number;
-    mesOk: boolean;
-    errorMes: string | null;
   } | null>(null);
 
   const etiquetaMes = MESES[mes] ?? String(mes);
 
   const puedeImportar =
-    !!archivo &&
-    preview != null &&
-    preview.mesOk &&
-    preview.cantidad > 0 &&
-    preview.totalIva > 0 &&
-    !guardando;
+    !!archivo && preview != null && preview.cantidad > 0 && preview.totalIva > 0 && !guardando;
 
   useEffect(() => {
     if (!open) return;
@@ -72,21 +61,17 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
   }, [open]);
 
   function analizarTexto(raw: string) {
-    const parsed = parsearTxtIvaDebitoAfip(raw);
+    const parsed = parsearTxtIvaDebitoAfip(raw, { mes, anio });
     if (!parsed.ok) {
       setPreview(null);
       setErrorParseo(parsed.error);
       return;
     }
-    const mesCheck = archivoTxtIvaDebCoincideMes(parsed.filas, mes, anio);
     setErrorParseo(null);
     setPreview({
       cantidad: parsed.filas.length,
-      totalBruto: parsed.totalBruto,
       totalIva: parsed.totalIva,
       erroresFila: parsed.erroresFila,
-      mesOk: mesCheck.ok,
-      errorMes: mesCheck.ok ? null : mesCheck.error,
     });
   }
 
@@ -105,12 +90,12 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
       }
       const d = r.data;
       const n = d.insertados + d.actualizados;
-      let msg = `Importación lista: ${n} comprobante(s) · total bruto $${fmtPrecio(d.totalBruto)} · IVA débito $${fmtPrecio(d.totalIva)}.`;
+      let msg = `Importación lista: ${n} alícuota(s) · IVA débito $${fmtPrecio(d.totalIva)} (${etiquetaMes} ${anio}).`;
       if (d.insertados > 0 || d.actualizados > 0) {
         msg += ` ${d.insertados} creado(s) · ${d.actualizados} actualización(es).`;
       }
       if (d.ignoradasInvalidas > 0) {
-        msg += ` ${d.ignoradasInvalidas} línea(s) omitida(s) por formato inválido.`;
+        msg += ` ${d.ignoradasInvalidas} línea(s) omitida(s).`;
       }
       toast.success(msg);
       onOpenChange(false);
@@ -152,7 +137,6 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
 
   const resumenClase = useMemo(() => {
     if (!preview) return "";
-    if (!preview.mesOk) return "border-destructive/30 bg-destructive/5";
     return "border-border/50 bg-card/30";
   }, [preview]);
 
@@ -165,7 +149,7 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
       }}
     >
       <AppModal
-        title="Importar Comprobantes Fiscales Emitidos"
+        title="Importar IVA Débito (Alícuotas)"
         size="md"
         actions={
           <>
@@ -189,9 +173,10 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
       >
         <div className="flex flex-col gap-4 text-sm">
           <p className="text-muted-foreground">
-            Período objetivo: <span className="font-medium text-foreground">{etiquetaMes} {anio}</span>.
-            El TXT es el Libro IVA Digital: cabecera de ventas (266 caracteres) y alícuotas (62 caracteres).
-            Se importa el IVA discriminado del campo «Impuesto liquidado» de las alícuotas.
+            Período: <span className="font-medium text-foreground">{etiquetaMes} {anio}</span>.
+            Subí el TXT de <strong className="font-medium text-foreground">alícuotas</strong> del Libro
+            IVA Digital (62 caracteres por línea). El IVA débito se toma del archivo; la aplicación no
+            lo calcula.
           </p>
 
           <div className="space-y-2">
@@ -201,7 +186,7 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
               type="file"
               accept=".txt,text/plain"
               className="hidden"
-              aria-label="Archivo comprobantes fiscales emitidos TXT"
+              aria-label="Archivo de alícuotas IVA débito TXT"
               disabled={guardando}
               onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
             />
@@ -212,7 +197,7 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
               disabled={guardando}
               onClick={() => inputRef.current?.click()}
             >
-              {archivo ? archivo.name : "Seleccionar archivo .txt"}
+              {archivo ? archivo.name : "Seleccionar archivo .txt de alícuotas"}
             </Button>
           </div>
 
@@ -232,16 +217,14 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
 
               <dl className="grid grid-cols-1 gap-1.5 text-sm">
                 <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Comprobantes</dt>
+                  <dt className="text-muted-foreground">Alícuotas</dt>
                   <dd className="tabular-nums font-medium">{preview.cantidad}</dd>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Total bruto (con IVA)</dt>
-                  <dd className="tabular-nums font-medium">${fmtPrecio(preview.totalBruto)}</dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">IVA débito (archivo)</dt>
-                  <dd className="tabular-nums font-semibold text-primary">${fmtPrecio(preview.totalIva)}</dd>
+                  <dt className="text-muted-foreground">IVA débito total</dt>
+                  <dd className="tabular-nums font-semibold text-primary">
+                    ${fmtPrecio(preview.totalIva)}
+                  </dd>
                 </div>
               </dl>
 
@@ -251,27 +234,15 @@ export default function ImportarIvaDebitoCsvModal({ open, onOpenChange, mes, ani
                 </p>
               )}
 
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                    preview.mesOk ? BADGE_SUCCESS_TINT_CLASS : "bg-destructive/10 text-destructive border-destructive/20",
-                  )}
-                >
-                  {preview.mesOk ? (
-                    <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden />
-                  ) : (
-                    <AlertCircle className="h-3 w-3 mr-1" aria-hidden />
-                  )}
-                  {preview.mesOk
-                    ? `Mes ${etiquetaMes} ${anio} confirmado`
-                    : "Mes no coincide"}
-                </span>
-              </div>
-
-              {preview.errorMes && (
-                <p className="text-xs text-destructive">{preview.errorMes}</p>
-              )}
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+                  BADGE_SUCCESS_TINT_CLASS,
+                )}
+              >
+                <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden />
+                {etiquetaMes} {anio}
+              </span>
             </div>
           )}
         </div>

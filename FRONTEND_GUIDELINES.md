@@ -915,7 +915,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **Vinculacion Con Prov.** — acceso **simple** (`PERMISOS.tienda.acceso` + `tabla.vinculos`); modal de vínculos en solo lectura para **simple** (sin vincular/desvincular ni export masivo).*
 
-*Última actualización (2026-05-27): **`/finanzas/posicion-iva`** — import TXT: cabecera (266) + alícuotas (62). Vista previa muestra **IVA débito (archivo)** importado (no calculado). Detalle IVA débito: columna **IVA DÉBITO** = `impIva` persistido.*
+*Última actualización (2026-05-27): **`/finanzas/posicion-iva`** — import solo **TXT alícuotas** (62 caracteres). Modal **Importar IVA Débito (Alícuotas)**; IVA de columna **IVA DÉBITO** = valor del archivo (sin fórmula 21 %).*
 
 *Última actualización (2026-05-27): **Control Stock** — botón **Check** en **STOCK** (confirmar sin variación); columna **ÚLT. CONTROL**; export Excel solo con variación; persistencia de control con variación o confirmación al exportar. Ver §1 **Stock — Acciones del encabezado**.*
 

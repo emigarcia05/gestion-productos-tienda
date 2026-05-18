@@ -2,11 +2,7 @@ import { createHash } from "crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { FilaCsvIvaDebParseada } from "@/lib/finBalIvaDebCsv";
-import {
-  archivoTxtIvaDebCoincideMes,
-  filasTxtConDedupeKey,
-  parsearTxtIvaDebitoAfip,
-} from "@/lib/finBalIvaDebTxt";
+import { filasTxtConDedupeKey, parsearTxtIvaDebitoAfip } from "@/lib/finBalIvaDebTxt";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import type { ServiceResult } from "@/types";
 
@@ -117,8 +113,7 @@ async function upsertLinea(
 }
 
 /**
- * Importa TXT Libro IVA Digital (cabecera + alícuotas).
- * Valida mes y persiste `imp_iva` discriminado por comprobante.
+ * Importa TXT de alícuotas (62 caracteres). Persiste `imp_iva` del archivo (sin cálculo).
  */
 export async function importarTxtIvaDebitoMes(params: {
   textoTxt: string;
@@ -130,11 +125,8 @@ export async function importarTxtIvaDebitoMes(params: {
     return { success: false, error: "Período inválido." };
   }
 
-  const parsed = parsearTxtIvaDebitoAfip(textoTxt);
+  const parsed = parsearTxtIvaDebitoAfip(textoTxt, { mes, anio });
   if (!parsed.ok) return { success: false, error: parsed.error };
-
-  const mesOk = archivoTxtIvaDebCoincideMes(parsed.filas, mes, anio);
-  if (!mesOk.ok) return { success: false, error: mesOk.error };
 
   const filas = filasTxtConDedupeKey(parsed.filas, (payload) =>
     createHash("sha256").update(payload, "utf8").digest("hex"),
