@@ -321,6 +321,9 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                 );
                 const fechaPersistida =
                   ultimosControles[item.id] ?? item.ultimaExportacionExcel;
+                const tieneVariacion = Boolean(
+                  getVariacionStock(item.stock, stocksEditados[item.id])
+                );
 
                 return (
                   <TableRow key={item.id}>
@@ -359,6 +362,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                           type="button"
                           variant="ghost"
                           size="icon"
+                          disabled={tieneVariacion}
                           className={cn(
                             TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
                             confirmado && "ring-2 ring-primary ring-offset-1"
@@ -366,9 +370,16 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                           aria-label={
                             confirmado
                               ? "Quitar confirmación de control"
-                              : "Confirmar control sin variación"
+                              : tieneVariacion
+                                ? "No se puede confirmar: hay variación de stock"
+                                : "Confirmar control sin variación"
                           }
                           aria-pressed={confirmado}
+                          title={
+                            tieneVariacion
+                              ? "Con variación de stock usá Exportar Excel o igualá el valor al stock original"
+                              : undefined
+                          }
                           onClick={() => toggleConfirmacionControl(item.id, item.stock)}
                         >
                           <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />

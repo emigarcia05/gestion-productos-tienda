@@ -63,12 +63,17 @@ interface SubmoduleItem {
   children?: SubmoduleItem[];
 }
 
-const MODULES: {
-  id: ModuleId;
+type NavModule = {
+  id: SidebarModuleId;
   label: string;
   icon: React.ReactNode;
   submodules: SubmoduleItem[];
-}[] = [
+  /** Enlace directo en sidebar (sin submódulos desplegables). */
+  href?: string;
+  permiso?: { simple: boolean; editor: boolean };
+};
+
+const MODULES: NavModule[] = [
   {
     id: "pedidos",
     label: "PEDIDO DE MERCADERÍA",
@@ -136,23 +141,13 @@ const MODULES: {
     id: "procesos",
     label: "PROCESOS",
     icon: <ListChecks className={iconClass} />,
-    submodules: [
-      {
-        href: "/gestion-productos/procesos",
-        label: "Guías De Importación",
-        icon: <ListChecks className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.procesos.acceso,
-      },
-    ],
+    href: "/gestion-productos/procesos",
+    permiso: PERMISOS.procesos.acceso,
+    submodules: [],
   },
 ];
 
-const FINANZAS_MODULES: {
-  id: FinanzasModuleId;
-  label: string;
-  icon: React.ReactNode;
-  submodules: SubmoduleItem[];
-}[] = [
+const FINANZAS_MODULES: NavModule[] = [
   {
     id: "balance",
     label: "BALANCE",
@@ -270,21 +265,22 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   const mainAreaId = getMainAppAreaIdFromPathname(pathname);
   const [openId, setOpenId] = useState<SidebarModuleId | null>(() => pathModule);
 
-  const modulesForArea =
+  const modulesForArea: NavModule[] =
     mainAreaId === "gestion-productos"
       ? MODULES
       : mainAreaId === "finanzas"
         ? FINANZAS_MODULES
         : [];
 
-  const visibleModules = modulesForArea.filter((module) =>
-    module.submodules.some((sub) => {
+  const visibleModules: NavModule[] = modulesForArea.filter((module) => {
+    if (module.href && module.permiso && puede(rol, module.permiso)) return true;
+    return module.submodules.some((sub) => {
       const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
       const childAllowed =
         sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
       return selfAllowed || childAllowed;
-    })
-  );
+    });
+  });
 
   useEffect(() => {
     setOpenId(pathModule);
@@ -295,6 +291,29 @@ export default function Sidebar({ rol }: { rol: Rol }) {
       <nav className="flex flex-col gap-0.5 px-4 pt-3 pb-4 overflow-y-auto" aria-label="Navegación principal">
         {visibleModules.length > 0 ? (
           visibleModules.map((module) => {
+            if (module.href) {
+              const active = isSubmoduleActive(pathname, module.href);
+              return (
+                <Link
+                  key={module.id}
+                  href={module.href}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                    "[&>span:first-child_svg]:text-sidebar-foreground",
+                    active
+                      ? "bg-sidebar-accent"
+                      : "hover:bg-sidebar-accent"
+                  )}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                    {module.icon}
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">{module.label}</span>
+                </Link>
+              );
+            }
+
             const isOpen = openId === module.id;
             return (
               <Collapsible

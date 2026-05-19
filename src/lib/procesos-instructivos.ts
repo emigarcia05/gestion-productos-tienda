@@ -1,4 +1,6 @@
 import { PERMISOS } from "@/lib/permisos";
+import type { Rol } from "@/lib/permisos";
+import { puede } from "@/lib/permisos";
 
 type PermisoRol = { simple: boolean; editor: boolean };
 
@@ -8,23 +10,34 @@ export interface PasoProcesoInstructivo {
   img: string;
 }
 
+export interface ModuloProcesosDef {
+  id: string;
+  label: string;
+}
+
 export interface ProcesoInstructivoDef {
   id: string;
-  titulo: string;
+  moduloId: string;
+  /** Etiqueta corta en el listado lateral (ej. Imp. Stock). */
+  labelCorto: string;
   descripcion: string;
-  /** Módulo de origen (referencia para el usuario). */
-  origen: string;
   permiso: PermisoRol;
   pasos: readonly PasoProcesoInstructivo[];
 }
 
+export const MODULOS_PROCESOS: readonly ModuloProcesosDef[] = [
+  { id: "importacion-dux", label: "Importacion Datos en Dux" },
+] as const;
+
+export type ModuloProcesosId = (typeof MODULOS_PROCESOS)[number]["id"];
+
 export const PROCESOS_INSTRUCTIVOS: readonly ProcesoInstructivoDef[] = [
   {
     id: "importar-stock",
-    titulo: "Importar Excel De Control Stock",
+    moduloId: "importacion-dux",
+    labelCorto: "Imp. Stock",
     descripcion:
       "Pasos para cargar en DUX el archivo exportado desde Control Stock (ajuste de stock).",
-    origen: "Lista Tienda · Control Stock",
     permiso: PERMISOS.stock.acceso,
     pasos: [
       { titulo: "Paso 1", texto: 'Abrir el módulo "Importar Datos"', img: "/importar_stock_1.png" },
@@ -35,26 +48,11 @@ export const PROCESOS_INSTRUCTIVOS: readonly ProcesoInstructivoDef[] = [
     ],
   },
   {
-    id: "importar-aumentos",
-    titulo: "Importar Excel De Control Aumentos",
+    id: "importar-compra",
+    moduloId: "importacion-dux",
+    labelCorto: "Imp. Compra",
     descripcion:
-      "Pasos para cargar en DUX el archivo exportado desde Control Aumentos (variaciones de costo).",
-    origen: "Lista Tienda · Control Aumentos",
-    permiso: PERMISOS.tienda.controlAumentos,
-    pasos: [
-      { titulo: "Paso 1", texto: 'Abrir el módulo "Importar Datos"', img: "/importar_precios_1.png" },
-      { titulo: "Paso 2", texto: 'Iniciar "Nueva Importacion"', img: "/importar_precios_2.png" },
-      { titulo: "Paso 3", texto: 'Seleccionar "Producto"', img: "/importar_precios_3.png" },
-      { titulo: "Paso 4", texto: "Cargar el archivo descargado", img: "/importar_precios_4.png" },
-      { titulo: "Paso 5", texto: "Seleccionar todos los ítems y guardar", img: "/importar_precios_5.png" },
-    ],
-  },
-  {
-    id: "importar-recepcion",
-    titulo: "Importar Excel De Recepción De Pedido",
-    descripcion:
-      "Pasos para cargar en DUX el Excel generado al recepcionar un pedido en Historial Pedidos.",
-    origen: "Pedido De Mercadería · Historial Pedidos",
+      "Pasos para cargar en DUX el Excel generado al recepcionar un pedido (Historial Pedidos).",
     permiso: PERMISOS.pedidos.acceso,
     pasos: [
       { titulo: "Paso 1", texto: 'Abrir el módulo "Importar Datos".', img: "/importar_compra_1.png" },
@@ -70,4 +68,13 @@ export type ProcesoInstructivoId = (typeof PROCESOS_INSTRUCTIVOS)[number]["id"];
 
 export function getProcesoInstructivoById(id: string): ProcesoInstructivoDef | undefined {
   return PROCESOS_INSTRUCTIVOS.find((p) => p.id === id);
+}
+
+export function listarProcesosVisiblesPorModulo(
+  moduloId: string,
+  rol: Rol
+): ProcesoInstructivoDef[] {
+  return PROCESOS_INSTRUCTIVOS.filter(
+    (p) => p.moduloId === moduloId && puede(rol, p.permiso)
+  );
 }
