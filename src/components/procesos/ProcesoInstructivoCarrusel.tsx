@@ -11,6 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { PasoProcesoInstructivo } from "@/lib/procesos-instructivos";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
+
+const PASO_NAV_ARROW_BUTTON_CLASS = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!h-9 !w-9 shrink-0 rounded-full"
+);
 
 interface Props {
   titulo: string;
@@ -66,12 +72,7 @@ export default function ProcesoInstructivoCarrusel({
   const irAdelante = () => setPasoActual((p) => (p < pasos.length - 1 ? p + 1 : p));
 
   return (
-    <div
-      className={cn(
-        "grid min-h-0 flex-1 grid-rows-[auto_auto_7rem_minmax(0,1fr)] gap-4",
-        className
-      )}
-    >
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
       <h2 className="shrink-0 text-center text-base font-semibold text-foreground">{titulo}</h2>
 
       <div
@@ -81,9 +82,9 @@ export default function ProcesoInstructivoCarrusel({
       >
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 rounded-full"
+          className={PASO_NAV_ARROW_BUTTON_CLASS}
           onClick={irAtras}
           disabled={pasoActual === 0}
           aria-label="Paso anterior"
@@ -102,7 +103,7 @@ export default function ProcesoInstructivoCarrusel({
                 aria-label={`Ir al paso ${i + 1}`}
                 aria-current={esActual ? "step" : undefined}
                 className={cn(
-                  "flex items-center justify-center rounded-full border-2 border-[#0072BB] bg-muted font-semibold text-foreground transition-all",
+                  "flex items-center justify-center rounded-full border-2 border-[#0072BB] bg-muted font-semibold text-black transition-all",
                   esActual ? "h-11 w-11 text-lg" : "h-8 w-8 text-sm"
                 )}
               >
@@ -114,9 +115,9 @@ export default function ProcesoInstructivoCarrusel({
 
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 rounded-full"
+          className={PASO_NAV_ARROW_BUTTON_CLASS}
           onClick={irAdelante}
           disabled={pasoActual === pasos.length - 1}
           aria-label="Paso siguiente"
@@ -137,7 +138,7 @@ export default function ProcesoInstructivoCarrusel({
         <>
           <button
             type="button"
-            className="relative min-h-0 h-full w-full min-w-0 overflow-hidden bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="relative block min-h-0 w-full min-w-0 flex-1 basis-0 overflow-hidden border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_img]:bg-transparent"
             onClick={() => setImagenAmpliada(true)}
             aria-label="Ampliar imagen del paso"
           >
@@ -145,7 +146,7 @@ export default function ProcesoInstructivoCarrusel({
               src={paso.img}
               alt={paso.texto}
               fill
-              className="cursor-zoom-in object-contain object-center"
+              className="cursor-zoom-in bg-transparent object-contain object-center"
               sizes="(max-width: 1200px) 75vw, 900px"
             />
           </button>

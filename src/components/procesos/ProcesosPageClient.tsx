@@ -112,7 +112,7 @@ export default function ProcesosPageClient({ rol }: Props) {
             </nav>
           </div>
 
-          <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-4">
+          <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-4">
             {procesoSeleccionado ? (
               <ProcesoInstructivoCarrusel
                 titulo={procesoSeleccionado.tituloGuia}
