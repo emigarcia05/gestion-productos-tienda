@@ -72,7 +72,7 @@ export default function ProcesoInstructivoCarrusel({
         className
       )}
     >
-      <h2 className="shrink-0 text-base font-semibold text-foreground">{titulo}</h2>
+      <h2 className="shrink-0 text-center text-base font-semibold text-foreground">{titulo}</h2>
 
       <div
         className="flex shrink-0 items-center justify-center gap-3"
@@ -102,10 +102,8 @@ export default function ProcesoInstructivoCarrusel({
                 aria-label={`Ir al paso ${i + 1}`}
                 aria-current={esActual ? "step" : undefined}
                 className={cn(
-                  "flex items-center justify-center rounded-full font-semibold transition-all",
-                  esActual
-                    ? "h-11 w-11 bg-primary text-lg text-primary-foreground shadow-sm ring-2 ring-primary/30"
-                    : "h-8 w-8 bg-muted text-sm text-muted-foreground opacity-75 hover:bg-muted/80 hover:opacity-100"
+                  "flex items-center justify-center rounded-full border-2 border-[#0072BB] bg-muted font-semibold text-foreground transition-all",
+                  esActual ? "h-11 w-11 text-lg" : "h-8 w-8 text-sm"
                 )}
               >
                 {i + 1}
@@ -128,9 +126,10 @@ export default function ProcesoInstructivoCarrusel({
       </div>
 
       <div
-        className="h-28 shrink-0 overflow-y-auto rounded-md border border-border bg-muted/20 px-3 py-2"
+        className="flex h-28 shrink-0 flex-col items-center justify-center gap-1 overflow-y-auto rounded-md border border-border bg-muted/20 px-3 py-2 text-center"
         aria-live="polite"
       >
+        <p className="shrink-0 text-sm font-semibold text-foreground">{paso.titulo}</p>
         <p className="text-sm leading-relaxed text-foreground">{paso.texto}</p>
       </div>
 
@@ -138,7 +137,7 @@ export default function ProcesoInstructivoCarrusel({
         <>
           <button
             type="button"
-            className="relative min-h-0 h-full w-full min-w-0 overflow-hidden rounded-lg bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="relative min-h-0 h-full w-full min-w-0 overflow-hidden bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => setImagenAmpliada(true)}
             aria-label="Ampliar imagen del paso"
           >
@@ -146,26 +145,26 @@ export default function ProcesoInstructivoCarrusel({
               src={paso.img}
               alt={paso.texto}
               fill
-              className="cursor-zoom-in object-contain object-center p-1"
+              className="cursor-zoom-in object-contain object-center"
               sizes="(max-width: 1200px) 75vw, 900px"
             />
           </button>
 
           <Dialog open={imagenAmpliada} onOpenChange={setImagenAmpliada}>
             <DialogContent
-              className="max-h-[92vh] max-w-[min(96vw,56rem)] gap-0 overflow-hidden border-0 p-2 sm:p-3"
+              className="fixed inset-0 top-0 left-0 z-50 flex h-dvh w-dvw max-w-none translate-x-0 translate-y-0 items-center justify-center gap-0 overflow-hidden rounded-none border-0 bg-black/95 p-0 shadow-none [&_[data-slot=dialog-close]]:border-white/40 [&_[data-slot=dialog-close]]:bg-black/50 [&_[data-slot=dialog-close]]:text-white"
               showCloseButton
             >
               <DialogTitle className="sr-only">
                 {titulo} — paso {pasoActual + 1}
               </DialogTitle>
-              <div className="relative aspect-video max-h-[calc(92vh-3rem)] w-full min-h-[12rem]">
+              <div className="relative h-full w-full min-h-0">
                 <Image
                   src={paso.img}
                   alt={paso.texto}
                   fill
                   className="object-contain object-center"
-                  sizes="96vw"
+                  sizes="100vw"
                   priority
                 />
               </div>
