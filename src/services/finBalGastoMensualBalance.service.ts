@@ -215,7 +215,12 @@ export async function listarPendientesDiscriminaIvaCargaMesCatalogo(params: {
     }
 
     const existentes = await prisma.finBalGastoMensual.findMany({
-      where: { mes, anio, gastoFinalId: { in: finals.map((f) => f.id) } },
+      where: {
+        mes,
+        anio,
+        gastoMensualEnAlta: true,
+        gastoFinalId: { in: finals.map((f) => f.id) },
+      },
       select: { gastoFinalId: true },
     });
     const ya = new Set(existentes.map((e) => e.gastoFinalId));
@@ -260,7 +265,12 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
     }
 
     const existentes = await prisma.finBalGastoMensual.findMany({
-      where: { mes, anio, gastoFinalId: { in: finals.map((f) => f.id) } },
+      where: {
+        mes,
+        anio,
+        gastoMensualEnAlta: true,
+        gastoFinalId: { in: finals.map((f) => f.id) },
+      },
       select: { gastoFinalId: true },
     });
     const ya = new Set(existentes.map((e) => e.gastoFinalId));
@@ -296,6 +306,7 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
           monto: 0,
           pagado: 0,
           iva: resolved.data,
+          gastoMensualEnAlta: true,
         },
       });
     });
@@ -496,45 +507,35 @@ export interface FinBalGastoFinalNoMensualListItem {
   diaDevengado: number | null;
   vencimiento: number | null;
   gastoFinalComentarios: string | null;
-  /** Si ya existe `fin_bal_gasto_mensual` para este gasto final y el periodo (mes, año). */
-  yaImputadoEnPeriodo: boolean;
 }
 
 /**
- * Gastos finales no mensuales del catálogo, con indicador de si ya hay imputación en `(mes, anio)`.
+ * Gastos finales no mensuales del catálogo (eventuales). Permite varias imputaciones
+ * del mismo gasto final en el mismo `(mes, anio)` y sucursal.
  */
 export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
   mes: number;
   anio: number;
 }): Promise<FinBalGastoFinalNoMensualListItem[]> {
-  const { mes, anio } = params;
-
-  const [finals, imputadas] = await Promise.all([
-    prisma.finBalGastoFinal.findMany({
-      where: { gastoMensual: false },
-      include: {
-        sucursal: { select: { nombre: true } },
-        proveedor: { select: { nombre: true } },
-        gasto: {
-          select: {
-            nombre: true,
-            rubro: {
-              select: {
-                nombre: true,
-                tipo: { select: { nombre: true } },
-              },
+  void params;
+  const finals = await prisma.finBalGastoFinal.findMany({
+    where: { gastoMensual: false },
+    include: {
+      sucursal: { select: { nombre: true } },
+      proveedor: { select: { nombre: true } },
+      gasto: {
+        select: {
+          nombre: true,
+          rubro: {
+            select: {
+              nombre: true,
+              tipo: { select: { nombre: true } },
             },
           },
         },
       },
-    }),
-    prisma.finBalGastoMensual.findMany({
-      where: { mes, anio },
-      select: { gastoFinalId: true },
-    }),
-  ]);
-
-  const ya = new Set(imputadas.map((i) => i.gastoFinalId));
+    },
+  });
 
   const rows: FinBalGastoFinalNoMensualListItem[] = finals.map((gf) => {
     const comRaw = gf.comentarios?.trim() ?? "";
@@ -549,7 +550,6 @@ export async function listarGastosFinalesNoMensualesConEstadoPeriodo(params: {
       diaDevengado: gf.diaDevengado,
       vencimiento: gf.vencimiento,
       gastoFinalComentarios: comRaw.length > 0 ? comRaw.toUpperCase() : null,
-      yaImputadoEnPeriodo: ya.has(gf.id),
     };
   });
 
@@ -636,18 +636,6 @@ export async function crearImputacionGastoUnicoBalance(params: {
         error: "Elegí una sucursal válida (centro de costo).",
       };
     }
-    const dupe = await prisma.finBalGastoMensual.findUnique({
-      where: {
-        gastoFinalId_mes_anio: { gastoFinalId, mes, anio },
-      },
-      select: { id: true },
-    });
-    if (dupe) {
-      return {
-        success: false,
-        error: "Este gasto único ya tiene imputación en el periodo seleccionado.",
-      };
-    }
     const row = await prisma.finBalGastoMensual.create({
       data: {
         gastoFinalId,
@@ -657,17 +645,12 @@ export async function crearImputacionGastoUnicoBalance(params: {
         pagado,
         imputacionSucursalId: sucursalId,
         iva: ivaResolved.data,
+        gastoMensualEnAlta: false,
       },
       select: { id: true },
     });
     return { success: true, data: { id: row.id } };
   } catch (e: unknown) {
-    if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
-      return {
-        success: false,
-        error: "Este gasto único ya tiene imputación en el periodo seleccionado.",
-      };
-    }
     const msg = e instanceof Error ? e.message : "No se pudo crear la imputación.";
     return { success: false, error: msg };
   }
@@ -858,15 +841,15 @@ export async function obtenerMontoImputacionMesAnterior(params: {
 }): Promise<number | null> {
   const { gastoFinalId, mes, anio } = params;
   const prev = mesAnteriorCalendario(mes, anio);
-  const row = await prisma.finBalGastoMensual.findUnique({
+  const row = await prisma.finBalGastoMensual.findFirst({
     where: {
-      gastoFinalId_mes_anio: {
-        gastoFinalId,
-        mes: prev.mes,
-        anio: prev.anio,
-      },
+      gastoFinalId,
+      mes: prev.mes,
+      anio: prev.anio,
+      gastoMensualEnAlta: true,
     },
     select: { monto: true },
+    orderBy: { createdAt: "desc" },
   });
   return row?.monto ?? null;
 }

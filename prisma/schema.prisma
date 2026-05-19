@@ -326,8 +326,9 @@ model FinBalGastoFinal {
 
 /**
  * Cuota / imputación mensual ligada a un `FinBalGastoFinal`.
- * Fecha de devengo lógica: `new Date(anio, mes - 1, diaDevengado)` usando `diaDevengado` del padre.
- * Restricciones en DB: mes 1–12, anio 2000–2100, monto ≥ 0, 0 ≤ pagado ≤ monto, único (gasto_final_id, mes, anio).
+ * Fecha de devengo lógica: `new Date(anio, mes - 1, diaDevengado)` usando `diaDevengado` del padre (mensual).
+ * Restricciones en DB: mes 1–12, anio 2000–2100, monto ≥ 0, 0 ≤ pagado ≤ monto.
+ * Unicidad `(gasto_final_id, mes, anio)` solo si `gastoMensualEnAlta = true` (índice parcial en PostgreSQL).
  */
 model FinBalGastoMensual {
   id           String   @id @default(cuid())
@@ -338,6 +339,11 @@ model FinBalGastoMensual {
   anio         Int      @map("anio")
   monto        Int
   pagado       Int
+  /**
+   * `true` si la fila proviene de «Cargar mes» (catálogo mensual). En eventuales es `false`
+   * y puede haber N filas por el mismo gasto final en el mismo periodo.
+   */
+  gastoMensualEnAlta Boolean @default(false) @map("gasto_mensual_en_alta")
   /**
    * Sucursal declarada al cargar una imputación (p. ej. gasto eventual sin sucursal en catálogo).
    * Si es NULL, la UI de Balance usa `fin_bal_gasto_final.sucursal_id`.
@@ -354,9 +360,9 @@ model FinBalGastoMensual {
   gastoFinal          FinBalGastoFinal @relation(fields: [gastoFinalId], references: [id], onDelete: Cascade)
   imputacionSucursal  Sucursal?        @relation("FinBalGastoMensualImputacionSucursal", fields: [imputacionSucursalId], references: [id], onDelete: Restrict)
 
-  @@unique([gastoFinalId, mes, anio], map: "fin_bal_gasto_mensual_gasto_mes_anio_ux")
   @@index([anio, mes])
   @@index([imputacionSucursalId])
+  @@index([gastoFinalId, mes, anio])
   @@map("fin_bal_gasto_mensual")
 }
 

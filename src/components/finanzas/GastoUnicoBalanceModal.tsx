@@ -365,15 +365,10 @@ export default function GastoUnicoBalanceModal({
                           type="button"
                           size="sm"
                           className="shrink-0"
-                          disabled={it.yaImputadoEnPeriodo}
-                          title={
-                            it.yaImputadoEnPeriodo
-                              ? "Ya hay imputación en este periodo"
-                              : "Cargar monto y pagado"
-                          }
+                          title="Cargar monto y pagado"
                           onClick={() => irACargar(it)}
                         >
-                          {it.yaImputadoEnPeriodo ? "Ya cargado" : "Cargar"}
+                          Cargar
                         </Button>
                       </li>
                     ))}
