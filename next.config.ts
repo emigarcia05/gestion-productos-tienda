@@ -122,6 +122,7 @@ const nextConfig: NextConfig = {
       { source: "/gestion-productos/pedidos/tintometrico", destination: "/pedidos/tintometrico" },
       { source: "/gestion-productos/pedidos/reposicion", destination: "/pedidos/reposicion" },
       { source: "/gestion-productos/pedidos/historial", destination: "/pedidos/historial" },
+      { source: "/gestion-productos/procesos", destination: "/procesos" },
     ];
   },
 };

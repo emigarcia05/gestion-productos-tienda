@@ -87,6 +87,11 @@ export const PERMISOS = {
     acceso: { simple: true, editor: true },
   },
 
+  // ─── Módulo /gestion-productos/procesos (guías post-exportación Excel → DUX) ─
+  procesos: {
+    acceso: { simple: true, editor: true },
+  },
+
   // ─── Página /importar ─────────────────────────────────────────────────────
   importar: {
     acceso: { simple: false, editor: true },

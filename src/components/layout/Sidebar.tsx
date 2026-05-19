@@ -31,6 +31,7 @@ import {
   BookOpen,
   CircleDollarSign,
   Percent,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -48,7 +49,7 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "proveedores" | "tienda" | "pedidos";
+type ModuleId = "proveedores" | "tienda" | "pedidos" | "procesos";
 type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
@@ -129,6 +130,19 @@ const MODULES: {
       { href: "/gestion-productos/tienda/control-stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
       { href: "/gestion-productos/tienda/calc-tintometrico", label: "Calc. Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
       { href: "/gestion-productos/tienda/calc-litros", label: "Calc. Litros", icon: <Droplets className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
+    ],
+  },
+  {
+    id: "procesos",
+    label: "PROCESOS",
+    icon: <ListChecks className={iconClass} />,
+    submodules: [
+      {
+        href: "/gestion-productos/procesos",
+        label: "Guías De Importación",
+        icon: <ListChecks className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.procesos.acceso,
+      },
     ],
   },
 ];
@@ -222,6 +236,7 @@ function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/gestion-productos/tienda") || pathname.startsWith("/tienda")) return "tienda";
   if (pathname.startsWith("/stock")) return "tienda";
   if (pathname.startsWith("/gestion-productos/pedidos") || pathname.startsWith("/pedidos")) return "pedidos";
+  if (pathname.startsWith("/gestion-productos/procesos") || pathname.startsWith("/procesos")) return "procesos";
   return "proveedores";
 }
 
@@ -245,6 +260,7 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/finanzas/balance/mensual" || pathname === "/finanzas/balance";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
   if (href === "/finanzas/balance/gastos/catalogo") return pathname === "/finanzas/balance/gastos/catalogo";
+  if (href === "/gestion-productos/procesos") return pathname === "/gestion-productos/procesos" || pathname === "/procesos";
   return pathname === href;
 }
 

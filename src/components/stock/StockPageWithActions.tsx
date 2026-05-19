@@ -6,7 +6,6 @@ import TablaStock from "@/components/stock/TablaStock";
 import FiltrosStock from "@/components/stock/FiltrosStock";
 import ImprimirStockButton from "@/components/stock/ImprimirStockButton";
 import ExportarStockButton from "@/components/stock/ExportarStockButton";
-import ExportarStockInstructorModal from "@/components/stock/ExportarStockInstructorModal";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
 import type { TablaStockHandle } from "./TablaStock";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
@@ -45,8 +44,6 @@ export default function StockPageWithActions({
 }: Props) {
   const tableRef = useRef<TablaStockHandle>(null);
   const [totalFiltrados, setTotalFiltrados] = useState<number>(data.items.length);
-  const [showInstructor, setShowInstructor] = useState(false);
-
   const tieneSucursal = sucursalValida !== null;
   const tieneItems = data.items.length > 0;
 
@@ -55,10 +52,7 @@ export default function StockPageWithActions({
       <div className="flex items-center justify-end gap-2">
         {tieneSucursal && tieneItems && (
           <>
-            <ExportarStockButton
-              tableRef={tableRef}
-              onAfterExport={() => setShowInstructor(true)}
-            />
+            <ExportarStockButton tableRef={tableRef} />
             <ImprimirStockButton tableRef={tableRef} />
           </>
         )}
@@ -81,7 +75,6 @@ export default function StockPageWithActions({
 
   return (
     <>
-      <ExportarStockInstructorModal open={showInstructor} onOpenChange={setShowInstructor} />
       <ClassicFilteredTableLayout
         title="Lista Tienda"
         subtitle="Control Stock"

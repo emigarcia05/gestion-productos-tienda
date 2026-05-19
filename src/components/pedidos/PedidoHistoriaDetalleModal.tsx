@@ -28,7 +28,6 @@ import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
-import ExportarRecepcionInstructorModal from "@/components/pedidos/ExportarRecepcionInstructorModal";
 import MontoArInput from "@/components/shared/MontoArInput";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
@@ -42,8 +41,6 @@ import {
   dateToIsoYmdArgentina,
   formatDdMmHhMmArgentina,
 } from "@/lib/fechaArgentina";
-
-const INSTRUCTOR_DELAY_MS = 1500;
 
 /** Texto plano de un error desconocido (throws de Server Actions / runtime). Incluye `digest` si React/Next lo adjuntan. */
 function mensajeErrorDesconocido(e: unknown): string {
@@ -141,8 +138,6 @@ export default function PedidoHistoriaDetalleModal({
   );
   /** Modo de corrección en pedidos RECEPCIONADO (edición local de UI). */
   const [modoCorreccionRecepcionado, setModoCorreccionRecepcionado] = useState(false);
-  const [showExportInstructor, setShowExportInstructor] = useState(false);
-
   /**
    * Modal "¿La compra genera comprobante fiscal?" — solo se abre cuando
    * `proveedor.iva === PREGUNTA` antes de cualquier disparador del export.
@@ -223,7 +218,6 @@ export default function PedidoHistoriaDetalleModal({
       setFechaRecepcion("");
       setCheckListConfirmedByItem({});
       setModoCorreccionRecepcionado(false);
-      setShowExportInstructor(false);
       // Si el modal de detalle se reabre con una promesa de decisión fiscal viva,
       // la cancelamos para evitar resolvers colgados entre aperturas.
       if (decisionFiscalResolverRef.current) {
@@ -511,7 +505,6 @@ export default function PedidoHistoriaDetalleModal({
         return false;
       }
       descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
-      setTimeout(() => setShowExportInstructor(true), INSTRUCTOR_DELAY_MS);
       return true;
     } catch {
       toast.error("Error inesperado al generar el Excel.");
@@ -596,10 +589,6 @@ export default function PedidoHistoriaDetalleModal({
                       descargarExcelBase64(
                         excelRes.data.excelBase64,
                         excelRes.data.filename
-                      );
-                      setTimeout(
-                        () => setShowExportInstructor(true),
-                        INSTRUCTOR_DELAY_MS
                       );
 
                       const res = await marcarPedidoHistoriaRegistradoAction({
@@ -1126,10 +1115,6 @@ export default function PedidoHistoriaDetalleModal({
         onAgregar={async (row, cantRecibida) => {
           await agregarNuevaFila(row, cantRecibida);
         }}
-      />
-      <ExportarRecepcionInstructorModal
-        open={showExportInstructor}
-        onOpenChange={setShowExportInstructor}
       />
       <ConfirmarComprobanteFiscalModal
         open={confirmarFiscalOpen}
