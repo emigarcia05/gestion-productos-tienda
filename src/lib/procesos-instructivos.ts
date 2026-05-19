@@ -7,7 +7,8 @@ type PermisoRol = { simple: boolean; editor: boolean };
 export interface PasoProcesoInstructivo {
   titulo: string;
   texto: string;
-  img: string;
+  /** Ruta en `/public`. Si no hay imagen, omitir. */
+  img?: string;
 }
 
 export interface ModuloProcesosDef {
@@ -20,6 +21,8 @@ export interface ProcesoInstructivoDef {
   moduloId: string;
   /** Etiqueta corta en el listado lateral (ej. Imp. Stock). */
   labelCorto: string;
+  /** Título fijo en la columna derecha de la guía. */
+  tituloGuia: string;
   descripcion: string;
   permiso: PermisoRol;
   pasos: readonly PasoProcesoInstructivo[];
@@ -36,6 +39,7 @@ export const PROCESOS_INSTRUCTIVOS: readonly ProcesoInstructivoDef[] = [
     id: "importar-stock",
     moduloId: "importacion-dux",
     labelCorto: "Imp. Stock",
+    tituloGuia: "Importar archivo de stock en DUX",
     descripcion:
       "Pasos para cargar en DUX el archivo exportado desde Control Stock (ajuste de stock).",
     permiso: PERMISOS.stock.acceso,
@@ -51,6 +55,7 @@ export const PROCESOS_INSTRUCTIVOS: readonly ProcesoInstructivoDef[] = [
     id: "importar-compra",
     moduloId: "importacion-dux",
     labelCorto: "Imp. Compra",
+    tituloGuia: "Importar archivo de compra en DUX",
     descripcion:
       "Pasos para cargar en DUX el Excel generado al recepcionar un pedido (Historial Pedidos).",
     permiso: PERMISOS.pedidos.acceso,

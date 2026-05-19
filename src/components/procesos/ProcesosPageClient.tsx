@@ -49,9 +49,9 @@ export default function ProcesosPageClient({ rol }: Props) {
       <SectionHeader titulo="Gestión Productos" subtitulo="Procesos" />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 pb-6 pt-2">
         <div className="grid min-h-0 flex-1 grid-cols-[25%_75%] gap-4">
-          <div className="flex min-h-0 flex-col gap-3">
+          <div className="grid min-h-0 grid-rows-[15%_85%] gap-3">
             <section
-              className="flex h-[25%] min-h-[7.5rem] shrink-0 flex-col gap-2 rounded-lg border border-border bg-card p-3"
+              className="flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-card p-3"
               aria-labelledby="procesos-modulo-titulo"
             >
               <ModalMicroLabel id="procesos-modulo-titulo">Módulo</ModalMicroLabel>
@@ -81,7 +81,7 @@ export default function ProcesosPageClient({ rol }: Props) {
             </section>
 
             <nav
-              className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto rounded-lg border border-border bg-card p-2"
+              className="flex min-h-0 flex-col gap-1 overflow-y-auto rounded-lg border border-border bg-card p-2"
               aria-label="Procesos del módulo"
             >
               {sinProcesos ? (
@@ -114,17 +114,12 @@ export default function ProcesosPageClient({ rol }: Props) {
 
           <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-4">
             {procesoSeleccionado ? (
-              <>
-                <p className="mb-4 shrink-0 text-sm text-muted-foreground">
-                  {procesoSeleccionado.descripcion}
-                </p>
-                <ProcesoInstructivoCarrusel
-                  titulo="Importar El Archivo Exportado En DUX"
-                  pasos={procesoSeleccionado.pasos}
-                  resetKey={procesoSeleccionado.id}
-                  className="min-h-0 flex-1"
-                />
-              </>
+              <ProcesoInstructivoCarrusel
+                titulo={procesoSeleccionado.tituloGuia}
+                pasos={procesoSeleccionado.pasos}
+                resetKey={procesoSeleccionado.id}
+                className="min-h-0 flex-1"
+              />
             ) : (
               <p className="text-sm text-muted-foreground">
                 {sinProcesos

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { PasoProcesoInstructivo } from "@/lib/procesos-instructivos";
 
@@ -15,6 +20,14 @@ interface Props {
   className?: string;
 }
 
+function indicesPasosVisibles(actual: number, total: number): number[] {
+  const indices: number[] = [];
+  if (actual > 0) indices.push(actual - 1);
+  indices.push(actual);
+  if (actual < total - 1) indices.push(actual + 1);
+  return indices;
+}
+
 export default function ProcesoInstructivoCarrusel({
   titulo,
   pasos,
@@ -22,11 +35,24 @@ export default function ProcesoInstructivoCarrusel({
   className,
 }: Props) {
   const [pasoActual, setPasoActual] = useState(0);
+  const [imagenAmpliada, setImagenAmpliada] = useState(false);
+
   const paso = pasos[pasoActual];
+  const indicesVisibles = useMemo(
+    () => indicesPasosVisibles(pasoActual, pasos.length),
+    [pasoActual, pasos.length]
+  );
 
   useEffect(() => {
-    queueMicrotask(() => setPasoActual(0));
+    queueMicrotask(() => {
+      setPasoActual(0);
+      setImagenAmpliada(false);
+    });
   }, [resetKey]);
+
+  useEffect(() => {
+    setImagenAmpliada(false);
+  }, [pasoActual]);
 
   if (!paso || pasos.length === 0) {
     return (
@@ -40,69 +66,117 @@ export default function ProcesoInstructivoCarrusel({
   const irAdelante = () => setPasoActual((p) => (p < pasos.length - 1 ? p + 1 : p));
 
   return (
-    <div className={cn("flex min-h-0 flex-col gap-4", className)}>
-      <h2 className="text-base font-semibold text-foreground">{titulo}</h2>
-      <div className="flex min-h-0 min-w-0 flex-1 items-stretch justify-center gap-4 overflow-hidden">
+    <div
+      className={cn(
+        "grid min-h-0 flex-1 grid-rows-[auto_auto_7rem_minmax(0,1fr)] gap-4",
+        className
+      )}
+    >
+      <h2 className="shrink-0 text-base font-semibold text-foreground">{titulo}</h2>
+
+      <div
+        className="flex shrink-0 items-center justify-center gap-3"
+        role="group"
+        aria-label="Navegación por pasos"
+      >
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="relative z-10 h-10 w-10 shrink-0 self-center rounded-full"
+          className="h-9 w-9 shrink-0 rounded-full"
           onClick={irAtras}
           disabled={pasoActual === 0}
-          aria-label="Paso Anterior"
+          aria-label="Paso anterior"
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center overflow-hidden text-center">
-          <p className="mb-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-primary">
-            {paso.titulo}
-          </p>
-          <p className="mb-2 shrink-0 text-sm text-foreground">{paso.texto}</p>
-          <div className="relative z-0 flex aspect-video min-h-0 w-full max-w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted/30">
-            <Image
-              src={paso.img}
-              alt={paso.texto}
-              fill
-              className="object-contain object-center"
-              sizes="(max-width: 896px) 100vw, 896px"
-            />
-          </div>
+        <div className="flex items-center justify-center gap-2">
+          {indicesVisibles.map((i) => {
+            const esActual = i === pasoActual;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setPasoActual(i)}
+                aria-label={`Ir al paso ${i + 1}`}
+                aria-current={esActual ? "step" : undefined}
+                className={cn(
+                  "flex items-center justify-center rounded-full font-semibold transition-all",
+                  esActual
+                    ? "h-11 w-11 bg-primary text-lg text-primary-foreground shadow-sm ring-2 ring-primary/30"
+                    : "h-8 w-8 bg-muted text-sm text-muted-foreground opacity-75 hover:bg-muted/80 hover:opacity-100"
+                )}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
         </div>
 
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="relative z-10 h-10 w-10 shrink-0 self-center rounded-full"
+          className="h-9 w-9 shrink-0 rounded-full"
           onClick={irAdelante}
           disabled={pasoActual === pasos.length - 1}
-          aria-label="Paso Siguiente"
+          aria-label="Paso siguiente"
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-center gap-2">
-        {pasos.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setPasoActual(i)}
-            aria-label={`Ir al paso ${i + 1}`}
-            aria-current={pasoActual === i ? "step" : undefined}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors",
-              pasoActual === i
-                ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            {i + 1}
-          </button>
-        ))}
+      <div
+        className="h-28 shrink-0 overflow-y-auto rounded-md border border-border bg-muted/20 px-3 py-2"
+        aria-live="polite"
+      >
+        <p className="text-sm leading-relaxed text-foreground">{paso.texto}</p>
       </div>
+
+      {paso.img ? (
+        <>
+          <button
+            type="button"
+            className="relative min-h-0 h-full w-full min-w-0 overflow-hidden rounded-lg bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => setImagenAmpliada(true)}
+            aria-label="Ampliar imagen del paso"
+          >
+            <Image
+              src={paso.img}
+              alt={paso.texto}
+              fill
+              className="cursor-zoom-in object-contain object-center p-1"
+              sizes="(max-width: 1200px) 75vw, 900px"
+            />
+          </button>
+
+          <Dialog open={imagenAmpliada} onOpenChange={setImagenAmpliada}>
+            <DialogContent
+              className="max-h-[92vh] max-w-[min(96vw,56rem)] gap-0 overflow-hidden border-0 p-2 sm:p-3"
+              showCloseButton
+            >
+              <DialogTitle className="sr-only">
+                {titulo} — paso {pasoActual + 1}
+              </DialogTitle>
+              <div className="relative aspect-video max-h-[calc(92vh-3rem)] w-full min-h-[12rem]">
+                <Image
+                  src={paso.img}
+                  alt={paso.texto}
+                  fill
+                  className="object-contain object-center"
+                  sizes="96vw"
+                  priority
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : (
+        <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-muted/10">
+          <p className="text-sm text-muted-foreground">Este paso no incluye imagen.</p>
+        </div>
+      )}
     </div>
   );
 }
