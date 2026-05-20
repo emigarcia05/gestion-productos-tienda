@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       vacios: result.vacios,
       errores: result.errores,
     });
-    revalidatePath("/proveedores/competencia-precios");
+    revalidatePath("/precios-competencia");
     return NextResponse.json({
       ok: true,
       competenciaId: competidor.id,

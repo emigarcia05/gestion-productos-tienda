@@ -3,6 +3,7 @@ import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 
 export interface DatoVinculoCompetenciaCliente {
   urlProducto: string | null;
+  tipoPagina: string | null;
   pxCompetencia: number | null;
   estado: string;
   errorMensaje: string | null;
@@ -13,8 +14,10 @@ export async function guardarUrlVinculoCompetencia(data: {
   codTienda: string;
   competenciaId: string;
   urlProducto: string | null;
+  tipoPagina?: string | null;
 }): Promise<DatoVinculoCompetenciaCliente> {
   const url = data.urlProducto?.trim() || null;
+  const tipoPagina = data.tipoPagina?.trim() || null;
 
   if (!url) {
     const row = await prisma.prodPrecioCompetencia.upsert({
@@ -28,6 +31,7 @@ export async function guardarUrlVinculoCompetencia(data: {
         codTienda: data.codTienda,
         competenciaId: data.competenciaId,
         urlProducto: null,
+        tipoPagina: null,
         estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
         pxCompetencia: null,
         errorMensaje: null,
@@ -35,6 +39,7 @@ export async function guardarUrlVinculoCompetencia(data: {
       },
       update: {
         urlProducto: null,
+        tipoPagina: null,
         estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
         errorMensaje: null,
       },
@@ -73,6 +78,7 @@ export async function guardarUrlVinculoCompetencia(data: {
       codTienda: data.codTienda,
       competenciaId: data.competenciaId,
       urlProducto: urlNorm,
+      tipoPagina,
       estado: ESTADO_RELEVAMIENTO_COMPETENCIA.PENDIENTE,
       pxCompetencia: null,
       errorMensaje: null,
@@ -80,6 +86,7 @@ export async function guardarUrlVinculoCompetencia(data: {
     },
     update: {
       urlProducto: urlNorm,
+      tipoPagina,
       estado: ESTADO_RELEVAMIENTO_COMPETENCIA.PENDIENTE,
       errorMensaje: null,
       // Solo persiste el enlace; el precio se releva al ejecutar Comparar Precios.
@@ -92,6 +99,7 @@ export async function guardarUrlVinculoCompetencia(data: {
 
 const vinculoSelect = {
   urlProducto: true,
+  tipoPagina: true,
   pxCompetencia: true,
   estado: true,
   errorMensaje: true,
@@ -100,6 +108,7 @@ const vinculoSelect = {
 
 function mapVinculo(row: {
   urlProducto: string | null;
+  tipoPagina: string | null;
   pxCompetencia: { toString(): string } | null;
   estado: string;
   errorMensaje: string | null;
@@ -107,6 +116,7 @@ function mapVinculo(row: {
 }): DatoVinculoCompetenciaCliente {
   return {
     urlProducto: row.urlProducto,
+    tipoPagina: row.tipoPagina,
     pxCompetencia: row.pxCompetencia != null ? Number(row.pxCompetencia) : null,
     estado: row.estado,
     errorMensaje: row.errorMensaje,

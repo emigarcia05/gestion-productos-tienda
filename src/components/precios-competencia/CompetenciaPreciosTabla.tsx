@@ -25,7 +25,7 @@ import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
-import EditarUrlVinculoModal from "@/components/proveedores/competencia-precios/EditarUrlVinculoModal";
+import EditarUrlVinculoModal from "@/components/precios-competencia/EditarUrlVinculoModal";
 
 interface Props {
   data: CompetenciaPreciosListResult | null;
@@ -188,6 +188,9 @@ export default function CompetenciaPreciosTabla({
           descripcion={editCell.descripcion}
           competenciaId={editCell.competenciaId}
           competenciaNombre={editCell.competenciaNombre}
+          configExtraccion={
+            competencias.find((c) => c.id === editCell.competenciaId)?.configExtraccion ?? null
+          }
           vinculoInicial={editCell.vinculo}
           onGuardado={() => {
             setEditCell(null);

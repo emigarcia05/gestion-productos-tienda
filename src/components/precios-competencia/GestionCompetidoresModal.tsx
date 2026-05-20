@@ -17,6 +17,8 @@ import {
 } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
+import type { CompetenciaConfigExtraccion } from "@/lib/competenciaConfigExtraccion";
+import CompetenciaExtraccionReglasEditor from "@/components/precios-competencia/CompetenciaExtraccionReglasEditor";
 import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
@@ -28,11 +30,14 @@ interface Props {
   onChanged: () => void;
 }
 
+const CONFIG_VACIA: CompetenciaConfigExtraccion = { reglaDefaultId: "", reglas: [] };
+
 export default function GestionCompetidoresModal({ open, onOpenChange, onChanged }: Props) {
   const [lista, setLista] = useState<CompetenciaParaCliente[]>([]);
   const [loading, setLoading] = useState(false);
   const [nombre, setNombre] = useState("");
   const [web, setWeb] = useState("");
+  const [configExtraccion, setConfigExtraccion] = useState<CompetenciaConfigExtraccion>(CONFIG_VACIA);
   const [editId, setEditId] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
@@ -52,11 +57,17 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
   const resetForm = () => {
     setNombre("");
     setWeb("");
+    setConfigExtraccion(CONFIG_VACIA);
     setEditId(null);
   };
 
   const handleGuardar = async () => {
-    const payload = { nombre: nombre.trim(), web: web.trim(), ...(editId ? { id: editId } : {}) };
+    const payload = {
+      nombre: nombre.trim(),
+      web: web.trim(),
+      configExtraccion,
+      ...(editId ? { id: editId } : {}),
+    };
     const result = editId
       ? await updateCompetenciaAction(payload)
       : await createCompetenciaAction(payload);
@@ -74,6 +85,7 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
     setEditId(row.id);
     setNombre(row.nombre);
     setWeb(row.web);
+    setConfigExtraccion(row.configExtraccion ?? CONFIG_VACIA);
   };
 
   const handleEliminar = async (id: string) => {
@@ -91,7 +103,7 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        size="lg"
+        size="xl"
         title={editId ? "Editar Competidor" : "Gestionar Competidores"}
         actions={
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -99,7 +111,7 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
           </Button>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
           <div className="grid grid-cols-1 gap-3">
             <div>
               <ModalMicroLabel>Nombre</ModalMicroLabel>
@@ -119,6 +131,12 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                 className="mt-1"
               />
             </div>
+
+            <CompetenciaExtraccionReglasEditor
+              value={configExtraccion}
+              onChange={setConfigExtraccion}
+            />
+
             <div className="flex gap-2 justify-end">
               {editId && (
                 <Button type="button" variant="outline" onClick={resetForm}>
@@ -150,6 +168,9 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                       <p className="text-xs text-muted-foreground truncate">{row.web}</p>
                       <p className="text-xs text-muted-foreground">
                         {labelUltimaComparacionCompetencia(row.ultimaComparacionAt)}
+                        {row.configExtraccion?.reglas?.length
+                          ? ` · ${row.configExtraccion.reglas.length} regla(s) de extracción`
+                          : " · sin reglas de extracción"}
                       </p>
                     </div>
                     <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>

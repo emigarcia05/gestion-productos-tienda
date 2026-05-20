@@ -5,10 +5,11 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Users } from "lucide-react";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import FiltrosCompetenciaPrecios from "@/components/proveedores/competencia-precios/FiltrosCompetenciaPrecios";
-import CompetenciaPreciosTabla from "@/components/proveedores/competencia-precios/CompetenciaPreciosTabla";
-import GestionCompetidoresModal from "@/components/proveedores/competencia-precios/GestionCompetidoresModal";
-import SincronizarCompetenciaModal from "@/components/proveedores/competencia-precios/SincronizarCompetenciaModal";
+import FiltrosCompetenciaPrecios from "@/components/precios-competencia/FiltrosCompetenciaPrecios";
+import CompetenciaPreciosTabla from "@/components/precios-competencia/CompetenciaPreciosTabla";
+import GestionCompetidoresModal from "@/components/precios-competencia/GestionCompetidoresModal";
+import SincronizarCompetenciaModal from "@/components/precios-competencia/SincronizarCompetenciaModal";
+import CompetenciaSyncProgresoBanner from "@/components/precios-competencia/CompetenciaSyncProgresoBanner";
 import { getCompetenciaPreciosListAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
 
@@ -56,8 +57,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
 
   return (
     <ClassicFilteredTableLayout
-      title="Lista Proveedores"
-      subtitle="Comp. Competencia"
+      title="Precios Competencia"
       contentWidth="full"
       actions={
         puedeEditar ? (
@@ -84,7 +84,9 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
         ) : undefined
       }
       filters={
-        <FiltrosCompetenciaPrecios
+        <>
+          {puedeEditar ? <CompetenciaSyncProgresoBanner /> : null}
+          <FiltrosCompetenciaPrecios
           q={q}
           marca={marca}
           rubro={rubro}
@@ -117,6 +119,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
           }}
           onBuscar={() => void cargar()}
         />
+        </>
       }
     >
       <CompetenciaPreciosTabla

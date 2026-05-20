@@ -1,3 +1,11 @@
+import {
+  ordenMetodosRegla,
+  parseCompetenciaConfigExtraccion,
+  reglaExtraccionParaVinculo,
+  type MetodoExtraccion,
+  type ReglaExtraccionPagina,
+} from "@/lib/competenciaConfigExtraccion";
+
 const FETCH_TIMEOUT_MS = 12_000;
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -7,11 +15,18 @@ export type ResultadoExtraccionPrecio =
   | { ok: true; precio: null; motivo: "sin_precio_en_pagina" }
   | { ok: false; error: string };
 
+export interface OpcionesExtraccionPrecio {
+  configExtraccion?: unknown;
+  tipoPagina?: string | null;
+}
+
 /**
  * Obtiene el precio desde la URL manual de la ficha del producto en el competidor.
+ * Usa reglas por tipo de página del competidor si están configuradas.
  */
 export async function extraerPrecioDesdeUrlProducto(
-  urlProducto: string
+  urlProducto: string,
+  opciones?: OpcionesExtraccionPrecio
 ): Promise<ResultadoExtraccionPrecio> {
   const url = urlProducto.trim();
   if (!url) {
@@ -30,7 +45,10 @@ export async function extraerPrecioDesdeUrlProducto(
     return { ok: false, error: "No se pudo descargar la página (timeout o HTTP error)." };
   }
 
-  const precio = pickBestPrice(parsePreciosFromHtml(html));
+  const config = parseCompetenciaConfigExtraccion(opciones?.configExtraccion ?? null);
+  const regla = reglaExtraccionParaVinculo(config, opciones?.tipoPagina);
+
+  const precio = await extraerPrecioDesdeHtml(html, regla);
   if (precio == null) {
     return { ok: true, precio: null, motivo: "sin_precio_en_pagina" };
   }
@@ -63,13 +81,221 @@ async function fetchHtml(url: string): Promise<string | null> {
   }
 }
 
+async function extraerPrecioDesdeHtml(
+  html: string,
+  regla: ReglaExtraccionPagina | null
+): Promise<number | null> {
+  if (regla) {
+    const metodos = ordenMetodosRegla(regla);
+    for (const metodo of metodos) {
+      const candidatos = await candidatosPorMetodo(html, regla, metodo);
+      const elegido = elegirPrecioConfigurado(candidatos, metodo);
+      if (elegido != null) return elegido;
+    }
+    return null;
+  }
+  return pickBestPriceGenerico(parsePreciosFromHtml(html));
+}
+
+async function candidatosPorMetodo(
+  html: string,
+  regla: ReglaExtraccionPagina,
+  metodo: MetodoExtraccion
+): Promise<number[]> {
+  switch (metodo) {
+    case "json_ld":
+      return regla.usarJsonLd ? parsePreciosJsonLd(html) : [];
+    case "css":
+      return parsePreciosPorSelectores(html, regla);
+    case "regex":
+      return parsePreciosPorRegex(html, regla.regexPrecio);
+    case "generico":
+      return parsePreciosFromHtml(html);
+    default:
+      return [];
+  }
+}
+
+function elegirPrecioConfigurado(
+  candidatos: number[],
+  metodo: MetodoExtraccion
+): number | null {
+  if (candidatos.length === 0) return null;
+  if (metodo === "css" || metodo === "regex" || metodo === "json_ld") {
+    return candidatos[0] ?? null;
+  }
+  return pickBestPriceGenerico(candidatos);
+}
+
+async function parsePreciosPorSelectores(
+  html: string,
+  regla: ReglaExtraccionPagina
+): Promise<number[]> {
+  const selectores = [regla.selectorPrecio, regla.selectorPrecioAlternativo]
+    .map((s) => s?.trim())
+    .filter((s): s is string => !!s);
+  if (selectores.length === 0) return [];
+  const attr = regla.atributoPrecio?.trim() || undefined;
+  return parsePreciosPorSelectoresEnHtml(html, selectores, attr);
+}
+
+function parsePreciosPorSelectoresSync(
+  html: string,
+  selectores: string[],
+  attr: string | undefined,
+  found: number[]
+): number[] {
+  for (const selector of selectores) {
+    const fromRegex = extraerTextoPorSelectorRegex(html, selector, attr);
+    if (fromRegex) {
+      const n = parsePrecioArgentino(fromRegex);
+      if (n != null) found.push(n);
+      if (found.length > 0) return found;
+    }
+  }
+  return found;
+}
+
+/** Fallback sin cheerio para selectores simples. */
+function extraerTextoPorSelectorRegex(
+  html: string,
+  selector: string,
+  attr?: string
+): string | null {
+  const sel = selector.trim();
+  if (!sel) return null;
+
+  const itemprop = /\[itemprop=["']?([^"'\]]+)["']?\]/i.exec(sel);
+  if (itemprop) {
+    const prop = itemprop[1];
+    const contentRe = new RegExp(
+      `itemprop=["']${escapeRe(prop)}["'][^>]*content=["']([^"']+)["']`,
+      "i"
+    );
+    const m1 = contentRe.exec(html);
+    if (m1) return m1[1];
+    const innerRe = new RegExp(`itemprop=["']${escapeRe(prop)}["'][^>]*>([^<]{1,80})<`, "i");
+    const m2 = innerRe.exec(html);
+    if (m2) return m2[1];
+  }
+
+  if (sel.startsWith(".")) {
+    const cls = sel.slice(1).split(/[.\s#[]/)[0];
+    if (cls) {
+      const re = new RegExp(
+        `class=["'][^"']*\\b${escapeRe(cls)}\\b[^"']*["'][^>]*>([^<]{1,120})<`,
+        "i"
+      );
+      const m = re.exec(html);
+      if (m) return m[1];
+    }
+  }
+
+  if (sel.startsWith("#")) {
+    const id = sel.slice(1).split(/[.\s[]/)[0];
+    if (id) {
+      const re = new RegExp(`id=["']${escapeRe(id)}["'][^>]*>([^<]{1,120})<`, "i");
+      const m = re.exec(html);
+      if (m) return m[1];
+    }
+  }
+
+  if (attr) {
+    const attrRe = new RegExp(`${escapeRe(attr)}=["']([^"']+)["']`, "gi");
+    const m = attrRe.exec(html);
+    if (m) return m[1];
+  }
+
+  const dataPrice = /data-price=["']([^"']+)["']/i.exec(html);
+  if (dataPrice) return dataPrice[1];
+
+  return null;
+}
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function parsePreciosPorSelectoresEnHtml(
+  html: string,
+  selectores: string[],
+  attr?: string
+): number[] {
+  return parsePreciosPorSelectoresSync(html, selectores, attr, []);
+}
+
+function parsePreciosPorRegex(html: string, pattern?: string): number[] {
+  const p = pattern?.trim();
+  if (!p) return [];
+  try {
+    const re = new RegExp(p, "i");
+    const m = re.exec(html);
+    if (!m?.[1]) return [];
+    const n = parsePrecioArgentino(m[1]);
+    return n != null ? [n] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function parsePreciosJsonLd(html: string): number[] {
+  const found = new Set<number>();
+  const scriptRe =
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let block: RegExpExecArray | null;
+  while ((block = scriptRe.exec(html)) !== null) {
+    const raw = block[1]?.trim();
+    if (!raw) continue;
+    try {
+      const data = JSON.parse(raw) as unknown;
+      collectPricesFromJsonLd(data, found);
+    } catch {
+      collectPricesFromJsonLdString(raw, found);
+    }
+  }
+  return [...found];
+}
+
+function collectPricesFromJsonLdString(raw: string, found: Set<number>): void {
+  const priceRe = /"price"\s*:\s*"?([\d]+(?:[.,]\d{1,2})?)"?/gi;
+  let m: RegExpExecArray | null;
+  while ((m = priceRe.exec(raw)) !== null) {
+    pushPrice(found, m[1]);
+  }
+}
+
+function collectPricesFromJsonLd(node: unknown, found: Set<number>): void {
+  if (node == null) return;
+  if (Array.isArray(node)) {
+    for (const item of node) collectPricesFromJsonLd(item, found);
+    return;
+  }
+  if (typeof node !== "object") return;
+  const obj = node as Record<string, unknown>;
+  if (typeof obj.price === "number" || typeof obj.price === "string") {
+    pushPrice(found, String(obj.price));
+  }
+  if (obj.offers) collectPricesFromJsonLd(obj.offers, found);
+  if (obj["@graph"]) collectPricesFromJsonLd(obj["@graph"], found);
+  for (const v of Object.values(obj)) {
+    if (v && typeof v === "object") collectPricesFromJsonLd(v, found);
+  }
+}
+
 export function parsePreciosFromHtml(html: string): number[] {
   const found = new Set<number>();
+  for (const n of parsePreciosJsonLd(html)) found.add(n);
 
-  const jsonLdPrice = /"price"\s*:\s*"?([\d]+(?:[.,]\d{1,2})?)"?/gi;
+  const metaPrices = [
+    /property=["']og:price:amount["'][^>]*content=["']([^"']+)["']/gi,
+    /property=["']product:price:amount["'][^>]*content=["']([^"']+)["']/gi,
+    /itemprop=["']price["'][^>]*content=["']([^"']+)["']/gi,
+  ];
   let m: RegExpExecArray | null;
-  while ((m = jsonLdPrice.exec(html)) !== null) {
-    pushPrice(found, m[1]);
+  for (const re of metaPrices) {
+    while ((m = re.exec(html)) !== null) {
+      pushPrice(found, m[1]);
+    }
   }
 
   const moneyPatterns = [
@@ -93,7 +319,9 @@ function pushPrice(set: Set<number>, raw: string): void {
 }
 
 function parsePrecioArgentino(raw: string): number | null {
-  const s = raw.trim().replace(/\s/g, "");
+  const cleaned = raw.replace(/[^\d.,]/g, "").trim();
+  if (!cleaned) return null;
+  const s = cleaned.replace(/\s/g, "");
   if (!s) return null;
   if (s.includes(",") && s.includes(".")) {
     const normalized = s.replace(/\./g, "").replace(",", ".");
@@ -108,7 +336,8 @@ function parsePrecioArgentino(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function pickBestPrice(candidates: number[]): number | null {
+/** Heurística genérica sin reglas: mediana para descartar outliers en páginas ruidosas. */
+function pickBestPriceGenerico(candidates: number[]): number | null {
   if (candidates.length === 0) return null;
   const sorted = [...candidates].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)] ?? null;

@@ -40,6 +40,11 @@ export async function syncCompetenciaPrecios(
     ...(options.codTienda ? { codTienda: options.codTienda } : {}),
   };
 
+  const competencia = await prisma.prodCompetencia.findUnique({
+    where: { id: options.competenciaId },
+    select: { configExtraccion: true },
+  });
+
   const totalEnBd = await prisma.prodPrecioCompetencia.count({ where: whereVinculo });
   const limite = options.limiteProductos;
   const totalObjetivo =
@@ -66,6 +71,7 @@ export async function syncCompetenciaPrecios(
         codTienda: true,
         competenciaId: true,
         urlProducto: true,
+        tipoPagina: true,
       },
     });
     if (vinculos.length === 0) break;
@@ -76,7 +82,10 @@ export async function syncCompetenciaPrecios(
 
       const now = new Date();
       try {
-        const resultado = await extraerPrecioDesdeUrlProducto(url);
+        const resultado = await extraerPrecioDesdeUrlProducto(url, {
+          configExtraccion: competencia?.configExtraccion,
+          tipoPagina: v.tipoPagina,
+        });
 
         if (!resultado.ok) {
           errores++;

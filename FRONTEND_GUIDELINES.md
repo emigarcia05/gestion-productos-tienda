@@ -1051,15 +1051,17 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
-## 5.1 Comparación de precios de competencia (`/proveedores/competencia-precios`)
+## 5.1 Módulo Precios Competencia (`/precios-competencia`)
 
-- **Ruta canónica:** `/gestion-productos/proveedores/competencia-precios` (rewrite → `/proveedores/competencia-precios`). **Permiso:** `PERMISOS.competenciaPrecios.acceso` (solo `editor` en matriz actual).
-- **Layout:** `area-page-shell` + `ClassicFilteredTableLayout` (`title` **Lista Proveedores**, `subtitle` **Comp. Competencia**, `contentWidth="full"`).
+- **Ruta canónica:** `/gestion-productos/precios-competencia` (rewrite → `/precios-competencia`). Rutas legacy `/proveedores/competencia-precios` y `/gestion-productos/proveedores/competencia-precios` redirigen aquí. **Permiso:** `PERMISOS.competenciaPrecios.acceso` (solo `editor` en matriz actual).
+- **Layout:** `area-page-shell` + `ClassicFilteredTableLayout` (`title` **Precios Competencia**, `contentWidth="full"`).
+- **Componentes:** `src/components/precios-competencia/*` (no bajo `proveedores/`).
 - **Tabla:** columnas fijas **CÓD. TIENDA**, **DESCRIPCIÓN**, **PX. TIENDA** + una columna dinámica por competidor registrado (`prod_competencia.nombre` en MAYÚSCULAS en `TableHead`). Precio competidor con `fmtPrecio`; sin dato → **—** (`text-muted-foreground`). `Table variant="compact"` dentro de `card-tabla-envoltorio` + `contenedor-tabla-gestion`.
 - **Filtros:** `FilterBar` + `FiltroBusquedaInput` (`useFiltrosConBusqueda`) + selects **MARCA** / **RUBRO** en `FiltroIndividualContainer`; contador **X PRODUCTO(S)**.
 - **Vínculo manual:** clic en celda competidor → `EditarUrlVinculoModal` (URL ficha + mensaje si `ERROR`). Filtros **COMPETIDOR** + **ESTADO VÍNCULO** (ej. **ERROR** para revisar URLs). Celdas: precio, **Sin URL**, **Error**, **Pendiente**, etc.
-- **Acciones (editor):** **Gestionar Competidores** (solo nombre + sitio) y **Comparar Precios Competencia** (un competidor; solo filas con URL; **Detener Comparación** → `/api/sync-competencia-precios/cancel`).
-- **Sidebar:** submódulo **Comp. Competencia** bajo **LISTA PROVEEDORES**.
+- **Acciones (editor):** **Gestionar Competidores** (nombre, sitio y **reglas de extracción por tipo de página**: selectores CSS, JSON-LD, regex; componente `CompetenciaExtraccionReglasEditor`) y **Comparar Precios Competencia** (un competidor; solo filas con URL; **Detener Comparación** → `/api/sync-competencia-precios/cancel`).
+- **Vínculo URL:** en `EditarUrlVinculoModal`, si el competidor tiene reglas, selector **Tipo de página** (`tipo_pagina` en vínculo) que elige qué regla aplica al relevar.
+- **Sidebar:** módulo propio **PRECIOS COMPETENCIA** (enlace directo, mismo patrón que **PROCESOS**), no bajo **LISTA PROVEEDORES**.
 
 ---
 

@@ -24,7 +24,7 @@ import {
 } from "@/services/competenciaPreciosList.service";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
-const PATH = "/proveedores/competencia-precios";
+const PATH = "/precios-competencia";
 
 async function gateAcceso(): Promise<{ ok: false; error: string } | null> {
   const rol = await getRol();
@@ -109,7 +109,11 @@ export async function createCompetenciaAction(
       const msg = parsed.error.flatten().fieldErrors;
       return {
         ok: false,
-        error: msg.nombre?.[0] ?? msg.web?.[0] ?? "Datos inválidos.",
+        error:
+          msg.nombre?.[0] ??
+          msg.web?.[0] ??
+          msg.configExtraccion?.[0] ??
+          "Datos inválidos.",
       };
     }
     const row = await competenciaService.createCompetencia(parsed.data);
@@ -135,7 +139,12 @@ export async function updateCompetenciaAction(
       const msg = parsed.error.flatten().fieldErrors;
       return {
         ok: false,
-        error: msg.nombre?.[0] ?? msg.web?.[0] ?? msg.id?.[0] ?? "Datos inválidos.",
+        error:
+          msg.nombre?.[0] ??
+          msg.web?.[0] ??
+          msg.id?.[0] ??
+          msg.configExtraccion?.[0] ??
+          "Datos inválidos.",
       };
     }
     const row = await competenciaService.updateCompetencia(parsed.data);

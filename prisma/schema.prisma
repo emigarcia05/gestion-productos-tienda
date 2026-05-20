@@ -562,6 +562,8 @@ model ProdCompetencia {
   web       String
   /// Última ejecución de relevamiento masivo para este competidor.
   ultimaComparacionAt DateTime? @map("ultima_comparacion_at")
+  /// Reglas de extracción por tipo de página (selectores CSS, JSON-LD, regex). Ver `competenciaConfigExtraccion.ts`.
+  configExtraccion Json? @map("config_extraccion")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -579,6 +581,8 @@ model ProdPrecioCompetencia {
   competenciaId String   @map("competencia_id")
   /// Ficha del producto en el sitio del competidor (carga manual).
   urlProducto   String?  @map("url_producto")
+  /// Slug de regla en `prod_competencia.config_extraccion.reglas` (ej. `ficha`, `listado`).
+  tipoPagina    String?  @map("tipo_pagina")
   pxCompetencia Decimal? @map("px_competencia") @db.Decimal(14, 4)
   estado        String   @default("PENDIENTE")
   errorMensaje  String?  @map("error_mensaje")

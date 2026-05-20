@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
+import { parseCompetenciaConfigExtraccion } from "@/lib/competenciaConfigExtraccion";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import type { CompetenciaPreciosFiltros } from "@/lib/validations/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
@@ -27,6 +28,7 @@ export interface CompetenciaPreciosListResult {
 function vinculoVacio(): DatoVinculoCompetenciaCliente {
   return {
     urlProducto: null,
+    tipoPagina: null,
     pxCompetencia: null,
     estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
     errorMensaje: null,
@@ -51,6 +53,7 @@ export async function getCompetenciaPreciosList(
       nombre: true,
       web: true,
       ultimaComparacionAt: true,
+      configExtraccion: true,
     },
   });
 
@@ -59,6 +62,7 @@ export async function getCompetenciaPreciosList(
     nombre: c.nombre,
     web: c.web,
     ultimaComparacionAt: c.ultimaComparacionAt?.toISOString() ?? null,
+    configExtraccion: parseCompetenciaConfigExtraccion(c.configExtraccion),
   }));
 
   const baseWhere: Prisma.ListaPrecioTiendaWhereInput = {
@@ -141,6 +145,7 @@ export async function getCompetenciaPreciosList(
             codTienda: true,
             competenciaId: true,
             urlProducto: true,
+            tipoPagina: true,
             pxCompetencia: true,
             estado: true,
             errorMensaje: true,
@@ -160,6 +165,7 @@ export async function getCompetenciaPreciosList(
     if (!entry) continue;
     entry[row.competenciaId] = {
       urlProducto: row.urlProducto,
+      tipoPagina: row.tipoPagina,
       pxCompetencia: row.pxCompetencia != null ? Number(row.pxCompetencia) : null,
       estado: row.urlProducto ? row.estado : ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
       errorMensaje: row.errorMensaje,

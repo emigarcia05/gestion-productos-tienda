@@ -1270,8 +1270,8 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 
 ### Modelos Prisma
 
-- **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia), `ultima_comparacion_at` (último relevamiento masivo del competidor). **Sin** `url_busqueda` (eliminada).
-- **`prod_precios_competencia`:** vínculo **producto tienda × competidor** — PK `(cod_tienda, competencia_id)`; `url_producto` (manual); `px_competencia` (último precio); `estado` (`SIN_URL` | `PENDIENTE` | `OK` | `SIN_PRECIO` | `ERROR`); `error_mensaje`; `relevado_at` (último intento de relevamiento). Constantes en `@/lib/competenciaRelevamiento.ts`.
+- **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia), `ultima_comparacion_at`, `config_extraccion` (JSON: reglas por tipo de página — selectores CSS, JSON-LD, regex; esquema Zod en `@/lib/competenciaConfigExtraccion.ts`). **Sin** `url_busqueda` (eliminada).
+- **`prod_precios_competencia`:** vínculo **producto tienda × competidor** — PK `(cod_tienda, competencia_id)`; `url_producto` (manual); `tipo_pagina` (slug de regla en `config_extraccion.reglas`); `px_competencia` (último precio); `estado` (`SIN_URL` | `PENDIENTE` | `OK` | `SIN_PRECIO` | `ERROR`); `error_mensaje`; `relevado_at` (último intento de relevamiento). Constantes en `@/lib/competenciaRelevamiento.ts`.
 - **Sync:** solo filas con `url_producto` no nulo; `POST` body `{ competenciaId, limiteProductos?, codTienda? }`; cancelación `POST /api/sync-competencia-precios/cancel`.
 - **Guardar URL:** `guardarUrlVinculoCompetenciaAction` → `competenciaVinculo.service.ts` (upsert vínculo, estado `PENDIENTE` al cargar URL).
 
@@ -1285,13 +1285,13 @@ Migración: `20260520190000_add_prod_competencia_tables`.
 ### Server Actions (`src/actions/competenciaPrecios.ts`)
 
 - `getCompetenciaPreciosListAction`, `listCompetenciasAction`, `createCompetenciaAction`, `updateCompetenciaAction`, `deleteCompetenciaAction`.
-- Payloads `unknown` + Zod (`@/lib/validations/competenciaPrecios.ts`). `revalidatePath("/proveedores/competencia-precios")` tras mutaciones.
+- Payloads `unknown` + Zod (`@/lib/validations/competenciaPrecios.ts`). `revalidatePath("/precios-competencia")` tras mutaciones.
 
 ### Servicios
 
 - `competencia.service.ts` — CRUD + `normalizeWebUrl`.
 - `competenciaPreciosList.service.ts` — listado paginado (`PAGE_SIZE`) con matriz de precios por competidor.
-- `competenciaPrecioScraping.service.ts` — `fetch` HTML + heurística de precios ARS (URLs de búsqueda derivadas de `web` + descripción/código tienda).
+- `competenciaPrecioScraping.service.ts` — `fetch` HTML; extracción por regla del competidor (`config_extraccion` + `tipo_pagina` del vínculo): JSON-LD, selectores CSS (`.clase`, `#id`, `[itemprop="price"]`, atributo opcional), regex custom; heurística genérica solo si no hay regla o como último método.
 - `syncCompetenciaPrecios.service.ts` — upsert por par producto×competidor; progreso vía callback.
 
 ### API Routes
@@ -1299,4 +1299,6 @@ Migración: `20260520190000_add_prod_competencia_tables`.
 - `POST /api/sync-competencia-precios` — body **`{ competenciaId }` obligatorio** (un solo competidor por ejecución); `{ codTienda? }` opcional. Al finalizar, actualiza `prod_competencia.ultima_comparacion_at`. Gate `guardCompetenciaPreciosSyncEsEditor`; progreso en `import_progress` id **`competencia-precios-sync`**.
 - `GET /api/sync-competencia-precios/status` — mismo gate.
 
-**Nota operativa:** el scraping genérico no garantiza precisión en todos los sitios; ajustes por competidor (selectores/URL) pueden requerir extensión del servicio de scraping.
+Migración adicional: `20260520230000_competencia_config_extraccion` (`config_extraccion`, `tipo_pagina`).
+
+**Nota operativa:** configurar al menos una regla **ficha** con el selector del precio visible en DevTools (`.precio-venta`, `#product-price`, `[itemprop="price"]`); sin reglas se usa heurística genérica (menos precisa).

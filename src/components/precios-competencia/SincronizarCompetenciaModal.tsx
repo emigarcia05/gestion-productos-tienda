@@ -22,6 +22,7 @@ import {
 } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
+import { useCompetenciaSyncStatusPoll } from "@/hooks/useCompetenciaSyncStatusPoll";
 
 interface Props {
   open: boolean;
@@ -40,6 +41,7 @@ export default function SincronizarCompetenciaModal({
   const [limiteProductos, setLimiteProductos] = useState("");
   const [urlsCargadas, setUrlsCargadas] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const pollSync = useCompetenciaSyncStatusPoll(syncing);
 
   const cargar = useCallback(async () => {
     setLoadingLista(true);
@@ -55,6 +57,16 @@ export default function SincronizarCompetenciaModal({
   useEffect(() => {
     if (open) void cargar();
   }, [open, cargar]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/sync-competencia-precios/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { running?: boolean } | null) => {
+        if (data?.running) setSyncing(true);
+      })
+      .catch(() => {});
+  }, [open]);
 
   useEffect(() => {
     if (!competenciaId) {
@@ -228,11 +240,23 @@ export default function SincronizarCompetenciaModal({
                   {labelUltimaComparacionCompetencia(seleccionado.ultimaComparacionAt)}
                 </p>
               ) : null}
-              {syncing ? (
-                <p className="text-sm text-muted-foreground">
-                  Si tarda mucho, usá Detener Comparación. También podés reiniciar{" "}
-                  <code className="text-xs">npm run dev</code> en la terminal del servidor.
-                </p>
+              {syncing || pollSync.running ? (
+                <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+                  <p className="text-sm font-semibold text-foreground">Comparación en curso</p>
+                  <p className="text-sm text-muted-foreground">
+                    Consultando URL{" "}
+                    <span className="tabular-nums font-medium text-foreground">
+                      {pollSync.processed} de {pollSync.total || consultasPrevistas}
+                    </span>
+                    {pollSync.total > 0
+                      ? ` (${Math.min(100, Math.round((pollSync.processed / pollSync.total) * 100))}%)`
+                      : null}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Podés usar Detener Comparación. El aviso también aparece arriba de la tabla si
+                    cerrás este modal.
+                  </p>
+                </div>
               ) : null}
             </>
           )}

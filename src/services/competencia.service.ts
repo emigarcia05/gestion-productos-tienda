@@ -1,43 +1,46 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  parseCompetenciaConfigExtraccion,
+  type CompetenciaConfigExtraccion,
+} from "@/lib/competenciaConfigExtraccion";
 
 export interface CompetenciaParaCliente {
   id: string;
   nombre: string;
   web: string;
   ultimaComparacionAt: string | null;
+  configExtraccion: CompetenciaConfigExtraccion | null;
 }
+
+const competenciaSelect = {
+  id: true,
+  nombre: true,
+  web: true,
+  ultimaComparacionAt: true,
+  configExtraccion: true,
+} as const;
 
 export async function listCompetencias(): Promise<CompetenciaParaCliente[]> {
   const rows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
-    select: {
-      id: true,
-      nombre: true,
-      web: true,
-      ultimaComparacionAt: true,
-    },
+    select: competenciaSelect,
   });
-  return rows.map((r) => ({
-    ...r,
-    ultimaComparacionAt: r.ultimaComparacionAt?.toISOString() ?? null,
-  }));
+  return rows.map(mapCompetenciaRow);
 }
 
 export async function createCompetencia(data: {
   nombre: string;
   web: string;
+  configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
   const row = await prisma.prodCompetencia.create({
     data: {
       nombre: data.nombre.trim(),
       web: normalizeWebUrl(data.web),
+      configExtraccion: toJsonInput(data.configExtraccion),
     },
-    select: {
-      id: true,
-      nombre: true,
-      web: true,
-      ultimaComparacionAt: true,
-    },
+    select: competenciaSelect,
   });
   return mapCompetenciaRow(row);
 }
@@ -46,21 +49,28 @@ export async function updateCompetencia(data: {
   id: string;
   nombre: string;
   web: string;
+  configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
   const row = await prisma.prodCompetencia.update({
     where: { id: data.id },
     data: {
       nombre: data.nombre.trim(),
       web: normalizeWebUrl(data.web),
+      ...(data.configExtraccion !== undefined
+        ? { configExtraccion: toJsonInput(data.configExtraccion) }
+        : {}),
     },
-    select: {
-      id: true,
-      nombre: true,
-      web: true,
-      ultimaComparacionAt: true,
-    },
+    select: competenciaSelect,
   });
   return mapCompetenciaRow(row);
+}
+
+function toJsonInput(
+  config: CompetenciaConfigExtraccion | null | undefined
+): Prisma.InputJsonValue | typeof Prisma.DbNull | undefined {
+  if (config === undefined) return undefined;
+  if (config == null || config.reglas.length === 0) return Prisma.DbNull;
+  return config as Prisma.InputJsonValue;
 }
 
 function mapCompetenciaRow(row: {
@@ -68,10 +78,14 @@ function mapCompetenciaRow(row: {
   nombre: string;
   web: string;
   ultimaComparacionAt: Date | null;
+  configExtraccion: unknown;
 }): CompetenciaParaCliente {
   return {
-    ...row,
+    id: row.id,
+    nombre: row.nombre,
+    web: row.web,
     ultimaComparacionAt: row.ultimaComparacionAt?.toISOString() ?? null,
+    configExtraccion: parseCompetenciaConfigExtraccion(row.configExtraccion),
   };
 }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { competenciaConfigExtraccionSchema } from "@/lib/competenciaConfigExtraccion";
 import {
   ESTADO_RELEVAMIENTO_COMPETENCIA,
   type EstadoRelevamientoCompetencia,
@@ -26,6 +27,7 @@ export const competenciaWebSchema = z
 export const createCompetenciaSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio.").max(120, "Nombre demasiado largo."),
   web: competenciaWebSchema,
+  configExtraccion: competenciaConfigExtraccionSchema.optional().nullable(),
 });
 
 export const updateCompetenciaSchema = createCompetenciaSchema.extend({
@@ -65,6 +67,14 @@ export const guardarUrlVinculoSchema = z.object({
   urlProducto: z
     .string()
     .max(2000)
+    .optional()
+    .transform((v) => {
+      const t = (v ?? "").trim();
+      return t.length > 0 ? t : null;
+    }),
+  tipoPagina: z
+    .string()
+    .max(40)
     .optional()
     .transform((v) => {
       const t = (v ?? "").trim();
