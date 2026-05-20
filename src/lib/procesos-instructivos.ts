@@ -29,17 +29,26 @@ export interface ProcesoInstructivoDef {
 }
 
 export const MODULOS_PROCESOS: readonly ModuloProcesosDef[] = [
-  { id: "importacion-dux", label: "Importacion Datos en Dux" },
+  { id: "importacion-dux", label: "Importación Datos En Dux" },
 ] as const;
 
 export type ModuloProcesosId = (typeof MODULOS_PROCESOS)[number]["id"];
+
+/** Primera letra de cada palabra en mayúscula (títulos del módulo Procesos). */
+export function formatoTituloProcesos(texto: string): string {
+  return texto.trim().replace(/\S+/g, (palabra) => {
+    const [primera, ...resto] = [...palabra];
+    if (!primera) return palabra;
+    return primera.toLocaleUpperCase("es-AR") + resto.join("");
+  });
+}
 
 export const PROCESOS_INSTRUCTIVOS: readonly ProcesoInstructivoDef[] = [
   {
     id: "importar-stock",
     moduloId: "importacion-dux",
     labelCorto: "Imp. Stock",
-    tituloGuia: "Importar archivo de stock en DUX",
+    tituloGuia: "Importar Archivo De Stock En DUX",
     descripcion:
       "Pasos para cargar en DUX el archivo exportado desde Control Stock (ajuste de stock).",
     permiso: PERMISOS.stock.acceso,
@@ -55,7 +64,7 @@ export const PROCESOS_INSTRUCTIVOS: readonly ProcesoInstructivoDef[] = [
     id: "importar-compra",
     moduloId: "importacion-dux",
     labelCorto: "Imp. Compra",
-    tituloGuia: "Importar archivo de compra en DUX",
+    tituloGuia: "Importar Archivo De Compra En DUX",
     descripcion:
       "Pasos para cargar en DUX el Excel generado al recepcionar un pedido (Historial Pedidos).",
     permiso: PERMISOS.pedidos.acceso,

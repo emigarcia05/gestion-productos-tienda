@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import {
   MODULOS_PROCESOS,
+  formatoTituloProcesos,
   listarProcesosVisiblesPorModulo,
   type ModuloProcesosId,
 } from "@/lib/procesos-instructivos";
@@ -54,16 +55,21 @@ export default function ProcesosPageClient({ rol }: Props) {
               className="flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-card p-3"
               aria-labelledby="procesos-modulo-titulo"
             >
-              <ModalMicroLabel id="procesos-modulo-titulo">Módulo</ModalMicroLabel>
+              <ModalMicroLabel
+                id="procesos-modulo-titulo"
+                className="normal-case tracking-normal"
+              >
+                Módulo
+              </ModalMicroLabel>
               <Select
                 value={moduloId}
                 onValueChange={(v) => setModuloId(v as ModuloProcesosId)}
               >
                 <SelectTrigger
-                  className="input-filtro-unificado w-full font-semibold uppercase"
+                  className="input-filtro-unificado w-full font-semibold capitalize"
                   aria-label="Módulo de procesos"
                 >
-                  <SelectValue placeholder="MÓDULO" />
+                  <SelectValue placeholder="Módulo" />
                 </SelectTrigger>
                 <SelectContent
                   position="popper"
@@ -73,7 +79,7 @@ export default function ProcesosPageClient({ rol }: Props) {
                 >
                   {MODULOS_PROCESOS.map((m) => (
                     <SelectItem key={m.id} value={m.id}>
-                      {m.label.toUpperCase()}
+                      {formatoTituloProcesos(m.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -97,14 +103,14 @@ export default function ProcesosPageClient({ rol }: Props) {
                       type="button"
                       onClick={() => setProcesoId(p.id)}
                       className={cn(
-                        "rounded-md px-3 py-2.5 text-left text-sm font-semibold uppercase tracking-wide transition-colors",
+                        "rounded-md px-3 py-2.5 text-left text-sm font-semibold capitalize tracking-wide transition-colors",
                         activo
                           ? "bg-primary/10 text-foreground ring-1 ring-primary/30"
                           : "text-foreground hover:bg-muted"
                       )}
                       aria-current={activo ? "true" : undefined}
                     >
-                      {p.labelCorto}
+                      {formatoTituloProcesos(p.labelCorto)}
                     </button>
                   );
                 })

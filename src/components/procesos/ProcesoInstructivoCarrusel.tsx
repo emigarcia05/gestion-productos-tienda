@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { PasoProcesoInstructivo } from "@/lib/procesos-instructivos";
+import { formatoTituloProcesos, type PasoProcesoInstructivo } from "@/lib/procesos-instructivos";
 import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 
 const PASO_NAV_SLOT_CLASS = "h-9 w-9 shrink-0 rounded-full";
@@ -20,11 +20,8 @@ const PASO_NAV_ARROW_ENABLED_CLASS = cn(
   PASO_NAV_SLOT_CLASS
 );
 
-/** Flecha deshabilitada: recuadro vacío, sin relleno, borde corporativo. */
-const PASO_NAV_ARROW_DISABLED_CLASS = cn(
-  PASO_NAV_SLOT_CLASS,
-  "cursor-default border-2 border-[#0072BB] bg-transparent shadow-none hover:bg-transparent disabled:opacity-100"
-);
+/** Flecha sin destino: oculta pero conserva el espacio del layout. */
+const PASO_NAV_ARROW_HIDDEN_CLASS = "invisible pointer-events-none";
 
 const PASO_NUMERO_BASE_CLASS = cn(
   PASO_NAV_SLOT_CLASS,
@@ -34,20 +31,14 @@ const PASO_NUMERO_BASE_CLASS = cn(
 const PASO_NUMERO_ACTUAL_CLASS = "bg-[#0072BB] text-white";
 const PASO_NUMERO_ADJACENTE_CLASS = "bg-transparent text-black hover:bg-muted/30";
 
+const PASO_NUMERO_SLOT_RESERVADO_CLASS = cn(PASO_NAV_SLOT_CLASS, PASO_NAV_ARROW_HIDDEN_CLASS);
+
 interface Props {
   titulo: string;
   pasos: readonly PasoProcesoInstructivo[];
   /** Reinicia al paso 1 cuando cambia (p. ej. id del proceso seleccionado). */
   resetKey?: string;
   className?: string;
-}
-
-function indicesPasosVisibles(actual: number, total: number): number[] {
-  const indices: number[] = [];
-  if (actual > 0) indices.push(actual - 1);
-  indices.push(actual);
-  if (actual < total - 1) indices.push(actual + 1);
-  return indices;
 }
 
 export default function ProcesoInstructivoCarrusel({
@@ -60,10 +51,6 @@ export default function ProcesoInstructivoCarrusel({
   const [imagenAmpliada, setImagenAmpliada] = useState(false);
 
   const paso = pasos[pasoActual];
-  const indicesVisibles = useMemo(
-    () => indicesPasosVisibles(pasoActual, pasos.length),
-    [pasoActual, pasos.length]
-  );
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -89,81 +76,99 @@ export default function ProcesoInstructivoCarrusel({
 
   const puedeIrAtras = pasoActual > 0;
   const puedeIrAdelante = pasoActual < pasos.length - 1;
+  const indicePasoAnterior = puedeIrAtras ? pasoActual - 1 : null;
+  const indicePasoSiguiente = puedeIrAdelante ? pasoActual + 1 : null;
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
-      <h2 className="shrink-0 text-center text-base font-semibold text-foreground">{titulo}</h2>
+      <h2 className="shrink-0 text-center text-base font-semibold capitalize text-foreground">
+        {formatoTituloProcesos(titulo)}
+      </h2>
 
       <div
         className="flex shrink-0 items-center justify-center gap-3"
         role="group"
         aria-label="Navegación por pasos"
       >
-        {puedeIrAtras ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={PASO_NAV_ARROW_ENABLED_CLASS}
-            onClick={irAtras}
-            aria-label="Paso anterior"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        ) : (
-          <span
-            className={PASO_NAV_ARROW_DISABLED_CLASS}
-            role="presentation"
-            aria-hidden
-          />
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={cn(
+            PASO_NAV_ARROW_ENABLED_CLASS,
+            !puedeIrAtras && PASO_NAV_ARROW_HIDDEN_CLASS
+          )}
+          onClick={irAtras}
+          disabled={!puedeIrAtras}
+          aria-label="Paso anterior"
+          aria-hidden={!puedeIrAtras}
+          tabIndex={puedeIrAtras ? 0 : -1}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
 
         <div className="flex items-center justify-center gap-2">
-          {indicesVisibles.map((i) => {
-            const esActual = i === pasoActual;
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setPasoActual(i)}
-                aria-label={`Ir al paso ${i + 1}`}
-                aria-current={esActual ? "step" : undefined}
-                className={cn(
-                  PASO_NUMERO_BASE_CLASS,
-                  esActual ? PASO_NUMERO_ACTUAL_CLASS : PASO_NUMERO_ADJACENTE_CLASS
-                )}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
+          {indicePasoAnterior !== null ? (
+            <button
+              type="button"
+              onClick={() => setPasoActual(indicePasoAnterior)}
+              aria-label={`Ir al paso ${indicePasoAnterior + 1}`}
+              className={cn(PASO_NUMERO_BASE_CLASS, PASO_NUMERO_ADJACENTE_CLASS)}
+            >
+              {indicePasoAnterior + 1}
+            </button>
+          ) : (
+            <span className={PASO_NUMERO_SLOT_RESERVADO_CLASS} aria-hidden />
+          )}
+
+          <button
+            type="button"
+            aria-label={`Paso ${pasoActual + 1}`}
+            aria-current="step"
+            className={cn(PASO_NUMERO_BASE_CLASS, PASO_NUMERO_ACTUAL_CLASS)}
+          >
+            {pasoActual + 1}
+          </button>
+
+          {indicePasoSiguiente !== null ? (
+            <button
+              type="button"
+              onClick={() => setPasoActual(indicePasoSiguiente)}
+              aria-label={`Ir al paso ${indicePasoSiguiente + 1}`}
+              className={cn(PASO_NUMERO_BASE_CLASS, PASO_NUMERO_ADJACENTE_CLASS)}
+            >
+              {indicePasoSiguiente + 1}
+            </button>
+          ) : (
+            <span className={PASO_NUMERO_SLOT_RESERVADO_CLASS} aria-hidden />
+          )}
         </div>
 
-        {puedeIrAdelante ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={PASO_NAV_ARROW_ENABLED_CLASS}
-            onClick={irAdelante}
-            aria-label="Paso siguiente"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        ) : (
-          <span
-            className={PASO_NAV_ARROW_DISABLED_CLASS}
-            role="presentation"
-            aria-hidden
-          />
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={cn(
+            PASO_NAV_ARROW_ENABLED_CLASS,
+            !puedeIrAdelante && PASO_NAV_ARROW_HIDDEN_CLASS
+          )}
+          onClick={irAdelante}
+          disabled={!puedeIrAdelante}
+          aria-label="Paso siguiente"
+          aria-hidden={!puedeIrAdelante}
+          tabIndex={puedeIrAdelante ? 0 : -1}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
       </div>
 
       <div
         className="flex h-28 shrink-0 flex-col items-center justify-center gap-1 overflow-y-auto rounded-md border border-border bg-muted/20 px-3 py-2 text-center"
         aria-live="polite"
       >
-        <p className="shrink-0 text-sm font-semibold text-foreground">{paso.titulo}</p>
+        <p className="shrink-0 text-sm font-semibold capitalize text-foreground">
+          {formatoTituloProcesos(paso.titulo)}
+        </p>
         <p className="text-sm leading-relaxed text-foreground">{paso.texto}</p>
       </div>
 
