@@ -19,6 +19,8 @@ const PASO_NAV_ARROW_HIDDEN_CLASS = "invisible pointer-events-none";
 
 const PASO_NUMERO_SLOT_RESERVADO_CLASS = cn(PASO_NAV_SLOT_CLASS, PASO_NAV_ARROW_HIDDEN_CLASS);
 
+const PROCESO_BORDE_CLASS = "rounded-md border-2 border-[#0072BB] bg-transparent";
+
 interface Props {
   titulo: string;
   pasos: readonly PasoProcesoInstructivo[];
@@ -72,7 +74,7 @@ export default function ProcesoInstructivoCarrusel({
       </h2>
 
       <div
-        className="flex shrink-0 items-center justify-center gap-3"
+        className={cn("flex shrink-0 items-center justify-center gap-3 p-3", PROCESO_BORDE_CLASS)}
         role="group"
         aria-label="Navegación por pasos"
       >
@@ -143,59 +145,67 @@ export default function ProcesoInstructivoCarrusel({
       </div>
 
       <div
-        className="flex h-28 shrink-0 flex-col items-center justify-center gap-1 overflow-y-auto rounded-md border-2 border-[#0072BB] bg-transparent px-3 py-2 text-center"
-        aria-live="polite"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3",
+          PROCESO_BORDE_CLASS
+        )}
       >
-        <p className="shrink-0 text-sm font-semibold capitalize text-black">
-          {formatoTituloProcesos(paso.titulo)}
-        </p>
-        <p className="text-sm leading-relaxed text-black">{paso.texto}</p>
-      </div>
-
-      {paso.img ? (
-        <>
-          <button
-            type="button"
-            className="proceso-paso-imagen-btn flex min-h-0 w-full min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 [&_img]:max-h-[90%] [&_img]:max-w-[90%] [&_img]:border-0 [&_img]:bg-transparent [&_span]:max-h-[90%] [&_span]:max-w-[90%] [&_span]:border-0 [&_span]:bg-transparent"
-            onClick={() => setImagenAmpliada(true)}
-            aria-label="Ampliar imagen del paso"
-          >
-            <Image
-              src={paso.img}
-              alt={paso.texto}
-              width={1920}
-              height={1080}
-              className="h-auto w-auto max-h-[90%] max-w-[90%] cursor-zoom-in bg-transparent object-contain"
-              sizes="(max-width: 1200px) 75vw, 900px"
-            />
-          </button>
-
-          <Dialog open={imagenAmpliada} onOpenChange={setImagenAmpliada}>
-            <DialogContent
-              className="fixed inset-0 top-0 left-0 z-50 flex h-dvh w-dvw max-w-none translate-x-0 translate-y-0 items-center justify-center gap-0 overflow-hidden rounded-none border-0 bg-black/95 p-0 shadow-none [&_[data-slot=dialog-close]]:border-white/40 [&_[data-slot=dialog-close]]:bg-black/50 [&_[data-slot=dialog-close]]:text-white"
-              showCloseButton
-            >
-              <DialogTitle className="sr-only">
-                {titulo} — paso {pasoActual + 1}
-              </DialogTitle>
-              <div className="relative h-full w-full min-h-0">
-                <Image
-                  src={paso.img}
-                  alt={paso.texto}
-                  fill
-                  className="object-contain object-center"
-                  sizes="100vw"
-                  priority
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-        </>
-      ) : (
-        <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-muted/10">
-          <p className="text-sm text-muted-foreground">Este paso no incluye imagen.</p>
+        <div
+          className="flex h-28 shrink-0 flex-col items-center justify-center gap-1 overflow-y-auto px-1 py-2 text-center"
+          aria-live="polite"
+        >
+          <p className="shrink-0 text-sm font-semibold capitalize text-black">
+            {formatoTituloProcesos(paso.titulo)}
+          </p>
+          <p className="text-sm leading-relaxed text-black">{paso.texto}</p>
         </div>
-      )}
+
+        {paso.img ? (
+          <>
+            <button
+              type="button"
+              data-variant="ghost"
+              className="proceso-paso-imagen-btn flex min-h-0 w-full min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden bg-transparent p-0 outline-none hover:bg-transparent focus:outline-none focus-visible:outline-none focus-visible:ring-0 [&_img]:max-h-[90%] [&_img]:max-w-[90%] [&_img]:border-0 [&_img]:bg-transparent [&_span]:max-h-[90%] [&_span]:max-w-[90%] [&_span]:border-0 [&_span]:bg-transparent"
+              onClick={() => setImagenAmpliada(true)}
+              aria-label="Ampliar imagen del paso"
+            >
+              <Image
+                src={paso.img}
+                alt={paso.texto}
+                width={1920}
+                height={1080}
+                className="h-auto w-auto max-h-[90%] max-w-[90%] cursor-zoom-in bg-transparent object-contain"
+                sizes="(max-width: 1200px) 75vw, 900px"
+              />
+            </button>
+
+            <Dialog open={imagenAmpliada} onOpenChange={setImagenAmpliada}>
+              <DialogContent
+                className="fixed inset-0 top-0 left-0 z-50 flex h-dvh w-dvw max-w-none translate-x-0 translate-y-0 items-center justify-center gap-0 overflow-hidden rounded-none border-0 bg-black/95 p-0 shadow-none [&_[data-slot=dialog-close]]:border-white/40 [&_[data-slot=dialog-close]]:bg-black/50 [&_[data-slot=dialog-close]]:text-white"
+                showCloseButton
+              >
+                <DialogTitle className="sr-only">
+                  {titulo} — paso {pasoActual + 1}
+                </DialogTitle>
+                <div className="relative h-full w-full min-h-0">
+                  <Image
+                    src={paso.img}
+                    alt={paso.texto}
+                    fill
+                    className="object-contain object-center"
+                    sizes="100vw"
+                    priority
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <p className="text-sm text-muted-foreground">Este paso no incluye imagen.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
