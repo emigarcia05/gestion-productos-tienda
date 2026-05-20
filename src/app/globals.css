@@ -1470,6 +1470,53 @@ button.tabla-row-btn-filled-brand {
   max-height: 100% !important;
 }
 
+/* Carrete de pasos (ProcesoInstructivoCarrusel): anula `main button` (radio cuadrado + fondo primary en `<button>` sin data-variant). */
+main button.proceso-paso-nav-flecha,
+main button.proceso-paso-nav-numero {
+  height: 2.25rem !important;
+  min-height: 2.25rem !important;
+  width: 2.25rem !important;
+  min-width: 2.25rem !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+  font-size: var(--text-sm) !important;
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+main button.proceso-paso-nav-flecha {
+  background-color: #0072bb !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+main button.proceso-paso-nav-flecha:hover:not(:disabled) {
+  background-color: color-mix(in srgb, #0072bb 90%, transparent) !important;
+  filter: none !important;
+}
+
+main button.proceso-paso-nav-numero--actual {
+  height: 3.375rem !important;
+  min-height: 3.375rem !important;
+  width: 3.375rem !important;
+  min-width: 3.375rem !important;
+  font-size: 1.125rem !important;
+  background-color: #0072bb !important;
+  color: #fff !important;
+  border: 2px solid #0072bb !important;
+}
+
+main button.proceso-paso-nav-numero--adyacente {
+  background-color: transparent !important;
+  color: #000 !important;
+  border: 2px solid #0072bb !important;
+}
+
+main button.proceso-paso-nav-numero--adyacente:hover:not(:disabled) {
+  background-color: color-mix(in oklch, var(--muted) 30%, transparent) !important;
+  filter: none !important;
+}
+
 /* ─── Título de sección (SectionHeader): diseño global, misma apariencia en todas las rutas ─── */
 .section-header {
   padding: 0.75rem 1.5rem 0;

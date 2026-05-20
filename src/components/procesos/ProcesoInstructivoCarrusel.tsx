@@ -11,25 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { formatoTituloProcesos, type PasoProcesoInstructivo } from "@/lib/procesos-instructivos";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 
-const PASO_NAV_SLOT_CLASS = "h-9 w-9 shrink-0 rounded-full";
-
-const PASO_NAV_ARROW_ENABLED_CLASS = cn(
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  PASO_NAV_SLOT_CLASS
-);
+const PASO_NAV_SLOT_CLASS = "h-9 w-9 shrink-0";
 
 /** Flecha sin destino: oculta pero conserva el espacio del layout. */
 const PASO_NAV_ARROW_HIDDEN_CLASS = "invisible pointer-events-none";
-
-const PASO_NUMERO_BASE_CLASS = cn(
-  PASO_NAV_SLOT_CLASS,
-  "flex items-center justify-center border-2 border-[#0072BB] text-sm font-semibold transition-colors"
-);
-
-const PASO_NUMERO_ACTUAL_CLASS = "bg-[#0072BB] text-white";
-const PASO_NUMERO_ADJACENTE_CLASS = "bg-transparent text-black hover:bg-muted/30";
 
 const PASO_NUMERO_SLOT_RESERVADO_CLASS = cn(PASO_NAV_SLOT_CLASS, PASO_NAV_ARROW_HIDDEN_CLASS);
 
@@ -95,7 +81,8 @@ export default function ProcesoInstructivoCarrusel({
           variant="ghost"
           size="icon"
           className={cn(
-            PASO_NAV_ARROW_ENABLED_CLASS,
+            "proceso-paso-nav-flecha",
+            PASO_NAV_SLOT_CLASS,
             !puedeIrAtras && PASO_NAV_ARROW_HIDDEN_CLASS
           )}
           onClick={irAtras}
@@ -113,7 +100,7 @@ export default function ProcesoInstructivoCarrusel({
               type="button"
               onClick={() => setPasoActual(indicePasoAnterior)}
               aria-label={`Ir al paso ${indicePasoAnterior + 1}`}
-              className={cn(PASO_NUMERO_BASE_CLASS, PASO_NUMERO_ADJACENTE_CLASS)}
+              className={cn("proceso-paso-nav-numero proceso-paso-nav-numero--adyacente", PASO_NAV_SLOT_CLASS)}
             >
               {indicePasoAnterior + 1}
             </button>
@@ -125,7 +112,7 @@ export default function ProcesoInstructivoCarrusel({
             type="button"
             aria-label={`Paso ${pasoActual + 1}`}
             aria-current="step"
-            className={cn(PASO_NUMERO_BASE_CLASS, PASO_NUMERO_ACTUAL_CLASS)}
+            className={cn("proceso-paso-nav-numero proceso-paso-nav-numero--actual", PASO_NAV_SLOT_CLASS)}
           >
             {pasoActual + 1}
           </button>
@@ -135,7 +122,7 @@ export default function ProcesoInstructivoCarrusel({
               type="button"
               onClick={() => setPasoActual(indicePasoSiguiente)}
               aria-label={`Ir al paso ${indicePasoSiguiente + 1}`}
-              className={cn(PASO_NUMERO_BASE_CLASS, PASO_NUMERO_ADJACENTE_CLASS)}
+              className={cn("proceso-paso-nav-numero proceso-paso-nav-numero--adyacente", PASO_NAV_SLOT_CLASS)}
             >
               {indicePasoSiguiente + 1}
             </button>
@@ -149,7 +136,8 @@ export default function ProcesoInstructivoCarrusel({
           variant="ghost"
           size="icon"
           className={cn(
-            PASO_NAV_ARROW_ENABLED_CLASS,
+            "proceso-paso-nav-flecha",
+            PASO_NAV_SLOT_CLASS,
             !puedeIrAdelante && PASO_NAV_ARROW_HIDDEN_CLASS
           )}
           onClick={irAdelante}
