@@ -74,7 +74,7 @@ export default function ProcesoInstructivoCarrusel({
       </h2>
 
       <div
-        className={cn("flex shrink-0 items-center justify-center gap-3 p-3", PROCESO_BORDE_CLASS)}
+        className="flex shrink-0 items-center justify-center gap-3 p-3"
         role="group"
         aria-label="Navegación por pasos"
       >

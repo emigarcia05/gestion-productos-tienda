@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import SectionHeader from "@/components/SectionHeader";
 import ProcesoInstructivoCarrusel from "@/components/procesos/ProcesoInstructivoCarrusel";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import {
   Select,
   SelectContent,
@@ -50,17 +49,17 @@ export default function ProcesosPageClient({ rol }: Props) {
       <SectionHeader titulo="Gestión Productos" subtitulo="Procesos" />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 pb-6 pt-2">
         <div className="grid min-h-0 flex-1 grid-cols-[25%_75%] gap-4">
-          <div className="grid min-h-0 grid-rows-[15%_85%] gap-3">
-            <section
-              className="flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-card p-3"
-              aria-labelledby="procesos-modulo-titulo"
-            >
-              <ModalMicroLabel
+          <aside
+            className="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border border-border bg-card p-3"
+            aria-labelledby="procesos-modulo-titulo"
+          >
+            <div className="flex shrink-0 flex-col gap-2">
+              <h2
                 id="procesos-modulo-titulo"
-                className="normal-case tracking-normal"
+                className="shrink-0 text-center text-base font-semibold capitalize text-foreground"
               >
                 Módulo
-              </ModalMicroLabel>
+              </h2>
               <Select
                 value={moduloId}
                 onValueChange={(v) => setModuloId(v as ModuloProcesosId)}
@@ -84,10 +83,10 @@ export default function ProcesosPageClient({ rol }: Props) {
                   ))}
                 </SelectContent>
               </Select>
-            </section>
+            </div>
 
             <nav
-              className="flex min-h-0 flex-col gap-1 overflow-y-auto rounded-lg border border-border bg-card p-2"
+              className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
               aria-label="Procesos del módulo"
             >
               {sinProcesos ? (
@@ -116,7 +115,7 @@ export default function ProcesosPageClient({ rol }: Props) {
                 })
               )}
             </nav>
-          </div>
+          </aside>
 
           <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-4">
             {procesoSeleccionado ? (
