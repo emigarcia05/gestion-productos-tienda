@@ -65,7 +65,7 @@ export type CompetenciaPreciosFiltros = z.infer<typeof competenciaPreciosFiltros
 
 export const syncCompetenciaPreciosBodySchema = z
   .object({
+    competenciaId: prismaCuidSchema,
     codTienda: listaPreciosCodTiendaSchema.optional(),
-    competenciaId: prismaCuidSchema.optional(),
   })
   .strict();

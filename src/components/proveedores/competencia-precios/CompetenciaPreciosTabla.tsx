@@ -16,6 +16,7 @@ import {
   tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { fmtPrecio } from "@/lib/format";
+import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
 import { cn } from "@/lib/utils";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
 
@@ -54,8 +55,16 @@ export default function CompetenciaPreciosTabla({
                   <TableHead className="w-[30%]">DESCRIPCIÓN</TableHead>
                   <TableHead className="w-[10%]">PX. TIENDA</TableHead>
                   {competencias.map((c) => (
-                    <TableHead key={c.id} className="min-w-[8rem]">
-                      {c.nombre.toUpperCase()}
+                    <TableHead key={c.id} className="min-w-[8rem] align-bottom">
+                      <span className="block leading-tight">{c.nombre.toUpperCase()}</span>
+                      <span className="block text-[0.65rem] font-normal normal-case text-primary-foreground/90 mt-0.5">
+                        {c.ultimaComparacionAt
+                          ? labelUltimaComparacionCompetencia(c.ultimaComparacionAt).replace(
+                              "Últ. comparación: ",
+                              "Últ.: "
+                            )
+                          : "Sin Últ. Comp."}
+                      </span>
                     </TableHead>
                   ))}
                 </TableRow>

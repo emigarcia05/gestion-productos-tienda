@@ -5,11 +5,10 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Users } from "lucide-react";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import FiltrosCompetenciaPrecios from "@/components/proveedores/competencia-precios/FiltrosCompetenciaPrecios";
 import CompetenciaPreciosTabla from "@/components/proveedores/competencia-precios/CompetenciaPreciosTabla";
 import GestionCompetidoresModal from "@/components/proveedores/competencia-precios/GestionCompetidoresModal";
+import SincronizarCompetenciaModal from "@/components/proveedores/competencia-precios/SincronizarCompetenciaModal";
 import { getCompetenciaPreciosListAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
 
@@ -20,7 +19,7 @@ interface Props {
 export default function CompetenciaPreciosPageClient({ rol }: Props) {
   const puedeEditar = puede(rol, PERMISOS.competenciaPrecios.editar);
   const [gestionOpen, setGestionOpen] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
   const [data, setData] = useState<CompetenciaPreciosListResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
@@ -51,40 +50,6 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
     void cargar();
   }, [cargar]);
 
-  const handleSync = async () => {
-    if (syncing) return;
-    if (!data?.competencias.length) {
-      toast.error("Registrá al menos un competidor antes de sincronizar.");
-      return;
-    }
-    setSyncing(true);
-    try {
-      const res = await fetch("/api/sync-competencia-precios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        error?: string;
-        encontrados?: number;
-        vacios?: number;
-      };
-      if (!res.ok || !json.ok) {
-        toast.error(json.error ?? "No se pudo sincronizar precios de competencia.");
-        return;
-      }
-      toast.success(
-        `Sincronización finalizada. Encontrados: ${json.encontrados ?? 0}. Sin precio: ${json.vacios ?? 0}.`
-      );
-      await cargar();
-    } catch {
-      toast.error("Error de red al sincronizar.");
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   return (
     <ClassicFilteredTableLayout
       title="Lista Proveedores"
@@ -106,11 +71,10 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
               type="button"
               variant="default"
               className="btn-primario-gestion gap-2"
-              disabled={syncing}
-              onClick={() => void handleSync()}
+              onClick={() => setSyncOpen(true)}
             >
-              <RefreshCw className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")} />
-              Actualizar Precios Competencia
+              <RefreshCw className="h-4 w-4 shrink-0" />
+              Comparar Precios Competencia
             </Button>
           </div>
         ) : undefined
@@ -148,11 +112,18 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
         onReload={handleReload}
       />
       {puedeEditar && (
-        <GestionCompetidoresModal
-          open={gestionOpen}
-          onOpenChange={setGestionOpen}
-          onChanged={() => void cargar()}
-        />
+        <>
+          <GestionCompetidoresModal
+            open={gestionOpen}
+            onOpenChange={setGestionOpen}
+            onChanged={() => void cargar()}
+          />
+          <SincronizarCompetenciaModal
+            open={syncOpen}
+            onOpenChange={setSyncOpen}
+            onCompletado={() => void cargar()}
+          />
+        </>
       )}
     </ClassicFilteredTableLayout>
   );

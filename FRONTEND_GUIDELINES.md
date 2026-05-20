@@ -1057,7 +1057,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 - **Layout:** `area-page-shell` + `ClassicFilteredTableLayout` (`title` **Lista Proveedores**, `subtitle` **Comp. Competencia**, `contentWidth="full"`).
 - **Tabla:** columnas fijas **CÓD. TIENDA**, **DESCRIPCIÓN**, **PX. TIENDA** + una columna dinámica por competidor registrado (`prod_competencia.nombre` en MAYÚSCULAS en `TableHead`). Precio competidor con `fmtPrecio`; sin dato → **—** (`text-muted-foreground`). `Table variant="compact"` dentro de `card-tabla-envoltorio` + `contenedor-tabla-gestion`.
 - **Filtros:** `FilterBar` + `FiltroBusquedaInput` (`useFiltrosConBusqueda`) + selects **MARCA** / **RUBRO** en `FiltroIndividualContainer`; contador **X PRODUCTO(S)**.
-- **Acciones (editor):** **Gestionar Competidores** (`GestionCompetidoresModal` + `Dialog` + `AppModal`) y **Actualizar Precios Competencia** → `POST /api/sync-competencia-precios` (timeout largo; toast al finalizar).
+- **Acciones (editor):** **Gestionar Competidores** y **Comparar Precios Competencia** (`SincronizarCompetenciaModal`: el usuario elige **un** competidor; muestra **Últ. comparación**; `POST /api/sync-competencia-precios` con `{ competenciaId }`). Encabezado de columna por competidor: subtexto **Últ.:** fecha Argentina o **Sin Últ. Comp.**
 - **Sidebar:** submódulo **Comp. Competencia** bajo **LISTA PROVEEDORES**.
 
 ---

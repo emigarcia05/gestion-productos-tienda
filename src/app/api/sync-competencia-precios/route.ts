@@ -18,7 +18,7 @@ let syncInProgress = false;
 
 /**
  * POST: sincroniza precios de competencia (scraping) para prod_precios_tienda.
- * Body opcional: { codTienda?, competenciaId? } para acotar el alcance.
+ * Body: { competenciaId } obligatorio; { codTienda? } opcional para un solo ítem.
  */
 export async function POST(request: Request) {
   const denied = await guardCompetenciaPreciosSyncEsEditor();
@@ -45,20 +45,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Parámetros inválidos." }, { status: 400 });
   }
 
-  const competidores = await prisma.prodCompetencia.count({
-    where: parsed.data.competenciaId ? { id: parsed.data.competenciaId } : undefined,
+  const competidor = await prisma.prodCompetencia.findUnique({
+    where: { id: parsed.data.competenciaId },
+    select: { id: true, nombre: true },
   });
-  if (competidores === 0) {
-    return NextResponse.json(
-      { ok: false, error: "Registrá al menos un competidor antes de sincronizar." },
-      { status: 400 }
-    );
+  if (!competidor) {
+    return NextResponse.json({ ok: false, error: "Competidor no encontrado." }, { status: 404 });
   }
 
   const totalProductos = await prisma.listaPrecioTienda.count({
     where: parsed.data.codTienda ? { codTienda: parsed.data.codTienda } : undefined,
   });
-  const totalPairs = totalProductos * competidores;
+  const totalPairs = totalProductos;
 
   syncInProgress = true;
   await startCompetenciaSyncInDb(totalPairs);
@@ -77,7 +75,12 @@ export async function POST(request: Request) {
       errores: result.errores,
     });
     revalidatePath("/proveedores/competencia-precios");
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({
+      ok: true,
+      competenciaId: competidor.id,
+      competenciaNombre: competidor.nombre,
+      ...result,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await setCompetenciaSyncErrorInDb(message);

@@ -16,6 +16,7 @@ import {
   updateCompetenciaAction,
 } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
+import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
 import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
@@ -171,6 +172,9 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                       {row.urlBusqueda ? (
                         <p className="text-xs text-muted-foreground truncate">{row.urlBusqueda}</p>
                       ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        {labelUltimaComparacionCompetencia(row.ultimaComparacionAt)}
+                      </p>
                     </div>
                     <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                       <Button

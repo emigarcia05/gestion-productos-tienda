@@ -29,10 +29,24 @@ export async function getCompetenciaPreciosList(
   const marca = filtros.marca.trim();
   const rubro = filtros.rubro.trim();
 
-  const competencias = await prisma.prodCompetencia.findMany({
+  const competenciasRows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
-    select: { id: true, nombre: true, web: true, urlBusqueda: true },
+    select: {
+      id: true,
+      nombre: true,
+      web: true,
+      urlBusqueda: true,
+      ultimaComparacionAt: true,
+    },
   });
+
+  const competencias = competenciasRows.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    web: c.web,
+    urlBusqueda: c.urlBusqueda,
+    ultimaComparacionAt: c.ultimaComparacionAt?.toISOString() ?? null,
+  }));
 
   const where = {
     ...(q

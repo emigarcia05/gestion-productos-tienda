@@ -13,16 +13,17 @@ export interface SyncCompetenciaPreciosResult {
 }
 
 export interface SyncCompetenciaPreciosOptions {
+  /** Obligatorio: solo se comparan precios de este competidor. */
+  competenciaId: string;
   codTienda?: string;
-  competenciaId?: string;
   onProgress?: (processed: number, total: number) => void;
 }
 
 export async function syncCompetenciaPrecios(
-  options: SyncCompetenciaPreciosOptions = {}
+  options: SyncCompetenciaPreciosOptions
 ): Promise<SyncCompetenciaPreciosResult> {
   const competidores = await prisma.prodCompetencia.findMany({
-    where: options.competenciaId ? { id: options.competenciaId } : undefined,
+    where: { id: options.competenciaId },
     select: { id: true, nombre: true, web: true, urlBusqueda: true },
   });
 
@@ -112,6 +113,11 @@ export async function syncCompetenciaPrecios(
 
     skip += BATCH_SIZE;
   }
+
+  await prisma.prodCompetencia.update({
+    where: { id: options.competenciaId },
+    data: { ultimaComparacionAt: new Date() },
+  });
 
   return { procesados: processed, encontrados, vacios, errores };
 }

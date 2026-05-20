@@ -1294,7 +1294,7 @@ Migración: `20260520190000_add_prod_competencia_tables`.
 
 ### API Routes
 
-- `POST /api/sync-competencia-precios` — body opcional `{ codTienda?, competenciaId? }`; gate `guardCompetenciaPreciosSyncEsEditor`; progreso en `import_progress` id **`competencia-precios-sync`** (`competenciaPreciosProgressDb.ts`).
+- `POST /api/sync-competencia-precios` — body **`{ competenciaId }` obligatorio** (un solo competidor por ejecución); `{ codTienda? }` opcional. Al finalizar, actualiza `prod_competencia.ultima_comparacion_at`. Gate `guardCompetenciaPreciosSyncEsEditor`; progreso en `import_progress` id **`competencia-precios-sync`**.
 - `GET /api/sync-competencia-precios/status` — mismo gate.
 
 **Nota operativa:** el scraping genérico no garantiza precisión en todos los sitios; ajustes por competidor (selectores/URL) pueden requerir extensión del servicio de scraping.

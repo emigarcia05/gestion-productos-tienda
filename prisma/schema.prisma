@@ -562,6 +562,8 @@ model ProdCompetencia {
   web       String
   /// URL de búsqueda/catálogo opcional. Usar `{q}` donde va el término (descripción o código tienda).
   urlBusqueda String? @map("url_busqueda")
+  /// Última ejecución exitosa de comparación de precios para este competidor.
+  ultimaComparacionAt DateTime? @map("ultima_comparacion_at")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
