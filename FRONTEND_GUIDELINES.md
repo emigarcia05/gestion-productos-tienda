@@ -1051,6 +1051,17 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ---
 
+## 5.1 Comparación de precios de competencia (`/proveedores/competencia-precios`)
+
+- **Ruta canónica:** `/gestion-productos/proveedores/competencia-precios` (rewrite → `/proveedores/competencia-precios`). **Permiso:** `PERMISOS.competenciaPrecios.acceso` (solo `editor` en matriz actual).
+- **Layout:** `area-page-shell` + `ClassicFilteredTableLayout` (`title` **Lista Proveedores**, `subtitle` **Comp. Competencia**, `contentWidth="full"`).
+- **Tabla:** columnas fijas **CÓD. TIENDA**, **DESCRIPCIÓN**, **PX. TIENDA** + una columna dinámica por competidor registrado (`prod_competencia.nombre` en MAYÚSCULAS en `TableHead`). Precio competidor con `fmtPrecio`; sin dato → **—** (`text-muted-foreground`). `Table variant="compact"` dentro de `card-tabla-envoltorio` + `contenedor-tabla-gestion`.
+- **Filtros:** `FilterBar` + `FiltroBusquedaInput` (`useFiltrosConBusqueda`) + selects **MARCA** / **RUBRO** en `FiltroIndividualContainer`; contador **X PRODUCTO(S)**.
+- **Acciones (editor):** **Gestionar Competidores** (`GestionCompetidoresModal` + `Dialog` + `AppModal`) y **Actualizar Precios Competencia** → `POST /api/sync-competencia-precios` (timeout largo; toast al finalizar).
+- **Sidebar:** submódulo **Comp. Competencia** bajo **LISTA PROVEEDORES**.
+
+---
+
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
 - Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`.

@@ -122,6 +122,7 @@ const MODULES: NavModule[] = [
       { href: "/gestion-productos/proveedores/lista-precios", label: "Lista Px Proveedores", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.listaPrecios },
       { href: "/gestion-productos/proveedores/sugeridos", label: "Px. Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.sugeridos },
       { href: "/gestion-productos/proveedores/comparacion-categorias", label: "Comp. Por Cat.", icon: <GitCompare className="h-4 w-4 shrink-0" />, permiso: PERMISOS.comparacionCategorias.acceso },
+      { href: "/gestion-productos/proveedores/competencia-precios", label: "Comp. Competencia", icon: <GitCompare className="h-4 w-4 shrink-0" />, permiso: PERMISOS.competenciaPrecios.acceso },
       { href: "/gestion-productos/proveedores/lista", label: "Lista Proveedores", icon: <List className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.lista },
     ],
   },
@@ -240,6 +241,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores/lista-precios") return pathname === "/gestion-productos/proveedores/lista-precios" || pathname === "/proveedores/lista-precios";
   if (href === "/gestion-productos/proveedores/comparacion-categorias")
     return pathname === "/gestion-productos/proveedores/comparacion-categorias" || pathname === "/proveedores/comparacion-categorias";
+  if (href === "/gestion-productos/proveedores/competencia-precios")
+    return pathname === "/gestion-productos/proveedores/competencia-precios" || pathname === "/proveedores/competencia-precios";
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";

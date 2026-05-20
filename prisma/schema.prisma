@@ -549,8 +549,40 @@ model ListaPrecioTienda {
 
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
+  preciosCompetencia      ProdPrecioCompetencia[]
 
   @@map("prod_precios_tienda")
+}
+
+/// Competidores externos (nombre + URLs del sitio para búsqueda de precios).
+model ProdCompetencia {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_competencia_nombre_key")
+  /// Sitio principal del competidor (home o dominio base).
+  web       String
+  /// URL de búsqueda/catálogo opcional. Usar `{q}` donde va el término (descripción o código tienda).
+  urlBusqueda String? @map("url_busqueda")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  precios ProdPrecioCompetencia[]
+
+  @@map("prod_competencia")
+}
+
+/// Precio de venta del competidor para un ítem tienda (`prod_precios_tienda`). `px_competencia` null = no encontrado.
+model ProdPrecioCompetencia {
+  codTienda     String   @map("cod_tienda")
+  competenciaId String   @map("competencia_id")
+  pxCompetencia Decimal? @map("px_competencia") @db.Decimal(14, 4)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  listaPrecioTienda ListaPrecioTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  competencia       ProdCompetencia   @relation(fields: [competenciaId], references: [id], onDelete: Cascade)
+
+  @@id([codTienda, competenciaId])
+  @@index([competenciaId], map: "prod_precios_competencia_competencia_id_idx")
+  @@map("prod_precios_competencia")
 }
 
 // Progreso de importación (singleton por id) para que el polling desde la sidebar funcione en serverless.

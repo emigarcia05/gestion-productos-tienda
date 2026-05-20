@@ -1263,3 +1263,38 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 - `tsc --noEmit` ✓
 - `ReadLints` sobre los 8 archivos modificados ✓
 - BD up-to-date (`prisma migrate status` → 119/119 aplicadas) ✓
+
+---
+
+## Comparación de precios de competencia (2026-05)
+
+### Modelos Prisma
+
+- **`prod_competencia`:** `id` (cuid), `nombre` (unique), `web` (URL del sitio), `url_busqueda` (opcional, plantilla con `{q}` para la página de búsqueda/catálogo).
+- **`prod_precios_competencia`:** PK compuesta `(cod_tienda, competencia_id)` → FK `prod_precios_tienda.cod_tienda` + `prod_competencia.id`; `px_competencia` **nullable** (`null` = precio no encontrado en scraping).
+
+Migración: `20260520190000_add_prod_competencia_tables`.
+
+### Permisos
+
+- Lectura listado: `puede(rol, PERMISOS.competenciaPrecios.acceso)`.
+- CRUD competidores + sync: `competenciaPrecios.editar` + `esEditor()`.
+
+### Server Actions (`src/actions/competenciaPrecios.ts`)
+
+- `getCompetenciaPreciosListAction`, `listCompetenciasAction`, `createCompetenciaAction`, `updateCompetenciaAction`, `deleteCompetenciaAction`.
+- Payloads `unknown` + Zod (`@/lib/validations/competenciaPrecios.ts`). `revalidatePath("/proveedores/competencia-precios")` tras mutaciones.
+
+### Servicios
+
+- `competencia.service.ts` — CRUD + `normalizeWebUrl`.
+- `competenciaPreciosList.service.ts` — listado paginado (`PAGE_SIZE`) con matriz de precios por competidor.
+- `competenciaPrecioScraping.service.ts` — `fetch` HTML + heurística de precios ARS (URLs de búsqueda derivadas de `web` + descripción/código tienda).
+- `syncCompetenciaPrecios.service.ts` — upsert por par producto×competidor; progreso vía callback.
+
+### API Routes
+
+- `POST /api/sync-competencia-precios` — body opcional `{ codTienda?, competenciaId? }`; gate `guardCompetenciaPreciosSyncEsEditor`; progreso en `import_progress` id **`competencia-precios-sync`** (`competenciaPreciosProgressDb.ts`).
+- `GET /api/sync-competencia-precios/status` — mismo gate.
+
+**Nota operativa:** el scraping genérico no garantiza precisión en todos los sitios; ajustes por competidor (selectores/URL) pueden requerir extensión del servicio de scraping.

@@ -20,6 +20,21 @@ export async function guardFinanzasLectura(): Promise<NextResponse | null> {
   return null;
 }
 
+/** Sync precios competencia (scraping) + polling de estado. */
+export async function guardCompetenciaPreciosSyncEsEditor(): Promise<NextResponse | null> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.competenciaPrecios.editar)) {
+    return NextResponse.json(
+      { ok: false, error: "Sin permisos para sincronizar precios de competencia." },
+      { status: 403 }
+    );
+  }
+  if (!(await esEditor())) {
+    return NextResponse.json({ ok: false, error: "Sin permisos de editor." }, { status: 403 });
+  }
+  return null;
+}
+
 /** Import lista precios por API + polling de estado. */
 export async function guardListaPreciosImportarEsEditor(): Promise<NextResponse | null> {
   const rol = await getRol();

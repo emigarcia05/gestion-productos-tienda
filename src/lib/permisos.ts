@@ -52,6 +52,12 @@ export const PERMISOS = {
     editar:  { simple: false, editor: true }, // CRUD categorías/subcategorías/presentaciones y asignar productos
   },
 
+  // ─── Página /proveedores/competencia-precios ─────────────────────────────────
+  competenciaPrecios: {
+    acceso: { simple: false, editor: true },
+    editar: { simple: false, editor: true }, // CRUD competidores + sincronizar precios desde webs
+  },
+
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
     /** Vinculacion Con Prov. (/gestion-productos/tienda/comp-proveedores). */

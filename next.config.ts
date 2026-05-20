@@ -33,6 +33,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/proveedores/competencia-precios",
+        destination: "/gestion-productos/proveedores/competencia-precios",
+        permanent: true,
+      },
+      {
         source: "/proveedores/lista",
         destination: "/gestion-productos/proveedores/lista",
         permanent: true,
@@ -110,6 +115,7 @@ const nextConfig: NextConfig = {
       { source: "/gestion-productos/proveedores/lista-precios", destination: "/proveedores/lista-precios" },
       { source: "/gestion-productos/proveedores/sugeridos", destination: "/proveedores/sugeridos" },
       { source: "/gestion-productos/proveedores/comparacion-categorias", destination: "/proveedores/comparacion-categorias" },
+      { source: "/gestion-productos/proveedores/competencia-precios", destination: "/proveedores/competencia-precios" },
       { source: "/gestion-productos/proveedores/lista", destination: "/proveedores/lista" },
       { source: "/gestion-productos/tienda/comp-proveedores", destination: "/tienda" },
       { source: "/gestion-productos/tienda/control-aumento", destination: "/tienda/aumentos" },
