@@ -9,20 +9,15 @@
  */
 import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
-import {
-  createCompetencia,
-  normalizeUrlBusqueda,
-  normalizeWebUrl,
-} from "../src/services/competencia.service";
+import { createCompetencia, normalizeWebUrl } from "../src/services/competencia.service";
 
 /** Completar con los competidores reales de la tienda. */
 const COMPETIDORES: {
   nombre: string;
   web: string;
   /** Plantilla opcional, ej. https://competidor.com/catalogo?buscar={q} */
-  urlBusqueda?: string;
 }[] = [
-  // { nombre: "Pinturería Ejemplo", web: "https://www.ejemplo.com.ar", urlBusqueda: "https://www.ejemplo.com.ar/buscar?q={q}" },
+  // { nombre: "Pinturería Ejemplo", web: "https://www.ejemplo.com.ar" },
 ];
 
 async function main() {
@@ -42,7 +37,6 @@ async function main() {
         where: { id: existente.id },
         data: {
           web: normalizeWebUrl(c.web),
-          urlBusqueda: normalizeUrlBusqueda(c.urlBusqueda),
         },
       });
       console.log(`Actualizado: ${c.nombre}`);

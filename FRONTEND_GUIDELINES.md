@@ -1057,7 +1057,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 - **Layout:** `area-page-shell` + `ClassicFilteredTableLayout` (`title` **Lista Proveedores**, `subtitle` **Comp. Competencia**, `contentWidth="full"`).
 - **Tabla:** columnas fijas **CÓD. TIENDA**, **DESCRIPCIÓN**, **PX. TIENDA** + una columna dinámica por competidor registrado (`prod_competencia.nombre` en MAYÚSCULAS en `TableHead`). Precio competidor con `fmtPrecio`; sin dato → **—** (`text-muted-foreground`). `Table variant="compact"` dentro de `card-tabla-envoltorio` + `contenedor-tabla-gestion`.
 - **Filtros:** `FilterBar` + `FiltroBusquedaInput` (`useFiltrosConBusqueda`) + selects **MARCA** / **RUBRO** en `FiltroIndividualContainer`; contador **X PRODUCTO(S)**.
-- **Acciones (editor):** **Gestionar Competidores** y **Comparar Precios Competencia** (`SincronizarCompetenciaModal`: el usuario elige **un** competidor; muestra **Últ. comparación**; `POST /api/sync-competencia-precios` con `{ competenciaId }`). Encabezado de columna por competidor: subtexto **Últ.:** fecha Argentina o **Sin Últ. Comp.**
+- **Vínculo manual:** clic en celda competidor → `EditarUrlVinculoModal` (URL ficha + mensaje si `ERROR`). Filtros **COMPETIDOR** + **ESTADO VÍNCULO** (ej. **ERROR** para revisar URLs). Celdas: precio, **Sin URL**, **Error**, **Pendiente**, etc.
+- **Acciones (editor):** **Gestionar Competidores** (solo nombre + sitio) y **Comparar Precios Competencia** (un competidor; solo filas con URL; **Detener Comparación** → `/api/sync-competencia-precios/cancel`).
 - **Sidebar:** submódulo **Comp. Competencia** bajo **LISTA PROVEEDORES**.
 
 ---

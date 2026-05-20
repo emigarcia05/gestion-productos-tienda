@@ -8,9 +8,14 @@ import {
   createCompetenciaSchema,
   deleteCompetenciaSchema,
   competenciaPreciosFiltrosSchema,
+  guardarUrlVinculoSchema,
   updateCompetenciaSchema,
 } from "@/lib/validations/competenciaPrecios";
 import * as competenciaService from "@/services/competencia.service";
+import {
+  guardarUrlVinculoCompetencia,
+  type DatoVinculoCompetenciaCliente,
+} from "@/services/competenciaVinculo.service";
 import {
   getCompetenciaPreciosList,
   type CompetenciaPreciosListResult,
@@ -83,7 +88,7 @@ export async function createCompetenciaAction(
       const msg = parsed.error.flatten().fieldErrors;
       return {
         ok: false,
-        error: msg.nombre?.[0] ?? msg.web?.[0] ?? msg.urlBusqueda?.[0] ?? "Datos inválidos.",
+        error: msg.nombre?.[0] ?? msg.web?.[0] ?? "Datos inválidos.",
       };
     }
     const row = await competenciaService.createCompetencia(parsed.data);
@@ -139,6 +144,35 @@ export async function deleteCompetenciaAction(raw: unknown): Promise<ActionResul
     return {
       ok: false,
       error: e instanceof Error ? e.message : "No se pudo eliminar el competidor.",
+    };
+  }
+}
+
+export async function guardarUrlVinculoCompetenciaAction(
+  raw: unknown
+): Promise<ActionResult<DatoVinculoCompetenciaCliente>> {
+  try {
+    const denied = await gateEditar();
+    if (denied) return denied;
+    const parsed = guardarUrlVinculoSchema.safeParse(raw);
+    if (!parsed.success) {
+      const msg = parsed.error.flatten().fieldErrors;
+      return {
+        ok: false,
+        error:
+          msg.codTienda?.[0] ??
+          msg.competenciaId?.[0] ??
+          msg.urlProducto?.[0] ??
+          "Datos inválidos.",
+      };
+    }
+    const row = await guardarUrlVinculoCompetencia(parsed.data);
+    revalidatePath(PATH);
+    return { ok: true, data: row };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo guardar la URL.",
     };
   }
 }

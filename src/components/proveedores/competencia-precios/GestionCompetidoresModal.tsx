@@ -33,7 +33,6 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
   const [loading, setLoading] = useState(false);
   const [nombre, setNombre] = useState("");
   const [web, setWeb] = useState("");
-  const [urlBusqueda, setUrlBusqueda] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
@@ -53,17 +52,11 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
   const resetForm = () => {
     setNombre("");
     setWeb("");
-    setUrlBusqueda("");
     setEditId(null);
   };
 
   const handleGuardar = async () => {
-    const payload = {
-      nombre: nombre.trim(),
-      web: web.trim(),
-      urlBusqueda: urlBusqueda.trim() || undefined,
-      ...(editId ? { id: editId } : {}),
-    };
+    const payload = { nombre: nombre.trim(), web: web.trim(), ...(editId ? { id: editId } : {}) };
     const result = editId
       ? await updateCompetenciaAction(payload)
       : await createCompetenciaAction(payload);
@@ -81,7 +74,6 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
     setEditId(row.id);
     setNombre(row.nombre);
     setWeb(row.web);
-    setUrlBusqueda(row.urlBusqueda ?? "");
   };
 
   const handleEliminar = async (id: string) => {
@@ -127,19 +119,6 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                 className="mt-1"
               />
             </div>
-            <div>
-              <ModalMicroLabel>Url De Búsqueda (Opcional)</ModalMicroLabel>
-              <Input
-                value={urlBusqueda}
-                onChange={(e) => setUrlBusqueda(e.target.value)}
-                placeholder="https://ejemplo.com/buscar?q={q}"
-                className="mt-1"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Usá {"{q}"} donde va la descripción o el código del producto. Si queda vacío, se
-                infiere desde el sitio web.
-              </p>
-            </div>
             <div className="flex gap-2 justify-end">
               {editId && (
                 <Button type="button" variant="outline" onClick={resetForm}>
@@ -169,9 +148,6 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                     <div className="min-w-0">
                       <p className="font-medium text-foreground truncate">{row.nombre}</p>
                       <p className="text-xs text-muted-foreground truncate">{row.web}</p>
-                      {row.urlBusqueda ? (
-                        <p className="text-xs text-muted-foreground truncate">{row.urlBusqueda}</p>
-                      ) : null}
                       <p className="text-xs text-muted-foreground">
                         {labelUltimaComparacionCompetencia(row.ultimaComparacionAt)}
                       </p>

@@ -1270,8 +1270,10 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 
 ### Modelos Prisma
 
-- **`prod_competencia`:** `id` (cuid), `nombre` (unique), `web` (URL del sitio), `url_busqueda` (opcional, plantilla con `{q}` para la página de búsqueda/catálogo).
-- **`prod_precios_competencia`:** PK compuesta `(cod_tienda, competencia_id)` → FK `prod_precios_tienda.cod_tienda` + `prod_competencia.id`; `px_competencia` **nullable** (`null` = precio no encontrado en scraping).
+- **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia), `ultima_comparacion_at` (último relevamiento masivo del competidor). **Sin** `url_busqueda` (eliminada).
+- **`prod_precios_competencia`:** vínculo **producto tienda × competidor** — PK `(cod_tienda, competencia_id)`; `url_producto` (manual); `px_competencia` (último precio); `estado` (`SIN_URL` | `PENDIENTE` | `OK` | `SIN_PRECIO` | `ERROR`); `error_mensaje`; `relevado_at` (último intento de relevamiento). Constantes en `@/lib/competenciaRelevamiento.ts`.
+- **Sync:** solo filas con `url_producto` no nulo; `POST` body `{ competenciaId, limiteProductos?, codTienda? }`; cancelación `POST /api/sync-competencia-precios/cancel`.
+- **Guardar URL:** `guardarUrlVinculoCompetenciaAction` → `competenciaVinculo.service.ts` (upsert vínculo, estado `PENDIENTE` al cargar URL).
 
 Migración: `20260520190000_add_prod_competencia_tables`.
 

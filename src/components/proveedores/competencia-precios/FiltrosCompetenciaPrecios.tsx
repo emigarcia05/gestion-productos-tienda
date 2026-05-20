@@ -12,6 +12,8 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import { ESTADOS_RELEVAMIENTO_FILTRO } from "@/lib/competenciaRelevamiento";
+import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import {
   Select,
   SelectContent,
@@ -25,6 +27,9 @@ interface Props {
   q: string;
   marca: string;
   rubro: string;
+  competenciaId: string;
+  estadoVinculo: string;
+  competencias: CompetenciaParaCliente[];
   marcasDisponibles: string[];
   rubrosDisponibles: string[];
   total: number;
@@ -32,6 +37,8 @@ interface Props {
   onQChange: (v: string) => void;
   onMarcaChange: (v: string) => void;
   onRubroChange: (v: string) => void;
+  onCompetenciaIdChange: (v: string) => void;
+  onEstadoVinculoChange: (v: string) => void;
   onBuscar: () => void;
 }
 
@@ -39,6 +46,9 @@ export default function FiltrosCompetenciaPrecios({
   q,
   marca,
   rubro,
+  competenciaId,
+  estadoVinculo,
+  competencias,
   marcasDisponibles,
   rubrosDisponibles,
   total,
@@ -46,6 +56,8 @@ export default function FiltrosCompetenciaPrecios({
   onQChange,
   onMarcaChange,
   onRubroChange,
+  onCompetenciaIdChange,
+  onEstadoVinculoChange,
   onBuscar,
 }: Props) {
   const {
@@ -64,12 +76,69 @@ export default function FiltrosCompetenciaPrecios({
     },
   });
 
-  const hasFilters = !!(q.trim() || marca || rubro);
+  const hasFilters = !!(q.trim() || marca || rubro || competenciaId || estadoVinculo);
 
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={!!competenciaId}
+            onLimpiar={() => {
+              onCompetenciaIdChange("");
+              onEstadoVinculoChange("");
+              onBuscar();
+            }}
+          >
+            <Select
+              value={competenciaId || "__all__"}
+              onValueChange={(v) => {
+                onCompetenciaIdChange(v === "__all__" ? "" : v);
+                onBuscar();
+              }}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="COMPETIDOR" />
+              </SelectTrigger>
+              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                <SelectItem value="__all__">COMPETIDOR</SelectItem>
+                {competencias.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={!!estadoVinculo}
+            onLimpiar={() => {
+              onEstadoVinculoChange("");
+              onBuscar();
+            }}
+          >
+            <Select
+              value={estadoVinculo || "__all__"}
+              onValueChange={(v) => {
+                onEstadoVinculoChange(v === "__all__" ? "" : v);
+                onBuscar();
+              }}
+              disabled={!competenciaId}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="ESTADO VÍNCULO" />
+              </SelectTrigger>
+              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                {ESTADOS_RELEVAMIENTO_FILTRO.map((e) => (
+                  <SelectItem key={e.value || "all"} value={e.value || "__all__"}>
+                    {e.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
             activo={!!marca}
@@ -149,6 +218,8 @@ export default function FiltrosCompetenciaPrecios({
             onQChange("");
             onMarcaChange("");
             onRubroChange("");
+            onCompetenciaIdChange("");
+            onEstadoVinculoChange("");
             onBuscar();
           }}
         />

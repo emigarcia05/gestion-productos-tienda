@@ -1,7 +1,10 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
+import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import type { CompetenciaPreciosFiltros } from "@/lib/validations/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
+import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
 export interface FilaCompetenciaPrecios {
   codTienda: string;
@@ -9,7 +12,7 @@ export interface FilaCompetenciaPrecios {
   pxListaTienda: number;
   marca: string | null;
   rubro: string | null;
-  preciosPorCompetencia: Record<string, number | null>;
+  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>;
 }
 
 export interface CompetenciaPreciosListResult {
@@ -21,6 +24,16 @@ export interface CompetenciaPreciosListResult {
   rubrosDisponibles: string[];
 }
 
+function vinculoVacio(): DatoVinculoCompetenciaCliente {
+  return {
+    urlProducto: null,
+    pxCompetencia: null,
+    estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+    errorMensaje: null,
+    relevadoAt: null,
+  };
+}
+
 export async function getCompetenciaPreciosList(
   filtros: CompetenciaPreciosFiltros
 ): Promise<CompetenciaPreciosListResult> {
@@ -28,6 +41,8 @@ export async function getCompetenciaPreciosList(
   const q = filtros.q.trim();
   const marca = filtros.marca.trim();
   const rubro = filtros.rubro.trim();
+  const estadoVinculo = filtros.estadoVinculo?.trim() ?? "";
+  const competenciaFiltroId = filtros.competenciaId?.trim() ?? "";
 
   const competenciasRows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
@@ -35,7 +50,6 @@ export async function getCompetenciaPreciosList(
       id: true,
       nombre: true,
       web: true,
-      urlBusqueda: true,
       ultimaComparacionAt: true,
     },
   });
@@ -44,23 +58,50 @@ export async function getCompetenciaPreciosList(
     id: c.id,
     nombre: c.nombre,
     web: c.web,
-    urlBusqueda: c.urlBusqueda,
     ultimaComparacionAt: c.ultimaComparacionAt?.toISOString() ?? null,
   }));
 
-  const where = {
+  const baseWhere: Prisma.ListaPrecioTiendaWhereInput = {
     ...(q
       ? {
           OR: [
-            { codTienda: { contains: q, mode: "insensitive" as const } },
-            { descripcionTienda: { contains: q, mode: "insensitive" as const } },
-            { codExt: { contains: q, mode: "insensitive" as const } },
+            { codTienda: { contains: q, mode: "insensitive" } },
+            { descripcionTienda: { contains: q, mode: "insensitive" } },
+            { codExt: { contains: q, mode: "insensitive" } },
           ],
         }
       : {}),
-    ...(marca ? { marca: { equals: marca, mode: "insensitive" as const } } : {}),
-    ...(rubro ? { rubro: { equals: rubro, mode: "insensitive" as const } } : {}),
+    ...(marca ? { marca: { equals: marca, mode: "insensitive" } } : {}),
+    ...(rubro ? { rubro: { equals: rubro, mode: "insensitive" } } : {}),
   };
+
+  let where: Prisma.ListaPrecioTiendaWhereInput = baseWhere;
+
+  if (estadoVinculo && competenciaFiltroId) {
+    if (estadoVinculo === ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL) {
+      where = {
+        ...baseWhere,
+        NOT: {
+          preciosCompetencia: {
+            some: {
+              competenciaId: competenciaFiltroId,
+              urlProducto: { not: null },
+            },
+          },
+        },
+      };
+    } else {
+      where = {
+        ...baseWhere,
+        preciosCompetencia: {
+          some: {
+            competenciaId: competenciaFiltroId,
+            estado: estadoVinculo,
+          },
+        },
+      };
+    }
+  }
 
   const [total, productos, marcasRows, rubrosRows] = await Promise.all([
     prisma.listaPrecioTienda.count({ where }),
@@ -99,22 +140,31 @@ export async function getCompetenciaPreciosList(
           select: {
             codTienda: true,
             competenciaId: true,
+            urlProducto: true,
             pxCompetencia: true,
+            estado: true,
+            errorMensaje: true,
+            relevadoAt: true,
           },
         })
       : [];
 
-  const preciosMap = new Map<string, Record<string, number | null>>();
+  const vinculosMap = new Map<string, Record<string, DatoVinculoCompetenciaCliente>>();
   for (const p of productos) {
-    const entry: Record<string, number | null> = {};
-    for (const c of competencias) entry[c.id] = null;
-    preciosMap.set(p.codTienda, entry);
+    const entry: Record<string, DatoVinculoCompetenciaCliente> = {};
+    for (const c of competencias) entry[c.id] = vinculoVacio();
+    vinculosMap.set(p.codTienda, entry);
   }
   for (const row of preciosRows) {
-    const entry = preciosMap.get(row.codTienda);
+    const entry = vinculosMap.get(row.codTienda);
     if (!entry) continue;
-    entry[row.competenciaId] =
-      row.pxCompetencia != null ? Number(row.pxCompetencia) : null;
+    entry[row.competenciaId] = {
+      urlProducto: row.urlProducto,
+      pxCompetencia: row.pxCompetencia != null ? Number(row.pxCompetencia) : null,
+      estado: row.urlProducto ? row.estado : ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+      errorMensaje: row.errorMensaje,
+      relevadoAt: row.relevadoAt?.toISOString() ?? null,
+    };
   }
 
   const filas: FilaCompetenciaPrecios[] = productos.map((p) => ({
@@ -123,7 +173,7 @@ export async function getCompetenciaPreciosList(
     pxListaTienda: Number(p.pxListaTienda),
     marca: p.marca,
     rubro: p.rubro,
-    preciosPorCompetencia: preciosMap.get(p.codTienda) ?? {},
+    vinculosPorCompetencia: vinculosMap.get(p.codTienda) ?? {},
   }));
 
   return {
@@ -131,11 +181,7 @@ export async function getCompetenciaPreciosList(
     total,
     totalPaginas: totalPaginasFromTotal(total),
     competencias,
-    marcasDisponibles: marcasRows
-      .map((m) => m.marca)
-      .filter((m): m is string => !!m),
-    rubrosDisponibles: rubrosRows
-      .map((r) => r.rubro)
-      .filter((r): r is string => !!r),
+    marcasDisponibles: marcasRows.map((m) => m.marca).filter((m): m is string => !!m),
+    rubrosDisponibles: rubrosRows.map((r) => r.rubro).filter((r): r is string => !!r),
   };
 }

@@ -5,6 +5,7 @@ import { RefreshCw } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,7 @@ export default function SincronizarCompetenciaModal({
   const [lista, setLista] = useState<CompetenciaParaCliente[]>([]);
   const [loadingLista, setLoadingLista] = useState(false);
   const [competenciaId, setCompetenciaId] = useState("");
+  const [limiteProductos, setLimiteProductos] = useState("10");
   const [syncing, setSyncing] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -55,25 +57,49 @@ export default function SincronizarCompetenciaModal({
     [lista, competenciaId]
   );
 
+  const handleCancelarSync = async () => {
+    try {
+      await fetch("/api/sync-competencia-precios/cancel", { method: "POST" });
+      toast.message("Cancelación solicitada. Se detiene tras el producto en curso.");
+    } catch {
+      toast.error("No se pudo solicitar la cancelación.");
+    }
+  };
+
   const handleSync = async () => {
     if (!competenciaId) {
       toast.error("Seleccioná un competidor.");
       return;
     }
+    const limiteRaw = limiteProductos.trim();
+    const limiteParsed = limiteRaw ? parseInt(limiteRaw, 10) : undefined;
+    if (limiteRaw && (Number.isNaN(limiteParsed) || limiteParsed! < 1 || limiteParsed! > 500)) {
+      toast.error("El máximo de productos debe estar entre 1 y 500 (o vacío para todo el catálogo).");
+      return;
+    }
+
     setSyncing(true);
     try {
+      const body: { competenciaId: string; limiteProductos?: number } = { competenciaId };
+      if (limiteParsed != null && limiteParsed > 0) body.limiteProductos = limiteParsed;
+
       const res = await fetch("/api/sync-competencia-precios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ competenciaId }),
+        body: JSON.stringify(body),
       });
       const json = (await res.json()) as {
         ok?: boolean;
+        cancelled?: boolean;
         error?: string;
         encontrados?: number;
         vacios?: number;
         competenciaNombre?: string;
       };
+      if (json.cancelled) {
+        toast.message(json.error ?? "Comparación cancelada.");
+        return;
+      }
       if (!res.ok || !json.ok) {
         toast.error(json.error ?? "No se pudo comparar precios.");
         return;
@@ -91,26 +117,38 @@ export default function SincronizarCompetenciaModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => !syncing && onOpenChange(v)}>
       <AppModal
         size="md"
         title="Comparar Precios Competencia"
         actions={
-          <>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={syncing}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              className="btn-primario-gestion gap-2"
-              disabled={syncing || !competenciaId || lista.length === 0}
-              onClick={() => void handleSync()}
-            >
-              <RefreshCw className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")} />
-              Comparar Precios
-            </Button>
-          </>
+          syncing ? (
+            <>
+              <Button type="button" variant="outline" onClick={() => void handleCancelarSync()}>
+                Detener Comparación
+              </Button>
+              <Button type="button" variant="default" disabled className="gap-2">
+                <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
+                Comparando...
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                className="btn-primario-gestion gap-2"
+                disabled={!competenciaId || lista.length === 0}
+                onClick={() => void handleSync()}
+              >
+                <RefreshCw className="h-4 w-4 shrink-0" />
+                Comparar Precios
+              </Button>
+            </>
+          )
         }
       >
         <div className="flex flex-col gap-4">
@@ -124,7 +162,11 @@ export default function SincronizarCompetenciaModal({
             <>
               <div>
                 <ModalMicroLabel>Competidor</ModalMicroLabel>
-                <Select value={competenciaId || undefined} onValueChange={setCompetenciaId}>
+                <Select
+                  value={competenciaId || undefined}
+                  onValueChange={setCompetenciaId}
+                  disabled={syncing}
+                >
                   <SelectTrigger className="mt-1 w-full">
                     <SelectValue placeholder="SELECCIONAR COMPETIDOR" />
                   </SelectTrigger>
@@ -137,15 +179,34 @@ export default function SincronizarCompetenciaModal({
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <ModalMicroLabel>Máx. Productos (Prueba)</ModalMicroLabel>
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={limiteProductos}
+                  onChange={(e) => setLimiteProductos(e.target.value)}
+                  placeholder="10"
+                  className="mt-1"
+                  disabled={syncing}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Solo releva filas con URL en la grilla. Máx. chico (ej. 5) para probar; vacío = todos
+                  los vínculos con URL.
+                </p>
+              </div>
               {seleccionado ? (
                 <p className="text-sm text-muted-foreground">
                   {labelUltimaComparacionCompetencia(seleccionado.ultimaComparacionAt)}
                 </p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
-                Solo se actualizarán los precios de la columna del competidor elegido (más rápido que
-                comparar todos a la vez).
-              </p>
+              {syncing ? (
+                <p className="text-sm text-muted-foreground">
+                  Si tarda mucho, usá Detener Comparación. También podés reiniciar{" "}
+                  <code className="text-xs">npm run dev</code> en la terminal del servidor.
+                </p>
+              ) : null}
             </>
           )}
         </div>

@@ -1,9 +1,17 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { extraerPrecioCompetenciaDesdeWeb } from "@/services/competenciaPrecioScraping.service";
+import { shouldAbortCompetenciaSyncInDb } from "@/lib/competenciaPreciosProgressDb";
+import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
+import { extraerPrecioDesdeUrlProducto } from "@/services/competenciaPrecioScraping.service";
 
-const BATCH_SIZE = 25;
-const DELAY_MS = 400;
+const DELAY_MS = 300;
+
+export class SyncCompetenciaPreciosCancelledError extends Error {
+  constructor() {
+    super("Comparación de competencia cancelada.");
+    this.name = "SyncCompetenciaPreciosCancelledError";
+  }
+}
 
 export interface SyncCompetenciaPreciosResult {
   procesados: number;
@@ -13,27 +21,28 @@ export interface SyncCompetenciaPreciosResult {
 }
 
 export interface SyncCompetenciaPreciosOptions {
-  /** Obligatorio: solo se comparan precios de este competidor. */
   competenciaId: string;
   codTienda?: string;
+  limiteProductos?: number;
   onProgress?: (processed: number, total: number) => void;
 }
 
+/**
+ * Releva precios solo en vínculos con `url_producto` cargada manualmente.
+ */
 export async function syncCompetenciaPrecios(
   options: SyncCompetenciaPreciosOptions
 ): Promise<SyncCompetenciaPreciosResult> {
-  const competidores = await prisma.prodCompetencia.findMany({
-    where: { id: options.competenciaId },
-    select: { id: true, nombre: true, web: true, urlBusqueda: true },
-  });
+  const whereVinculo = {
+    competenciaId: options.competenciaId,
+    urlProducto: { not: null },
+    ...(options.codTienda ? { codTienda: options.codTienda } : {}),
+  };
 
-  if (competidores.length === 0) {
-    return { procesados: 0, encontrados: 0, vacios: 0, errores: 0 };
-  }
-
-  const productWhere = options.codTienda ? { codTienda: options.codTienda } : {};
-  const totalProductos = await prisma.listaPrecioTienda.count({ where: productWhere });
-  const totalPairs = totalProductos * competidores.length;
+  const totalEnBd = await prisma.prodPrecioCompetencia.count({ where: whereVinculo });
+  const limite = options.limiteProductos;
+  const totalObjetivo =
+    limite != null && limite > 0 ? Math.min(totalEnBd, limite) : totalEnBd;
 
   let processed = 0;
   let encontrados = 0;
@@ -41,77 +50,111 @@ export async function syncCompetenciaPrecios(
   let errores = 0;
   let skip = 0;
 
-  while (true) {
-    const productos = await prisma.listaPrecioTienda.findMany({
-      where: productWhere,
+  while (processed < totalObjetivo) {
+    if (await shouldAbortCompetenciaSyncInDb()) {
+      throw new SyncCompetenciaPreciosCancelledError();
+    }
+
+    const take = Math.min(50, totalObjetivo - processed);
+    const vinculos = await prisma.prodPrecioCompetencia.findMany({
+      where: whereVinculo,
       orderBy: { codTienda: "asc" },
       skip,
-      take: BATCH_SIZE,
+      take,
       select: {
         codTienda: true,
-        codExt: true,
-        descripcionTienda: true,
+        competenciaId: true,
+        urlProducto: true,
       },
     });
-    if (productos.length === 0) break;
+    if (vinculos.length === 0) break;
 
-    for (const producto of productos) {
-      for (const competidor of competidores) {
-        try {
-          const px = await extraerPrecioCompetenciaDesdeWeb(
-            competidor.web,
-            {
-              codTienda: producto.codTienda,
-              descripcionTienda: producto.descripcionTienda,
-              codExt: producto.codExt,
-            },
-            competidor.urlBusqueda
-          );
+    for (const v of vinculos) {
+      const url = v.urlProducto?.trim();
+      if (!url) continue;
 
-          await prisma.prodPrecioCompetencia.upsert({
+      const now = new Date();
+      try {
+        const resultado = await extraerPrecioDesdeUrlProducto(url);
+
+        if (!resultado.ok) {
+          errores++;
+          await prisma.prodPrecioCompetencia.update({
             where: {
               codTienda_competenciaId: {
-                codTienda: producto.codTienda,
-                competenciaId: competidor.id,
+                codTienda: v.codTienda,
+                competenciaId: v.competenciaId,
               },
             },
-            create: {
-              codTienda: producto.codTienda,
-              competenciaId: competidor.id,
-              pxCompetencia: px != null ? new Prisma.Decimal(px) : null,
-            },
-            update: {
-              pxCompetencia: px != null ? new Prisma.Decimal(px) : null,
+            data: {
+              pxCompetencia: null,
+              estado: ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR,
+              errorMensaje: resultado.error.slice(0, 500),
+              relevadoAt: now,
             },
           });
-
-          if (px != null) encontrados++;
-          else vacios++;
-        } catch {
-          errores++;
-          await prisma.prodPrecioCompetencia.upsert({
+        } else if (resultado.precio != null) {
+          encontrados++;
+          await prisma.prodPrecioCompetencia.update({
             where: {
               codTienda_competenciaId: {
-                codTienda: producto.codTienda,
-                competenciaId: competidor.id,
+                codTienda: v.codTienda,
+                competenciaId: v.competenciaId,
               },
             },
-            create: {
-              codTienda: producto.codTienda,
-              competenciaId: competidor.id,
-              pxCompetencia: null,
+            data: {
+              pxCompetencia: new Prisma.Decimal(resultado.precio),
+              estado: ESTADO_RELEVAMIENTO_COMPETENCIA.OK,
+              errorMensaje: null,
+              relevadoAt: now,
             },
-            update: { pxCompetencia: null },
+          });
+        } else {
+          vacios++;
+          await prisma.prodPrecioCompetencia.update({
+            where: {
+              codTienda_competenciaId: {
+                codTienda: v.codTienda,
+                competenciaId: v.competenciaId,
+              },
+            },
+            data: {
+              pxCompetencia: null,
+              estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO,
+              errorMensaje: null,
+              relevadoAt: now,
+            },
           });
         }
+      } catch (e) {
+        errores++;
+        const msg = e instanceof Error ? e.message : "Error desconocido.";
+        await prisma.prodPrecioCompetencia.update({
+          where: {
+            codTienda_competenciaId: {
+              codTienda: v.codTienda,
+              competenciaId: v.competenciaId,
+            },
+          },
+          data: {
+            pxCompetencia: null,
+            estado: ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR,
+            errorMensaje: msg.slice(0, 500),
+            relevadoAt: now,
+          },
+        });
+      }
 
-        processed++;
-        options.onProgress?.(processed, totalPairs);
-        await delay(DELAY_MS);
+      processed++;
+      options.onProgress?.(processed, totalObjetivo);
+      await delay(DELAY_MS);
+
+      if (await shouldAbortCompetenciaSyncInDb()) {
+        throw new SyncCompetenciaPreciosCancelledError();
       }
     }
 
-    skip += BATCH_SIZE;
+    skip += take;
   }
 
   await prisma.prodCompetencia.update({

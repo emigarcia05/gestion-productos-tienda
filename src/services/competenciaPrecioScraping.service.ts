@@ -1,70 +1,40 @@
-import { normalizeWebUrl } from "@/services/competencia.service";
-
 const FETCH_TIMEOUT_MS = 12_000;
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-export interface ProductoBusquedaCompetencia {
-  codTienda: string;
-  descripcionTienda: string | null;
-  codExt: string;
-}
+export type ResultadoExtraccionPrecio =
+  | { ok: true; precio: number }
+  | { ok: true; precio: null; motivo: "sin_precio_en_pagina" }
+  | { ok: false; error: string };
 
 /**
- * Intenta obtener el precio de venta en el sitio del competidor.
- * Estrategia genérica: varias URLs de búsqueda + heurística sobre el HTML.
- * Sitios con markup propio pueden requerir ajuste futuro por competidor.
+ * Obtiene el precio desde la URL manual de la ficha del producto en el competidor.
  */
-export async function extraerPrecioCompetenciaDesdeWeb(
-  webBase: string,
-  producto: ProductoBusquedaCompetencia,
-  urlBusquedaPlantilla?: string | null
-): Promise<number | null> {
-  const termino = (producto.descripcionTienda ?? producto.codTienda).trim();
-  if (!termino) return null;
-
-  const base = normalizeWebUrl(webBase);
-  const urls = buildSearchUrls(base, termino, urlBusquedaPlantilla);
-
-  for (const url of urls) {
-    const html = await fetchHtml(url);
-    if (!html) continue;
-    const precio = pickBestPrice(parsePreciosFromHtml(html));
-    if (precio != null) return precio;
+export async function extraerPrecioDesdeUrlProducto(
+  urlProducto: string
+): Promise<ResultadoExtraccionPrecio> {
+  const url = urlProducto.trim();
+  if (!url) {
+    return { ok: false, error: "URL de producto vacía." };
   }
 
-  return null;
-}
-
-function buildSearchUrls(
-  base: string,
-  termino: string,
-  urlBusquedaPlantilla?: string | null
-): string[] {
-  const q = encodeURIComponent(termino);
-  const urls: string[] = [];
-
-  const plantilla = (urlBusquedaPlantilla ?? "").trim();
-  if (plantilla) {
-    const resolved = plantilla
-      .replace(/\{q\}/gi, q)
-      .replace(/\{query\}/gi, q)
-      .replace(/\{termino\}/gi, q);
-    const withScheme =
-      resolved.startsWith("http://") || resolved.startsWith("https://")
-        ? resolved
-        : `https://${resolved}`;
-    urls.push(withScheme);
+  let parsed: URL;
+  try {
+    parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+  } catch {
+    return { ok: false, error: "URL de producto inválida." };
   }
 
-  return [
-    ...urls,
-    `${base}/search?q=${q}`,
-    `${base}/buscar?q=${q}`,
-    `${base}/catalogsearch/result/?q=${q}`,
-    `${base}?s=${q}`,
-    `${base}/?search=${q}`,
-  ];
+  const html = await fetchHtml(parsed.toString());
+  if (!html) {
+    return { ok: false, error: "No se pudo descargar la página (timeout o HTTP error)." };
+  }
+
+  const precio = pickBestPrice(parsePreciosFromHtml(html));
+  if (precio == null) {
+    return { ok: true, precio: null, motivo: "sin_precio_en_pagina" };
+  }
+  return { ok: true, precio };
 }
 
 async function fetchHtml(url: string): Promise<string | null> {
@@ -93,7 +63,6 @@ async function fetchHtml(url: string): Promise<string | null> {
   }
 }
 
-/** Precios candidatos en ARS (descarta valores absurdos). */
 export function parsePreciosFromHtml(html: string): number[] {
   const found = new Set<number>();
 
@@ -142,6 +111,5 @@ function parsePrecioArgentino(raw: string): number | null {
 function pickBestPrice(candidates: number[]): number | null {
   if (candidates.length === 0) return null;
   const sorted = [...candidates].sort((a, b) => a - b);
-  const mid = sorted[Math.floor(sorted.length / 2)];
-  return mid ?? null;
+  return sorted[Math.floor(sorted.length / 2)] ?? null;
 }

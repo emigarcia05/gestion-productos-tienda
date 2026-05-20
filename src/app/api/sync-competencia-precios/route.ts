@@ -3,13 +3,17 @@ import { revalidatePath } from "next/cache";
 import { guardCompetenciaPreciosSyncEsEditor } from "@/lib/apiRouteAuth";
 import { syncCompetenciaPreciosBodySchema } from "@/lib/validations/competenciaPrecios";
 import { prisma } from "@/lib/prisma";
-import { syncCompetenciaPrecios } from "@/services/syncCompetenciaPrecios.service";
+import {
+  syncCompetenciaPrecios,
+  SyncCompetenciaPreciosCancelledError,
+} from "@/services/syncCompetenciaPrecios.service";
 import {
   setCompetenciaSyncErrorInDb,
   setCompetenciaSyncProgressInDb,
   setCompetenciaSyncResultInDb,
   startCompetenciaSyncInDb,
   getCompetenciaSyncProgressFromDb,
+  clearCompetenciaSyncRunningStateInDb,
 } from "@/lib/competenciaPreciosProgressDb";
 
 export const maxDuration = 300;
@@ -53,10 +57,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Competidor no encontrado." }, { status: 404 });
   }
 
-  const totalProductos = await prisma.listaPrecioTienda.count({
-    where: parsed.data.codTienda ? { codTienda: parsed.data.codTienda } : undefined,
-  });
-  const totalPairs = totalProductos;
+  const whereVinculo = {
+    competenciaId: parsed.data.competenciaId,
+    urlProducto: { not: null },
+    ...(parsed.data.codTienda ? { codTienda: parsed.data.codTienda } : {}),
+  };
+  const totalEnBd = await prisma.prodPrecioCompetencia.count({ where: whereVinculo });
+  if (totalEnBd === 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "No hay productos con URL cargada para este competidor. Asigná URLs antes de comparar.",
+      },
+      { status: 400 }
+    );
+  }
+  const limite = parsed.data.limiteProductos;
+  const totalPairs =
+    limite != null && limite > 0 ? Math.min(totalEnBd, limite) : totalEnBd;
 
   syncInProgress = true;
   await startCompetenciaSyncInDb(totalPairs);
@@ -65,6 +83,7 @@ export async function POST(request: Request) {
     const result = await syncCompetenciaPrecios({
       codTienda: parsed.data.codTienda,
       competenciaId: parsed.data.competenciaId,
+      limiteProductos: parsed.data.limiteProductos,
       onProgress(processed, total) {
         void setCompetenciaSyncProgressInDb(processed, total);
       },
@@ -82,6 +101,13 @@ export async function POST(request: Request) {
       ...result,
     });
   } catch (e) {
+    if (e instanceof SyncCompetenciaPreciosCancelledError) {
+      await clearCompetenciaSyncRunningStateInDb();
+      return NextResponse.json(
+        { ok: false, cancelled: true, error: e.message },
+        { status: 200 }
+      );
+    }
     const message = e instanceof Error ? e.message : String(e);
     await setCompetenciaSyncErrorInDb(message);
     console.error("Error sync competencia precios:", message);

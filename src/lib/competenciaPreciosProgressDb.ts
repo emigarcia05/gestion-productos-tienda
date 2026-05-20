@@ -87,6 +87,35 @@ export async function setCompetenciaSyncResultInDb(result: {
   });
 }
 
+/** Cancelación cooperativa: el worker comprueba `running` entre lotes. */
+export async function shouldAbortCompetenciaSyncInDb(): Promise<boolean> {
+  const row = await prisma.importProgress.findUnique({ where: { id: PROGRESS_ID } });
+  return row != null && !row.running;
+}
+
+export async function requestCancelCompetenciaSyncInDb(): Promise<boolean> {
+  const row = await prisma.importProgress.findUnique({ where: { id: PROGRESS_ID } });
+  if (!row?.running) return false;
+  await prisma.importProgress.update({
+    where: { id: PROGRESS_ID },
+    data: {
+      running: false,
+      error: "Cancelado por el usuario.",
+      updatedAt: new Date(),
+    },
+  });
+  return true;
+}
+
+export async function clearCompetenciaSyncRunningStateInDb(): Promise<void> {
+  const row = await prisma.importProgress.findUnique({ where: { id: PROGRESS_ID } });
+  if (!row) return;
+  await prisma.importProgress.update({
+    where: { id: PROGRESS_ID },
+    data: { running: false, updatedAt: new Date() },
+  });
+}
+
 export async function setCompetenciaSyncErrorInDb(message: string): Promise<void> {
   await prisma.importProgress.upsert({
     where: { id: PROGRESS_ID },

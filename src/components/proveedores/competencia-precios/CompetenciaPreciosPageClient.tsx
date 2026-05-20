@@ -25,6 +25,8 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
   const [q, setQ] = useState("");
   const [marca, setMarca] = useState("");
   const [rubro, setRubro] = useState("");
+  const [competenciaId, setCompetenciaId] = useState("");
+  const [estadoVinculo, setEstadoVinculo] = useState("");
   const [pagina, setPagina] = useState(1);
 
   const cargar = useCallback(async () => {
@@ -34,13 +36,15 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
         q,
         marca,
         rubro,
+        competenciaId: competenciaId || undefined,
+        estadoVinculo,
         pagina: String(pagina),
       });
       setData(result);
     } finally {
       setLoading(false);
     }
-  }, [q, marca, rubro, pagina]);
+  }, [q, marca, rubro, competenciaId, estadoVinculo, pagina]);
 
   useEffect(() => {
     void cargar();
@@ -84,6 +88,9 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
           q={q}
           marca={marca}
           rubro={rubro}
+          competenciaId={competenciaId}
+          estadoVinculo={estadoVinculo}
+          competencias={data?.competencias ?? []}
           marcasDisponibles={data?.marcasDisponibles ?? []}
           rubrosDisponibles={data?.rubrosDisponibles ?? []}
           total={data?.total ?? 0}
@@ -100,6 +107,14 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
             setRubro(v);
             setPagina(1);
           }}
+          onCompetenciaIdChange={(v) => {
+            setCompetenciaId(v);
+            setPagina(1);
+          }}
+          onEstadoVinculoChange={(v) => {
+            setEstadoVinculo(v);
+            setPagina(1);
+          }}
           onBuscar={() => void cargar()}
         />
       }
@@ -108,6 +123,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
         data={data}
         loading={loading}
         pagina={pagina}
+        puedeEditar={puedeEditar}
         onPaginaChange={setPagina}
         onReload={handleReload}
       />

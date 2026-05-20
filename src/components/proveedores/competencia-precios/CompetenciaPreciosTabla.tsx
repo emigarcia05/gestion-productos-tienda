@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -17,24 +17,52 @@ import {
 } from "@/components/shared/TableEmptyState";
 import { fmtPrecio } from "@/lib/format";
 import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
+import {
+  ESTADO_RELEVAMIENTO_COMPETENCIA,
+  etiquetaEstadoRelevamiento,
+} from "@/lib/competenciaRelevamiento";
+import { TEXT_WARNING_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
+import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+import EditarUrlVinculoModal from "@/components/proveedores/competencia-precios/EditarUrlVinculoModal";
 
 interface Props {
   data: CompetenciaPreciosListResult | null;
   loading: boolean;
   pagina: number;
+  puedeEditar: boolean;
   onPaginaChange: (p: number) => void;
   onReload: () => void;
+}
+
+function celdaVinculoTexto(v: DatoVinculoCompetenciaCliente): string {
+  if (!v.urlProducto) return "Sin URL";
+  if (v.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.OK && v.pxCompetencia != null) {
+    return fmtPrecio(v.pxCompetencia);
+  }
+  if (v.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR) return "Error";
+  if (v.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO) return "Sin Precio";
+  if (v.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.PENDIENTE) return "Pendiente";
+  return etiquetaEstadoRelevamiento(v.estado);
 }
 
 export default function CompetenciaPreciosTabla({
   data,
   loading,
   pagina,
+  puedeEditar,
   onPaginaChange,
   onReload,
 }: Props) {
+  const [editCell, setEditCell] = useState<{
+    codTienda: string;
+    descripcion: string | null;
+    competenciaId: string;
+    competenciaNombre: string;
+    vinculo: DatoVinculoCompetenciaCliente;
+  } | null>(null);
+
   useEffect(() => {
     onReload();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recargar solo al cambiar página
@@ -52,7 +80,7 @@ export default function CompetenciaPreciosTabla({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[10%]">CÓD. TIENDA</TableHead>
-                  <TableHead className="w-[30%]">DESCRIPCIÓN</TableHead>
+                  <TableHead className="w-[28%]">DESCRIPCIÓN</TableHead>
                   <TableHead className="w-[10%]">PX. TIENDA</TableHead>
                   {competencias.map((c) => (
                     <TableHead key={c.id} className="min-w-[8rem] align-bottom">
@@ -101,16 +129,39 @@ export default function CompetenciaPreciosTabla({
                         {fmtPrecio(fila.pxListaTienda)}
                       </TableCell>
                       {competencias.map((c) => {
-                        const px = fila.preciosPorCompetencia[c.id];
+                        const v = fila.vinculosPorCompetencia[c.id];
+                        const texto = celdaVinculoTexto(v);
+                        const esError = v.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR;
+                        const esSinUrl = !v.urlProducto;
                         return (
                           <TableCell
                             key={c.id}
                             className={cn(
                               "celda-datos tabular-nums text-right",
-                              px == null && "text-muted-foreground"
+                              (esSinUrl || v.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO) &&
+                                "text-muted-foreground",
+                              esError && TEXT_WARNING_CLASS,
+                              puedeEditar && "cursor-pointer hover:bg-muted/50"
                             )}
+                            title={
+                              esError && v.errorMensaje
+                                ? v.errorMensaje
+                                : v.urlProducto ?? "Clic para cargar URL"
+                            }
+                            onClick={
+                              puedeEditar
+                                ? () =>
+                                    setEditCell({
+                                      codTienda: fila.codTienda,
+                                      descripcion: fila.descripcionTienda,
+                                      competenciaId: c.id,
+                                      competenciaNombre: c.nombre,
+                                      vinculo: v,
+                                    })
+                                : undefined
+                            }
                           >
-                            {px != null ? fmtPrecio(px) : "—"}
+                            {texto}
                           </TableCell>
                         );
                       })}
@@ -129,6 +180,21 @@ export default function CompetenciaPreciosTabla({
           )}
         </CardContent>
       </Card>
+      {editCell && puedeEditar ? (
+        <EditarUrlVinculoModal
+          open={!!editCell}
+          onOpenChange={(o) => !o && setEditCell(null)}
+          codTienda={editCell.codTienda}
+          descripcion={editCell.descripcion}
+          competenciaId={editCell.competenciaId}
+          competenciaNombre={editCell.competenciaNombre}
+          vinculoInicial={editCell.vinculo}
+          onGuardado={() => {
+            setEditCell(null);
+            onReload();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

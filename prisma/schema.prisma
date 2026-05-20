@@ -558,11 +558,9 @@ model ListaPrecioTienda {
 model ProdCompetencia {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_competencia_nombre_key")
-  /// Sitio principal del competidor (home o dominio base).
+  /// Sitio principal del competidor (referencia; las fichas van en prod_precios_competencia.url_producto).
   web       String
-  /// URL de búsqueda/catálogo opcional. Usar `{q}` donde va el término (descripción o código tienda).
-  urlBusqueda String? @map("url_busqueda")
-  /// Última ejecución exitosa de comparación de precios para este competidor.
+  /// Última ejecución de relevamiento masivo para este competidor.
   ultimaComparacionAt DateTime? @map("ultima_comparacion_at")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -572,11 +570,19 @@ model ProdCompetencia {
   @@map("prod_competencia")
 }
 
-/// Precio de venta del competidor para un ítem tienda (`prod_precios_tienda`). `px_competencia` null = no encontrado.
+/**
+ * Vínculo manual producto tienda × competidor: URL de ficha + último relevamiento.
+ * Estados: SIN_URL | PENDIENTE | OK | SIN_PRECIO | ERROR (ver `competenciaRelevamiento.ts`).
+ */
 model ProdPrecioCompetencia {
   codTienda     String   @map("cod_tienda")
   competenciaId String   @map("competencia_id")
+  /// Ficha del producto en el sitio del competidor (carga manual).
+  urlProducto   String?  @map("url_producto")
   pxCompetencia Decimal? @map("px_competencia") @db.Decimal(14, 4)
+  estado        String   @default("PENDIENTE")
+  errorMensaje  String?  @map("error_mensaje")
+  relevadoAt    DateTime? @map("relevado_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   listaPrecioTienda ListaPrecioTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
