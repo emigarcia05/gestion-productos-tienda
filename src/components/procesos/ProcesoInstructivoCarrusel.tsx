@@ -164,7 +164,7 @@ export default function ProcesoInstructivoCarrusel({
         <>
           <button
             type="button"
-            className="flex min-h-0 w-full min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_img]:max-h-full [&_img]:max-w-full [&_img]:bg-transparent [&_span]:bg-transparent"
+            className="flex min-h-0 w-full min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 [&_img]:max-h-full [&_img]:max-w-full [&_img]:border-0 [&_img]:bg-transparent [&_span]:border-0 [&_span]:bg-transparent"
             onClick={() => setImagenAmpliada(true)}
             aria-label="Ampliar imagen del paso"
           >

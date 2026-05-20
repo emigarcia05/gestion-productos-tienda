@@ -1513,8 +1513,11 @@ main button.proceso-paso-nav-numero--adyacente {
 }
 
 main button.proceso-paso-nav-numero--adyacente:hover:not(:disabled) {
-  background-color: color-mix(in oklch, var(--muted) 30%, transparent) !important;
+  background-color: transparent !important;
+  color: #000 !important;
+  border: 2px solid #0072bb !important;
   filter: none !important;
+  box-shadow: none !important;
 }
 
 /* ─── Título de sección (SectionHeader): diseño global, misma apariencia en todas las rutas ─── */
