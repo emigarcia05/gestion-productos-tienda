@@ -51,7 +51,7 @@ export default function EditarUrlVinculoModal({
         toast.error(result.error);
         return;
       }
-      toast.success("URL guardada.");
+      toast.success("URL guardada. El precio se obtiene al ejecutar Comparar Precios.");
       onOpenChange(false);
       onGuardado();
     } finally {
@@ -96,7 +96,8 @@ export default function EditarUrlVinculoModal({
               className="mt-1"
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              Dejá vacío para quitar el vínculo. Tras guardar, usá Comparar Precios para relevar.
+              Solo se guarda el enlace (no se consulta el sitio ahora). Dejá vacío para quitar el
+              vínculo. El precio se busca al ejecutar Comparar Precios para ese competidor.
             </p>
           </div>
         </div>

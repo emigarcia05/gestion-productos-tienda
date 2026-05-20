@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
+import { prismaCuidSchema } from "@/lib/validations/common";
 import {
   createCompetenciaSchema,
   deleteCompetenciaSchema,
@@ -11,6 +12,7 @@ import {
   guardarUrlVinculoSchema,
   updateCompetenciaSchema,
 } from "@/lib/validations/competenciaPrecios";
+import { prisma } from "@/lib/prisma";
 import * as competenciaService from "@/services/competencia.service";
 import {
   guardarUrlVinculoCompetencia,
@@ -64,6 +66,25 @@ export async function getCompetenciaPreciosListAction(
     return await getCompetenciaPreciosList(parsed.data);
   } catch {
     return EMPTY_LIST;
+  }
+}
+
+export async function countVinculosConUrlCompetenciaAction(
+  competenciaId: unknown
+): Promise<number> {
+  try {
+    const denied = await gateAcceso();
+    if (denied) return 0;
+    const parsed = prismaCuidSchema.safeParse(competenciaId);
+    if (!parsed.success) return 0;
+    return prisma.prodPrecioCompetencia.count({
+      where: {
+        competenciaId: parsed.data,
+        urlProducto: { not: null },
+      },
+    });
+  } catch {
+    return 0;
   }
 }
 

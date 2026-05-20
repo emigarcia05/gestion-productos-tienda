@@ -28,7 +28,8 @@ export interface SyncCompetenciaPreciosOptions {
 }
 
 /**
- * Releva precios solo en vínculos con `url_producto` cargada manualmente.
+ * Releva precios: una consulta HTTP por cada fila de `prod_precios_competencia`
+ * del competidor elegido que tenga `url_producto` (no recorre el catálogo tienda).
  */
 export async function syncCompetenciaPrecios(
   options: SyncCompetenciaPreciosOptions

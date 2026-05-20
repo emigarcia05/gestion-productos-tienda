@@ -16,7 +16,10 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { listCompetenciasAction } from "@/actions/competenciaPrecios";
+import {
+  countVinculosConUrlCompetenciaAction,
+  listCompetenciasAction,
+} from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
 
@@ -34,7 +37,8 @@ export default function SincronizarCompetenciaModal({
   const [lista, setLista] = useState<CompetenciaParaCliente[]>([]);
   const [loadingLista, setLoadingLista] = useState(false);
   const [competenciaId, setCompetenciaId] = useState("");
-  const [limiteProductos, setLimiteProductos] = useState("10");
+  const [limiteProductos, setLimiteProductos] = useState("");
+  const [urlsCargadas, setUrlsCargadas] = useState(0);
   const [syncing, setSyncing] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -51,6 +55,22 @@ export default function SincronizarCompetenciaModal({
   useEffect(() => {
     if (open) void cargar();
   }, [open, cargar]);
+
+  useEffect(() => {
+    if (!competenciaId) {
+      setUrlsCargadas(0);
+      return;
+    }
+    void countVinculosConUrlCompetenciaAction(competenciaId).then(setUrlsCargadas);
+  }, [competenciaId, open]);
+
+  const consultasPrevistas = useMemo(() => {
+    const lim = limiteProductos.trim();
+    if (!lim) return urlsCargadas;
+    const n = parseInt(lim, 10);
+    if (Number.isNaN(n) || n < 1) return urlsCargadas;
+    return Math.min(urlsCargadas, n);
+  }, [urlsCargadas, limiteProductos]);
 
   const seleccionado = useMemo(
     () => lista.find((c) => c.id === competenciaId) ?? null,
@@ -74,7 +94,7 @@ export default function SincronizarCompetenciaModal({
     const limiteRaw = limiteProductos.trim();
     const limiteParsed = limiteRaw ? parseInt(limiteRaw, 10) : undefined;
     if (limiteRaw && (Number.isNaN(limiteParsed) || limiteParsed! < 1 || limiteParsed! > 500)) {
-      toast.error("El máximo de productos debe estar entre 1 y 500 (o vacío para todo el catálogo).");
+      toast.error("El máximo debe estar entre 1 y 500 (o vacío para todas las URL cargadas).");
       return;
     }
 
@@ -141,7 +161,7 @@ export default function SincronizarCompetenciaModal({
                 type="button"
                 variant="default"
                 className="btn-primario-gestion gap-2"
-                disabled={!competenciaId || lista.length === 0}
+                disabled={!competenciaId || lista.length === 0 || urlsCargadas === 0}
                 onClick={() => void handleSync()}
               >
                 <RefreshCw className="h-4 w-4 shrink-0" />
@@ -192,10 +212,17 @@ export default function SincronizarCompetenciaModal({
                   disabled={syncing}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Solo releva filas con URL en la grilla. Máx. chico (ej. 5) para probar; vacío = todos
-                  los vínculos con URL.
+                  Opcional: tope para pruebas (ej. 5). Vacío = consultar todas las URL cargadas del
+                  competidor.
                 </p>
               </div>
+              {competenciaId ? (
+                <p className="text-sm font-medium text-foreground">
+                  {urlsCargadas === 0
+                    ? "No hay URL cargadas para este competidor. Asigná enlaces en la grilla antes de comparar."
+                    : `Se realizarán ${consultasPrevistas} consulta(s) HTTP (una por URL cargada).`}
+                </p>
+              ) : null}
               {seleccionado ? (
                 <p className="text-sm text-muted-foreground">
                   {labelUltimaComparacionCompetencia(seleccionado.ultimaComparacionAt)}

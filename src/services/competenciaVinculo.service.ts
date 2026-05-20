@@ -51,6 +51,17 @@ export async function guardarUrlVinculoCompetencia(data: {
 
   const urlNorm = url.startsWith("http") ? url : `https://${url}`;
 
+  const existente = await prisma.prodPrecioCompetencia.findUnique({
+    where: {
+      codTienda_competenciaId: {
+        codTienda: data.codTienda,
+        competenciaId: data.competenciaId,
+      },
+    },
+    select: { urlProducto: true },
+  });
+  const urlCambio = existente?.urlProducto !== urlNorm;
+
   const row = await prisma.prodPrecioCompetencia.upsert({
     where: {
       codTienda_competenciaId: {
@@ -71,6 +82,8 @@ export async function guardarUrlVinculoCompetencia(data: {
       urlProducto: urlNorm,
       estado: ESTADO_RELEVAMIENTO_COMPETENCIA.PENDIENTE,
       errorMensaje: null,
+      // Solo persiste el enlace; el precio se releva al ejecutar Comparar Precios.
+      ...(urlCambio ? { pxCompetencia: null, relevadoAt: null } : {}),
     },
     select: vinculoSelect,
   });
