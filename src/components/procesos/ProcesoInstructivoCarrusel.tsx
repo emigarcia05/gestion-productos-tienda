@@ -94,38 +94,30 @@ export default function ProcesoInstructivoCarrusel({
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
-        <div className="flex items-center justify-center gap-2">
+        <div
+          className="flex items-center justify-center gap-2"
+          aria-live="polite"
+          aria-label={`Paso ${pasoActual + 1} de ${pasos.length}`}
+        >
           {indicePasoAnterior !== null ? (
-            <button
-              type="button"
-              onClick={() => setPasoActual(indicePasoAnterior)}
-              aria-label={`Ir al paso ${indicePasoAnterior + 1}`}
-              className={cn("proceso-paso-nav-numero proceso-paso-nav-numero--adyacente", PASO_NAV_SLOT_CLASS)}
-            >
+            <span className={cn("proceso-paso-nav-numero", PASO_NAV_SLOT_CLASS)}>
               {indicePasoAnterior + 1}
-            </button>
+            </span>
           ) : (
             <span className={PASO_NUMERO_SLOT_RESERVADO_CLASS} aria-hidden />
           )}
 
-          <button
-            type="button"
-            aria-label={`Paso ${pasoActual + 1}`}
-            aria-current="step"
+          <span
             className={cn("proceso-paso-nav-numero proceso-paso-nav-numero--actual", PASO_NAV_SLOT_CLASS)}
+            aria-current="step"
           >
             {pasoActual + 1}
-          </button>
+          </span>
 
           {indicePasoSiguiente !== null ? (
-            <button
-              type="button"
-              onClick={() => setPasoActual(indicePasoSiguiente)}
-              aria-label={`Ir al paso ${indicePasoSiguiente + 1}`}
-              className={cn("proceso-paso-nav-numero proceso-paso-nav-numero--adyacente", PASO_NAV_SLOT_CLASS)}
-            >
+            <span className={cn("proceso-paso-nav-numero", PASO_NAV_SLOT_CLASS)}>
               {indicePasoSiguiente + 1}
-            </button>
+            </span>
           ) : (
             <span className={PASO_NUMERO_SLOT_RESERVADO_CLASS} aria-hidden />
           )}
@@ -151,20 +143,20 @@ export default function ProcesoInstructivoCarrusel({
       </div>
 
       <div
-        className="flex h-28 shrink-0 flex-col items-center justify-center gap-1 overflow-y-auto rounded-md border border-border bg-muted/20 px-3 py-2 text-center"
+        className="flex h-28 shrink-0 flex-col items-center justify-center gap-1 overflow-y-auto rounded-md border-2 border-[#0072BB] bg-transparent px-3 py-2 text-center"
         aria-live="polite"
       >
-        <p className="shrink-0 text-sm font-semibold capitalize text-foreground">
+        <p className="shrink-0 text-sm font-semibold capitalize text-black">
           {formatoTituloProcesos(paso.titulo)}
         </p>
-        <p className="text-sm leading-relaxed text-foreground">{paso.texto}</p>
+        <p className="text-sm leading-relaxed text-black">{paso.texto}</p>
       </div>
 
       {paso.img ? (
         <>
           <button
             type="button"
-            className="flex min-h-0 w-full min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 [&_img]:max-h-full [&_img]:max-w-full [&_img]:border-0 [&_img]:bg-transparent [&_span]:border-0 [&_span]:bg-transparent"
+            className="proceso-paso-imagen-btn flex min-h-0 w-full min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 [&_img]:max-h-[90%] [&_img]:max-w-[90%] [&_img]:border-0 [&_img]:bg-transparent [&_span]:max-h-[90%] [&_span]:max-w-[90%] [&_span]:border-0 [&_span]:bg-transparent"
             onClick={() => setImagenAmpliada(true)}
             aria-label="Ampliar imagen del paso"
           >
@@ -173,7 +165,7 @@ export default function ProcesoInstructivoCarrusel({
               alt={paso.texto}
               width={1920}
               height={1080}
-              className="h-auto w-auto max-h-full max-w-full cursor-zoom-in bg-transparent object-contain"
+              className="h-auto w-auto max-h-[90%] max-w-[90%] cursor-zoom-in bg-transparent object-contain"
               sizes="(max-width: 1200px) 75vw, 900px"
             />
           </button>

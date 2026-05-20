@@ -1470,9 +1470,8 @@ button.tabla-row-btn-filled-brand {
   max-height: 100% !important;
 }
 
-/* Carrete de pasos (ProcesoInstructivoCarrusel): anula `main button` (radio cuadrado + fondo primary en `<button>` sin data-variant). */
-main button.proceso-paso-nav-flecha,
-main button.proceso-paso-nav-numero {
+/* Carrete de pasos (ProcesoInstructivoCarrusel): flechas = botones; números = indicadores `<span>`. */
+main button.proceso-paso-nav-flecha {
   height: 2.25rem !important;
   min-height: 2.25rem !important;
   width: 2.25rem !important;
@@ -1482,9 +1481,6 @@ main button.proceso-paso-nav-numero {
   box-shadow: none !important;
   font-size: var(--text-sm) !important;
   font-weight: var(--font-weight-semibold) !important;
-}
-
-main button.proceso-paso-nav-flecha {
   background-color: #0072bb !important;
   color: #fff !important;
   border: none !important;
@@ -1495,27 +1491,41 @@ main button.proceso-paso-nav-flecha:hover:not(:disabled) {
   filter: none !important;
 }
 
-main button.proceso-paso-nav-numero--actual {
+.proceso-paso-nav-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid #0072bb;
+  background-color: transparent;
+  color: #000;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+}
+
+.proceso-paso-nav-numero--actual {
   height: 3.375rem !important;
   min-height: 3.375rem !important;
   width: 3.375rem !important;
   min-width: 3.375rem !important;
   font-size: 1.125rem !important;
-  background-color: #0072bb !important;
-  color: #fff !important;
-  border: 2px solid #0072bb !important;
 }
 
-main button.proceso-paso-nav-numero--adyacente {
+main button.proceso-paso-imagen-btn {
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 1 1 0% !important;
+  padding: 0 !important;
   background-color: transparent !important;
-  color: #000 !important;
+  color: inherit !important;
   border: 2px solid #0072bb !important;
+  border-radius: var(--radius) !important;
+  box-shadow: none !important;
 }
 
-main button.proceso-paso-nav-numero--adyacente:hover:not(:disabled) {
+main button.proceso-paso-imagen-btn:hover:not(:disabled) {
   background-color: transparent !important;
-  color: #000 !important;
-  border: 2px solid #0072bb !important;
   filter: none !important;
   box-shadow: none !important;
 }
