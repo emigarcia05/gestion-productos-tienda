@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import {
   TITULARES_CAJA_TESORERIA,
   type TitularCajaTesoreria,
@@ -168,9 +169,7 @@ export default function AltaChequeTesoreriaModal({
       >
         <div className="grid grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TIPO
-            </span>
+            <ModalMicroLabel>TIPO</ModalMicroLabel>
             <Select
               value={tipo}
               onValueChange={(value) => setTipo(value as TipoChequeTesoreria)}
@@ -194,9 +193,7 @@ export default function AltaChequeTesoreriaModal({
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TENEDOR
-            </span>
+            <ModalMicroLabel>TENEDOR</ModalMicroLabel>
             <Select
               value={tenedor}
               onValueChange={(value) => setTenedor(value as TitularCajaTesoreria)}
@@ -220,9 +217,7 @@ export default function AltaChequeTesoreriaModal({
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              EMISOR
-            </span>
+            <ModalMicroLabel>EMISOR</ModalMicroLabel>
             <Input
               value={emisor}
               onChange={(e) => setEmisor(e.target.value.toLocaleUpperCase("es-AR"))}
@@ -232,9 +227,7 @@ export default function AltaChequeTesoreriaModal({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              MONTO
-            </span>
+            <ModalMicroLabel>MONTO</ModalMicroLabel>
             <MontoArInput
               valueNormalized={montoNorm}
               onValueNormalizedChange={setMontoNorm}
@@ -243,9 +236,7 @@ export default function AltaChequeTesoreriaModal({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              FECHA RECIBIDO
-            </span>
+            <ModalMicroLabel>FECHA RECIBIDO</ModalMicroLabel>
             <div className="relative w-full">
               <Input
                 type="text"
@@ -297,9 +288,7 @@ export default function AltaChequeTesoreriaModal({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              FECHA ACREDITACIÓN
-            </span>
+            <ModalMicroLabel>FECHA ACREDITACIÓN</ModalMicroLabel>
             <div className="relative w-full">
               <Input
                 type="text"

@@ -19,6 +19,7 @@ import { listarProveedoresMercaderiaParaPagoChequeTesoreriaAction } from "@/acti
 import type { FinTesoreriaChequeItem, ProveedorMercaderiaChequeTesoreriaItem } from "@/services/finTesoreriaCheques.service";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Check, CalendarDays, Loader2 } from "lucide-react";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -123,9 +124,7 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
             </div>
           ) : null}
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              FECHA TRANSFERENCIA
-            </span>
+            <ModalMicroLabel>FECHA TRANSFERENCIA</ModalMicroLabel>
             <div className="relative w-full">
               <Input
                 type="date"
@@ -159,9 +158,7 @@ export default function ElegirProveedorPagoChequeTesoreriaModal({
             </div>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Buscar
-            </span>
+            <ModalMicroLabel>Buscar</ModalMicroLabel>
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value.toLocaleUpperCase("es-AR"))}

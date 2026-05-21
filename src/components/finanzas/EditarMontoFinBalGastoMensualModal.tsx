@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -165,9 +166,7 @@ export default function EditarMontoFinBalGastoMensualModal({
               </div>
             </div>
             <label className="flex w-full flex-col items-center gap-1 text-center">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                MONTO
-              </span>
+              <ModalMicroLabel>MONTO</ModalMicroLabel>
               <MontoArInput
                 valueNormalized={montoNorm}
                 onValueNormalizedChange={setMontoNorm}

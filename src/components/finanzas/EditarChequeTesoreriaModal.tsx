@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import type { TipoChequeTesoreria } from "@prisma/client";
 import { actualizarFinTesoreriaChequeAction } from "@/actions/finTesoreriaCheques";
 import type { FinTesoreriaChequeItem } from "@/services/finTesoreriaCheques.service";
@@ -125,9 +126,7 @@ export default function EditarChequeTesoreriaModal({
       >
         <div className="grid grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TIPO
-            </span>
+            <ModalMicroLabel>TIPO</ModalMicroLabel>
             <Select
               value={tipo}
               onValueChange={(value) => setTipo(value as TipoChequeTesoreria)}
@@ -151,9 +150,7 @@ export default function EditarChequeTesoreriaModal({
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TENEDOR
-            </span>
+            <ModalMicroLabel>TENEDOR</ModalMicroLabel>
             <Select
               value={tenedor || "none"}
               onValueChange={(value) =>
@@ -180,9 +177,7 @@ export default function EditarChequeTesoreriaModal({
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              EMISOR
-            </span>
+            <ModalMicroLabel>EMISOR</ModalMicroLabel>
             <Input
               value={emisor}
               onChange={(e) => setEmisor(e.target.value.toLocaleUpperCase("es-AR"))}
@@ -192,9 +187,7 @@ export default function EditarChequeTesoreriaModal({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              MONTO
-            </span>
+            <ModalMicroLabel>MONTO</ModalMicroLabel>
             <MontoArInput
               valueNormalized={montoNorm}
               onValueNormalizedChange={setMontoNorm}
@@ -203,9 +196,7 @@ export default function EditarChequeTesoreriaModal({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              FECHA RECIBIDO
-            </span>
+            <ModalMicroLabel>FECHA RECIBIDO</ModalMicroLabel>
             <Input
               type="date"
               name="fecha_recibido"
@@ -216,9 +207,7 @@ export default function EditarChequeTesoreriaModal({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              FECHA ACREDITACIÓN
-            </span>
+            <ModalMicroLabel>FECHA ACREDITACIÓN</ModalMicroLabel>
             <Input
               type="date"
               name="fecha_acreditacion"

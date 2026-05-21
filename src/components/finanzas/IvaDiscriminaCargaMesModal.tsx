@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import type { PendienteDiscriminaIvaCargaMesItem } from "@/services/finBalGastoMensualBalance.service";
 
 interface Props {
@@ -79,9 +80,9 @@ export default function IvaDiscriminaCargaMesModal({ open, onOpenChange, items, 
                 className="rounded-md border border-border bg-muted/30 px-3 py-2"
               >
                 <div className="mb-2 font-medium text-foreground leading-snug">{it.etiqueta}</div>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <ModalMicroLabel className="mb-1 block">
                   ¿El gasto discrimina IVA? <span className="text-destructive">*</span>
-                </span>
+                </ModalMicroLabel>
                 <Select
                   value={decisiones[it.gastoFinalId] ?? "none"}
                   onValueChange={(v) =>

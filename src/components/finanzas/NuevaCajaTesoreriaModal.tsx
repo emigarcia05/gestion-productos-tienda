@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { crearCajaTesoreriaAction, listarEntidadesFinTesoreriaAction } from "@/actions/cajasTesoreria";
 import { cn } from "@/lib/utils";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import {
   OPCIONES_DISPONIBILIDAD_CAJA_UI,
   OPCIONES_TIPO_CAJA_TESORERIA_UI,
@@ -156,9 +157,7 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
         >
           <div className="grid min-h-0 grid-cols-1 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                TIPO CAJA
-              </span>
+              <ModalMicroLabel>TIPO CAJA</ModalMicroLabel>
               <Select
                 value={tipoCaja}
                 onValueChange={(value) => setTipoCaja(value as TipoCajaTesoreria)}
@@ -183,9 +182,7 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
             </label>
 
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                ENTIDAD
-              </span>
+              <ModalMicroLabel>ENTIDAD</ModalMicroLabel>
               <div className="flex gap-2">
                 <Select
                   value={entidadId || "none"}
@@ -224,9 +221,7 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
             </div>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                TITULAR
-              </span>
+              <ModalMicroLabel>TITULAR</ModalMicroLabel>
               <Select
                 value={titular || "none"}
                 onValueChange={(value) => setTitular(value === "none" ? "" : (value as TitularCajaTesoreria))}
@@ -252,9 +247,7 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                TIPO VALOR
-              </span>
+              <ModalMicroLabel>TIPO VALOR</ModalMicroLabel>
               <Select
                 value={tipoValor}
                 onValueChange={(value) => setTipoValor(value as TipoValorTesoreria)}
@@ -279,9 +272,7 @@ export default function NuevaCajaTesoreriaModal({ open, onOpenChange, onCreated 
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                DISPONIBILIDAD
-              </span>
+              <ModalMicroLabel>DISPONIBILIDAD</ModalMicroLabel>
               <Select
                 value={disponibilidad}
                 onValueChange={(value) => setDisponibilidad(value as DisponibilidadCajaTesoreria)}

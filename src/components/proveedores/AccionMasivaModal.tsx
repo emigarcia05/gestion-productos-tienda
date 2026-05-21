@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { aplicarCampoMasivo, type CampoMasivo } from "@/actions/productos";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
 import { TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 
@@ -123,7 +124,7 @@ export default function AccionMasivaModal({
 
             {/* Alcance de la acción */}
             <div className="rounded-md border border-border/50 bg-muted/30 px-3 py-2.5 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">ALCANCE</p>
+              <ModalMicroLabel>ALCANCE</ModalMicroLabel>
 
               <div className="space-y-1.5">
                 <Label className="text-xs">PROVEEDOR</Label>

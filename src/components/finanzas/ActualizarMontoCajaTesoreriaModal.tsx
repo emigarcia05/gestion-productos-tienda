@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -98,21 +99,15 @@ export default function ActualizarMontoCajaTesoreriaModal({
       >
         <div className="grid grid-cols-1 gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              ENTIDAD
-            </span>
+            <ModalMicroLabel>ENTIDAD</ModalMicroLabel>
             <Input value={caja?.entidadNombre ?? ""} disabled readOnly />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              TITULAR
-            </span>
+            <ModalMicroLabel>TITULAR</ModalMicroLabel>
             <Input value={caja?.titular ?? ""} disabled readOnly />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              MONTO
-            </span>
+            <ModalMicroLabel>MONTO</ModalMicroLabel>
             <MontoArInput
               valueNormalized={montoNorm}
               onValueNormalizedChange={setMontoNorm}

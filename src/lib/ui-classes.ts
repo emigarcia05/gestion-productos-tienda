@@ -62,3 +62,16 @@ export const TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS =
 
 /** Tamaño uniforme del ícono dentro de botones de acción en tabla. */
 export const TABLE_ROW_ACTION_ICON_CLASS = "h-4 w-4 shrink-0";
+
+/**
+ * Etiqueta de campo en modales (label nativo o `<Label>`).
+ * Color `foreground` (negro de UI); `globals.css` refuerza en `.app-modal__body` / `.modal-app__body`.
+ */
+export const MODAL_FIELD_LABEL_CLASS = "modal-field-label text-foreground";
+
+/**
+ * Micro-etiqueta MAYÚSCULAS en modales (misma tipografía que `ModalMicroLabel`).
+ * Preferir el componente `ModalMicroLabel`; usar esta constante solo en `<label>` compuestos.
+ */
+export const MODAL_MICRO_LABEL_CLASS =
+  "modal-micro-label modal-field-label text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-foreground";

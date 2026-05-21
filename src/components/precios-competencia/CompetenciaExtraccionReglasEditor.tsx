@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,9 @@ import {
 } from "@/lib/competenciaConfigExtraccion";
 import { cn } from "@/lib/utils";
 
+const PLACEHOLDER_SELECTOR_PRECIO =
+  "Clic derecho sobre el precio → Inspeccionar → Copiar → Copiar selector y pegá ese valor en el campo de arriba.";
+
 interface Props {
   value: CompetenciaConfigExtraccion;
   onChange: (next: CompetenciaConfigExtraccion) => void;
@@ -20,7 +22,6 @@ interface Props {
 
 export default function CompetenciaExtraccionReglasEditor({ value, onChange, className }: Props) {
   const reglas = value.reglas;
-  const [avanzadoAbierto, setAvanzadoAbierto] = useState<Record<number, boolean>>({});
 
   const setReglas = (next: ReglaExtraccionPagina[]) => {
     onChange({ ...value, reglas: next });
@@ -52,10 +53,6 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
     onChange({ reglaDefaultId: reglaDefaultId || "", reglas: next });
   };
 
-  const toggleAvanzado = (index: number) => {
-    setAvanzadoAbierto((prev) => ({ ...prev, [index]: !prev[index] }));
-  };
-
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       {reglas.length === 0 ? (
@@ -79,9 +76,6 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Se usa al guardar la URL de un producto si elegís ese tipo de página.
-              </p>
             </div>
           ) : null}
 
@@ -120,52 +114,19 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
                   <Input
                     value={regla.selectorPrecio ?? ""}
                     onChange={(e) => updateRegla(index, { selectorPrecio: e.target.value })}
-                    placeholder=".precio-venta"
+                    placeholder={PLACEHOLDER_SELECTOR_PRECIO}
                     className="mt-1 font-mono text-xs"
                   />
-                  <p className="mt-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-2 text-xs text-muted-foreground">
-                    En la ficha del producto: clic derecho sobre el precio → Inspeccionar → Copiar →{" "}
-                    <span className="font-semibold text-foreground">Copiar selector</span> y pegá
-                    ese valor en el campo de arriba.
-                  </p>
                 </div>
 
                 <div>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                    onClick={() => toggleAvanzado(index)}
-                    aria-expanded={!!avanzadoAbierto[index]}
-                  >
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 transition-transform",
-                        avanzadoAbierto[index] && "rotate-180"
-                      )}
-                    />
-                    Opciones avanzadas (solo si lo anterior no alcanza)
-                  </button>
-                  {avanzadoAbierto[index] ? (
-                    <div className="mt-2 flex flex-col gap-2 pl-1">
-                      <label className="flex items-center gap-2 text-sm text-foreground">
-                        <input
-                          type="checkbox"
-                          checked={regla.usarJsonLd}
-                          onChange={(e) => updateRegla(index, { usarJsonLd: e.target.checked })}
-                        />
-                        Intentar también datos estructurados de la página (JSON-LD)
-                      </label>
-                      <div>
-                        <ModalMicroLabel>Regex personalizado</ModalMicroLabel>
-                        <Input
-                          value={regla.regexPrecio ?? ""}
-                          onChange={(e) => updateRegla(index, { regexPrecio: e.target.value })}
-                          placeholder="Solo con ayuda técnica"
-                          className="mt-1 font-mono text-xs"
-                        />
-                      </div>
-                    </div>
-                  ) : null}
+                  <ModalMicroLabel>Regex personalizado</ModalMicroLabel>
+                  <Input
+                    value={regla.regexPrecio ?? ""}
+                    onChange={(e) => updateRegla(index, { regexPrecio: e.target.value })}
+                    placeholder="Configurar con IA"
+                    className="mt-1 font-mono text-xs"
+                  />
                 </div>
               </li>
             ))}

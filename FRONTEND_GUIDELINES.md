@@ -23,7 +23,8 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - **Excepción acordada**: la pantalla **Balance mensual** (`FinanzasBalanceMensualPageClient`) usa **hex fijos de informe** en el encabezado de la grilla (`#0072BB` + texto blanco) y en las filas de **resultado operativo / resultado ejercicio** (fondo `#a9d6f1`, texto `#063652`). No extrapolar este patrón a otras pantallas sin actualizar esta guía. Detalle en la subsección **Balance mensual** bajo `ClassicFilteredTableLayout`. **Ventas Mensuales** (`FinBalVtasPageClient`, `/finanzas/balance/vtas`): barra **`FilterBar`** + **`FilaFiltrosDesplegables`** (5 columnas: **MES**, **AÑO**, **SUCURSAL**, slot **`col-span-2`** con contador **REGISTRO(S)** + **`LimpiarFiltrosButton`**); cada desplegable en **`FiltroIndividualContainer`** (`input-filtro-unificado`, `select-content-filtro`, máscara **MAYÚSCULAS** en opción “todos” y meses); sin etiquetas fuera del trigger; la **carga** de datos va en **`CrearFinBalVtasModal`** (botón **Nueva Carga** en `actions`), no en la barra de filtros. En modo editor, **Eliminar** por fila: botón ícono **`Trash2`** con **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`**, `aria-label` descriptivo.  
    - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
    - **`AppModal`** (`size`): el CVA ya aplica `max-w-md` … `max-w-3xl`. **No** repetir el mismo `max-w-*` en `className` salvo un ancho distinto al del `size` (ej. `max-w-[66rem]` en recepción).
-   - **Micro-etiquetas en modales densos:** usar **`ModalMicroLabel`**, no repetir `text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground` en `<span>` sueltos.
+   - **Etiquetas de campo en modales (global):** todo **label** de input, **Select**, fecha, etc. dentro de **`AppModal`**, **`.modal-app`** o **`[data-slot="dialog-content"]`** debe verse en **negro** (`var(--foreground)` / `text-foreground`), **no** `text-muted-foreground`. **`globals.css`** fuerza `color: var(--modal-field-label-color)` en `label`, `[data-slot="label"]`, **`.modal-field-label`**, **`.modal-micro-label`** y **`dt`** de formularios en el cuerpo del modal. Constantes: **`MODAL_FIELD_LABEL_CLASS`**, **`MODAL_MICRO_LABEL_CLASS`** (`@/lib/ui-classes`). Texto auxiliar (ayudas, vacíos, contadores) puede seguir **`text-muted-foreground`**.
+   - **Micro-etiquetas en modales densos:** usar **`ModalMicroLabel`** (ya incluye color foreground), no repetir la cadena legacy en `<span>` sueltos.
    - **`DialogHeader` / `DialogFooter`** (`components/ui/dialog.tsx`): una sola alineación y una sola dirección de flex por eje (sin `text-center` + `text-left` ni `flex-col-reverse` + `flex-row` duplicados).
    - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
   - **Tarjeta envoltorio de tabla**: cuando la grilla principal vaya dentro de un `Card` (ej. Comp. Proveedores, `/pedidos/enviar`), usar clase global **`card-tabla-envoltorio`** en el **`Card`** de shadcn; la sombra sale de **`--card-tabla-envoltorio-shadow`** en **`globals.css`**. Si la card debe crecer en un flex column (p. ej. proveedores), usar **`className={cn("card-tabla-envoltorio", "flex-1")}`**. En páginas que no usan `Card` (ej. Pedido Urgente / Tintométrico), aplicar directamente `.contenedor-tabla-gestion` como en Comp. Proveedores. **No** repetir utilidades largas ni **`shadow-[0_4px_12px_rgba(0,0,0,0.05)]`** (valor mágico duplicado).
@@ -47,6 +48,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 7. **Nuevo modal con tabla**  
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
+   - **Etiquetas de campo:** `<label>`, `<Label>` (`data-slot="label"`), **`ModalMicroLabel`** o **`MODAL_FIELD_LABEL_CLASS`** / **`MODAL_MICRO_LABEL_CLASS`** — color **`text-foreground`** (regla global en **`globals.css`**; ver punto 2 de la Guía para IA).
    - Micro-etiquetas de campo en modales densos: **`ModalMicroLabel`** (`@/components/shared/ModalMicroLabel.tsx`, CVA `align`).
    - `AppModal` (wrapper estándar) expone variantes con **CVA** para evitar duplicación de clases:
     - `size`: `"sm" | "md" | "lg" | "xl"` (default `"md"` = `max-w-lg`).
@@ -289,6 +291,8 @@ import SectionHeader from "@/components/SectionHeader";
 | `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
 | `--card-tabla-envoltorio-shadow` | **`:root`**: sombra suave de la tarjeta-tabla (antes repetida como `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`). |
 | `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
+| `--modal-field-label-color` | **`:root`**: color de etiquetas de campo en modales (`var(--foreground)`). Aplicado con `!important` en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]` a `label`, `[data-slot="label"]`, `.modal-field-label`, `.modal-micro-label`, `dt`. |
+| `MODAL_FIELD_LABEL_CLASS`, `MODAL_MICRO_LABEL_CLASS` (`@/lib/ui-classes`) | Clases Tailwind para etiquetas en modales (foreground). **`ModalMicroLabel`** usa la micro constante vía CVA. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
 | `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
 | `.tabla-gestion-compacta.tabla-vinculos-modal` | Variante de ancho para **modal Vínculos** (Tienda): `width: 100%`, `table-layout: fixed`; los encabezados usan la misma regla global de `tabla-gestion-compacta`. |
@@ -663,17 +667,24 @@ Indicador de **proceso en curso** (modal, importación, barra lateral). Clases g
   - **`onDoubleClick`**: `() => void?` — si está definido, el contenedor usa **`cursor-pointer`** y **`title`** *«Doble Clic Para Cancelar Sincronización»* (p. ej. sync lista precios en slidenav).
 - **Accesibilidad**: `role="status"`, `aria-live="polite"`.
 
+### Etiquetas de campo en modales (regla global)
+
+- **Alcance:** todos los modales (`AppModal`, `.modal-app`, `Dialog` con `[data-slot="dialog-content"]`).
+- **Color obligatorio:** **`var(--foreground)`** (negro de la UI). **Prohibido** `text-muted-foreground` en etiquetas de inputs, desplegables, fechas y micro-etiquetas de campo.
+- **Implementación:** `globals.css` (`--modal-field-label-color` + selectores en `.app-modal__body`, `.modal-app__body`, `[data-slot="dialog-content"]`). Constantes **`MODAL_FIELD_LABEL_CLASS`** y **`MODAL_MICRO_LABEL_CLASS`** en `@/lib/ui-classes`.
+- **Excepciones:** textos de ayuda, estados vacíos, metadatos secundarios y contadores (ej. `12 / 10000`) siguen **`text-muted-foreground`**.
+
 ### `ModalMicroLabel` (`src/components/shared/ModalMicroLabel.tsx`)
 
-Etiqueta visual **compacta** para títulos de campo o bloques dentro de modales (tipografía en MAYÚSCULAS alineada a filtros/tablas). Implementación con **CVA** (`modalMicroLabelVariants`).
+Etiqueta visual **compacta** para títulos de campo o bloques dentro de modales (tipografía en MAYÚSCULAS alineada a filtros/tablas). Implementación con **CVA** (`modalMicroLabelVariants`, base **`MODAL_MICRO_LABEL_CLASS`** → **`text-foreground`**).
 
 - **Props**
   - **`children`**: `ReactNode` — texto en MAYÚSCULAS (según guía de mayúsculas en filtros cuando aplique).
   - **`align`** (CVA): `"left"` (default) \| `"center"` — controla `text-left` / `text-center` y `w-full leading-tight`.
-  - **`className`**: `string?` — combina con `cn()` para overrides puntuales.
+  - **`className`**: `string?` — combina con `cn()` para overrides puntuales (ej. `mb-1 block`).
   - Resto: atributos nativos de `<span>` (`id`, `ref`, etc.).
-- **Accesibilidad**: es un `<span>` decorativo; si precede a un control, envolver en `<label>` (como en **FECHA FACTURA** de `PedidoHistoriaDetalleModal`) o asociar el control con `aria-labelledby` / `aria-label` explícito en el input.
-- **Cuándo usarlo**: micro-etiquetas sobre inputs o separación de secciones en modales densos; evita duplicar `text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground`.
+- **Accesibilidad**: es un `<span>` con clases **`modal-micro-label`** y **`modal-field-label`**; si precede a un control, envolver en `<label>` (como en **FECHA FACTURA** de `PedidoHistoriaDetalleModal`) o asociar el control con `aria-labelledby` / `aria-label` explícito en el input.
+- **Cuándo usarlo**: micro-etiquetas sobre inputs o separación de secciones en modales densos; no duplicar la cadena legacy con `text-muted-foreground`.
 
 ### `DuxSyncStyleButton` (`src/components/shared/DuxSyncStyleButton.tsx`)
 
@@ -819,6 +830,7 @@ Antes de dar por terminada una tarea de frontend:
 - [ ] Mensajes de tabla/lista vacía reutilizan `TableEmptyRow` o `TableEmptyState` (variantes CVA), sin copiar `py-* text-muted-foreground text-center` sueltos.
 - [ ] Botones de toolbar con **ícono + label** (y/o estado async): usan `ToolbarActionButton` (`src/components/shared/ToolbarActionButton.tsx`) o `Button` de shadcn **sin** repetir `gap-2 shrink-0` (el `Button` base ya los aporta) ni dimensionar el `<svg>` con `h-4 w-4 shrink-0` (el `Button` lo hace vía `[&_svg:not([class*='size-'])]:size-4`).
 - [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros y desplegables: MAYÚSCULAS. Encabezados de tablas de datos: MAYÚSCULAS y negrita. Abreviaciones con punto final (Px., Cx., Dto., etc.).
+- [ ] **Modales:** etiquetas de campos (`label`, `Label`, `ModalMicroLabel`, `MODAL_*_LABEL_CLASS`) en **`text-foreground`**; no `text-muted-foreground` en etiquetas de controles (ayudas y mensajes secundarios exceptuados).
 - [ ] Iconos: `lucide-react`. Toasts: `sonner`. Fuente: Geist (vía layout/tema).
 - [ ] No hay `any`; validación de datos con Zod donde aplique.
 - [ ] Si se añade una clase global nueva, se registra en este documento (sección 2).
@@ -1059,7 +1071,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 - **Tabla:** `<colgroup>` suma **100%**: **DESCRIPCIÓN** **50%**; el **50%** restante se reparte entre competidores (`50 / N` cada uno). Por competidor, encabezado en dos filas (`rowSpan` en descripción): fila 1 nombre en MAYÚSCULAS + **Últ.:** comparación; fila 2 subcolumnas **PRECIO** (**80%** del bloque del competidor) y **COMP.** (**20%**, variación % vs `pxListaTienda`: `((pxCompetidor − pxTienda) / pxTienda) × 100`, `fmtPctEntero`, clases `variacion-costo--positiva/negativa`). Sin columna **CÓD. TIENDA** ni **PX. TIENDA** visible (el precio tienda solo alimenta **COMP.**). Clic en celda **PRECIO** abre vínculo. `Table variant="compact"` + `table-fixed` en `card-tabla-envoltorio` + `contenedor-tabla-gestion`.
 - **Filtros:** `FilterBar` + `FiltroBusquedaInput` (`useFiltrosConBusqueda`) + selects **MARCA** / **RUBRO** en `FiltroIndividualContainer`; contador **X PRODUCTO(S)**. Búsqueda por términos con `filtroTexto` en `competenciaPreciosList.service.ts` (cada palabra por separado, orden libre, parcial en descripción/código — igual que lista precios).
 - **Vínculo manual:** clic en celda competidor → `EditarUrlVinculoModal` (URL ficha + mensaje si `ERROR`). Filtros **COMPETIDOR** + **ESTADO VÍNCULO** (ej. **ERROR** para revisar URLs). Celdas: precio, **Sin URL**, **Error**, **Pendiente**, etc.
-- **Acciones (editor):** **Gestionar Competidores** (`GestionCompetidoresModal`: buscador por nombre + botón **+** → `AltaCompetidorModal`; lista con editar/eliminar; editar abre `ConfiguracionCompetidorModal` — título **Configuracion Competidor - {nombre}**, ahí nombre, sitio y un solo campo **Selector del precio** con cartel recordatorio «Copiar selector» en `CompetenciaExtraccionReglasEditor`) y **Comparar Precios Competencia** (un competidor; solo filas con URL; **Detener Comparación** → `/api/sync-competencia-precios/cancel`).
+- **Acciones (editor):** **Gestionar Competidores** (`GestionCompetidoresModal`: buscador por nombre + botón **+** → `AltaCompetidorModal`; lista con editar/eliminar; editar abre `ConfiguracionCompetidorModal` — título **Configuracion Competidor - {nombre}**, ahí nombre, sitio; en `CompetenciaExtraccionReglasEditor`: **Selector del precio** (placeholder con instrucción Copiar selector) y **Regex personalizado** siempre visible (placeholder **Configurar con IA**)) y **Comparar Precios Competencia** (un competidor; solo filas con URL; **Detener Comparación** → `/api/sync-competencia-precios/cancel`).
 - **Vínculo URL:** en `EditarUrlVinculoModal`, si el competidor tiene reglas, selector **Tipo de página** (`tipo_pagina` en vínculo) que elige qué regla aplica al relevar.
 - **Sidebar:** módulo propio **PRECIOS COMPETENCIA** (enlace directo, mismo patrón que **PROCESOS**), no bajo **LISTA PROVEEDORES**.
 
@@ -1074,6 +1086,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
   - `flujo-fullstack-end-to-end.mdc`: define ciclo de implementación end-to-end y cierre con retroalimentación documental.
 - Módulo **Pedido De Mercadería** (`/pedidos/*`): las opciones de **SUCURSAL** deben venir de `global_sucursales` con `pedido = true` (no hardcodear listado fijo). Si una sucursal queda deshabilitada en DB, no debe aparecer en filtros/selectores ni operar por URL.
 - Si se agrega un nuevo patrón visual, clase global, componente compartido o convención de UI, debe actualizarse este documento y mantenerse alineado con las reglas de `.cursor/rules/`.
+
+---
+
+*Última actualización (2026-05-21): **Etiquetas de campo en modales** — regla global: color `foreground` (negro de UI), no `muted`, en `label` / `Label` / `ModalMicroLabel` / `MODAL_*_LABEL_CLASS`; `globals.css` (`--modal-field-label-color`) en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]`; migración de micro-etiquetas legacy en modales Finanzas a `ModalMicroLabel`.*
 
 ---
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -171,9 +172,7 @@ export default function CrearEditarFinBalCatalogoItemModal({
         <div className="grid min-h-0 grid-cols-1 gap-3">
           {nivel !== "tipo" && parentNombre && !esAltaGastoSoloNombre ? (
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                {labels.parentLabel}
-              </span>
+              <ModalMicroLabel>{labels.parentLabel}</ModalMicroLabel>
               <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
                 {parentNombre}
               </div>
@@ -181,9 +180,7 @@ export default function CrearEditarFinBalCatalogoItemModal({
           ) : null}
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              NOMBRE
-            </span>
+            <ModalMicroLabel>NOMBRE</ModalMicroLabel>
             <Input
               value={nombre}
               onChange={(e) => setNombre(e.target.value.toUpperCase())}

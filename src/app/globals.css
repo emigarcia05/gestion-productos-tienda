@@ -1207,8 +1207,31 @@
   flex-shrink: 0;
 }
 
-/* Estilos globales para todos los modales .modal-app: textos en negro, inputs/desplegables #0072BB */
+/* ─── Modales: etiquetas de campo (label, micro-etiqueta) en negro / foreground ─── */
+:root {
+  --modal-field-label-color: var(--foreground);
+}
+
+/* AppModal, modal-app y dialogs legacy: etiquetas de inputs/Select, no texto auxiliar */
+.app-modal__body label,
+.app-modal__body [data-slot="label"],
+.app-modal__body .modal-field-label,
+.app-modal__body .modal-micro-label,
 .modal-app__body label,
+.modal-app__body [data-slot="label"],
+.modal-app__body .modal-field-label,
+.modal-app__body .modal-micro-label,
+[data-slot="dialog-content"] label,
+[data-slot="dialog-content"] [data-slot="label"],
+[data-slot="dialog-content"] .modal-field-label,
+[data-slot="dialog-content"] .modal-micro-label,
+.app-modal__body dt,
+.modal-app__body dt,
+[data-slot="dialog-content"] dt {
+  color: var(--modal-field-label-color) !important;
+}
+
+/* Estilos globales .modal-app: párrafos y strong del cuerpo; inputs/desplegables #0072BB */
 .modal-app__body > p,
 .modal-app__body strong {
   color: var(--foreground);

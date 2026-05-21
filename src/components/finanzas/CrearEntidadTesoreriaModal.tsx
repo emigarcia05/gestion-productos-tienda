@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -130,9 +131,7 @@ export default function CrearEntidadTesoreriaModal({
         >
           <div className="flex min-h-0 flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                NUEVA ENTIDAD
-              </span>
+              <ModalMicroLabel>NUEVA ENTIDAD</ModalMicroLabel>
               <div className="flex gap-2">
                 <Input
                   value={nuevoNombre}
@@ -158,9 +157,7 @@ export default function CrearEntidadTesoreriaModal({
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-1 border-t pt-3">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                ENTIDADES EXISTENTES
-              </span>
+              <ModalMicroLabel>ENTIDADES EXISTENTES</ModalMicroLabel>
               <ul className="max-h-[min(22rem,55vh)] space-y-2 overflow-y-auto pr-1">
                 {items.map((e) => (
                   <li

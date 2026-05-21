@@ -196,7 +196,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
         <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
             {/* Fila 0: Proveedor */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">PROVEEDOR</label>
+              <label className="text-sm font-medium text-foreground">PROVEEDOR</label>
               <div className="relative">
                 <select
                   value={proveedorId}
@@ -217,7 +217,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
             {/* Tres filas: mismo tipo/tamaño/color de texto; botones en la misma columna alineados */}
             <div className="grid grid-cols-[1fr_10rem] gap-x-4 gap-y-3 items-center">
               {/* Fila 1: Adjuntar / Modificar archivo */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">
+              <span className="text-sm font-medium text-foreground min-w-0 truncate">
                 {fileName ? "MODIFICAR ARCHIVO" : "ADJUNTAR UN ARCHIVO"}
               </span>
               <div className="flex gap-2 w-full min-w-0">
@@ -250,7 +250,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
 
               {/* Fila 2: Los datos tienen encabezados — SÍ / NO */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">LOS DATOS TIENEN ENCABEZADOS</span>
+              <span className="text-sm font-medium text-foreground min-w-0 truncate">LOS DATOS TIENEN ENCABEZADOS</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"
@@ -275,7 +275,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
 
               {/* Fila 3: Habilitado — SÍ / NO */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">HABILITADO</span>
+              <span className="text-sm font-medium text-foreground min-w-0 truncate">HABILITADO</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"
@@ -300,7 +300,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               </div>
 
               {/* Fila 4: Precio en dólares — SÍ / NO */}
-              <span className="text-sm font-medium text-muted-foreground min-w-0 truncate">PRECIO EN DÓLARES</span>
+              <span className="text-sm font-medium text-foreground min-w-0 truncate">PRECIO EN DÓLARES</span>
               <div className="flex gap-2 w-full min-w-0">
                 <button
                   type="button"

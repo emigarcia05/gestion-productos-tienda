@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -401,9 +402,9 @@ export default function GastoUnicoBalanceModal({
               </div>
               {seleccion.ivaPolitica === "PREGUNTA" ? (
                 <label className="flex w-full flex-col gap-1">
-                  <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  <ModalMicroLabel>
                     ¿El gasto discrimina IVA? <span className="text-destructive">*</span>
-                  </span>
+                  </ModalMicroLabel>
                   <Select
                     value={discriminaIvaRespuesta}
                     onValueChange={(v) => setDiscriminaIvaRespuesta(v as "none" | "si" | "no")}
@@ -421,9 +422,9 @@ export default function GastoUnicoBalanceModal({
                 </label>
               ) : null}
               <label className="flex w-full flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <ModalMicroLabel>
                   Sucursal <span className="text-destructive">*</span>
-                </span>
+                </ModalMicroLabel>
                 <Select
                   value={imputacionSucursalId || "none"}
                   onValueChange={(v) => setImputacionSucursalId(v === "none" ? "" : v)}
@@ -448,9 +449,9 @@ export default function GastoUnicoBalanceModal({
                 ) : null}
               </label>
               <label className="flex w-full flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <ModalMicroLabel>
                   Monto <span className="text-destructive">*</span>
-                </span>
+                </ModalMicroLabel>
                 <MontoArInput
                   valueNormalized={montoNorm}
                   onValueNormalizedChange={setMontoNorm}
@@ -459,9 +460,7 @@ export default function GastoUnicoBalanceModal({
                 />
               </label>
               <label className="flex w-full flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  Pagado
-                </span>
+                <ModalMicroLabel>Pagado</ModalMicroLabel>
                 <div className="relative w-full">
                   <MontoArInput
                     valueNormalized={pagadoNorm}
@@ -485,9 +484,9 @@ export default function GastoUnicoBalanceModal({
                 </div>
               </label>
               <label className="flex w-full flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <ModalMicroLabel>
                   Fecha De Gasto <span className="text-destructive">*</span>
-                </span>
+                </ModalMicroLabel>
                 <input
                   type="date"
                   value={fechaGasto}
@@ -500,9 +499,9 @@ export default function GastoUnicoBalanceModal({
                 />
               </label>
               <label className="flex w-full flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <ModalMicroLabel>
                   Plazo De Pago {plazoRequerido ? <span className="text-destructive">*</span> : null}
-                </span>
+                </ModalMicroLabel>
                 <Select
                   value={pagoTotal ? undefined : plazoPago || undefined}
                   onValueChange={setPlazoPago}

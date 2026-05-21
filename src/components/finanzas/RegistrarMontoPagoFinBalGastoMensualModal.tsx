@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Check, Loader2, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
@@ -180,9 +181,7 @@ export default function RegistrarMontoPagoFinBalGastoMensualModal({
             </div>
 
             <label className="flex w-full flex-col items-center gap-1 text-center">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                MONTO
-              </span>
+              <ModalMicroLabel>MONTO</ModalMicroLabel>
               <MontoArInput
                 valueNormalized={montoNorm}
                 onValueNormalizedChange={setMontoNorm}
@@ -227,9 +226,7 @@ export default function RegistrarMontoPagoFinBalGastoMensualModal({
             </div>
 
             <label className="flex w-full flex-col items-center gap-1 text-center">
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                PAGADO
-              </span>
+              <ModalMicroLabel>PAGADO</ModalMicroLabel>
               <div className="relative w-full">
                 <MontoArInput
                   valueNormalized={pagadoNorm}
