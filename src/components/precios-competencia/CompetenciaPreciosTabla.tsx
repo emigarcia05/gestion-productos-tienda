@@ -61,26 +61,40 @@ function CeldaDifPct({ pct }: { pct: number | null }) {
 }
 
 const SUBFILA_DETALLE_CLASS = "tabla-fila-altura-auto tabla-fila-detalle-competencia";
+const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
+const SUBFILA_CELDA_HUECA_CLASS = "tabla-fila-detalle-competencia-hueca";
 
-/** Subfila: celdas alineadas al colgroup; sin divisores entre columnas. */
-function DetalleCompetidorFila({ item }: { item: CompetidorPrecioFila }) {
+/** Subfila: bloque visual solo en PRECIO TIENDA + PX PROMEDIO + DIF TIENDA (cols 2–4). */
+function DetalleCompetidorFila({
+  item,
+  esUltima,
+}: {
+  item: CompetidorPrecioFila;
+  esUltima: boolean;
+}) {
   return (
-    <TableRow className={cn(SUBFILA_DETALLE_CLASS, "hover:bg-transparent")}>
-      <TableCell className="celda-datos" aria-hidden />
-      <TableCell className="celda-datos max-w-0 text-right">
+    <TableRow
+      className={cn(
+        SUBFILA_DETALLE_CLASS,
+        esUltima && "tabla-fila-detalle-competencia--cierre",
+        "hover:bg-transparent"
+      )}
+    >
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+      <TableCell className={cn("celda-datos max-w-0 text-right", SUBFILA_CELDA_BLOQUE_CLASS)}>
         <span className="block truncate font-medium text-foreground" title={item.nombre}>
           {item.nombre}
         </span>
       </TableCell>
-      <TableCell className="celda-datos tabular-nums text-right">
+      <TableCell className={cn("celda-datos tabular-nums text-right", SUBFILA_CELDA_BLOQUE_CLASS)}>
         {fmtPrecio(item.px)}
       </TableCell>
-      <TableCell className="celda-datos text-center">
+      <TableCell className={cn("celda-datos text-center", SUBFILA_CELDA_BLOQUE_CLASS)}>
         <CeldaDifPct pct={item.difPctVsTienda} />
       </TableCell>
-      <TableCell className="celda-datos" aria-hidden />
-      <TableCell className="celda-datos" aria-hidden />
-      <TableCell className="celda-datos" aria-hidden />
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }
@@ -258,20 +272,34 @@ export default function CompetenciaPreciosTabla({
                         {expandido && detalle.length === 0 ? (
                           <TableRow
                             key={`${fila.codTienda}-detalle-vacio`}
-                            className={cn(SUBFILA_DETALLE_CLASS, "hover:bg-transparent")}
+                            className={cn(
+                              SUBFILA_DETALLE_CLASS,
+                              "tabla-fila-detalle-competencia--cierre",
+                              "hover:bg-transparent"
+                            )}
                           >
-                            <TableCell colSpan={COLS} className="celda-datos py-2">
+                            <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+                            <TableCell
+                              colSpan={3}
+                              className={cn("celda-datos py-2", SUBFILA_CELDA_BLOQUE_CLASS)}
+                            >
                               <p className="text-sm text-muted-foreground text-center">
                                 Sin precios relevados de competidores para este producto.
                               </p>
                             </TableCell>
+                            <TableCell
+                              colSpan={3}
+                              className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)}
+                              aria-hidden
+                            />
                           </TableRow>
                         ) : null}
                         {expandido
-                          ? detalle.map((item) => (
+                          ? detalle.map((item, idx) => (
                               <DetalleCompetidorFila
                                 key={`${fila.codTienda}-${item.competenciaId}`}
                                 item={item}
+                                esUltima={idx === detalle.length - 1}
                               />
                             ))
                           : null}

@@ -926,28 +926,36 @@
   max-height: none !important;
 }
 
-/* Precios Competencia — subfila detalle: fondo uniforme (sin cebra), sin divisores verticales. */
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia,
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:nth-child(odd),
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:nth-child(even) {
-  --tabla-row-bg: color-mix(in oklab, var(--muted) 52%, var(--card));
-  background-color: color-mix(in oklab, var(--muted) 52%, var(--card)) !important;
+/* Precios Competencia — subfila: bloque solo en cols 2–4 (PRECIO TIENDA + PX PROMEDIO + DIF TIENDA). */
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia {
+  background-color: transparent !important;
 }
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td {
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-hueca {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-celda {
+  --tabla-row-bg: color-mix(in oklab, var(--muted) 52%, var(--card));
   background-color: color-mix(in oklab, var(--muted) 52%, var(--card)) !important;
   box-shadow: none !important;
 }
-.tabla-gestion-compacta tbody tr:not(.tabla-fila-detalle-competencia) + tr.tabla-fila-detalle-competencia td {
+.tabla-gestion-compacta
+  tbody
+  tr:not(.tabla-fila-detalle-competencia)
+  + tr.tabla-fila-detalle-competencia
+  td.tabla-fila-detalle-competencia-celda {
   border-top: 1px solid color-mix(in oklab, var(--primary) 14%, var(--border));
 }
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover,
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td {
-  --tabla-row-bg: color-mix(in oklab, var(--muted) 68%, var(--card));
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre td.tabla-fila-detalle-competencia-celda {
+  border-bottom: 1px solid #0072bb !important;
+  padding-bottom: 0.5rem !important;
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td.tabla-fila-detalle-competencia-celda {
   background-color: color-mix(in oklab, var(--muted) 68%, var(--card)) !important;
   color: var(--foreground) !important;
 }
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td:first-child {
-  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--primary) 40%, transparent) !important;
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-celda:nth-child(2) {
+  box-shadow: inset 3px 0 0 #0072bb !important;
 }
 
 /**
