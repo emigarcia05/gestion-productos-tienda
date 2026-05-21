@@ -5,18 +5,12 @@ import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
-import GuiaCampoExtraccionCompetencia from "@/components/precios-competencia/GuiaCampoExtraccionCompetencia";
 import {
   reglaExtraccionVacia,
   type CompetenciaConfigExtraccion,
   type ReglaExtraccionPagina,
 } from "@/lib/competenciaConfigExtraccion";
 import { cn } from "@/lib/utils";
-
-const TIP_COPIAR_SELECTOR =
-  "elegí Copiar → Copiar selector (en Chrome/Edge). No uses HTML, XPath ni «copiar elemento». Si solo ves XPath, anotá la clase del precio (ej. price) y pegá .price";
 
 interface Props {
   value: CompetenciaConfigExtraccion;
@@ -64,17 +58,6 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div>
-        <Label className="text-sm font-semibold text-foreground">
-          Cómo leer el precio en el sitio del competidor
-        </Label>
-        <p className={cn("mt-1 text-xs", CALLOUT_WARNING_CLASS)}>
-          Abrí una ficha de producto real en el navegador del competidor. Con el botón derecho
-          sobre el precio → Inspeccionar, copiá el selector y pegalo acá. Probá con Comparar
-          Precios (1 producto) antes de cargar muchas URLs.
-        </p>
-      </div>
-
       {reglas.length === 0 ? (
         <Button type="button" variant="outline" size="sm" onClick={agregarRegla}>
           <Plus className="h-4 w-4 mr-1" />
@@ -133,43 +116,18 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
                 </div>
 
                 <div>
-                  <ModalMicroLabel>Elemento precio (obligatorio)</ModalMicroLabel>
+                  <ModalMicroLabel>Selector del precio</ModalMicroLabel>
                   <Input
                     value={regla.selectorPrecio ?? ""}
                     onChange={(e) => updateRegla(index, { selectorPrecio: e.target.value })}
                     placeholder=".precio-venta"
                     className="mt-1 font-mono text-xs"
                   />
-                  <GuiaCampoExtraccionCompetencia
-                    pasos={[
-                      "En la página del competidor, ubicá el número que ves como precio de venta (ej. $ 12.500).",
-                      "Clic derecho sobre ese número → Inspeccionar.",
-                      "En el panel, clic derecho sobre la línea resaltada del precio → Copiar → Copiar selector.",
-                      "Pegá aquí lo copiado (suele verse como .algo o #algo).",
-                    ]}
-                    tip={TIP_COPIAR_SELECTOR}
-                  />
-                </div>
-
-                <div>
-                  <ModalMicroLabel>Contenedor del precio (opcional)</ModalMicroLabel>
-                  <Input
-                    value={regla.selectorPrecioAlternativo ?? ""}
-                    onChange={(e) =>
-                      updateRegla(index, { selectorPrecioAlternativo: e.target.value })
-                    }
-                    placeholder=".bloque-precio-producto"
-                    className="mt-1 font-mono text-xs"
-                  />
-                  <GuiaCampoExtraccionCompetencia
-                    pasos={[
-                      "Si el precio sale mal o trae otro número de la página, volvé al inspector.",
-                      "Subí un nivel: elegí el div o sección que envuelve solo el precio del producto (no el menú ni productos relacionados).",
-                      "Clic derecho en ese contenedor → Copiar → Copiar selector, y pegá aquí.",
-                      "Dejá vacío si todavía no lo necesitás; primero probá solo con Elemento precio.",
-                    ]}
-                    tip={TIP_COPIAR_SELECTOR}
-                  />
+                  <p className="mt-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-2 text-xs text-muted-foreground">
+                    En la ficha del producto: clic derecho sobre el precio → Inspeccionar → Copiar →{" "}
+                    <span className="font-semibold text-foreground">Copiar selector</span> y pegá
+                    ese valor en el campo de arriba.
+                  </p>
                 </div>
 
                 <div>

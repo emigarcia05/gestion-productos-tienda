@@ -12,15 +12,16 @@ import {
   listCompetenciasAction,
 } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
-import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import AltaCompetidorModal from "@/components/precios-competencia/AltaCompetidorModal";
 import ConfiguracionCompetidorModal from "@/components/precios-competencia/ConfiguracionCompetidorModal";
-import {
-  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-} from "@/lib/ui-classes";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
+
+const LIST_ROW_ICON_BTN_CLASS = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "h-9 w-9 min-h-9 max-h-9"
+);
 
 interface Props {
   open: boolean;
@@ -133,24 +134,19 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                   {listaFiltrada.map((row) => (
                     <li
                       key={row.id}
-                      className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2"
+                      className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2"
                     >
-                      <div className="min-w-0">
-                        <p className="font-medium text-foreground truncate">{row.nombre}</p>
-                        <p className="text-xs text-muted-foreground truncate">{row.web}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {labelUltimaComparacionCompetencia(row.ultimaComparacionAt)}
-                          {row.configExtraccion?.reglas?.length
-                            ? ` · ${row.configExtraccion.reglas.length} regla(s)`
-                            : " · sin reglas"}
+                      <div className="flex min-w-0 flex-1 items-center justify-start text-left">
+                        <p className="w-full truncate text-left font-medium text-foreground">
+                          {row.nombre}
                         </p>
                       </div>
-                      <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                      <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                          className={LIST_ROW_ICON_BTN_CLASS}
                           aria-label={`Configurar ${row.nombre}`}
                           onClick={() => setConfigCompetidor(row)}
                         >
@@ -160,10 +156,7 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className={cn(
-                            TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                            "text-destructive hover:text-destructive"
-                          )}
+                          className={LIST_ROW_ICON_BTN_CLASS}
                           aria-label={`Eliminar ${row.nombre}`}
                           onClick={() => void handleEliminar(row)}
                         >
