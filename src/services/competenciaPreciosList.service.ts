@@ -44,10 +44,10 @@ export async function getCompetenciaPreciosList(
 ): Promise<CompetenciaPreciosListResult> {
   const pagina = Math.max(1, parseInt(filtros.pagina, 10) || 1);
   const q = filtros.q.trim();
-  const difPromedio = filtros.difPromedio?.trim() ?? "";
+  const difPromedio = filtros.difPromedio;
+  const configurado = filtros.configurado;
   const provCaroCompetenciaId = filtros.provCaroCompetenciaId?.trim() ?? "";
   const provBaratoCompetenciaId = filtros.provBaratoCompetenciaId?.trim() ?? "";
-  const configurado = filtros.configurado?.trim() ?? "";
 
   const competenciasRows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
@@ -74,7 +74,7 @@ export async function getCompetenciaPreciosList(
 
   const whereConfigurado = whereConfiguradoCompetencia(configurado);
   const codTiendasPrecio = await codTiendasFiltrosPrecioCompetencia({
-    difPromedio: difPromedio || undefined,
+    difPromedio: difPromedio === "" ? undefined : difPromedio,
     provCaroCompetenciaId: provCaroCompetenciaId || undefined,
     provBaratoCompetenciaId: provBaratoCompetenciaId || undefined,
   });
