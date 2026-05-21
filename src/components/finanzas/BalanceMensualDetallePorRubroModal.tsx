@@ -15,6 +15,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import TablaSubencabezadoSeccionRow from "@/components/shared/TablaSubencabezadoSeccionRow";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
 import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -180,16 +181,15 @@ export default function BalanceMensualDetallePorRubroModal({
                       message="No hay imputaciones para este concepto en el periodo."
                     />
                   ) : (
-                    secciones.map((sec) => (
+                    secciones.map((sec) => {
+                      const totalBloque = sec.rubros.reduce((a, r) => a + r.monto, 0);
+                      return (
                       <Fragment key={`${sec.etiquetaTipo}-${sec.tipoGastoNombre ?? "pool"}`}>
-                        <TableRow className="bg-muted/45 hover:bg-muted/45">
-                          <TableCell
-                            colSpan={4}
-                            className="celda-datos py-2 text-xs font-semibold uppercase tracking-wide text-foreground"
-                          >
-                            {fmtTituloPalabras(sec.etiquetaTipo.toLowerCase())}
-                          </TableCell>
-                        </TableRow>
+                        <TablaSubencabezadoSeccionRow
+                          titulo={sec.etiquetaTipo}
+                          colSpan={4}
+                          totalBloque={totalBloque}
+                        />
                         {sec.rubros.map((r) => {
                           const payload: ElegirRubroBalancePayload = {
                             rubro: r,
@@ -244,7 +244,8 @@ export default function BalanceMensualDetallePorRubroModal({
                           );
                         })}
                       </Fragment>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

@@ -926,6 +926,27 @@
   max-height: none !important;
 }
 
+/* Subencabezado de sección en tbody (Pedido Urgente, modales Balance por tipo, etc.). */
+.tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado:hover td.tabla-fila-seccion-subencabezado-celda {
+  background-color: color-mix(in oklab, var(--muted) 70%, var(--card)) !important;
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado td.tabla-fila-seccion-subencabezado-celda {
+  --tabla-row-bg: color-mix(in oklab, var(--muted) 70%, var(--card));
+  background-color: var(--tabla-row-bg) !important;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
 /* Precios Competencia — subfila: bloque solo en cols 2–4 (PRECIO TIENDA + PX PROMEDIO + DIF TIENDA). */
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia {
   background-color: transparent !important;

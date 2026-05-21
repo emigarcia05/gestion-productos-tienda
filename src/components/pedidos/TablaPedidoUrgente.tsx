@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import TablaSubencabezadoSeccionRow from "@/components/shared/TablaSubencabezadoSeccionRow";
 import { cn } from "@/lib/utils";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -112,20 +113,6 @@ function textoProveedorCeldaPedidoUrgente(prod: ProductoPedidoUrgente): string {
   return (prod.prefijo ?? "").trim();
 }
 
-function SubencabezadoSeccionPedidoUrgente({ titulo }: { titulo: string }) {
-  return (
-    <TableRow className="tabla-fila-altura-auto hover:bg-transparent cursor-default border-b border-border">
-      <TableCell
-        colSpan={COLUMNS}
-        className={cn(
-          "celda-datos bg-muted/70 text-xs font-semibold text-foreground tracking-wide uppercase"
-        )}
-      >
-        {titulo}
-      </TableCell>
-    </TableRow>
-  );
-}
 
 function FilaDatosPedidoUrgente({
   prod,
@@ -285,9 +272,10 @@ export default function TablaPedidoUrgente({
           <>
             {productosRegistradosDux.length > 0 ? (
               <>
-                <SubencabezadoSeccionPedidoUrgente
+                <TablaSubencabezadoSeccionRow
                   key="subheader-dux-registrados"
                   titulo={TEXTO_SUBENCABEZADO_REGISTRADOS_DUX}
+                  colSpan={COLUMNS}
                 />
                 {productosRegistradosDux.map((prod) => (
                   <FilaDatosPedidoUrgente
@@ -302,9 +290,10 @@ export default function TablaPedidoUrgente({
             ) : null}
             {productosSinRegistrarDux.length > 0 ? (
               <>
-                <SubencabezadoSeccionPedidoUrgente
+                <TablaSubencabezadoSeccionRow
                   key="subheader-dux-sin-registrar"
                   titulo={TEXTO_SUBENCABEZADO_SIN_REGISTRAR_DUX}
+                  colSpan={COLUMNS}
                 />
                 {productosSinRegistrarDux.map((prod) => (
                   <FilaDatosPedidoUrgente
