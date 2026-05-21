@@ -1291,7 +1291,7 @@ Migración: `20260520190000_add_prod_competencia_tables`.
 
 - `competencia.service.ts` — CRUD + `normalizeWebUrl`.
 - `competenciaPreciosList.service.ts` — listado paginado (`PAGE_SIZE`) con matriz de precios por competidor.
-- `competenciaPrecioScraping.service.ts` — `fetch` HTML; extracción por regla del competidor (`config_extraccion` + `tipo_pagina` del vínculo): JSON-LD, selectores CSS (`.clase`, `#id`, `[itemprop="price"]`, atributo opcional), regex custom; heurística genérica solo si no hay regla o como último método.
+- `competenciaPrecioScraping.service.ts` — `fetch` HTML; extracción por regla del competidor (`config_extraccion` + `tipo_pagina` del vínculo): JSON-LD, selectores CSS (`.clase`, `#id`, `[itemprop="price"]`, atributo opcional), regex custom; heurística genérica solo si no hay regla o como último método. Tras capturar texto, **`parsePrecioArgentino`** (`@/lib/parsePrecioArgentino.ts`) normaliza a **entero en pesos** (sin centavos): punto como **miles** (`179.129` → `179129`), coma como decimales opcionales (`1.234.567,89` → `1234567`). Aplica a regex, CSS y JSON-LD por igual.
 - `syncCompetenciaPrecios.service.ts` — upsert por par producto×competidor; progreso vía callback.
 
 ### API Routes

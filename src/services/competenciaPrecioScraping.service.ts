@@ -5,6 +5,7 @@ import {
   type MetodoExtraccion,
   type ReglaExtraccionPagina,
 } from "@/lib/competenciaConfigExtraccion";
+import { parsePrecioArgentino } from "@/lib/parsePrecioArgentino";
 
 const FETCH_TIMEOUT_MS = 12_000;
 const USER_AGENT =
@@ -377,24 +378,6 @@ export function parsePreciosFromHtml(html: string): number[] {
 function pushPrice(set: Set<number>, raw: string): void {
   const n = parsePrecioArgentino(raw);
   if (n != null && n >= 10 && n <= 50_000_000) set.add(n);
-}
-
-function parsePrecioArgentino(raw: string): number | null {
-  const cleaned = raw.replace(/[^\d.,]/g, "").trim();
-  if (!cleaned) return null;
-  const s = cleaned.replace(/\s/g, "");
-  if (!s) return null;
-  if (s.includes(",") && s.includes(".")) {
-    const normalized = s.replace(/\./g, "").replace(",", ".");
-    const n = Number(normalized);
-    return Number.isFinite(n) ? n : null;
-  }
-  if (s.includes(",")) {
-    const n = Number(s.replace(",", "."));
-    return Number.isFinite(n) ? n : null;
-  }
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
 }
 
 /** Heurística genérica sin reglas: mediana para descartar outliers en páginas ruidosas. */
