@@ -22,16 +22,21 @@ import {
   calcularResumenPreciosCompetenciaFila,
   type CompetidorPrecioFila,
 } from "@/lib/competenciaPreciosFilaResumen";
-import {
-  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-} from "@/lib/ui-classes";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
 import AsociarUrlsCompetenciaModal from "@/components/precios-competencia/AsociarUrlsCompetenciaModal";
 
 const COLS = 7;
-const COL_WIDTHS = [45, 10, 10, 10, 10, 10, 5] as const;
+const COL_WIDTHS = [45, 9, 9, 9, 9, 9, 10] as const;
+
+const WRAPPER_ACCIONES_FILA =
+  "tabla-precios-competencia-acciones flex h-full min-h-0 max-h-full w-full items-stretch justify-center gap-0.5 overflow-hidden p-0.5 box-border";
+
+const BTN_ACCION_FILA = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!h-full !max-h-full min-h-0 !w-auto aspect-square shrink-0 !p-0.5 [&_svg]:size-3.5"
+);
 
 interface Props {
   data: CompetenciaPreciosListResult | null;
@@ -123,7 +128,7 @@ export default function CompetenciaPreciosTabla({
       <Card className={cn("card-tabla-envoltorio", "flex-1 min-h-0")}>
         <CardContent className="flex flex-1 min-h-0 flex-col p-0">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <Table variant="compact" className="w-full table-fixed">
+            <Table variant="compact" className="tabla-precios-competencia w-full table-fixed">
               <colgroup>
                 {COL_WIDTHS.map((pct, i) => (
                   <col key={i} style={{ width: `${pct}%` }} />
@@ -174,9 +179,13 @@ export default function CompetenciaPreciosTabla({
                     const detalle = resumen?.competidoresOrdenados ?? [];
                     return (
                       <Fragment key={fila.codTienda}>
-                        <TableRow>
-                          <TableCell className="celda-datos">{fila.descripcionTienda ?? "—"}</TableCell>
-                          <TableCell className="celda-datos tabular-nums text-right">
+                        <TableRow className="tabla-precios-competencia-fila-principal">
+                          <TableCell className="celda-datos max-w-0">
+                            <span className="block truncate" title={fila.descripcionTienda ?? undefined}>
+                              {fila.descripcionTienda ?? "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="celda-datos tabular-nums text-right whitespace-nowrap">
                             {fmtPrecio(fila.pxListaTienda)}
                           </TableCell>
                           <TableCell className="celda-datos tabular-nums text-right tabla-bloque-secundario-cell-divider">
@@ -197,23 +206,23 @@ export default function CompetenciaPreciosTabla({
                           >
                             {resumen?.mayor?.prefijo3 ?? "—"}
                           </TableCell>
-                          <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
-                            <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                          <TableCell className="celda-datos celda-datos--accion-relleno-fila celda-acciones-competencia tabla-bloque-secundario-cell-divider">
+                            <div className={WRAPPER_ACCIONES_FILA}>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                className={BTN_ACCION_FILA}
                                 aria-label={
-                                  expandido ? "Ocultar detalle de competidores" : "Ver detalle de competidores"
+                                  expandido ? "Ocultar detalle" : "Ver detalle"
                                 }
                                 aria-expanded={expandido}
                                 onClick={() => toggleDetalle(fila.codTienda)}
                               >
                                 {expandido ? (
-                                  <ChevronUp className="h-4 w-4 shrink-0" />
+                                  <ChevronUp className="shrink-0" aria-hidden />
                                 ) : (
-                                  <ChevronDown className="h-4 w-4 shrink-0" />
+                                  <ChevronDown className="shrink-0" aria-hidden />
                                 )}
                               </Button>
                               {puedeEditar ? (
@@ -221,8 +230,8 @@ export default function CompetenciaPreciosTabla({
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                  aria-label="Asociar URLs de competidores"
+                                  className={BTN_ACCION_FILA}
+                                  aria-label="Asociar URL"
                                   onClick={() =>
                                     setAsociarFila({
                                       codTienda: fila.codTienda,
@@ -231,7 +240,7 @@ export default function CompetenciaPreciosTabla({
                                     })
                                   }
                                 >
-                                  <Link2 className="h-4 w-4 shrink-0" />
+                                  <Link2 className="shrink-0" aria-hidden />
                                 </Button>
                               ) : null}
                             </div>
@@ -240,7 +249,7 @@ export default function CompetenciaPreciosTabla({
                         {expandido ? (
                           <TableRow
                             key={`${fila.codTienda}-detalle`}
-                            className="hover:bg-transparent bg-muted/40"
+                            className="tabla-precios-competencia-fila-detalle hover:bg-transparent bg-muted/40"
                           >
                             <TableCell colSpan={COLS} className="celda-datos py-2 px-4">
                               {detalle.length === 0 ? (

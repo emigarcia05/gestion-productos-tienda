@@ -926,6 +926,51 @@
   --tabla-body-cell-padding-y: 0.375rem;
 }
 
+/* Precios Competencia: filas de datos con alto fijo; botones de ACCIONES a altura de celda. */
+.tabla-gestion-compacta.tabla-precios-competencia {
+  --tabla-body-row-min-height: 2rem;
+}
+.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-principal {
+  height: var(--tabla-body-row-min-height) !important;
+  max-height: var(--tabla-body-row-min-height) !important;
+}
+.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-principal td {
+  height: var(--tabla-body-row-min-height) !important;
+  max-height: var(--tabla-body-row-min-height) !important;
+  overflow: hidden;
+}
+.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-detalle,
+.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-detalle td {
+  height: auto !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-principal td.celda-acciones-competencia {
+  padding: 0 !important;
+  vertical-align: middle;
+}
+.tabla-gestion-compacta.tabla-precios-competencia
+  tbody
+  tr.tabla-precios-competencia-fila-principal
+  td.celda-acciones-competencia
+  .tabla-precios-competencia-acciones {
+  height: 100%;
+  min-height: 0;
+}
+.tabla-gestion-compacta.tabla-precios-competencia
+  tbody
+  tr.tabla-precios-competencia-fila-principal
+  td.celda-acciones-competencia
+  button.tabla-row-btn-filled-brand {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  width: auto !important;
+  max-width: calc(50% - 0.125rem);
+  aspect-ratio: 1 / 1;
+  flex: 1 1 0;
+  padding: 0.25rem !important;
+}
+
 /* Toggle de tilde compacto en tablas (global y reutilizable). */
 .tabla-gestion-compacta tbody td .tabla-check-toggle {
   --tabla-check-size: calc(var(--tabla-body-row-min-height) - 0.75rem);
