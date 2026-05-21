@@ -20,8 +20,12 @@ import {
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import {
   calcularResumenPreciosCompetenciaFila,
+  listarCompetidoresConFalloRelevamiento,
+  type CompetidorFalloRelevamientoFila,
   type CompetidorPrecioFila,
 } from "@/lib/competenciaPreciosFilaResumen";
+import RelevamientoUltimoMensaje from "@/components/precios-competencia/RelevamientoUltimoMensaje";
+import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -95,6 +99,35 @@ function DetalleCompetidorFila({
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+    </TableRow>
+  );
+}
+
+function DetalleCompetidorFalloFila({
+  item,
+  vinculo,
+  esUltima,
+}: {
+  item: CompetidorFalloRelevamientoFila;
+  vinculo: DatoVinculoCompetenciaCliente | undefined;
+  esUltima: boolean;
+}) {
+  return (
+    <TableRow
+      className={cn(
+        SUBFILA_DETALLE_CLASS,
+        esUltima && "tabla-fila-detalle-competencia--cierre",
+        "hover:bg-transparent"
+      )}
+    >
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+      <TableCell colSpan={3} className={cn("celda-datos py-2", SUBFILA_CELDA_BLOQUE_CLASS)}>
+        <div className="flex flex-col gap-1.5 max-w-full">
+          <span className="text-sm font-medium text-foreground">{item.nombre}</span>
+          <RelevamientoUltimoMensaje vinculo={vinculo} />
+        </div>
+      </TableCell>
+      <TableCell colSpan={3} className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }
@@ -200,6 +233,11 @@ export default function CompetenciaPreciosTabla({
                     const resumen = resumenesPorFila.get(fila.codTienda);
                     const expandido = expandidos.has(fila.codTienda);
                     const detalle = resumen?.competidoresOrdenados ?? [];
+                    const fallos = listarCompetidoresConFalloRelevamiento(
+                      fila.vinculosPorCompetencia,
+                      competencias
+                    );
+                    const filasDetalle = detalle.length + fallos.length;
                     return (
                       <Fragment key={fila.codTienda}>
                         <TableRow>
@@ -269,7 +307,7 @@ export default function CompetenciaPreciosTabla({
                             </div>
                           </TableCell>
                         </TableRow>
-                        {expandido && detalle.length === 0 ? (
+                        {expandido && filasDetalle === 0 ? (
                           <TableRow
                             key={`${fila.codTienda}-detalle-vacio`}
                             className={cn(
@@ -297,9 +335,19 @@ export default function CompetenciaPreciosTabla({
                         {expandido
                           ? detalle.map((item, idx) => (
                               <DetalleCompetidorFila
-                                key={`${fila.codTienda}-${item.competenciaId}`}
+                                key={`${fila.codTienda}-${item.competenciaId}-ok`}
                                 item={item}
-                                esUltima={idx === detalle.length - 1}
+                                esUltima={idx === detalle.length - 1 && fallos.length === 0}
+                              />
+                            ))
+                          : null}
+                        {expandido
+                          ? fallos.map((item, idx) => (
+                              <DetalleCompetidorFalloFila
+                                key={`${fila.codTienda}-${item.competenciaId}-fallo`}
+                                item={item}
+                                vinculo={fila.vinculosPorCompetencia[item.competenciaId]}
+                                esUltima={idx === fallos.length - 1}
                               />
                             ))
                           : null}

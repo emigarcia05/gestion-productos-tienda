@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useCompetenciaSyncStatusPoll } from "@/hooks/useCompetenciaSyncStatusPoll";
 import { listCompetenciasAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
+import { cn } from "@/lib/utils";
 
 /** Valor del select para comparar todos los competidores con URL cargada. */
 export const COMPETENCIA_SYNC_TODOS = "__TODOS__";
@@ -35,6 +37,7 @@ export default function SincronizarCompetenciaModal({
   const [loadingLista, setLoadingLista] = useState(false);
   const [competenciaId, setCompetenciaId] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const { processed, total } = useCompetenciaSyncStatusPoll(syncing);
 
   const cargar = useCallback(async () => {
     setLoadingLista(true);
@@ -153,6 +156,18 @@ export default function SincronizarCompetenciaModal({
         }
       >
         <div className="flex flex-col gap-4">
+          {syncing ? (
+            <div
+              className={cn(
+                "rounded-lg border border-primary/40 bg-primary/10 px-4 py-3",
+                "text-center text-sm font-semibold tracking-wide text-foreground"
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              {processed} de {total}
+            </div>
+          ) : null}
           {loadingLista ? (
             <p className="text-sm text-muted-foreground">Cargando competidores...</p>
           ) : lista.length === 0 ? (

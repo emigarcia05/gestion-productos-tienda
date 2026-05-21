@@ -49,6 +49,40 @@ export function listarCompetidoresConPrecioOk(
   return items.sort((a, b) => a.px - b.px);
 }
 
+export interface CompetidorFalloRelevamientoFila {
+  competenciaId: string;
+  nombre: string;
+  estado: string;
+  errorMensaje: string | null;
+  relevadoAt: string | null;
+}
+
+/** Competidores con URL y último relevamiento en ERROR o SIN_PRECIO (para detalle expandido). */
+export function listarCompetidoresConFalloRelevamiento(
+  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
+  competencias: CompetenciaParaCliente[]
+): CompetidorFalloRelevamientoFila[] {
+  const items: CompetidorFalloRelevamientoFila[] = [];
+  for (const c of competencias) {
+    const v = vinculosPorCompetencia[c.id];
+    if (!v?.urlProducto?.trim()) continue;
+    if (
+      v.estado !== ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR &&
+      v.estado !== ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO
+    ) {
+      continue;
+    }
+    items.push({
+      competenciaId: c.id,
+      nombre: c.nombre,
+      estado: v.estado,
+      errorMensaje: v.errorMensaje,
+      relevadoAt: v.relevadoAt,
+    });
+  }
+  return items.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
 export function calcularResumenPreciosCompetenciaFila(
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[],

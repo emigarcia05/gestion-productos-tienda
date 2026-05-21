@@ -13,6 +13,7 @@ import {
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import { guardarUrlVinculoCompetenciaAction } from "@/actions/competenciaPrecios";
+import RelevamientoUltimoMensaje from "@/components/precios-competencia/RelevamientoUltimoMensaje";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
@@ -146,6 +147,12 @@ export default function AsociarUrlsCompetenciaModal({
             <span className="font-semibold">{codTienda}</span>
             {descripcion ? ` — ${descripcion}` : null}
           </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Si falla <span className="font-medium text-foreground">un producto</span>, revisá la URL de ese ítem.
+            Si fallan <span className="font-medium text-foreground">casi todos</span> los productos del mismo competidor,
+            revisá <span className="font-medium text-foreground">Configuracion Competidor</span> (selectores, regex, tipo de
+            página). El último mensaje de cada comparación aparece abajo (podés copiarlo para depurar acá o con una IA).
+          </p>
           {competencias.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay competidores registrados.</p>
           ) : (
@@ -219,6 +226,10 @@ export default function AsociarUrlsCompetenciaModal({
                         ) : null}
                       </div>
                     </div>
+                    <RelevamientoUltimoMensaje
+                      vinculo={vinculosPorCompetencia[f.competenciaId]}
+                      tieneUrlEnEdicion={!!f.url.trim()}
+                    />
                   </div>
                 </li>
               ))}
