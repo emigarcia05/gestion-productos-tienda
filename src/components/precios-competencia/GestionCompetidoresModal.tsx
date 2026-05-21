@@ -1,28 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog } from "@/components/ui/dialog";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { toast } from "sonner";
 import {
-  createCompetenciaAction,
   deleteCompetenciaAction,
   listCompetenciasAction,
-  updateCompetenciaAction,
 } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
-import type { CompetenciaConfigExtraccion } from "@/lib/competenciaConfigExtraccion";
-import CompetenciaExtraccionReglasEditor from "@/components/precios-competencia/CompetenciaExtraccionReglasEditor";
+import { matchByMultiTerm } from "@/lib/busqueda";
+import AltaCompetidorModal from "@/components/precios-competencia/AltaCompetidorModal";
+import ConfiguracionCompetidorModal from "@/components/precios-competencia/ConfiguracionCompetidorModal";
 import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -30,15 +28,12 @@ interface Props {
   onChanged: () => void;
 }
 
-const CONFIG_VACIA: CompetenciaConfigExtraccion = { reglaDefaultId: "", reglas: [] };
-
 export default function GestionCompetidoresModal({ open, onOpenChange, onChanged }: Props) {
   const [lista, setLista] = useState<CompetenciaParaCliente[]>([]);
   const [loading, setLoading] = useState(false);
-  const [nombre, setNombre] = useState("");
-  const [web, setWeb] = useState("");
-  const [configExtraccion, setConfigExtraccion] = useState<CompetenciaConfigExtraccion>(CONFIG_VACIA);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [altaOpen, setAltaOpen] = useState(false);
+  const [configCompetidor, setConfigCompetidor] = useState<CompetenciaParaCliente | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -51,157 +46,151 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
   }, []);
 
   useEffect(() => {
-    if (open) void cargar();
+    if (open) {
+      setBusqueda("");
+      void cargar();
+    }
   }, [open, cargar]);
 
-  const resetForm = () => {
-    setNombre("");
-    setWeb("");
-    setConfigExtraccion(CONFIG_VACIA);
-    setEditId(null);
-  };
+  const listaFiltrada = useMemo(() => {
+    const q = busqueda.trim();
+    if (!q) return lista;
+    return lista.filter((c) => matchByMultiTerm([c.nombre, c.web], q));
+  }, [lista, busqueda]);
 
-  const handleGuardar = async () => {
-    const payload = {
-      nombre: nombre.trim(),
-      web: web.trim(),
-      configExtraccion,
-      ...(editId ? { id: editId } : {}),
-    };
-    const result = editId
-      ? await updateCompetenciaAction(payload)
-      : await createCompetenciaAction(payload);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    toast.success(editId ? "Competidor actualizado." : "Competidor creado.");
-    resetForm();
-    await cargar();
-    onChanged();
-  };
-
-  const handleEditar = (row: CompetenciaParaCliente) => {
-    setEditId(row.id);
-    setNombre(row.nombre);
-    setWeb(row.web);
-    setConfigExtraccion(row.configExtraccion ?? CONFIG_VACIA);
-  };
-
-  const handleEliminar = async (id: string) => {
-    const result = await deleteCompetenciaAction({ id });
+  const handleEliminar = async (row: CompetenciaParaCliente) => {
+    const result = await deleteCompetenciaAction({ id: row.id });
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
     toast.success("Competidor eliminado.");
-    if (editId === id) resetForm();
+    if (configCompetidor?.id === row.id) setConfigCompetidor(null);
+    await cargar();
+    onChanged();
+  };
+
+  const handleCreado = async (nuevo: CompetenciaParaCliente) => {
+    await cargar();
+    onChanged();
+    setConfigCompetidor(nuevo);
+  };
+
+  const handleConfigGuardado = async () => {
     await cargar();
     onChanged();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <AppModal
-        size="xl"
-        title={editId ? "Editar Competidor" : "Gestionar Competidores"}
-        actions={
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
-        }
-      >
-        <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <ModalMicroLabel>Nombre</ModalMicroLabel>
-              <Input
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Nombre del competidor"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <ModalMicroLabel>Sitio Web</ModalMicroLabel>
-              <Input
-                value={web}
-                onChange={(e) => setWeb(e.target.value)}
-                placeholder="https://ejemplo.com"
-                className="mt-1"
-              />
-            </div>
-
-            <CompetenciaExtraccionReglasEditor
-              value={configExtraccion}
-              onChange={setConfigExtraccion}
-            />
-
-            <div className="flex gap-2 justify-end">
-              {editId && (
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar Edición
-                </Button>
-              )}
-              <Button type="button" variant="default" onClick={() => void handleGuardar()}>
-                <Plus className="h-4 w-4 mr-1" />
-                {editId ? "Guardar Cambios" : "Agregar Competidor"}
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <AppModal
+          size="lg"
+          title="Gestionar Competidores"
+          actions={
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          }
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
+                <Input
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar competidor por nombre..."
+                  className="pl-9 h-10"
+                  aria-label="Buscar competidor por nombre"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="default"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                aria-label="Agregar competidor"
+                onClick={() => setAltaOpen(true)}
+              >
+                <Plus className="h-5 w-5" />
               </Button>
             </div>
-          </div>
 
-          <div className="border-t border-border pt-3">
-            <Label className="text-sm font-semibold text-foreground">Competidores Registrados</Label>
-            {loading ? (
-              <p className="text-sm text-muted-foreground mt-2">Cargando...</p>
-            ) : lista.length === 0 ? (
-              <p className="text-sm text-muted-foreground mt-2">No hay competidores registrados.</p>
-            ) : (
-              <ul className="mt-2 flex flex-col gap-2">
-                {lista.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground truncate">{row.nombre}</p>
-                      <p className="text-xs text-muted-foreground truncate">{row.web}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {labelUltimaComparacionCompetencia(row.ultimaComparacionAt)}
-                        {row.configExtraccion?.reglas?.length
-                          ? ` · ${row.configExtraccion.reglas.length} regla(s) de extracción`
-                          : " · sin reglas de extracción"}
-                      </p>
-                    </div>
-                    <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                        aria-label={`Editar ${row.nombre}`}
-                        onClick={() => handleEditar(row)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                        aria-label={`Eliminar ${row.nombre}`}
-                        onClick={() => void handleEliminar(row.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className="min-h-[12rem]">
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Cargando...</p>
+              ) : lista.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No hay competidores. Usá el botón + para agregar el primero.
+                </p>
+              ) : listaFiltrada.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Ningún competidor coincide con la búsqueda.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                  {listaFiltrada.map((row) => (
+                    <li
+                      key={row.id}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">{row.nombre}</p>
+                        <p className="text-xs text-muted-foreground truncate">{row.web}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {labelUltimaComparacionCompetencia(row.ultimaComparacionAt)}
+                          {row.configExtraccion?.reglas?.length
+                            ? ` · ${row.configExtraccion.reglas.length} regla(s)`
+                            : " · sin reglas"}
+                        </p>
+                      </div>
+                      <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                          aria-label={`Configurar ${row.nombre}`}
+                          onClick={() => setConfigCompetidor(row)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                            "text-destructive hover:text-destructive"
+                          )}
+                          aria-label={`Eliminar ${row.nombre}`}
+                          onClick={() => void handleEliminar(row)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
-      </AppModal>
-    </Dialog>
+        </AppModal>
+      </Dialog>
+
+      <AltaCompetidorModal
+        open={altaOpen}
+        onOpenChange={setAltaOpen}
+        onCreado={(c) => void handleCreado(c)}
+      />
+
+      <ConfiguracionCompetidorModal
+        open={!!configCompetidor}
+        onOpenChange={(o) => !o && setConfigCompetidor(null)}
+        competidor={configCompetidor}
+        onGuardado={() => void handleConfigGuardado()}
+      />
+    </>
   );
 }

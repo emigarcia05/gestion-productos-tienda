@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { filtroTexto } from "@/lib/busqueda";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 import { parseCompetenciaConfigExtraccion } from "@/lib/competenciaConfigExtraccion";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
@@ -66,15 +67,7 @@ export async function getCompetenciaPreciosList(
   }));
 
   const baseWhere: Prisma.ListaPrecioTiendaWhereInput = {
-    ...(q
-      ? {
-          OR: [
-            { codTienda: { contains: q, mode: "insensitive" } },
-            { descripcionTienda: { contains: q, mode: "insensitive" } },
-            { codExt: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {}),
+    ...(q ? filtroTexto(q, ["codTienda", "descripcionTienda", "codExt"]) : {}),
     ...(marca ? { marca: { equals: marca, mode: "insensitive" } } : {}),
     ...(rubro ? { rubro: { equals: rubro, mode: "insensitive" } } : {}),
   };
