@@ -90,6 +90,36 @@ export function ordenMetodosRegla(regla: ReglaExtraccionPagina): MetodoExtraccio
   return [...new Set(orden)];
 }
 
+/**
+ * Selectores a probar al relevar (líneas o comas separadas).
+ * Si el selector es `#id-1234`, agrega `[id^="id-"]` para fichas con otro número de producto.
+ */
+export function expandirSelectoresPrecio(raw: string): string[] {
+  const tokens = raw
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const resultado: string[] = [];
+  const visto = new Set<string>();
+  const push = (s: string) => {
+    if (!s || visto.has(s)) return;
+    visto.add(s);
+    resultado.push(s);
+  };
+
+  for (const sel of tokens) {
+    push(sel);
+    if (sel.startsWith("#")) {
+      const id = sel.slice(1).split(/[.\s[]/)[0];
+      if (id && /-\d+$/.test(id)) {
+        const prefijo = id.replace(/-\d+$/, "-");
+        push(`[id^="${prefijo}"]`);
+      }
+    }
+  }
+  return resultado;
+}
+
 /** Regla vacía para formulario de alta. */
 export function reglaExtraccionVacia(id = "ficha"): ReglaExtraccionPagina {
   return {

@@ -1,4 +1,5 @@
 import {
+  expandirSelectoresPrecio,
   ordenMetodosRegla,
   parseCompetenciaConfigExtraccion,
   reglaExtraccionParaVinculo,
@@ -143,7 +144,8 @@ async function parsePreciosPorSelectores(
     if (fragmento) scope = fragmento;
   }
   if (elemento) {
-    return parsePreciosPorSelectoresEnHtml(scope, [elemento], attr);
+    const selectores = expandirSelectoresPrecio(elemento);
+    return parsePreciosPorSelectoresEnHtml(scope, selectores, attr);
   }
   return parsePreciosPorSelectoresEnHtml(scope, [contenedor!], attr);
 }
@@ -226,6 +228,23 @@ function extraerTextoPorSelectorRegex(
 ): string | null {
   const sel = selector.trim();
   if (!sel) return null;
+
+  const idPrefijo = /\[id\^=["']([^"']+)["']\]/i.exec(sel);
+  if (idPrefijo) {
+    const prefijo = idPrefijo[1];
+    const re = new RegExp(
+      `id=["'](${escapeRe(prefijo)}[^"']*)["'][^>]*>([^<]{1,120})<`,
+      "i"
+    );
+    const m = re.exec(html);
+    if (m) return m[2];
+    const contentRe = new RegExp(
+      `id=["'](${escapeRe(prefijo)}[^"']*)["'][^>]*content=["']([^"']+)["']`,
+      "i"
+    );
+    const m2 = contentRe.exec(html);
+    if (m2) return m2[2];
+  }
 
   const itemprop = /\[itemprop=["']?([^"'\]]+)["']?\]/i.exec(sel);
   if (itemprop) {

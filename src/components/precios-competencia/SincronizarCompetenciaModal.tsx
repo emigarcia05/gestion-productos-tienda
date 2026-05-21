@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -15,14 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import {
-  countVinculosConUrlCompetenciaAction,
-  listCompetenciasAction,
-} from "@/actions/competenciaPrecios";
+import { listCompetenciasAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
-import { labelUltimaComparacionCompetencia } from "@/lib/competenciaUltimaComparacion";
-import { useCompetenciaSyncStatusPoll } from "@/hooks/useCompetenciaSyncStatusPoll";
 
 interface Props {
   open: boolean;
@@ -38,10 +31,7 @@ export default function SincronizarCompetenciaModal({
   const [lista, setLista] = useState<CompetenciaParaCliente[]>([]);
   const [loadingLista, setLoadingLista] = useState(false);
   const [competenciaId, setCompetenciaId] = useState("");
-  const [limiteProductos, setLimiteProductos] = useState("");
-  const [urlsCargadas, setUrlsCargadas] = useState(0);
   const [syncing, setSyncing] = useState(false);
-  const pollSync = useCompetenciaSyncStatusPoll(syncing);
 
   const cargar = useCallback(async () => {
     setLoadingLista(true);
@@ -68,27 +58,6 @@ export default function SincronizarCompetenciaModal({
       .catch(() => {});
   }, [open]);
 
-  useEffect(() => {
-    if (!competenciaId) {
-      setUrlsCargadas(0);
-      return;
-    }
-    void countVinculosConUrlCompetenciaAction(competenciaId).then(setUrlsCargadas);
-  }, [competenciaId, open]);
-
-  const consultasPrevistas = useMemo(() => {
-    const lim = limiteProductos.trim();
-    if (!lim) return urlsCargadas;
-    const n = parseInt(lim, 10);
-    if (Number.isNaN(n) || n < 1) return urlsCargadas;
-    return Math.min(urlsCargadas, n);
-  }, [urlsCargadas, limiteProductos]);
-
-  const seleccionado = useMemo(
-    () => lista.find((c) => c.id === competenciaId) ?? null,
-    [lista, competenciaId]
-  );
-
   const handleCancelarSync = async () => {
     try {
       await fetch("/api/sync-competencia-precios/cancel", { method: "POST" });
@@ -103,22 +72,13 @@ export default function SincronizarCompetenciaModal({
       toast.error("Seleccioná un competidor.");
       return;
     }
-    const limiteRaw = limiteProductos.trim();
-    const limiteParsed = limiteRaw ? parseInt(limiteRaw, 10) : undefined;
-    if (limiteRaw && (Number.isNaN(limiteParsed) || limiteParsed! < 1 || limiteParsed! > 500)) {
-      toast.error("El máximo debe estar entre 1 y 500 (o vacío para todas las URL cargadas).");
-      return;
-    }
 
     setSyncing(true);
     try {
-      const body: { competenciaId: string; limiteProductos?: number } = { competenciaId };
-      if (limiteParsed != null && limiteParsed > 0) body.limiteProductos = limiteParsed;
-
       const res = await fetch("/api/sync-competencia-precios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ competenciaId }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
@@ -173,7 +133,7 @@ export default function SincronizarCompetenciaModal({
                 type="button"
                 variant="default"
                 className="btn-primario-gestion gap-2"
-                disabled={!competenciaId || lista.length === 0 || urlsCargadas === 0}
+                disabled={!competenciaId || lista.length === 0}
                 onClick={() => void handleSync()}
               >
                 <RefreshCw className="h-4 w-4 shrink-0" />
@@ -191,74 +151,25 @@ export default function SincronizarCompetenciaModal({
               No hay competidores registrados. Usá Gestionar Competidores para agregar uno.
             </p>
           ) : (
-            <>
-              <div>
-                <ModalMicroLabel>Competidor</ModalMicroLabel>
-                <Select
-                  value={competenciaId || undefined}
-                  onValueChange={setCompetenciaId}
-                  disabled={syncing}
-                >
-                  <SelectTrigger className="mt-1 w-full">
-                    <SelectValue placeholder="SELECCIONAR COMPETIDOR" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" side="bottom" align="start">
-                    {lista.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <ModalMicroLabel>Máx. Productos (Prueba)</ModalMicroLabel>
-                <Input
-                  type="number"
-                  min={1}
-                  max={500}
-                  value={limiteProductos}
-                  onChange={(e) => setLimiteProductos(e.target.value)}
-                  placeholder="10"
-                  className="mt-1"
-                  disabled={syncing}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Opcional: tope para pruebas (ej. 5). Vacío = consultar todas las URL cargadas del
-                  competidor.
-                </p>
-              </div>
-              {competenciaId ? (
-                <p className="text-sm font-medium text-foreground">
-                  {urlsCargadas === 0
-                    ? "No hay URL cargadas para este competidor. Asigná enlaces en la grilla antes de comparar."
-                    : `Se realizarán ${consultasPrevistas} consulta(s) HTTP (una por URL cargada).`}
-                </p>
-              ) : null}
-              {seleccionado ? (
-                <p className="text-sm text-muted-foreground">
-                  {labelUltimaComparacionCompetencia(seleccionado.ultimaComparacionAt)}
-                </p>
-              ) : null}
-              {syncing || pollSync.running ? (
-                <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
-                  <p className="text-sm font-semibold text-foreground">Comparación en curso</p>
-                  <p className="text-sm text-muted-foreground">
-                    Consultando URL{" "}
-                    <span className="tabular-nums font-medium text-foreground">
-                      {pollSync.processed} de {pollSync.total || consultasPrevistas}
-                    </span>
-                    {pollSync.total > 0
-                      ? ` (${Math.min(100, Math.round((pollSync.processed / pollSync.total) * 100))}%)`
-                      : null}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Podés usar Detener Comparación. El aviso también aparece arriba de la tabla si
-                    cerrás este modal.
-                  </p>
-                </div>
-              ) : null}
-            </>
+            <div>
+              <ModalMicroLabel>Competidor</ModalMicroLabel>
+              <Select
+                value={competenciaId || undefined}
+                onValueChange={setCompetenciaId}
+                disabled={syncing}
+              >
+                <SelectTrigger className="mt-1 w-full">
+                  <SelectValue placeholder="SELECCIONAR COMPETIDOR" />
+                </SelectTrigger>
+                <SelectContent position="popper" side="bottom" align="start">
+                  {lista.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
         </div>
       </AppModal>

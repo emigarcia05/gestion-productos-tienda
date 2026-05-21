@@ -117,6 +117,17 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
                     placeholder={PLACEHOLDER_SELECTOR_PRECIO}
                     className="mt-1 font-mono text-xs"
                   />
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Si el ID cambia por producto (ej.{" "}
+                    <span className="font-mono text-foreground">#price-…-5066</span> y{" "}
+                    <span className="font-mono text-foreground">#price-…-5067</span>), pegá un
+                    selector de cualquier ficha o usá el prefijo:{" "}
+                    <span className="font-mono text-foreground">
+                      [id^=&quot;price-including-tax-product-price-&quot;]
+                    </span>
+                    . Al guardar un ID con número al final, se prueba también el prefijo
+                    automáticamente.
+                  </p>
                 </div>
 
                 <div>
