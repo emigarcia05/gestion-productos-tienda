@@ -813,19 +813,21 @@
   height: 1rem !important;
   color: #0072bb !important;
 }
-.tabla-gestion-compacta tbody tr {
+.tabla-gestion-compacta tbody tr:not(.tabla-fila-altura-auto) {
   --tabla-row-bg: var(--card);
   border-bottom: 1px solid var(--primary-foreground) !important;
   /* Solo fondo en hover: sin cambiar tipografía ni layout (evita “saltos”). */
   transition: background-color 0.15s ease;
   height: var(--tabla-body-row-min-height) !important;
+  min-height: var(--tabla-body-row-min-height) !important;
   max-height: var(--tabla-body-row-min-height) !important;
 }
-.tabla-gestion-compacta tbody tr td {
+.tabla-gestion-compacta tbody tr:not(.tabla-fila-altura-auto) td {
   padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
   font-size: 0.75rem !important;
   line-height: 1.25 !important;
   height: var(--tabla-body-row-min-height) !important;
+  min-height: var(--tabla-body-row-min-height) !important;
   max-height: var(--tabla-body-row-min-height) !important;
   box-sizing: border-box;
   vertical-align: middle;
@@ -924,38 +926,22 @@
   max-height: none !important;
 }
 
-/* Precios Competencia: botones ACCIONES a altura de celda (fila de datos = alto global 2rem). */
-.tabla-gestion-compacta.tabla-precios-competencia tbody tr:not(.tabla-fila-altura-auto) td {
-  overflow: hidden;
-}
-.tabla-gestion-compacta.tabla-precios-competencia
-  tbody
-  tr:not(.tabla-fila-altura-auto)
-  td.celda-acciones-competencia {
-  padding: 0 !important;
-  vertical-align: middle;
-}
-.tabla-gestion-compacta.tabla-precios-competencia
-  tbody
-  tr:not(.tabla-fila-altura-auto)
-  td.celda-acciones-competencia
-  .tabla-precios-competencia-acciones {
-  height: 100%;
-  min-height: 0;
-}
-.tabla-gestion-compacta.tabla-precios-competencia
-  tbody
-  tr:not(.tabla-fila-altura-auto)
-  td.celda-acciones-competencia
-  button.tabla-row-btn-filled-brand {
-  height: 100% !important;
-  max-height: 100% !important;
+/**
+ * Botones #0072BB en filas de tabla: `size="icon"` del componente Button impone `size-9` (2.25rem)
+ * y estiraba la fila por encima de `--tabla-body-row-min-height` (2rem). Cuadrado = alto útil
+ * de celda con wrapper estándar `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS` (p-1.5 → 0.75rem total).
+ */
+.tabla-gestion-compacta tbody td button.tabla-row-btn-filled-brand {
+  --tabla-row-action-btn-size: calc(var(--tabla-body-row-min-height) - 0.75rem);
+  width: var(--tabla-row-action-btn-size) !important;
+  height: var(--tabla-row-action-btn-size) !important;
+  min-width: 0 !important;
   min-height: 0 !important;
-  width: auto !important;
-  max-width: calc(50% - 0.125rem);
+  max-width: var(--tabla-row-action-btn-size) !important;
+  max-height: var(--tabla-row-action-btn-size) !important;
+  padding: 0.125rem !important;
+  flex: 0 0 auto !important;
   aspect-ratio: 1 / 1;
-  flex: 1 1 0;
-  padding: 0.25rem !important;
 }
 
 /* Toggle de tilde compacto en tablas (global y reutilizable). */

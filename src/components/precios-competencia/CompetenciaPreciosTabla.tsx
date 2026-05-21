@@ -22,21 +22,17 @@ import {
   calcularResumenPreciosCompetenciaFila,
   type CompetidorPrecioFila,
 } from "@/lib/competenciaPreciosFilaResumen";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { CompetenciaPreciosListResult } from "@/services/competenciaPreciosList.service";
 import AsociarUrlsCompetenciaModal from "@/components/precios-competencia/AsociarUrlsCompetenciaModal";
 
 const COLS = 7;
 const COL_WIDTHS = [45, 9, 9, 9, 9, 9, 10] as const;
-
-const WRAPPER_ACCIONES_FILA =
-  "tabla-precios-competencia-acciones flex h-full min-h-0 max-h-full w-full items-stretch justify-center gap-0.5 overflow-hidden p-0.5 box-border";
-
-const BTN_ACCION_FILA = cn(
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  "!h-full !max-h-full min-h-0 !w-auto aspect-square shrink-0 !p-0.5 [&_svg]:size-3.5"
-);
 
 interface Props {
   data: CompetenciaPreciosListResult | null;
@@ -52,7 +48,7 @@ function CeldaDifPct({ pct }: { pct: number | null }) {
     return <span className="text-muted-foreground">—</span>;
   }
   return (
-    <span className="inline-flex items-center justify-center gap-1 text-foreground font-semibold text-sm tabular-nums">
+    <span className="inline-flex items-center justify-center gap-0.5 text-foreground font-semibold text-xs tabular-nums leading-tight">
       {pct > 0 && (
         <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" aria-hidden />
       )}
@@ -128,7 +124,7 @@ export default function CompetenciaPreciosTabla({
       <Card className={cn("card-tabla-envoltorio", "flex-1 min-h-0")}>
         <CardContent className="flex flex-1 min-h-0 flex-col p-0">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <Table variant="compact" className="tabla-precios-competencia w-full table-fixed">
+            <Table variant="compact" className="w-full table-fixed">
               <colgroup>
                 {COL_WIDTHS.map((pct, i) => (
                   <col key={i} style={{ width: `${pct}%` }} />
@@ -206,13 +202,13 @@ export default function CompetenciaPreciosTabla({
                           >
                             {resumen?.mayor?.prefijo3 ?? "—"}
                           </TableCell>
-                          <TableCell className="celda-datos celda-datos--accion-relleno-fila celda-acciones-competencia tabla-bloque-secundario-cell-divider">
-                            <div className={WRAPPER_ACCIONES_FILA}>
+                          <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
+                            <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className={BTN_ACCION_FILA}
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                 aria-label={
                                   expandido ? "Ocultar detalle" : "Ver detalle"
                                 }
@@ -220,9 +216,9 @@ export default function CompetenciaPreciosTabla({
                                 onClick={() => toggleDetalle(fila.codTienda)}
                               >
                                 {expandido ? (
-                                  <ChevronUp className="shrink-0" aria-hidden />
+                                  <ChevronUp className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 ) : (
-                                  <ChevronDown className="shrink-0" aria-hidden />
+                                  <ChevronDown className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 )}
                               </Button>
                               {puedeEditar ? (
@@ -230,7 +226,7 @@ export default function CompetenciaPreciosTabla({
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className={BTN_ACCION_FILA}
+                                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                                   aria-label="Asociar URL"
                                   onClick={() =>
                                     setAsociarFila({
@@ -240,7 +236,7 @@ export default function CompetenciaPreciosTabla({
                                     })
                                   }
                                 >
-                                  <Link2 className="shrink-0" aria-hidden />
+                                  <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                                 </Button>
                               ) : null}
                             </div>
