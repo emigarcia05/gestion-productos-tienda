@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { guardarUrlVinculoCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
@@ -127,9 +129,11 @@ export default function AsociarUrlsCompetenciaModal({
               {filas.map((f, index) => (
                 <li
                   key={f.competenciaId}
-                  className="grid grid-cols-[minmax(0,10rem)_1fr] gap-3 items-start border-b border-border pb-3 last:border-0 last:pb-0"
+                  className="grid grid-cols-[minmax(0,10rem)_1fr] gap-3 items-center border-b border-border pb-3 last:border-0 last:pb-0"
                 >
-                  <span className="text-sm font-semibold text-foreground pt-2">{f.nombre}</span>
+                  <span className="flex min-h-full w-full items-center justify-center text-center text-sm font-semibold text-foreground">
+                    {f.nombre}
+                  </span>
                   <div className="flex flex-col gap-2 min-w-0">
                     {f.reglas.length > 0 ? (
                       <div>
@@ -156,17 +160,37 @@ export default function AsociarUrlsCompetenciaModal({
                     ) : null}
                     <div>
                       <ModalMicroLabel>URL del producto</ModalMicroLabel>
-                      <Input
-                        value={f.url}
-                        disabled={!puedeEditar || saving}
-                        onChange={(e) =>
-                          setFilas((prev) =>
-                            prev.map((row, i) => (i === index ? { ...row, url: e.target.value } : row))
-                          )
-                        }
-                        placeholder="https://..."
-                        className="mt-1"
-                      />
+                      <div className="relative mt-1 w-full min-w-0">
+                        <Input
+                          value={f.url}
+                          disabled={!puedeEditar || saving}
+                          onChange={(e) =>
+                            setFilas((prev) =>
+                              prev.map((row, i) => (i === index ? { ...row, url: e.target.value } : row))
+                            )
+                          }
+                          placeholder="https://..."
+                          className={cn(puedeEditar && "pr-10")}
+                        />
+                        {puedeEditar ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={saving || !f.url.trim()}
+                            className="absolute right-0 top-0 h-9 w-9 shrink-0 rounded-r-md text-muted-foreground hover:bg-muted hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
+                            aria-label={`Borrar URL de ${f.nombre}`}
+                            title="Borrar URL"
+                            onClick={() =>
+                              setFilas((prev) =>
+                                prev.map((row, i) => (i === index ? { ...row, url: "" } : row))
+                              )
+                            }
+                          >
+                            <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </li>

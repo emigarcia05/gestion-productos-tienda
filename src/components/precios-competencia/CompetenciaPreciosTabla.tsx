@@ -60,15 +60,26 @@ function CeldaDifPct({ pct }: { pct: number | null }) {
   );
 }
 
-function DetalleCompetidorLinea({ item }: { item: CompetidorPrecioFila }) {
+/** Subfila: celdas alineadas al `<colgroup>` (competidor → DESCRIPCIÓN, px → PX PROMEDIO, dif → DIF TIENDA). */
+function DetalleCompetidorFila({ item }: { item: CompetidorPrecioFila }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_6rem_5rem] gap-3 items-center py-1 text-sm">
-      <span className="font-medium text-foreground truncate">{item.nombre}</span>
-      <span className="tabular-nums text-right text-foreground">{fmtPrecio(item.px)}</span>
-      <span className="text-center">
+    <TableRow className="tabla-fila-altura-auto hover:bg-transparent bg-muted/40">
+      <TableCell className="celda-datos max-w-0 text-right">
+        <span className="block truncate font-medium text-foreground text-right" title={item.nombre}>
+          {item.nombre}
+        </span>
+      </TableCell>
+      <TableCell className="celda-datos" aria-hidden />
+      <TableCell className="celda-datos tabular-nums text-right tabla-bloque-secundario-cell-divider">
+        {fmtPrecio(item.px)}
+      </TableCell>
+      <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
         <CeldaDifPct pct={item.difPctVsTienda} />
-      </span>
-    </div>
+      </TableCell>
+      <TableCell className="celda-datos" aria-hidden />
+      <TableCell className="celda-datos" aria-hidden />
+      <TableCell className="celda-datos" aria-hidden />
+    </TableRow>
   );
 }
 
@@ -242,31 +253,26 @@ export default function CompetenciaPreciosTabla({
                             </div>
                           </TableCell>
                         </TableRow>
-                        {expandido ? (
+                        {expandido && detalle.length === 0 ? (
                           <TableRow
-                            key={`${fila.codTienda}-detalle`}
+                            key={`${fila.codTienda}-detalle-vacio`}
                             className="tabla-fila-altura-auto hover:bg-transparent bg-muted/40"
                           >
-                            <TableCell colSpan={COLS} className="celda-datos py-2 px-4">
-                              {detalle.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-2">
-                                  Sin precios relevados de competidores para este producto.
-                                </p>
-                              ) : (
-                                <div className="max-w-2xl mx-auto w-full">
-                                  <div className="grid grid-cols-[minmax(0,1fr)_6rem_5rem] gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-foreground pb-1 border-b border-border">
-                                    <span>Competidor</span>
-                                    <span className="text-right">Px.</span>
-                                    <span className="text-center">Dif. Tienda</span>
-                                  </div>
-                                  {detalle.map((item) => (
-                                    <DetalleCompetidorLinea key={item.competenciaId} item={item} />
-                                  ))}
-                                </div>
-                              )}
+                            <TableCell colSpan={COLS} className="celda-datos py-2">
+                              <p className="text-sm text-muted-foreground text-center">
+                                Sin precios relevados de competidores para este producto.
+                              </p>
                             </TableCell>
                           </TableRow>
                         ) : null}
+                        {expandido
+                          ? detalle.map((item) => (
+                              <DetalleCompetidorFila
+                                key={`${fila.codTienda}-${item.competenciaId}`}
+                                item={item}
+                              />
+                            ))
+                          : null}
                       </Fragment>
                     );
                   })
