@@ -37,8 +37,10 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-surface: var(--surface);
-  /** Gris universal: fondo de páginas y modales. Usar bg-gris en Tailwind. */
+  /** Lienzo de app (páginas, main, marco de modales). Tailwind: `bg-gris`. */
   --color-gris: var(--gris);
+  /** Inset: subfilas y bloques dentro de card blanca. Tailwind: `bg-gris-inset`. */
+  --color-gris-inset: var(--gris-inset);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -118,14 +120,20 @@
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  /** Gris universal (slate-200 #e2e8f0): fondo de páginas y ventanas modales. Referencia única: cuando se hable de "gris" en la app = este valor. */
-  --gris: #e2e8f0;
-  /** Fondo de superficie: alias del gris universal para compatibilidad. */
-  --surface: var(--gris);
+  /**
+   * Escalera de grises (de más oscuro a más claro en el lienzo):
+   * `--gris-canvas` → `bg-gris` (páginas, shell, marco modal);
+   * `--gris-inset` → subfilas / bloques anidados en tablas blancas;
+   * `--card` → contenido principal.
+   */
+  --gris-canvas: #cbd5e1;
+  --gris-inset: #e2e8f0;
+  --gris: var(--gris-canvas);
+  --surface: var(--gris-canvas);
   --accent: #e0f2fe;
   --accent-foreground: #0072bb;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
+  --border: var(--gris-inset);
+  --input: var(--gris-inset);
   --ring: #0072bb;
   --sidebar: #0072bb;
   --sidebar-foreground: #fff;
@@ -934,11 +942,11 @@
   max-height: var(--tabla-thead-height) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado:hover td.tabla-fila-seccion-subencabezado-celda {
-  background-color: var(--card) !important;
+  background-color: var(--gris-inset) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado td.tabla-fila-seccion-subencabezado-celda {
-  --tabla-row-bg: var(--card);
-  background-color: var(--card) !important;
+  --tabla-row-bg: var(--gris-inset);
+  background-color: var(--gris-inset) !important;
   border: none !important;
   box-shadow: none !important;
   padding-left: 0.75rem;
@@ -953,7 +961,7 @@
   vertical-align: middle;
 }
 
-/* Precios Competencia — subfilas: fondo blanco (card), alto fijo = encabezado; divisor #0072bb solo entre filas de datos (cols 2–4). */
+/* Precios Competencia — subfilas: fondo inset (--gris-inset), alto fijo = encabezado; divisor #0072bb solo entre filas de datos (cols 2–4). */
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia,
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td {
   height: var(--tabla-thead-height) !important;
@@ -961,13 +969,13 @@
   max-height: var(--tabla-thead-height) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-hueca {
-  background-color: var(--card) !important;
+  background-color: var(--gris-inset) !important;
   border: none !important;
   box-shadow: none !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-celda {
-  --tabla-row-bg: var(--card);
-  background-color: var(--card) !important;
+  --tabla-row-bg: var(--gris-inset);
+  background-color: var(--gris-inset) !important;
   border: none !important;
   box-shadow: none !important;
 }
@@ -980,7 +988,7 @@
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td.tabla-fila-detalle-competencia-celda,
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td.tabla-fila-detalle-competencia-hueca {
-  background-color: var(--card) !important;
+  background-color: var(--gris-inset) !important;
   color: var(--foreground) !important;
 }
 /* Última subfila del bloque: espacio inferior antes de la fila clásica siguiente. */

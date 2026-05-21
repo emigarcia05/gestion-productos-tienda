@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 import { parseCompetenciaConfigExtraccion } from "@/lib/competenciaConfigExtraccion";
+import {
+  codTiendasFiltrosPrecioCompetencia,
+  whereConfiguradoCompetencia,
+} from "@/lib/competenciaPreciosFiltrosQuery";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import type { CompetenciaPreciosFiltros } from "@/lib/validations/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
@@ -22,8 +26,6 @@ export interface CompetenciaPreciosListResult {
   total: number;
   totalPaginas: number;
   competencias: CompetenciaParaCliente[];
-  marcasDisponibles: string[];
-  rubrosDisponibles: string[];
 }
 
 function vinculoVacio(): DatoVinculoCompetenciaCliente {
@@ -42,10 +44,10 @@ export async function getCompetenciaPreciosList(
 ): Promise<CompetenciaPreciosListResult> {
   const pagina = Math.max(1, parseInt(filtros.pagina, 10) || 1);
   const q = filtros.q.trim();
-  const marca = filtros.marca.trim();
-  const rubro = filtros.rubro.trim();
-  const estadoVinculo = filtros.estadoVinculo?.trim() ?? "";
-  const competenciaFiltroId = filtros.competenciaId?.trim() ?? "";
+  const difPromedio = filtros.difPromedio?.trim() ?? "";
+  const provCaroCompetenciaId = filtros.provCaroCompetenciaId?.trim() ?? "";
+  const provBaratoCompetenciaId = filtros.provBaratoCompetenciaId?.trim() ?? "";
+  const configurado = filtros.configurado?.trim() ?? "";
 
   const competenciasRows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
@@ -68,39 +70,26 @@ export async function getCompetenciaPreciosList(
 
   const baseWhere: Prisma.ListaPrecioTiendaWhereInput = {
     ...(q ? filtroTexto(q, ["codTienda", "descripcionTienda", "codExt"]) : {}),
-    ...(marca ? { marca: { equals: marca, mode: "insensitive" } } : {}),
-    ...(rubro ? { rubro: { equals: rubro, mode: "insensitive" } } : {}),
   };
 
-  let where: Prisma.ListaPrecioTiendaWhereInput = baseWhere;
+  const whereConfigurado = whereConfiguradoCompetencia(configurado);
+  const codTiendasPrecio = await codTiendasFiltrosPrecioCompetencia({
+    difPromedio: difPromedio || undefined,
+    provCaroCompetenciaId: provCaroCompetenciaId || undefined,
+    provBaratoCompetenciaId: provBaratoCompetenciaId || undefined,
+  });
 
-  if (estadoVinculo && competenciaFiltroId) {
-    if (estadoVinculo === ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL) {
-      where = {
-        ...baseWhere,
-        NOT: {
-          preciosCompetencia: {
-            some: {
-              competenciaId: competenciaFiltroId,
-              urlProducto: { not: null },
-            },
-          },
-        },
-      };
-    } else {
-      where = {
-        ...baseWhere,
-        preciosCompetencia: {
-          some: {
-            competenciaId: competenciaFiltroId,
-            estado: estadoVinculo,
-          },
-        },
-      };
-    }
-  }
+  const where: Prisma.ListaPrecioTiendaWhereInput = {
+    AND: [
+      baseWhere,
+      ...(whereConfigurado ? [whereConfigurado] : []),
+      ...(codTiendasPrecio !== undefined
+        ? [{ codTienda: { in: codTiendasPrecio } }]
+        : []),
+    ],
+  };
 
-  const [total, productos, marcasRows, rubrosRows] = await Promise.all([
+  const [total, productos] = await Promise.all([
     prisma.listaPrecioTienda.count({ where }),
     prisma.listaPrecioTienda.findMany({
       where,
@@ -114,18 +103,6 @@ export async function getCompetenciaPreciosList(
         marca: true,
         rubro: true,
       },
-    }),
-    prisma.listaPrecioTienda.findMany({
-      where: { marca: { not: null } },
-      distinct: ["marca"],
-      select: { marca: true },
-      orderBy: { marca: "asc" },
-    }),
-    prisma.listaPrecioTienda.findMany({
-      where: { rubro: { not: null } },
-      distinct: ["rubro"],
-      select: { rubro: true },
-      orderBy: { rubro: "asc" },
     }),
   ]);
 
@@ -180,7 +157,5 @@ export async function getCompetenciaPreciosList(
     total,
     totalPaginas: totalPaginasFromTotal(total),
     competencias,
-    marcasDisponibles: marcasRows.map((m) => m.marca).filter((m): m is string => !!m),
-    rubrosDisponibles: rubrosRows.map((r) => r.rubro).filter((r): r is string => !!r),
   };
 }

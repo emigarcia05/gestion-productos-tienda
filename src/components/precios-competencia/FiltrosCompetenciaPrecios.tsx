@@ -12,7 +12,10 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
-import { ESTADOS_RELEVAMIENTO_FILTRO } from "@/lib/competenciaRelevamiento";
+import {
+  CONFIGURADO_OPCIONES,
+  DIF_PROMEDIO_OPCIONES,
+} from "@/lib/competenciaPreciosFiltros";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import {
   Select,
@@ -25,39 +28,35 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   q: string;
-  marca: string;
-  rubro: string;
-  competenciaId: string;
-  estadoVinculo: string;
+  difPromedio: string;
+  provCaroCompetenciaId: string;
+  provBaratoCompetenciaId: string;
+  configurado: string;
   competencias: CompetenciaParaCliente[];
-  marcasDisponibles: string[];
-  rubrosDisponibles: string[];
   total: number;
   loading: boolean;
   onQChange: (v: string) => void;
-  onMarcaChange: (v: string) => void;
-  onRubroChange: (v: string) => void;
-  onCompetenciaIdChange: (v: string) => void;
-  onEstadoVinculoChange: (v: string) => void;
+  onDifPromedioChange: (v: string) => void;
+  onProvCaroCompetenciaIdChange: (v: string) => void;
+  onProvBaratoCompetenciaIdChange: (v: string) => void;
+  onConfiguradoChange: (v: string) => void;
   onBuscar: () => void;
 }
 
 export default function FiltrosCompetenciaPrecios({
   q,
-  marca,
-  rubro,
-  competenciaId,
-  estadoVinculo,
+  difPromedio,
+  provCaroCompetenciaId,
+  provBaratoCompetenciaId,
+  configurado,
   competencias,
-  marcasDisponibles,
-  rubrosDisponibles,
   total,
   loading,
   onQChange,
-  onMarcaChange,
-  onRubroChange,
-  onCompetenciaIdChange,
-  onEstadoVinculoChange,
+  onDifPromedioChange,
+  onProvCaroCompetenciaIdChange,
+  onProvBaratoCompetenciaIdChange,
+  onConfiguradoChange,
   onBuscar,
 }: Props) {
   const {
@@ -82,25 +81,52 @@ export default function FiltrosCompetenciaPrecios({
         <FilaFiltrosDesplegables>
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={!!competenciaId}
+            activo={!!difPromedio}
             onLimpiar={() => {
-              onCompetenciaIdChange("");
-              onEstadoVinculoChange("");
+              onDifPromedioChange("");
               onBuscar();
             }}
           >
             <Select
-              value={competenciaId || "__all__"}
+              value={difPromedio || "__all__"}
               onValueChange={(v) => {
-                onCompetenciaIdChange(v === "__all__" ? "" : v);
+                onDifPromedioChange(v === "__all__" ? "" : v);
                 onBuscar();
               }}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="COMPETIDOR" />
+                <SelectValue placeholder="DIF. PROMEDIO" />
               </SelectTrigger>
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                <SelectItem value="__all__">COMPETIDOR</SelectItem>
+                <SelectItem value="__all__">DIF. PROMEDIO</SelectItem>
+                {DIF_PROMEDIO_OPCIONES.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={!!provCaroCompetenciaId}
+            onLimpiar={() => {
+              onProvCaroCompetenciaIdChange("");
+              onBuscar();
+            }}
+          >
+            <Select
+              value={provCaroCompetenciaId || "__all__"}
+              onValueChange={(v) => {
+                onProvCaroCompetenciaIdChange(v === "__all__" ? "" : v);
+                onBuscar();
+              }}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="PROV. CARO" />
+              </SelectTrigger>
+              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                <SelectItem value="__all__">PROV. CARO</SelectItem>
                 {competencias.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.nombre.toUpperCase()}
@@ -111,27 +137,27 @@ export default function FiltrosCompetenciaPrecios({
           </FiltroIndividualContainer>
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={!!estadoVinculo}
+            activo={!!provBaratoCompetenciaId}
             onLimpiar={() => {
-              onEstadoVinculoChange("");
+              onProvBaratoCompetenciaIdChange("");
               onBuscar();
             }}
           >
             <Select
-              value={estadoVinculo || "__all__"}
+              value={provBaratoCompetenciaId || "__all__"}
               onValueChange={(v) => {
-                onEstadoVinculoChange(v === "__all__" ? "" : v);
+                onProvBaratoCompetenciaIdChange(v === "__all__" ? "" : v);
                 onBuscar();
               }}
-              disabled={!competenciaId}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="ESTADO VÍNCULO" />
+                <SelectValue placeholder="PROV. BARATO" />
               </SelectTrigger>
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                {ESTADOS_RELEVAMIENTO_FILTRO.map((e) => (
-                  <SelectItem key={e.value || "all"} value={e.value || "__all__"}>
-                    {e.label}
+                <SelectItem value="__all__">PROV. BARATO</SelectItem>
+                {competencias.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre.toUpperCase()}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -139,55 +165,27 @@ export default function FiltrosCompetenciaPrecios({
           </FiltroIndividualContainer>
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={!!marca}
+            activo={!!configurado}
             onLimpiar={() => {
-              onMarcaChange("");
+              onConfiguradoChange("");
               onBuscar();
             }}
           >
             <Select
-              value={marca || "__all__"}
+              value={configurado || "__all__"}
               onValueChange={(v) => {
-                onMarcaChange(v === "__all__" ? "" : v);
+                onConfiguradoChange(v === "__all__" ? "" : v);
                 onBuscar();
               }}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="MARCA" />
+                <SelectValue placeholder="CONFIGURADO" />
               </SelectTrigger>
               <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                <SelectItem value="__all__">TODAS</SelectItem>
-                {marcasDisponibles.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FiltroIndividualContainer>
-          <FiltroIndividualContainer
-            className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={!!rubro}
-            onLimpiar={() => {
-              onRubroChange("");
-              onBuscar();
-            }}
-          >
-            <Select
-              value={rubro || "__all__"}
-              onValueChange={(v) => {
-                onRubroChange(v === "__all__" ? "" : v);
-                onBuscar();
-              }}
-            >
-              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                <SelectValue placeholder="RUBRO" />
-              </SelectTrigger>
-              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                <SelectItem value="__all__">TODOS</SelectItem>
-                {rubrosDisponibles.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r.toUpperCase()}
+                <SelectItem value="__all__">CONFIGURADO</SelectItem>
+                {CONFIGURADO_OPCIONES.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -210,10 +208,10 @@ export default function FiltrosCompetenciaPrecios({
           onClick={() => {
             setQ("");
             onQChange("");
-            onMarcaChange("");
-            onRubroChange("");
-            onCompetenciaIdChange("");
-            onEstadoVinculoChange("");
+            onDifPromedioChange("");
+            onProvCaroCompetenciaIdChange("");
+            onProvBaratoCompetenciaIdChange("");
+            onConfiguradoChange("");
             onBuscar();
           }}
         />

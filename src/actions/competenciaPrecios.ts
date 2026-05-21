@@ -51,8 +51,6 @@ const EMPTY_LIST: CompetenciaPreciosListResult = {
   total: 0,
   totalPaginas: 1,
   competencias: [],
-  marcasDisponibles: [],
-  rubrosDisponibles: [],
 };
 
 export async function getCompetenciaPreciosListAction(

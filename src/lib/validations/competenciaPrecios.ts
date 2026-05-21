@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { competenciaConfigExtraccionSchema } from "@/lib/competenciaConfigExtraccion";
 import {
-  ESTADO_RELEVAMIENTO_COMPETENCIA,
-  type EstadoRelevamientoCompetencia,
-} from "@/lib/competenciaRelevamiento";
+  CONFIGURADO_FILTRO,
+  DIF_PROMEDIO_FILTRO,
+} from "@/lib/competenciaPreciosFiltros";
 import { listaPreciosCodTiendaSchema, paramsPaginaSchema, prismaCuidSchema } from "@/lib/validations/common";
 
 export const competenciaWebSchema = z
@@ -38,25 +38,24 @@ export const deleteCompetenciaSchema = z.object({
   id: prismaCuidSchema,
 });
 
-const estadoVinculoSchema = z
-  .enum([
-    "",
-    ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
-    ESTADO_RELEVAMIENTO_COMPETENCIA.PENDIENTE,
-    ESTADO_RELEVAMIENTO_COMPETENCIA.OK,
-    ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO,
-    ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR,
-  ])
+const difPromedioFiltroSchema = z
+  .enum(["", DIF_PROMEDIO_FILTRO.MAS_CARO, DIF_PROMEDIO_FILTRO.MAS_BARATO])
+  .optional()
+  .default("");
+
+const configuradoFiltroSchema = z
+  .enum(["", CONFIGURADO_FILTRO.SI, CONFIGURADO_FILTRO.NO])
   .optional()
   .default("");
 
 export const competenciaPreciosFiltrosSchema = paramsPaginaSchema.extend({
   q: z.string().max(200).optional().default(""),
-  marca: z.string().max(120).optional().default(""),
-  rubro: z.string().max(120).optional().default(""),
-  /** Requerido si `estadoVinculo` ≠ vacío: filtra por competidor de la columna. */
-  competenciaId: prismaCuidSchema.optional(),
-  estadoVinculo: estadoVinculoSchema,
+  difPromedio: difPromedioFiltroSchema,
+  /** PROV. CARO: precio tienda menor que el del competidor (relevamiento OK). */
+  provCaroCompetenciaId: prismaCuidSchema.optional(),
+  /** PROV. BARATO: precio tienda mayor que el del competidor (relevamiento OK). */
+  provBaratoCompetenciaId: prismaCuidSchema.optional(),
+  configurado: configuradoFiltroSchema,
 });
 
 export type CompetenciaPreciosFiltros = z.infer<typeof competenciaPreciosFiltrosSchema>;
@@ -98,6 +97,3 @@ export const syncCompetenciaPreciosBodySchema = z
     message: "No combines todos con competenciaId.",
   });
 
-export function esEstadoVinculoValido(v: string): v is EstadoRelevamientoCompetencia {
-  return Object.values(ESTADO_RELEVAMIENTO_COMPETENCIA).includes(v as EstadoRelevamientoCompetencia);
-}
