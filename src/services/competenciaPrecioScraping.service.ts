@@ -131,12 +131,73 @@ async function parsePreciosPorSelectores(
   html: string,
   regla: ReglaExtraccionPagina
 ): Promise<number[]> {
-  const selectores = [regla.selectorPrecio, regla.selectorPrecioAlternativo]
-    .map((s) => s?.trim())
-    .filter((s): s is string => !!s);
-  if (selectores.length === 0) return [];
+  const elemento = regla.selectorPrecio?.trim();
+  const contenedor = regla.selectorPrecioAlternativo?.trim();
+  if (!elemento && !contenedor) return [];
+
   const attr = regla.atributoPrecio?.trim() || undefined;
-  return parsePreciosPorSelectoresEnHtml(html, selectores, attr);
+  let scope = html;
+  if (contenedor) {
+    const fragmento = extraerHtmlFragmentoContenedor(html, contenedor);
+    if (fragmento) scope = fragmento;
+  }
+  if (elemento) {
+    return parsePreciosPorSelectoresEnHtml(scope, [elemento], attr);
+  }
+  return parsePreciosPorSelectoresEnHtml(scope, [contenedor!], attr);
+}
+
+/** Recorta el HTML al primer bloque que coincide con el contenedor (selector CSS simple). */
+function extraerHtmlFragmentoContenedor(html: string, selector: string): string | null {
+  const sel = selector.trim();
+  if (!sel) return null;
+
+  if (sel.startsWith(".")) {
+    const cls = sel.slice(1).split(/[.\s#[]/)[0];
+    if (!cls) return null;
+    const openRe = new RegExp(
+      `<([a-z][a-z0-9]*)[^>]*class=["'][^"']*\\b${escapeRe(cls)}\\b[^"']*["'][^>]*>`,
+      "i"
+    );
+    const open = openRe.exec(html);
+    if (!open || open.index == null) return null;
+    const tag = open[1].toLowerCase();
+    const start = open.index;
+    const afterOpen = start + open[0].length;
+    const closeTag = `</${tag}>`;
+    const closeIdx = html.indexOf(closeTag, afterOpen);
+    if (closeIdx === -1) return html.slice(start, Math.min(start + 12_000, html.length));
+    return html.slice(start, closeIdx + closeTag.length);
+  }
+
+  if (sel.startsWith("#")) {
+    const id = sel.slice(1).split(/[.\s[]/)[0];
+    if (!id) return null;
+    const openRe = new RegExp(
+      `<([a-z][a-z0-9]*)[^>]*id=["']${escapeRe(id)}["'][^>]*>`,
+      "i"
+    );
+    const open = openRe.exec(html);
+    if (!open || open.index == null) return null;
+    const tag = open[1].toLowerCase();
+    const start = open.index;
+    const afterOpen = start + open[0].length;
+    const closeTag = `</${tag}>`;
+    const closeIdx = html.indexOf(closeTag, afterOpen);
+    if (closeIdx === -1) return html.slice(start, Math.min(start + 12_000, html.length));
+    return html.slice(start, closeIdx + closeTag.length);
+  }
+
+  const texto = extraerTextoPorSelectorRegex(html, sel, undefined);
+  if (texto) {
+    const idx = html.indexOf(texto);
+    if (idx >= 0) {
+      const start = Math.max(0, idx - 2000);
+      const end = Math.min(html.length, idx + 2000);
+      return html.slice(start, end);
+    }
+  }
+  return null;
 }
 
 function parsePreciosPorSelectoresSync(
