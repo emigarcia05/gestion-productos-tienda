@@ -60,20 +60,22 @@ function CeldaDifPct({ pct }: { pct: number | null }) {
   );
 }
 
-/** Subfila: celdas alineadas al `<colgroup>` (competidor → DESCRIPCIÓN, px → PX PROMEDIO, dif → DIF TIENDA). */
+const SUBFILA_DETALLE_CLASS = "tabla-fila-altura-auto tabla-fila-detalle-competencia";
+
+/** Subfila: celdas alineadas al colgroup; sin divisores entre columnas. */
 function DetalleCompetidorFila({ item }: { item: CompetidorPrecioFila }) {
   return (
-    <TableRow className="tabla-fila-altura-auto hover:bg-transparent bg-muted/40">
+    <TableRow className={cn(SUBFILA_DETALLE_CLASS, "hover:bg-transparent")}>
+      <TableCell className="celda-datos" aria-hidden />
       <TableCell className="celda-datos max-w-0 text-right">
-        <span className="block truncate font-medium text-foreground text-right" title={item.nombre}>
+        <span className="block truncate font-medium text-foreground" title={item.nombre}>
           {item.nombre}
         </span>
       </TableCell>
-      <TableCell className="celda-datos" aria-hidden />
-      <TableCell className="celda-datos tabular-nums text-right tabla-bloque-secundario-cell-divider">
+      <TableCell className="celda-datos tabular-nums text-right">
         {fmtPrecio(item.px)}
       </TableCell>
-      <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
+      <TableCell className="celda-datos text-center">
         <CeldaDifPct pct={item.difPctVsTienda} />
       </TableCell>
       <TableCell className="celda-datos" aria-hidden />
@@ -256,7 +258,7 @@ export default function CompetenciaPreciosTabla({
                         {expandido && detalle.length === 0 ? (
                           <TableRow
                             key={`${fila.codTienda}-detalle-vacio`}
-                            className="tabla-fila-altura-auto hover:bg-transparent bg-muted/40"
+                            className={cn(SUBFILA_DETALLE_CLASS, "hover:bg-transparent")}
                           >
                             <TableCell colSpan={COLS} className="celda-datos py-2">
                               <p className="text-sm text-muted-foreground text-center">

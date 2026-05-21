@@ -926,6 +926,30 @@
   max-height: none !important;
 }
 
+/* Precios Competencia — subfila detalle: fondo uniforme (sin cebra), sin divisores verticales. */
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia,
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:nth-child(odd),
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:nth-child(even) {
+  --tabla-row-bg: color-mix(in oklab, var(--muted) 52%, var(--card));
+  background-color: color-mix(in oklab, var(--muted) 52%, var(--card)) !important;
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td {
+  background-color: color-mix(in oklab, var(--muted) 52%, var(--card)) !important;
+  box-shadow: none !important;
+}
+.tabla-gestion-compacta tbody tr:not(.tabla-fila-detalle-competencia) + tr.tabla-fila-detalle-competencia td {
+  border-top: 1px solid color-mix(in oklab, var(--primary) 14%, var(--border));
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover,
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td {
+  --tabla-row-bg: color-mix(in oklab, var(--muted) 68%, var(--card));
+  background-color: color-mix(in oklab, var(--muted) 68%, var(--card)) !important;
+  color: var(--foreground) !important;
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td:first-child {
+  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--primary) 40%, transparent) !important;
+}
+
 /**
  * Botones #0072BB en filas de tabla: `size="icon"` del componente Button impone `size-9` (2.25rem)
  * y estiraba la fila por encima de `--tabla-body-row-min-height` (2rem). Cuadrado = alto útil
