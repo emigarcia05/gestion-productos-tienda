@@ -28,8 +28,8 @@ export default function TablaSubencabezadoSeccionRow({
   return (
     <TableRow
       className={cn(
-        "tabla-fila-altura-auto tabla-fila-seccion-subencabezado",
-        "cursor-default border-b border-border hover:bg-transparent",
+        "tabla-fila-seccion-subencabezado",
+        "cursor-default hover:bg-transparent",
         className,
       )}
     >

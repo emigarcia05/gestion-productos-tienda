@@ -927,18 +927,24 @@
 }
 
 /* Subencabezado de sección en tbody (Pedido Urgente, modales Balance por tipo, etc.). */
+.tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado,
+.tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado td {
+  height: var(--tabla-thead-height) !important;
+  min-height: var(--tabla-thead-height) !important;
+  max-height: var(--tabla-thead-height) !important;
+}
 .tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado:hover td.tabla-fila-seccion-subencabezado-celda {
-  background-color: color-mix(in oklab, var(--muted) 70%, var(--card)) !important;
+  background-color: var(--card) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-seccion-subencabezado td.tabla-fila-seccion-subencabezado-celda {
-  --tabla-row-bg: color-mix(in oklab, var(--muted) 70%, var(--card));
-  background-color: var(--tabla-row-bg) !important;
-  border-bottom: 1px solid var(--border);
-  border-left: 3px solid var(--primary);
-  padding-top: 0.375rem;
-  padding-bottom: 0.375rem;
+  --tabla-row-bg: var(--card);
+  background-color: var(--card) !important;
+  border: none !important;
+  box-shadow: none !important;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
+  padding-top: 0;
+  padding-bottom: 0;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -947,36 +953,46 @@
   vertical-align: middle;
 }
 
-/* Precios Competencia — subfila: bloque solo en cols 2–4 (PRECIO TIENDA + PX PROMEDIO + DIF TIENDA). */
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia {
-  background-color: transparent !important;
+/* Precios Competencia — subfilas: fondo blanco (card), alto fijo = encabezado; divisor #0072bb solo entre filas de datos (cols 2–4). */
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia,
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td {
+  height: var(--tabla-thead-height) !important;
+  min-height: var(--tabla-thead-height) !important;
+  max-height: var(--tabla-thead-height) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-hueca {
-  background-color: transparent !important;
+  background-color: var(--card) !important;
+  border: none !important;
   box-shadow: none !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-celda {
-  --tabla-row-bg: color-mix(in oklab, var(--muted) 52%, var(--card));
-  background-color: color-mix(in oklab, var(--muted) 52%, var(--card)) !important;
+  --tabla-row-bg: var(--card);
+  background-color: var(--card) !important;
+  border: none !important;
   box-shadow: none !important;
 }
 .tabla-gestion-compacta
   tbody
-  tr:not(.tabla-fila-detalle-competencia)
+  tr.tabla-fila-detalle-competencia
   + tr.tabla-fila-detalle-competencia
   td.tabla-fila-detalle-competencia-celda {
-  border-top: 1px solid color-mix(in oklab, var(--primary) 14%, var(--border));
+  border-top: 1px solid #0072bb !important;
 }
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre td.tabla-fila-detalle-competencia-celda {
-  border-bottom: 1px solid #0072bb !important;
-  padding-bottom: 0.5rem !important;
-}
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td.tabla-fila-detalle-competencia-celda {
-  background-color: color-mix(in oklab, var(--muted) 68%, var(--card)) !important;
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td.tabla-fila-detalle-competencia-celda,
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia:hover td.tabla-fila-detalle-competencia-hueca {
+  background-color: var(--card) !important;
   color: var(--foreground) !important;
 }
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-celda:nth-child(2) {
-  box-shadow: inset 3px 0 0 #0072bb !important;
+/* Última subfila del bloque: espacio inferior antes de la fila clásica siguiente. */
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre,
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre td {
+  height: auto !important;
+  min-height: var(--tabla-thead-height) !important;
+  max-height: none !important;
+}
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre td {
+  padding-bottom: 0.75rem !important;
+  border-bottom: none !important;
 }
 
 /**

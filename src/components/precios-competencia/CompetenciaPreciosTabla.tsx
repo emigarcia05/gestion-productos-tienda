@@ -60,7 +60,7 @@ function CeldaDifPct({ pct }: { pct: number | null }) {
   );
 }
 
-const SUBFILA_DETALLE_CLASS = "tabla-fila-altura-auto tabla-fila-detalle-competencia";
+const SUBFILA_DETALLE_CLASS = "tabla-fila-detalle-competencia";
 const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
 const SUBFILA_CELDA_HUECA_CLASS = "tabla-fila-detalle-competencia-hueca";
 
@@ -281,7 +281,7 @@ export default function CompetenciaPreciosTabla({
                             <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
                             <TableCell
                               colSpan={3}
-                              className={cn("celda-datos py-2", SUBFILA_CELDA_BLOQUE_CLASS)}
+                              className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}
                             >
                               <p className="text-sm text-muted-foreground text-center">
                                 Sin precios relevados de competidores para este producto.
