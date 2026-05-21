@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import { guardarUrlVinculoCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
@@ -66,6 +69,22 @@ export default function AsociarUrlsCompetenciaModal({
     });
   }, [competencias, vinculosPorCompetencia]);
 
+  const filasInicialesPorId = useMemo(() => {
+    const m = new Map<string, FilaUrl>();
+    for (const f of filasIniciales) m.set(f.competenciaId, f);
+    return m;
+  }, [filasIniciales]);
+
+  function filaTieneCambios(f: FilaUrl): boolean {
+    const ini = filasInicialesPorId.get(f.competenciaId);
+    if (!ini) return true;
+    const urlIni = ini.url.trim();
+    const urlActual = f.url.trim();
+    if (urlIni !== urlActual) return true;
+    if (f.reglas.length > 0 && f.tipoPagina !== ini.tipoPagina) return true;
+    return false;
+  }
+
   useEffect(() => {
     if (!open) return;
     setFilas(filasIniciales);
@@ -73,9 +92,14 @@ export default function AsociarUrlsCompetenciaModal({
 
   const handleGuardar = async () => {
     if (!puedeEditar) return;
+    const filasAGuardar = filas.filter(filaTieneCambios);
+    if (filasAGuardar.length === 0) {
+      toast.message("No hay cambios para guardar.");
+      return;
+    }
     setSaving(true);
     try {
-      for (const f of filas) {
+      for (const f of filasAGuardar) {
         const result = await guardarUrlVinculoCompetenciaAction({
           codTienda,
           competenciaId: f.competenciaId,
@@ -137,11 +161,11 @@ export default function AsociarUrlsCompetenciaModal({
                   <div className="flex flex-col gap-2 min-w-0">
                     {f.reglas.length > 0 ? (
                       <div>
-                        <ModalMicroLabel>Tipo de página</ModalMicroLabel>
                         <select
-                          className="mt-1 input-filtro-unificado w-full"
+                          className="input-filtro-unificado w-full"
                           value={f.tipoPagina}
                           disabled={!puedeEditar || saving}
+                          aria-label={`Tipo de página — ${f.nombre}`}
                           onChange={(e) =>
                             setFilas((prev) =>
                               prev.map((row, i) =>
@@ -159,11 +183,11 @@ export default function AsociarUrlsCompetenciaModal({
                       </div>
                     ) : null}
                     <div>
-                      <ModalMicroLabel>URL del producto</ModalMicroLabel>
-                      <div className="relative mt-1 w-full min-w-0">
+                      <div className="relative w-full min-w-0">
                         <Input
                           value={f.url}
                           disabled={!puedeEditar || saving}
+                          aria-label={`URL del producto — ${f.nombre}`}
                           onChange={(e) =>
                             setFilas((prev) =>
                               prev.map((row, i) => (i === index ? { ...row, url: e.target.value } : row))
@@ -178,7 +202,10 @@ export default function AsociarUrlsCompetenciaModal({
                             variant="ghost"
                             size="icon"
                             disabled={saving || !f.url.trim()}
-                            className="absolute right-0 top-0 h-9 w-9 shrink-0 rounded-r-md text-muted-foreground hover:bg-muted hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
+                            className={cn(
+                              TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                              "absolute right-0 top-0 !h-9 !w-9 shrink-0 !p-0",
+                            )}
                             aria-label={`Borrar URL de ${f.nombre}`}
                             title="Borrar URL"
                             onClick={() =>
@@ -187,7 +214,7 @@ export default function AsociarUrlsCompetenciaModal({
                               )
                             }
                           >
-                            <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                           </Button>
                         ) : null}
                       </div>

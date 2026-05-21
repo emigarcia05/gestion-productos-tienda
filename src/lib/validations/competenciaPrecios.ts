@@ -84,11 +84,19 @@ export const guardarUrlVinculoSchema = z.object({
 
 export const syncCompetenciaPreciosBodySchema = z
   .object({
-    competenciaId: prismaCuidSchema,
+    competenciaId: prismaCuidSchema.optional(),
+    /** Compara todos los competidores con al menos una URL cargada. */
+    todos: z.literal(true).optional(),
     codTienda: listaPreciosCodTiendaSchema.optional(),
     limiteProductos: z.coerce.number().int().min(1).max(500).optional(),
   })
-  .strict();
+  .strict()
+  .refine((d) => d.todos === true || d.competenciaId != null, {
+    message: "Indicá competenciaId o todos: true.",
+  })
+  .refine((d) => !(d.todos === true && d.competenciaId != null), {
+    message: "No combines todos con competenciaId.",
+  });
 
 export function esEstadoVinculoValido(v: string): v is EstadoRelevamientoCompetencia {
   return Object.values(ESTADO_RELEVAMIENTO_COMPETENCIA).includes(v as EstadoRelevamientoCompetencia);

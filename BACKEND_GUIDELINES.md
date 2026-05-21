@@ -1272,8 +1272,8 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 
 - **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia), `ultima_comparacion_at`, `config_extraccion` (JSON: reglas por tipo de página — selectores CSS, JSON-LD, regex; esquema Zod en `@/lib/competenciaConfigExtraccion.ts`). **Sin** `url_busqueda` (eliminada).
 - **`prod_precios_competencia`:** vínculo **producto tienda × competidor** — PK `(cod_tienda, competencia_id)`; `url_producto` (manual); `tipo_pagina` (slug de regla en `config_extraccion.reglas`); `px_competencia` (último precio); `estado` (`SIN_URL` | `PENDIENTE` | `OK` | `SIN_PRECIO` | `ERROR`); `error_mensaje`; `relevado_at` (último intento de relevamiento). Constantes en `@/lib/competenciaRelevamiento.ts`.
-- **Sync:** solo filas con `url_producto` no nulo; `POST` body `{ competenciaId, limiteProductos?, codTienda? }`; cancelación `POST /api/sync-competencia-precios/cancel`.
-- **Guardar URL:** `guardarUrlVinculoCompetenciaAction` → `competenciaVinculo.service.ts` (upsert vínculo, estado `PENDIENTE` al cargar URL).
+- **Sync:** solo filas con `url_producto` no nulo; `POST` body `{ competenciaId, limiteProductos?, codTienda? }` o `{ todos: true, limiteProductos?, codTienda? }` (todos los competidores con URL, en secuencia); cancelación `POST /api/sync-competencia-precios/cancel`.
+- **Guardar URL:** `guardarUrlVinculoCompetenciaAction` → `competenciaVinculo.service.ts` (upsert por `cod_tienda` + `competencia_id`; solo el competidor tocado: si la URL no cambió no se pisa `estado`/`px_competencia`; si cambia la URL → `PENDIENTE` y se limpia precio de ese vínculo; al borrar URL solo ese competidor pasa a `SIN_URL` sin tocar filas de otros).
 
 Migración: `20260520190000_add_prod_competencia_tables`.
 
@@ -1296,7 +1296,7 @@ Migración: `20260520190000_add_prod_competencia_tables`.
 
 ### API Routes
 
-- `POST /api/sync-competencia-precios` — body **`{ competenciaId }` obligatorio** (un solo competidor por ejecución); `{ codTienda? }` opcional. Al finalizar, actualiza `prod_competencia.ultima_comparacion_at`. Gate `guardCompetenciaPreciosSyncEsEditor`; progreso en `import_progress` id **`competencia-precios-sync`**.
+- `POST /api/sync-competencia-precios` — body **`{ competenciaId }`** (un competidor) o **`{ todos: true }`** (todos los que tengan URL cargada; progreso acumulado); `{ codTienda? }`, `{ limiteProductos? }` opcionales. Al finalizar cada competidor, actualiza `prod_competencia.ultima_comparacion_at`. Gate `guardCompetenciaPreciosSyncEsEditor`; progreso en `import_progress` id **`competencia-precios-sync`**.
 - `GET /api/sync-competencia-precios/status` — mismo gate.
 
 Migración adicional: `20260520230000_competencia_config_extraccion` (`config_extraccion`, `tipo_pagina`).

@@ -17,6 +17,9 @@ import { toast } from "sonner";
 import { listCompetenciasAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
+/** Valor del select para comparar todos los competidores con URL cargada. */
+export const COMPETENCIA_SYNC_TODOS = "__TODOS__";
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,16 +72,17 @@ export default function SincronizarCompetenciaModal({
 
   const handleSync = async () => {
     if (!competenciaId) {
-      toast.error("Seleccioná un competidor.");
+      toast.error("Seleccioná un competidor o TODOS.");
       return;
     }
 
+    const todos = competenciaId === COMPETENCIA_SYNC_TODOS;
     setSyncing(true);
     try {
       const res = await fetch("/api/sync-competencia-precios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ competenciaId }),
+        body: JSON.stringify(todos ? { todos: true } : { competenciaId }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
@@ -86,7 +90,10 @@ export default function SincronizarCompetenciaModal({
         error?: string;
         encontrados?: number;
         vacios?: number;
+        errores?: number;
         competenciaNombre?: string;
+        competidoresProcesados?: number;
+        todos?: boolean;
       };
       if (json.cancelled) {
         toast.message(json.error ?? "Comparación cancelada.");
@@ -96,8 +103,10 @@ export default function SincronizarCompetenciaModal({
         toast.error(json.error ?? "No se pudo comparar precios.");
         return;
       }
+      const erroresTxt =
+        (json.errores ?? 0) > 0 ? `, ${json.errores} con error` : "";
       toast.success(
-        `${json.competenciaNombre ?? "Competidor"}: ${json.encontrados ?? 0} con precio, ${json.vacios ?? 0} sin precio.`
+        `${json.competenciaNombre ?? "Competidor"}: ${json.encontrados ?? 0} con precio, ${json.vacios ?? 0} sin precio${erroresTxt}.`
       );
       onOpenChange(false);
       onCompletado();
@@ -162,6 +171,7 @@ export default function SincronizarCompetenciaModal({
                   <SelectValue placeholder="SELECCIONAR COMPETIDOR" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start">
+                  <SelectItem value={COMPETENCIA_SYNC_TODOS}>TODOS</SelectItem>
                   {lista.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.nombre}
