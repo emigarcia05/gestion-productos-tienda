@@ -58,7 +58,6 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
   return (
     <ClassicFilteredTableLayout
       title="Precios Competencia"
-      contentWidth="full"
       actions={
         puedeEditar ? (
           <div className="flex gap-2">
@@ -84,7 +83,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
         ) : undefined
       }
       filters={
-        <>
+        <div className="flex w-full min-w-0 flex-col gap-0.5">
           {puedeEditar ? <CompetenciaSyncProgresoBanner /> : null}
           <FiltrosCompetenciaPrecios
           q={q}
@@ -119,7 +118,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
           }}
           onBuscar={() => void cargar()}
         />
-        </>
+        </div>
       }
     >
       <CompetenciaPreciosTabla

@@ -76,8 +76,6 @@ export default function FiltrosCompetenciaPrecios({
     },
   });
 
-  const hasFilters = !!(q.trim() || marca || rubro || competenciaId || estadoVinculo);
-
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
@@ -195,13 +193,10 @@ export default function FiltrosCompetenciaPrecios({
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>
-          <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-            {loading ? "CARGANDO..." : `${total} PRODUCTO(S)`}
-          </span>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
-      <div className="flex items-center gap-2">
-        <FilterRowSearch>
+      <div className="flex items-center gap-3">
+        <FilterRowSearch className="flex-1">
           <FiltroBusquedaInput
             id="competencia-precios-busqueda"
             placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
@@ -212,7 +207,6 @@ export default function FiltrosCompetenciaPrecios({
           />
         </FilterRowSearch>
         <LimpiarFiltrosButton
-          visible={hasFilters}
           onClick={() => {
             setQ("");
             onQChange("");
@@ -223,6 +217,9 @@ export default function FiltrosCompetenciaPrecios({
             onBuscar();
           }}
         />
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+          {loading ? "CARGANDO..." : `${total.toLocaleString("es-AR")} PRODUCTO(S)`}
+        </span>
       </div>
     </FilterBar>
   );

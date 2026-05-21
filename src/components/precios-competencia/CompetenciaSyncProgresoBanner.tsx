@@ -14,7 +14,7 @@ export default function CompetenciaSyncProgresoBanner() {
   return (
     <div
       className={cn(
-        "mx-8 mb-2 flex items-center gap-3 rounded-lg border px-4 py-2 text-sm",
+        "flex w-full shrink-0 items-center gap-3 rounded-lg border px-4 py-2 text-sm",
         running ? "border-primary/40 bg-primary/10" : "border-border bg-muted"
       )}
       role="status"
