@@ -179,7 +179,7 @@ export default function CompetenciaPreciosTabla({
                     const detalle = resumen?.competidoresOrdenados ?? [];
                     return (
                       <Fragment key={fila.codTienda}>
-                        <TableRow className="tabla-precios-competencia-fila-principal">
+                        <TableRow>
                           <TableCell className="celda-datos max-w-0">
                             <span className="block truncate" title={fila.descripcionTienda ?? undefined}>
                               {fila.descripcionTienda ?? "—"}
@@ -249,7 +249,7 @@ export default function CompetenciaPreciosTabla({
                         {expandido ? (
                           <TableRow
                             key={`${fila.codTienda}-detalle`}
-                            className="tabla-precios-competencia-fila-detalle hover:bg-transparent bg-muted/40"
+                            className="tabla-fila-altura-auto hover:bg-transparent bg-muted/40"
                           >
                             <TableCell colSpan={COLS} className="celda-datos py-2 px-4">
                               {detalle.length === 0 ? (

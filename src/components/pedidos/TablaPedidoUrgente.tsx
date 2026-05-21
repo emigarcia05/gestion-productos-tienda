@@ -114,11 +114,11 @@ function textoProveedorCeldaPedidoUrgente(prod: ProductoPedidoUrgente): string {
 
 function SubencabezadoSeccionPedidoUrgente({ titulo }: { titulo: string }) {
   return (
-    <TableRow className="hover:bg-transparent cursor-default border-b border-border">
+    <TableRow className="tabla-fila-altura-auto hover:bg-transparent cursor-default border-b border-border">
       <TableCell
         colSpan={COLUMNS}
         className={cn(
-          "celda-datos bg-muted/70 py-2 text-xs font-semibold text-foreground tracking-wide uppercase"
+          "celda-datos bg-muted/70 text-xs font-semibold text-foreground tracking-wide uppercase"
         )}
       >
         {titulo}

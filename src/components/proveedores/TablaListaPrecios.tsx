@@ -55,9 +55,9 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
       <Table variant="compact">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="py-2 px-3 text-xs w-28">PROVEEDOR</TableHead>
-            <TableHead className="py-2 px-3 text-xs">DESCRIPCIÓN</TableHead>
-            <TableHead className="py-2 px-3 text-xs w-32 text-primary">CANT. URG.</TableHead>
+            <TableHead className="w-28">PROVEEDOR</TableHead>
+            <TableHead>DESCRIPCIÓN</TableHead>
+            <TableHead className="w-32">CANT. URG.</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -73,9 +73,9 @@ export default function TablaListaPrecios({ productos, onAgregarAlPedido, sinFil
               className={puedeAgregar ? "cursor-pointer" : ""}
               onDoubleClick={() => handleDobleClick(prod)}
             >
-              <TableCell className="py-2 px-3 text-xs font-mono">{prod.proveedor.prefijo}</TableCell>
-              <TableCell className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</TableCell>
-              <TableCell className="py-2 px-3 text-center tabular-nums text-xs" />
+              <TableCell className="celda-datos celda-mono">{prod.proveedor.prefijo}</TableCell>
+              <TableCell className="celda-datos font-semibold">{prod.descripcion}</TableCell>
+              <TableCell className="celda-datos tabular-nums" />
             </TableRow>
           ))
           )}

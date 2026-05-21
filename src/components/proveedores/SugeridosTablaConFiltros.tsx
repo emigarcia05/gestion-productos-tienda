@@ -251,7 +251,7 @@ export default function SugeridosTablaConFiltros({
                 <TableCell className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
                 </TableCell>
-                <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
+                <TableCell className="celda-datos min-w-0 overflow-hidden">
                   <div className="celda-destacado truncate text-xs font-bold" title={fila.descripcion}>
                     {fila.descripcion}
                   </div>

@@ -198,7 +198,7 @@
   --tabla-thead-line-height: 1.15;
   --tabla-thead-padding-y: 0.2rem;
   --tabla-thead-height: 2.125rem;
-  /* Fila cuerpo compacta: ~py-0.5 + texto 0.75rem leading-tight + inputs/botones ~1.75rem (h-7). */
+  /* Fila cuerpo compacta (estándar global, referencia Lista Px Proveedores): 2rem fijo en todas las tablas `.tabla-gestion-compacta`. */
   --tabla-body-row-min-height: 2rem;
   --tabla-body-cell-padding-y: 0.125rem;
   --tabla-body-cell-padding-x: 0.625rem;
@@ -917,40 +917,27 @@
   height: 0.875rem;
 }
 
-/**
- * Balance · Gastos (`TablaGastos`): fila **alto fijo** (hereda `--tabla-body-row-min-height` en el `<table>`),
- * más padding en celdas; botones **ACCIONES** usan el patrón global `tabla-row-btn-filled-brand` + wrapper `p-1.5`.
- */
-.tabla-gestion-compacta.tabla-balance-gastos {
-  --tabla-body-row-min-height: 2.875rem;
-  --tabla-body-cell-padding-y: 0.375rem;
-}
-
-/* Precios Competencia: filas de datos con alto fijo; botones de ACCIONES a altura de celda. */
-.tabla-gestion-compacta.tabla-precios-competencia {
-  --tabla-body-row-min-height: 2rem;
-}
-.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-principal {
-  height: var(--tabla-body-row-min-height) !important;
-  max-height: var(--tabla-body-row-min-height) !important;
-}
-.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-principal td {
-  height: var(--tabla-body-row-min-height) !important;
-  max-height: var(--tabla-body-row-min-height) !important;
-  overflow: hidden;
-}
-.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-detalle,
-.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-detalle td {
+/* Excepción documentada: filas auxiliares (subencabezado, detalle expandido) pueden crecer en alto. */
+.tabla-gestion-compacta tbody tr.tabla-fila-altura-auto,
+.tabla-gestion-compacta tbody tr.tabla-fila-altura-auto td {
   height: auto !important;
   max-height: none !important;
 }
-.tabla-gestion-compacta.tabla-precios-competencia tbody tr.tabla-precios-competencia-fila-principal td.celda-acciones-competencia {
+
+/* Precios Competencia: botones ACCIONES a altura de celda (fila de datos = alto global 2rem). */
+.tabla-gestion-compacta.tabla-precios-competencia tbody tr:not(.tabla-fila-altura-auto) td {
+  overflow: hidden;
+}
+.tabla-gestion-compacta.tabla-precios-competencia
+  tbody
+  tr:not(.tabla-fila-altura-auto)
+  td.celda-acciones-competencia {
   padding: 0 !important;
   vertical-align: middle;
 }
 .tabla-gestion-compacta.tabla-precios-competencia
   tbody
-  tr.tabla-precios-competencia-fila-principal
+  tr:not(.tabla-fila-altura-auto)
   td.celda-acciones-competencia
   .tabla-precios-competencia-acciones {
   height: 100%;
@@ -958,7 +945,7 @@
 }
 .tabla-gestion-compacta.tabla-precios-competencia
   tbody
-  tr.tabla-precios-competencia-fila-principal
+  tr:not(.tabla-fila-altura-auto)
   td.celda-acciones-competencia
   button.tabla-row-btn-filled-brand {
   height: 100% !important;
@@ -1016,19 +1003,10 @@
   --tabla-row-bg: var(--muted);
   background-color: var(--muted);
 }
-.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr {
-  height: auto !important;
-  max-height: none !important;
-}
-.tabla-gestion-compacta.tabla-deuda-proveedores tbody tr td {
-  height: auto !important;
-  max-height: none !important;
-}
 .tabla-gestion-compacta.tabla-deuda-proveedores tbody td.celda-proveedor-deuda {
-  white-space: normal !important;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
   vertical-align: middle;
   text-align: center;
 }

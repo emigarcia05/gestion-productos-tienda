@@ -354,17 +354,17 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                   <Table variant="compact" className="table-fixed w-full">
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="py-2 px-3 text-xs w-[45%]">PRIMERA FILA</TableHead>
-                        <TableHead className="py-2 px-3 text-xs w-[55%]">MAPEAR A</TableHead>
+                        <TableHead className="w-[45%]">PRIMERA FILA</TableHead>
+                        <TableHead className="w-[55%]">MAPEAR A</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {colLabels.map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell className="py-2 px-3 font-mono text-xs truncate">
+                          <TableCell className="celda-datos celda-mono truncate">
                             {(encabezados ?? filaEjemplo)?.[i] ?? <span className="text-muted-foreground italic">—</span>}
                           </TableCell>
-                          <TableCell className="py-2 px-3">
+                          <TableCell className="celda-datos">
                             <div className="relative">
                               <select
                                 value={mapeo[i] ?? "ignorar"}

@@ -238,12 +238,8 @@ export default function SeleccionarProductoModal({
                     <Table variant="compact" scrollX={false} className="table-fixed w-full">
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          <TableHead className="py-2.5 px-3 text-xs w-28 text-center bg-primary text-primary-foreground font-bold">
-                            PROVEEDOR
-                          </TableHead>
-                          <TableHead className="py-2.5 px-3 text-xs min-w-0 bg-primary text-primary-foreground font-bold">
-                            DESCRIPCIÓN
-                          </TableHead>
+                          <TableHead className="w-28 text-center">PROVEEDOR</TableHead>
+                          <TableHead className="min-w-0">DESCRIPCIÓN</TableHead>
                         </TableRow>
                       </TableHeader>
                     </Table>
@@ -259,12 +255,12 @@ export default function SeleccionarProductoModal({
                             className="cursor-pointer select-none hover:bg-primary/5"
                             title="Doble Clic Para Vincular"
                           >
-                            <TableCell className="py-2.5 px-3 text-xs w-28 text-center">
+                            <TableCell className="celda-datos w-28 text-center">
                               <Badge variant="secondary" className="font-mono text-xs">
                                 {row.proveedor.prefijo}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-2.5 px-3 text-xs min-w-0">
+                            <TableCell className="celda-datos min-w-0">
                               <span className="block truncate" title={row.descripcionProveedor}>
                                 {row.descripcionProveedor}
                               </span>

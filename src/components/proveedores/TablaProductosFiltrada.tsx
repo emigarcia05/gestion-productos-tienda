@@ -179,37 +179,37 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             {puede(rol, col.codProdProv) && (
-              <TableHead className="py-2 px-2 text-xs w-16 leading-tight">COD.<br />PROV.</TableHead>
+              <TableHead className="w-16 leading-tight">COD.<br />PROV.</TableHead>
             )}
             {puede(rol, col.codExt) && (
-              <TableHead className="py-2 px-2 text-xs w-24 leading-tight">CÓD.<br />EXTERNO</TableHead>
+              <TableHead className="w-24 leading-tight">CÓD.<br />EXTERNO</TableHead>
             )}
             {puede(rol, col.descripcion) && (
-              <TableHead className="py-2 px-3 text-xs">DESCRIPCIÓN</TableHead>
+              <TableHead>DESCRIPCIÓN</TableHead>
             )}
             {puede(rol, col.proveedor) && (
-              <TableHead className="py-2 px-2 text-xs w-14 leading-tight">Prov.</TableHead>
+              <TableHead className="w-14 leading-tight">Prov.</TableHead>
             )}
             {puede(rol, col.precioLista) && (
-              <TableHead className="py-2 px-2 text-xs w-20 leading-tight">PX.<br />LISTA</TableHead>
+              <TableHead className="w-20 leading-tight">PX.<br />LISTA</TableHead>
             )}
             {puede(rol, col.precioVentaSugerido) && (
-              <TableHead className="py-2 px-2 text-xs w-20 leading-tight">PX. VENTA<br />SUG.</TableHead>
+              <TableHead className="w-20 leading-tight">PX. VENTA<br />SUG.</TableHead>
             )}
             {puede(rol, col.descuentoRubro) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">DTO.<br />RUBRO</TableHead>
+              <TableHead className="w-12 leading-tight">DTO.<br />RUBRO</TableHead>
             )}
             {puede(rol, col.descuentoCantidad) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">DTO.<br />CANT.</TableHead>
+              <TableHead className="w-12 leading-tight">DTO.<br />CANT.</TableHead>
             )}
             {puede(rol, col.cxTransporte) && (
-              <TableHead className="py-2 px-2 text-xs w-12 leading-tight">CX.<br />TRANSP.</TableHead>
+              <TableHead className="w-12 leading-tight">CX.<br />TRANSP.</TableHead>
             )}
             {puede(rol, col.precioCompraFinal) && (
-              <TableHead className="py-2 px-2 text-xs w-24 leading-tight">PX. COMPRA<br />FINAL</TableHead>
+              <TableHead className="w-24 leading-tight">PX. COMPRA<br />FINAL</TableHead>
             )}
             {puede(rol, col.disponible) && (
-              <TableHead className="py-2 px-2 text-xs w-16 leading-tight">DISP.</TableHead>
+              <TableHead className="w-16 leading-tight">DISP.</TableHead>
             )}
           </TableRow>
         </TableHeader>
@@ -223,47 +223,47 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
           productos.map((prod) => (
             <TableRow key={prod.id}>
               {puede(rol, col.codProdProv) && (
-                <TableCell className="py-2 px-2 font-mono text-xs">{prod.codProdProv}</TableCell>
+                <TableCell className="celda-datos celda-mono">{prod.codProdProv}</TableCell>
               )}
               {puede(rol, col.codExt) && (
-                <TableCell className="py-2 px-2 whitespace-nowrap">
+                <TableCell className="celda-datos whitespace-nowrap">
                   <code className="text-xs px-1.5 py-0.5 rounded font-mono bg-muted">{prod.codigoExterno}</code>
                 </TableCell>
               )}
               {puede(rol, col.descripcion) && (
-                <TableCell className="py-2 px-3 text-xs font-semibold">{prod.descripcion}</TableCell>
+                <TableCell className="celda-datos font-semibold">{prod.descripcion}</TableCell>
               )}
               {puede(rol, col.proveedor) && (
-                <TableCell className="py-2 px-2 text-xs font-mono">{prod.proveedor.prefijo}</TableCell>
+                <TableCell className="celda-datos celda-mono">{prod.proveedor.prefijo}</TableCell>
               )}
               {puede(rol, col.precioLista) && (
-                <TableCell className="py-2 px-2 tabular-nums text-xs whitespace-nowrap">${fmtPrecio(prod.precioLista)}</TableCell>
+                <TableCell className="celda-datos tabular-nums whitespace-nowrap">${fmtPrecio(prod.precioLista)}</TableCell>
               )}
               {puede(rol, col.precioVentaSugerido) && (
-                <TableCell className="py-2 px-2 tabular-nums text-xs font-bold whitespace-nowrap">${fmtPrecio(prod.precioVentaSugerido)}</TableCell>
+                <TableCell className="celda-datos tabular-nums font-bold whitespace-nowrap">${fmtPrecio(prod.precioVentaSugerido)}</TableCell>
               )}
               {puede(rol, col.descuentoRubro) && (
-                <TableCell className="py-2 px-2 text-center">
+                <TableCell className="celda-datos text-center">
                   <CeldaPorcentaje productoId={prod.id} campo="descuentoRubro" valor={prod.descuentoRubro} onUpdate={handleUpdate} />
                 </TableCell>
               )}
               {puede(rol, col.descuentoCantidad) && (
-                <TableCell className="py-2 px-2 text-center">
+                <TableCell className="celda-datos text-center">
                   <CeldaPorcentaje productoId={prod.id} campo="descuentoCantidad" valor={prod.descuentoCantidad} onUpdate={handleUpdate} />
                 </TableCell>
               )}
               {puede(rol, col.cxTransporte) && (
-                <TableCell className="py-2 px-2 text-center">
+                <TableCell className="celda-datos text-center">
                   <CeldaPorcentaje productoId={prod.id} campo="cxTransporte" valor={prod.cxTransporte} onUpdate={handleUpdate} />
                 </TableCell>
               )}
               {puede(rol, col.precioCompraFinal) && (
-                <TableCell className="py-2 px-2 tabular-nums text-xs font-bold whitespace-nowrap">
+                <TableCell className="celda-datos tabular-nums font-bold whitespace-nowrap">
                   ${fmtPrecio(calcPxCompraFinal(prod.precioLista, prod.descuentoRubro, prod.descuentoCantidad, prod.cxTransporte))}
                 </TableCell>
               )}
               {puede(rol, col.disponible) && (
-                <TableCell className="py-2 px-2 text-center">
+                <TableCell className="celda-datos text-center">
                   <CeldaDisponible productoId={prod.id} valor={prod.disponible} onUpdate={handleUpdate} />
                 </TableCell>
               )}

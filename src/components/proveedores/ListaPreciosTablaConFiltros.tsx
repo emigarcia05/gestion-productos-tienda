@@ -340,7 +340,7 @@ export default function ListaPreciosTablaConFiltros({
                 <TableCell className="celda-datos">
                   {fila.rubro ?? "—"}
                 </TableCell>
-                <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
+                <TableCell className="celda-datos min-w-0 overflow-hidden">
                   <div className="celda-destacado truncate text-xs font-bold">
                     {fila.descripcionProveedor}
                   </div>

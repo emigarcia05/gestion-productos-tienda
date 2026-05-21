@@ -195,7 +195,7 @@ export default function SelectorProductosReposicionModal({
                             )}
                             onClick={() => !disabled && toggle(item)}
                           >
-                            <TableCell className="w-12 py-2">
+                            <TableCell className="celda-datos w-12 text-center">
                               <button
                                 type="button"
                                 className={cn(
@@ -215,7 +215,7 @@ export default function SelectorProductosReposicionModal({
                                 ) : null}
                               </button>
                             </TableCell>
-                            <TableCell className="text-xs py-2 text-left">
+                            <TableCell className="celda-datos text-left">
                               {item.descripcionTienda ?? "—"}
                             </TableCell>
                           </TableRow>

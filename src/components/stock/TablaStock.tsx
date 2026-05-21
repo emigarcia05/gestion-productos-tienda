@@ -282,10 +282,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-3 py-2 text-xs w-[40%]">DESCRIPCIÓN</TableHead>
-                <TableHead className="px-3 py-2 text-xs w-[30%]">STOCK</TableHead>
-                <TableHead className="px-3 py-2 text-xs w-[15%]">VARIACIÓN</TableHead>
-                <TableHead className="px-3 py-2 text-xs w-[15%]">ÚLT. CONTROL</TableHead>
+                <TableHead className="w-[40%]">DESCRIPCIÓN</TableHead>
+                <TableHead className="w-[30%]">STOCK</TableHead>
+                <TableHead className="w-[15%]">VARIACIÓN</TableHead>
+                <TableHead className="w-[15%]">ÚLT. CONTROL</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -327,10 +327,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
                 return (
                   <TableRow key={item.id}>
-                    <TableCell className="px-3 py-2 text-xs w-[40%] min-w-0 overflow-hidden">
+                    <TableCell className="celda-datos w-[40%] min-w-0 overflow-hidden">
                       {item.descripcion}
                     </TableCell>
-                    <TableCell className="px-3 py-2 text-sm tabular-nums w-[30%]">
+                    <TableCell className="celda-datos tabular-nums w-[30%]">
                       <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                         <Button
                           type="button"
@@ -386,7 +386,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="px-3 py-2 text-xs tabular-nums w-[15%]">
+                    <TableCell className="celda-datos tabular-nums w-[15%]">
                       {(() => {
                         if (confirmado) {
                           return (
@@ -412,7 +412,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
                         );
                       })()}
                     </TableCell>
-                    <TableCell className="px-3 py-2 text-xs tabular-nums w-[15%]">
+                    <TableCell className="celda-datos tabular-nums w-[15%]">
                       {fechaPersistida ? (
                         fmtFecha(fechaPersistida)
                       ) : controladoSesion ? (

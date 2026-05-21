@@ -223,7 +223,7 @@ export default function TablaGastos({
           <div data-slot="table-container" className="relative min-h-0 w-full min-w-0 max-w-full">
             <table
               data-slot="table"
-              className="w-full caption-bottom text-sm tabla-gestion-compacta tabla-balance-gastos table-fixed"
+              className="w-full caption-bottom text-sm tabla-gestion-compacta table-fixed"
             >
               <ColgroupAnchos anchos={anchosFullPct} />
               <TableHeader>
