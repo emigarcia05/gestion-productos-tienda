@@ -85,8 +85,6 @@ export default function TablaTienda({
               codigoExterno={item.codigoExterno}
               cantidadVinculos={item._count.productos}
               costoTienda={item.costo}
-              precioListaTienda={item.precioLista}
-              porcIva={item.porcIva}
               marca={item.marca}
               rubro={item.rubro}
               subRubro={item.subRubro}

@@ -19,6 +19,13 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import {
+  CX_PROD_SELECCION_PROM,
+  VINC_COSTO_MAS,
+  VINC_COSTO_SIN,
+  VINC_COSTO_UNO,
+  type ProveedorCxPxFiltro,
+} from "@/lib/cxPxTienda";
 import { cn } from "@/lib/utils";
 
 const FOCUS_KEY = "filtros-cx-px-tienda-focus";
@@ -27,22 +34,28 @@ interface Props {
   marcas: string[];
   rubros: string[];
   subRubros: string[];
+  proveedores: ProveedorCxPxFiltro[];
   totalItems: number;
   qActual: string;
   marcaActual: string;
   rubroActual: string;
   subRubroActual: string;
+  vincCostoActual: string;
+  costoProvActual: string;
 }
 
 export default function FiltrosCxPxTienda({
   marcas,
   rubros,
   subRubros,
+  proveedores,
   totalItems,
   qActual,
   marcaActual,
   rubroActual,
   subRubroActual,
+  vincCostoActual,
+  costoProvActual,
 }: Props) {
   const pathname = usePathname();
 
@@ -63,18 +76,38 @@ export default function FiltrosCxPxTienda({
     },
   });
 
-  const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual);
+  const hayFiltros = !!(
+    q ||
+    marcaActual ||
+    rubroActual ||
+    subRubroActual ||
+    vincCostoActual ||
+    costoProvActual
+  );
 
-  function navigate(updates: { q?: string; marca?: string; rubro?: string; subRubro?: string }) {
+  function navigate(updates: {
+    q?: string;
+    marca?: string;
+    rubro?: string;
+    subRubro?: string;
+    vincCosto?: string;
+    costoProv?: string;
+  }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const subRubroVal = updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
+    const vincCostoVal =
+      updates.vincCosto !== undefined ? updates.vincCosto : vincCostoActual;
+    const costoProvVal =
+      updates.costoProv !== undefined ? updates.costoProv : costoProvActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
+    if (vincCostoVal) p.set("vincCosto", vincCostoVal);
+    if (costoProvVal) p.set("costoProv", costoProvVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
 
@@ -86,6 +119,12 @@ export default function FiltrosCxPxTienda({
   }
   function handleSubRubro(value: string) {
     navigate({ subRubro: value });
+  }
+  function handleVincCosto(value: string) {
+    navigate({ vincCosto: value });
+  }
+  function handleCostoProv(value: string) {
+    navigate({ costoProv: value });
   }
 
   function limpiarFiltros() {
@@ -173,6 +212,60 @@ export default function FiltrosCxPxTienda({
                 {subRubros.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(vincCostoActual)}
+            onLimpiar={() => handleVincCosto("")}
+          >
+            <Select
+              value={vincCostoActual || "none"}
+              onValueChange={(v) => handleVincCosto(v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="filtro-cx-px-vinc-costo" className="input-filtro-unificado">
+                <SelectValue placeholder="VINC. COSTO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">VINC. COSTO</SelectItem>
+                <SelectItem value={VINC_COSTO_SIN}>SIN PROV.</SelectItem>
+                <SelectItem value={VINC_COSTO_UNO}>UN PROV.</SelectItem>
+                <SelectItem value={VINC_COSTO_MAS}>MAS DE 1 PROV.</SelectItem>
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(costoProvActual)}
+            onLimpiar={() => handleCostoProv("")}
+          >
+            <Select
+              value={costoProvActual || "none"}
+              onValueChange={(v) => handleCostoProv(v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="filtro-cx-px-proveedores" className="input-filtro-unificado">
+                <SelectValue placeholder="PROVEEDORES" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PROVEEDORES</SelectItem>
+                <SelectItem value={CX_PROD_SELECCION_PROM}>CX. PROM.</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.prefijo ? `[${p.prefijo}] ` : ""}
+                    {p.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>

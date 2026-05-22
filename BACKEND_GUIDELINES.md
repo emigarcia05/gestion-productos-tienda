@@ -160,7 +160,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.10 Margen sin IVA (Vinculacion Con Prov., modal `/tienda`)
 
-- La columna **MARGEN S/ IVA** en el modal de vínculos usa `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
+- El modal **Vínculos Con Proveedores** ya no muestra margen; `precioLista` / `porcIva` en `ItemTiendaParaTabla` siguen disponibles para otros usos. `calcMargenSinIvaPct` (`src/lib/calculos.ts`) permanece por si otro módulo lo necesita.
 
 ### 1.10b Costo lista para Cx/Px Tienda (`cod_ext_costo_lista`)
 
@@ -172,7 +172,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   3. Si no aplica: espejo DUX (`costo_compra`, `proveedor`).
 - **Candidatos** para asignar o validar: `prod_precios_provee` con `cod_tienda_vinculo = ítem`, `habilitado = true`.
 - **Vínculos** (`src/actions/vinculos.ts`): `getVinculos` devuelve `{ productos, codExtCostoLista }`. Tras `vincularProducto`: `autoAsignarCodExtCostoListaTrasVincular` (solo si FK vacía: un candidato o match DUX). Tras `desvincularProducto`: `limpiarCodExtCostoListaSiCoincide` si la FK apuntaba a ese `cod_ext`. Elección explícita de costo en UI: **`guardarCostoCxProdTiendaAction`** (`cxPxTienda.ts`); `establecerCostoListaTiendaAction` sigue disponible en servidor (misma lógica `establecerCodExtCostoLista`) pero ya no se usa desde `VincularModal`.
-- **Cx & Px Tienda** (`src/actions/cxPxTienda.ts`): `guardarCostoCxProdTiendaAction({ codTienda, seleccion })` — `seleccion = cod_ext` persiste proveedor; `seleccion = prom` limpia FK (`limpiarCodExtCostoLista`). Listado con opciones por ítem desde `prod_precios_provee` habilitados vinculados.
+- **Cx & Px Tienda** (`src/actions/cxPxTienda.ts`): `guardarCostoCxProdTiendaAction({ codTienda, seleccion })` — `seleccion = cod_ext` persiste proveedor; `seleccion = prom` limpia FK (`limpiarCodExtCostoLista`). Listado con opciones por ítem desde `prod_precios_provee` habilitados vinculados. Filtros URL: `vincCosto` (`sin` = ningún vínculo habilitado; `uno` = exactamente uno; `mas` = dos o más, vía `groupBy` en `cod_tienda`); `costoProv` (`prom` = `cod_ext_costo_lista` nulo; si no `id_proveedor` con `some` vínculo habilitado). Proveedores del desplegable: mercadería con al menos un `prod_precios_provee` vinculado (`cod_tienda` no nulo, `habilitado`).
 - **Oficial DUX** (columna OFICIAL en modal): regla distinta — prefijo proveedor vs texto `proveedor` tienda; no sustituye la elección de costo Cx/Px salvo auto-asignación al vincular.
 
 ### 1.11 Coeficiente Tintométrico por proveedor

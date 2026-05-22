@@ -13,8 +13,12 @@ import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import {
   CX_PROD_SELECCION_PROM,
+  VINC_COSTO_MAS,
+  VINC_COSTO_SIN,
+  VINC_COSTO_UNO,
   type ItemCxPxTiendaParaTabla,
   type OpcionCostoCxProdProveedor,
+  type ProveedorCxPxFiltro,
 } from "@/lib/cxPxTienda";
 import {
   calcularCostoPromedioVinculos,
@@ -25,8 +29,50 @@ import {
   listarCandidatosCostoPorCodTienda,
 } from "@/services/costoListaTienda.service";
 
+async function listarProveedoresCxPxFiltro(): Promise<ProveedorCxPxFiltro[]> {
+  const rows = await prisma.proveedor.findMany({
+    where: {
+      proveedorMercaderia: true,
+      listaPrecios: {
+        some: { habilitado: true, codTiendaVinculo: { not: null } },
+      },
+    },
+    orderBy: { nombre: "asc" },
+    select: { id: true, nombre: true, prefijo: true },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    prefijo: p.prefijo ?? "",
+  }));
+}
+
+async function whereFiltroVincCosto(
+  vincCosto: string
+): Promise<Prisma.ListaPrecioTiendaWhereInput | undefined> {
+  if (vincCosto === VINC_COSTO_SIN) {
+    return { listaPreciosProveedores: { none: { habilitado: true } } };
+  }
+  if (vincCosto !== VINC_COSTO_UNO && vincCosto !== VINC_COSTO_MAS) {
+    return undefined;
+  }
+  const grouped = await prisma.listaPrecioProveedor.groupBy({
+    by: ["codTiendaVinculo"],
+    where: { habilitado: true, codTiendaVinculo: { not: null } },
+    _count: { codExt: true },
+  });
+  const codTiendas = grouped
+    .filter((g) => {
+      if (!g.codTiendaVinculo) return false;
+      const n = g._count.codExt;
+      return vincCosto === VINC_COSTO_UNO ? n === 1 : n >= 2;
+    })
+    .map((g) => g.codTiendaVinculo as string);
+  return { codTienda: { in: codTiendas } };
+}
+
 async function getCxPxTiendaEmptyOpciones() {
-  const [rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+  const [rubrosDistinct, subRubrosDistinct, marcasDistinct, proveedores] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
       select: { rubro: true },
       distinct: ["rubro"],
@@ -45,6 +91,7 @@ async function getCxPxTiendaEmptyOpciones() {
       where: { marca: { not: null } },
       orderBy: { marca: "asc" },
     }),
+    listarProveedoresCxPxFiltro(),
   ]);
 
   return {
@@ -54,6 +101,7 @@ async function getCxPxTiendaEmptyOpciones() {
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
+    proveedores,
   };
 }
 
@@ -110,6 +158,8 @@ export async function getCxPxTiendaPageData(params: {
   rubro?: string;
   subRubro?: string;
   marca?: string;
+  vincCosto?: string;
+  costoProv?: string;
   pagina?: string;
 }) {
   const rol = await getRol();
@@ -122,7 +172,15 @@ export async function getCxPxTiendaPageData(params: {
     return getCxPxTiendaEmptyOpciones();
   }
 
-  const { q = "", rubro = "", subRubro = "", marca = "", pagina = "1" } = parsed.data;
+  const {
+    q = "",
+    rubro = "",
+    subRubro = "",
+    marca = "",
+    vincCosto = "",
+    costoProv = "",
+    pagina = "1",
+  } = parsed.data;
 
   const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
@@ -130,6 +188,21 @@ export async function getCxPxTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
+
+  if (vincCosto) {
+    const vincWhere = await whereFiltroVincCosto(vincCosto);
+    if (vincWhere) andParts.push(vincWhere);
+  }
+
+  if (costoProv === CX_PROD_SELECCION_PROM) {
+    andParts.push({ codExtCostoLista: null });
+  } else if (costoProv) {
+    andParts.push({
+      listaPreciosProveedores: {
+        some: { habilitado: true, idProveedor: costoProv },
+      },
+    });
+  }
 
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
@@ -148,7 +221,8 @@ export async function getCxPxTiendaPageData(params: {
     ? { AND: [...andPartsOnlyQ, { subRubro: { not: null } }] }
     : { subRubro: { not: null } };
 
-  const [rows, total, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
+  const [rows, total, rubrosDistinct, subRubrosDistinct, marcasDistinct, proveedores] =
+    await Promise.all([
     prisma.listaPrecioTienda.findMany({
       where,
       orderBy: [{ descripcionTienda: "asc" }],
@@ -180,6 +254,7 @@ export async function getCxPxTiendaPageData(params: {
       where: whereMarcas,
       orderBy: { marca: "asc" },
     }),
+    listarProveedoresCxPxFiltro(),
   ]);
 
   const codTiendas = rows.map((r) => r.codTienda);
@@ -218,6 +293,7 @@ export async function getCxPxTiendaPageData(params: {
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
+    proveedores,
   };
 }
 

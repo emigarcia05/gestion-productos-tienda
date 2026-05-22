@@ -5,7 +5,7 @@ import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import FiltrosCxPxTienda from "@/components/cx-px-tienda/FiltrosCxPxTienda";
 import TablaCxPxTienda from "@/components/cx-px-tienda/TablaCxPxTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type { ItemCxPxTiendaParaTabla } from "@/lib/cxPxTienda";
+import type { ItemCxPxTiendaParaTabla, ProveedorCxPxFiltro } from "@/lib/cxPxTienda";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 interface Props {
@@ -15,11 +15,14 @@ interface Props {
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
   subRubros: Array<{ subRubro: string }>;
+  proveedores: ProveedorCxPxFiltro[];
   rol: Rol;
   q: string;
   rubro: string;
   subRubro: string;
   marca: string;
+  vincCosto: string;
+  costoProv: string;
   paginaNum: number;
 }
 
@@ -35,6 +38,9 @@ export default function CxPxTiendaPageClient({
   subRubro,
   rol,
   marca,
+  proveedores,
+  vincCosto,
+  costoProv,
   paginaNum,
 }: Props) {
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
@@ -48,6 +54,9 @@ export default function CxPxTiendaPageClient({
       marcaActual={marca}
       rubroActual={rubro}
       subRubroActual={subRubro}
+      proveedores={proveedores}
+      vincCostoActual={vincCosto}
+      costoProvActual={costoProv}
     />
   );
 
@@ -62,7 +71,7 @@ export default function CxPxTiendaPageClient({
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
                 basePath="/gestion-productos/tienda/cx-px-tienda"
-                params={{ q, rubro, subRubro, marca }}
+                params={{ q, rubro, subRubro, marca, vincCosto, costoProv }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}

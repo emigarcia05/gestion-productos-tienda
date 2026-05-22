@@ -20,8 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
-import { calcPxCompraFinal, calcMargenSinIvaPct } from "@/lib/calculos";
-import { fmtPrecio, fmtPctEntero } from "@/lib/format";
+import { calcPxCompraFinal } from "@/lib/calculos";
+import { fmtPrecio } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
 import type { Rol } from "@/lib/permisos";
 
@@ -46,9 +46,6 @@ interface Props {
   codigoExterno: string | null;
   cantidadVinculos: number;
   costoTienda: number;
-  /** Precio lista tienda (px. venta) para margen s/ IVA — mismo criterio que `TablaTienda`. */
-  precioListaTienda: number;
-  porcIva: number;
   marca?: string | null;
   rubro?: string | null;
   subRubro?: string | null;
@@ -101,8 +98,6 @@ export default function VincularModal({
   itemDescripcion,
   cantidadVinculos: cantidadInicial,
   costoTienda,
-  precioListaTienda,
-  porcIva,
   marca,
   rubro,
   subRubro,
@@ -289,10 +284,9 @@ export default function VincularModal({
               <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] w-full min-w-0">
                 <Table variant="compact" scrollX={false} className="tabla-vinculos-modal">
                   <colgroup>
-                    <col className="w-[20%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[24%]" />
-                    <col className={puedeEditar ? "w-[24%]" : "w-[38%]"} />
+                    <col className="w-[22%]" />
+                    <col className="w-[28%]" />
+                    <col className={puedeEditar ? "w-[36%]" : "w-[50%]"} />
                     {puedeEditar ? <col className="w-[14%]" /> : null}
                   </colgroup>
                   <TableHeader>
@@ -300,7 +294,6 @@ export default function VincularModal({
                       <TableHead>PREFIJO</TableHead>
                       <TableHead>PX. FINAL</TableHead>
                       <TableHead>VARIAC.</TableHead>
-                      <TableHead>MARGEN</TableHead>
                       {puedeEditar ? (
                         <TableHead>
                           <span className="sr-only">DESVINC.</span>
@@ -312,7 +305,6 @@ export default function VincularModal({
                   <TableBody>
                     {filasOrdenadas.map(({ producto: p, px }) => {
                       const oficial = esOficial(p);
-                      const margenPct = calcMargenSinIvaPct(precioListaTienda, px, porcIva);
                       const bloquearEliminarOficial =
                         oficial && filasOrdenadas.length >= 2;
                       return (
@@ -325,9 +317,6 @@ export default function VincularModal({
                           </TableCell>
                           <TableCell className="celda-datos celda-numero">
                             <DifCosto costoTienda={costoTienda} pxCompraFinalSinIva={px} />
-                          </TableCell>
-                          <TableCell className="celda-datos celda-numero">
-                            {margenPct != null ? fmtPctEntero(margenPct) : ""}
                           </TableCell>
                           {puedeEditar ? (
                             <TableCell className="celda-datos celda-datos--accion-relleno-fila">

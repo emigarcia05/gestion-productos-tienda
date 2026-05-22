@@ -218,9 +218,9 @@ Registro de simplificaciones y reglas para que no reaparezcan patrones inútiles
 
 - **Tabla estándar**: `<Table variant="compact" className="tabla-vinculos-modal">` directamente dentro de `.contenedor-tabla-gestion` con `w-full min-w-0` (mismo ancho útil que el modal). Incluir `<colgroup>` con anchos porcentuales (suma 100%) para `table-layout: fixed`. El wrapper `overflow-x` lo aporta el propio `<Table>` (`data-slot="table-container"`); no añadir `inline-block` ni centrar la tabla al contenido. **`tabla-vinculos-modal`** en `globals.css`: `width: 100%`, `table-layout: fixed`, padding horizontal reducido; **`thead th`** con salto de línea (`white-space: normal`, `overflow-wrap`/`word-break`); última columna (ícono) `nowrap` y ancho fijo. **AppModal** `size="lg"` + `sm:max-w-2xl`, `bodyShellClassName` compacto, **sin** card/borde extra alrededor de la tabla. **No** usar el listado legacy `.modal-vinculos-*`.
 - **Orden de filas**: primero el proveedor **oficial** (coincide `prefijoProveedor` / `proveedorDux` con el prefijo del vínculo); el resto ordenado por **px. final de compra** ascendente. Si no hay oficial reconocido, todas las filas solo por precio.
-- **Columnas** (sin `tabla-bloque-*`): `PREFIJO`, `PX. FINAL`, `VARIAC.`, `MARGEN S/ IVA` y, a la derecha en rol editor, **DESVINC.** (`Trash2` con `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`). El costo Cx/Px se define en **Cx & Px Tienda** (`guardarCostoCxProdTiendaAction`), no en este modal. Márgenes con `calcMargenSinIvaPct` (usa `costo_compra` DUX del ítem). **Regla de desvinculación**: si hay al menos dos vínculos y la fila es el proveedor oficial DUX, el ícono de borrar queda deshabilitado (tooltip); primero debe cambiarse el oficial fuera del modal.
+- **Columnas** (sin `tabla-bloque-*`): `PREFIJO`, `PX. FINAL`, `VARIAC.` y, a la derecha en rol editor, **DESVINC.** (`Trash2` con `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` → `desvincularProducto`). **Regla de desvinculación**: si hay al menos dos vínculos y la fila es el proveedor oficial DUX, el ícono queda deshabilitado (tooltip).
 - **Encabezado del producto**: dos líneas — (1) descripción `text-sm font-semibold text-foreground` con `break-words`; (2) si hay datos, una sola línea `text-xs text-muted-foreground` con **Marca - Rubro - SubRubro** (solo valores no vacíos, unidos con ` - `). El mismo bloque (`flex shrink-0 flex-col gap-1 pb-2 text-center`) se repite en **`SeleccionarProductoModal`** (“Vincular Nuevo Producto”), recibiendo `itemDescripcion`, `marca`, `rubro`, `subRubro` desde **`VincularModal`**.
-- **Props**: además de `costoTienda`, el modal recibe `precioListaTienda` y `porcIva` desde la fila de tienda para el margen.
+- **Props**: `costoTienda` (DUX) para **VARIAC.** frente al px. final del vínculo.
 
 ### Ejemplos de código (referencia para IA)
 
@@ -795,7 +795,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
-**ANALISIS DE PRECIOS** (rol **editor**, orden): `Vinc. Con Prov.` → `Px Competencia` → `Cx & Px Tienda` → `Comp. Por Cat.`. **`FiltrosCxPxTienda`**: **MARCA** → **RUBRO** → **SUB-RUBRO** + búsqueda **DESCRIPCIÓN** (`q` en URL). Grilla **`TablaCxPxTienda`**: **DESCRIPCIÓN** (45%) + **CX PROD.** (55%): `Select` con **CX. PROM.** (promedio de vínculos habilitados, sin persistir FK) y cada proveedor vinculado; al lado el costo (`px_compra_final_sin_iva`). Al elegir proveedor (ej. Merino) → `guardarCostoCxProdTiendaAction` persiste `cod_ext_costo_lista`. Ver `BACKEND_GUIDELINES` §1.10b.
+**ANALISIS DE PRECIOS** (rol **editor**, orden): `Vinc. Con Prov.` → `Px Competencia` → `Cx & Px Tienda` → `Comp. Por Cat.`. **`FiltrosCxPxTienda`**: **MARCA** → **RUBRO** → **SUB-RUBRO** → **VINC. COSTO** (`vincCosto=sin|uno|mas`: sin proveedor / un proveedor / dos o más vínculos habilitados) → **PROVEEDORES** (`costoProv=prom` = Cx. Prom. sin FK; o `id` de proveedor con al menos un vínculo) + búsqueda **DESCRIPCIÓN** (`q`). Grilla **`TablaCxPxTienda`**: **DESCRIPCIÓN** (45%) + **CX PROD.** (55%): `Select` con **CX. PROM.** y cada proveedor vinculado; `guardarCostoCxProdTiendaAction` persiste `cod_ext_costo_lista`. Ver `BACKEND_GUIDELINES` §1.10b.
 
 Rutas legacy **Control Aumentos** (`/tienda/aumentos`, `/gestion-productos/tienda/control-aumento`) redirigen a **Control Stock**.
 
@@ -1064,7 +1064,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-04-27): **Comp. Proveedores** — encabezados de export Excel ajustados: **Act. Proveedor** usa `CODIGO` (antes `CODIGO TIENDA`), y **Act. Margen** usa `CODIGO` + `PORC UTILIDAD` (antes `CODIGO TIENDA` + `MARGEN`).*
 
-*Última actualización (2026-05-20): **`VincularModal`** — quitadas columnas **OFICIAL** y **COSTO CX**; desvincular con ícono **Trash2** a la derecha (§ Tienda — Modal Vínculos).*
+*Última actualización (2026-05-20): **`VincularModal`** — columnas **PREFIJO**, **PX. FINAL**, **VARIAC.** + ícono **Trash2** (desvincular); sin **MARGEN** (§ Tienda — Modal Vínculos).*
 
 *Última actualización (2026-04-21): **Proveedores** — `ProveedorForm`: prefijo **opcional** (sin `required` HTML); **PROVEEDOR MERCADERÍA** sigue siendo SI/NO obligatorio vía Zod. **Filtros Tienda** (`FiltrosTienda.tsx`): opciones de proveedor con `key={p.id}`; si no hay prefijo, solo se muestra el nombre (sin corchetes vacíos). **Calc. Tintométrico** (`TiendaCalcTintometricoPageClient.tsx`): valor del `Select` = `id` del proveedor (no prefijo); etiqueta `[prefijo]` o `[codigoUnico]` si falta prefijo. **Vincular / Seleccionar producto** (`VincularModal` + `SeleccionarProductoModal`): exclusión de duplicados por **`idsProveedoresYaVinculados`** (`proveedorId`), no por prefijo.*
 

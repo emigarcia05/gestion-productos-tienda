@@ -12,6 +12,8 @@ interface Props {
     rubro?: string;
     subRubro?: string;
     marca?: string;
+    vincCosto?: string;
+    costoProv?: string;
     pagina?: string;
   }>;
 }
@@ -23,15 +25,26 @@ export default async function CxPxTiendaPage({ searchParams }: Props) {
   }
 
   const sp = await searchParams;
-  const { q = "", rubro = "", subRubro = "", marca = "", pagina = "1" } = sp;
+  const {
+    q = "",
+    rubro = "",
+    subRubro = "",
+    marca = "",
+    vincCosto = "",
+    costoProv = "",
+    pagina = "1",
+  } = sp;
 
-  const { items, total, totalPaginas, marcas, rubros, subRubros } = await getCxPxTiendaPageData({
-    q,
-    rubro,
-    subRubro,
-    marca,
-    pagina,
-  });
+  const { items, total, totalPaginas, marcas, rubros, subRubros, proveedores } =
+    await getCxPxTiendaPageData({
+      q,
+      rubro,
+      subRubro,
+      marca,
+      vincCosto,
+      costoProv,
+      pagina,
+    });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   return (
@@ -47,6 +60,9 @@ export default async function CxPxTiendaPage({ searchParams }: Props) {
       rubro={rubro}
       subRubro={subRubro}
       marca={marca}
+      vincCosto={vincCosto}
+      costoProv={costoProv}
+      proveedores={proveedores}
       paginaNum={paginaNum}
     />
   );
