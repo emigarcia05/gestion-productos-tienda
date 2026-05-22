@@ -45,7 +45,6 @@ export default async function TiendaPage({ searchParams }: Props) {
       vinculado: vinculado || undefined,
       pagina,
     });
-  const hasFiltros = !!(q || rubro || subRubro || marca || proveedor || vinculado);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   return (
@@ -58,7 +57,6 @@ export default async function TiendaPage({ searchParams }: Props) {
       rubros={rubros}
       subRubros={subRubros}
       rol={rol}
-      hasFiltros={hasFiltros}
       q={q}
       rubro={rubro}
       subRubro={subRubro}

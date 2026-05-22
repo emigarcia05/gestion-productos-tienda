@@ -23,7 +23,6 @@ interface Props {
   rubros: Array<{ rubro: string }>;
   subRubros: Array<{ subRubro: string }>;
   rol: Rol;
-  hasFiltros: boolean;
   q: string;
   rubro: string;
   subRubro: string;
@@ -106,7 +105,6 @@ export default function CompProveedoresPageClient({
   rubros,
   subRubros,
   rol,
-  hasFiltros,
   q,
   rubro,
   subRubro,
@@ -220,14 +218,13 @@ export default function CompProveedoresPageClient({
             <TablaTienda
               items={items}
               rol={rol}
-              sinFiltros={!hasFiltros}
               selectedIds={selectedIds}
               onToggleSelected={toggleItem}
               onToggleAllVisible={toggleAllVisible}
               canBulkSelect={canBulkChange}
             />
           </div>
-          {hasFiltros && totalPaginas > 1 && (
+          {totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
                 basePath="/gestion-productos/tienda/comp-proveedores"

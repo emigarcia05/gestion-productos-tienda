@@ -155,7 +155,8 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
 
-- Filtro de URL **`vinculado`**: en `getTiendaPageData`, `vinculado=no` aplica `listaPreciosProveedores: { none: {} }` (ningún registro en `prod_precios_provee` con `cod_tienda` del ítem); `vinculado=si` aplica `{ some: {} }` (al menos un vínculo). Otros valores se ignoran. Reemplaza al antiguo `mejorPrecio=true` (menor costo disponible vía SQL).
+- **`getTiendaPageData` (Vinculacion Con Prov.)**: sin filtros en URL lista **todo** `prod_precios_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
+- Filtro de URL **`vinculado`**: `vinculado=no` → `listaPreciosProveedores: { none: {} }`; `vinculado=si` → `{ some: {} }`. Otros valores se ignoran.
 - En `getTiendaPageData` (listado **Vinculacion Con Prov.**), cuando hay mejora por un proveedor **no-oficial**:
   - el “mejor proveedor” se define por el menor `px_compra_final_sin_iva` entre proveedores no-oficiales **con `habilitado = true`** en `prod_precios_provee`;
   - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);

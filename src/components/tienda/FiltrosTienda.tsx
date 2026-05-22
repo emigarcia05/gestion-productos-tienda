@@ -132,37 +132,6 @@ export default function FiltrosTienda({
         <FilaFiltrosDesplegables>
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={Boolean(proveedorActual)}
-            onLimpiar={() => handleProveedor("")}
-          >
-            <Select
-              value={proveedorActual || "none"}
-              onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
-            >
-              <SelectTrigger
-                id="filtro-tienda-proveedor"
-                className="input-filtro-unificado"
-              >
-                <SelectValue placeholder="PROVEEDORES" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">PROVEEDORES</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.nombre}>
-                    {p.prefijo ? `[${p.prefijo}] ` : ""}
-                    {p.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FiltroIndividualContainer>
-          <FiltroIndividualContainer
-            className={FILTER_SELECT_WRAPPER_CLASS}
             activo={Boolean(marcaActual)}
             onLimpiar={() => handleMarca("")}
           >
@@ -246,6 +215,37 @@ export default function FiltrosTienda({
                 {subRubros.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedorActual)}
+            onLimpiar={() => handleProveedor("")}
+          >
+            <Select
+              value={proveedorActual || "none"}
+              onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
+            >
+              <SelectTrigger
+                id="filtro-tienda-proveedor"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="PROV. VINC." />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PROV. VINC.</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.nombre}>
+                    {p.prefijo ? `[${p.prefijo}] ` : ""}
+                    {p.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>

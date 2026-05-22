@@ -174,9 +174,6 @@ export async function getTiendaPageData(params: {
 
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
-  /* Sin filtros: no cargar ítems para que la navegación sea más rápida; solo opciones de filtros. */
-  if (andParts.length === 0) return getTiendaEmptyWithOpciones();
-
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
