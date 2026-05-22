@@ -6,6 +6,12 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import type { ServiceResult } from "@/types";
 import type { ProductoCompleto } from "@/types";
+import {
+  autoAsignarCodExtCostoListaTrasVincular,
+  establecerCodExtCostoLista,
+  limpiarCodExtCostoListaSiCoincide,
+  proveedorTextoCoincideConDux,
+} from "@/services/costoListaTienda.service";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { getProveedoresMercaderia as getProveedoresFromProveedores } from "@/actions/proveedores";
@@ -17,14 +23,42 @@ const listarParaVincularFiltrosSchema = z.object({
   q: z.string().max(500).optional(),
 });
 
-export async function getVinculos(itemTiendaCod: string): Promise<ServiceResult<ProductoCompleto[]>> {
+export type VinculosItemTiendaPayload = {
+  productos: ProductoCompleto[];
+  codExtCostoLista: string | null;
+};
+
+export async function getVinculos(
+  itemTiendaCod: string
+): Promise<ServiceResult<VinculosItemTiendaPayload>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
     return { success: false, error: "Sin acceso a tienda." };
   }
   const parsedId = listaPreciosCodTiendaSchema.safeParse(itemTiendaCod);
   if (!parsedId.success) return { success: false, error: "Cód. tienda inválido." };
-  return getProductosVinculadosPorItemTienda(parsedId.data);
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const [productosRes, tienda] = await Promise.all([
+      getProductosVinculadosPorItemTienda(parsedId.data),
+      prisma.listaPrecioTienda.findUnique({
+        where: { codTienda: parsedId.data },
+        select: { codExtCostoLista: true },
+      }),
+    ]);
+    if (!productosRes.success) return productosRes;
+    if (!tienda) return { success: false, error: "Ítem tienda no encontrado." };
+    return {
+      success: true,
+      data: {
+        productos: productosRes.data,
+        codExtCostoLista: tienda.codExtCostoLista,
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { success: false, error: msg };
+  }
 }
 
 /** Proveedores reales desde BD (para modal de vinculación y otros). */
@@ -96,7 +130,9 @@ export async function vincularProducto(
       where: { codExt: parsedProducto.data },
       data: { codTiendaVinculo: parsedItem.data },
     });
+    await autoAsignarCodExtCostoListaTrasVincular(parsedItem.data);
     revalidatePath("/tienda");
+    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al vincular el producto.";
@@ -137,11 +173,11 @@ export async function desvincularProducto(
     const totalVinculados = await prisma.listaPrecioProveedor.count({
       where: { codTiendaVinculo: itemTienda.codTienda },
     });
-    const oficialTxt = (itemTienda.proveedor ?? "").trim().toLowerCase();
-    const esOficial =
-      oficialTxt.length > 0 &&
-      (oficialTxt === (producto.proveedor.nombre ?? "").trim().toLowerCase() ||
-        oficialTxt === (producto.proveedor.prefijo ?? "").trim().toLowerCase());
+    const esOficial = proveedorTextoCoincideConDux(
+      itemTienda.proveedor,
+      producto.proveedor.nombre,
+      producto.proveedor.prefijo
+    );
     if (totalVinculados >= 2 && esOficial) {
       return {
         ok: false,
@@ -149,14 +185,38 @@ export async function desvincularProducto(
           "No se puede desvincular el proveedor oficial mientras exista un alternativo. Primero cambiá el oficial y luego eliminá la vinculación.",
       };
     }
+    await limpiarCodExtCostoListaSiCoincide(itemTienda.codTienda, parsed.data);
     await prisma.listaPrecioProveedor.update({
       where: { codExt: parsed.data },
       data: { codTiendaVinculo: null },
     });
     revalidatePath("/tienda");
+    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al desvincular el producto.";
     return { ok: false, error: message };
   }
+}
+
+/** Define qué fila `prod_precios_provee` alimenta CX. COMPRA en Cx/Px Tienda. */
+export async function establecerCostoListaTiendaAction(
+  itemTiendaCod: string,
+  productoListaCodExt: string
+): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) {
+    return { ok: false, error: "Sin acceso a tienda." };
+  }
+  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const parsedItem = listaPreciosCodTiendaSchema.safeParse(itemTiendaCod);
+  const parsedProducto = listaPreciosCodExtSchema.safeParse(productoListaCodExt);
+  if (!parsedItem.success || !parsedProducto.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const res = await establecerCodExtCostoLista(parsedItem.data, parsedProducto.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidatePath("/tienda");
+  revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+  return { ok: true, data: undefined };
 }

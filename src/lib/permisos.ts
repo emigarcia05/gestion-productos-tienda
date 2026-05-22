@@ -58,6 +58,11 @@ export const PERMISOS = {
     editar: { simple: false, editor: true }, // CRUD competidores + sincronizar precios desde webs
   },
 
+  // ─── Módulo Cx y Px Tienda (/gestion-productos/tienda/cx-px-tienda) ──────────
+  cxPxTienda: {
+    acceso: { simple: false, editor: true },
+  },
+
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
     /** Vinc. Con Prov. (/gestion-productos/tienda/comp-proveedores). Módulo Análisis de Precios — solo editor. */

@@ -162,6 +162,18 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 - La columna **MARGEN S/ IVA** en el modal de vínculos usa `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
 
+### 1.10b Costo lista para Cx/Px Tienda (`cod_ext_costo_lista`)
+
+- **Columna** `prod_precios_tienda.cod_ext_costo_lista` (`TEXT NULL`, FK → `prod_precios_provee.cod_ext`). Migración **`20260520120000_add_cod_ext_costo_lista_prod_precios_tienda`**: índice, FK y backfill (único vínculo habilitado por ítem, o match texto DUX ↔ nombre/prefijo proveedor).
+- **Convivencia con DUX**: `costo_compra` y `proveedor` en tienda siguen siendo **espejo DUX** (`syncListaPrecioTienda.service.ts`); la sync **no** escribe ni borra `cod_ext_costo_lista`. **PX. LISTA** en Cx/Px sigue siendo `px_lista_tienda` (DUX).
+- **CX. COMPRA** y **PROVEEDOR** en la grilla Cx/Px (`getCxPxTiendaPageData` → `resolverCostoCxPxParaFila` en `src/services/costoListaTienda.service.ts`):
+  1. Si hay FK persistida y join `costoListaProveedor`: **`px_compra_final_sin_iva`** y prefijo/nombre del proveedor de esa fila lista.
+  2. Si FK null: fallback solo lectura — único candidato habilitado (`cod_tienda_vinculo` + `habilitado`) o fila cuyo proveedor coincide con texto DUX (`proveedorTextoCoincideConDux`).
+  3. Si no aplica: espejo DUX (`costo_compra`, `proveedor`).
+- **Candidatos** para asignar o validar: `prod_precios_provee` con `cod_tienda_vinculo = ítem`, `habilitado = true`.
+- **Vínculos** (`src/actions/vinculos.ts`): `getVinculos` devuelve `{ productos, codExtCostoLista }`. Tras `vincularProducto`: `autoAsignarCodExtCostoListaTrasVincular` (solo si FK vacía: un candidato o match DUX). Tras `desvincularProducto`: `limpiarCodExtCostoListaSiCoincide` si la FK apuntaba a ese `cod_ext`. Mutación explícita: `establecerCostoListaTiendaAction(codTienda, codExt)` → `establecerCodExtCostoLista`; revalida `/tienda` y `/gestion-productos/tienda/cx-px-tienda`.
+- **Oficial DUX** (columna OFICIAL en modal): regla distinta — prefijo proveedor vs texto `proveedor` tienda; no sustituye la elección de costo Cx/Px salvo auto-asignación al vincular.
+
 ### 1.11 Coeficiente Tintométrico por proveedor
 
 - Persistencia en `global_proveedores.coeficiente_tintometrico` (`NUMERIC(12,6)`, `NOT NULL`, default `1`).
@@ -961,6 +973,7 @@ Antes de entregar código nuevo o modificado, verificar:
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
 - **`tienda.ts`**: `getTiendaPageData` y `getUltimoSync` comprueban `getRol()` + `puede()`. **Vinc. Con Prov.** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control Aumentos** retirado de navegación (rutas legacy redirigen). `convertirEnProveedor` conserva validación Zod pero devuelve error funcional (cambio manual de proveedor en BD deshabilitado).
+- **`cxPxTienda.ts`**: `getCxPxTiendaPageData` — listado paginado de `prod_precios_tienda` con filtros URL `q`, `marca`, `rubro`, `subRubro`; `getCxPxTiendaPageParamsSchema` (Zod). Permiso `PERMISOS.cxPxTienda.acceso` (solo **editor**). **CX. COMPRA** / **PROVEEDOR** vía `resolverCostoCxPxParaFila` y FK `cod_ext_costo_lista` (ver §1.10b). **`costoListaTienda.service.ts`**: validar, establecer, limpiar y auto-asignar costo lista.
 - **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`; en **`update`** se persisten **todas** las columnas sincronizadas desde DUX, incluido **`cod_ext`**. Si DUX cambia `cod_ext`/`proveedor` para el mismo `cod_tienda`, la misma fila se actualiza (no se crea otra por `cod_ext`). Al finalizar la sync elimina de `prod_precios_tienda` los `cod_tienda` que ya no llegaron en la corrida actual desde DUX.
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
 - **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.

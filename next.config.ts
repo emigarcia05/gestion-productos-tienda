@@ -127,6 +127,7 @@ const nextConfig: NextConfig = {
       { source: "/gestion-productos/proveedores/comparacion-categorias", destination: "/proveedores/comparacion-categorias" },
       { source: "/gestion-productos/precios-competencia", destination: "/precios-competencia" },
       { source: "/gestion-productos/proveedores/lista", destination: "/proveedores/lista" },
+      { source: "/gestion-productos/tienda/cx-px-tienda", destination: "/tienda/cx-px" },
       { source: "/gestion-productos/tienda/comp-proveedores", destination: "/tienda" },
       { source: "/gestion-productos/tienda/control-stock", destination: "/stock" },
       { source: "/gestion-productos/tienda/calc-tintometrico", destination: "/tienda/tintometrico" },

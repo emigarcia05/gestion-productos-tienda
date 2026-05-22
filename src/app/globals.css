@@ -1148,6 +1148,36 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
+/* Tabla Cx y Px Tienda: anchos por columna (6 columnas). */
+.tabla-cx-px-tienda-listado {
+  table-layout: fixed;
+  width: 100%;
+}
+.tabla-cx-px-tienda-listado thead th:nth-child(1),
+.tabla-cx-px-tienda-listado tbody td:nth-child(1) {
+  width: 11%;
+}
+.tabla-cx-px-tienda-listado thead th:nth-child(2),
+.tabla-cx-px-tienda-listado tbody td:nth-child(2) {
+  width: 38%;
+}
+.tabla-cx-px-tienda-listado thead th:nth-child(3),
+.tabla-cx-px-tienda-listado tbody td:nth-child(3) {
+  width: 12%;
+}
+.tabla-cx-px-tienda-listado thead th:nth-child(4),
+.tabla-cx-px-tienda-listado tbody td:nth-child(4) {
+  width: 12%;
+}
+.tabla-cx-px-tienda-listado thead th:nth-child(5),
+.tabla-cx-px-tienda-listado tbody td:nth-child(5) {
+  width: 13%;
+}
+.tabla-cx-px-tienda-listado thead th:nth-child(6),
+.tabla-cx-px-tienda-listado tbody td:nth-child(6) {
+  width: 14%;
+}
+
 /* Tabla Tienda / Vinculacion Con Prov.: COD. TIENDA 15% + DESCRIPCIÓN 67% + VINCULACIÓN 18%. */
 .tabla-tienda-listado {
   table-layout: fixed;

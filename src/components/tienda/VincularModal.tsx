@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
-import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -19,7 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
+import {
+  getVinculos,
+  vincularProducto,
+  desvincularProducto,
+  establecerCostoListaTiendaAction,
+} from "@/actions/vinculos";
 import { calcPxCompraFinal, calcMargenSinIvaPct } from "@/lib/calculos";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
@@ -117,6 +122,7 @@ export default function VincularModal({
   const setOpen = onOpenChange !== undefined ? onOpenChange : setOpenInterno;
   const [abrirSelector, setAbrirSelector] = useState(false);
   const [vinculados, setVinculados] = useState<ProductoConProveedor[]>([]);
+  const [codExtCostoLista, setCodExtCostoLista] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [cantidad, setCantidad] = useState(cantidadInicial);
   const [isPending, startTransition] = useTransition();
@@ -125,8 +131,10 @@ export default function VincularModal({
     if (!open) return;
     queueMicrotask(() => setCargando(true));
     getVinculos(itemTiendaId).then((result) => {
-      if (result.success) setVinculados(result.data);
-      else toast.error(result.error);
+      if (result.success) {
+        setVinculados(result.data.productos);
+        setCodExtCostoLista(result.data.codExtCostoLista);
+      } else toast.error(result.error);
       setCargando(false);
     });
   }, [open, itemTiendaId]);
@@ -162,6 +170,18 @@ export default function VincularModal({
   function esOficial(p: ProductoConProveedor): boolean {
     if (prefijoPrincipal === "") return false;
     return p.proveedor.prefijo.trim().toLowerCase() === prefijoPrincipal;
+  }
+
+  function handleEstablecerCostoCx(producto: ProductoConProveedor) {
+    startTransition(async () => {
+      const res = await establecerCostoListaTiendaAction(itemTiendaId, producto.id);
+      if (res.ok) {
+        setCodExtCostoLista(producto.id);
+        toast.success(`Costo Cx/Px: ${producto.proveedor.prefijo}`);
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   function handleDesvincular(producto: ProductoConProveedor) {
@@ -202,8 +222,9 @@ export default function VincularModal({
       if (res.ok) {
         const refreshed = await getVinculos(itemTiendaId);
         if (refreshed.success) {
-          setVinculados(refreshed.data);
-          setCantidad(refreshed.data.length);
+          setVinculados(refreshed.data.productos);
+          setCodExtCostoLista(refreshed.data.codExtCostoLista);
+          setCantidad(refreshed.data.productos.length);
         } else {
           setVinculados((prev) => [
             ...prev,
@@ -292,12 +313,13 @@ export default function VincularModal({
                     <col className="w-[14%]" />
                     <col className="w-[22%]" />
                     <col className="w-[14%]" />
-                    <col className={puedeEditar ? "w-[24%]" : "w-[34%]"} />
-                    {puedeEditar ? <col className="w-[10%]" /> : null}
+                    <col className={puedeEditar ? "w-[20%]" : "w-[30%]"} />
+                    {puedeEditar ? <col className="w-[14%]" /> : null}
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead>OFICIAL</TableHead>
+                      <TableHead>COSTO CX</TableHead>
                       <TableHead>PREFIJO</TableHead>
                       <TableHead>PX. FINAL</TableHead>
                       <TableHead>VARIAC.</TableHead>
@@ -313,6 +335,7 @@ export default function VincularModal({
                   <TableBody>
                     {filasOrdenadas.map(({ producto: p, px }) => {
                       const oficial = esOficial(p);
+                      const esCostoCx = codExtCostoLista === p.id;
                       const margenPct = calcMargenSinIvaPct(precioListaTienda, px, porcIva);
                       const bloquearEliminarOficial =
                         oficial && filasOrdenadas.length >= 2;
@@ -320,7 +343,33 @@ export default function VincularModal({
                         <TableRow key={p.id}>
                           <TableCell className="celda-datos text-center">
                             {oficial ? (
-                              <span className="sr-only">Proveedor oficial actual</span>
+                              <span className="sr-only">Proveedor oficial Dux</span>
+                            ) : (
+                              <span className="text-muted-foreground" aria-hidden>
+                                —
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="celda-datos text-center">
+                            {esCostoCx ? (
+                              <span
+                                className="inline-flex items-center justify-center rounded-full bg-primary/15 p-1"
+                                title="Costo usado en Cx y Px Tienda"
+                              >
+                                <Check className="h-3.5 w-3.5 text-primary" aria-hidden />
+                                <span className="sr-only">Costo Cx/Px</span>
+                              </span>
+                            ) : puedeEditar ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                disabled={isPending}
+                                onClick={() => handleEstablecerCostoCx(p)}
+                              >
+                                Usar
+                              </Button>
                             ) : (
                               <span className="text-muted-foreground" aria-hidden>
                                 —

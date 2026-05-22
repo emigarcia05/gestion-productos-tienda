@@ -49,7 +49,7 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "pedidos" | "ayuda-vendedor" | "proveedores" | "analisis-precios";
+type ModuleId = "pedidos" | "ayuda-vendedor" | "proveedores" | "analisis-precios" | "cx-px-tienda";
 type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
@@ -195,6 +195,14 @@ const MODULES: NavModule[] = [
       },
     ],
   },
+  {
+    id: "cx-px-tienda",
+    label: "CX Y PX TIENDA",
+    icon: <CircleDollarSign className={iconClass} />,
+    href: "/gestion-productos/tienda/cx-px-tienda",
+    permiso: PERMISOS.cxPxTienda.acceso,
+    submodules: [],
+  },
 ];
 
 const FINANZAS_MODULES: NavModule[] = [
@@ -294,6 +302,12 @@ function getOpenModule(pathname: string): SidebarModuleId {
     return "ayuda-vendedor";
   }
   if (
+    pathname.startsWith("/gestion-productos/tienda/cx-px-tienda") ||
+    pathname.startsWith("/tienda/cx-px")
+  ) {
+    return "cx-px-tienda";
+  }
+  if (
     pathname.startsWith("/gestion-productos/tienda/comp-proveedores") ||
     pathname === "/gestion-productos/tienda" ||
     pathname.startsWith("/tienda") ||
@@ -333,8 +347,10 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     );
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
+  if (href === "/gestion-productos/tienda/cx-px-tienda")
+    return pathname === "/gestion-productos/tienda/cx-px-tienda" || pathname.startsWith("/tienda/cx-px");
   if (href === "/gestion-productos/tienda/comp-proveedores")
-    return pathname === "/gestion-productos/tienda/comp-proveedores" || pathname === "/tienda" || pathname.startsWith("/tienda/comp");
+    return pathname === "/gestion-productos/tienda/comp-proveedores" || pathname === "/tienda";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
   if (href === "/finanzas/tesoreria")
     return pathname === "/finanzas/tesoreria" || pathname === "/finanzas";
