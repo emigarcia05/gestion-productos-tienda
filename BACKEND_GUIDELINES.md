@@ -153,18 +153,14 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Control Aumentos (Excel)**: columna **`COSTO`** = **`px_compra_final_sin_iva`** del vínculo proveedor oficial; exportación sólo **`CODIGO`** y **`COSTO`** (sin columnas auxiliares salvo nuevo requerimiento).
 - Migración de columna física: **`20260514120000_rename_prod_precios_provee_px_compra_final_sin_iva`** (`px_compra_final` → `px_compra_final_sin_iva`, misma expresión GENERATED).
 
-### 1.9 Campos calculados de “Tabla Tienda” (prefijos/dif por mejor proveedor)
+### 1.9 Listado Vinculacion Con Prov. (`getTiendaPageData`)
 
-- **`getTiendaPageData` (Vinculacion Con Prov.)**: sin filtros en URL lista **todo** `prod_precios_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
+- **`getTiendaPageData`**: sin filtros en URL lista **todo** `prod_precios_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
 - Filtro de URL **`vinculado`**: `vinculado=no` → `listaPreciosProveedores: { none: {} }`; `vinculado=si` → `{ some: {} }`. Otros valores se ignoran.
-- En `getTiendaPageData` (listado **Vinculacion Con Prov.**), cuando hay mejora por un proveedor **no-oficial**:
-  - el “mejor proveedor” se define por el menor `px_compra_final_sin_iva` entre proveedores no-oficiales **con `habilitado = true`** en `prod_precios_provee`;
-  - el “DIF.” se calcula como porcentaje entero de mejora vs `costo_compra` y se setea en `difMejorPrecioPctEntero` (ej. `-12%` en UI, renderizado como reducción);
-  - si no existe proveedor que mejore el costo, los campos se devuelven como `null` para que la UI renderice vacío.
 
-### 1.10 Margen sin IVA (Vinculacion Con Prov., modal y export `/tienda`)
+### 1.10 Margen sin IVA (Vinculacion Con Prov., modal `/tienda`)
 
-- La columna **MARGEN S/ IVA** en el modal de vínculos y los cálculos de export usan `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
+- La columna **MARGEN S/ IVA** en el modal de vínculos usa `px_lista_tienda` → `precioLista` y `costo_compra` → `costo` en `ItemTiendaParaTabla`; el cálculo vive en `calcMargenSinIvaPct` (`src/lib/calculos.ts`): \(((pxLista/(1+\mathrm{IVA}/100))/\mathrm{costo})-1)\times 100\). El IVA por ítem viene de `porcIva` (hoy 21 en el mapeo de `getTiendaPageData`). No requiere campos nuevos en la Action: es derivado en el cliente.
 
 ### 1.11 Coeficiente Tintométrico por proveedor
 
@@ -964,7 +960,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
-- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` conserva validación Zod pero devuelve error funcional (cambio manual de proveedor en BD deshabilitado). `cambiarAProveedorMenorCostoAction` (masiva) exige `esEditor()`, recibe IDs validados con Zod, selecciona candidato no oficial con **menor costo y `habilitado = true`** y devuelve solo payload para exportar **Act. Proveedor** / **Act. Margen**; **no** actualiza `prod_precios_tienda`.
+- **`tienda.ts`**: `getTiendaPageData`, `getUltimoSync` y `getControlAumentos` comprueban `getRol()` + `puede()` (`PERMISOS.tienda.acceso` / `controlAumentos`). `convertirEnProveedor` conserva validación Zod pero devuelve error funcional (cambio manual de proveedor en BD deshabilitado).
 - **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`; en **`update`** se persisten **todas** las columnas sincronizadas desde DUX, incluido **`cod_ext`**. Si DUX cambia `cod_ext`/`proveedor` para el mismo `cod_tienda`, la misma fila se actualiza (no se crea otra por `cod_ext`). Al finalizar la sync elimina de `prod_precios_tienda` los `cod_tienda` que ya no llegaron en la corrida actual desde DUX.
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
 - **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.

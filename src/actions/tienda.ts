@@ -5,7 +5,6 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { z } from "zod";
 import type { ActionResult } from "@/lib/types";
 import { filtroTexto } from "@/lib/busqueda";
-import { calcMargenSinIvaPct, calcPxCompraFinal } from "@/lib/calculos";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -35,7 +34,6 @@ async function getTiendaEmptyWithOpciones() {
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
-    setMejorPrecio: new Set<string>(),
     totalPaginas: 0,
   };
 }
@@ -73,17 +71,6 @@ export interface ItemTiendaParaTabla {
   stockeable: boolean;
   habilitado: boolean;
   _count: { productos: number };
-  /**
-   * Si hay ≥2 proveedores vinculados y al menos un no oficial con px_compra_final_sin_iva < costo_compra:
-   * prefijo del proveedor no-oficial con el menor px_compra_final_sin_iva. Null en caso contrario.
-   */
-  mejorProveedorNoOficialPrefijo: string | null;
-  /**
-   * Si hay mejora (no-oficial mejora el costo):
-   * diferencia en porcentaje entero de la mejora vs costo (ej. +12%).
-   * Null en caso contrario.
-   */
-  difMejorPrecioPctEntero: number | null;
 }
 
 export interface ProveedorTintoLts {
@@ -202,60 +189,6 @@ export async function getTiendaPageData(params: {
     prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: whereMarcas, orderBy: { marca: "asc" } }),
   ]);
 
-  const linkedPrices =
-    rows.length > 0
-      ? await prisma.listaPrecioProveedor.findMany({
-          where: { codTiendaVinculo: { in: rows.map((r) => r.codTienda) } },
-          select: {
-            codTiendaVinculo: true,
-            pxCompraFinalSinIva: true,
-            pxListaProveedor: true,
-            dtoProveedor: true,
-            dtoMarca: true,
-            dtoRubro: true,
-            dtoCantidad: true,
-            dtoFinanciero: true,
-            cxTransporte: true,
-            proveedor: { select: { nombre: true } },
-          },
-        })
-      : [];
-
-  const proveedorOficialPorTienda = new Map<string, string>();
-  for (const r of rows) {
-    const txt = (r.proveedor ?? "").trim().toLowerCase();
-    proveedorOficialPorTienda.set(r.codTienda, txt);
-  }
-
-  // Mínimo px_compra_final_sin_iva solo entre proveedores NO oficiales por ítem tienda.
-  // Guardamos también el nombre (normalizado) del mejor proveedor no-oficial para poder resolver su prefijo luego.
-  const minPxNoOficialPorTienda = new Map<string, { px: number; mejorProveedorNombre: string | null }>();
-  for (const lp of linkedPrices) {
-    if (!lp.codTiendaVinculo) continue;
-    const oficial = proveedorOficialPorTienda.get(lp.codTiendaVinculo) ?? "";
-    const nombreProveedor = (lp.proveedor?.nombre ?? "").trim().toLowerCase();
-    if (nombreProveedor === oficial) continue; // excluir proveedor oficial
-    let n: number;
-    if (lp.pxCompraFinalSinIva != null) {
-      n = Number(lp.pxCompraFinalSinIva);
-    } else {
-      const pxLista = Number(lp.pxListaProveedor);
-      n = calcPxCompraFinal(
-        pxLista,
-        lp.dtoRubro,
-        lp.dtoCantidad,
-        lp.cxTransporte,
-        lp.dtoProveedor,
-        lp.dtoMarca,
-        lp.dtoFinanciero
-      );
-    }
-    const prev = minPxNoOficialPorTienda.get(lp.codTiendaVinculo);
-    if (prev === undefined || n < prev.px) {
-      minPxNoOficialPorTienda.set(lp.codTiendaVinculo, { px: n, mejorProveedorNombre: nombreProveedor || null });
-    }
-  }
-
   const nombreToPrefijo = new Map(
     proveedores.map((p) => [
       p.nombre.toLowerCase().trim(),
@@ -266,21 +199,6 @@ export async function getTiendaPageData(params: {
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
     const proveedorTexto = r.proveedor?.trim() ?? null;
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
-    const costo = Number(r.costoCompra);
-    const minData = minPxNoOficialPorTienda.get(r.codTienda);
-    const cantidadVinculos = r._count.listaPreciosProveedores;
-
-    /* Solo hay mejora si hay ≥2 vinculados y un no-oficial mejora el costo */
-    const tieneMejora = cantidadVinculos >= 2 && minData?.px != null && minData.px < costo && costo > 0;
-
-    const mejorProveedorNoOficialPrefijo = tieneMejora
-      ? nombreToPrefijo.get(minData?.mejorProveedorNombre ?? "") ?? null
-      : null;
-
-    const difMejorPrecioPctEntero = tieneMejora
-      ? Math.round(((costo - minData!.px) / costo) * 100)
-      : null;
-
     return {
       id: r.codTienda,
       codItem: r.codTienda,
@@ -290,7 +208,7 @@ export async function getTiendaPageData(params: {
       marca: r.marca,
       proveedorDux: prefijo,
       codigoExterno: r.codExt,
-      costo,
+      costo: Number(r.costoCompra),
       porcIva: 21,
       precioLista: Number(r.pxListaTienda),
       precioMayorista: 0,
@@ -299,8 +217,6 @@ export async function getTiendaPageData(params: {
       stockeable: r.stockeable,
       habilitado: true,
       _count: { productos: r._count.listaPreciosProveedores },
-      mejorProveedorNoOficialPrefijo,
-      difMejorPrecioPctEntero,
     };
   });
 
@@ -319,7 +235,6 @@ export async function getTiendaPageData(params: {
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
-    setMejorPrecio: new Set<string>(),
     totalPaginas,
   };
 }
@@ -356,25 +271,6 @@ export interface ControlAumentosData {
   individual:  ItemAumento[];
 }
 
-export interface ActProveedorExcelRow {
-  codigoTienda: string;
-  codigoExterno: string;
-  proveedor: string;
-  costo: number;
-}
-
-export interface ActMargenExcelRow {
-  codigoTienda: string;
-  margen: number;
-}
-
-export interface CambiarProvMenorCostoResult {
-  proveedorRows: ActProveedorExcelRow[];
-  margenRows: ActMargenExcelRow[];
-  actualizados: number;
-  omitidos: number;
-}
-
 export async function getControlAumentos(): Promise<ControlAumentosData> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.controlAumentos)) {
@@ -405,177 +301,7 @@ export async function convertirEnProveedor(
   }
   return {
     ok: false,
-    error:
-      "La modificación de proveedor en base de datos está deshabilitada. Usá la exportación Excel para gestionar cambios.",
+    error: "La modificación de proveedor en base de datos está deshabilitada.",
   };
 }
 
-const cambiarProvMenorCostoSchema = z.object({
-  itemTiendaIds: z.array(z.string().min(1).max(128)).min(1).max(500),
-});
-
-function normalizarProveedor(value: string | null | undefined): string {
-  return (value ?? "").trim().toLowerCase();
-}
-
-function esProveedorOficial(
-  oficialTexto: string,
-  proveedor: { nombre: string | null; prefijo: string | null } | null
-): boolean {
-  if (!oficialTexto) return false;
-  const nombre = normalizarProveedor(proveedor?.nombre);
-  const prefijo = normalizarProveedor(proveedor?.prefijo);
-  return oficialTexto === nombre || oficialTexto === prefijo;
-}
-
-export async function cambiarAProveedorMenorCostoAction(
-  raw: unknown
-): Promise<ActionResult<CambiarProvMenorCostoResult>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acceso)) {
-    return { ok: false, error: "Sin acceso a tienda." };
-  }
-  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-
-  const parsed = cambiarProvMenorCostoSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: "Productos seleccionados inválidos." };
-  }
-
-  const ids = Array.from(new Set(parsed.data.itemTiendaIds));
-  if (ids.length === 0) {
-    return { ok: false, error: "No hay productos seleccionados." };
-  }
-
-  const itemsTienda = await prisma.listaPrecioTienda.findMany({
-    where: { codTienda: { in: ids } },
-    select: {
-      codTienda: true,
-      proveedor: true,
-      codExt: true,
-      costoCompra: true,
-      pxListaTienda: true,
-    },
-  });
-
-  if (itemsTienda.length === 0) {
-    return { ok: false, error: "No se encontraron productos para actualizar." };
-  }
-
-  const vinculados = await prisma.listaPrecioProveedor.findMany({
-    where: {
-      codTiendaVinculo: { in: itemsTienda.map((i) => i.codTienda) },
-      habilitado: true,
-    },
-    select: {
-      codTiendaVinculo: true,
-      codExt: true,
-      pxCompraFinalSinIva: true,
-      pxListaProveedor: true,
-      dtoProveedor: true,
-      dtoMarca: true,
-      dtoRubro: true,
-      dtoCantidad: true,
-      dtoFinanciero: true,
-      cxTransporte: true,
-      proveedor: { select: { nombre: true, prefijo: true } },
-    },
-  });
-
-  const vinculadosPorItem = new Map<string, typeof vinculados>();
-  for (const v of vinculados) {
-    if (!v.codTiendaVinculo) continue;
-    const lista = vinculadosPorItem.get(v.codTiendaVinculo) ?? [];
-    lista.push(v);
-    vinculadosPorItem.set(v.codTiendaVinculo, lista);
-  }
-
-  const updates: Array<{
-    itemId: string;
-    codigoTienda: string;
-    codigoExterno: string;
-    proveedor: string;
-    costo: number;
-    margen: number;
-  }> = [];
-
-  for (const item of itemsTienda) {
-    const oficialTexto = normalizarProveedor(item.proveedor);
-    const candidatos = (vinculadosPorItem.get(item.codTienda) ?? [])
-      .filter((v) => !esProveedorOficial(oficialTexto, v.proveedor))
-      .map((v) => {
-        const costo =
-          v.pxCompraFinalSinIva != null
-            ? Number(v.pxCompraFinalSinIva)
-            : calcPxCompraFinal(
-                Number(v.pxListaProveedor),
-                v.dtoRubro,
-                v.dtoCantidad,
-                v.cxTransporte,
-                v.dtoProveedor,
-                v.dtoMarca,
-                v.dtoFinanciero
-              );
-        return { vinculo: v, costo };
-      })
-      .filter((c) => Number.isFinite(c.costo) && c.costo > 0);
-
-    if (candidatos.length === 0) continue;
-
-    candidatos.sort((a, b) => a.costo - b.costo);
-    const mejor = candidatos[0];
-    const costoActual = Number(item.costoCompra);
-    if (!(mejor.costo < costoActual)) continue;
-
-    const proveedorNombre = mejor.vinculo.proveedor?.nombre?.trim() ?? "";
-    const proveedorPrefijo = mejor.vinculo.proveedor?.prefijo?.trim() ?? "";
-    const proveedorTexto = proveedorNombre || proveedorPrefijo;
-    if (!proveedorTexto) continue;
-
-    const margen = calcMargenSinIvaPct(
-      Number(item.pxListaTienda),
-      mejor.costo,
-      21
-    );
-    if (margen == null) continue;
-
-    updates.push({
-      itemId: item.codTienda,
-      codigoTienda: item.codTienda,
-      codigoExterno: mejor.vinculo.codExt,
-      proveedor: proveedorTexto,
-      costo: mejor.costo,
-      margen,
-    });
-  }
-
-  if (updates.length === 0) {
-    return {
-      ok: true,
-      data: {
-        proveedorRows: [],
-        margenRows: [],
-        actualizados: 0,
-        omitidos: itemsTienda.length,
-      },
-    };
-  }
-
-  return {
-    ok: true,
-    data: {
-      proveedorRows: updates.map((u) => ({
-        codigoTienda: u.codigoTienda,
-        codigoExterno: u.codigoExterno,
-        proveedor: u.proveedor,
-        costo: u.costo,
-      })),
-      margenRows: updates.map((u) => ({
-        codigoTienda: u.codigoTienda,
-        margen: u.margen,
-      })),
-      actualizados: updates.length,
-      omitidos: itemsTienda.length - updates.length,
-    },
-  };
-}
