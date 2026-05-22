@@ -49,7 +49,7 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "pedidos" | "ayuda-vendedor" | "proveedores" | "analisis-precios" | "cx-px-tienda";
+type ModuleId = "pedidos" | "ayuda-vendedor" | "proveedores" | "analisis-precios";
 type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
@@ -183,9 +183,15 @@ const MODULES: NavModule[] = [
       },
       {
         href: "/gestion-productos/precios-competencia",
-        label: "Precios Competencia",
+        label: "Px Competencia",
         icon: <GitCompare className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.competenciaPrecios.acceso,
+      },
+      {
+        href: "/gestion-productos/tienda/cx-px-tienda",
+        label: "Cx & Px Tienda",
+        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.cxPxTienda.acceso,
       },
       {
         href: "/gestion-productos/proveedores/comparacion-categorias",
@@ -194,14 +200,6 @@ const MODULES: NavModule[] = [
         permiso: PERMISOS.comparacionCategorias.acceso,
       },
     ],
-  },
-  {
-    id: "cx-px-tienda",
-    label: "CX Y PX TIENDA",
-    icon: <CircleDollarSign className={iconClass} />,
-    href: "/gestion-productos/tienda/cx-px-tienda",
-    permiso: PERMISOS.cxPxTienda.acceso,
-    submodules: [],
   },
 ];
 
@@ -303,14 +301,11 @@ function getOpenModule(pathname: string): SidebarModuleId {
   }
   if (
     pathname.startsWith("/gestion-productos/tienda/cx-px-tienda") ||
-    pathname.startsWith("/tienda/cx-px")
-  ) {
-    return "cx-px-tienda";
-  }
-  if (
+    pathname.startsWith("/tienda/cx-px") ||
     pathname.startsWith("/gestion-productos/tienda/comp-proveedores") ||
     pathname === "/gestion-productos/tienda" ||
-    pathname.startsWith("/tienda") ||
+    pathname.startsWith("/tienda/comp-proveedores") ||
+    pathname === "/tienda" ||
     pathname.startsWith("/gestion-productos/precios-competencia") ||
     pathname.startsWith("/precios-competencia") ||
     pathname.startsWith("/gestion-productos/proveedores/competencia-precios") ||

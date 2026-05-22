@@ -219,3 +219,37 @@ export async function listarCandidatosCostoPorCodTienda(codTienda: string) {
     },
   });
 }
+
+export function etiquetaProveedorCosto(prefijo: string | null, nombre: string): string {
+  const p = (prefijo ?? "").trim();
+  if (p) return p;
+  return nombre.trim();
+}
+
+export function costoDesdeCandidato(pxCompraFinalSinIva: unknown): number {
+  return toNum(pxCompraFinalSinIva);
+}
+
+/** Promedio de `px_compra_final_sin_iva` entre vínculos habilitados (> 0). */
+export function calcularCostoPromedioVinculos(
+  candidatos: Array<{ pxCompraFinalSinIva: unknown }>
+): number | null {
+  const valores = candidatos
+    .map((c) => toNum(c.pxCompraFinalSinIva))
+    .filter((n) => n > 0);
+  if (valores.length === 0) return null;
+  return valores.reduce((a, b) => a + b, 0) / valores.length;
+}
+
+export async function limpiarCodExtCostoLista(codTienda: string): Promise<ServiceResult<void>> {
+  try {
+    await prisma.listaPrecioTienda.update({
+      where: { codTienda },
+      data: { codExtCostoLista: null },
+    });
+    return { success: true, data: undefined };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { success: false, error: msg };
+  }
+}
