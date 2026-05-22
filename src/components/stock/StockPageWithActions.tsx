@@ -76,7 +76,7 @@ export default function StockPageWithActions({
   return (
     <>
       <ClassicFilteredTableLayout
-        title="Lista Tienda"
+        title="Ayuda Vendedor"
         subtitle="Control Stock"
         actions={actions}
         filters={filters}

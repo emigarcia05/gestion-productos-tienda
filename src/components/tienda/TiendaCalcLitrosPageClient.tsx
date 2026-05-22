@@ -234,7 +234,7 @@ export default function TiendaCalcLitrosPageClient({
         rows={tiposPintura}
         onSaved={() => router.refresh()}
       />
-      <SectionHeader titulo="Lista Tienda" subtitulo="Calc. Litros" />
+      <SectionHeader titulo="Ayuda Vendedor" subtitulo="Calc. Litros" />
 
       <div className="flex-1 overflow-hidden w-full px-8 contenedor-pagina-con-filtros">
         <section className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-card p-4">

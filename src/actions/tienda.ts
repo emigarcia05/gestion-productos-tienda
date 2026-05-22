@@ -271,15 +271,6 @@ export interface ControlAumentosData {
   individual:  ItemAumento[];
 }
 
-export async function getControlAumentos(): Promise<ControlAumentosData> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.controlAumentos)) {
-    return { porMarca: [], porRubro: [], porSubRubro: [], individual: [] };
-  }
-  const { getControlAumentosData } = await import("@/services/controlAumentos.service");
-  return getControlAumentosData();
-}
-
 /** Marca un producto vinculado como proveedor principal: actualiza prod_precios_tienda.cod_ext y prod_precios_tienda.proveedor. */
 const prismaIdParamSchema = z.object({
   itemTiendaId: z.string().min(1).max(128),

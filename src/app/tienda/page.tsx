@@ -20,7 +20,7 @@ interface Props {
 
 export default async function TiendaPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/gestion-productos/tienda/control-stock");
+  if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/gestion-productos/proveedores/sugeridos");
 
   const sp = await searchParams;
   const {

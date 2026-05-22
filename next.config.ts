@@ -54,7 +54,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/tienda/aumentos",
-        destination: "/gestion-productos/tienda/control-aumento",
+        destination: "/gestion-productos/tienda/control-stock",
+        permanent: true,
+      },
+      {
+        source: "/gestion-productos/tienda/control-aumento",
+        destination: "/gestion-productos/tienda/control-stock",
         permanent: true,
       },
       {
@@ -123,7 +128,6 @@ const nextConfig: NextConfig = {
       { source: "/gestion-productos/precios-competencia", destination: "/precios-competencia" },
       { source: "/gestion-productos/proveedores/lista", destination: "/proveedores/lista" },
       { source: "/gestion-productos/tienda/comp-proveedores", destination: "/tienda" },
-      { source: "/gestion-productos/tienda/control-aumento", destination: "/tienda/aumentos" },
       { source: "/gestion-productos/tienda/control-stock", destination: "/stock" },
       { source: "/gestion-productos/tienda/calc-tintometrico", destination: "/tienda/tintometrico" },
       { source: "/gestion-productos/tienda/calc-litros", destination: "/tienda/litros" },

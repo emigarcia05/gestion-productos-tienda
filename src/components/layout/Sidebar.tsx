@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Handshake,
-  ShoppingBag,
-  PackageSearch,
   ClipboardList,
   ChevronDown,
   AlarmClock,
@@ -14,7 +12,6 @@ import {
   FileSearch,
   List,
   Link2,
-  TrendingUp,
   RotateCw,
   Pipette,
   Droplets,
@@ -32,6 +29,9 @@ import {
   CircleDollarSign,
   Percent,
   ListChecks,
+  LifeBuoy,
+  LineChart,
+  PackageSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -49,7 +49,7 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "proveedores" | "tienda" | "pedidos" | "procesos" | "precios-competencia";
+type ModuleId = "pedidos" | "ayuda-vendedor" | "proveedores" | "analisis-precios";
 type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
@@ -115,43 +115,85 @@ const MODULES: NavModule[] = [
     ],
   },
   {
+    id: "ayuda-vendedor",
+    label: "AYUDA VENDEDOR",
+    icon: <LifeBuoy className={iconClass} />,
+    submodules: [
+      {
+        href: "/gestion-productos/tienda/calc-tintometrico",
+        label: "Calc. Tintométrico",
+        icon: <Pipette className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.tienda.tintoLts,
+      },
+      {
+        href: "/gestion-productos/proveedores/sugeridos",
+        label: "Px. Vta. Sugeridos",
+        icon: <FileSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.proveedores.sugeridos,
+      },
+      {
+        href: "/gestion-productos/tienda/calc-litros",
+        label: "Calc. Litros",
+        icon: <Droplets className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.tienda.tintoLts,
+      },
+      {
+        href: "/gestion-productos/procesos",
+        label: "Procesos",
+        icon: <ListChecks className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.procesos.acceso,
+      },
+      {
+        href: "/gestion-productos/tienda/control-stock",
+        label: "Control Stock",
+        icon: <PackageSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.stock.acceso,
+      },
+    ],
+  },
+  {
     id: "proveedores",
     label: "LISTA PROVEEDORES",
     icon: <Handshake className={iconClass} />,
     submodules: [
-      { href: "/gestion-productos/proveedores/lista-precios", label: "Lista Px Proveedores", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.listaPrecios },
-      { href: "/gestion-productos/proveedores/sugeridos", label: "Px. Vta. Sugeridos", icon: <FileSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.sugeridos },
-      { href: "/gestion-productos/proveedores/comparacion-categorias", label: "Comp. Por Cat.", icon: <GitCompare className="h-4 w-4 shrink-0" />, permiso: PERMISOS.comparacionCategorias.acceso },
-      { href: "/gestion-productos/proveedores/lista", label: "Lista Proveedores", icon: <List className="h-4 w-4 shrink-0" />, permiso: PERMISOS.proveedores.lista },
+      {
+        href: "/gestion-productos/proveedores/lista-precios",
+        label: "Lista Precios",
+        icon: <FileSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.proveedores.listaPrecios,
+      },
+      {
+        href: "/gestion-productos/proveedores/lista",
+        label: "Lista Proveedores",
+        icon: <List className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.proveedores.lista,
+      },
     ],
   },
   {
-    id: "tienda",
-    label: "LISTA TIENDA",
-    icon: <ShoppingBag className={iconClass} />,
+    id: "analisis-precios",
+    label: "ANALISIS DE PRECIOS",
+    icon: <LineChart className={iconClass} />,
     submodules: [
-      { href: "/gestion-productos/tienda/comp-proveedores", label: "Vinculacion Con Prov.", icon: <Link2 className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.acceso },
-      { href: "/gestion-productos/tienda/control-aumento", label: "Control Aumento", icon: <TrendingUp className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.controlAumentos },
-      { href: "/gestion-productos/tienda/control-stock", label: "Control Stock", icon: <PackageSearch className="h-4 w-4 shrink-0" />, permiso: PERMISOS.stock.acceso },
-      { href: "/gestion-productos/tienda/calc-tintometrico", label: "Calc. Tintométrico", icon: <Pipette className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
-      { href: "/gestion-productos/tienda/calc-litros", label: "Calc. Litros", icon: <Droplets className="h-4 w-4 shrink-0" />, permiso: PERMISOS.tienda.tintoLts },
+      {
+        href: "/gestion-productos/tienda/comp-proveedores",
+        label: "Vinc. Con Prov.",
+        icon: <Link2 className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.tienda.acceso,
+      },
+      {
+        href: "/gestion-productos/precios-competencia",
+        label: "Precios Competencia",
+        icon: <GitCompare className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.competenciaPrecios.acceso,
+      },
+      {
+        href: "/gestion-productos/proveedores/comparacion-categorias",
+        label: "Comp. Por Cat.",
+        icon: <GitCompare className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.comparacionCategorias.acceso,
+      },
     ],
-  },
-  {
-    id: "precios-competencia",
-    label: "PRECIOS COMPETENCIA",
-    icon: <GitCompare className={iconClass} />,
-    href: "/gestion-productos/precios-competencia",
-    permiso: PERMISOS.competenciaPrecios.acceso,
-    submodules: [],
-  },
-  {
-    id: "procesos",
-    label: "PROCESOS",
-    icon: <ListChecks className={iconClass} />,
-    href: "/gestion-productos/procesos",
-    permiso: PERMISOS.procesos.acceso,
-    submodules: [],
   },
 ];
 
@@ -235,18 +277,46 @@ const FINANZAS_MODULES: NavModule[] = [
 function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/finanzas/balance")) return "balance";
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
-  if (pathname === "/" || pathname.startsWith("/gestion-productos/proveedores") || pathname.startsWith("/proveedores")) return "proveedores";
-  if (pathname.startsWith("/gestion-productos/tienda") || pathname.startsWith("/tienda")) return "tienda";
-  if (pathname.startsWith("/stock")) return "tienda";
   if (pathname.startsWith("/gestion-productos/pedidos") || pathname.startsWith("/pedidos")) return "pedidos";
   if (
-    pathname.startsWith("/gestion-productos/precios-competencia") ||
-    pathname.startsWith("/precios-competencia")
+    pathname.startsWith("/gestion-productos/tienda/calc-tintometrico") ||
+    pathname.startsWith("/gestion-productos/tienda/calc-litros") ||
+    pathname.startsWith("/gestion-productos/tienda/control-stock") ||
+    pathname.startsWith("/tienda/tintometrico") ||
+    pathname.startsWith("/tienda/litros") ||
+    pathname.startsWith("/tienda/tinto-lts") ||
+    pathname.startsWith("/stock") ||
+    pathname === "/gestion-productos/proveedores/sugeridos" ||
+    pathname === "/proveedores/sugeridos" ||
+    pathname.startsWith("/gestion-productos/procesos") ||
+    pathname.startsWith("/procesos")
   ) {
-    return "precios-competencia";
+    return "ayuda-vendedor";
   }
-  if (pathname.startsWith("/gestion-productos/procesos") || pathname.startsWith("/procesos")) return "procesos";
-  return "proveedores";
+  if (
+    pathname.startsWith("/gestion-productos/tienda/comp-proveedores") ||
+    pathname === "/gestion-productos/tienda" ||
+    pathname.startsWith("/tienda") ||
+    pathname.startsWith("/gestion-productos/precios-competencia") ||
+    pathname.startsWith("/precios-competencia") ||
+    pathname.startsWith("/gestion-productos/proveedores/competencia-precios") ||
+    pathname.startsWith("/proveedores/competencia-precios") ||
+    pathname.startsWith("/gestion-productos/proveedores/comparacion-categorias") ||
+    pathname.startsWith("/proveedores/comparacion-categorias")
+  ) {
+    return "analisis-precios";
+  }
+  if (
+    pathname.startsWith("/gestion-productos/proveedores/lista-precios") ||
+    pathname.startsWith("/proveedores/lista-precios") ||
+    pathname.startsWith("/gestion-productos/proveedores/lista") ||
+    pathname.startsWith("/proveedores/lista") ||
+    pathname === "/gestion-productos/proveedores" ||
+    pathname === "/proveedores"
+  ) {
+    return "proveedores";
+  }
+  return "pedidos";
 }
 
 function isSubmoduleActive(pathname: string, href: string): boolean {
@@ -263,6 +333,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     );
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
+  if (href === "/gestion-productos/tienda/comp-proveedores")
+    return pathname === "/gestion-productos/tienda/comp-proveedores" || pathname === "/tienda" || pathname.startsWith("/tienda/comp");
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
   if (href === "/finanzas/tesoreria")
     return pathname === "/finanzas/tesoreria" || pathname === "/finanzas";

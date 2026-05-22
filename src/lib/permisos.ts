@@ -60,10 +60,8 @@ export const PERMISOS = {
 
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
-    /** Vinculacion Con Prov. (/gestion-productos/tienda/comp-proveedores). */
-    acceso: { simple: true, editor: true },
-    /** Control Aumentos (/tienda/aumentos). */
-    controlAumentos: { simple: false, editor: true },
+    /** Vinc. Con Prov. (/gestion-productos/tienda/comp-proveedores). Módulo Análisis de Precios — solo editor. */
+    acceso: { simple: false, editor: true },
     /** Calc. Tintométrico y Calc. Litros (/tienda/tintometrico, /tienda/litros). */
     tintoLts: { simple: true, editor: true },
     acciones: {
@@ -78,8 +76,8 @@ export const PERMISOS = {
       rubro:        { simple: true,  editor: true },
       subRubro:     { simple: true,  editor: true },
       vinculado: { simple: true, editor: true },
-      /** Abrir modal de vínculos (doble clic). Vincular/desvincular en Action sigue con `esEditor()`. */
-      vinculos: { simple: true, editor: true },
+      /** Abrir modal de vínculos (doble clic). Pantalla solo editor; vincular/desvincular en Action con `esEditor()`. */
+      vinculos: { simple: false, editor: true },
     },
   },
 
