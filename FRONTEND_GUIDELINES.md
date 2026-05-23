@@ -795,7 +795,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
-**ANALISIS DE PRECIOS** (rol **editor**, orden): `Vinc. Con Prov.` → `Px Competencia` → `Cx & Px Tienda` → `Comp. Por Cat.`. **`FiltrosCxPxTienda`**: **MARCA** → **RUBRO** → **SUB-RUBRO** → **VINC. COSTO** (`vincCosto=sin|uno|mas`: sin proveedor / un proveedor / dos o más vínculos habilitados) → **PROVEEDORES** (`costoProv=prom` = Cx. Prom. sin FK; o `id` de proveedor con al menos un vínculo) + búsqueda **DESCRIPCIÓN** (`q`). Grilla **`TablaCxPxTienda`**: **DESCRIPCIÓN** (45%) + **CX PROD.** (55%): `Select` con **CX. PROM.** y cada proveedor vinculado; `guardarCostoCxProdTiendaAction` persiste `cod_ext_costo_lista`. Ver `BACKEND_GUIDELINES` §1.10b.
+**ANALISIS DE PRECIOS** (rol **editor**, orden): `Vinc. Con Prov.` → `Px Competencia` → `Cx & Px Tienda` → `Comp. Por Cat.`. **`Cx & Px Tienda`**: al abrir **sin** query de filtros carga **todos** los ítems de **`prod_precios_tienda`** paginados (`PAGE_SIZE`); los filtros en URL solo **reducen** el listado. **`getCxPxTiendaPageParamsSchema`**: strings vacíos en query (`""`) se normalizan a omitidos (evita fallo Zod y tabla vacía). **`FiltrosCxPxTienda`**: **MARCA** → **RUBRO** → **SUB-RUBRO** → **VINC. COSTO** → **PROVEEDORES** + búsqueda **`q`**. Grilla **`TablaCxPxTienda`**: **DESCRIPCIÓN** + **CX PROD.** (`guardarCostoCxProdTiendaAction`). Ver `BACKEND_GUIDELINES` §1.10b.
 
 Rutas legacy **Control Aumentos** (`/tienda/aumentos`, `/gestion-productos/tienda/control-aumento`) redirigen a **Control Stock**.
 

@@ -67,7 +67,7 @@ export default function CxPxTiendaPageClient({
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
             <TablaCxPxTienda items={items} puedeEditar={puedeEditar} />
           </div>
-          {totalPaginas > 1 && (
+          {total > PAGE_SIZE && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
                 basePath="/gestion-productos/tienda/cx-px-tienda"

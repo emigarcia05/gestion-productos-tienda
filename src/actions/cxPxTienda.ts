@@ -181,6 +181,7 @@ export async function getCxPxTiendaPageData(params: {
     costoProv = "",
     pagina = "1",
   } = parsed.data;
+  // Sin filtros en URL: listar todo `prod_precios_tienda` paginado (como Vinc. Con Prov.).
 
   const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
