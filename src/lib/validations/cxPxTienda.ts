@@ -15,13 +15,12 @@ const queryOpcional = z.preprocess(
 export const getCxPxTiendaPageParamsSchema = z.object({
   q: queryOpcional.pipe(z.string().max(500).optional()),
   rubro: queryOpcional.pipe(z.string().max(200).optional()),
-  subRubro: queryOpcional.pipe(z.string().max(200).optional()),
   marca: queryOpcional.pipe(z.string().max(200).optional()),
   /** `sin` | `uno` | `mas` — cantidad de proveedores vinculados (habilitados). */
   vincCosto: queryOpcional.pipe(
     z.union([z.literal(VINC_COSTO_SIN), z.literal(VINC_COSTO_UNO), z.literal(VINC_COSTO_MAS)]).optional()
   ),
-  /** `prom` = Cx. Prom. (sin FK costo); si no, `id` de proveedor con al menos un vínculo. */
+  /** `prom` = Cx. Prom. (`cod_ext_costo_lista` nulo); si no, `id` de proveedor de la fila FK persistida. */
   costoProv: queryOpcional.pipe(
     z.union([z.literal(CX_PROD_SELECCION_PROM), z.string().min(1).max(128)]).optional()
   ),

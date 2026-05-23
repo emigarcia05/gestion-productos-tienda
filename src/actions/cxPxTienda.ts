@@ -72,18 +72,12 @@ async function whereFiltroVincCosto(
 }
 
 async function getCxPxTiendaEmptyOpciones() {
-  const [rubrosDistinct, subRubrosDistinct, marcasDistinct, proveedores] = await Promise.all([
+  const [rubrosDistinct, marcasDistinct, proveedores] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
       select: { rubro: true },
       distinct: ["rubro"],
       where: { rubro: { not: null } },
       orderBy: { rubro: "asc" },
-    }),
-    prisma.listaPrecioTienda.findMany({
-      select: { subRubro: true },
-      distinct: ["subRubro"],
-      where: { subRubro: { not: null } },
-      orderBy: { subRubro: "asc" },
     }),
     prisma.listaPrecioTienda.findMany({
       select: { marca: true },
@@ -100,7 +94,6 @@ async function getCxPxTiendaEmptyOpciones() {
     totalPaginas: 0,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
-    subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     proveedores,
   };
 }
@@ -156,7 +149,6 @@ function mapFilaCxPx(
 export async function getCxPxTiendaPageData(params: {
   q?: string;
   rubro?: string;
-  subRubro?: string;
   marca?: string;
   vincCosto?: string;
   costoProv?: string;
@@ -175,7 +167,6 @@ export async function getCxPxTiendaPageData(params: {
   const {
     q = "",
     rubro = "",
-    subRubro = "",
     marca = "",
     vincCosto = "",
     costoProv = "",
@@ -187,7 +178,6 @@ export async function getCxPxTiendaPageData(params: {
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
   if (textFilter.AND?.length) andParts.push(textFilter);
   if (rubro) andParts.push({ rubro });
-  if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
 
   if (vincCosto) {
@@ -195,12 +185,15 @@ export async function getCxPxTiendaPageData(params: {
     if (vincWhere) andParts.push(vincWhere);
   }
 
+  // CX. PROV.: ítems cuyo costo persistido (`cod_ext_costo_lista`) apunta a ese proveedor, o sin FK (CX. PROM.).
   if (costoProv === CX_PROD_SELECCION_PROM) {
     andParts.push({ codExtCostoLista: null });
   } else if (costoProv) {
     andParts.push({
-      listaPreciosProveedores: {
-        some: { habilitado: true, idProveedor: costoProv },
+      codExtCostoLista: { not: null },
+      costoListaProveedor: {
+        idProveedor: costoProv,
+        habilitado: true,
       },
     });
   }
@@ -218,12 +211,8 @@ export async function getCxPxTiendaPageData(params: {
   const whereRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length
     ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] }
     : { rubro: { not: null } };
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length
-    ? { AND: [...andPartsOnlyQ, { subRubro: { not: null } }] }
-    : { subRubro: { not: null } };
 
-  const [rows, total, rubrosDistinct, subRubrosDistinct, marcasDistinct, proveedores] =
-    await Promise.all([
+  const [rows, total, rubrosDistinct, marcasDistinct, proveedores] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
       where,
       orderBy: [{ descripcionTienda: "asc" }],
@@ -242,12 +231,6 @@ export async function getCxPxTiendaPageData(params: {
       distinct: ["rubro"],
       where: whereRubros,
       orderBy: { rubro: "asc" },
-    }),
-    prisma.listaPrecioTienda.findMany({
-      select: { subRubro: true },
-      distinct: ["subRubro"],
-      where: whereSubRubros,
-      orderBy: { subRubro: "asc" },
     }),
     prisma.listaPrecioTienda.findMany({
       select: { marca: true },
@@ -293,7 +276,6 @@ export async function getCxPxTiendaPageData(params: {
     totalPaginas,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
-    subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     proveedores,
   };
 }

@@ -10,7 +10,6 @@ interface Props {
   searchParams: Promise<{
     q?: string;
     rubro?: string;
-    subRubro?: string;
     marca?: string;
     vincCosto?: string;
     costoProv?: string;
@@ -28,18 +27,16 @@ export default async function CxPxTiendaPage({ searchParams }: Props) {
   const {
     q = "",
     rubro = "",
-    subRubro = "",
     marca = "",
     vincCosto = "",
     costoProv = "",
     pagina = "1",
   } = sp;
 
-  const { items, total, totalPaginas, marcas, rubros, subRubros, proveedores } =
+  const { items, total, totalPaginas, marcas, rubros, proveedores } =
     await getCxPxTiendaPageData({
       q,
       rubro,
-      subRubro,
       marca,
       vincCosto,
       costoProv,
@@ -54,11 +51,9 @@ export default async function CxPxTiendaPage({ searchParams }: Props) {
       totalPaginas={totalPaginas}
       marcas={marcas}
       rubros={rubros}
-      subRubros={subRubros}
       rol={rol}
       q={q}
       rubro={rubro}
-      subRubro={subRubro}
       marca={marca}
       vincCosto={vincCosto}
       costoProv={costoProv}
