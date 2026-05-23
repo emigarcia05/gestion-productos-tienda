@@ -795,7 +795,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
-**ANALISIS DE PRECIOS** (rol **editor**, orden): `Vinc. Con Prov.` → `Px Competencia` → `Cx & Px Tienda` → `Comp. Por Cat.`. **`Cx & Px Tienda`**: al abrir **sin** query de filtros carga **todos** los ítems de **`prod_precios_tienda`** paginados (`PAGE_SIZE`). **`FiltrosCxPxTienda`**: **MARCA** → **RUBRO** → **CX. VINC.** → **CX. PROV.** (`costoProv=prom` → sin FK costo / Cx. Prom.; `costoProv={id}` → `cod_ext_costo_lista` apunta a fila de ese proveedor) + **`q`**. Grilla **`TablaCxPxTienda`**: **DESCRIPCIÓN** + **CX PROD.** (`guardarCostoCxProdTiendaAction`). Ver `BACKEND_GUIDELINES` §1.10b.
+**ANALISIS DE PRECIOS** (rol **editor**, orden): `Vinc. Con Prov.` → `Px Competencia` → `Cx & Px Tienda` → `Comp. Por Cat.`. **`Cx & Px Tienda`**: al abrir **sin** query de filtros carga **todos** los ítems de **`prod_precios_tienda`** paginados (`PAGE_SIZE`). **`FiltrosCxPxTienda`**: **MARCA** → **RUBRO** → **CX. VINC.** → **CX. PROV.** (`costoProv=prom` → sin FK costo / Cx. Prom.; `costoProv={id}` → `cod_ext_costo_lista` apunta a fila de ese proveedor) + **`q`**. Grilla **`TablaCxPxTienda`**: **DESCRIPCIÓN** + **CX PROD.** (`guardarCostoCxProdTiendaAction`). Header **`ExportarCxButton`**: Excel `.xls` (**CODIGO** = `cod_tienda`, **COSTO** = `px_compra_final_sin_iva` del vínculo) solo si `costo_compra` (DUX) ≠ costo lista. Ver `BACKEND_GUIDELINES` §1.10b.
 
 Rutas legacy **Control Aumentos** (`/tienda/aumentos`, `/gestion-productos/tienda/control-aumento`) redirigen a **Control Stock**.
 

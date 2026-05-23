@@ -28,6 +28,8 @@ import {
   limpiarCodExtCostoLista,
   listarCandidatosCostoPorCodTienda,
 } from "@/services/costoListaTienda.service";
+import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
+import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 
 async function listarProveedoresCxPxFiltro(): Promise<ProveedorCxPxFiltro[]> {
   const rows = await prisma.proveedor.findMany({
@@ -315,4 +317,23 @@ export async function guardarCostoCxProdTiendaAction(
   revalidatePath("/gestion-productos/tienda/cx-px-tienda");
   revalidatePath("/tienda/cx-px");
   return { ok: true, data: undefined };
+}
+
+/** Excel CODIGO + COSTO: solo filas con `costo_compra` ≠ costo de `cod_ext_costo_lista`. */
+export async function exportarCostoCxDiffAction(): Promise<
+  ActionResult<{ filas: FilaExportCostoCx[] }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  try {
+    const filas = await listarFilasExportCostoCxDiff();
+    return { ok: true, data: { filas } };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
+    };
+  }
 }

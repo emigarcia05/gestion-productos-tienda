@@ -1,0 +1,55 @@
+"use client";
+
+import { useState } from "react";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { exportarCostoCxDiffAction } from "@/actions/cxPxTienda";
+import { descargarExcelCostoCx } from "@/lib/exportCostoCxExcelClient";
+
+export default function ExportarCxButton() {
+  const [exportando, setExportando] = useState(false);
+
+  async function handleExportar() {
+    setExportando(true);
+    try {
+      const res = await exportarCostoCxDiffAction();
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo exportar.");
+        return;
+      }
+      if (res.data.filas.length === 0) {
+        toast.message(
+          "No hay productos con diferencia entre costo DUX y costo lista del proveedor vinculado."
+        );
+        return;
+      }
+      descargarExcelCostoCx(res.data.filas);
+      toast.success(`${res.data.filas.length} producto(s) exportado(s).`);
+    } finally {
+      setExportando(false);
+    }
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="default"
+          size="default"
+          className="btn-primario-gestion gap-2 shrink-0"
+          disabled={exportando}
+          onClick={() => void handleExportar()}
+        >
+          <Download className="h-4 w-4 shrink-0" />
+          {exportando ? "Exportando..." : "Exportar Cx"}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        Excel con CODIGO y COSTO (solo ítems donde costo lista ≠ costo DUX)
+      </TooltipContent>
+    </Tooltip>
+  );
+}
