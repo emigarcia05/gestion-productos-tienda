@@ -24,6 +24,7 @@ import {
   type ItemCxPxTiendaParaTabla,
   type MarcacionOrdenCxPx,
   type OpcionCostoCxProdProveedor,
+  type OpcionPxListaCompetidor,
   type ProveedorCxPxFiltro,
 } from "@/lib/cxPxTienda";
 import {
