@@ -203,9 +203,14 @@ export default function BalanceMensualGastoHistoricoModal({
     }
 
     if (!gastoFinalId) {
-      setSerie([]);
-      setError(null);
-      return undefined;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setSerie([]);
+        setError(null);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
     startTransition(() => {

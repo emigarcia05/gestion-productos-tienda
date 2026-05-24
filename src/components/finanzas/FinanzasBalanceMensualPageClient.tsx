@@ -436,6 +436,9 @@ export default function FinanzasBalanceMensualPageClient({
     mes: number;
     anio: number;
   } | null>(null);
+  /** Detalle por rubro abierto desde barra del historial CV/CF en grilla (volver reabre historial). */
+  const [detalleRubrosDesdeHistoricoGrilla, setDetalleRubrosDesdeHistoricoGrilla] =
+    useState(false);
 
   const filasEfectivasDetalle = filasParaModalesDetalle ?? filas;
 
@@ -499,15 +502,53 @@ export default function FinanzasBalanceMensualPageClient({
 
   const mesAnioEtiquetaModalesDetalle = detalleModalesMesAnio ?? { mes, anio };
 
-  const handleHistoricoOpenChange = useCallback((nextOpen: boolean) => {
-    setHistoricoOpen(nextOpen);
-    if (!nextOpen) {
-      setHistoricoGastoFinalId(null);
-      setHistoricoFilaGrilla(null);
-      setHistoricoDetalleCostosOrigen(null);
-      setHistoricoAbiertoDesde(null);
-    }
+  const cerrarDetalleRubrosModal = useCallback(() => {
+    setDetalleRubrosOpen(false);
+    setDetalleRubrosCtx(null);
+    setFilasParaModalesDetalle(null);
+    setDetalleModalesMesAnio(null);
   }, []);
+
+  const volverDesdeDetalleRubros = useCallback(() => {
+    const reabrirHistorico = detalleRubrosDesdeHistoricoGrilla;
+    cerrarDetalleRubrosModal();
+    setDetalleRubrosDesdeHistoricoGrilla(false);
+    if (reabrirHistorico) {
+      setHistoricoOpen(true);
+    }
+  }, [cerrarDetalleRubrosModal, detalleRubrosDesdeHistoricoGrilla]);
+
+  const historialRubroDisponible = useCallback(
+    (rubroClave: string) => {
+      if (!detalleRubrosCtx) return false;
+      return (
+        resolverGastoFinalIdHistorialRubro(
+          filasEfectivasDetalle,
+          detalleRubrosCtx.columna,
+          detalleRubrosCtx.tipo,
+          rubroClave,
+        ) != null
+      );
+    },
+    [detalleRubrosCtx, filasEfectivasDetalle],
+  );
+
+  const handleHistoricoOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      setHistoricoOpen(nextOpen);
+      if (!nextOpen) {
+        setHistoricoGastoFinalId(null);
+        setHistoricoFilaGrilla(null);
+        setHistoricoDetalleCostosOrigen(null);
+        setHistoricoAbiertoDesde(null);
+        if (detalleRubrosDesdeHistoricoGrilla) {
+          cerrarDetalleRubrosModal();
+          setDetalleRubrosDesdeHistoricoGrilla(false);
+        }
+      }
+    },
+    [cerrarDetalleRubrosModal, detalleRubrosDesdeHistoricoGrilla],
+  );
 
   async function handleSeleccionarMesEnGraficoHistorico(mesBar: number, anioBar: number) {
     if (!historicoDetalleCostosOrigen) return;
@@ -540,6 +581,8 @@ export default function FinanzasBalanceMensualPageClient({
       totalCvCelda: bloque.costosVariables,
       totalCfCelda: bloque.costosFijos,
     });
+    setDetalleRubrosDesdeHistoricoGrilla(true);
+    setHistoricoOpen(false);
     setDetalleRubrosOpen(true);
   }
 
@@ -652,12 +695,11 @@ export default function FinanzasBalanceMensualPageClient({
       <BalanceMensualDetallePorRubroModal
         open={detalleRubrosOpen}
         onOpenChange={(open) => {
-          setDetalleRubrosOpen(open);
           if (!open) {
-            setDetalleRubrosCtx(null);
-            setFilasParaModalesDetalle(null);
-            setDetalleModalesMesAnio(null);
+            volverDesdeDetalleRubros();
+            return;
           }
+          setDetalleRubrosOpen(true);
         }}
         titulo={
           detalleRubrosCtx
@@ -691,12 +733,8 @@ export default function FinanzasBalanceMensualPageClient({
           });
           setDetalleGastosPorRubroOpen(true);
         }}
-        onVolver={() => {
-          setDetalleRubrosOpen(false);
-          setDetalleRubrosCtx(null);
-          setFilasParaModalesDetalle(null);
-          setDetalleModalesMesAnio(null);
-        }}
+        onVolver={volverDesdeDetalleRubros}
+        historialRubroDisponible={historialRubroDisponible}
         onAbrirHistoricoRubro={(rubroClave) => {
           if (!detalleRubrosCtx) return;
           const id = resolverGastoFinalIdHistorialRubro(
@@ -705,10 +743,7 @@ export default function FinanzasBalanceMensualPageClient({
             detalleRubrosCtx.tipo,
             rubroClave,
           );
-          if (!id) {
-            toast.error("No hay gasto vinculado para mostrar evolución mensual en este rubro.");
-            return;
-          }
+          if (!id) return;
           setHistoricoDetalleCostosOrigen(null);
           setHistoricoFilaGrilla(null);
           setHistoricoGastoFinalId(id);

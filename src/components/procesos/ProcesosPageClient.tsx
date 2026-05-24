@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import SectionHeader from "@/components/SectionHeader";
 import ProcesoInstructivoCarrusel from "@/components/procesos/ProcesoInstructivoCarrusel";
 import {
@@ -33,14 +33,15 @@ export default function ProcesosPageClient({ rol }: Props) {
 
   const [procesoId, setProcesoId] = useState<string>("");
 
-  useEffect(() => {
+  const procesoIdEfectivo = useMemo(() => {
     const first = procesosDelModulo[0]?.id ?? "";
-    setProcesoId((actual) =>
-      procesosDelModulo.some((p) => p.id === actual) ? actual : first
-    );
-  }, [procesosDelModulo]);
+    if (procesoId && procesosDelModulo.some((p) => p.id === procesoId)) {
+      return procesoId;
+    }
+    return first;
+  }, [procesoId, procesosDelModulo]);
 
-  const procesoSeleccionado = procesosDelModulo.find((p) => p.id === procesoId);
+  const procesoSeleccionado = procesosDelModulo.find((p) => p.id === procesoIdEfectivo);
 
   const sinProcesos = procesosDelModulo.length === 0;
 
@@ -95,7 +96,7 @@ export default function ProcesosPageClient({ rol }: Props) {
                 </p>
               ) : (
                 procesosDelModulo.map((p) => {
-                  const activo = p.id === procesoId;
+                  const activo = p.id === procesoIdEfectivo;
                   return (
                     <button
                       key={p.id}

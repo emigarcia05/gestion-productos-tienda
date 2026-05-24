@@ -14,7 +14,11 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
+import {
+  BALANCE_MODAL_BOTON_HISTORIAL_CLASS,
+  BALANCE_MODAL_TD_HISTORIAL_CLASS,
+  BALANCE_MODAL_TH_HISTORIAL_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { BalanceMensualFilaDetalleGasto } from "@/lib/balanceMensualDetalle";
 
@@ -22,17 +26,6 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TH_PCT = "text-center whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
-
-const COL_HISTORIAL = "border-l-2 border-[#0072BB] bg-muted/35";
-const TH_HISTORIAL = cn(
-  COL_HISTORIAL,
-  "w-11 min-w-11 max-w-11 p-0 text-center align-middle text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground",
-);
-const TD_HISTORIAL = cn(COL_HISTORIAL, "w-11 min-w-11 max-w-11 p-0 align-middle");
-const CLASE_BOTON_HISTORIAL_MODAL = cn(
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
-);
 
 /** % centrado + barra de magnitud (mismo criterio que otros modales de balance). */
 function CeldaPorcentajeConBarra({
@@ -178,7 +171,7 @@ export default function BalanceMensualDetalleGastosRubroModal({
                         {tipo === "variables" ? "COSTOS VARIABLES" : "COSTOS FIJOS"}
                       </span>
                     </TableHead>
-                    <TableHead className={TH_HISTORIAL} scope="col" title="Evolución mensual">
+                    <TableHead className={BALANCE_MODAL_TH_HISTORIAL_CLASS} scope="col" title="Evolución mensual">
                       <span className="inline-block px-0.5">Hist.</span>
                     </TableHead>
                   </TableRow>
@@ -229,23 +222,25 @@ export default function BalanceMensualDetalleGastosRubroModal({
                           >
                             <CeldaPorcentajeConBarra parte={r.monto} denominador={denomTipo} />
                           </TableCell>
-                          <TableCell className={TD_HISTORIAL}>
+                          <TableCell className={BALANCE_MODAL_TD_HISTORIAL_CLASS}>
                             <div className="flex justify-center py-0.5">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={CLASE_BOTON_HISTORIAL_MODAL}
-                                aria-label={`Ver evolución mensual — ${r.gastoNombre}`}
-                                onClick={() =>
-                                  onAbrirHistorico({
-                                    gastoFinalId: r.gastoFinalId,
-                                    etiqueta: `${r.gastoNombre} — ${r.proveedorNombre} · ${r.sucursalNombre}`,
-                                  })
-                                }
-                              >
-                                <ChartNoAxesColumn aria-hidden />
-                              </Button>
+                              {r.gastoFinalId.trim() ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className={BALANCE_MODAL_BOTON_HISTORIAL_CLASS}
+                                  aria-label={`Ver evolución mensual — ${r.gastoNombre}`}
+                                  onClick={() =>
+                                    onAbrirHistorico({
+                                      gastoFinalId: r.gastoFinalId,
+                                      etiqueta: `${r.gastoNombre} — ${r.proveedorNombre} · ${r.sucursalNombre}`,
+                                    })
+                                  }
+                                >
+                                  <ChartNoAxesColumn aria-hidden />
+                                </Button>
+                              ) : null}
                             </div>
                           </TableCell>
                         </TableRow>

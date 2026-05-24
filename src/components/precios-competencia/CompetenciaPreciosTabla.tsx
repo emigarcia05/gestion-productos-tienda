@@ -152,8 +152,8 @@ export default function CompetenciaPreciosTabla({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recargar solo al cambiar página
   }, [pagina]);
 
-  const competencias = data?.competencias ?? [];
-  const filas = data?.filas ?? [];
+  const competencias = useMemo(() => data?.competencias ?? [], [data?.competencias]);
+  const filas = useMemo(() => data?.filas ?? [], [data?.filas]);
 
   const resumenesPorFila = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calcularResumenPreciosCompetenciaFila>>();

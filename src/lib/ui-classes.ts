@@ -64,6 +64,28 @@ export const TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS =
 export const TABLE_ROW_ACTION_ICON_CLASS = "h-4 w-4 shrink-0";
 
 /**
+ * Columna **Hist.** en modales de drill-down del balance mensual (borde #0072BB + fondo suave).
+ * Usar con {@link BALANCE_MODAL_TH_HISTORIAL_CLASS}, {@link BALANCE_MODAL_TD_HISTORIAL_CLASS} y
+ * {@link BALANCE_MODAL_BOTON_HISTORIAL_CLASS}.
+ */
+export const BALANCE_MODAL_COL_HISTORIAL_CLASS =
+  "border-l-2 border-[#0072BB] bg-muted/35";
+
+export const BALANCE_MODAL_TH_HISTORIAL_CLASS =
+  `${BALANCE_MODAL_COL_HISTORIAL_CLASS} w-11 min-w-11 max-w-11 p-0 text-center align-middle text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground`;
+
+export const BALANCE_MODAL_TD_HISTORIAL_CLASS =
+  `${BALANCE_MODAL_COL_HISTORIAL_CLASS} w-11 min-w-11 max-w-11 p-0 align-middle`;
+
+/** Botón ícono ChartNoAxesColumn en columna Hist. de modales balance (7×7 rem, #0072BB). */
+export const BALANCE_MODAL_BOTON_HISTORIAL_CLASS =
+  `${TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS} !h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5`;
+
+/** Tooltip estándar: historial por rubro usa el gasto final de mayor monto en ese rubro. */
+export const BALANCE_MODAL_HISTORIAL_RUBRO_TITLE =
+  "Evolución mensual del gasto con mayor impacto en este rubro";
+
+/**
  * Etiqueta de campo en modales (label nativo o `<Label>`).
  * Color `foreground` (negro de UI); `globals.css` refuerza en `.app-modal__body` / `.modal-app__body`.
  */

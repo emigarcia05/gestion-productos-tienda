@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ControlStockData, ItemStock, Sucursal } from "@/actions/stock";
+import type { ControlStockData, Sucursal } from "@/actions/stock";
 import { registrarExportacionExcelStock } from "@/actions/stock";
 import PrintStock from "./PrintStock";
 import {

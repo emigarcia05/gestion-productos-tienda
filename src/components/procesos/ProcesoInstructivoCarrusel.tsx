@@ -48,7 +48,7 @@ export default function ProcesoInstructivoCarrusel({
   }, [resetKey]);
 
   useEffect(() => {
-    setImagenAmpliada(false);
+    queueMicrotask(() => setImagenAmpliada(false));
   }, [pasoActual]);
 
   if (!paso || pasos.length === 0) {

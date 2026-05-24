@@ -8,7 +8,7 @@ import type { FilaListaPrecio } from "@/lib/parsearImport";
 import { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
-import { calcPxCompraFinal, clampPercent } from "@/lib/calculos";
+import { clampPercent } from "@/lib/calculos";
 import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";

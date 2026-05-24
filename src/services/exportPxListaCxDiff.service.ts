@@ -15,7 +15,7 @@ export interface FilaExportPxListaCx {
 
 /**
  * Ítems donde `px_lista_tienda` (DUX) ≠ PX LISTA configurado en Cx & Px.
- * IMPORTE = columna MARCACION de la misma pantalla.
+ * PORC UTILIDAD (Excel) = columna MARCACION de la misma pantalla.
  */
 export async function listarFilasExportPxListaCxDiff(): Promise<FilaExportPxListaCx[]> {
   const [rows, competencias] = await Promise.all([

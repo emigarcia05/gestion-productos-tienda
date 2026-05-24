@@ -1148,7 +1148,7 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
-/* Tabla Cx & Px Tienda: 46% + 22% + 22% + 10% (colgroup); CX/PX con grid 16:9 y 13:9 interno. */
+/* Tabla Cx & Px Tienda: 45% + 22% + 22% + 11% (colgroup); CX/PX con grid 50/50 (lista + valor centrado). */
 .tabla-cx-px-tienda-listado {
   table-layout: fixed;
   width: 100%;

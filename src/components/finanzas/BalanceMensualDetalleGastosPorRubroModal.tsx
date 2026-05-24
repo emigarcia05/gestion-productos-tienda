@@ -15,24 +15,17 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtPrecio, fmtPctDeTotal, fmtTituloPalabras } from "@/lib/format";
-import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
+import {
+  BALANCE_MODAL_BOTON_HISTORIAL_CLASS,
+  BALANCE_MODAL_TD_HISTORIAL_CLASS,
+  BALANCE_MODAL_TH_HISTORIAL_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import type { BalanceMensualGastoAgregado } from "@/lib/balanceMensualDetalle";
 
 const TH_CENTER = "text-center whitespace-nowrap";
 const TD_MONTO = "celda-datos tabular-nums";
 const CELL_MIN = "min-w-0";
-
-const COL_HISTORIAL = "border-l-2 border-[#0072BB] bg-muted/35";
-const TH_HISTORIAL = cn(
-  COL_HISTORIAL,
-  "w-11 min-w-11 max-w-11 p-0 text-center align-middle text-[10px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground",
-);
-const TD_HISTORIAL = cn(COL_HISTORIAL, "w-11 min-w-11 max-w-11 p-0 align-middle");
-const CLASE_BOTON_HISTORIAL_MODAL = cn(
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0 [&_svg]:size-3.5",
-);
 
 /** Mismo patrón que `BalanceMensualDetallePorRubroModal` (% centrado + barra debajo, relleno alineado a la izquierda). */
 function CeldaPorcentajeConBarra({
@@ -147,7 +140,7 @@ function TablaGastosRubro({
           >
             <span className="block">{etiquetaPctCf}</span>
           </TableHead>
-          <TableHead className={TH_HISTORIAL} scope="col" title="Evolución mensual">
+          <TableHead className={BALANCE_MODAL_TH_HISTORIAL_CLASS} scope="col" title="Evolución mensual">
             <span className="inline-block px-0.5">Hist.</span>
           </TableHead>
         </TableRow>
@@ -199,14 +192,14 @@ function TablaGastosRubro({
                 >
                   <CeldaPorcentajeConBarra parte={g.monto} denominador={totalTipoCelda} />
                 </TableCell>
-                <TableCell className={TD_HISTORIAL}>
+                <TableCell className={BALANCE_MODAL_TD_HISTORIAL_CLASS}>
                   <div className="flex justify-center py-0.5">
                     {g.tieneHistorialDisponible && g.gastoFinalId ? (
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className={CLASE_BOTON_HISTORIAL_MODAL}
+                        className={BALANCE_MODAL_BOTON_HISTORIAL_CLASS}
                         aria-label={`Ver evolución mensual — ${g.gastoNombre}`}
                         onClick={(e) => {
                           e.stopPropagation();

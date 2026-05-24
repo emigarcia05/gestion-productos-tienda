@@ -95,7 +95,7 @@ interface Props {
 }
 
 export default function GenerarPedidoToolbarButton({
-  proveedores,
+  proveedores: _proveedores,
   defaultSucursal,
   defaultProveedor,
   defaultTipos,

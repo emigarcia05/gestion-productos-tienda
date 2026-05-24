@@ -6,7 +6,7 @@ export function descargarExcelPxListaCx(filas: FilaExportPxListaCx[]): void {
   void import("xlsx").then((XLSX) => {
     const hojaFilas = filas.map((f) => ({
       CODIGO: f.codigo,
-      IMPORTE: f.importe,
+      "PORC UTILIDAD": f.importe,
     }));
     const hoja = XLSX.utils.json_to_sheet(hojaFilas);
     const libro = XLSX.utils.book_new();

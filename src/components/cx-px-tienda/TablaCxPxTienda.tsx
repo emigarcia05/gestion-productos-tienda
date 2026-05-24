@@ -72,10 +72,10 @@ export default function TablaCxPxTienda({
   return (
     <Table variant="compact" scrollX={false} className="tabla-cx-px-tienda-listado">
       <colgroup>
-        <col className="w-[46%]" />
+        <col className="w-[45%]" />
         <col className="w-[22%]" />
         <col className="w-[22%]" />
-        <col className="w-[10%]" />
+        <col className="w-[11%]" />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
@@ -104,7 +104,7 @@ export default function TablaCxPxTienda({
                   {item.descripcion}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0">
-                  <div className="grid w-full min-w-0 grid-cols-[minmax(0,16fr)_minmax(0,9fr)] items-center gap-1.5">
+                  <div className="grid w-full min-w-0 grid-cols-2 items-center gap-1.5">
                     <Select
                       value={item.seleccion}
                       onValueChange={(v) => handleCambioCx(item.codTienda, v)}
@@ -134,7 +134,7 @@ export default function TablaCxPxTienda({
                       </SelectContent>
                     </Select>
                     <span
-                      className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0"
+                      className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 block w-full"
                       aria-label="Costo seleccionado"
                     >
                       ${fmtPrecio(costoVista)}
@@ -142,7 +142,7 @@ export default function TablaCxPxTienda({
                   </div>
                 </TableCell>
                 <TableCell className="celda-datos min-w-0">
-                  <div className="grid w-full min-w-0 grid-cols-[minmax(0,13fr)_minmax(0,9fr)] items-center gap-1.5">
+                  <div className="grid w-full min-w-0 grid-cols-2 items-center gap-1.5">
                     <Select
                       value={item.seleccionPxLista}
                       onValueChange={(v) => handleCambioPxLista(item.codTienda, v)}
@@ -172,7 +172,7 @@ export default function TablaCxPxTienda({
                       </SelectContent>
                     </Select>
                     <span
-                      className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0"
+                      className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 block w-full"
                       aria-label="Precio lista seleccionado"
                       title={
                         sinOpcionesPxLista && item.seleccionPxLista === PX_LISTA_SELECCION_PROM

@@ -48,7 +48,7 @@ export default function ExportarPxButton() {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Excel con CODIGO e IMPORTE (marcación); solo ítems donde px lista DUX ≠ PX LISTA
+        Excel con CODIGO y PORC UTILIDAD (marcación); solo ítems donde px lista DUX ≠ PX LISTA
       </TooltipContent>
     </Tooltip>
   );
