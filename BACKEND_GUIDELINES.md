@@ -1281,12 +1281,13 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 
 ### Modelos Prisma
 
-- **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia), `ultima_comparacion_at`, `config_extraccion` (JSON: reglas por tipo de página — selectores CSS, JSON-LD, regex; esquema Zod en `@/lib/competenciaConfigExtraccion.ts`). **Sin** `url_busqueda` (eliminada).
+- **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia), `id_proveedor` (FK opcional → `global_proveedores.id`; si está definido, el sync puede tomar `px_vta_sugerido` de `prod_precios_provee` sin HTTP), `ultima_comparacion_at`, `config_extraccion` (JSON: reglas por tipo de página — selectores CSS, JSON-LD, regex; esquema Zod en `@/lib/competenciaConfigExtraccion.ts`). **Sin** `url_busqueda` (eliminada).
 - **`prod_precios_competencia`:** vínculo **producto tienda × competidor** — PK `(cod_tienda, competencia_id)`; `url_producto` (manual); `tipo_pagina` (slug de regla en `config_extraccion.reglas`); `px_competencia` (último precio); `estado` (`SIN_URL` | `PENDIENTE` | `OK` | `SIN_PRECIO` | `ERROR`); `error_mensaje`; `relevado_at` (último intento de relevamiento). Constantes en `@/lib/competenciaRelevamiento.ts`.
-- **Sync:** solo filas con `url_producto` no nulo; `POST` body `{ competenciaId, limiteProductos?, codTienda? }` o `{ todos: true, limiteProductos?, codTienda? }` (todos los competidores con URL, en secuencia); cancelación `POST /api/sync-competencia-precios/cancel`.
+- **Precio mostrado (lectura / grilla):** misma presentación que el precio por URL. Prioridad en `aplicarPrioridadPrecioMostrar` (`competenciaPxSugerido.service.ts`), aplicada en `competenciaPreciosList.service.ts`: (1) si hay `px_vta_sugerido` del proveedor asociado al competidor para ese `cod_tienda` → se expone como `pxCompetencia` con `estado = OK`; (2) si no → `px_competencia` y `estado` del relevamiento por URL en BD. `prod_precios_competencia.px_competencia` sigue siendo solo el resultado del scraping.
+- **Sync:** si hay sugerido, no hace HTTP ni pisa `px_competencia` en BD; si no hay sugerido, scraping de `url_producto`. Filas relevables: `url_producto` no nulo **o** sugerido disponible (`whereVinculosRelevablesCompetencia`). `POST` body `{ competenciaId, limiteProductos?, codTienda? }` o `{ todos: true, … }`; cancelación `POST /api/sync-competencia-precios/cancel`.
 - **Guardar URL:** `guardarUrlVinculoCompetenciaAction` → `competenciaVinculo.service.ts` (upsert por `cod_tienda` + `competencia_id`; solo el competidor tocado: si la URL no cambió no se pisa `estado`/`px_competencia`; si cambia la URL → `PENDIENTE` y se limpia precio de ese vínculo; al borrar URL solo ese competidor pasa a `SIN_URL` sin tocar filas de otros).
 
-Migración: `20260520190000_add_prod_competencia_tables`.
+Migraciones: `20260520190000_add_prod_competencia_tables`; `20260523120000_prod_competencia_id_proveedor` (`id_proveedor` opcional en `prod_competencia`).
 
 ### Permisos
 
@@ -1300,10 +1301,11 @@ Migración: `20260520190000_add_prod_competencia_tables`.
 
 ### Servicios
 
-- `competencia.service.ts` — CRUD + `normalizeWebUrl`.
+- `competencia.service.ts` — CRUD + `normalizeWebUrl` (incluye `idProveedor` opcional).
+- `competenciaPxSugerido.service.ts` — `obtenerPxVtaSugeridoParaCompetencia`, `whereVinculosRelevablesCompetencia`, `countVinculosRelevablesCompetencia`.
 - `competenciaPreciosList.service.ts` — listado paginado (`PAGE_SIZE`) con vínculos por competidor por fila (`vinculosPorCompetencia`). Filtros Zod (`competenciaPreciosFiltrosSchema`): `difPromedio` (`MAS_CARO` \| `MAS_BARATO`), `provCaroCompetenciaId`, `provBaratoCompetenciaId`, `configurado` (`SI` \| `NO`), `q`, `pagina`. Comparaciones de precio (promedio y por competidor) solo con filas `estado = OK` y `px_competencia` no nulo; promedio = `ROUND(AVG(px_competencia))` alineado a `competenciaPreciosFilaResumen.ts`. `configurado`: `SI` → `preciosCompetencia` con `url_producto` no nulo; `NO` → sin ninguna URL. Lógica SQL auxiliar en `competenciaPreciosFiltrosQuery.ts`. La grilla agrega promedio/mín/máx en cliente vía `competenciaPreciosFilaResumen.ts`.
 - `competenciaPrecioScraping.service.ts` — `fetch` HTML; extracción por regla del competidor (`config_extraccion` + `tipo_pagina` del vínculo): JSON-LD, selectores CSS (`.clase`, `#id`, `[id^="prefijo-"]`, `[itemprop="price"]`), regex custom; `expandirSelectoresPrecio` en `@/lib/competenciaConfigExtraccion.ts` duplica `#id-1234` → también `[id^="id-"]` para IDs distintos por producto; heurística genérica solo si no hay regla o como último método. Tras capturar texto, **`parsePrecioArgentino`** (`@/lib/parsePrecioArgentino.ts`) normaliza a **entero en pesos** (sin centavos): punto como **miles** (`179.129` → `179129`), coma como decimales opcionales (`1.234.567,89` → `1234567`). Aplica a regex, CSS y JSON-LD por igual.
-- `syncCompetenciaPrecios.service.ts` — upsert por par producto×competidor; progreso vía callback.
+- `syncCompetenciaPrecios.service.ts` — relevamiento por par producto×competidor (sugerido proveedor o scraping); devuelve también `desdeSugerido`; progreso vía callback.
 
 ### API Routes
 

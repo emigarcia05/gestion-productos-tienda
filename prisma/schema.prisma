@@ -84,6 +84,7 @@ model Proveedor {
   comprobantesProveedor ComprobanteProveedor[]
   finBalGastoFinal   FinBalGastoFinal[]
   finTesoreriaChequesPago FinTesoreriaCheque[]
+  competenciasPrecios ProdCompetencia[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -565,6 +566,8 @@ model ProdCompetencia {
   nombre    String   @unique(map: "prod_competencia_nombre_key")
   /// Sitio principal del competidor (referencia; las fichas van en prod_precios_competencia.url_producto).
   web       String
+  /// Si está definido, el sync puede tomar `px_vta_sugerido` de `prod_precios_provee` (mismo `cod_tienda`) sin scraping.
+  idProveedor String? @map("id_proveedor")
   /// Última ejecución de relevamiento masivo para este competidor.
   ultimaComparacionAt DateTime? @map("ultima_comparacion_at")
   /// Reglas de extracción por tipo de página (selectores CSS, JSON-LD, regex). Ver `competenciaConfigExtraccion.ts`.
@@ -572,8 +575,10 @@ model ProdCompetencia {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  proveedor Proveedor? @relation(fields: [idProveedor], references: [id], onDelete: SetNull)
   precios ProdPrecioCompetencia[]
 
+  @@index([idProveedor], map: "prod_competencia_id_proveedor_idx")
   @@map("prod_competencia")
 }
 

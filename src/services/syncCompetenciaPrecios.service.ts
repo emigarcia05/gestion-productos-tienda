@@ -2,6 +2,11 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { shouldAbortCompetenciaSyncInDb } from "@/lib/competenciaPreciosProgressDb";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
+import {
+  countVinculosRelevablesCompetencia,
+  obtenerPxVtaSugeridoParaCompetencia,
+  whereVinculosRelevablesCompetencia,
+} from "@/services/competenciaPxSugerido.service";
 import { extraerPrecioDesdeUrlProducto } from "@/services/competenciaPrecioScraping.service";
 
 const DELAY_MS = 300;
@@ -18,34 +23,44 @@ export interface SyncCompetenciaPreciosResult {
   encontrados: number;
   vacios: number;
   errores: number;
+  desdeSugerido: number;
 }
 
 export interface SyncCompetenciaPreciosOptions {
   competenciaId: string;
+  idProveedor?: string | null;
   codTienda?: string;
   limiteProductos?: number;
   onProgress?: (processed: number, total: number) => void;
 }
 
 /**
- * Releva precios: una consulta HTTP por cada fila de `prod_precios_competencia`
- * del competidor elegido que tenga `url_producto` (no recorre el catálogo tienda).
+ * Releva precios por vínculo producto×competidor: primero `px_vta_sugerido` del proveedor
+ * asociado (si está configurado y existe en `prod_precios_provee`); si no, scraping de `url_producto`.
  */
 export async function syncCompetenciaPrecios(
   options: SyncCompetenciaPreciosOptions
 ): Promise<SyncCompetenciaPreciosResult> {
-  const whereVinculo = {
+  const idProveedor = options.idProveedor ?? null;
+
+  const whereVinculo = whereVinculosRelevablesCompetencia({
     competenciaId: options.competenciaId,
-    urlProducto: { not: null },
-    ...(options.codTienda ? { codTienda: options.codTienda } : {}),
-  };
+    idProveedor,
+    codTienda: options.codTienda,
+  });
 
   const competencia = await prisma.prodCompetencia.findUnique({
     where: { id: options.competenciaId },
-    select: { configExtraccion: true },
+    select: { configExtraccion: true, idProveedor: true },
   });
 
-  const totalEnBd = await prisma.prodPrecioCompetencia.count({ where: whereVinculo });
+  const proveedorSync = idProveedor ?? competencia?.idProveedor ?? null;
+
+  const totalEnBd = await countVinculosRelevablesCompetencia({
+    competenciaId: options.competenciaId,
+    idProveedor: proveedorSync,
+    codTienda: options.codTienda,
+  });
   const limite = options.limiteProductos;
   const totalObjetivo =
     limite != null && limite > 0 ? Math.min(totalEnBd, limite) : totalEnBd;
@@ -54,6 +69,7 @@ export async function syncCompetenciaPrecios(
   let encontrados = 0;
   let vacios = 0;
   let errores = 0;
+  let desdeSugerido = 0;
   let skip = 0;
 
   while (processed < totalObjetivo) {
@@ -77,11 +93,49 @@ export async function syncCompetenciaPrecios(
     if (vinculos.length === 0) break;
 
     for (const v of vinculos) {
-      const url = v.urlProducto?.trim();
-      if (!url) continue;
-
       const now = new Date();
+      const url = v.urlProducto?.trim() || null;
+
       try {
+        if (proveedorSync) {
+          const precioSugerido = await obtenerPxVtaSugeridoParaCompetencia(
+            v.codTienda,
+            proveedorSync
+          );
+          if (precioSugerido != null) {
+            encontrados++;
+            desdeSugerido++;
+            // El sugerido se muestra en lectura; en BD se conserva el relevamiento por URL.
+            processed++;
+            options.onProgress?.(processed, totalObjetivo);
+            if (await shouldAbortCompetenciaSyncInDb()) {
+              throw new SyncCompetenciaPreciosCancelledError();
+            }
+            continue;
+          }
+        }
+
+        if (!url) {
+          vacios++;
+          await prisma.prodPrecioCompetencia.update({
+            where: {
+              codTienda_competenciaId: {
+                codTienda: v.codTienda,
+                competenciaId: v.competenciaId,
+              },
+            },
+            data: {
+              pxCompetencia: null,
+              estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO,
+              errorMensaje: null,
+              relevadoAt: now,
+            },
+          });
+          processed++;
+          options.onProgress?.(processed, totalObjetivo);
+          continue;
+        }
+
         const resultado = await extraerPrecioDesdeUrlProducto(url, {
           configExtraccion: competencia?.configExtraccion,
           tipoPagina: v.tipoPagina,
@@ -172,7 +226,7 @@ export async function syncCompetenciaPrecios(
     data: { ultimaComparacionAt: new Date() },
   });
 
-  return { procesados: processed, encontrados, vacios, errores };
+  return { procesados: processed, encontrados, vacios, errores, desdeSugerido };
 }
 
 function delay(ms: number): Promise<void> {

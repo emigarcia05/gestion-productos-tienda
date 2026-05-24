@@ -24,9 +24,18 @@ export const competenciaWebSchema = z
     { message: "URL del sitio inválida." }
   );
 
+const idProveedorCompetenciaSchema = z
+  .union([prismaCuidSchema, z.literal(""), z.null()])
+  .optional()
+  .transform((v) => {
+    if (v === "" || v == null) return null;
+    return v;
+  });
+
 export const createCompetenciaSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio.").max(120, "Nombre demasiado largo."),
   web: competenciaWebSchema,
+  idProveedor: idProveedorCompetenciaSchema,
   configExtraccion: competenciaConfigExtraccionSchema.optional().nullable(),
 });
 

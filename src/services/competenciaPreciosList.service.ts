@@ -11,6 +11,10 @@ import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import type { CompetenciaPreciosFiltros } from "@/lib/validations/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+import {
+  aplicarPrioridadPrecioMostrar,
+  buildMapPxVtaSugerido,
+} from "@/services/competenciaPxSugerido.service";
 
 export interface FilaCompetenciaPrecios {
   codTienda: string;
@@ -55,6 +59,7 @@ export async function getCompetenciaPreciosList(
       id: true,
       nombre: true,
       web: true,
+      idProveedor: true,
       ultimaComparacionAt: true,
       configExtraccion: true,
     },
@@ -64,6 +69,7 @@ export async function getCompetenciaPreciosList(
     id: c.id,
     nombre: c.nombre,
     web: c.web,
+    idProveedor: c.idProveedor,
     ultimaComparacionAt: c.ultimaComparacionAt?.toISOString() ?? null,
     configExtraccion: parseCompetenciaConfigExtraccion(c.configExtraccion),
   }));
@@ -107,6 +113,25 @@ export async function getCompetenciaPreciosList(
   ]);
 
   const codTiendas = productos.map((p) => p.codTienda);
+  const idProveedoresCompetencia = [
+    ...new Set(
+      competencias.map((c) => c.idProveedor).filter((id): id is string => Boolean(id))
+    ),
+  ];
+  const pxSugeridoPorCodTiendaProveedor = await buildMapPxVtaSugerido(
+    codTiendas,
+    idProveedoresCompetencia
+  );
+
+  const pxSugeridoParaCompetencia = (
+    codTienda: string,
+    competenciaId: string
+  ): number | null => {
+    const idProveedor = competencias.find((c) => c.id === competenciaId)?.idProveedor;
+    if (!idProveedor) return null;
+    return pxSugeridoPorCodTiendaProveedor.get(`${codTienda}:${idProveedor}`) ?? null;
+  };
+
   const preciosRows =
     codTiendas.length > 0
       ? await prisma.prodPrecioCompetencia.findMany({
@@ -133,7 +158,7 @@ export async function getCompetenciaPreciosList(
   for (const row of preciosRows) {
     const entry = vinculosMap.get(row.codTienda);
     if (!entry) continue;
-    entry[row.competenciaId] = {
+    const desdeBd: DatoVinculoCompetenciaCliente = {
       urlProducto: row.urlProducto,
       tipoPagina: row.tipoPagina,
       pxCompetencia: row.pxCompetencia != null ? Number(row.pxCompetencia) : null,
@@ -141,6 +166,19 @@ export async function getCompetenciaPreciosList(
       errorMensaje: row.errorMensaje,
       relevadoAt: row.relevadoAt?.toISOString() ?? null,
     };
+    entry[row.competenciaId] = aplicarPrioridadPrecioMostrar(
+      desdeBd,
+      pxSugeridoParaCompetencia(row.codTienda, row.competenciaId)
+    );
+  }
+
+  for (const [codTienda, entry] of vinculosMap) {
+    for (const c of competencias) {
+      entry[c.id] = aplicarPrioridadPrecioMostrar(
+        entry[c.id] ?? vinculoVacio(),
+        pxSugeridoParaCompetencia(codTienda, c.id)
+      );
+    }
   }
 
   const filas: FilaCompetenciaPrecios[] = productos.map((p) => ({

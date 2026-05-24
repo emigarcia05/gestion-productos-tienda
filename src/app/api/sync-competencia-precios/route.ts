@@ -7,6 +7,7 @@ import {
   syncCompetenciaPrecios,
   SyncCompetenciaPreciosCancelledError,
 } from "@/services/syncCompetenciaPrecios.service";
+import { countVinculosRelevablesCompetencia } from "@/services/competenciaPxSugerido.service";
 import {
   setCompetenciaSyncErrorInDb,
   setCompetenciaSyncProgressInDb,
@@ -21,7 +22,7 @@ export const maxDuration = 300;
 let syncInProgress = false;
 
 /**
- * POST: sincroniza precios de competencia (scraping).
+ * POST: sincroniza precios de competencia (px_vta_sugerido del proveedor asociado o scraping).
  * Body: { competenciaId } o { todos: true }; { codTienda? } opcional para un solo ítem.
  */
 export async function POST(request: Request) {
@@ -52,32 +53,41 @@ export async function POST(request: Request) {
   const codTienda = parsed.data.codTienda;
   const limiteProductos = parsed.data.limiteProductos;
 
-  type CompetidorSync = { id: string; nombre: string; totalEnBd: number };
+  type CompetidorSync = {
+    id: string;
+    nombre: string;
+    idProveedor: string | null;
+    totalEnBd: number;
+  };
 
   let competidoresSync: CompetidorSync[] = [];
 
   if (parsed.data.todos === true) {
     const todos = await prisma.prodCompetencia.findMany({
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, idProveedor: true },
       orderBy: { nombre: "asc" },
     });
     for (const c of todos) {
-      const totalEnBd = await prisma.prodPrecioCompetencia.count({
-        where: {
-          competenciaId: c.id,
-          urlProducto: { not: null },
-          ...(codTienda ? { codTienda } : {}),
-        },
+      const totalEnBd = await countVinculosRelevablesCompetencia({
+        competenciaId: c.id,
+        idProveedor: c.idProveedor,
+        codTienda,
       });
       if (totalEnBd > 0) {
-        competidoresSync.push({ id: c.id, nombre: c.nombre, totalEnBd });
+        competidoresSync.push({
+          id: c.id,
+          nombre: c.nombre,
+          idProveedor: c.idProveedor,
+          totalEnBd,
+        });
       }
     }
     if (competidoresSync.length === 0) {
       return NextResponse.json(
         {
           ok: false,
-          error: "No hay productos con URL cargada en ningún competidor. Asigná URLs antes de comparar.",
+          error:
+            "No hay productos con URL cargada ni con Px. Vta. Sugerido para comparar. Asigná URLs o configurá el proveedor asociado.",
         },
         { status: 400 }
       );
@@ -85,28 +95,34 @@ export async function POST(request: Request) {
   } else {
     const competidor = await prisma.prodCompetencia.findUnique({
       where: { id: parsed.data.competenciaId! },
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, idProveedor: true },
     });
     if (!competidor) {
       return NextResponse.json({ ok: false, error: "Competidor no encontrado." }, { status: 404 });
     }
-    const totalEnBd = await prisma.prodPrecioCompetencia.count({
-      where: {
-        competenciaId: competidor.id,
-        urlProducto: { not: null },
-        ...(codTienda ? { codTienda } : {}),
-      },
+    const totalEnBd = await countVinculosRelevablesCompetencia({
+      competenciaId: competidor.id,
+      idProveedor: competidor.idProveedor,
+      codTienda,
     });
     if (totalEnBd === 0) {
       return NextResponse.json(
         {
           ok: false,
-          error: "No hay productos con URL cargada para este competidor. Asigná URLs antes de comparar.",
+          error:
+            "No hay productos con URL cargada ni con Px. Vta. Sugerido para este competidor.",
         },
         { status: 400 }
       );
     }
-    competidoresSync = [{ id: competidor.id, nombre: competidor.nombre, totalEnBd }];
+    competidoresSync = [
+      {
+        id: competidor.id,
+        nombre: competidor.nombre,
+        idProveedor: competidor.idProveedor,
+        totalEnBd,
+      },
+    ];
   }
 
   const limite = limiteProductos;
@@ -124,12 +140,14 @@ export async function POST(request: Request) {
     let encontrados = 0;
     let vacios = 0;
     let errores = 0;
+    let desdeSugerido = 0;
     let procesados = 0;
 
     for (const competidor of competidoresSync) {
       const result = await syncCompetenciaPrecios({
         codTienda,
         competenciaId: competidor.id,
+        idProveedor: competidor.idProveedor,
         limiteProductos,
         onProgress(processed, _total) {
           void setCompetenciaSyncProgressInDb(processedOffset + processed, totalPairs);
@@ -140,9 +158,10 @@ export async function POST(request: Request) {
       encontrados += result.encontrados;
       vacios += result.vacios;
       errores += result.errores;
+      desdeSugerido += result.desdeSugerido;
     }
 
-    const result = { procesados, encontrados, vacios, errores };
+    const result = { procesados, encontrados, vacios, errores, desdeSugerido };
 
     await setCompetenciaSyncResultInDb({
       encontrados: result.encontrados,

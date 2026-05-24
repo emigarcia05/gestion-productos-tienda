@@ -9,6 +9,7 @@ export interface CompetenciaParaCliente {
   id: string;
   nombre: string;
   web: string;
+  idProveedor: string | null;
   ultimaComparacionAt: string | null;
   configExtraccion: CompetenciaConfigExtraccion | null;
 }
@@ -17,6 +18,7 @@ const competenciaSelect = {
   id: true,
   nombre: true,
   web: true,
+  idProveedor: true,
   ultimaComparacionAt: true,
   configExtraccion: true,
 } as const;
@@ -32,12 +34,14 @@ export async function listCompetencias(): Promise<CompetenciaParaCliente[]> {
 export async function createCompetencia(data: {
   nombre: string;
   web: string;
+  idProveedor?: string | null;
   configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
   const row = await prisma.prodCompetencia.create({
     data: {
       nombre: data.nombre.trim(),
       web: normalizeWebUrl(data.web),
+      idProveedor: data.idProveedor ?? null,
       configExtraccion: toJsonInput(data.configExtraccion),
     },
     select: competenciaSelect,
@@ -49,6 +53,7 @@ export async function updateCompetencia(data: {
   id: string;
   nombre: string;
   web: string;
+  idProveedor?: string | null;
   configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
   const row = await prisma.prodCompetencia.update({
@@ -56,6 +61,7 @@ export async function updateCompetencia(data: {
     data: {
       nombre: data.nombre.trim(),
       web: normalizeWebUrl(data.web),
+      ...(data.idProveedor !== undefined ? { idProveedor: data.idProveedor } : {}),
       ...(data.configExtraccion !== undefined
         ? { configExtraccion: toJsonInput(data.configExtraccion) }
         : {}),
@@ -77,6 +83,7 @@ function mapCompetenciaRow(row: {
   id: string;
   nombre: string;
   web: string;
+  idProveedor: string | null;
   ultimaComparacionAt: Date | null;
   configExtraccion: unknown;
 }): CompetenciaParaCliente {
@@ -84,6 +91,7 @@ function mapCompetenciaRow(row: {
     id: row.id,
     nombre: row.nombre,
     web: row.web,
+    idProveedor: row.idProveedor,
     ultimaComparacionAt: row.ultimaComparacionAt?.toISOString() ?? null,
     configExtraccion: parseCompetenciaConfigExtraccion(row.configExtraccion),
   };

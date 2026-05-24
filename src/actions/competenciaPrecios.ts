@@ -22,6 +22,7 @@ import {
   getCompetenciaPreciosList,
   type CompetenciaPreciosListResult,
 } from "@/services/competenciaPreciosList.service";
+import { countVinculosRelevablesCompetencia } from "@/services/competenciaPxSugerido.service";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
 const PATH = "/precios-competencia";
@@ -75,11 +76,14 @@ export async function countVinculosConUrlCompetenciaAction(
     if (denied) return 0;
     const parsed = prismaCuidSchema.safeParse(competenciaId);
     if (!parsed.success) return 0;
-    return prisma.prodPrecioCompetencia.count({
-      where: {
-        competenciaId: parsed.data,
-        urlProducto: { not: null },
-      },
+    const competencia = await prisma.prodCompetencia.findUnique({
+      where: { id: parsed.data },
+      select: { idProveedor: true },
+    });
+    if (!competencia) return 0;
+    return countVinculosRelevablesCompetencia({
+      competenciaId: parsed.data,
+      idProveedor: competencia.idProveedor,
     });
   } catch {
     return 0;
@@ -111,6 +115,7 @@ export async function createCompetenciaAction(
           msg.nombre?.[0] ??
           msg.web?.[0] ??
           msg.configExtraccion?.[0] ??
+          msg.idProveedor?.[0] ??
           "Datos inválidos.",
       };
     }
@@ -142,6 +147,7 @@ export async function updateCompetenciaAction(
           msg.web?.[0] ??
           msg.id?.[0] ??
           msg.configExtraccion?.[0] ??
+          msg.idProveedor?.[0] ??
           "Datos inválidos.",
       };
     }

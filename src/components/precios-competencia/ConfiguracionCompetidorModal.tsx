@@ -5,14 +5,24 @@ import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { getProveedores } from "@/actions/proveedores";
 import { updateCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import {
   type CompetenciaConfigExtraccion,
 } from "@/lib/competenciaConfigExtraccion";
 import CompetenciaExtraccionReglasEditor from "@/components/precios-competencia/CompetenciaExtraccionReglasEditor";
+
+const SIN_PROVEEDOR_ASOCIADO = "__SIN_PROVEEDOR__";
 
 interface Props {
   open: boolean;
@@ -31,6 +41,8 @@ export default function ConfiguracionCompetidorModal({
 }: Props) {
   const [nombre, setNombre] = useState("");
   const [web, setWeb] = useState("");
+  const [idProveedor, setIdProveedor] = useState<string>(SIN_PROVEEDOR_ASOCIADO);
+  const [proveedores, setProveedores] = useState<{ id: string; nombre: string }[]>([]);
   const [configExtraccion, setConfigExtraccion] =
     useState<CompetenciaConfigExtraccion>(CONFIG_VACIA);
   const [saving, setSaving] = useState(false);
@@ -39,7 +51,11 @@ export default function ConfiguracionCompetidorModal({
     if (!open || !competidor) return;
     setNombre(competidor.nombre);
     setWeb(competidor.web);
+    setIdProveedor(competidor.idProveedor ?? SIN_PROVEEDOR_ASOCIADO);
     setConfigExtraccion(competidor.configExtraccion ?? CONFIG_VACIA);
+    void getProveedores().then((rows) =>
+      setProveedores(rows.map((p) => ({ id: p.id, nombre: p.nombre })))
+    );
   }, [open, competidor]);
 
   const handleGuardar = async () => {
@@ -50,6 +66,8 @@ export default function ConfiguracionCompetidorModal({
         id: competidor.id,
         nombre: nombre.trim(),
         web: web.trim(),
+        idProveedor:
+          idProveedor === SIN_PROVEEDOR_ASOCIADO ? null : idProveedor,
         configExtraccion,
       });
       if (!result.ok) {
@@ -113,6 +131,26 @@ export default function ConfiguracionCompetidorModal({
               placeholder="https://ejemplo.com"
               className="mt-1"
             />
+          </div>
+          <div>
+            <ModalMicroLabel>Proveedor (Px. Vta. Sugerido)</ModalMicroLabel>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Si el producto está vinculado en lista proveedor con Px. Vta. Sugerido, el
+              relevamiento usa ese valor y no hace scraping.
+            </p>
+            <Select value={idProveedor} onValueChange={setIdProveedor}>
+              <SelectTrigger className="mt-1 w-full">
+                <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
+              </SelectTrigger>
+              <SelectContent position="popper" side="bottom" align="start">
+                <SelectItem value={SIN_PROVEEDOR_ASOCIADO}>SIN PROVEEDOR</SelectItem>
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nombre.toLocaleUpperCase("es")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <CompetenciaExtraccionReglasEditor
             value={configExtraccion}
