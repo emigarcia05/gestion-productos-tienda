@@ -18,10 +18,11 @@ export interface ResumenPreciosCompetenciaFila {
   competidoresOrdenados: CompetidorPrecioFila[];
 }
 
-export function prefijoCompetidor3(nombre: string): string {
-  const t = nombre.trim();
-  if (!t) return "—";
-  return t.slice(0, 3).toUpperCase();
+/** Abreviatura en columnas MENOR/MAYOR PRECIO: `global_proveedores.prefijo` del proveedor del competidor. */
+export function abreviaturaCompetidorEnGrilla(c: CompetenciaParaCliente): string {
+  const p = c.prefijoProveedor?.trim();
+  if (!p) return "—";
+  return p.toUpperCase();
 }
 
 function difPctVsBase(precio: number, base: number): number | null {
@@ -41,7 +42,7 @@ export function listarCompetidoresConPrecioOk(
     items.push({
       competenciaId: c.id,
       nombre: c.nombre,
-      prefijo3: prefijoCompetidor3(c.nombre),
+      prefijo3: abreviaturaCompetidorEnGrilla(c),
       px: v.pxCompetencia,
       difPctVsTienda: difPctVsBase(v.pxCompetencia, pxListaTienda),
     });

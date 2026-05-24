@@ -2,14 +2,17 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
-import { parseCompetenciaConfigExtraccion } from "@/lib/competenciaConfigExtraccion";
 import {
   codTiendasFiltrosPrecioCompetencia,
   whereConfiguradoCompetencia,
 } from "@/lib/competenciaPreciosFiltrosQuery";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import type { CompetenciaPreciosFiltros } from "@/lib/validations/competenciaPrecios";
-import type { CompetenciaParaCliente } from "@/services/competencia.service";
+import {
+  competenciaSelect,
+  mapCompetenciaRow,
+  type CompetenciaParaCliente,
+} from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 import {
   aplicarPrioridadPrecioMostrar,
@@ -57,24 +60,10 @@ export async function getCompetenciaPreciosList(
 
   const competenciasRows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
-    select: {
-      id: true,
-      nombre: true,
-      web: true,
-      idProveedor: true,
-      ultimaComparacionAt: true,
-      configExtraccion: true,
-    },
+    select: competenciaSelect,
   });
 
-  const competencias = competenciasRows.map((c) => ({
-    id: c.id,
-    nombre: c.nombre,
-    web: c.web,
-    idProveedor: c.idProveedor,
-    ultimaComparacionAt: c.ultimaComparacionAt?.toISOString() ?? null,
-    configExtraccion: parseCompetenciaConfigExtraccion(c.configExtraccion),
-  }));
+  const competencias = competenciasRows.map(mapCompetenciaRow);
 
   const baseWhere: Prisma.ListaPrecioTiendaWhereInput = {
     ...(q ? filtroTexto(q, ["codTienda", "descripcionTienda", "codExt"]) : {}),

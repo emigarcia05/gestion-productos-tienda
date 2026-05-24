@@ -5,7 +5,7 @@ import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { getProveedores } from "@/actions/proveedores";
+import { getProveedoresMercaderia } from "@/actions/proveedores";
 import { createCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import CompetidorProveedorNombrePaginaFields, {
@@ -32,7 +32,7 @@ export default function AltaCompetidorModal({ open, onOpenChange, onCreado }: Pr
     setNombre("");
     setWeb("");
     setIdProveedor(SIN_PROVEEDOR_ASOCIADO);
-    void getProveedores().then((rows) =>
+    void getProveedoresMercaderia().then((rows) =>
       setProveedores(rows.map((p) => ({ id: p.id, nombre: p.nombre })))
     );
   }, [open]);

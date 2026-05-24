@@ -10,17 +10,20 @@ export interface CompetenciaParaCliente {
   nombre: string;
   web: string;
   idProveedor: string | null;
+  /** `global_proveedores.prefijo` del proveedor asociado (abreviatura en grilla). */
+  prefijoProveedor: string | null;
   ultimaComparacionAt: string | null;
   configExtraccion: CompetenciaConfigExtraccion | null;
 }
 
-const competenciaSelect = {
+export const competenciaSelect = {
   id: true,
   nombre: true,
   web: true,
   idProveedor: true,
   ultimaComparacionAt: true,
   configExtraccion: true,
+  proveedor: { select: { prefijo: true } },
 } as const;
 
 export async function listCompetencias(): Promise<CompetenciaParaCliente[]> {
@@ -98,19 +101,22 @@ function toJsonInput(
   return config as Prisma.InputJsonValue;
 }
 
-function mapCompetenciaRow(row: {
+export function mapCompetenciaRow(row: {
   id: string;
   nombre: string;
   web: string;
   idProveedor: string | null;
   ultimaComparacionAt: Date | null;
   configExtraccion: unknown;
+  proveedor?: { prefijo: string | null } | null;
 }): CompetenciaParaCliente {
+  const prefijo = row.proveedor?.prefijo?.trim();
   return {
     id: row.id,
     nombre: row.nombre,
     web: row.web,
     idProveedor: row.idProveedor,
+    prefijoProveedor: prefijo || null,
     ultimaComparacionAt: row.ultimaComparacionAt?.toISOString() ?? null,
     configExtraccion: parseCompetenciaConfigExtraccion(row.configExtraccion),
   };

@@ -53,10 +53,6 @@ export default function CompetidorProveedorNombrePaginaFields({
     <>
       <div>
         <ModalMicroLabel>Proveedor</ModalMicroLabel>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Con proveedor elegido, el nombre del competidor se toma de lista proveedores (Px. Vta.
-          Sugerido para relevar precios).
-        </p>
         <Select
           value={idProveedor}
           onValueChange={onIdProveedorChange}

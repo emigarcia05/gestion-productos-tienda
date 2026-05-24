@@ -5,7 +5,7 @@ import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { getProveedores } from "@/actions/proveedores";
+import { getProveedoresMercaderia } from "@/actions/proveedores";
 import { updateCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import {
@@ -47,7 +47,7 @@ export default function ConfiguracionCompetidorModal({
     setWeb(competidor.web);
     setIdProveedor(pid);
     setConfigExtraccion(competidor.configExtraccion ?? CONFIG_VACIA);
-    void getProveedores().then((rows) => {
+    void getProveedoresMercaderia().then((rows) => {
       const mapped = rows.map((p) => ({ id: p.id, nombre: p.nombre }));
       setProveedores(mapped);
       if (pid !== SIN_PROVEEDOR_ASOCIADO) {

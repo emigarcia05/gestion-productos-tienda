@@ -9,15 +9,17 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getCxPxTiendaPageParamsSchema } from "@/lib/validations/cxPxTienda";
-import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import {
   CX_PROD_SELECCION_PROM,
+  PX_LISTA_SELECCION_PROM,
   VINC_COSTO_MAS,
   VINC_COSTO_SIN,
   VINC_COSTO_UNO,
   type ItemCxPxTiendaParaTabla,
   type OpcionCostoCxProdProveedor,
+  type OpcionPxListaCompetidor,
   type ProveedorCxPxFiltro,
 } from "@/lib/cxPxTienda";
 import {
@@ -30,6 +32,15 @@ import {
 } from "@/services/costoListaTienda.service";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
+import {
+  buildMapOpcionesPxListaPorCodTienda,
+  calcularPxPromedioCompetencia,
+  establecerCompetenciaIdPxLista,
+  limpiarCompetenciaIdPxLista,
+  pxListaMostradoParaSeleccion,
+  validarCompetenciaPxLista,
+  type CompetenciaPxListaCtx,
+} from "@/services/pxListaCxPxTienda.service";
 
 async function listarProveedoresCxPxFiltro(): Promise<ProveedorCxPxFiltro[]> {
   const rows = await prisma.proveedor.findMany({
@@ -100,14 +111,35 @@ async function getCxPxTiendaEmptyOpciones() {
   };
 }
 
+async function listarCompetenciasPxListaCtx(): Promise<CompetenciaPxListaCtx[]> {
+  const rows = await prisma.prodCompetencia.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      idProveedor: true,
+      proveedor: { select: { prefijo: true } },
+    },
+  });
+  return rows.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    idProveedor: c.idProveedor,
+    prefijoProveedor: c.proveedor?.prefijo?.trim() || null,
+  }));
+}
+
 function mapFilaCxPx(
   r: {
     codTienda: string;
     descripcionTienda: string | null;
     costoCompra: unknown;
     codExtCostoLista: string | null;
+    pxListaTienda: unknown;
+    competenciaIdPxLista: string | null;
   },
-  candidatos: Awaited<ReturnType<typeof listarCandidatosCostoPorCodTienda>>
+  candidatos: Awaited<ReturnType<typeof listarCandidatosCostoPorCodTienda>>,
+  opcionesPxLista: OpcionPxListaCompetidor[]
 ): ItemCxPxTiendaParaTabla {
   const costoDux = Number(r.costoCompra) || 0;
   const costoPromedio = calcularCostoPromedioVinculos(candidatos);
@@ -135,6 +167,24 @@ function mapFilaCxPx(
       opcionesProveedor[0].costo > 0 ? opcionesProveedor[0].costo : costoDux;
   }
 
+  const pxListaTiendaDux = Number(r.pxListaTienda) || 0;
+
+  let seleccionPxLista: typeof PX_LISTA_SELECCION_PROM | string = PX_LISTA_SELECCION_PROM;
+  if (
+    r.competenciaIdPxLista &&
+    opcionesPxLista.some((o) => o.competenciaId === r.competenciaIdPxLista)
+  ) {
+    seleccionPxLista = r.competenciaIdPxLista;
+  } else if (opcionesPxLista.length === 1) {
+    seleccionPxLista = opcionesPxLista[0].competenciaId;
+  }
+
+  const pxListaMostrado = pxListaMostradoParaSeleccion(
+    seleccionPxLista,
+    opcionesPxLista,
+    pxListaTiendaDux
+  );
+
   return {
     id: r.codTienda,
     codTienda: r.codTienda,
@@ -144,6 +194,11 @@ function mapFilaCxPx(
     opcionesProveedor,
     seleccion,
     costoMostrado,
+    pxListaTiendaDux,
+    competenciaIdPxLista: r.competenciaIdPxLista,
+    opcionesPxLista,
+    seleccionPxLista,
+    pxListaMostrado,
   };
 }
 
@@ -214,7 +269,8 @@ export async function getCxPxTiendaPageData(params: {
     ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] }
     : { rubro: { not: null } };
 
-  const [rows, total, rubrosDistinct, marcasDistinct, proveedores] = await Promise.all([
+  const [rows, total, rubrosDistinct, marcasDistinct, proveedores, competenciasPxLista] =
+    await Promise.all([
     prisma.listaPrecioTienda.findMany({
       where,
       orderBy: [{ descripcionTienda: "asc" }],
@@ -225,6 +281,8 @@ export async function getCxPxTiendaPageData(params: {
         descripcionTienda: true,
         costoCompra: true,
         codExtCostoLista: true,
+        pxListaTienda: true,
+        competenciaIdPxLista: true,
       },
     }),
     prisma.listaPrecioTienda.count({ where }),
@@ -241,6 +299,7 @@ export async function getCxPxTiendaPageData(params: {
       orderBy: { marca: "asc" },
     }),
     listarProveedoresCxPxFiltro(),
+    listarCompetenciasPxListaCtx(),
   ]);
 
   const codTiendas = rows.map((r) => r.codTienda);
@@ -266,8 +325,17 @@ export async function getCxPxTiendaPageData(params: {
     vinculosPorTienda.set(v.codTiendaVinculo, lista);
   }
 
+  const opcionesPxListaMap = await buildMapOpcionesPxListaPorCodTienda(
+    codTiendas,
+    competenciasPxLista
+  );
+
   const items: ItemCxPxTiendaParaTabla[] = rows.map((r) =>
-    mapFilaCxPx(r, vinculosPorTienda.get(r.codTienda) ?? [])
+    mapFilaCxPx(
+      r,
+      vinculosPorTienda.get(r.codTienda) ?? [],
+      opcionesPxListaMap.get(r.codTienda) ?? []
+    )
   );
 
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
@@ -311,6 +379,46 @@ export async function guardarCostoCxProdTiendaAction(
     if (!res.success) return { ok: false, error: res.error };
   } else {
     const res = await establecerCodExtCostoLista(codTienda, seleccion);
+    if (!res.success) return { ok: false, error: res.error };
+  }
+
+  revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+  revalidatePath("/tienda/cx-px");
+  return { ok: true, data: undefined };
+}
+
+const guardarPxListaSchema = z.object({
+  codTienda: listaPreciosCodTiendaSchema,
+  seleccion: z.union([z.literal(PX_LISTA_SELECCION_PROM), prismaCuidSchema]),
+});
+
+/** Persiste px lista: competidor → `competencia_id_px_lista`; Px. Prom. → limpia FK. */
+export async function guardarPxListaTiendaAction(
+  raw: unknown
+): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = guardarPxListaSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+
+  const { codTienda, seleccion } = parsed.data;
+
+  if (seleccion === PX_LISTA_SELECCION_PROM) {
+    const res = await limpiarCompetenciaIdPxLista(codTienda);
+    if (!res.success) return { ok: false, error: res.error };
+  } else {
+    const competencias = await listarCompetenciasPxListaCtx();
+    const valid = await validarCompetenciaPxLista(codTienda, seleccion, competencias);
+    if (!valid.ok) return { ok: false, error: valid.error };
+    const res = await establecerCompetenciaIdPxLista(codTienda, seleccion);
     if (!res.success) return { ok: false, error: res.error };
   }
 
