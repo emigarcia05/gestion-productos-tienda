@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
+import { obtenerPxVtaSugeridoParaCompetencia } from "@/services/competenciaPxSugerido.service";
 
 export interface DatoVinculoCompetenciaCliente {
   urlProducto: string | null;
@@ -8,6 +9,8 @@ export interface DatoVinculoCompetenciaCliente {
   estado: string;
   errorMensaje: string | null;
   relevadoAt: string | null;
+  /** true si el competidor tiene proveedor y existe `px_vta_sugerido` en `prod_precios_provee` para este `cod_tienda`. */
+  urlBloqueadaPorPxSugerido: boolean;
 }
 
 export async function guardarUrlVinculoCompetencia(data: {
@@ -18,6 +21,22 @@ export async function guardarUrlVinculoCompetencia(data: {
 }): Promise<DatoVinculoCompetenciaCliente> {
   const url = data.urlProducto?.trim() || null;
   const tipoPagina = data.tipoPagina?.trim() || null;
+
+  const competencia = await prisma.prodCompetencia.findUnique({
+    where: { id: data.competenciaId },
+    select: { idProveedor: true },
+  });
+  if (competencia?.idProveedor) {
+    const pxSugerido = await obtenerPxVtaSugeridoParaCompetencia(
+      data.codTienda,
+      competencia.idProveedor
+    );
+    if (pxSugerido != null) {
+      throw new Error(
+        "Este producto usa Px. Vta. Sugerido del proveedor asociado al competidor; no se puede cargar ni modificar la URL."
+      );
+    }
+  }
 
   if (!url) {
     const existenteSinUrl = await prisma.prodPrecioCompetencia.findUnique({
@@ -170,5 +189,6 @@ function mapVinculo(row: {
     estado: row.estado,
     errorMensaje: row.errorMensaje,
     relevadoAt: row.relevadoAt?.toISOString() ?? null,
+    urlBloqueadaPorPxSugerido: false,
   };
 }

@@ -1303,7 +1303,7 @@ Migraciones: `20260520190000_add_prod_competencia_tables`; `20260523120000_prod_
 
 - `competencia.service.ts` — CRUD + `normalizeWebUrl` (incluye `idProveedor` opcional).
 - `competenciaPxSugerido.service.ts` — `obtenerPxVtaSugeridoParaCompetencia`, `whereVinculosRelevablesCompetencia`, `countVinculosRelevablesCompetencia`.
-- `competenciaPreciosList.service.ts` — listado paginado (`PAGE_SIZE`) con vínculos por competidor por fila (`vinculosPorCompetencia`). Filtros Zod (`competenciaPreciosFiltrosSchema`): `difPromedio` (`MAS_CARO` \| `MAS_BARATO`), `provCaroCompetenciaId`, `provBaratoCompetenciaId`, `configurado` (`SI` \| `NO`), `q`, `pagina`. Comparaciones de precio (promedio y por competidor) solo con filas `estado = OK` y `px_competencia` no nulo; promedio = `ROUND(AVG(px_competencia))` alineado a `competenciaPreciosFilaResumen.ts`. `configurado`: `SI` → `preciosCompetencia` con `url_producto` no nulo; `NO` → sin ninguna URL. Lógica SQL auxiliar en `competenciaPreciosFiltrosQuery.ts`. La grilla agrega promedio/mín/máx en cliente vía `competenciaPreciosFilaResumen.ts`.
+- `competenciaPreciosList.service.ts` — listado paginado (`PAGE_SIZE`) con vínculos por competidor por fila (`vinculosPorCompetencia`). Filtros Zod (`competenciaPreciosFiltrosSchema`): `difPromedio` (`MAS_CARO` \| `MAS_BARATO`), `provCaroCompetenciaId`, `provBaratoCompetenciaId`, `competenciaId` (solo ítems con px relevado para ese competidor), `configurado` (`SI` \| `NO`), `q`, `pagina`. Comparaciones de precio (promedio y por competidor) solo con filas `estado = OK` y `px_competencia` no nulo; promedio = `ROUND(AVG(px_competencia))` alineado a `competenciaPreciosFilaResumen.ts`. Filtro `competenciaId`: unión de vínculos scraping OK y `prod_precios_provee.px_vta_sugerido` del `id_proveedor` del competidor (`codTiendasConPxRelevadoCompetencia` en `competenciaPreciosFiltrosQuery.ts`). `configurado`: `SI` → `preciosCompetencia` con `url_producto` no nulo; `NO` → sin ninguna URL. Lógica SQL auxiliar en `competenciaPreciosFiltrosQuery.ts`. La grilla agrega promedio/mín/máx en cliente vía `competenciaPreciosFilaResumen.ts`.
 - `competenciaPrecioScraping.service.ts` — `fetch` HTML; extracción por regla del competidor (`config_extraccion` + `tipo_pagina` del vínculo): JSON-LD, selectores CSS (`.clase`, `#id`, `[id^="prefijo-"]`, `[itemprop="price"]`), regex custom; `expandirSelectoresPrecio` en `@/lib/competenciaConfigExtraccion.ts` duplica `#id-1234` → también `[id^="id-"]` para IDs distintos por producto; heurística genérica solo si no hay regla o como último método. Tras capturar texto, **`parsePrecioArgentino`** (`@/lib/parsePrecioArgentino.ts`) normaliza a **entero en pesos** (sin centavos): punto como **miles** (`179.129` → `179129`), coma como decimales opcionales (`1.234.567,89` → `1234567`). Aplica a regex, CSS y JSON-LD por igual.
 - `syncCompetenciaPrecios.service.ts` — relevamiento por par producto×competidor (sugerido proveedor o scraping); devuelve también `desdeSugerido`; progreso vía callback.
 
@@ -1315,3 +1315,19 @@ Migraciones: `20260520190000_add_prod_competencia_tables`; `20260523120000_prod_
 Migración adicional: `20260520230000_competencia_config_extraccion` (`config_extraccion`, `tipo_pagina`).
 
 **Nota operativa:** configurar al menos una regla **ficha** con el selector del precio visible en DevTools (`.precio-venta`, `#product-price`, `[itemprop="price"]`); sin reglas se usa heurística genérica (menos precisa).
+
+### Contrato backend → frontend (Px. sugerido por competidor, 2026-05)
+
+La UI de configuración de competidores **debe** permitir asignar `idProveedor` (CUID de `global_proveedores.id`). El backend ya expone y persiste el campo; la pantalla es responsabilidad del módulo frontend.
+
+| Acción / lectura | Campo | Tipo | Notas |
+|------------------|-------|------|--------|
+| `listCompetenciasAction` | `idProveedor` | `string \| null` | En cada ítem de `CompetenciaParaCliente` |
+| `createCompetenciaAction` | `idProveedor` | `string \| null` opcional | Zod: `prismaCuidSchema`, `""` o `null` → `null` |
+| `updateCompetenciaAction` | `idProveedor` | idem | Mismo esquema que create + `id` competidor |
+| `getCompetenciaPreciosListAction` | `vinculosPorCompetencia[*].pxCompetencia` | `number \| null` | **Ya resuelto en servidor:** si el competidor tiene `idProveedor` y existe `prod_precios_provee.px_vta_sugerido` para ese `cod_tienda`, el listado devuelve ese precio con `estado = OK`; si no, precio/estado del scraping (`px_competencia` en BD) |
+| `getCompetenciaPreciosListAction` | `vinculosPorCompetencia[*].urlBloqueadaPorPxSugerido` | `boolean` | `true` cuando aplica el sugerido anterior; la UI bloquea URL en **Asociar URLs**; `guardarUrlVinculoCompetencia` rechaza alta/edición de URL en ese caso |
+
+**Catálogo de proveedores para el selector:** reutilizar `getProveedores` (`src/actions/proveedores.ts`) con el gate de permisos existente; el valor guardado es `Proveedor.id` (CUID), no `id_proveedor_dux`.
+
+**Despliegue BD:** aplicar `20260523120000_prod_competencia_id_proveedor` en el entorno (`prisma migrate deploy`).

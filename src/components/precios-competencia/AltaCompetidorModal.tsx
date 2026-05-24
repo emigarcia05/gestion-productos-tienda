@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import AppModal from "@/components/shared/AppModal";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { getProveedores } from "@/actions/proveedores";
 import { createCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
+import CompetidorProveedorNombrePaginaFields, {
+  SIN_PROVEEDOR_ASOCIADO,
+  aplicarCambioProveedorCompetidor,
+  type ProveedorCompetidorOption,
+} from "@/components/precios-competencia/CompetidorProveedorNombrePaginaFields";
 
 interface Props {
   open: boolean;
@@ -19,13 +23,18 @@ interface Props {
 export default function AltaCompetidorModal({ open, onOpenChange, onCreado }: Props) {
   const [nombre, setNombre] = useState("");
   const [web, setWeb] = useState("");
+  const [idProveedor, setIdProveedor] = useState<string>(SIN_PROVEEDOR_ASOCIADO);
+  const [proveedores, setProveedores] = useState<ProveedorCompetidorOption[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setNombre("");
-      setWeb("");
-    }
+    if (!open) return;
+    setNombre("");
+    setWeb("");
+    setIdProveedor(SIN_PROVEEDOR_ASOCIADO);
+    void getProveedores().then((rows) =>
+      setProveedores(rows.map((p) => ({ id: p.id, nombre: p.nombre })))
+    );
   }, [open]);
 
   const handleGuardar = async () => {
@@ -34,6 +43,8 @@ export default function AltaCompetidorModal({ open, onOpenChange, onCreado }: Pr
       const result = await createCompetenciaAction({
         nombre: nombre.trim(),
         web: web.trim(),
+        idProveedor:
+          idProveedor === SIN_PROVEEDOR_ASOCIADO ? null : idProveedor,
         configExtraccion: { reglaDefaultId: "", reglas: [] },
       });
       if (!result.ok) {
@@ -78,24 +89,18 @@ export default function AltaCompetidorModal({ open, onOpenChange, onCreado }: Pr
           <p className="text-sm text-muted-foreground">
             Después de crearlo podés configurar cómo leer el precio en su sitio.
           </p>
-          <div>
-            <ModalMicroLabel>Nombre</ModalMicroLabel>
-            <Input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Nombre del competidor"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <ModalMicroLabel>Sitio Web</ModalMicroLabel>
-            <Input
-              value={web}
-              onChange={(e) => setWeb(e.target.value)}
-              placeholder="https://ejemplo.com"
-              className="mt-1"
-            />
-          </div>
+          <CompetidorProveedorNombrePaginaFields
+            idProveedor={idProveedor}
+            nombre={nombre}
+            web={web}
+            proveedores={proveedores}
+            disabled={saving}
+            onIdProveedorChange={(value) =>
+              aplicarCambioProveedorCompetidor(value, proveedores, setIdProveedor, setNombre)
+            }
+            onNombreChange={setNombre}
+            onWebChange={setWeb}
+          />
         </div>
       </AppModal>
     </Dialog>

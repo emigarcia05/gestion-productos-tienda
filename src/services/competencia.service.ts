@@ -31,17 +31,32 @@ export async function listCompetencias(): Promise<CompetenciaParaCliente[]> {
   return rows.map(mapCompetenciaRow);
 }
 
+async function resolveIdProveedorCompetencia(
+  idProveedor: string | null | undefined
+): Promise<string | null> {
+  if (idProveedor == null) return null;
+  const existe = await prisma.proveedor.findUnique({
+    where: { id: idProveedor },
+    select: { id: true },
+  });
+  if (!existe) {
+    throw new Error("El proveedor asociado no existe.");
+  }
+  return idProveedor;
+}
+
 export async function createCompetencia(data: {
   nombre: string;
   web: string;
   idProveedor?: string | null;
   configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
+  const idProveedor = await resolveIdProveedorCompetencia(data.idProveedor ?? null);
   const row = await prisma.prodCompetencia.create({
     data: {
       nombre: data.nombre.trim(),
       web: normalizeWebUrl(data.web),
-      idProveedor: data.idProveedor ?? null,
+      idProveedor,
       configExtraccion: toJsonInput(data.configExtraccion),
     },
     select: competenciaSelect,
@@ -56,12 +71,16 @@ export async function updateCompetencia(data: {
   idProveedor?: string | null;
   configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
+  const idProveedor =
+    data.idProveedor !== undefined
+      ? await resolveIdProveedorCompetencia(data.idProveedor)
+      : undefined;
   const row = await prisma.prodCompetencia.update({
     where: { id: data.id },
     data: {
       nombre: data.nombre.trim(),
       web: normalizeWebUrl(data.web),
-      ...(data.idProveedor !== undefined ? { idProveedor: data.idProveedor } : {}),
+      ...(idProveedor !== undefined ? { idProveedor } : {}),
       ...(data.configExtraccion !== undefined
         ? { configExtraccion: toJsonInput(data.configExtraccion) }
         : {}),

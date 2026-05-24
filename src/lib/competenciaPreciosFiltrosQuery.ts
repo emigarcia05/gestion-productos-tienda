@@ -12,6 +12,8 @@ export interface FiltrosPrecioCompetenciaQuery {
   difPromedio?: DifPromedioFiltro | "";
   provCaroCompetenciaId?: string;
   provBaratoCompetenciaId?: string;
+  /** Solo productos con px relevado para este competidor (scraping OK o px_vta_sugerido). */
+  competenciaId?: string;
   configurado?: ConfiguradoFiltro | "";
 }
 
@@ -23,6 +25,47 @@ function intersectCodTiendas(partes: string[][]): string[] {
     set = new Set([...set].filter((c) => next.has(c)));
   }
   return [...set];
+}
+
+/**
+ * Productos con precio relevado para el competidor: scraping (`estado = OK`, `px_competencia`)
+ * o `px_vta_sugerido` del proveedor asociado en `prod_precios_provee`.
+ */
+export async function codTiendasConPxRelevadoCompetidor(
+  competenciaId: string
+): Promise<string[]> {
+  const competencia = await prisma.prodCompetencia.findUnique({
+    where: { id: competenciaId },
+    select: { idProveedor: true },
+  });
+
+  const desdeUrl = await prisma.$queryRaw<{ cod_tienda: string }[]>`
+    SELECT DISTINCT ppc.cod_tienda
+    FROM prod_precios_competencia ppc
+    WHERE ppc.competencia_id = ${competenciaId}
+      AND ppc.estado = ${ESTADO_RELEVAMIENTO_COMPETENCIA.OK}
+      AND ppc.px_competencia IS NOT NULL
+  `;
+
+  const codSet = new Set(desdeUrl.map((r) => r.cod_tienda));
+
+  if (competencia?.idProveedor) {
+    const desdeSugerido = await prisma.listaPrecioProveedor.findMany({
+      where: {
+        idProveedor: competencia.idProveedor,
+        habilitado: true,
+        pxVtaSugerido: { not: null, gt: 0 },
+        codTiendaVinculo: { not: null },
+      },
+      select: { codTiendaVinculo: true },
+      distinct: ["codTiendaVinculo"],
+    });
+    for (const row of desdeSugerido) {
+      if (row.codTiendaVinculo) codSet.add(row.codTiendaVinculo);
+    }
+  }
+
+  return [...codSet];
 }
 
 async function codTiendasDifPromedio(
@@ -97,6 +140,9 @@ export async function codTiendasFiltrosPrecioCompetencia(
     partes.push(
       codTiendasTiendaMasCaraQueCompetidor(filtros.provBaratoCompetenciaId.trim())
     );
+  }
+  if (filtros.competenciaId?.trim()) {
+    partes.push(codTiendasConPxRelevadoCompetidor(filtros.competenciaId.trim()));
   }
 
   if (partes.length === 0) return undefined;

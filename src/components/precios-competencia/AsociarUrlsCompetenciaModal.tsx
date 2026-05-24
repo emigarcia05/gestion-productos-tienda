@@ -35,6 +35,7 @@ type FilaUrl = {
   tipoPagina: string;
   reglaDefault: string;
   reglas: { id: string; nombre: string }[];
+  urlBloqueadaPorPxSugerido: boolean;
 };
 
 export default function AsociarUrlsCompetenciaModal({
@@ -66,6 +67,7 @@ export default function AsociarUrlsCompetenciaModal({
         tipoPagina: v?.tipoPagina ?? reglaDefault,
         reglaDefault,
         reglas,
+        urlBloqueadaPorPxSugerido: v?.urlBloqueadaPorPxSugerido ?? false,
       };
     });
   }, [competencias, vinculosPorCompetencia]);
@@ -77,6 +79,7 @@ export default function AsociarUrlsCompetenciaModal({
   }, [filasIniciales]);
 
   function filaTieneCambios(f: FilaUrl): boolean {
+    if (f.urlBloqueadaPorPxSugerido) return false;
     const ini = filasInicialesPorId.get(f.competenciaId);
     if (!ini) return true;
     const urlIni = ini.url.trim();
@@ -157,7 +160,9 @@ export default function AsociarUrlsCompetenciaModal({
             <p className="text-sm text-muted-foreground">No hay competidores registrados.</p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {filas.map((f, index) => (
+              {filas.map((f, index) => {
+                const urlBloqueada = f.urlBloqueadaPorPxSugerido;
+                return (
                 <li
                   key={f.competenciaId}
                   className="grid grid-cols-[minmax(0,10rem)_1fr] gap-3 items-center border-b border-border pb-3 last:border-0 last:pb-0"
@@ -166,12 +171,19 @@ export default function AsociarUrlsCompetenciaModal({
                     {f.nombre}
                   </span>
                   <div className="flex flex-col gap-2 min-w-0">
+                    {urlBloqueada ? (
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Precio desde{" "}
+                        <span className="font-medium text-foreground">Px. Vta. Sugerido</span> del
+                        proveedor asociado. La URL no aplica para este producto.
+                      </p>
+                    ) : null}
                     {f.reglas.length > 0 ? (
                       <div>
                         <select
                           className="input-filtro-unificado w-full"
                           value={f.tipoPagina}
-                          disabled={!puedeEditar || saving}
+                          disabled={!puedeEditar || saving || urlBloqueada}
                           aria-label={`Tipo de página — ${f.nombre}`}
                           onChange={(e) =>
                             setFilas((prev) =>
@@ -203,7 +215,7 @@ export default function AsociarUrlsCompetenciaModal({
                           placeholder="https://..."
                           className={cn(puedeEditar && "pr-10")}
                         />
-                        {puedeEditar ? (
+                        {puedeEditar && !urlBloqueada ? (
                           <Button
                             type="button"
                             variant="ghost"
@@ -232,7 +244,8 @@ export default function AsociarUrlsCompetenciaModal({
                     />
                   </div>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           )}
         </div>

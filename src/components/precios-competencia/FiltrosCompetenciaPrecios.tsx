@@ -32,6 +32,7 @@ interface Props {
   provCaroCompetenciaId: string;
   provBaratoCompetenciaId: string;
   configurado: string;
+  competenciaId: string;
   competencias: CompetenciaParaCliente[];
   total: number;
   loading: boolean;
@@ -40,6 +41,7 @@ interface Props {
   onProvCaroCompetenciaIdChange: (v: string) => void;
   onProvBaratoCompetenciaIdChange: (v: string) => void;
   onConfiguradoChange: (v: string) => void;
+  onCompetenciaIdChange: (v: string) => void;
   onBuscar: () => void;
 }
 
@@ -49,6 +51,7 @@ export default function FiltrosCompetenciaPrecios({
   provCaroCompetenciaId,
   provBaratoCompetenciaId,
   configurado,
+  competenciaId,
   competencias,
   total,
   loading,
@@ -57,6 +60,7 @@ export default function FiltrosCompetenciaPrecios({
   onProvCaroCompetenciaIdChange,
   onProvBaratoCompetenciaIdChange,
   onConfiguradoChange,
+  onCompetenciaIdChange,
   onBuscar,
 }: Props) {
   const {
@@ -191,6 +195,34 @@ export default function FiltrosCompetenciaPrecios({
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={!!competenciaId}
+            onLimpiar={() => {
+              onCompetenciaIdChange("");
+              onBuscar();
+            }}
+          >
+            <Select
+              value={competenciaId || "__all__"}
+              onValueChange={(v) => {
+                onCompetenciaIdChange(v === "__all__" ? "" : v);
+                onBuscar();
+              }}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="COMPETIDOR" />
+              </SelectTrigger>
+              <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
+                <SelectItem value="__all__">COMPETIDOR</SelectItem>
+                {competencias.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-3">
@@ -212,6 +244,7 @@ export default function FiltrosCompetenciaPrecios({
             onProvCaroCompetenciaIdChange("");
             onProvBaratoCompetenciaIdChange("");
             onConfiguradoChange("");
+            onCompetenciaIdChange("");
             onBuscar();
           }}
         />

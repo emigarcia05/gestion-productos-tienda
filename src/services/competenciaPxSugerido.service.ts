@@ -121,6 +121,7 @@ export function aplicarPrioridadPrecioMostrar(
       ...vinculo,
       pxCompetencia: pxSugerido,
       estado: ESTADO_RELEVAMIENTO_COMPETENCIA.OK,
+      urlBloqueadaPorPxSugerido: true,
     };
   }
 
@@ -130,8 +131,9 @@ export function aplicarPrioridadPrecioMostrar(
       ...vinculo,
       pxCompetencia: null,
       estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+      urlBloqueadaPorPxSugerido: false,
     };
   }
 
-  return vinculo;
+  return { ...vinculo, urlBloqueadaPorPxSugerido: false };
 }

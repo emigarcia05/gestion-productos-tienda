@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AppModal from "@/components/shared/AppModal";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getProveedores } from "@/actions/proveedores";
@@ -21,8 +12,11 @@ import {
   type CompetenciaConfigExtraccion,
 } from "@/lib/competenciaConfigExtraccion";
 import CompetenciaExtraccionReglasEditor from "@/components/precios-competencia/CompetenciaExtraccionReglasEditor";
-
-const SIN_PROVEEDOR_ASOCIADO = "__SIN_PROVEEDOR__";
+import CompetidorProveedorNombrePaginaFields, {
+  SIN_PROVEEDOR_ASOCIADO,
+  aplicarCambioProveedorCompetidor,
+  type ProveedorCompetidorOption,
+} from "@/components/precios-competencia/CompetidorProveedorNombrePaginaFields";
 
 interface Props {
   open: boolean;
@@ -42,20 +36,27 @@ export default function ConfiguracionCompetidorModal({
   const [nombre, setNombre] = useState("");
   const [web, setWeb] = useState("");
   const [idProveedor, setIdProveedor] = useState<string>(SIN_PROVEEDOR_ASOCIADO);
-  const [proveedores, setProveedores] = useState<{ id: string; nombre: string }[]>([]);
+  const [proveedores, setProveedores] = useState<ProveedorCompetidorOption[]>([]);
   const [configExtraccion, setConfigExtraccion] =
     useState<CompetenciaConfigExtraccion>(CONFIG_VACIA);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !competidor) return;
-    setNombre(competidor.nombre);
+    const pid = competidor.idProveedor ?? SIN_PROVEEDOR_ASOCIADO;
     setWeb(competidor.web);
-    setIdProveedor(competidor.idProveedor ?? SIN_PROVEEDOR_ASOCIADO);
+    setIdProveedor(pid);
     setConfigExtraccion(competidor.configExtraccion ?? CONFIG_VACIA);
-    void getProveedores().then((rows) =>
-      setProveedores(rows.map((p) => ({ id: p.id, nombre: p.nombre })))
-    );
+    void getProveedores().then((rows) => {
+      const mapped = rows.map((p) => ({ id: p.id, nombre: p.nombre }));
+      setProveedores(mapped);
+      if (pid !== SIN_PROVEEDOR_ASOCIADO) {
+        const prov = mapped.find((p) => p.id === pid);
+        setNombre(prov?.nombre ?? competidor.nombre);
+      } else {
+        setNombre(competidor.nombre);
+      }
+    });
   }, [open, competidor]);
 
   const handleGuardar = async () => {
@@ -114,44 +115,18 @@ export default function ConfiguracionCompetidorModal({
         }
       >
         <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
-          <div>
-            <ModalMicroLabel>Nombre</ModalMicroLabel>
-            <Input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Nombre del competidor"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <ModalMicroLabel>Sitio Web</ModalMicroLabel>
-            <Input
-              value={web}
-              onChange={(e) => setWeb(e.target.value)}
-              placeholder="https://ejemplo.com"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <ModalMicroLabel>Proveedor (Px. Vta. Sugerido)</ModalMicroLabel>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Si el producto está vinculado en lista proveedor con Px. Vta. Sugerido, el
-              relevamiento usa ese valor y no hace scraping.
-            </p>
-            <Select value={idProveedor} onValueChange={setIdProveedor}>
-              <SelectTrigger className="mt-1 w-full">
-                <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
-              </SelectTrigger>
-              <SelectContent position="popper" side="bottom" align="start">
-                <SelectItem value={SIN_PROVEEDOR_ASOCIADO}>SIN PROVEEDOR</SelectItem>
-                {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nombre.toLocaleUpperCase("es")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CompetidorProveedorNombrePaginaFields
+            idProveedor={idProveedor}
+            nombre={nombre}
+            web={web}
+            proveedores={proveedores}
+            disabled={saving}
+            onIdProveedorChange={(value) =>
+              aplicarCambioProveedorCompetidor(value, proveedores, setIdProveedor, setNombre)
+            }
+            onNombreChange={setNombre}
+            onWebChange={setWeb}
+          />
           <CompetenciaExtraccionReglasEditor
             value={configExtraccion}
             onChange={setConfigExtraccion}

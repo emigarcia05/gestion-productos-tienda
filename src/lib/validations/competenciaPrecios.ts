@@ -64,6 +64,8 @@ export const competenciaPreciosFiltrosSchema = paramsPaginaSchema.extend({
   provCaroCompetenciaId: prismaCuidSchema.optional(),
   /** PROV. BARATO: precio tienda mayor que el del competidor (relevamiento OK). */
   provBaratoCompetenciaId: prismaCuidSchema.optional(),
+  /** Solo ítems con precio relevado para ese competidor (URL OK o px_vta_sugerido). */
+  competenciaId: prismaCuidSchema.optional(),
   configurado: configuradoFiltroSchema,
 });
 

@@ -28,6 +28,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
   const [provCaroCompetenciaId, setProvCaroCompetenciaId] = useState("");
   const [provBaratoCompetenciaId, setProvBaratoCompetenciaId] = useState("");
   const [configurado, setConfigurado] = useState("");
+  const [competenciaId, setCompetenciaId] = useState("");
   const [pagina, setPagina] = useState(1);
 
   const cargar = useCallback(async () => {
@@ -39,13 +40,14 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
         provCaroCompetenciaId: provCaroCompetenciaId || undefined,
         provBaratoCompetenciaId: provBaratoCompetenciaId || undefined,
         configurado,
+        competenciaId: competenciaId || undefined,
         pagina: String(pagina),
       });
       setData(result);
     } finally {
       setLoading(false);
     }
-  }, [q, difPromedio, provCaroCompetenciaId, provBaratoCompetenciaId, configurado, pagina]);
+  }, [q, difPromedio, provCaroCompetenciaId, provBaratoCompetenciaId, configurado, competenciaId, pagina]);
 
   useEffect(() => {
     void cargar();
@@ -91,6 +93,7 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
             provCaroCompetenciaId={provCaroCompetenciaId}
             provBaratoCompetenciaId={provBaratoCompetenciaId}
             configurado={configurado}
+            competenciaId={competenciaId}
             competencias={data?.competencias ?? []}
             total={data?.total ?? 0}
             loading={loading}
@@ -112,6 +115,10 @@ export default function CompetenciaPreciosPageClient({ rol }: Props) {
             }}
             onConfiguradoChange={(v) => {
               setConfigurado(v);
+              setPagina(1);
+            }}
+            onCompetenciaIdChange={(v) => {
+              setCompetenciaId(v);
               setPagina(1);
             }}
             onBuscar={() => void cargar()}

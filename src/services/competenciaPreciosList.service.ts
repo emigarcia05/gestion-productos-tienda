@@ -40,6 +40,7 @@ function vinculoVacio(): DatoVinculoCompetenciaCliente {
     estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
     errorMensaje: null,
     relevadoAt: null,
+    urlBloqueadaPorPxSugerido: false,
   };
 }
 
@@ -52,6 +53,7 @@ export async function getCompetenciaPreciosList(
   const configurado = filtros.configurado;
   const provCaroCompetenciaId = filtros.provCaroCompetenciaId?.trim() ?? "";
   const provBaratoCompetenciaId = filtros.provBaratoCompetenciaId?.trim() ?? "";
+  const competenciaId = filtros.competenciaId?.trim() ?? "";
 
   const competenciasRows = await prisma.prodCompetencia.findMany({
     orderBy: { nombre: "asc" },
@@ -83,6 +85,7 @@ export async function getCompetenciaPreciosList(
     difPromedio: difPromedio === "" ? undefined : difPromedio,
     provCaroCompetenciaId: provCaroCompetenciaId || undefined,
     provBaratoCompetenciaId: provBaratoCompetenciaId || undefined,
+    competenciaId: competenciaId || undefined,
   });
 
   const where: Prisma.ListaPrecioTiendaWhereInput = {
@@ -165,6 +168,7 @@ export async function getCompetenciaPreciosList(
       estado: row.urlProducto ? row.estado : ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
       errorMensaje: row.errorMensaje,
       relevadoAt: row.relevadoAt?.toISOString() ?? null,
+      urlBloqueadaPorPxSugerido: false,
     };
     entry[row.competenciaId] = aplicarPrioridadPrecioMostrar(
       desdeBd,

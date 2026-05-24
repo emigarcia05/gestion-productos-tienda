@@ -29,6 +29,8 @@ interface Props {
  * Muestra el último resultado de comparación (estado + mensaje) para copiar y depurar.
  */
 export default function RelevamientoUltimoMensaje({ vinculo, tieneUrlEnEdicion }: Props) {
+  if (vinculo?.urlBloqueadaPorPxSugerido) return null;
+
   if (!vinculo?.urlProducto?.trim() && !tieneUrlEnEdicion) return null;
 
   const estado = vinculo?.estado ?? ESTADO_RELEVAMIENTO_COMPETENCIA.PENDIENTE;
