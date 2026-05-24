@@ -6,7 +6,11 @@ import ExportarCxButton from "@/components/cx-px-tienda/ExportarCxButton";
 import FiltrosCxPxTienda from "@/components/cx-px-tienda/FiltrosCxPxTienda";
 import TablaCxPxTienda from "@/components/cx-px-tienda/TablaCxPxTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type { ItemCxPxTiendaParaTabla, ProveedorCxPxFiltro } from "@/lib/cxPxTienda";
+import type {
+  CompetenciaCxPxFiltro,
+  ItemCxPxTiendaParaTabla,
+  ProveedorCxPxFiltro,
+} from "@/lib/cxPxTienda";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 interface Props {
@@ -14,14 +18,15 @@ interface Props {
   total: number;
   totalPaginas: number;
   marcas: Array<{ marca: string }>;
-  rubros: Array<{ rubro: string }>;
   proveedores: ProveedorCxPxFiltro[];
+  competencias: CompetenciaCxPxFiltro[];
   rol: Rol;
   q: string;
-  rubro: string;
   marca: string;
   vincCosto: string;
   costoProv: string;
+  pxLista: string;
+  marcacionOrden: string;
   paginaNum: number;
 }
 
@@ -30,28 +35,30 @@ export default function CxPxTiendaPageClient({
   total,
   totalPaginas,
   marcas,
-  rubros,
   q,
-  rubro,
   rol,
   marca,
   proveedores,
+  competencias,
   vincCosto,
   costoProv,
+  pxLista,
+  marcacionOrden,
   paginaNum,
 }: Props) {
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
   const filters = (
     <FiltrosCxPxTienda
       marcas={marcas.map((m) => m.marca)}
-      rubros={rubros.map((r) => r.rubro)}
       totalItems={total}
       qActual={q}
       marcaActual={marca}
-      rubroActual={rubro}
       proveedores={proveedores}
+      competencias={competencias}
       vincCostoActual={vincCosto}
       costoProvActual={costoProv}
+      pxListaActual={pxLista}
+      marcacionOrdenActual={marcacionOrden}
     />
   );
 
@@ -70,7 +77,7 @@ export default function CxPxTiendaPageClient({
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
                 basePath="/gestion-productos/tienda/cx-px-tienda"
-                params={{ q, rubro, marca, vincCosto, costoProv }}
+                params={{ q, marca, vincCosto, costoProv, pxLista, marcacionOrden }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}

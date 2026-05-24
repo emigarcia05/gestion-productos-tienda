@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 interface Props {
   searchParams: Promise<{
     q?: string;
-    rubro?: string;
     marca?: string;
     vincCosto?: string;
     costoProv?: string;
+    pxLista?: string;
+    marcacionOrden?: string;
     pagina?: string;
   }>;
 }
@@ -26,20 +27,22 @@ export default async function CxPxTiendaPage({ searchParams }: Props) {
   const sp = await searchParams;
   const {
     q = "",
-    rubro = "",
     marca = "",
     vincCosto = "",
     costoProv = "",
+    pxLista = "",
+    marcacionOrden = "",
     pagina = "1",
   } = sp;
 
-  const { items, total, totalPaginas, marcas, rubros, proveedores } =
+  const { items, total, totalPaginas, marcas, proveedores, competencias } =
     await getCxPxTiendaPageData({
       q,
-      rubro,
       marca,
       vincCosto,
       costoProv,
+      pxLista,
+      marcacionOrden,
       pagina,
     });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
@@ -50,14 +53,15 @@ export default async function CxPxTiendaPage({ searchParams }: Props) {
       total={total}
       totalPaginas={totalPaginas}
       marcas={marcas}
-      rubros={rubros}
       rol={rol}
       q={q}
-      rubro={rubro}
       marca={marca}
       vincCosto={vincCosto}
       costoProv={costoProv}
+      pxLista={pxLista}
+      marcacionOrden={marcacionOrden}
       proveedores={proveedores}
+      competencias={competencias}
       paginaNum={paginaNum}
     />
   );

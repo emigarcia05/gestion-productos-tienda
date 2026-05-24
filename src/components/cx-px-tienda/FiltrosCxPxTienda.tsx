@@ -21,9 +21,13 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
   CX_PROD_SELECCION_PROM,
+  MARCACION_ORDEN_MAYOR_MENOR,
+  MARCACION_ORDEN_MENOR_MAYOR,
+  PX_LISTA_SELECCION_PROM,
   VINC_COSTO_MAS,
   VINC_COSTO_SIN,
   VINC_COSTO_UNO,
+  type CompetenciaCxPxFiltro,
   type ProveedorCxPxFiltro,
 } from "@/lib/cxPxTienda";
 import { cn } from "@/lib/utils";
@@ -32,26 +36,28 @@ const FOCUS_KEY = "filtros-cx-px-tienda-focus";
 
 interface Props {
   marcas: string[];
-  rubros: string[];
   proveedores: ProveedorCxPxFiltro[];
+  competencias: CompetenciaCxPxFiltro[];
   totalItems: number;
   qActual: string;
   marcaActual: string;
-  rubroActual: string;
   vincCostoActual: string;
   costoProvActual: string;
+  pxListaActual: string;
+  marcacionOrdenActual: string;
 }
 
 export default function FiltrosCxPxTienda({
   marcas,
-  rubros,
   proveedores,
+  competencias,
   totalItems,
   qActual,
   marcaActual,
-  rubroActual,
   vincCostoActual,
   costoProvActual,
+  pxListaActual,
+  marcacionOrdenActual,
 }: Props) {
   const pathname = usePathname();
 
@@ -72,42 +78,56 @@ export default function FiltrosCxPxTienda({
     },
   });
 
-  const hayFiltros = !!(q || marcaActual || rubroActual || vincCostoActual || costoProvActual);
+  const hayFiltros = !!(
+    q ||
+    marcaActual ||
+    vincCostoActual ||
+    costoProvActual ||
+    pxListaActual ||
+    marcacionOrdenActual
+  );
 
   function navigate(updates: {
     q?: string;
     marca?: string;
-    rubro?: string;
     vincCosto?: string;
     costoProv?: string;
+    pxLista?: string;
+    marcacionOrden?: string;
   }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
-    const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const vincCostoVal =
       updates.vincCosto !== undefined ? updates.vincCosto : vincCostoActual;
     const costoProvVal =
       updates.costoProv !== undefined ? updates.costoProv : costoProvActual;
+    const pxListaVal = updates.pxLista !== undefined ? updates.pxLista : pxListaActual;
+    const marcacionVal =
+      updates.marcacionOrden !== undefined ? updates.marcacionOrden : marcacionOrdenActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
-    if (rubroVal) p.set("rubro", rubroVal);
     if (vincCostoVal) p.set("vincCosto", vincCostoVal);
     if (costoProvVal) p.set("costoProv", costoProvVal);
+    if (pxListaVal) p.set("pxLista", pxListaVal);
+    if (marcacionVal) p.set("marcacionOrden", marcacionVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
 
   function handleMarca(value: string) {
-    navigate({ marca: value, rubro: "" });
-  }
-  function handleRubro(value: string) {
-    navigate({ rubro: value });
+    navigate({ marca: value });
   }
   function handleVincCosto(value: string) {
     navigate({ vincCosto: value });
   }
   function handleCostoProv(value: string) {
     navigate({ costoProv: value });
+  }
+  function handlePxLista(value: string) {
+    navigate({ pxLista: value });
+  }
+  function handleMarcacionOrden(value: string) {
+    navigate({ marcacionOrden: value });
   }
 
   function limpiarFiltros() {
@@ -141,33 +161,6 @@ export default function FiltrosCxPxTienda({
                 {marcas.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FiltroIndividualContainer>
-          <FiltroIndividualContainer
-            className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={Boolean(rubroActual)}
-            onLimpiar={() => handleRubro("")}
-          >
-            <Select
-              value={rubroActual || "none"}
-              onValueChange={(v) => handleRubro(v === "none" ? "" : v)}
-            >
-              <SelectTrigger id="filtro-cx-px-rubro" className="input-filtro-unificado">
-                <SelectValue placeholder="RUBRO" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">RUBRO</SelectItem>
-                {rubros.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -224,6 +217,58 @@ export default function FiltrosCxPxTienda({
                     {p.nombre}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(pxListaActual)}
+            onLimpiar={() => handlePxLista("")}
+          >
+            <Select
+              value={pxListaActual || "none"}
+              onValueChange={(v) => handlePxLista(v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="filtro-cx-px-px-lista" className="input-filtro-unificado">
+                <SelectValue placeholder="PX LISTA" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">PX LISTA</SelectItem>
+                <SelectItem value={PX_LISTA_SELECCION_PROM}>PX PROM.</SelectItem>
+                {competencias.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.etiqueta}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(marcacionOrdenActual)}
+            onLimpiar={() => handleMarcacionOrden("")}
+          >
+            <Select
+              value={marcacionOrdenActual || "none"}
+              onValueChange={(v) => handleMarcacionOrden(v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="filtro-cx-px-marcacion" className="input-filtro-unificado">
+                <SelectValue placeholder="MARCACION" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">MARCACION</SelectItem>
+                <SelectItem value={MARCACION_ORDEN_MENOR_MAYOR}>MENOR A MAYOR</SelectItem>
+                <SelectItem value={MARCACION_ORDEN_MAYOR_MENOR}>MAYOR A MENOR</SelectItem>
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>

@@ -1,10 +1,14 @@
 import { z } from "zod";
 import {
   CX_PROD_SELECCION_PROM,
+  MARCACION_ORDEN_MAYOR_MENOR,
+  MARCACION_ORDEN_MENOR_MAYOR,
+  PX_LISTA_SELECCION_PROM,
   VINC_COSTO_MAS,
   VINC_COSTO_SIN,
   VINC_COSTO_UNO,
 } from "@/lib/cxPxTienda";
+import { prismaCuidSchema } from "@/lib/validations/common";
 
 /** Query vacío (`""`) → `undefined` para no romper el enum en Zod. */
 const queryOpcional = z.preprocess(
@@ -14,7 +18,6 @@ const queryOpcional = z.preprocess(
 
 export const getCxPxTiendaPageParamsSchema = z.object({
   q: queryOpcional.pipe(z.string().max(500).optional()),
-  rubro: queryOpcional.pipe(z.string().max(200).optional()),
   marca: queryOpcional.pipe(z.string().max(200).optional()),
   /** `sin` | `uno` | `mas` — cantidad de proveedores vinculados (habilitados). */
   vincCosto: queryOpcional.pipe(
@@ -23,6 +26,16 @@ export const getCxPxTiendaPageParamsSchema = z.object({
   /** `prom` = Cx. Prom. (`cod_ext_costo_lista` nulo); si no, `id` de proveedor de la fila FK persistida. */
   costoProv: queryOpcional.pipe(
     z.union([z.literal(CX_PROD_SELECCION_PROM), z.string().min(1).max(128)]).optional()
+  ),
+  /** `prom` = Px. Prom. (`competencia_id_px_lista` nulo); si no, `id` del competidor persistido. */
+  pxLista: queryOpcional.pipe(
+    z.union([z.literal(PX_LISTA_SELECCION_PROM), prismaCuidSchema]).optional()
+  ),
+  /** Orden por columna MARCACION calculada en servidor. */
+  marcacionOrden: queryOpcional.pipe(
+    z
+      .union([z.literal(MARCACION_ORDEN_MENOR_MAYOR), z.literal(MARCACION_ORDEN_MAYOR_MENOR)])
+      .optional()
   ),
   pagina: queryOpcional.pipe(z.string().max(20).optional()),
 });

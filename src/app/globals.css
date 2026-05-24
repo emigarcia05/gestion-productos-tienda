@@ -1148,7 +1148,7 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
-/* Tabla Cx & Px Tienda: DESCRIPCIÓN + CX PROD. + PX LISTA (colgroup en TablaCxPxTienda). */
+/* Tabla Cx & Px Tienda: DESCRIPCIÓN + CX PROD. + PX LISTA + MARCACION (colgroup en TablaCxPxTienda). */
 .tabla-cx-px-tienda-listado {
   table-layout: fixed;
   width: 100%;

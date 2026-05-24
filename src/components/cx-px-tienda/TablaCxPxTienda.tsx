@@ -26,38 +26,16 @@ import {
 import {
   CX_PROD_SELECCION_PROM,
   PX_LISTA_SELECCION_PROM,
+  costoCxProdMostrado,
+  marcacionCxPxDeItem,
+  pxListaMostrado,
   type ItemCxPxTiendaParaTabla,
 } from "@/lib/cxPxTienda";
-import { fmtPrecio } from "@/lib/format";
+import { fmtMarcacionPct, fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const COL_COUNT = 3;
+const COL_COUNT = 4;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron ítems.";
-
-function costoParaSeleccion(
-  item: ItemCxPxTiendaParaTabla,
-  seleccion: string
-): number {
-  if (seleccion === CX_PROD_SELECCION_PROM) {
-    return item.costoPromedio ?? item.costoMostrado;
-  }
-  const op = item.opcionesProveedor.find((o) => o.codExt === seleccion);
-  return op?.costo ?? item.costoMostrado;
-}
-
-function pxListaParaSeleccion(item: ItemCxPxTiendaParaTabla, seleccion: string): number {
-  if (seleccion === PX_LISTA_SELECCION_PROM) {
-    const valores = item.opcionesPxLista
-      .map((o) => o.px)
-      .filter((n): n is number => n != null && n > 0);
-    if (valores.length > 0) {
-      return Math.round(valores.reduce((a, b) => a + b, 0) / valores.length);
-    }
-    return item.pxListaTiendaDux;
-  }
-  const op = item.opcionesPxLista.find((o) => o.competenciaId === seleccion);
-  return op?.px ?? item.pxListaMostrado;
-}
 
 export default function TablaCxPxTienda({
   items,
@@ -94,15 +72,17 @@ export default function TablaCxPxTienda({
   return (
     <Table variant="compact" scrollX={false} className="tabla-cx-px-tienda-listado">
       <colgroup>
-        <col className="w-[38%]" />
-        <col className="w-[31%]" />
-        <col className="w-[31%]" />
+        <col className="w-[32%]" />
+        <col className="w-[24%]" />
+        <col className="w-[24%]" />
+        <col className="w-[20%]" />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead>DESCRIPCIÓN</TableHead>
           <TableHead>CX PROD.</TableHead>
           <TableHead>PX LISTA</TableHead>
+          <TableHead className="text-center">MARCACION</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -111,9 +91,10 @@ export default function TablaCxPxTienda({
         ) : (
           items.map((item) => {
             const sinVinculosCx = item.opcionesProveedor.length === 0;
-            const costoVista = costoParaSeleccion(item, item.seleccion);
-            const pxListaVista = pxListaParaSeleccion(item, item.seleccionPxLista);
+            const costoVista = costoCxProdMostrado(item);
+            const pxListaVista = pxListaMostrado(item);
             const sinOpcionesPxLista = item.opcionesPxLista.length === 0;
+            const marcacion = marcacionCxPxDeItem(item);
 
             return (
               <TableRow key={item.id}>
@@ -200,6 +181,13 @@ export default function TablaCxPxTienda({
                       ${fmtPrecio(pxListaVista)}
                     </span>
                   </div>
+                </TableCell>
+                <TableCell className="celda-datos text-center tabular-nums text-sm font-medium text-foreground">
+                  {marcacion != null ? (
+                    <span aria-label="Marcación">{fmtMarcacionPct(marcacion)}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             );

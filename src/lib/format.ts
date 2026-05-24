@@ -27,6 +27,16 @@ export function fmtPct(n: number): string {
   return "≈0%";
 }
 
+/** Marcación / margen con dos decimales (es-AR), sufijo `%`. */
+export function fmtMarcacionPct(n: number): string {
+  const v = Math.round(n * 100) / 100;
+  const s = v.toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${s}%`;
+}
+
 /** Variación porcentual sin decimales (entero). Para Control Aumentos y listados que muestran % redondeado. */
 export function fmtPctEntero(n: number): string {
   const entero = Math.round(n);
