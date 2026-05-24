@@ -3,6 +3,7 @@
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import ExportarCxButton from "@/components/cx-px-tienda/ExportarCxButton";
+import ExportarPxButton from "@/components/cx-px-tienda/ExportarPxButton";
 import FiltrosCxPxTienda from "@/components/cx-px-tienda/FiltrosCxPxTienda";
 import TablaCxPxTienda from "@/components/cx-px-tienda/TablaCxPxTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -67,7 +68,14 @@ export default function CxPxTiendaPageClient({
       <ClassicFilteredTableLayout
         title="Cx & Px Tienda"
         filters={filters}
-        actions={puedeEditar ? <ExportarCxButton /> : undefined}
+        actions={
+          puedeEditar ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <ExportarCxButton />
+              <ExportarPxButton />
+            </div>
+          ) : undefined
+        }
       >
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">

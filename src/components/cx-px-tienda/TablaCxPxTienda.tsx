@@ -37,14 +37,6 @@ import { cn } from "@/lib/utils";
 const COL_COUNT = 4;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron ítems.";
 
-/** Reparto interno CX PROD. / PX LISTA (12% + 8% del ancho total de tabla, dentro del 20% de columna). */
-const FILA_CX_PX_CLASS = "flex items-center gap-1 min-w-0 w-full";
-const FILA_CX_PX_SELECT_SLOT_CLASS = "min-w-0 flex-[3] basis-0";
-const FILA_CX_PX_SELECT_TRIGGER_CLASS =
-  "input-filtro-unificado h-8 w-full min-w-0 max-w-none";
-const FILA_CX_PX_VALOR_SLOT_CLASS =
-  "celda-numero tabular-nums min-w-0 flex-[2] basis-0 text-right text-sm font-medium text-foreground";
-
 export default function TablaCxPxTienda({
   items,
   puedeEditar,
@@ -80,9 +72,9 @@ export default function TablaCxPxTienda({
   return (
     <Table variant="compact" scrollX={false} className="tabla-cx-px-tienda-listado">
       <colgroup>
-        <col className="w-[50%]" />
-        <col className="w-[20%]" />
-        <col className="w-[20%]" />
+        <col className="w-[46%]" />
+        <col className="w-[22%]" />
+        <col className="w-[22%]" />
         <col className="w-[10%]" />
       </colgroup>
       <TableHeader>
@@ -90,7 +82,9 @@ export default function TablaCxPxTienda({
           <TableHead>DESCRIPCIÓN</TableHead>
           <TableHead>CX PROD.</TableHead>
           <TableHead>PX LISTA</TableHead>
-          <TableHead className="text-center">MARCACION</TableHead>
+          <TableHead className="text-center tabla-bloque-secundario-head-divider">
+            MARCACION
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -109,77 +103,76 @@ export default function TablaCxPxTienda({
                 <TableCell className="celda-datos celda-destacado min-w-0 overflow-hidden">
                   {item.descripcion}
                 </TableCell>
-                <TableCell className="celda-datos min-w-0 p-1">
-                  <div className={FILA_CX_PX_CLASS}>
-                    <div className={FILA_CX_PX_SELECT_SLOT_CLASS}>
-                      <Select
-                        value={item.seleccion}
-                        onValueChange={(v) => handleCambioCx(item.codTienda, v)}
-                        disabled={!puedeEditar || isPending || sinVinculosCx}
+                <TableCell className="celda-datos min-w-0">
+                  <div className="grid w-full min-w-0 grid-cols-[minmax(0,16fr)_minmax(0,9fr)] items-center gap-1.5">
+                    <Select
+                      value={item.seleccion}
+                      onValueChange={(v) => handleCambioCx(item.codTienda, v)}
+                      disabled={!puedeEditar || isPending || sinVinculosCx}
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          "input-filtro-unificado h-8 w-full min-w-0",
+                          !puedeEditar && "pointer-events-none opacity-80"
+                        )}
+                        aria-label={`Costo producto ${item.codTienda}`}
                       >
-                        <SelectTrigger
-                          className={cn(
-                            FILA_CX_PX_SELECT_TRIGGER_CLASS,
-                            !puedeEditar && "pointer-events-none opacity-80"
-                          )}
-                          aria-label={`Costo producto ${item.codTienda}`}
-                        >
-                          <SelectValue placeholder="CX PROD." />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          side="bottom"
-                          align="start"
-                          className="select-content-filtro"
-                        >
-                          <SelectItem value={CX_PROD_SELECCION_PROM}>CX. PROM.</SelectItem>
-                          {item.opcionesProveedor.map((op) => (
-                            <SelectItem key={op.codExt} value={op.codExt}>
-                              {op.etiqueta}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <span className={FILA_CX_PX_VALOR_SLOT_CLASS} aria-label="Costo seleccionado">
+                        <SelectValue placeholder="CX PROD." />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        <SelectItem value={CX_PROD_SELECCION_PROM}>CX. PROM.</SelectItem>
+                        {item.opcionesProveedor.map((op) => (
+                          <SelectItem key={op.codExt} value={op.codExt}>
+                            {op.etiqueta}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span
+                      className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0"
+                      aria-label="Costo seleccionado"
+                    >
                       ${fmtPrecio(costoVista)}
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="celda-datos min-w-0 p-1">
-                  <div className={FILA_CX_PX_CLASS}>
-                    <div className={FILA_CX_PX_SELECT_SLOT_CLASS}>
-                      <Select
-                        value={item.seleccionPxLista}
-                        onValueChange={(v) => handleCambioPxLista(item.codTienda, v)}
-                        disabled={!puedeEditar || isPending}
+                <TableCell className="celda-datos min-w-0">
+                  <div className="grid w-full min-w-0 grid-cols-[minmax(0,13fr)_minmax(0,9fr)] items-center gap-1.5">
+                    <Select
+                      value={item.seleccionPxLista}
+                      onValueChange={(v) => handleCambioPxLista(item.codTienda, v)}
+                      disabled={!puedeEditar || isPending}
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          "input-filtro-unificado h-8 w-full min-w-0",
+                          !puedeEditar && "pointer-events-none opacity-80"
+                        )}
+                        aria-label={`Px lista ${item.codTienda}`}
                       >
-                        <SelectTrigger
-                          className={cn(
-                            FILA_CX_PX_SELECT_TRIGGER_CLASS,
-                            !puedeEditar && "pointer-events-none opacity-80"
-                          )}
-                          aria-label={`Px lista ${item.codTienda}`}
-                        >
-                          <SelectValue placeholder="PX LISTA" />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          side="bottom"
-                          align="start"
-                          className="select-content-filtro"
-                        >
-                          <SelectItem value={PX_LISTA_SELECCION_PROM}>PX PROM.</SelectItem>
-                          {item.opcionesPxLista.map((op) => (
-                            <SelectItem key={op.competenciaId} value={op.competenciaId}>
-                              {op.etiqueta}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        <SelectValue placeholder="PX LISTA" />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        <SelectItem value={PX_LISTA_SELECCION_PROM}>PX PROM.</SelectItem>
+                        {item.opcionesPxLista.map((op) => (
+                          <SelectItem key={op.competenciaId} value={op.competenciaId}>
+                            {op.etiqueta}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <span
-                      className={FILA_CX_PX_VALOR_SLOT_CLASS}
+                      className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0"
                       aria-label="Precio lista seleccionado"
                       title={
                         sinOpcionesPxLista && item.seleccionPxLista === PX_LISTA_SELECCION_PROM
@@ -191,7 +184,12 @@ export default function TablaCxPxTienda({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="celda-datos text-center tabular-nums text-sm font-medium text-foreground">
+                <TableCell
+                  className={cn(
+                    "celda-datos text-center tabular-nums text-sm font-medium text-foreground",
+                    "tabla-bloque-secundario-cell-divider"
+                  )}
+                >
                   {marcacion != null ? (
                     <span aria-label="Marcación">{fmtMarcacionPct(marcacion)}</span>
                   ) : (

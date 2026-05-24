@@ -136,31 +136,52 @@ export async function validarCompetenciaPxLista(
   return { ok: true };
 }
 
-export async function establecerCompetenciaIdPxLista(
-  codTienda: string,
-  competenciaId: string
-): Promise<{ success: true } | { success: false; error: string }> {
-  try {
-    await prisma.listaPrecioTienda.update({
-      where: { codTienda },
-      data: { competenciaIdPxLista: competenciaId },
-    });
-    return { success: true };
-  } catch (e) {
-    return {
-      success: false,
-      error: e instanceof Error ? e.message : "No se pudo guardar.",
-    };
-  }
+/** Compara espejo DUX vs precio configurado persistido en Cx & Px. */
+export function pxListaTiendaDifiereDeCxPx(pxListaTiendaDux: number, pxListaCxPx: number): boolean {
+  return Math.round(pxListaTiendaDux) !== Math.round(pxListaCxPx);
 }
 
-export async function limpiarCompetenciaIdPxLista(
-  codTienda: string
+export async function resolverPxListaCxPxAlGuardar(
+  codTienda: string,
+  seleccion: string,
+  competencias: CompetenciaPxListaCtx[]
+): Promise<number | { error: string }> {
+  const row = await prisma.listaPrecioTienda.findUnique({
+    where: { codTienda },
+    select: { pxListaTienda: true },
+  });
+  if (!row) return { error: "Producto no encontrado." };
+
+  const pxListaTiendaDux = Number(row.pxListaTienda) || 0;
+  const opcionesMap = await buildMapOpcionesPxListaPorCodTienda([codTienda], competencias);
+  const opciones = opcionesMap.get(codTienda) ?? [];
+
+  if (seleccion !== PX_LISTA_SELECCION_PROM) {
+    const valid = await validarCompetenciaPxLista(codTienda, seleccion, competencias);
+    if (!valid.ok) return { error: valid.error };
+  }
+
+  return pxListaMostradoParaSeleccion(seleccion, opciones, pxListaTiendaDux);
+}
+
+export async function guardarPxListaCxPxConfig(
+  codTienda: string,
+  seleccion: string,
+  pxListaCxPx: number,
+  competencias: CompetenciaPxListaCtx[]
 ): Promise<{ success: true } | { success: false; error: string }> {
+  if (seleccion !== PX_LISTA_SELECCION_PROM) {
+    const valid = await validarCompetenciaPxLista(codTienda, seleccion, competencias);
+    if (!valid.ok) return { success: false, error: valid.error };
+  }
+
   try {
     await prisma.listaPrecioTienda.update({
       where: { codTienda },
-      data: { competenciaIdPxLista: null },
+      data: {
+        competenciaIdPxLista: seleccion === PX_LISTA_SELECCION_PROM ? null : seleccion,
+        pxListaCxPx,
+      },
     });
     return { success: true };
   } catch (e) {

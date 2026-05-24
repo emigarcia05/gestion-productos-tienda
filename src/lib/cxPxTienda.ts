@@ -67,6 +67,8 @@ export interface ItemCxPxTiendaParaTabla {
   seleccion: typeof CX_PROD_SELECCION_PROM | string;
   costoMostrado: number;
   pxListaTiendaDux: number;
+  /** Valor persistido en `px_lista_cx_px` (null = aún no guardado en Cx & Px). */
+  pxListaCxPxPersistido: number | null;
   competenciaIdPxLista: string | null;
   opcionesPxLista: OpcionPxListaCompetidor[];
   /** `prom` = Px. Prom. (promedio competidores con precio); si no, `competenciaId`. */
@@ -83,8 +85,11 @@ export function costoCxProdMostrado(item: ItemCxPxTiendaParaTabla): number {
   return op?.costo ?? item.costoMostrado;
 }
 
-/** Px lista mostrado según selección persistida en la fila. */
+/** Px lista mostrado: valor persistido en BD o cálculo en lectura según selección. */
 export function pxListaMostrado(item: ItemCxPxTiendaParaTabla): number {
+  if (item.pxListaCxPxPersistido != null && item.pxListaCxPxPersistido > 0) {
+    return item.pxListaCxPxPersistido;
+  }
   if (item.seleccionPxLista === PX_LISTA_SELECCION_PROM) {
     const valores = item.opcionesPxLista
       .map((o) => o.px)
