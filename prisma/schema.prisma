@@ -569,8 +569,8 @@ model ListaPrecioTienda {
 model ProdCompetencia {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_competencia_nombre_key")
-  /// Sitio principal del competidor (referencia; las fichas van en prod_precios_competencia.url_producto).
-  web       String
+  /// Sitio principal del competidor (opcional; las fichas van en prod_precios_competencia.url_producto).
+  web       String?
   /// Si está definido, el sync puede tomar `px_vta_sugerido` de `prod_precios_provee` (mismo `cod_tienda`) sin scraping.
   idProveedor String? @map("id_proveedor")
   /// Última ejecución de relevamiento masivo para este competidor.

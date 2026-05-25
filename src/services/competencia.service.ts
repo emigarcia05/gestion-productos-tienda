@@ -50,7 +50,7 @@ async function resolveIdProveedorCompetencia(
 
 export async function createCompetencia(data: {
   nombre: string;
-  web: string;
+  web?: string;
   idProveedor?: string | null;
   configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
@@ -58,7 +58,7 @@ export async function createCompetencia(data: {
   const row = await prisma.prodCompetencia.create({
     data: {
       nombre: data.nombre.trim(),
-      web: normalizeWebUrl(data.web),
+      web: normalizeWebUrlOptional(data.web ?? ""),
       idProveedor,
       configExtraccion: toJsonInput(data.configExtraccion),
     },
@@ -70,7 +70,7 @@ export async function createCompetencia(data: {
 export async function updateCompetencia(data: {
   id: string;
   nombre: string;
-  web: string;
+  web?: string;
   idProveedor?: string | null;
   configExtraccion?: CompetenciaConfigExtraccion | null;
 }): Promise<CompetenciaParaCliente> {
@@ -82,7 +82,7 @@ export async function updateCompetencia(data: {
     where: { id: data.id },
     data: {
       nombre: data.nombre.trim(),
-      web: normalizeWebUrl(data.web),
+      web: normalizeWebUrlOptional(data.web ?? ""),
       ...(idProveedor !== undefined ? { idProveedor } : {}),
       ...(data.configExtraccion !== undefined
         ? { configExtraccion: toJsonInput(data.configExtraccion) }
@@ -104,7 +104,7 @@ function toJsonInput(
 export function mapCompetenciaRow(row: {
   id: string;
   nombre: string;
-  web: string;
+  web: string | null;
   idProveedor: string | null;
   ultimaComparacionAt: Date | null;
   configExtraccion: unknown;
@@ -114,7 +114,7 @@ export function mapCompetenciaRow(row: {
   return {
     id: row.id,
     nombre: row.nombre,
-    web: row.web,
+    web: row.web ?? "",
     idProveedor: row.idProveedor,
     prefijoProveedor: prefijo || null,
     ultimaComparacionAt: row.ultimaComparacionAt?.toISOString() ?? null,
@@ -126,10 +126,18 @@ export async function deleteCompetencia(id: string): Promise<void> {
   await prisma.prodCompetencia.delete({ where: { id } });
 }
 
-export function normalizeWebUrl(web: string): string {
+export function normalizeWebUrlOptional(web: string): string | null {
   const trimmed = web.trim();
+  if (!trimmed) return null;
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return trimmed.replace(/\/+$/, "");
   }
   return `https://${trimmed.replace(/\/+$/, "")}`;
+}
+
+/** @deprecated Usar `normalizeWebUrlOptional`; mantiene compatibilidad con scripts seed. */
+export function normalizeWebUrl(web: string): string {
+  const n = normalizeWebUrlOptional(web);
+  if (!n) throw new Error("La URL del sitio es obligatoria.");
+  return n;
 }

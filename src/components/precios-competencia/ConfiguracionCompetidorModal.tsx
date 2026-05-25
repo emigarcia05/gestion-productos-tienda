@@ -106,7 +106,7 @@ export default function ConfiguracionCompetidorModal({
             <Button
               type="button"
               variant="default"
-              disabled={saving || !nombre.trim() || !web.trim()}
+              disabled={saving || !nombre.trim()}
               onClick={() => void handleGuardar()}
             >
               Guardar

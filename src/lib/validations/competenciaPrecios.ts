@@ -6,15 +6,18 @@ import {
 } from "@/lib/competenciaPreciosFiltros";
 import { listaPreciosCodTiendaSchema, paramsPaginaSchema, prismaCuidSchema } from "@/lib/validations/common";
 
+/** URL del sitio: opcional; si se informa, debe ser válida. */
 export const competenciaWebSchema = z
   .string()
-  .min(4, "La URL del sitio es obligatoria.")
   .max(500, "La URL es demasiado larga.")
+  .optional()
+  .default("")
+  .transform((v) => (v ?? "").trim())
   .refine(
     (v) => {
-      const s = v.trim();
+      if (!v) return true;
       try {
-        const u = s.startsWith("http://") || s.startsWith("https://") ? s : `https://${s}`;
+        const u = v.startsWith("http://") || v.startsWith("https://") ? v : `https://${v}`;
         new URL(u);
         return true;
       } catch {

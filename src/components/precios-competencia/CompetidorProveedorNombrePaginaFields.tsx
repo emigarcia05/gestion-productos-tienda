@@ -87,7 +87,7 @@ export default function CompetidorProveedorNombrePaginaFields({
         <Input
           value={web}
           onChange={(e) => onWebChange(e.target.value)}
-          placeholder="https://ejemplo.com"
+          placeholder="https://ejemplo.com (opcional)"
           className="mt-1"
           disabled={disabled}
         />

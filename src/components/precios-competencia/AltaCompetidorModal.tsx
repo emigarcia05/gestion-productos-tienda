@@ -77,7 +77,7 @@ export default function AltaCompetidorModal({ open, onOpenChange, onCreado }: Pr
             <Button
               type="button"
               variant="default"
-              disabled={saving || !nombre.trim() || !web.trim()}
+              disabled={saving || !nombre.trim()}
               onClick={() => void handleGuardar()}
             >
               Crear
