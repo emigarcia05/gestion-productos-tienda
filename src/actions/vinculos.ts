@@ -10,7 +10,6 @@ import {
   autoAsignarCodExtCostoListaTrasVincular,
   establecerCodExtCostoLista,
   limpiarCodExtCostoListaSiCoincide,
-  proveedorTextoCoincideConDux,
 } from "@/services/costoListaTienda.service";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
@@ -156,7 +155,7 @@ export async function desvincularProducto(
     const { prisma } = await import("@/lib/prisma");
     const itemTienda = await prisma.listaPrecioTienda.findUnique({
       where: { codTienda: parsedItem.data },
-      select: { codTienda: true, proveedor: true },
+      select: { codTienda: true },
     });
     if (!itemTienda) return { ok: false, error: "Ítem tienda no encontrado." };
     const producto = await prisma.listaPrecioProveedor.findUnique({
@@ -169,21 +168,6 @@ export async function desvincularProducto(
     });
     if (!producto || producto.codTiendaVinculo !== itemTienda.codTienda) {
       return { ok: false, error: "Producto no encontrado o no vinculado a este ítem." };
-    }
-    const totalVinculados = await prisma.listaPrecioProveedor.count({
-      where: { codTiendaVinculo: itemTienda.codTienda },
-    });
-    const esOficial = proveedorTextoCoincideConDux(
-      itemTienda.proveedor,
-      producto.proveedor.nombre,
-      producto.proveedor.prefijo
-    );
-    if (totalVinculados >= 2 && esOficial) {
-      return {
-        ok: false,
-        error:
-          "No se puede desvincular el proveedor oficial mientras exista un alternativo. Primero cambiá el oficial y luego eliminá la vinculación.",
-      };
     }
     await limpiarCodExtCostoListaSiCoincide(itemTienda.codTienda, parsed.data);
     await prisma.listaPrecioProveedor.update({

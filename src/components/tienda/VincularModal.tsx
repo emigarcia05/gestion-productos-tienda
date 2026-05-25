@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,7 @@ export default function VincularModal({
   onOpenChange,
   rol = "editor",
 }: Props) {
+  const router = useRouter();
   const puedeEditar = rol === "editor";
   const [openInterno, setOpenInterno] = useState(false);
   const open = openProp !== undefined ? openProp : openInterno;
@@ -161,17 +163,12 @@ export default function VincularModal({
   }
 
   function handleDesvincular(producto: ProductoConProveedor) {
-    if (vinculados.length >= 2 && esOficial(producto)) {
-      toast.error(
-        "No se puede desvincular el proveedor oficial. Primero cambiá el oficial y luego eliminá esta vinculación."
-      );
-      return;
-    }
     startTransition(async () => {
       const res = await desvincularProducto(itemTiendaId, producto.id);
       if (res.ok) {
         setVinculados((prev) => prev.filter((p) => p.id !== producto.id));
         setCantidad((c) => Math.max(0, c - 1));
+        router.refresh();
         toast.success(`Desvinculado: ${producto.codigoExterno}`);
       } else {
         toast.error(res.error);
@@ -213,6 +210,7 @@ export default function VincularModal({
           ]);
           setCantidad((c) => c + 1);
         }
+        router.refresh();
         toast.success(`Vinculado: ${producto.codigoExterno}`);
       } else {
         toast.error(res.error);
@@ -303,11 +301,7 @@ export default function VincularModal({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filasOrdenadas.map(({ producto: p, px }) => {
-                      const oficial = esOficial(p);
-                      const bloquearEliminarOficial =
-                        oficial && filasOrdenadas.length >= 2;
-                      return (
+                    {filasOrdenadas.map(({ producto: p, px }) => (
                         <TableRow key={p.id}>
                           <TableCell className="celda-datos celda-mono whitespace-nowrap">
                             {p.proveedor.prefijo}
@@ -325,14 +319,13 @@ export default function VincularModal({
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDesvincular(p)}
-                                  disabled={isPending || bloquearEliminarOficial}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDesvincular(p);
+                                  }}
+                                  disabled={isPending}
                                   className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                  title={
-                                    bloquearEliminarOficial
-                                      ? "No se puede desvincular el proveedor oficial mientras exista un alternativo."
-                                      : "Desvincular"
-                                  }
+                                  title="Desvincular"
                                   aria-label={`Desvincular ${p.proveedor.prefijo}`}
                                 >
                                   <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
@@ -341,8 +334,7 @@ export default function VincularModal({
                             </TableCell>
                           ) : null}
                         </TableRow>
-                      );
-                    })}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
