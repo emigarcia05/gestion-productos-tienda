@@ -543,6 +543,8 @@ model ListaPrecioTienda {
   descripcionTienda String? @map("descripcion_tienda")
   /** FK a `prod_precios_provee.cod_ext`: costo Cx = px_compra_final_sin_iva de esa fila (no lo pisa el sync DUX). */
   codExtCostoLista String? @map("cod_ext_costo_lista")
+  /** true si es producto de marca propia TiendaColor: no se vincula con prod_precios_provee y se excluye del filtro VINCULADO=NO. Editable desde VincularModal; el sync DUX no lo toca. */
+  esProductoPropio Boolean @default(false) @map("es_producto_propio")
   /** FK a `prod_competencia.id`: px lista mostrado en Cx & Px (NULL = PX PROM.). */
   competenciaIdPxLista String? @map("competencia_id_px_lista")
   /** Precio entero en pesos persistido al guardar PX LISTA en Cx & Px (≠ espejo DUX `px_lista_tienda`). */

@@ -25,6 +25,7 @@ const listarParaVincularFiltrosSchema = z.object({
 export type VinculosItemTiendaPayload = {
   productos: ProductoCompleto[];
   codExtCostoLista: string | null;
+  esProductoPropio: boolean;
 };
 
 export async function getVinculos(
@@ -42,7 +43,7 @@ export async function getVinculos(
       getProductosVinculadosPorItemTienda(parsedId.data),
       prisma.listaPrecioTienda.findUnique({
         where: { codTienda: parsedId.data },
-        select: { codExtCostoLista: true },
+        select: { codExtCostoLista: true, esProductoPropio: true },
       }),
     ]);
     if (!productosRes.success) return productosRes;
@@ -52,6 +53,7 @@ export async function getVinculos(
       data: {
         productos: productosRes.data,
         codExtCostoLista: tienda.codExtCostoLista,
+        esProductoPropio: tienda.esProductoPropio,
       },
     };
   } catch (e) {

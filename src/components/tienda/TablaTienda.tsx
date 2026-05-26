@@ -11,6 +11,7 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import VincularModal from "./VincularModal";
+import { Badge } from "@/components/ui/badge";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import type { ItemTiendaParaTabla } from "@/actions/tienda";
 import { cn } from "@/lib/utils";
@@ -61,10 +62,16 @@ export default function TablaTienda({
                   <TableCell
                     className={cn(
                       "celda-datos celda-numero tabular-nums",
-                      n === 0 && "text-muted-foreground"
+                      n === 0 && !item.esProductoPropio && "text-muted-foreground"
                     )}
                   >
-                    {textoVinculacion}
+                    {item.esProductoPropio ? (
+                      <Badge variant="secondary" className="font-semibold tracking-wide">
+                        PROPIO
+                      </Badge>
+                    ) : (
+                      textoVinculacion
+                    )}
                   </TableCell>
                 </TableRow>
               );

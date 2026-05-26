@@ -70,6 +70,8 @@ export interface ItemTiendaParaTabla {
   /** Derivado de DUX: ambos depósitos informan `ctd_disponible` no nulo. */
   stockeable: boolean;
   habilitado: boolean;
+  /** true si fue marcado como Producto TiendaColor desde VincularModal (no vincula con prod_precios_provee). */
+  esProductoPropio: boolean;
   _count: { productos: number };
 }
 
@@ -152,9 +154,10 @@ export async function getTiendaPageData(params: {
   // Filtro por proveedor: solo proveedores oficiales (columna proveedor en prod_precios_tienda). Los vinculados son solo para comparación en la tabla.
   if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
 
-  /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. */
+  /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. Los productos propios TiendaColor se excluyen de `no` (nunca van a vincularse). */
   if (vinculado === "no") {
     andParts.push({ listaPreciosProveedores: { none: {} } });
+    andParts.push({ esProductoPropio: false });
   } else if (vinculado === "si") {
     andParts.push({ listaPreciosProveedores: { some: {} } });
   }
@@ -216,6 +219,7 @@ export async function getTiendaPageData(params: {
       stockMaipu: r.stockMaipu,
       stockeable: r.stockeable,
       habilitado: true,
+      esProductoPropio: r.esProductoPropio,
       _count: { productos: r._count.listaPreciosProveedores },
     };
   });

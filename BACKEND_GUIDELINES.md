@@ -156,7 +156,16 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 ### 1.9 Listado Vinculacion Con Prov. (`getTiendaPageData`)
 
 - **`getTiendaPageData`**: sin filtros en URL lista **todo** `prod_precios_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
-- Filtro de URL **`vinculado`**: `vinculado=no` → `listaPreciosProveedores: { none: {} }`; `vinculado=si` → `{ some: {} }`. Otros valores se ignoran.
+- Filtro de URL **`vinculado`**: `vinculado=no` → `AND [ { listaPreciosProveedores: { none: {} } }, { esProductoPropio: false } ]` (los **Productos TiendaColor** quedan fuera porque nunca se vinculan); `vinculado=si` → `{ listaPreciosProveedores: { some: {} } }`. Otros valores se ignoran.
+- `ItemTiendaParaTabla` incluye `esProductoPropio: boolean` (mapeado desde `prod_precios_tienda.es_producto_propio`) para que `TablaTienda` muestre badge **PROPIO** en la columna VINCULACIÓN.
+
+### 1.9b Producto TiendaColor (`es_producto_propio`)
+
+- **Columna** `prod_precios_tienda.es_producto_propio` (`BOOLEAN NOT NULL DEFAULT false`). Migración **`20260528120000_add_es_producto_propio_tienda`**. Identifica ítems de marca propia TiendaColor que no se vinculan con `prod_precios_provee`.
+- **Convivencia con DUX**: el sync `syncListaPrecioTienda.service.ts` **no** incluye `esProductoPropio` en el `update`/`create` del upsert (igual patrón que `codExtCostoLista`, `competenciaIdPxLista`, `pxListaCxPx`); cualquier corrida DUX preserva el valor existente.
+- **Servicio** `setProductoPropioTienda` (`src/services/productoPropioTienda.service.ts`): valida `cod_tienda` con `listaPreciosCodTiendaSchema`; si `esPropio = true` y `prisma.listaPrecioProveedor.count({ where: { codTiendaVinculo } }) > 0` rechaza con error legible (`"El ítem tiene N vínculo(s) con proveedor. Desvinculalos antes de marcarlo como Producto TiendaColor."`). Sin desvinculación automática: la baja se hace manualmente desde **VincularModal**.
+- **Action** `setProductoPropioTiendaAction` (`src/actions/productoPropioTienda.ts`): gate doble `puede(rol, PERMISOS.tienda.acceso)` + `esEditor()` (mismo patrón que `vincularProducto` / `desvincularProducto`); payload `unknown` validado con Zod (`{ codTienda, esPropio }`); revalida `/tienda`, `/gestion-productos/tienda/comp-proveedores`, `/gestion-productos/tienda/cx-px-tienda`.
+- **`getVinculos`** (`src/actions/vinculos.ts`) incluye `esProductoPropio` en `VinculosItemTiendaPayload` para que **VincularModal** sepa el estado al abrirse y renderice el botón toggle correcto.
 
 ### 1.10 Margen sin IVA (Vinculacion Con Prov., modal `/tienda`)
 
