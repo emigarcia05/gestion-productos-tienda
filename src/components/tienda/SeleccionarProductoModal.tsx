@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { FiltroIndividualContainer } from "@/components/FilterBar";
 import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
@@ -67,7 +67,7 @@ export default function SeleccionarProductoModal({
   open,
   onClose,
   onSeleccionar,
-  excluirItemTiendaId: _excluirItemTiendaId,
+  excluirItemTiendaId,
   idsProveedoresYaVinculados = [],
   itemDescripcion,
   marca,
@@ -79,6 +79,9 @@ export default function SeleccionarProductoModal({
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<ProductoProveedorParaVincular[]>([]);
   const [loading, setLoading] = useState(false);
+  const [infoVinculo, setInfoVinculo] = useState<
+    { codTienda: string; descripcion: string | null; prefijo: string } | null
+  >(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -130,7 +133,22 @@ export default function SeleccionarProductoModal({
     };
   }, [open, proveedorId, q, hayFiltros, idsProveedoresYaVinculados]);
 
+  function vinculadoOtraTienda(row: ProductoProveedorParaVincular): boolean {
+    return (
+      row.tiendaVinculada != null &&
+      row.tiendaVinculada.codTienda !== excluirItemTiendaId
+    );
+  }
+
   function handleRowDoubleClick(row: ProductoProveedorParaVincular) {
+    if (vinculadoOtraTienda(row) && row.tiendaVinculada) {
+      setInfoVinculo({
+        codTienda: row.tiendaVinculada.codTienda,
+        descripcion: row.tiendaVinculada.descripcion,
+        prefijo: row.proveedor.prefijo,
+      });
+      return;
+    }
     const producto: ProductoConProveedor = {
       id: row.id,
       proveedorId: row.idProveedor,
@@ -147,6 +165,7 @@ export default function SeleccionarProductoModal({
     "APLICÁ AL MENOS UN FILTRO (PROVEEDOR O DESCRIPCIÓN) PARA VER LOS PRODUCTOS.";
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(v) => {
@@ -248,25 +267,49 @@ export default function SeleccionarProductoModal({
                   <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
                     <Table variant="compact" scrollX={false} className="table-fixed w-full">
                       <TableBody>
-                        {rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            onDoubleClick={() => handleRowDoubleClick(row)}
-                            className="cursor-pointer select-none hover:bg-primary/5"
-                            title="Doble Clic Para Vincular"
-                          >
-                            <TableCell className="celda-datos w-28 text-center">
-                              <Badge variant="secondary" className="font-mono text-xs">
-                                {row.proveedor.prefijo}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="celda-datos min-w-0">
-                              <span className="block truncate" title={row.descripcionProveedor}>
-                                {row.descripcionProveedor}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {rows.map((row) => {
+                          const bloqueado = vinculadoOtraTienda(row);
+                          return (
+                            <TableRow
+                              key={row.id}
+                              onDoubleClick={() => handleRowDoubleClick(row)}
+                              className={cn(
+                                "select-none",
+                                bloqueado
+                                  ? "cursor-not-allowed opacity-60 bg-muted/40 hover:bg-muted/50"
+                                  : "cursor-pointer hover:bg-primary/5"
+                              )}
+                              title={
+                                bloqueado
+                                  ? "Producto ya vinculado a otro ítem. Doble clic para ver detalles."
+                                  : "Doble Clic Para Vincular"
+                              }
+                              aria-disabled={bloqueado || undefined}
+                            >
+                              <TableCell className="celda-datos w-28 text-center">
+                                <Badge variant="secondary" className="font-mono text-xs">
+                                  {row.proveedor.prefijo}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="celda-datos min-w-0">
+                                <span
+                                  className="flex items-center gap-2 min-w-0"
+                                  title={row.descripcionProveedor}
+                                >
+                                  {bloqueado ? (
+                                    <Lock
+                                      className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                                      aria-hidden
+                                    />
+                                  ) : null}
+                                  <span className="block truncate">
+                                    {row.descripcionProveedor}
+                                  </span>
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
@@ -291,5 +334,53 @@ export default function SeleccionarProductoModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog
+      open={infoVinculo != null}
+      onOpenChange={(v) => {
+        if (!v) setInfoVinculo(null);
+      }}
+    >
+      <DialogContent className="modal-app max-w-md w-[calc(100%-2rem)] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="modal-app__header shrink-0">
+          <DialogTitle className="modal-app__title">Producto Ya Vinculado</DialogTitle>
+        </DialogHeader>
+        <div className="modal-app__content">
+          <div className="modal-app__body px-6 py-4 flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              Este producto del proveedor{" "}
+              <strong className="text-foreground font-semibold">
+                [{infoVinculo?.prefijo}]
+              </strong>{" "}
+              ya está vinculado al siguiente ítem de tienda:
+            </p>
+            <div className="rounded-md border border-border bg-card p-3 flex flex-col gap-1">
+              <span className="text-xs uppercase text-muted-foreground tracking-wide">
+                Cód. Tienda
+              </span>
+              <span className="text-sm font-mono font-semibold text-foreground">
+                {infoVinculo?.codTienda}
+              </span>
+              <span className="text-xs uppercase text-muted-foreground tracking-wide mt-2">
+                Descripción
+              </span>
+              <span className="text-sm text-foreground break-words">
+                {infoVinculo?.descripcion?.trim() || "(sin descripción)"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Para vincularlo a otro ítem, primero desvinculá este producto desde su ítem
+              tienda actual.
+            </p>
+          </div>
+          <div className="modal-app__footer shrink-0 justify-end">
+            <Button variant="default" size="sm" onClick={() => setInfoVinculo(null)}>
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

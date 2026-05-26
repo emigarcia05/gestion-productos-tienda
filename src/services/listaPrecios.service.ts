@@ -275,6 +275,8 @@ export interface ProductoProveedorParaVincular {
   proveedor: { prefijo: string; nombre: string };
   /** Precio final de compra (para usar como costo objetivo al seleccionar desde lista). */
   pxCompraFinalSinIva: number | null;
+  /** Si ya está vinculado a un ítem `prod_precios_tienda`, datos para mostrar bloqueo informativo. */
+  tiendaVinculada: { codTienda: string; descripcion: string | null } | null;
 }
 
 const MAX_PRODUCTOS_VINCULAR = 500;
@@ -295,7 +297,10 @@ export async function listarProductosProveedoresParaVincular(
 
   const rows = await prisma.listaPrecioProveedor.findMany({
     where,
-    include: { proveedor: { select: { prefijo: true, nombre: true } } },
+    include: {
+      proveedor: { select: { prefijo: true, nombre: true } },
+      listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
+    },
     orderBy: { codExt: "asc" },
     take: MAX_PRODUCTOS_VINCULAR,
   });
@@ -309,6 +314,12 @@ export async function listarProductosProveedoresParaVincular(
     rubro: r.rubro ?? null,
     proveedor: { prefijo: r.proveedor.prefijo ?? "", nombre: r.proveedor.nombre },
     pxCompraFinalSinIva: r.pxCompraFinalSinIva != null ? Number(r.pxCompraFinalSinIva) : null,
+    tiendaVinculada: r.listaPrecioTienda
+      ? {
+          codTienda: r.listaPrecioTienda.codTienda,
+          descripcion: r.listaPrecioTienda.descripcionTienda,
+        }
+      : null,
   }));
 }
 

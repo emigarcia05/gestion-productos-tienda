@@ -1070,6 +1070,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-20): **`VincularModal`** — columnas **PREFIJO**, **PX. FINAL**, **VARIAC.** + ícono **Trash2** (desvincular); sin **MARGEN** (§ Tienda — Modal Vínculos).*
 
+*Última actualización (2026-05-26): **`SeleccionarProductoModal`** — filas cuyo `prod_precios_provee.cod_tienda` apunta a otro ítem se muestran **bloqueadas** (`opacity-60`, `cursor-not-allowed`, ícono `Lock`); doble clic abre sub-modal **Producto Ya Vinculado** con `cod_tienda` y descripción del ítem destino. `listarProductosProveedoresParaVincular` incluye `tiendaVinculada` (`{ codTienda, descripcion }`).*
+
 *Última actualización (2026-04-21): **Proveedores** — `ProveedorForm`: prefijo **opcional** (sin `required` HTML); **PROVEEDOR MERCADERÍA** sigue siendo SI/NO obligatorio vía Zod. **Filtros Tienda** (`FiltrosTienda.tsx`): opciones de proveedor con `key={p.id}`; si no hay prefijo, solo se muestra el nombre (sin corchetes vacíos). **Calc. Tintométrico** (`TiendaCalcTintometricoPageClient.tsx`): valor del `Select` = `id` del proveedor (no prefijo); etiqueta `[prefijo]` o `[codigoUnico]` si falta prefijo. **Vincular / Seleccionar producto** (`VincularModal` + `SeleccionarProductoModal`): exclusión de duplicados por **`idsProveedoresYaVinculados`** (`proveedorId`), no por prefijo.*
 
 *Última actualización (2026-05-05): **Frontend desktop-only** — se elimina el uso de variantes responsive/mobile en `src/` (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`, `max-*`), dejando clases base únicas para escritorio.*
