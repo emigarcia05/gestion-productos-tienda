@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, Tag } from "lucide-react";
+import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, Tag, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -11,6 +11,7 @@ import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+import { cn } from "@/lib/utils";
 import AppModal from "@/components/shared/AppModal";
 import {
   Table,
@@ -20,7 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getVinculos, vincularProducto, desvincularProducto } from "@/actions/vinculos";
+import {
+  getVinculos,
+  vincularProducto,
+  desvincularProducto,
+  establecerCostoListaTiendaAction,
+} from "@/actions/vinculos";
 import { setProductoPropioTiendaAction } from "@/actions/productoPropioTienda";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
@@ -47,6 +53,7 @@ interface Props {
   itemDescripcion: string;
   codigoExterno: string | null;
   cantidadVinculos: number;
+  /** Compatibilidad con TablaTienda: ya no se usa para la columna VARIACION (la base la marca el tilde). */
   costoTienda: number;
   marca?: string | null;
   rubro?: string | null;
@@ -73,22 +80,36 @@ function pxCompraDeProducto(p: ProductoConProveedor): number {
       );
 }
 
-function DifCosto({ costoTienda, pxCompraFinalSinIva }: { costoTienda: number; pxCompraFinalSinIva: number }) {
-  if (costoTienda <= 0 || pxCompraFinalSinIva <= 0) return <span className="variacion-costo--neutra">—</span>;
-  const dif = ((pxCompraFinalSinIva - costoTienda) / costoTienda) * 100;
+/**
+ * Variación de una fila respecto al precio base (fila tildada).
+ *  - Sin base: `—`.
+ *  - Fila base o |Δ%| < 1%: `≈0%` (neutra).
+ *  - Otra fila: flecha ↑ + `+X.X%` si más cara que la base; flecha ↓ + `-X.X%` si más barata.
+ */
+function VariacionVsBase({ px, pxBase }: { px: number; pxBase: number | null }) {
+  if (pxBase == null || pxBase <= 0 || px <= 0) {
+    return <span className="variacion-costo--neutra">—</span>;
+  }
+  const dif = ((px - pxBase) / pxBase) * 100;
   const abs = Math.abs(dif);
   if (abs < UMBRAL_PCT) return <span className="variacion-costo--neutra">≈0%</span>;
   const absFmt = abs.toFixed(1);
   if (dif > 0) {
     return (
-      <span className="variacion-costo--positiva flex items-center justify-center gap-1" title={`Px. Compra Final es ${absFmt}% más caro que Cx. Actual`}>
+      <span
+        className="variacion-costo--positiva flex items-center justify-center gap-1"
+        title={`Precio ${absFmt}% más caro que la base seleccionada`}
+      >
         <ArrowUp className="h-3.5 w-3.5 variacion-costo-icon--positiva shrink-0" />
         +{absFmt}%
       </span>
     );
   }
   return (
-    <span className="variacion-costo--negativa flex items-center justify-center gap-1" title={`Px. Compra Final es ${absFmt}% más económico que Cx. Actual`}>
+    <span
+      className="variacion-costo--negativa flex items-center justify-center gap-1"
+      title={`Precio ${absFmt}% más económico que la base seleccionada`}
+    >
       <ArrowDown className="h-3.5 w-3.5 variacion-costo-icon--negativa shrink-0" />
       -{absFmt}%
     </span>
@@ -99,7 +120,6 @@ export default function VincularModal({
   itemTiendaId,
   itemDescripcion,
   cantidadVinculos: cantidadInicial,
-  costoTienda,
   marca,
   rubro,
   subRubro,
@@ -118,6 +138,8 @@ export default function VincularModal({
   const [cargando, setCargando] = useState(false);
   const [cantidad, setCantidad] = useState(cantidadInicial);
   const [esPropio, setEsPropio] = useState(false);
+  /** `cod_ext` (FK `cod_ext_costo_lista`) de la fila tildada como base; `null` = sin base (Cx. Prom.). */
+  const [codExtBase, setCodExtBase] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -127,6 +149,7 @@ export default function VincularModal({
       if (result.success) {
         setVinculados(result.data.productos);
         setEsPropio(result.data.esProductoPropio);
+        setCodExtBase(result.data.codExtCostoLista);
       } else toast.error(result.error);
       setCargando(false);
     });
@@ -181,9 +204,28 @@ export default function VincularModal({
     return [...conPx].sort((a, b) => a.px - b.px);
   }, [vinculados, prefijoPrincipal]);
 
-  function esOficial(p: ProductoConProveedor): boolean {
-    if (prefijoPrincipal === "") return false;
-    return p.proveedor.prefijo.trim().toLowerCase() === prefijoPrincipal;
+  /** Precio base (px_compra_final_sin_iva de la fila tildada). `null` si nada tildado o la fila base ya no está en la lista. */
+  const pxBase = useMemo(() => {
+    if (!codExtBase) return null;
+    const baseRow = filasOrdenadas.find((r) => r.producto.codigoExterno === codExtBase);
+    return baseRow ? baseRow.px : null;
+  }, [codExtBase, filasOrdenadas]);
+
+  function handleToggleBase(producto: ProductoConProveedor) {
+    if (!puedeEditar) return;
+    const yaEraBase = codExtBase === producto.codigoExterno;
+    const nuevoValor = yaEraBase ? null : producto.codigoExterno;
+    const previo = codExtBase;
+    setCodExtBase(nuevoValor);
+    startTransition(async () => {
+      const res = await establecerCostoListaTiendaAction(itemTiendaId, nuevoValor);
+      if (res.ok) {
+        router.refresh();
+      } else {
+        setCodExtBase(previo);
+        toast.error(res.error);
+      }
+    });
   }
 
   function handleDesvincular(producto: ProductoConProveedor) {
@@ -192,6 +234,9 @@ export default function VincularModal({
       if (res.ok) {
         setVinculados((prev) => prev.filter((p) => p.id !== producto.id));
         setCantidad((c) => Math.max(0, c - 1));
+        if (codExtBase === producto.codigoExterno) {
+          setCodExtBase(null);
+        }
         router.refresh();
         toast.success(`Desvinculado: ${producto.codigoExterno}`);
       } else {
@@ -221,6 +266,7 @@ export default function VincularModal({
         if (refreshed.success) {
           setVinculados(refreshed.data.productos);
           setCantidad(refreshed.data.productos.length);
+          setCodExtBase(refreshed.data.codExtCostoLista);
         } else {
           setVinculados((prev) => [
             ...prev,
@@ -333,16 +379,23 @@ export default function VincularModal({
               <div className="contenedor-tabla-gestion no-scroll-x max-h-[min(420px,55vh)] min-h-[12rem] w-full min-w-0">
                 <Table variant="compact" scrollX={false} className="tabla-vinculos-modal">
                   <colgroup>
-                    <col className="w-[22%]" />
-                    <col className="w-[28%]" />
-                    <col className={puedeEditar ? "w-[36%]" : "w-[50%]"} />
-                    {puedeEditar ? <col className="w-[14%]" /> : null}
+                    <col className="w-[5%]" />
+                    <col className="w-[15%]" />
+                    <col className={puedeEditar ? "w-[45%]" : "w-[55%]"} />
+                    <col className="w-[15%]" />
+                    <col className="w-[10%]" />
+                    {puedeEditar ? <col className="w-[10%]" /> : null}
                   </colgroup>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead>PREFIJO</TableHead>
-                      <TableHead>PX. FINAL</TableHead>
-                      <TableHead>VARIAC.</TableHead>
+                      <TableHead className="text-center">
+                        <span className="sr-only">BASE</span>
+                        <Check className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
+                      </TableHead>
+                      <TableHead>PROVEEDOR</TableHead>
+                      <TableHead>DESCRIPCION</TableHead>
+                      <TableHead>PRECIO</TableHead>
+                      <TableHead>VARIACION</TableHead>
                       {puedeEditar ? (
                         <TableHead>
                           <span className="sr-only">DESVINC.</span>
@@ -352,16 +405,47 @@ export default function VincularModal({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filasOrdenadas.map(({ producto: p, px }) => (
+                    {filasOrdenadas.map(({ producto: p, px }) => {
+                      const esBase = codExtBase === p.codigoExterno;
+                      return (
                         <TableRow key={p.id}>
+                          <TableCell className="celda-datos text-center">
+                            <input
+                              type="checkbox"
+                              checked={esBase}
+                              onChange={() => handleToggleBase(p)}
+                              disabled={!puedeEditar || isPending}
+                              className={cn(
+                                "h-4 w-4 cursor-pointer accent-primary",
+                                (!puedeEditar || isPending) && "cursor-not-allowed opacity-60"
+                              )}
+                              aria-label={
+                                esBase
+                                  ? `Quitar base de comparación (${p.proveedor.prefijo})`
+                                  : `Marcar ${p.proveedor.prefijo} como base de comparación`
+                              }
+                              title={
+                                esBase
+                                  ? "Esta fila es la base. Click para destildar (Cx. Prom.)."
+                                  : "Marcar como base para calcular variaciones del resto."
+                              }
+                            />
+                          </TableCell>
                           <TableCell className="celda-datos celda-mono whitespace-nowrap">
                             {p.proveedor.prefijo}
+                          </TableCell>
+                          <TableCell className="celda-datos truncate" title={p.descripcion}>
+                            {p.descripcion}
                           </TableCell>
                           <TableCell className="celda-datos celda-numero celda-destacado">
                             ${fmtPrecio(px)}
                           </TableCell>
                           <TableCell className="celda-datos celda-numero">
-                            <DifCosto costoTienda={costoTienda} pxCompraFinalSinIva={px} />
+                            {esBase ? (
+                              <span className="variacion-costo--neutra">0%</span>
+                            ) : (
+                              <VariacionVsBase px={px} pxBase={pxBase} />
+                            )}
                           </TableCell>
                           {puedeEditar ? (
                             <TableCell className="celda-datos celda-datos--accion-relleno-fila">
@@ -385,7 +469,8 @@ export default function VincularModal({
                             </TableCell>
                           ) : null}
                         </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

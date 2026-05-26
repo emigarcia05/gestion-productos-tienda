@@ -54,7 +54,7 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
                 <TableHead className="min-w-0">PROVEEDOR</TableHead>
                 <TableHead className="w-24">PREFIJO</TableHead>
                 <TableHead className="w-28">CANT. PRODUCTOS</TableHead>
-                <TableHead className="w-36">PROD. PROVISTOS</TableHead>
+                <TableHead className="w-36">CANT. VINCULADOS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -78,7 +78,7 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
                   </TableCell>
                   <TableCell className="celda-datos celda-mono whitespace-nowrap">{prov.prefijo}</TableCell>
                   <TableCell className="celda-datos celda-numero">{prov.cantProductos.toLocaleString()}</TableCell>
-                  <TableCell className="celda-datos celda-numero">{prov.cantProductosProvistos.toLocaleString()}</TableCell>
+                  <TableCell className="celda-datos celda-numero">{prov.cantVinculados.toLocaleString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

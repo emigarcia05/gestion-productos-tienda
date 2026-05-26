@@ -9,6 +9,7 @@ import type { ProductoCompleto } from "@/types";
 import {
   autoAsignarCodExtCostoListaTrasVincular,
   establecerCodExtCostoLista,
+  limpiarCodExtCostoLista,
   limpiarCodExtCostoListaSiCoincide,
 } from "@/services/costoListaTienda.service";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
@@ -185,10 +186,14 @@ export async function desvincularProducto(
   }
 }
 
-/** Define qué fila `prod_precios_provee` alimenta CX. COMPRA en Cx/Px Tienda. */
+/**
+ * Define qué fila `prod_precios_provee` alimenta CX. COMPRA / costo base de comparación.
+ * - `productoListaCodExt = string` → fija FK `cod_ext_costo_lista` al `codExt` indicado.
+ * - `productoListaCodExt = null` → destilda: limpia la FK (vuelve a Cx. Prom. / sin base).
+ */
 export async function establecerCostoListaTiendaAction(
   itemTiendaCod: string,
-  productoListaCodExt: string
+  productoListaCodExt: string | null
 ): Promise<ActionResult> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
@@ -196,13 +201,22 @@ export async function establecerCostoListaTiendaAction(
   }
   if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
   const parsedItem = listaPreciosCodTiendaSchema.safeParse(itemTiendaCod);
-  const parsedProducto = listaPreciosCodExtSchema.safeParse(productoListaCodExt);
-  if (!parsedItem.success || !parsedProducto.success) {
+  if (!parsedItem.success) {
     return { ok: false, error: "Datos inválidos." };
   }
-  const res = await establecerCodExtCostoLista(parsedItem.data, parsedProducto.data);
-  if (!res.success) return { ok: false, error: res.error };
+  if (productoListaCodExt === null) {
+    const res = await limpiarCodExtCostoLista(parsedItem.data);
+    if (!res.success) return { ok: false, error: res.error };
+  } else {
+    const parsedProducto = listaPreciosCodExtSchema.safeParse(productoListaCodExt);
+    if (!parsedProducto.success) {
+      return { ok: false, error: "Datos inválidos." };
+    }
+    const res = await establecerCodExtCostoLista(parsedItem.data, parsedProducto.data);
+    if (!res.success) return { ok: false, error: res.error };
+  }
   revalidatePath("/tienda");
+  revalidatePath("/gestion-productos/tienda/comp-proveedores");
   revalidatePath("/gestion-productos/tienda/cx-px-tienda");
   return { ok: true, data: undefined };
 }

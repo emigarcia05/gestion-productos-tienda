@@ -65,8 +65,8 @@ export interface ProveedorListItem {
   iva: IvaProveedor;
   /** Cantidad de ítems en prod_precios_provee. */
   cantProductos: number;
-  /** Cantidad de ítems del proveedor vinculados a lista_precios_tienda. */
-  cantProductosProvistos: number;
+  /** Cantidad de ítems de `prod_precios_provee` con `cod_tienda_vinculo` no nulo (vinculados manualmente a un `prod_precios_tienda`). */
+  cantVinculados: number;
 }
 
 export const PROVEEDOR_ERROR = {
@@ -125,7 +125,7 @@ export async function getProveedoresNoMercaderia(): Promise<ProveedorListItem[]>
 async function listarProveedoresInterno(
   where: { proveedorMercaderia?: boolean } | null
 ): Promise<ProveedorListItem[]> {
-  const [rows, provistosByProveedor] = await Promise.all([
+  const [rows, vinculadosByProveedor] = await Promise.all([
     prisma.proveedor.findMany({
       where: where ?? undefined,
       orderBy: { nombre: "asc" },
@@ -138,8 +138,8 @@ async function listarProveedoresInterno(
     }),
   ]);
 
-  const provistosMap = new Map(
-    provistosByProveedor.map((g) => [g.idProveedor, g._count.codExt])
+  const vinculadosMap = new Map(
+    vinculadosByProveedor.map((g) => [g.idProveedor, g._count.codExt])
   );
 
   return rows.map((p) => ({
@@ -154,7 +154,7 @@ async function listarProveedoresInterno(
     proveedorMercaderia: p.proveedorMercaderia,
     iva: p.iva,
     cantProductos: p._count.listaPrecios,
-    cantProductosProvistos: provistosMap.get(p.id) ?? 0,
+    cantVinculados: vinculadosMap.get(p.id) ?? 0,
   }));
 }
 
