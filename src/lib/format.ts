@@ -37,7 +37,7 @@ export function fmtMarcacionPct(n: number): string {
   return `${s}%`;
 }
 
-/** Variación porcentual sin decimales (entero). Para Control Aumentos y listados que muestran % redondeado. */
+/** Variación porcentual sin decimales (entero). Para listados que muestran % redondeado (Precios Competencia, Comparación Categorías). */
 export function fmtPctEntero(n: number): string {
   const entero = Math.round(n);
   if (entero > 0)  return `+${entero}%`;

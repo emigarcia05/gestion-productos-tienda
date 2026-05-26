@@ -1,7 +1,7 @@
 import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
 import type { FilaExportPxListaCx } from "@/services/exportPxListaCxDiff.service";
 
-/** Excel `.xls` (misma convención que Exportar Cx / Stock / Aumentos). */
+/** Excel `.xls` (misma convención que Exportar Cx / Stock). */
 export function descargarExcelPxListaCx(filas: FilaExportPxListaCx[]): void {
   void import("xlsx").then((XLSX) => {
     const hojaFilas = filas.map((f) => ({

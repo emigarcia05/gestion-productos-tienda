@@ -273,10 +273,11 @@ export default function VincularModal({
               {puedeEditar ? (
                 <Button
                   size="sm"
-                  variant={esPropio ? "default" : "outline"}
+                  variant="default"
                   className="gap-1.5"
                   onClick={handleToggleProductoPropio}
                   disabled={isPending}
+                  aria-pressed={esPropio}
                   title={
                     esPropio
                       ? "Quitar marca de Producto TiendaColor."

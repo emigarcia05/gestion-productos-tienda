@@ -1,14 +1,13 @@
 "use server";
 
-import { esEditor, getRol } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { z } from "zod";
-import type { ActionResult } from "@/lib/types";
 import { filtroTexto } from "@/lib/busqueda";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
+import { prismaCuidSchema } from "@/lib/validations/common";
 
 /** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y filtro `vinculado` sin resultados. */
 async function getTiendaEmptyWithOpciones() {
@@ -151,8 +150,16 @@ export async function getTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
-  // Filtro por proveedor: solo proveedores oficiales (columna proveedor en prod_precios_tienda). Los vinculados son solo para comparación en la tabla.
-  if (proveedor) andParts.push({ proveedor: { equals: proveedor, mode: "insensitive" } });
+  // Filtro PROV. VINC.: ítems con al menos un vínculo manual habilitado al proveedor seleccionado (idProveedor, CUID).
+  // Tolerante con URLs legacy: si el valor no parsea como CUID, se ignora el filtro (no rompe la pantalla).
+  const proveedorIdParsed = prismaCuidSchema.safeParse(proveedor);
+  if (proveedorIdParsed.success) {
+    andParts.push({
+      listaPreciosProveedores: {
+        some: { idProveedor: proveedorIdParsed.data, habilitado: true },
+      },
+    });
+  }
 
   /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. Los productos propios TiendaColor se excluyen de `no` (nunca van a vincularse). */
   if (vinculado === "no") {
@@ -243,60 +250,4 @@ export async function getTiendaPageData(params: {
   };
 }
 
-// ─── Control de Aumentos ───────────────────────────────────────────────────
-
-export interface ItemAumento {
-  itemId:          string;
-  codItem:         string;
-  descripcion:     string;
-  marca:           string | null;
-  rubro:           string | null;
-  subRubro:        string | null;
-  codigoExterno:   string;
-  proveedorDux:    string | null;  // prefijo del proveedor (para UI)
-  proveedorNombre: string | null;   // nombre completo (para exportación)
-  costoTienda:     number;
-  pxCompraFinalSinIva:   number;
-  pctAumento:      number; // ((pxCompraFinalSinIva - costoTienda) / costoTienda) * 100
-}
-
-export interface GrupoAumento {
-  nombre:      string;
-  cantidad:    number;
-  pctPromedio: number;
-  subiendo:    number;
-  bajando:     number;
-}
-
-export interface ControlAumentosData {
-  porMarca:    GrupoAumento[];
-  porRubro:    GrupoAumento[];
-  porSubRubro: GrupoAumento[];
-  individual:  ItemAumento[];
-}
-
-/** Marca un producto vinculado como proveedor principal: actualiza prod_precios_tienda.cod_ext y prod_precios_tienda.proveedor. */
-const prismaIdParamSchema = z.object({
-  itemTiendaId: z.string().min(1).max(128),
-  productoProveedorId: z.string().min(1).max(128),
-});
-
-export async function convertirEnProveedor(
-  itemTiendaId: string,
-  productoProveedorId: string
-): Promise<ActionResult> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acceso)) {
-    return { ok: false, error: "Sin acceso a tienda." };
-  }
-  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
-  const parsed = prismaIdParamSchema.safeParse({ itemTiendaId, productoProveedorId });
-  if (!parsed.success) {
-    return { ok: false, error: "IDs inválidos." };
-  }
-  return {
-    ok: false,
-    error: "La modificación de proveedor en base de datos está deshabilitada.",
-  };
-}
 

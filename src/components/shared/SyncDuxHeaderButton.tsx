@@ -13,7 +13,7 @@ import { useListaPreciosTiendaModalSync } from "@/hooks/useListaPreciosTiendaMod
  * Botón "Importar Datos Dux": abre modal de confirmación y, al confirmar,
  * dispara la sincronización real (POST /api/sync-lista-precios-tienda).
  * Muestra el progreso junto al botón (y en la sidebar vía SyncStatusIndicator)
- * tanto en Comp. Proveedores, Control Aumentos como en Control Stock.
+ * tanto en Comp. Proveedores como en Control Stock.
  */
 export default function SyncDuxHeaderButton() {
   const router = useRouter();

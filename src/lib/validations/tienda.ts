@@ -5,6 +5,7 @@ export const getTiendaPageParamsSchema = z.object({
   rubro: z.string().max(200).optional(),
   subRubro: z.string().max(200).optional(),
   marca: z.string().max(200).optional(),
+  /** Filtro PROV. VINC.: id (CUID) del proveedor; la action ignora valores que no parsean como CUID (URLs legacy con texto). */
   proveedor: z.string().max(200).optional(),
   /** Query `vinculado=no` | `vinculado=si` (mayúsculas/minúsculas); otro valor se ignora en la action. */
   vinculado: z.string().max(5).optional(),

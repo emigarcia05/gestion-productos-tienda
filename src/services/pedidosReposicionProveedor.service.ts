@@ -1,6 +1,10 @@
 /**
- * Resolución de proveedor para pedido REPOSICIÓN por `cod_tienda` (vínculos en
+ * Resolución de proveedor para pedido REPOSICIÓN por `cod_tienda` (vínculos manuales en
  * `prod_precios_provee.cod_tienda`) y menor costo comparable según Posición IVA.
+ *
+ * Desde 2026-05-28 se eliminó el fallback legacy por `cod_ext` (cuando el sync DUX
+ * todavía poblaba `prod_precios_tienda.cod_ext`). La única fuente de verdad es el vínculo
+ * manual desde **Vínculos Con Proveedores**.
  */
 
 import { IvaProveedor } from "@prisma/client";
@@ -10,10 +14,7 @@ import {
   type MiembroPrecioComparablePedidoUrgente,
 } from "@/lib/precioComparacionPedidoUrgenteReposicion";
 import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
-import {
-  pickListaPrecioProveedorPorCodExtYTienda,
-  type LpRowPick,
-} from "@/services/pedidosEnvio.service";
+import type { LpRowPick } from "@/services/pedidosEnvio.service";
 
 export type LpRowReposicionResuelto = LpRowPick & {
   codExt: string;
@@ -97,84 +98,42 @@ export async function cargarListaPrecioReposicionPorCodTiendas(
   return mapaListaPrecioPorCodTiendaVinculo(filas.map(filaLpToResuelto));
 }
 
-export async function cargarListaPrecioReposicionFallbackPorCodExt(
-  codExts: string[]
-): Promise<Map<string, LpRowReposicionResuelto[]>> {
-  const keys = [...new Set(codExts.map((c) => c.trim()).filter(Boolean))];
-  if (keys.length === 0) return new Map();
-
-  const filas = await prisma.listaPrecioProveedor.findMany({
-    where: { codExt: { in: keys }, habilitado: true },
-    select: selectListaPrecioReposicion,
-    orderBy: [{ codExt: "asc" }, { idProveedor: "asc" }],
-  });
-
-  const map = new Map<string, LpRowReposicionResuelto[]>();
-  for (const f of filas.map(filaLpToResuelto)) {
-    const k = f.codExt.trim();
-    const arr = map.get(k) ?? [];
-    arr.push(f);
-    map.set(k, arr);
-  }
-  return map;
-}
-
-type TiendaPickReposicion = {
-  codTienda: string;
-  codExt: string | null;
-  proveedor: string | null;
-};
-
 /**
- * Elige la fila de lista proveedor para un `cod_tienda`: primero vínculos (`cod_tienda` en provee),
- * ordenados por menor costo comparable; si no hay vínculos, fallback por `cod_ext` de tienda.
+ * Elige la fila de lista proveedor para un `cod_tienda`: requiere al menos un vínculo
+ * manual habilitado en `prod_precios_provee.cod_tienda`; entre todos los vínculos, gana
+ * el menor costo comparable según Posición IVA. Sin vínculos manuales, devuelve `null`.
  */
 export function elegirListaPrecioProveedorReposicion(params: {
   codTienda: string;
-  tienda: TiendaPickReposicion;
   lpPorCodTienda: Map<string, LpRowReposicionResuelto[]>;
-  lpPorCodExt?: Map<string, LpRowReposicionResuelto[]>;
   ivaSaldoAcumulado: number;
 }): LpRowReposicionResuelto | null {
   const ct = params.codTienda.trim();
   const vinculados = params.lpPorCodTienda.get(ct) ?? [];
+  if (vinculados.length === 0) return null;
 
-  if (vinculados.length > 0) {
-    const miembros: (MiembroPrecioComparablePedidoUrgente & LpRowReposicionResuelto)[] =
-      vinculados.map((v) => ({
-        ...v,
-        pxCompraFinalSinIva: v.pxCompraFinalSinIva,
-        ivaProveedor: v.ivaProveedor ?? IvaProveedor.PREGUNTA,
-        prefijo: v.proveedor.prefijo ?? "",
-        codExt: v.codExt,
-      }));
-    const ordenados = ordenarMiembrosPedidoUrgentePorMenorCostoComparable(
-      miembros,
-      params.ivaSaldoAcumulado
-    );
-    return ordenados[0] ?? null;
-  }
-
-  const codExtT = (params.tienda.codExt ?? "").trim();
-  if (!codExtT) return null;
-  const listaLp = params.lpPorCodExt?.get(codExtT) ?? [];
-  const legacy = pickListaPrecioProveedorPorCodExtYTienda(listaLp, {
-    codTienda: params.tienda.codTienda,
-    proveedor: params.tienda.proveedor,
-  });
-  if (!legacy) return null;
-  const match = listaLp.find((r) => r.idProveedor === legacy.idProveedor);
-  return match ?? { ...legacy, codExt: codExtT, pxCompraFinalSinIva: null, ivaProveedor: IvaProveedor.PREGUNTA };
+  const miembros: (MiembroPrecioComparablePedidoUrgente & LpRowReposicionResuelto)[] =
+    vinculados.map((v) => ({
+      ...v,
+      pxCompraFinalSinIva: v.pxCompraFinalSinIva,
+      ivaProveedor: v.ivaProveedor ?? IvaProveedor.PREGUNTA,
+      prefijo: v.proveedor.prefijo ?? "",
+      codExt: v.codExt,
+    }));
+  const ordenados = ordenarMiembrosPedidoUrgentePorMenorCostoComparable(
+    miembros,
+    params.ivaSaldoAcumulado
+  );
+  return ordenados[0] ?? null;
 }
 
 export async function sumarIvaSaldoParaReposicion(): Promise<number> {
   return sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
 }
 
-/** Verifica que exista al menos una línea de lista proveedor para configurar reposición. */
+/** Verifica que exista al menos una línea de lista proveedor habilitada vinculada al `cod_tienda`. */
 export async function existeListaPrecioParaReposicionCodTienda(
-  codTienda: string,
-  tienda: { codExt: string | null }
+  codTienda: string
 ): Promise<boolean> {
   const ct = codTienda.trim();
   if (!ct) return false;
@@ -183,14 +142,5 @@ export async function existeListaPrecioParaReposicionCodTienda(
     where: { codTiendaVinculo: ct, habilitado: true },
     select: { codExt: true },
   });
-  if (vinculo) return true;
-
-  const codExt = (tienda.codExt ?? "").trim();
-  if (!codExt) return false;
-
-  const porExt = await prisma.listaPrecioProveedor.findFirst({
-    where: { codExt, habilitado: true },
-    select: { codExt: true },
-  });
-  return porExt != null;
+  return vinculo != null;
 }

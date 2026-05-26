@@ -243,7 +243,7 @@ export default function FiltrosTienda({
               >
                 <SelectItem value="none">PROV. VINC.</SelectItem>
                 {proveedores.map((p) => (
-                  <SelectItem key={p.id} value={p.nombre}>
+                  <SelectItem key={p.id} value={p.id}>
                     {p.prefijo ? `[${p.prefijo}] ` : ""}
                     {p.nombre}
                   </SelectItem>

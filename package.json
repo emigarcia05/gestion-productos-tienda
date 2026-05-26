@@ -23,7 +23,6 @@
     "db:fix-lista-precios-tienda-cod-ext": "tsx scripts/fix-lista-precios-tienda-cod-ext.ts",
     "db:fix-lista-precios-proveedores-columnas": "tsx scripts/fix-lista-precios-proveedores-columnas.ts",
     "db:simulate-api-tienda": "tsx scripts/simulate-api-lista-precios-tienda.ts",
-    "db:vincular-tienda-por-cod-ext": "tsx scripts/vincular-tienda-por-cod-ext.ts",
     "db:export-excel": "tsx scripts/export-db-to-excel.ts",
     "db:seed-competencia": "tsx scripts/seed-prod-competencia.ts"
   },

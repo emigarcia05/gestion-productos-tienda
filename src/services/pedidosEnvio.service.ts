@@ -12,7 +12,6 @@ import {
 } from "@/lib/pedidosTintometrico";
 import { SUCURSAL_LABEL_PEDIDO } from "@/lib/pedidos";
 import {
-  cargarListaPrecioReposicionFallbackPorCodExt,
   cargarListaPrecioReposicionPorCodTiendas,
   elegirListaPrecioProveedorReposicion,
   existeListaPrecioParaReposicionCodTienda,
@@ -105,14 +104,12 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       };
     }
     const codT = codTienda.trim();
-    const tieneListaProveedor = await existeListaPrecioParaReposicionCodTienda(codT, {
-      codExt: tienda.codExt,
-    });
+    const tieneListaProveedor = await existeListaPrecioParaReposicionCodTienda(codT);
     if (!tieneListaProveedor) {
       return {
         ok: false,
         error:
-          "No hay proveedor vinculado al producto en prod_precios_provee (cod_tienda) ni lista por cod_ext.",
+          "No hay proveedor vinculado al producto en prod_precios_provee. Vinculá al menos un proveedor desde Vínculos Con Proveedores.",
       };
     }
 
@@ -516,24 +513,6 @@ export type LpRowPick = {
   proveedor: { prefijo: string | null; nombre: string | null };
 };
 
-export function pickListaPrecioProveedorPorCodExtYTienda(
-  lista: LpRowPick[],
-  tienda: { proveedor: string | null; codTienda: string }
-): LpRowPick | null {
-  if (lista.length === 0) return null;
-  const proveedorTiendaNorm = (tienda.proveedor ?? "").trim().toUpperCase();
-  const porNombre = lista.find((r) => {
-    const pref = (r.proveedor.prefijo ?? "").trim().toUpperCase();
-    const nom = (r.proveedor.nombre ?? "").trim().toUpperCase();
-    return (
-      proveedorTiendaNorm.length > 0 &&
-      (pref === proveedorTiendaNorm || nom === proveedorTiendaNorm)
-    );
-  });
-  const vinculado = lista.find((r) => r.codTiendaVinculo === tienda.codTienda);
-  return porNombre ?? vinculado ?? lista[0] ?? null;
-}
-
 function pickListaPrecioProveedorUrgente(
   lista: LpRowPick[],
   proveedorIdFiltro?: string
@@ -670,13 +649,6 @@ export async function getItemsTablaEnviarPedido(params: {
       : Promise.resolve([]),
   ]);
 
-  const codExtsFallbackRepos = [...codTiendasRepos]
-    .map((ct) => (tiendaByCodTienda.get(ct)?.codExt ?? "").trim())
-    .filter(Boolean);
-  const lpPorCodExtRepos = await cargarListaPrecioReposicionFallbackPorCodExt(
-    codExtsFallbackRepos
-  );
-
   const lpPorCodExt = new Map<string, LpRowPick[]>();
   for (const row of lpRows) {
     const k = (row.codExt ?? "").trim();
@@ -717,9 +689,7 @@ export async function getItemsTablaEnviarPedido(params: {
       }
       const provRow = elegirListaPrecioProveedorReposicion({
         codTienda: codTi,
-        tienda,
         lpPorCodTienda: lpPorCodTiendaRepos,
-        lpPorCodExt: lpPorCodExtRepos,
         ivaSaldoAcumulado: ivaSaldoReposicion,
       });
       if (!provRow) {
@@ -947,13 +917,6 @@ export async function getItemsYProveedorParaEnviar(
       : Promise.resolve([]),
   ]);
 
-  const codExtsFallbackReposPdf = [...codTiendasRepos]
-    .map((ct) => (tiendaByCodTienda.get(ct)?.codExt ?? "").trim())
-    .filter(Boolean);
-  const lpPorCodExtReposPdf = await cargarListaPrecioReposicionFallbackPorCodExt(
-    codExtsFallbackReposPdf
-  );
-
   const lpPorCodExt = new Map<string, LpRowPick[]>();
   for (const row of lpRowsPdf) {
     const k = (row.codExt ?? "").trim();
@@ -989,9 +952,7 @@ export async function getItemsYProveedorParaEnviar(
       if (!tienda) continue;
       const provRow = elegirListaPrecioProveedorReposicion({
         codTienda: codTi,
-        tienda,
         lpPorCodTienda: lpPorCodTiendaReposPdf,
-        lpPorCodExt: lpPorCodExtReposPdf,
         ivaSaldoAcumulado: ivaSaldoReposicionPdf,
       });
       if (!provRow || provRow.idProveedor !== pid) continue;

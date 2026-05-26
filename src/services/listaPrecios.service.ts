@@ -842,10 +842,15 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
         })
       : [];
 
-  const descripcionTiendaPorCodExt = new Map(
+  const descripcionTiendaPorCodExt = new Map<string, string>(
     tiendaRows
-      .filter((t) => t.descripcionTienda != null && t.descripcionTienda.trim() !== "")
-      .map((t) => [t.codExt, t.descripcionTienda as string])
+      .filter(
+        (t): t is { codExt: string; descripcionTienda: string } =>
+          t.codExt != null &&
+          t.descripcionTienda != null &&
+          t.descripcionTienda.trim() !== ""
+      )
+      .map((t) => [t.codExt, t.descripcionTienda])
   );
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
@@ -1049,10 +1054,15 @@ export async function getListaPreciosParaPedidoUrgente(
         })
       : [];
 
-  const descripcionTiendaPorCodExt = new Map(
+  const descripcionTiendaPorCodExt = new Map<string, string>(
     tiendaRows
-      .filter((t) => t.descripcionTienda != null && t.descripcionTienda.trim() !== "")
-      .map((t) => [t.codExt, t.descripcionTienda as string])
+      .filter(
+        (t): t is { codExt: string; descripcionTienda: string } =>
+          t.codExt != null &&
+          t.descripcionTienda != null &&
+          t.descripcionTienda.trim() !== ""
+      )
+      .map((t) => [t.codExt, t.descripcionTienda])
   );
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));

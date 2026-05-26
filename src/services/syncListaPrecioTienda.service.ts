@@ -13,7 +13,6 @@ import {
   type ItemDux,
 } from "@/lib/duxApi";
 import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
-import { vincularProveedoresPorCodExt } from "@/services/vinculosPorCodExt.service";
 
 /** Se lanza cuando el usuario cancela la sync vía API (flag `running` en BD). */
 export class SyncListaPrecioTiendaCancelledError extends Error {
@@ -57,16 +56,14 @@ export interface SyncListaPrecioTiendaResult {
   errores: string[];
 }
 
+/** Mapea ítem DUX a la fila de upsert. Desde 2026-05-28 `cod_ext` y `proveedor` quedan fuera del sync (vinculación 100 % manual vía `prod_precios_provee.cod_tienda`). */
 function itemDuxToRecord(item: ItemDux) {
-  const codExt = (item.codigoExterno ?? item.codItem).trim() || item.codItem;
   const codTienda = (item.codItem ?? "").trim() || COD_TIENDA;
   return {
-    codExt,
     codTienda,
     rubro: item.rubro ?? null,
     subRubro: item.subRubro ?? null,
     marca: item.marca ?? null,
-    proveedor: item.proveedorDux ?? null,
     descripcionTienda: item.descripcion ?? null,
     costoCompra: Number(item.costo) || 0,
     pxListaTienda: Number(item.precioLista) || 0,
@@ -179,13 +176,11 @@ export async function syncListaPrecioTiendaFromDux(
               await tx.listaPrecioTienda.upsert({
                 where: { codTienda: row.codTienda },
                 create: {
-                  codExt: row.codExt,
                   codTienda: row.codTienda,
                   rubro: row.rubro,
                   subRubro: row.subRubro,
                   marca: row.marca,
                   idMarca,
-                  proveedor: row.proveedor,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
                   pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
@@ -194,13 +189,11 @@ export async function syncListaPrecioTiendaFromDux(
                   stockeable: row.stockeable,
                 },
                 update: {
-                  codExt: row.codExt,
                   codTienda: row.codTienda,
                   rubro: row.rubro,
                   subRubro: row.subRubro,
                   marca: row.marca,
                   idMarca,
-                  proveedor: row.proveedor,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
                   pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
@@ -254,16 +247,6 @@ export async function syncListaPrecioTiendaFromDux(
     const msg = e instanceof Error ? e.message : String(e);
     errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
     console.error("Error en limpieza de cod_tienda ausentes:", msg);
-  }
-
-  // Vinculación automática por cod_ext: `prod_precios_provee.cod_tienda` = `prod_precios_tienda.cod_tienda` donde `cod_ext` coincide
-  await assertListaPrecioTiendaSyncNotCancelled();
-  try {
-    await vincularProveedoresPorCodExt();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    errores.push(`Vinculación por cod_ext: ${msg}`);
-    console.error("Error en vinculación automática por cod_ext:", msg);
   }
 
   const duracionMs = Date.now() - inicioMs;

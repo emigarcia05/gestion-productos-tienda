@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ItemPedidoEnvioRowParaEnviar, SucursalPedidoEnvio } from "@/services/pedidosEnvio.service";
 import {
-  cargarListaPrecioReposicionFallbackPorCodExt,
   cargarListaPrecioReposicionPorCodTiendas,
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
@@ -108,7 +107,6 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     select: {
       codExt: true,
       codTienda: true,
-      proveedor: true,
       descripcionTienda: true,
       stockMaipu: true,
       stockGuaymallen: true,
@@ -126,10 +124,6 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas(codTiendas),
   ]);
-  const codExtsFallbackOtra = codTiendas
-    .map((ct) => (tiendaPorCodTienda.get(ct)?.codExt ?? "").trim())
-    .filter(Boolean);
-  const lpPorCodExtOtra = await cargarListaPrecioReposicionFallbackPorCodExt(codExtsFallbackOtra);
 
   const stockFieldOtra = getStockFieldBySucursal(otraCodigo);
   const otherMerc2 = await prisma.prodPedMerc2.findMany({
@@ -167,9 +161,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (!tienda) continue;
     const provRow = elegirListaPrecioProveedorReposicion({
       codTienda: codT,
-      tienda,
       lpPorCodTienda: lpPorCodTiendaOtra,
-      lpPorCodExt: lpPorCodExtOtra,
       ivaSaldoAcumulado: ivaSaldoReposicion,
     });
     if (!provRow) continue;
@@ -199,8 +191,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (!tienda) continue;
     if (!tienda.stockeable) continue;
 
-    const cx = normCodExt(tienda.codExt);
-    if (!cx) continue;
+    const cx = normCodExt(tienda.codExt ?? "");
 
     const topePedidoRow =
       fila.tipoPedido === "REPOSICION" ? fila.reposicionCantConf : null;

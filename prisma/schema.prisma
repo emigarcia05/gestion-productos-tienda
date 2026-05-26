@@ -534,12 +534,14 @@ model Marca {
 // Alimentada solo por API externa (tabla prod_precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
 model ListaPrecioTienda {
   codTienda       String   @id @map("cod_tienda") // clave de negocio estable (PK); sync upsert por cod_tienda
-  codExt          String   @map("cod_ext") // mutable: puede variar por cambio de proveedor en DUX
+  /** Histórico DUX: a partir de 2026-05-28 ya no se sincroniza (vinculación 100 % manual vía `prod_precios_provee.cod_tienda`). Se preservan valores legacy para trazabilidad. */
+  codExt          String?  @map("cod_ext")
   rubro           String?
   subRubro        String?  @map("sub_rubro")
   marca           String?  // texto tal cual viene de la API DUX (se mantiene para trazabilidad)
   idMarca         String?  @map("id_marca") // FK a prod_marcas: marca normalizada y vinculada
-  proveedor       String?  // texto DUX (sync); no define solo el costo mostrado en Cx/Px
+  /** Histórico DUX: a partir de 2026-05-28 ya no se sincroniza. La relación tienda ↔ proveedor se infiere de `listaPreciosProveedores` (vínculos manuales). */
+  proveedor       String?
   descripcionTienda String? @map("descripcion_tienda")
   /** FK a `prod_precios_provee.cod_ext`: costo Cx = px_compra_final_sin_iva de esa fila (no lo pisa el sync DUX). */
   codExtCostoLista String? @map("cod_ext_costo_lista")

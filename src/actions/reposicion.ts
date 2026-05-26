@@ -14,7 +14,6 @@ import {
   upsertPedidoMercaderiaReposicionConfig,
 } from "@/services/pedidosEnvio.service";
 import {
-  cargarListaPrecioReposicionFallbackPorCodExt,
   cargarListaPrecioReposicionPorCodTiendas,
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
@@ -280,18 +279,12 @@ export async function getReposicionData(
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
   ]);
-  const codExtsFallback = rows
-    .map((r) => (r.codExt ?? "").trim())
-    .filter(Boolean);
-  const lpPorCodExt = await cargarListaPrecioReposicionFallbackPorCodExt(codExtsFallback);
 
   const items: ItemReposicion[] = rows.map((r) => {
     const codTienda = r.codTienda.trim();
     const provResuelto = elegirListaPrecioProveedorReposicion({
       codTienda,
-      tienda: r,
       lpPorCodTienda,
-      lpPorCodExt,
       ivaSaldoAcumulado: ivaSaldoReposicion,
     });
     const regla = reglasMap.get(codTienda) ?? null;
@@ -311,7 +304,7 @@ export async function getReposicionData(
     });
     return {
       idListaTienda: codTienda,
-      codExt: provResuelto?.codExt ?? r.codExt,
+      codExt: provResuelto?.codExt ?? r.codExt ?? "",
       codTienda,
       descripcionTienda: r.descripcionTienda,
       stock,
@@ -378,7 +371,7 @@ export async function getProductosReposicionSelector(
 
   return rows.map((r) => ({
       idListaTienda: r.codTienda,
-      codExt: r.codExt,
+      codExt: r.codExt ?? "",
       codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,
     }));

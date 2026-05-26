@@ -53,16 +53,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/tienda/aumentos",
-        destination: "/gestion-productos/tienda/control-stock",
-        permanent: true,
-      },
-      {
-        source: "/gestion-productos/tienda/control-aumento",
-        destination: "/gestion-productos/tienda/control-stock",
-        permanent: true,
-      },
-      {
         source: "/stock",
         destination: "/gestion-productos/tienda/control-stock",
         permanent: true,

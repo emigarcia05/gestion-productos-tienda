@@ -55,7 +55,8 @@ export async function getSucursalesTintometricas(): Promise<SucursalTintometrica
 export type BaseTintometricaRow = {
   id: string;
   codTienda: string;
-  codExt: string;
+  /** Histórico DUX: puede ser `null` para ítems creados luego del 2026-05-28. */
+  codExt: string | null;
   descripcionTienda: string;
   marca: string | null;
   rubro: string | null;

@@ -1,7 +1,7 @@
 import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 
-/** Excel `.xls` (misma convención que Stock / Aumentos). */
+/** Excel `.xls` (misma convención que Stock). */
 export function descargarExcelCostoCx(filas: FilaExportCostoCx[]): void {
   void import("xlsx").then((XLSX) => {
     const hojaFilas = filas.map((f) => ({
