@@ -11,11 +11,9 @@ export interface FilaExportCostoCx {
   costo: number;
 }
 
-/** Compara `prod_precios_tienda.costo_compra` vs costo CX PROD. (centavos). */
+/** Compara `costo_compra` (DUX) vs costo CX PROD. en pesos enteros (sin decimales). */
 export function costosCompraDifieren(costoCompra: number, costoCxProd: number): boolean {
-  const a = Math.round(costoCompra * 100);
-  const b = Math.round(costoCxProd * 100);
-  return a !== b;
+  return Math.round(costoCompra) !== Math.round(costoCxProd);
 }
 
 function toNum(n: unknown): number {
