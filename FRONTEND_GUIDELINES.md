@@ -1014,7 +1014,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **`ListaPreciosTablaConFiltros`** — vista principal: **COD. EXT.**, **PROV.** (solo sin filtro proveedor), **DESCRIPCION** (tienda + proveedor + marca/rubro), **PX. LISTA PROV.**, **PX. FINAL**, **DET.** (chevron expande descuentos) y **ACCIONES** (editar). Subfila con **DESC. PROV./MARCA/RUBRO/CANT./FINAN.** y **CX. TRANSP.** reutiliza clases `tabla-fila-detalle-competencia-*`; vacíos numéricos muestran **—**.*
 
-*Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, **DESC. PROVEEDOR / MARCA / CANTIDAD / FINAN. / CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS: cada dígito → 2 decimales visibles, ej. `1`→`0,01`, `125`→`1,25`; válido **&gt; 0** y **&lt; 100**). **DESC. RUBRO** mantiene texto libre con `parsePorcentaje0a100Input`. Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
+*Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, descuentos y **CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS; válido **&gt; 0** y **&lt; 100**). Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
+
+*Última actualización (2026-05-27): **`EdicionMasivaListaPreciosModal`** — formulario en grilla **etiqueta derecha / control izquierda** (`grid-cols-[1.35fr_minmax(0,1fr)]`); separadores horizontales suaves **`border-primary/30`** entre bloques: **MARCA/RUBRO** → descuentos → **CX. TRANSPORTE** → **COTIZACIÓN DÓLAR** (modo fila: **PX. LISTA PROVEEDOR** arriba con divisor previo).*
 
 *Última actualización (2026-05-27): **`/gestion-productos/pedidos/generar-pedido`** — en el filtro desplegable **TIPO DE PEDIDO** se elimina el checkbox cuadrado por opción; cada opción se selecciona al hacer click en toda la fila y marca estado con ícono **Check** (tilde) a la derecha.*
 

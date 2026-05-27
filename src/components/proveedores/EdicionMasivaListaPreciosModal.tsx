@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,11 @@ import {
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
 } from "@/actions/listaPrecios";
-import { formatPorcentaje0a100Input, parsePorcentaje0a100Input } from "@/lib/format";
 import {
   parsePorcentajeCentNormalized,
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
+import { cn } from "@/lib/utils";
 
 interface MarcaOption {
   id: string;
@@ -39,19 +39,49 @@ interface RubroOption {
 
 type PercentCentKey = keyof Pick<
   ActualizacionMasivaListaPrecios,
-  "dtoProveedor" | "dtoMarca" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
+  "dtoProveedor" | "dtoMarca" | "dtoRubro" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
 >;
 
-const CAMPOS_PORCENTAJE_CENT: { key: PercentCentKey; label: string }[] = [
-  { key: "dtoProveedor", label: "DESC. PROVEEDOR (%)" },
-  { key: "dtoMarca", label: "DESC. MARCA (%)" },
-  { key: "dtoCantidad", label: "DESC. CANTIDAD (%)" },
-  { key: "dtoFinanciero", label: "DESC. FINAN. (%)" },
-  { key: "cxTransporte", label: "CX. TRANSPORTE (%)" },
+const CAMPOS_DESCUENTO_CENT: { key: Exclude<PercentCentKey, "cxTransporte">; label: string }[] = [
+  { key: "dtoProveedor", label: "DESC. PROVEEDOR" },
+  { key: "dtoMarca", label: "DESC. MARCA" },
+  { key: "dtoRubro", label: "DESC. RUBRO" },
+  { key: "dtoCantidad", label: "DESC. CANTIDAD" },
+  { key: "dtoFinanciero", label: "DESC. FINANCIERO" },
 ];
 
-const PERCENT_RUBRO_KEY = "dtoRubro" as const;
-const PERCENT_INPUT_PATTERN = /^\d{0,3}([.,]\d{0,2})?$/;
+const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-4 gap-y-2 items-center";
+const LABEL_CLASS = "text-right font-medium text-sm";
+const INPUT_CONTROL_CLASS = "tabular-nums border-primary w-full min-w-0";
+
+function ModalFormDivider() {
+  return (
+    <div
+      className="col-span-2 border-t border-primary/30 my-3"
+      role="separator"
+      aria-hidden
+    />
+  );
+}
+
+function ModalFormRow({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <Label htmlFor={id} className={LABEL_CLASS}>
+        {label}
+      </Label>
+      <div className="min-w-0">{children}</div>
+    </>
+  );
+}
 
 interface BaseProps {
   marcas: MarcaOption[];
@@ -90,6 +120,7 @@ function centInputsDesdeFila(fila: FilaListaPrecioParaCliente): Partial<Record<P
   return {
     dtoProveedor: porcentajeCentFromNumber(fila.dtoProveedor),
     dtoMarca: porcentajeCentFromNumber(fila.dtoMarca),
+    dtoRubro: porcentajeCentFromNumber(fila.dtoRubro),
     dtoCantidad: porcentajeCentFromNumber(fila.dtoCantidad),
     dtoFinanciero: porcentajeCentFromNumber(fila.dtoFinanciero),
     cxTransporte: porcentajeCentFromNumber(fila.cxTransporte),
@@ -110,7 +141,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const [percentCentNormalized, setPercentCentNormalized] = useState<
     Partial<Record<PercentCentKey, string>>
   >({});
-  const [percentRubroInput, setPercentRubroInput] = useState("");
   const [cotizacionDolar, setCotizacionDolar] = useState("");
   const [pxListaProveedor, setPxListaProveedor] = useState("");
   const filaActual = filaMode ? props.fila : null;
@@ -126,7 +156,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     setMarcaNombre(filaActual.marca ?? "");
     setRubroNombre(filaActual.rubro ?? "");
     setPercentCentNormalized(centInputsDesdeFila(filaActual));
-    setPercentRubroInput(formatPorcentaje0a100Input(filaActual.dtoRubro));
     setCotizacionDolar("");
     setPxListaProveedor(String(Math.round(Number(filaActual.pxListaProveedor) || 0)));
   }, [filaMode, open, filaActual]);
@@ -135,19 +164,20 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     setMarcaNombre("");
     setRubroNombre("");
     setPercentCentNormalized({});
-    setPercentRubroInput("");
     setCotizacionDolar("");
     setPxListaProveedor("");
   }
 
-  function handleRubroPercentChange(raw: string) {
-    const trimmed = raw.trim();
-    if (trimmed !== "" && !PERCENT_INPUT_PATTERN.test(trimmed)) return;
-    setPercentRubroInput(raw);
+  function setPercentCent(key: PercentCentKey, next: string) {
+    setPercentCentNormalized((prev) => ({ ...prev, [key]: next }));
   }
 
   function validatePercentInputs(): string | null {
-    for (const { key, label } of CAMPOS_PORCENTAJE_CENT) {
+    const all: { key: PercentCentKey; label: string }[] = [
+      ...CAMPOS_DESCUENTO_CENT,
+      { key: "cxTransporte", label: "CX. TRANSPORTE" },
+    ];
+    for (const { key, label } of all) {
       const norm = percentCentNormalized[key];
       if (norm === undefined || norm.trim() === "") continue;
       const parsed = parsePorcentajeCentNormalized(norm);
@@ -155,13 +185,19 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
         return `${label}: ingresá un valor mayor a 0 y menor a 100.`;
       }
     }
-    if (percentRubroInput.trim() !== "") {
-      const parsed = parsePorcentaje0a100Input(percentRubroInput);
-      if (parsed === undefined) {
-        return `DESC. RUBRO (%): ingresá un valor entre 0 y 100 con hasta 2 decimales.`;
-      }
-    }
     return null;
+  }
+
+  function applyPercentCentToPayload(
+    data: ActualizacionMasivaListaPrecios,
+    keys: readonly PercentCentKey[]
+  ) {
+    for (const key of keys) {
+      const norm = percentCentNormalized[key];
+      if (norm === undefined || norm.trim() === "") continue;
+      const parsed = parsePorcentajeCentNormalized(norm);
+      if (parsed !== undefined) data[key] = parsed;
+    }
   }
 
   function buildPayload(): ActualizacionMasivaListaPrecios {
@@ -169,17 +205,11 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     if (marcaNombre) data.marca = marcaNombre;
     if (rubroNombre) data.rubro = rubroNombre;
 
-    for (const { key } of CAMPOS_PORCENTAJE_CENT) {
-      const norm = percentCentNormalized[key];
-      if (norm === undefined || norm.trim() === "") continue;
-      const parsed = parsePorcentajeCentNormalized(norm);
-      if (parsed !== undefined) data[key] = parsed;
-    }
-
-    if (percentRubroInput.trim() !== "") {
-      const parsed = parsePorcentaje0a100Input(percentRubroInput);
-      if (parsed !== undefined) data.dtoRubro = parsed;
-    }
+    applyPercentCentToPayload(
+      data,
+      CAMPOS_DESCUENTO_CENT.map((c) => c.key)
+    );
+    applyPercentCentToPayload(data, ["cxTransporte"]);
 
     const cotizacion = parsePxListaProveedor(cotizacionDolar);
     if (cotizacion !== undefined && cotizacion > 0) data.cotizacionDolar = cotizacion;
@@ -248,30 +278,28 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
         </p>
       )}
 
-      <div className="grid gap-0 py-1">
+      <div className={cn(FORM_GRID_CLASS, "py-1")}>
         {filaMode && (
-          <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
-            <Label htmlFor="pxListaProveedor" className="text-right font-medium">
-              PX. LISTA PROVEEDOR
-            </Label>
-            <Input
-              id="pxListaProveedor"
-              type="number"
-              min={0}
-              step={1}
-              placeholder="—"
-              value={pxListaProveedor}
-              onChange={(e) => setPxListaProveedor(e.target.value)}
-              className="tabular-nums border-primary"
-            />
-          </div>
+          <>
+            <ModalFormRow id="pxListaProveedor" label="PX. LISTA PROVEEDOR">
+              <Input
+                id="pxListaProveedor"
+                type="number"
+                min={0}
+                step={1}
+                placeholder="—"
+                value={pxListaProveedor}
+                onChange={(e) => setPxListaProveedor(e.target.value)}
+                className={INPUT_CONTROL_CLASS}
+              />
+            </ModalFormRow>
+            <ModalFormDivider />
+          </>
         )}
-        <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
-          <Label htmlFor="marca" className="text-right font-medium">
-            MARCA
-          </Label>
+
+        <ModalFormRow id="marca" label="MARCA">
           <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
-            <SelectTrigger id="marca" className="input-filtro-unificado tabular-nums border-primary">
+            <SelectTrigger id="marca" className={cn("input-filtro-unificado", INPUT_CONTROL_CLASS)}>
               <SelectValue placeholder="SELECCIONAR MARCA" />
             </SelectTrigger>
             <SelectContent>
@@ -283,13 +311,11 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
-          <Label htmlFor="rubro" className="text-right font-medium">
-            RUBRO
-          </Label>
+        </ModalFormRow>
+
+        <ModalFormRow id="rubro" label="RUBRO">
           <Select value={rubroNombre || "none"} onValueChange={(v) => setRubroNombre(v === "none" ? "" : v)}>
-            <SelectTrigger id="rubro" className="input-filtro-unificado tabular-nums border-primary">
+            <SelectTrigger id="rubro" className={cn("input-filtro-unificado", INPUT_CONTROL_CLASS)}>
               <SelectValue placeholder="SELECCIONAR RUBRO" />
             </SelectTrigger>
             <SelectContent>
@@ -301,44 +327,37 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        {CAMPOS_PORCENTAJE_CENT.map(({ key, label }) => (
-          <div key={key} className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
-            <Label htmlFor={key} className="text-right font-medium">
-              {label}
-            </Label>
+        </ModalFormRow>
+
+        <ModalFormDivider />
+
+        {CAMPOS_DESCUENTO_CENT.map(({ key, label }) => (
+          <ModalFormRow key={key} id={key} label={label}>
             <PorcentajeCentInput
               id={key}
               placeholder="0,00"
               valueNormalized={percentCentNormalized[key] ?? ""}
-              onValueNormalizedChange={(next) =>
-                setPercentCentNormalized((prev) => ({ ...prev, [key]: next }))
-              }
+              onValueNormalizedChange={(next) => setPercentCent(key, next)}
+              className={INPUT_CONTROL_CLASS}
             />
-          </div>
+          </ModalFormRow>
         ))}
-        <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
-          <Label htmlFor={PERCENT_RUBRO_KEY} className="text-right font-medium">
-            DESC. RUBRO (%)
-          </Label>
-          <Input
-            id={PERCENT_RUBRO_KEY}
-            type="text"
-            inputMode="decimal"
+
+        <ModalFormDivider />
+
+        <ModalFormRow id="cxTransporte" label="CX. TRANSPORTE">
+          <PorcentajeCentInput
+            id="cxTransporte"
             placeholder="0,00"
-            value={percentRubroInput}
-            onChange={(e) => handleRubroPercentChange(e.target.value)}
-            className="tabular-nums border-primary"
+            valueNormalized={percentCentNormalized.cxTransporte ?? ""}
+            onValueNormalizedChange={(next) => setPercentCent("cxTransporte", next)}
+            className={INPUT_CONTROL_CLASS}
           />
-        </div>
-        <p className="col-span-2 text-xs text-muted-foreground text-right">
-          Descuentos y CX. transporte: solo números, 2 decimales (ej. 1 → 0,01; 125 → 1,25). Mayor a 0 y menor a
-          100.
-        </p>
-        <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
-          <Label htmlFor="cotizacionDolar" className="text-right font-medium">
-            COTIZACIÓN DÓLAR
-          </Label>
+        </ModalFormRow>
+
+        <ModalFormDivider />
+
+        <ModalFormRow id="cotizacionDolar" label="COTIZACIÓN DÓLAR">
           <Input
             id="cotizacionDolar"
             type="number"
@@ -347,9 +366,9 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
             placeholder="—"
             value={cotizacionDolar}
             onChange={(e) => setCotizacionDolar(e.target.value)}
-            className="tabular-nums border-primary"
+            className={INPUT_CONTROL_CLASS}
           />
-        </div>
+        </ModalFormRow>
       </div>
     </div>
   );
