@@ -67,14 +67,15 @@ async function whereFiltroVincCosto(
   vincCosto: string
 ): Promise<Prisma.ListaPrecioTiendaWhereInput | undefined> {
   if (vincCosto === VINC_COSTO_SIN) {
-    return { listaPreciosProveedores: { none: { habilitado: true } } };
+    // "SIN VINC.": no existe ningun registro vinculado en prod_precios_provee.
+    return { listaPreciosProveedores: { none: {} } };
   }
   if (vincCosto !== VINC_COSTO_UNO && vincCosto !== VINC_COSTO_MAS) {
     return undefined;
   }
   const grouped = await prisma.listaPrecioProveedor.groupBy({
     by: ["codTiendaVinculo"],
-    where: { habilitado: true, codTiendaVinculo: { not: null } },
+    where: { codTiendaVinculo: { not: null } },
     _count: { codExt: true },
   });
   const codTiendas = grouped
@@ -182,11 +183,11 @@ export async function getCxPxTiendaPageData(params: {
   if (costoProv === CX_PROD_SELECCION_PROM) {
     andParts.push({ codExtCostoLista: null });
   } else if (costoProv) {
+    // CX PROVEEDOR: filtra por proveedor configurado en la columna CX PROD.
     andParts.push({
       codExtCostoLista: { not: null },
       costoListaProveedor: {
         idProveedor: costoProv,
-        habilitado: true,
       },
     });
   }
@@ -194,7 +195,19 @@ export async function getCxPxTiendaPageData(params: {
   if (pxLista === PX_LISTA_SELECCION_PROM) {
     andParts.push({ competenciaIdPxLista: null });
   } else if (pxLista) {
-    andParts.push({ competenciaIdPxLista: pxLista });
+    // PX LISTA: filtra por id_proveedor de la configuracion elegida.
+    const comp = await prisma.prodCompetencia.findUnique({
+      where: { id: pxLista },
+      select: { idProveedor: true },
+    });
+    if (comp?.idProveedor) {
+      andParts.push({
+        competenciaPxLista: { idProveedor: comp.idProveedor },
+      });
+    } else {
+      // Valor desconocido/invalido: retorna vacio sin romper el listado.
+      andParts.push({ codTienda: "__sin_coincidencias__" });
+    }
   }
 
   const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};

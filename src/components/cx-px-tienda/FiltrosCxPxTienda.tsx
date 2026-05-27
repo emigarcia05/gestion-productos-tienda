@@ -176,7 +176,7 @@ export default function FiltrosCxPxTienda({
               onValueChange={(v) => handleVincCosto(v === "none" ? "" : v)}
             >
               <SelectTrigger id="filtro-cx-px-cx-vinc" className="input-filtro-unificado">
-                <SelectValue placeholder="CX. VINC." />
+                <SelectValue placeholder="CX VINCULADO" />
               </SelectTrigger>
               <SelectContent
                 position="popper"
@@ -184,10 +184,10 @@ export default function FiltrosCxPxTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">CX. VINC.</SelectItem>
-                <SelectItem value={VINC_COSTO_SIN}>SIN PROV.</SelectItem>
+                <SelectItem value="none">CX VINCULADO</SelectItem>
+                <SelectItem value={VINC_COSTO_SIN}>SIN PROV. (SIN VINC.)</SelectItem>
                 <SelectItem value={VINC_COSTO_UNO}>UN PROV.</SelectItem>
-                <SelectItem value={VINC_COSTO_MAS}>MAS DE 1 PROV.</SelectItem>
+                <SelectItem value={VINC_COSTO_MAS}>+ 1 PROV.</SelectItem>
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>
