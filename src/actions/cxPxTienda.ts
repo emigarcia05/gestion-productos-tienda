@@ -398,7 +398,7 @@ export async function exportarPxListaCxDiffAction(): Promise<
   }
 }
 
-/** Excel CODIGO + COSTO: solo filas con `costo_compra` ≠ costo de `cod_ext_costo_lista`. */
+/** Excel CODIGO + COSTO: `costo_compra` (DUX) ≠ costo del proveedor elegido en CX PROD. de la grilla. */
 export async function exportarCostoCxDiffAction(): Promise<
   ActionResult<{ filas: FilaExportCostoCx[] }>
 > {

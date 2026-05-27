@@ -1,14 +1,20 @@
+import { CX_PROD_SELECCION_PROM, costoCxProdMostrado } from "@/lib/cxPxTienda";
 import { prisma } from "@/lib/prisma";
+import {
+  buildItemsCxPxDesdeFilas,
+  filaCxPxSelect,
+  listarCompetenciasPxListaCtx,
+} from "@/services/cxPxTiendaRows.service";
 
 export interface FilaExportCostoCx {
   codigo: string;
   costo: number;
 }
 
-/** Compara costo DUX (`costo_compra`) vs costo lista (`px_compra_final_sin_iva` del FK). */
-export function costosCompraDifieren(costoCompra: number, costoLista: number): boolean {
+/** Compara `prod_precios_tienda.costo_compra` vs costo CX PROD. (centavos). */
+export function costosCompraDifieren(costoCompra: number, costoCxProd: number): boolean {
   const a = Math.round(costoCompra * 100);
-  const b = Math.round(costoLista * 100);
+  const b = Math.round(costoCxProd * 100);
   return a !== b;
 }
 
@@ -19,32 +25,50 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Ítems con `cod_ext_costo_lista` donde el costo lista (proveedor) ≠ `costo_compra` (DUX).
- * COSTO exportado = valor de la fila referenciada por `cod_ext_costo_lista`.
+ * Control de costos: compara `costo_compra` (DUX) con el valor mostrado en **CX PROD.** de la grilla
+ * (`costoCxProdMostrado`: proveedor elegido → `px_compra_final_sin_iva`; **CX. PROM.** → promedio vínculos).
+ * Excel: CODIGO = `cod_tienda`, COSTO = ese costo CX PROD. (entero redondeado).
  */
 export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
+  const competenciasPxLista = await listarCompetenciasPxListaCtx();
+
   const rows = await prisma.listaPrecioTienda.findMany({
-    where: { codExtCostoLista: { not: null } },
-    select: {
-      codTienda: true,
-      costoCompra: true,
-      costoListaProveedor: {
-        select: { pxCompraFinalSinIva: true },
+    where: {
+      listaPreciosProveedores: {
+        some: { habilitado: true },
       },
+    },
+    select: {
+      ...filaCxPxSelect,
+      costoCompra: true,
     },
     orderBy: { codTienda: "asc" },
   });
 
+  const costoCompraPorCodTienda = new Map(
+    rows.map((r) => [r.codTienda, toNum(r.costoCompra)])
+  );
+
+  const items = await buildItemsCxPxDesdeFilas(rows, competenciasPxLista);
+
   const filas: FilaExportCostoCx[] = [];
-  for (const r of rows) {
-    const lp = r.costoListaProveedor;
-    if (!lp) continue;
-    const costoDux = toNum(r.costoCompra);
-    const costoLista = toNum(lp.pxCompraFinalSinIva);
-    if (!costosCompraDifieren(costoDux, costoLista)) continue;
+  for (const item of items) {
+    if (item.opcionesProveedor.length === 0) continue;
+
+    if (item.seleccion === CX_PROD_SELECCION_PROM) {
+      if (item.costoPromedio == null || item.costoPromedio <= 0) continue;
+    } else {
+      const op = item.opcionesProveedor.find((o) => o.codExt === item.seleccion);
+      if (!op || op.costo <= 0) continue;
+    }
+
+    const costoCxProd = costoCxProdMostrado(item);
+    const costoDux = costoCompraPorCodTienda.get(item.codTienda) ?? 0;
+    if (!costosCompraDifieren(costoDux, costoCxProd)) continue;
+
     filas.push({
-      codigo: r.codTienda,
-      costo: Math.round(costoLista),
+      codigo: item.codTienda,
+      costo: Math.round(costoCxProd),
     });
   }
   return filas;

@@ -21,7 +21,7 @@ export default function ExportarCxButton() {
       }
       if (res.data.filas.length === 0) {
         toast.message(
-          "No hay productos con diferencia entre costo DUX y costo lista del proveedor vinculado."
+          "No hay productos con diferencia entre costo compra (DUX) y el costo del proveedor seleccionado en CX PROD."
         );
         return;
       }
@@ -48,7 +48,8 @@ export default function ExportarCxButton() {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Excel con CODIGO y COSTO (solo ítems donde costo lista ≠ costo DUX)
+        Control de costos: compara costo compra (DUX) con CX PROD. (proveedor o promedio CX. PROM.).
+        Excel CODIGO + COSTO solo si hay diferencia
       </TooltipContent>
     </Tooltip>
   );
