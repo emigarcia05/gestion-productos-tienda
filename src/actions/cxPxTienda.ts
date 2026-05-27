@@ -181,7 +181,8 @@ export async function getCxPxTiendaPageData(params: {
   }
 
   if (costoProv === CX_PROD_SELECCION_PROM) {
-    andParts.push({ codExtCostoLista: null });
+    // `prom` en UI no es solo FK nula: tambien contempla la seleccion calculada.
+    // Se resuelve luego de `buildItemsCxPxDesdeFilas` para replicar exactamente la grilla.
   } else if (costoProv) {
     // CX PROVEEDOR: filtra por proveedor configurado en la columna CX PROD.
     andParts.push({
@@ -193,7 +194,7 @@ export async function getCxPxTiendaPageData(params: {
   }
 
   if (pxLista === PX_LISTA_SELECCION_PROM) {
-    andParts.push({ competenciaIdPxLista: null });
+    // `prom` en UI no es solo FK nula: se filtra luego con la seleccion calculada.
   } else if (pxLista) {
     // PX LISTA: filtra por id_proveedor de la configuracion elegida.
     const comp = await prisma.prodCompetencia.findUnique({
@@ -224,6 +225,8 @@ export async function getCxPxTiendaPageData(params: {
   const ordenMarcacion =
     marcacionOrden === MARCACION_ORDEN_MENOR_MAYOR ||
     marcacionOrden === MARCACION_ORDEN_MAYOR_MENOR;
+  const requiereFiltroCalculadoProm =
+    costoProv === CX_PROD_SELECCION_PROM || pxLista === PX_LISTA_SELECCION_PROM;
 
   const [marcasDistinct, proveedores, competenciasPxLista] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
@@ -241,14 +244,24 @@ export async function getCxPxTiendaPageData(params: {
   let items: ItemCxPxTiendaParaTabla[];
   let total: number;
 
-  if (ordenMarcacion) {
+  if (ordenMarcacion || requiereFiltroCalculadoProm) {
     const allRows = await prisma.listaPrecioTienda.findMany({
       where,
       select: filaCxPxSelect,
     });
     items = await buildItemsCxPxDesdeFilas(allRows, competenciasPxLista);
-    ordenarItemsPorMarcacion(items, marcacionOrden as MarcacionOrdenCxPx);
+    if (costoProv === CX_PROD_SELECCION_PROM) {
+      items = items.filter((it) => it.seleccion === CX_PROD_SELECCION_PROM);
+    }
+    if (pxLista === PX_LISTA_SELECCION_PROM) {
+      items = items.filter((it) => it.seleccionPxLista === PX_LISTA_SELECCION_PROM);
+    }
     total = items.length;
+    if (ordenMarcacion) {
+      ordenarItemsPorMarcacion(items, marcacionOrden as MarcacionOrdenCxPx);
+    } else {
+      items.sort((a, b) => a.descripcion.localeCompare(b.descripcion, "es"));
+    }
     items = items.slice(skip, skip + PAGE_SIZE);
   } else {
     const [rows, totalCount] = await Promise.all([
