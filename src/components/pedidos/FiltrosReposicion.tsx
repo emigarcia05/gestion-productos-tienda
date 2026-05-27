@@ -150,9 +150,9 @@ export default function FiltrosReposicion({
     }
   }
 
-  const sucursalValue = sucursalActual ?? "none";
+  const sucursalValue = sucursalActual ?? undefined;
   const sucursalSeleccionada = sucursalActual !== null;
-  const configuradoValue = configuradoActual || "none";
+  const configuradoValue = configuradoActual || undefined;
 
   const proveedoresDisponibles = Array.from(
     new Map(
@@ -177,7 +177,7 @@ export default function FiltrosReposicion({
           >
             <Select
               value={sucursalValue}
-              onValueChange={(v) => handleSucursal(v === "none" ? "" : v)}
+              onValueChange={(v) => handleSucursal(v)}
             >
               <SelectTrigger
                 id="filtro-reposicion-sucursal"
@@ -191,7 +191,6 @@ export default function FiltrosReposicion({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUCURSAL</SelectItem>
                 {sucursales.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -209,9 +208,9 @@ export default function FiltrosReposicion({
             }}
           >
             <Select
-              value={proveedorActual || "none"}
+              value={proveedorActual || undefined}
               onValueChange={(v) => {
-                const next = v === "none" ? "" : v;
+                const next = v;
                 onProveedorChange(next);
                 navigate({ proveedor: next, pagina: "1" });
               }}
@@ -229,7 +228,6 @@ export default function FiltrosReposicion({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PROVEEDOR</SelectItem>
                 {proveedoresDisponibles.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.nombre.toUpperCase()}
@@ -244,8 +242,8 @@ export default function FiltrosReposicion({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || "none"}
-              onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
+              value={marcaActual || undefined}
+              onValueChange={(v) => handleMarca(v)}
               disabled={!sucursalSeleccionada}
             >
               <SelectTrigger
@@ -260,7 +258,6 @@ export default function FiltrosReposicion({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">MARCA</SelectItem>
                 {data.marcas.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -275,8 +272,8 @@ export default function FiltrosReposicion({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || "none"}
-              onValueChange={(v) => handleRubro(v === "none" ? "" : v)}
+              value={rubroActual || undefined}
+              onValueChange={(v) => handleRubro(v)}
               disabled={!sucursalSeleccionada}
             >
               <SelectTrigger
@@ -291,7 +288,6 @@ export default function FiltrosReposicion({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">RUBRO</SelectItem>
                 {data.rubros.map((r) => (
                   <SelectItem key={r} value={r}>
                     {r}
@@ -303,7 +299,7 @@ export default function FiltrosReposicion({
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
             activo={configuradoActual === "si"}
-            onLimpiar={() => handleConfigurado("none")}
+            onLimpiar={() => handleConfigurado("")}
           >
             <Select
               value={configuradoValue}
@@ -322,7 +318,6 @@ export default function FiltrosReposicion({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">CONFIGURADO</SelectItem>
                 <SelectItem value="si">SÍ</SelectItem>
               </SelectContent>
             </Select>

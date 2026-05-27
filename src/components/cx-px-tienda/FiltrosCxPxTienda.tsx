@@ -145,8 +145,8 @@ export default function FiltrosCxPxTienda({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || "none"}
-              onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
+              value={marcaActual || undefined}
+              onValueChange={(v) => handleMarca(v)}
             >
               <SelectTrigger id="filtro-cx-px-marca" className="input-filtro-unificado">
                 <SelectValue placeholder="MARCA" />
@@ -157,7 +157,6 @@ export default function FiltrosCxPxTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">MARCA</SelectItem>
                 {marcas.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -172,8 +171,8 @@ export default function FiltrosCxPxTienda({
             onLimpiar={() => handleVincCosto("")}
           >
             <Select
-              value={vincCostoActual || "none"}
-              onValueChange={(v) => handleVincCosto(v === "none" ? "" : v)}
+              value={vincCostoActual || undefined}
+              onValueChange={(v) => handleVincCosto(v)}
             >
               <SelectTrigger id="filtro-cx-px-cx-vinc" className="input-filtro-unificado">
                 <SelectValue placeholder="CX VINCULADO" />
@@ -184,8 +183,7 @@ export default function FiltrosCxPxTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">CX VINCULADO</SelectItem>
-                <SelectItem value={VINC_COSTO_SIN}>SIN PROV. (SIN VINC.)</SelectItem>
+                <SelectItem value={VINC_COSTO_SIN}>SIN VINC.</SelectItem>
                 <SelectItem value={VINC_COSTO_UNO}>UN PROV.</SelectItem>
                 <SelectItem value={VINC_COSTO_MAS}>+ 1 PROV.</SelectItem>
               </SelectContent>
@@ -197,8 +195,8 @@ export default function FiltrosCxPxTienda({
             onLimpiar={() => handleCostoProv("")}
           >
             <Select
-              value={costoProvActual || "none"}
-              onValueChange={(v) => handleCostoProv(v === "none" ? "" : v)}
+              value={costoProvActual || undefined}
+              onValueChange={(v) => handleCostoProv(v)}
             >
               <SelectTrigger id="filtro-cx-px-cx-prov" className="input-filtro-unificado">
                 <SelectValue placeholder="CX. PROV." />
@@ -209,7 +207,6 @@ export default function FiltrosCxPxTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">CX. PROV.</SelectItem>
                 <SelectItem value={CX_PROD_SELECCION_PROM}>CX. PROM.</SelectItem>
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
@@ -226,8 +223,8 @@ export default function FiltrosCxPxTienda({
             onLimpiar={() => handlePxLista("")}
           >
             <Select
-              value={pxListaActual || "none"}
-              onValueChange={(v) => handlePxLista(v === "none" ? "" : v)}
+              value={pxListaActual || undefined}
+              onValueChange={(v) => handlePxLista(v)}
             >
               <SelectTrigger id="filtro-cx-px-px-lista" className="input-filtro-unificado">
                 <SelectValue placeholder="PX LISTA" />
@@ -238,7 +235,6 @@ export default function FiltrosCxPxTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PX LISTA</SelectItem>
                 <SelectItem value={PX_LISTA_SELECCION_PROM}>PX PROM.</SelectItem>
                 {competencias.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
@@ -254,8 +250,8 @@ export default function FiltrosCxPxTienda({
             onLimpiar={() => handleMarcacionOrden("")}
           >
             <Select
-              value={marcacionOrdenActual || "none"}
-              onValueChange={(v) => handleMarcacionOrden(v === "none" ? "" : v)}
+              value={marcacionOrdenActual || undefined}
+              onValueChange={(v) => handleMarcacionOrden(v)}
             >
               <SelectTrigger id="filtro-cx-px-marcacion" className="input-filtro-unificado">
                 <SelectValue placeholder="MARCACION" />
@@ -266,7 +262,6 @@ export default function FiltrosCxPxTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">MARCACION</SelectItem>
                 <SelectItem value={MARCACION_ORDEN_MENOR_MAYOR}>MENOR A MAYOR</SelectItem>
                 <SelectItem value={MARCACION_ORDEN_MAYOR_MENOR}>MAYOR A MENOR</SelectItem>
               </SelectContent>

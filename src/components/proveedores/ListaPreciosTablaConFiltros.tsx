@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -32,6 +34,11 @@ import {
   tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
+import {
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
+import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 interface RubroOption {
@@ -70,6 +77,10 @@ interface MarcaOption {
 interface ListaPreciosTablaConFiltrosProps {
   proveedores: ProveedorOption[];
   marcas: MarcaOption[];
+  rubros: RubroOption[];
+  puedeEdicionMasiva?: boolean;
+  reloadNonce?: number;
+  onEdicionSuccess?: () => void;
   onFilteredIdsChange?: (ids: string[]) => void;
   fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
@@ -81,9 +92,15 @@ const MENSAJE_SIN_FILTRO =
 export default function ListaPreciosTablaConFiltros({
   proveedores,
   marcas,
+  rubros,
+  puedeEdicionMasiva = false,
+  reloadNonce = 0,
+  onEdicionSuccess,
   onFilteredIdsChange,
   fetchListaPreciosConOpcionesAction,
 }: ListaPreciosTablaConFiltrosProps) {
+  const [filaEdit, setFilaEdit] = useState<FilaListaPrecioParaCliente | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [rubroNombre, setRubroNombre] = useState<string>("");
@@ -179,6 +196,7 @@ export default function ListaPreciosTablaConFiltros({
     pagina,
     fetchListaPreciosConOpcionesAction,
     onFilteredIdsChange,
+    reloadNonce,
   ]);
 
   useEffect(() => {
@@ -204,8 +222,8 @@ export default function ListaPreciosTablaConFiltros({
           <FilaFiltrosDesplegables>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
-                value={proveedorId || "none"}
-                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+                value={proveedorId || undefined}
+                onValueChange={(v) => setProveedorId(v)}
               >
                 <SelectTrigger id="filtro-proveedor" className="input-filtro-unificado">
                   <SelectValue placeholder="PROVEEDOR" />
@@ -216,7 +234,6 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">PROVEEDOR</SelectItem>
                   {proveedoresOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
@@ -227,8 +244,8 @@ export default function ListaPreciosTablaConFiltros({
             </div>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
-                value={marcaNombre || "none"}
-                onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}
+                value={marcaNombre || undefined}
+                onValueChange={(v) => setMarcaNombre(v)}
               >
                 <SelectTrigger id="filtro-marca" className="input-filtro-unificado">
                   <SelectValue placeholder="MARCA" />
@@ -239,7 +256,6 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">MARCA</SelectItem>
                   {marcasOptions.map((m) => (
                     <SelectItem key={m.id} value={m.nombre}>
                       {m.nombre}
@@ -250,8 +266,8 @@ export default function ListaPreciosTablaConFiltros({
             </div>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
-                value={rubroNombre || "none"}
-                onValueChange={(v) => setRubroNombre(v === "none" ? "" : v)}
+                value={rubroNombre || undefined}
+                onValueChange={(v) => setRubroNombre(v)}
               >
                 <SelectTrigger id="filtro-rubro" className="input-filtro-unificado">
                   <SelectValue placeholder="RUBRO" />
@@ -262,7 +278,6 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">RUBRO</SelectItem>
                   {rubrosOptions.map((r) => (
                     <SelectItem key={r.id} value={r.nombre}>
                       {r.nombre}
@@ -273,8 +288,8 @@ export default function ListaPreciosTablaConFiltros({
             </div>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
-                value={habilitadoFilter || "none"}
-                onValueChange={(v) => setHabilitadoFilter(v === "none" ? "" : v)}
+                value={habilitadoFilter || undefined}
+                onValueChange={(v) => setHabilitadoFilter(v)}
               >
                 <SelectTrigger id="filtro-habilitado" className="input-filtro-unificado">
                   <SelectValue placeholder="HABILITADO" />
@@ -285,7 +300,6 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">HABILITADO</SelectItem>
                   <SelectItem value="si">HABILITADO</SelectItem>
                   <SelectItem value="no">NO HABILITADO</SelectItem>
                 </SelectContent>
@@ -316,8 +330,6 @@ export default function ListaPreciosTablaConFiltros({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-20">COD. EXT.</TableHead>
-              <TableHead className="w-20">MARCA</TableHead>
-              <TableHead className="w-20">RUBRO</TableHead>
               <TableHead className="min-w-0">DESCRIPCION</TableHead>
               <TableHead className="w-28">PX. FINAL</TableHead>
               <TableHead className="w-16">DESC. PROV.</TableHead>
@@ -326,6 +338,9 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead className="w-16">DESC. CANT.</TableHead>
               <TableHead className="w-16">DESC. FINAN.</TableHead>
               <TableHead className="w-16">CX. TRANSP.</TableHead>
+              {puedeEdicionMasiva && (
+                <TableHead className="w-14 text-center">ACCIONES</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -333,12 +348,6 @@ export default function ListaPreciosTablaConFiltros({
               <TableRow key={fila.id}>
                 <TableCell className="celda-datos celda-mono whitespace-nowrap">
                   {fila.codExt}
-                </TableCell>
-                <TableCell className="celda-datos">
-                  {fila.marca ?? "—"}
-                </TableCell>
-                <TableCell className="celda-datos">
-                  {fila.rubro ?? "—"}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0 overflow-hidden">
                   <div className="celda-destacado truncate text-xs font-bold">
@@ -366,6 +375,25 @@ export default function ListaPreciosTablaConFiltros({
                 <TableCell className="celda-datos celda-numero">
                   {fmtNumero(fila.cxTransporte)}%
                 </TableCell>
+                {puedeEdicionMasiva && (
+                  <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
+                    <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                        aria-label={`Editar ${fila.codExt}`}
+                        onClick={() => {
+                          setFilaEdit(fila);
+                          setEditOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
             {(!hasFilterActive || loading || filteredFilas.length === 0) && (
@@ -378,7 +406,7 @@ export default function ListaPreciosTablaConFiltros({
                       textSize: "sm",
                     })
                   )}
-                  colSpan={11}
+                  colSpan={puedeEdicionMasiva ? 10 : 9}
                 >
                   <span
                     className={tableEmptyStateMessageVariants({
@@ -397,6 +425,22 @@ export default function ListaPreciosTablaConFiltros({
           </TableBody>
         </Table>
       </div>
+
+      {puedeEdicionMasiva && (
+        <EdicionMasivaListaPreciosModal
+          mode="fila"
+          fila={filaEdit}
+          open={editOpen}
+          onOpenChange={(next) => {
+            setEditOpen(next);
+            if (!next) setFilaEdit(null);
+          }}
+          marcas={marcas}
+          rubros={rubros}
+          onSuccess={onEdicionSuccess}
+        />
+      )}
+
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
         <span className="text-sm text-muted-foreground tabular-nums">
           {!hasFilterActive || total === 0

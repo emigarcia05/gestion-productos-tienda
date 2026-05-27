@@ -14,6 +14,8 @@ export const actualizacionMasivaListaPreciosSchema = z.object({
   dtoFinanciero: z.number().min(0).max(100).optional(),
   cxTransporte: z.number().min(0).max(100).optional(),
   cotizacionDolar: z.number().positive().optional(),
+  /** Precio de lista del proveedor (`prod_precios_provee.px_lista_proveedor`). */
+  pxListaProveedor: z.number().min(0).optional(),
 });
 
 export type ActualizacionMasivaListaPreciosInput = z.infer<typeof actualizacionMasivaListaPreciosSchema>;

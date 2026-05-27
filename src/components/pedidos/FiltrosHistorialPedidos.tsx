@@ -129,10 +129,8 @@ export default function FiltrosHistorialPedidos({
             onLimpiar={() => applyNavigate({ proveedorId: "" })}
           >
             <Select
-              value={proveedorId || "none"}
-              onValueChange={(v) =>
-                applyNavigate({ proveedorId: v === "none" ? "" : v })
-              }
+              value={proveedorId || undefined}
+              onValueChange={(v) => applyNavigate({ proveedorId: v })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="PROVEEDOR" />
@@ -143,7 +141,6 @@ export default function FiltrosHistorialPedidos({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PROVEEDOR</SelectItem>
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     [{p.prefijo}] {p.nombre}
@@ -159,10 +156,8 @@ export default function FiltrosHistorialPedidos({
             onLimpiar={() => applyNavigate({ sucursalCodigo: "" })}
           >
             <Select
-              value={sucursalCodigo || "none"}
-              onValueChange={(v) =>
-                applyNavigate({ sucursalCodigo: v === "none" ? "" : v })
-              }
+              value={sucursalCodigo || undefined}
+              onValueChange={(v) => applyNavigate({ sucursalCodigo: v })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SUCURSAL" />
@@ -173,7 +168,6 @@ export default function FiltrosHistorialPedidos({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUCURSAL</SelectItem>
                 {SUCURSALES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}

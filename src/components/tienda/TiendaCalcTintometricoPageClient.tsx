@@ -92,8 +92,8 @@ export default function TiendaCalcTintometricoPageClient({
               </span>
               <div className="min-w-0">
                 <Select
-                  value={proveedorId || "none"}
-                  onValueChange={(value) => setProveedorId(value === "none" ? "" : value)}
+                  value={proveedorId || undefined}
+                  onValueChange={(value) => setProveedorId(value)}
                 >
                   <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>
                     <SelectValue placeholder="SELECCIONAR" />
@@ -104,7 +104,6 @@ export default function TiendaCalcTintometricoPageClient({
                     align="start"
                     className="select-content-filtro"
                   >
-                    <SelectItem value="none">SELECCIONAR</SelectItem>
                     {proveedoresConCoefMayorAUno.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.prefijo ? `[${item.prefijo}] ` : `[${item.codigoUnico}] `}

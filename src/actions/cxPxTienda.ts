@@ -67,8 +67,10 @@ async function whereFiltroVincCosto(
   vincCosto: string
 ): Promise<Prisma.ListaPrecioTiendaWhereInput | undefined> {
   if (vincCosto === VINC_COSTO_SIN) {
-    // "SIN VINC.": no existe ningun registro vinculado en prod_precios_provee.
-    return { listaPreciosProveedores: { none: {} } };
+    // "SIN VINC.": no es producto propio y no tiene ningun vinculo en prod_precios_provee.
+    return {
+      AND: [{ esProductoPropio: false }, { listaPreciosProveedores: { none: {} } }],
+    };
   }
   if (vincCosto !== VINC_COSTO_UNO && vincCosto !== VINC_COSTO_MAS) {
     return undefined;
@@ -85,7 +87,20 @@ async function whereFiltroVincCosto(
       return vincCosto === VINC_COSTO_UNO ? n === 1 : n >= 2;
     })
     .map((g) => g.codTiendaVinculo as string);
-  return { codTienda: { in: codTiendas } };
+  if (vincCosto === VINC_COSTO_MAS) {
+    return { codTienda: { in: codTiendas } };
+  }
+
+  // "UN PROV.": un vinculo real o producto propio (vinculo empresa).
+  const propiosRows = await prisma.listaPrecioTienda.findMany({
+    where: { esProductoPropio: true },
+    select: { codTienda: true },
+  });
+  const propiosSet = new Set(propiosRows.map((r) => r.codTienda));
+  const codTiendasUno = codTiendas.filter((cod) => !propiosSet.has(cod));
+  for (const cod of propiosSet) codTiendasUno.push(cod);
+
+  return { codTienda: { in: codTiendasUno } };
 }
 
 function mapCompetenciasCxPxFiltro(

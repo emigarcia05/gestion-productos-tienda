@@ -145,14 +145,13 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroProveedor("")}
             >
               <Select
-                value={filtroProveedor || "none"}
-                onValueChange={(v) => setFiltroProveedor(v === "none" ? "" : v)}
+                value={filtroProveedor || undefined}
+                onValueChange={(v) => setFiltroProveedor(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                  <SelectItem value="none">PROVEEDOR</SelectItem>
                   {proveedores.map((proveedor) => (
                     <SelectItem key={proveedor} value={proveedor}>
                       {proveedor}
@@ -167,14 +166,13 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroSucursal("")}
             >
               <Select
-                value={filtroSucursal || "none"}
-                onValueChange={(v) => setFiltroSucursal(v === "none" ? "" : v)}
+                value={filtroSucursal || undefined}
+                onValueChange={(v) => setFiltroSucursal(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
                   <SelectValue placeholder="SUCURSAL" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                  <SelectItem value="none">SUCURSAL</SelectItem>
                   {sucursales.map((sucursal) => (
                     <SelectItem key={sucursal} value={sucursal}>
                       {sucursal}
@@ -189,14 +187,13 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroPagado("")}
             >
               <Select
-                value={filtroPagado || "none"}
-                onValueChange={(v) => setFiltroPagado(v === "none" ? "" : v)}
+                value={filtroPagado || undefined}
+                onValueChange={(v) => setFiltroPagado(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
                   <SelectValue placeholder="PAGADO" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                  <SelectItem value="none">PAGADO</SelectItem>
                   <SelectItem value="pendiente">PENDIENTE</SelectItem>
                 </SelectContent>
               </Select>
@@ -207,14 +204,13 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroVencido("")}
             >
               <Select
-                value={filtroVencido || "none"}
-                onValueChange={(v) => setFiltroVencido(v === "none" ? "" : v)}
+                value={filtroVencido || undefined}
+                onValueChange={(v) => setFiltroVencido(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
                   <SelectValue placeholder="VENCIDO" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start" className="select-content-filtro">
-                  <SelectItem value="none">VENCIDO</SelectItem>
                   <SelectItem value="vencido">VENCIDO</SelectItem>
                 </SelectContent>
               </Select>
@@ -222,8 +218,8 @@ export default function TablaControlComprobantes({
             <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
               <FiltroIndividualContainer className={cn(FILTER_SELECT_WRAPPER_CLASS, "w-full")} activo={Boolean(filtroControlado)} onLimpiar={() => setFiltroControlado("")}>
                 <Select
-                  value={filtroControlado || "none"}
-                  onValueChange={(v) => setFiltroControlado(v === "none" ? "" : v)}
+                  value={filtroControlado || undefined}
+                  onValueChange={(v) => setFiltroControlado(v)}
                 >
                   <SelectTrigger className="input-filtro-unificado">
                     <SelectValue placeholder="CONTROLADO" />
@@ -234,7 +230,6 @@ export default function TablaControlComprobantes({
                     align="start"
                     className="select-content-filtro"
                   >
-                    <SelectItem value="none">CONTROLADO</SelectItem>
                     <SelectItem value="no">NO</SelectItem>
                   </SelectContent>
                 </Select>

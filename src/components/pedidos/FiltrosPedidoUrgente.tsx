@@ -112,10 +112,8 @@ export default function FiltrosPedidoUrgente({
             onLimpiar={() => updateUrl({ sucursal: "" })}
           >
             <Select
-              value={sucursal || "none"}
-              onValueChange={(v) =>
-                updateUrl({ sucursal: v === "none" ? "" : (v as SucursalPedido) })
-              }
+              value={sucursal || undefined}
+              onValueChange={(v) => updateUrl({ sucursal: v as SucursalPedido })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SUCURSAL" />
@@ -126,7 +124,6 @@ export default function FiltrosPedidoUrgente({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUCURSAL</SelectItem>
                 {sucursales.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -141,8 +138,8 @@ export default function FiltrosPedidoUrgente({
             onLimpiar={() => updateUrl({ proveedor: "" })}
           >
             <Select
-              value={proveedor || "none"}
-              onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
+              value={proveedor || undefined}
+              onValueChange={(v) => updateUrl({ proveedor: v })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="PROVEEDOR" />
@@ -153,7 +150,6 @@ export default function FiltrosPedidoUrgente({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PROVEEDORES</SelectItem>
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     [{p.prefijo}] {p.nombre}
@@ -168,10 +164,8 @@ export default function FiltrosPedidoUrgente({
             onLimpiar={() => updateUrl({ pedido: "" })}
           >
             <Select
-              value={pedido || "none"}
-              onValueChange={(v) =>
-                updateUrl({ pedido: v === "none" ? "" : (v as FiltroPedidoValor) })
-              }
+              value={pedido || undefined}
+              onValueChange={(v) => updateUrl({ pedido: v as FiltroPedidoValor })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="PEDIDO" />
@@ -182,7 +176,6 @@ export default function FiltrosPedidoUrgente({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PEDIDO</SelectItem>
                 <SelectItem value="cualquier">CUALQUIER TIPO PEDIDO</SelectItem>
                 <SelectItem value="urgente">PEDIDO URGENTE</SelectItem>
                 <SelectItem value="reposicion">PEDIDO REPOSICION</SelectItem>

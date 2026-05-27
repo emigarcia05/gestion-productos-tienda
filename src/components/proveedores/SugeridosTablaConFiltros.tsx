@@ -172,8 +172,8 @@ export default function SugeridosTablaConFiltros({
           <FilaFiltrosDesplegables>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
-                value={proveedorId || "none"}
-                onValueChange={(v) => setProveedorId(v === "none" ? "" : v)}
+                value={proveedorId || undefined}
+                onValueChange={(v) => setProveedorId(v)}
               >
                 <SelectTrigger id="filtro-sugeridos-proveedor" className="input-filtro-unificado">
                   <SelectValue placeholder="PROVEEDOR" />
@@ -184,7 +184,6 @@ export default function SugeridosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">PROVEEDOR</SelectItem>
                   {proveedoresOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
@@ -195,8 +194,8 @@ export default function SugeridosTablaConFiltros({
             </div>
             <div className={FILTER_SELECT_WRAPPER_CLASS}>
               <Select
-                value={marcaNombre || "none"}
-                onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}
+                value={marcaNombre || undefined}
+                onValueChange={(v) => setMarcaNombre(v)}
               >
                 <SelectTrigger id="filtro-sugeridos-marca" className="input-filtro-unificado">
                   <SelectValue placeholder="MARCA" />
@@ -207,7 +206,6 @@ export default function SugeridosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">MARCA</SelectItem>
                   {marcasOptions.map((m) => (
                     <SelectItem key={m.id} value={m.nombre}>
                       {m.nombre}

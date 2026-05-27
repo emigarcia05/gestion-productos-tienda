@@ -18,7 +18,7 @@ import FilterBar, {
   FilterRowSearch,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedidos";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
@@ -140,10 +140,10 @@ export default function FiltrosEnviarPedido({
             onLimpiar={() => updateUrl({ sucursal: "", tipos: [], proveedor: "" })}
           >
             <Select
-              value={sucursal || "none"}
+              value={sucursal || undefined}
               onValueChange={(v) =>
                 updateUrl({
-                  sucursal: v === "none" ? "" : (v as SucursalPedido),
+                  sucursal: v as SucursalPedido,
                   tipos: [],
                   proveedor: "",
                 })
@@ -158,7 +158,6 @@ export default function FiltrosEnviarPedido({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUCURSAL</SelectItem>
                 {sucursales.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -199,20 +198,31 @@ export default function FiltrosEnviarPedido({
                 role="listbox"
                 aria-multiselectable="true"
               >
-                {OPCIONES_TIPO.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={tipos.includes(opt.value)}
-                      onChange={() => toggleTipo(opt.value)}
-                      className="h-4 w-4 rounded border-border"
-                    />
-                    {opt.label}
-                  </label>
-                ))}
+                {OPCIONES_TIPO.map((opt) => {
+                  const selected = tipos.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      onClick={() => toggleTipo(opt.value)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm font-medium hover:bg-muted",
+                        selected && "bg-muted"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      <Check
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-primary transition-opacity",
+                          selected ? "opacity-100" : "opacity-0"
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -223,8 +233,8 @@ export default function FiltrosEnviarPedido({
             onLimpiar={() => updateUrl({ proveedor: "" })}
           >
             <Select
-              value={proveedor || "none"}
-              onValueChange={(v) => updateUrl({ proveedor: v === "none" ? "" : v })}
+              value={proveedor || undefined}
+              onValueChange={(v) => updateUrl({ proveedor: v })}
               disabled={!proveedorHabilitado}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
@@ -246,7 +256,6 @@ export default function FiltrosEnviarPedido({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PROVEEDOR</SelectItem>
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     [{p.prefijo}] {p.nombre}

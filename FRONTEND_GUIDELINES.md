@@ -1010,6 +1010,12 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-21): **Alto de fila unificado** — **`--tabla-body-row-min-height: 2rem`**; botones **`tabla-row-btn-filled-brand`** con tamaño **`calc(2rem - 0.75rem)`** para no estirar filas (`size-9` del Button); **Precios Competencia** alineado al patrón **`TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`**.*
 
+*Última actualización (2026-05-27): **`/gestion-productos/proveedores/lista-precios`** — la grilla elimina columnas **MARCA** y **RUBRO** (se mantienen en barra de filtros), agrega columna **ACCIONES** con botón ícono **Editar** por fila (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`) y abre modal en modo individual usando el mismo componente de **Edición Masiva**.*
+
+*Última actualización (2026-05-27): **`/gestion-productos/pedidos/generar-pedido`** — en el filtro desplegable **TIPO DE PEDIDO** se elimina el checkbox cuadrado por opción; cada opción se selecciona al hacer click en toda la fila y marca estado con ícono **Check** (tilde) a la derecha.*
+
+*Última actualización (2026-05-27): **Filtros desplegables (regla global de UX)** — en `FilterBar` y filtros equivalentes, la máscara/placeholder del filtro (**PROVEEDOR**, **MARCA**, **RUBRO**, **SUCURSAL**, etc.) no debe repetirse como `SelectItem` dentro de la lista desplegable. El estado “sin filtro” se representa con `value` vacío (`undefined` en `Select`) y limpieza mediante `onLimpiar`/`LimpiarFiltrosButton`.*
+
 *Última actualización (2026-05-05): **`TABLE_ROW_*`** — botón **`aspect-square`** (ancho = alto útil); **`TABLE_ROW_CELL_*`** incluye **`p-1.5`**; **`tbody td button`** fijo **1.75rem** excluye **`.tabla-row-btn-filled-brand`**.*
 
 *Última actualización (2026-05-06): **`/finanzas/balance/gastos/catalogo`** — se retira la columna fija **PROVEEDORES** del layout Finder; la gestión pasa a botón de header **PROVEEDORES** que abre modal dedicado (lista + filtro por nombre + botón **Agregar Proveedor** para editor).*

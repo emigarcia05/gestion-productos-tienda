@@ -69,7 +69,7 @@ export default function FiltrosProductos({
   });
 
   function handleProveedor(value: string) {
-    navigate(q, value === "none" ? "" : value);
+    navigate(q, value);
   }
 
   const hayFiltros = !!(proveedorActual || q);
@@ -88,14 +88,13 @@ export default function FiltrosProductos({
           onLimpiar={() => handleProveedor("")}
         >
           <Select
-            value={proveedorActual || "none"}
-            onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
+            value={proveedorActual || undefined}
+            onValueChange={(v) => handleProveedor(v)}
           >
             <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
               <SelectValue placeholder="PROVEEDOR" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">PROVEEDORES</SelectItem>
               {proveedores.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   [{p.prefijo}] {p.nombre}

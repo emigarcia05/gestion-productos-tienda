@@ -430,6 +430,7 @@ export interface ActualizacionMasivaListaPrecios {
   dtoFinanciero?: number;
   cxTransporte?: number;
   cotizacionDolar?: number;
+  pxListaProveedor?: number;
 }
 
 /**
@@ -454,6 +455,7 @@ export async function actualizarListaPreciosMasivo(
     dtoFinanciero?: number;
     cxTransporte?: number;
     cotizacionDolar?: number;
+    pxListaProveedor?: number;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
   if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
@@ -465,6 +467,8 @@ export async function actualizarListaPreciosMasivo(
   if (data.cxTransporte !== undefined) updatePayload.cxTransporte = clampPercent(data.cxTransporte);
   if (data.cotizacionDolar !== undefined && data.cotizacionDolar > 0)
     updatePayload.cotizacionDolar = data.cotizacionDolar;
+  if (data.pxListaProveedor !== undefined && data.pxListaProveedor >= 0)
+    updatePayload.pxListaProveedor = data.pxListaProveedor;
 
   if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
 
@@ -505,6 +509,10 @@ export async function actualizarListaPreciosMasivo(
   if (updatePayload.cotizacionDolar !== undefined) {
     setClauses.push(`cotizacion_dolar = $${params.length + 1}`);
     params.push(updatePayload.cotizacionDolar);
+  }
+  if (updatePayload.pxListaProveedor !== undefined) {
+    setClauses.push(`px_lista_proveedor = $${params.length + 1}`);
+    params.push(updatePayload.pxListaProveedor);
   }
   params.push(ids);
 

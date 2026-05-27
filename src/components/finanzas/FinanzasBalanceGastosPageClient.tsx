@@ -364,8 +364,8 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltSucursal("")}
                 >
                   <Select
-                    value={filtSucursal || "none"}
-                    onValueChange={(v) => setFiltSucursal(v === "none" ? "" : v)}
+                    value={filtSucursal || undefined}
+                    onValueChange={(v) => setFiltSucursal(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="SUCURSAL" />
@@ -376,7 +376,6 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">SUCURSAL</SelectItem>
                       {sucursalesOpciones.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
@@ -392,8 +391,8 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltProveedor("")}
                 >
                   <Select
-                    value={filtProveedor || "none"}
-                    onValueChange={(v) => setFiltProveedor(v === "none" ? "" : v)}
+                    value={filtProveedor || undefined}
+                    onValueChange={(v) => setFiltProveedor(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="PROVEEDOR" />
@@ -404,7 +403,6 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">PROVEEDOR</SelectItem>
                       {proveedoresOpciones.map((p) => (
                         <SelectItem key={p} value={p}>
                           {p}
@@ -419,7 +417,7 @@ export default function FinanzasBalanceGastosPageClient({
                   activo={Boolean(filtRubro)}
                   onLimpiar={() => setFiltRubro("")}
                 >
-                  <Select value={filtRubro || "none"} onValueChange={(v) => setFiltRubro(v === "none" ? "" : v)}>
+                  <Select value={filtRubro || undefined} onValueChange={(v) => setFiltRubro(v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="RUBRO" />
                     </SelectTrigger>
@@ -429,7 +427,6 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">RUBRO</SelectItem>
                       {rubrosOpciones.map((r) => (
                         <SelectItem key={r} value={r}>
                           {r}
@@ -444,7 +441,7 @@ export default function FinanzasBalanceGastosPageClient({
                   activo={Boolean(filtGasto)}
                   onLimpiar={() => setFiltGasto("")}
                 >
-                  <Select value={filtGasto || "none"} onValueChange={(v) => setFiltGasto(v === "none" ? "" : v)}>
+                  <Select value={filtGasto || undefined} onValueChange={(v) => setFiltGasto(v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="GASTO" />
                     </SelectTrigger>
@@ -454,7 +451,6 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">GASTO</SelectItem>
                       {gastosOpciones.map((g) => (
                         <SelectItem key={g} value={g}>
                           {g}
@@ -470,10 +466,8 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltEstado("")}
                 >
                   <Select
-                    value={filtEstado || "none"}
-                    onValueChange={(v) =>
-                      setFiltEstado(v === "none" ? "" : (v as FiltroEstadoBalanceGastos))
-                    }
+                    value={filtEstado || undefined}
+                    onValueChange={(v) => setFiltEstado(v as FiltroEstadoBalanceGastos)}
                   >
                     <SelectTrigger className="input-filtro-unificado" aria-label="Estado (monto / pagado)">
                       <SelectValue placeholder="ESTADO" />
@@ -484,7 +478,6 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">ESTADO</SelectItem>
                       <SelectItem value="con_monto_sin_pago">CON MONTO Y PENDIENTE</SelectItem>
                       <SelectItem value="con_monto_con_pago">CON MONTO Y PAGADO</SelectItem>
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
@@ -553,10 +546,8 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltTipo("")}
                 >
                   <Select
-                    value={filtTipo || "none"}
-                    onValueChange={(v) =>
-                      setFiltTipo(v === "none" ? "" : (v as FiltroTipoBalanceGastos))
-                    }
+                    value={filtTipo || undefined}
+                    onValueChange={(v) => setFiltTipo(v as FiltroTipoBalanceGastos)}
                   >
                     <SelectTrigger className="input-filtro-unificado" aria-label="Tipo de gasto (mensual / eventual)">
                       <SelectValue placeholder="TIPO" />
@@ -567,7 +558,6 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TIPO</SelectItem>
                       <SelectItem value="mensual">MENSUAL</SelectItem>
                       <SelectItem value="eventual">EVENTUAL</SelectItem>
                     </SelectContent>

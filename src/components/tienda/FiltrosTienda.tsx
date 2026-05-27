@@ -136,8 +136,8 @@ export default function FiltrosTienda({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || "none"}
-              onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
+              value={marcaActual || undefined}
+              onValueChange={(v) => handleMarca(v)}
             >
               <SelectTrigger
                 id="filtro-tienda-marca"
@@ -151,7 +151,6 @@ export default function FiltrosTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">MARCA</SelectItem>
                 {marcas.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -166,8 +165,8 @@ export default function FiltrosTienda({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || "none"}
-              onValueChange={(v) => handleRubro(v === "none" ? "" : v)}
+              value={rubroActual || undefined}
+              onValueChange={(v) => handleRubro(v)}
             >
               <SelectTrigger
                 id="filtro-tienda-rubro"
@@ -181,7 +180,6 @@ export default function FiltrosTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">RUBRO</SelectItem>
                 {rubros.map((r) => (
                   <SelectItem key={r} value={r}>
                     {r}
@@ -196,8 +194,8 @@ export default function FiltrosTienda({
             onLimpiar={() => handleSubRubro("")}
           >
             <Select
-              value={subRubroActual || "none"}
-              onValueChange={(v) => handleSubRubro(v === "none" ? "" : v)}
+              value={subRubroActual || undefined}
+              onValueChange={(v) => handleSubRubro(v)}
             >
               <SelectTrigger
                 id="filtro-tienda-subrubro"
@@ -211,7 +209,6 @@ export default function FiltrosTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUB-RUBRO</SelectItem>
                 {subRubros.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
@@ -226,8 +223,8 @@ export default function FiltrosTienda({
             onLimpiar={() => handleProveedor("")}
           >
             <Select
-              value={proveedorActual || "none"}
-              onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
+              value={proveedorActual || undefined}
+              onValueChange={(v) => handleProveedor(v)}
             >
               <SelectTrigger
                 id="filtro-tienda-proveedor"
@@ -241,7 +238,6 @@ export default function FiltrosTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PROV. VINC.</SelectItem>
                 {proveedores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.prefijo ? `[${p.prefijo}] ` : ""}
@@ -257,8 +253,8 @@ export default function FiltrosTienda({
             onLimpiar={() => handleVinculado("")}
           >
             <Select
-              value={vinculadoActual || "none"}
-              onValueChange={(v) => handleVinculado(v === "none" ? "" : v)}
+              value={vinculadoActual || undefined}
+              onValueChange={(v) => handleVinculado(v)}
             >
               <SelectTrigger
                 id="filtro-tienda-vinculado"
@@ -272,7 +268,6 @@ export default function FiltrosTienda({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">VINCULADO</SelectItem>
                 <SelectItem value="no">NO</SelectItem>
                 <SelectItem value="si">SI</SelectItem>
               </SelectContent>

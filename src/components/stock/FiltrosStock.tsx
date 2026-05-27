@@ -136,7 +136,7 @@ export default function FiltrosStock({
   }
 
   function handleOrden(value: string) {
-    navigate({ orden: value === "none" ? "" : value });
+    navigate({ orden: value });
   }
 
   function limpiarFiltros() {
@@ -148,7 +148,7 @@ export default function FiltrosStock({
     }
   }
 
-  const sucursalValue = sucursalActual ?? "none";
+  const sucursalValue = sucursalActual ?? undefined;
   const sucursalSeleccionada = sucursalActual !== null;
 
   return (
@@ -162,7 +162,7 @@ export default function FiltrosStock({
           >
             <Select
               value={sucursalValue}
-              onValueChange={(v) => handleSucursal(v === "none" ? "" : v)}
+              onValueChange={(v) => handleSucursal(v)}
             >
               <SelectTrigger
                 id="filtro-stock-sucursal"
@@ -176,7 +176,6 @@ export default function FiltrosStock({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUCURSAL</SelectItem>
                 {SUCURSALES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -191,8 +190,8 @@ export default function FiltrosStock({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || "none"}
-              onValueChange={(v) => handleMarca(v === "none" ? "" : v)}
+              value={marcaActual || undefined}
+              onValueChange={(v) => handleMarca(v)}
               disabled={!sucursalSeleccionada}
             >
               <SelectTrigger
@@ -207,7 +206,6 @@ export default function FiltrosStock({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">MARCA</SelectItem>
                 {data.marcas.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -222,8 +220,8 @@ export default function FiltrosStock({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || "none"}
-              onValueChange={(v) => handleRubro(v === "none" ? "" : v)}
+              value={rubroActual || undefined}
+              onValueChange={(v) => handleRubro(v)}
               disabled={!sucursalSeleccionada}
             >
               <SelectTrigger
@@ -238,7 +236,6 @@ export default function FiltrosStock({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">RUBRO</SelectItem>
                 {data.rubros.map((r) => (
                   <SelectItem key={r} value={r}>
                     {r}
@@ -250,10 +247,10 @@ export default function FiltrosStock({
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
             activo={soloNegativoActual}
-            onLimpiar={() => handleSoloNegativo("none")}
+            onLimpiar={() => handleSoloNegativo("")}
           >
             <Select
-              value={soloNegativoActual ? "negativo" : "none"}
+              value={soloNegativoActual ? "negativo" : undefined}
               onValueChange={handleSoloNegativo}
               disabled={!sucursalSeleccionada}
             >
@@ -269,7 +266,6 @@ export default function FiltrosStock({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">STOCK</SelectItem>
                 <SelectItem value="negativo">STOCK NEGATIVO</SelectItem>
               </SelectContent>
             </Select>
@@ -277,7 +273,7 @@ export default function FiltrosStock({
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
             activo={ordenActual === "segunTiempoControl"}
-            onLimpiar={() => handleOrden("none")}
+            onLimpiar={() => handleOrden("")}
           >
             <Select
               value={ordenActual || ""}

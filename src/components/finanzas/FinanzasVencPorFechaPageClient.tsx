@@ -146,8 +146,8 @@ export default function FinanzasVencPorFechaPageClient({
                   onLimpiar={() => setFiltroProveedor("")}
                 >
                   <Select
-                    value={filtroProveedor || "none"}
-                    onValueChange={(valor) => setFiltroProveedor(valor === "none" ? "" : valor)}
+                    value={filtroProveedor || undefined}
+                    onValueChange={(valor) => setFiltroProveedor(valor)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="PROVEEDOR" />
@@ -158,7 +158,6 @@ export default function FinanzasVencPorFechaPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">PROVEEDOR</SelectItem>
                       {proveedoresConVencimientos.map((proveedor) => (
                         <SelectItem key={proveedor} value={proveedor}>
                           {proveedor}

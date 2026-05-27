@@ -60,6 +60,12 @@ export default function ListaPreciosPageClient({
 }: Props) {
   const router = useRouter();
   const [filteredIds, setFilteredIds] = useState<string[]>([]);
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const handleEdicionSuccess = useCallback(() => {
+    setReloadNonce((n) => n + 1);
+    router.refresh();
+  }, [router]);
 
   const handleFilteredIdsChange = useCallback((ids: string[]) => {
     setFilteredIds(ids);
@@ -78,7 +84,7 @@ export default function ListaPreciosPageClient({
             filteredIds={filteredIds}
             marcas={marcas}
             rubros={rubros}
-            onSuccess={() => router.refresh()}
+            onSuccess={handleEdicionSuccess}
           />
         )}
       </div>
@@ -93,6 +99,10 @@ export default function ListaPreciosPageClient({
       <ListaPreciosTablaConFiltros
         proveedores={proveedores}
         marcas={marcas}
+        rubros={rubros}
+        puedeEdicionMasiva={puedeEdicionMasiva}
+        reloadNonce={reloadNonce}
+        onEdicionSuccess={handleEdicionSuccess}
         onFilteredIdsChange={handleFilteredIdsChange}
         fetchListaPreciosConOpcionesAction={fetchListaPreciosConOpcionesAction}
       />

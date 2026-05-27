@@ -91,7 +91,7 @@ export default function FinanzasTesoreriaPageClient({
                   activo={Boolean(filtroEntidad)}
                   onLimpiar={() => setFiltroEntidad("")}
                 >
-                  <Select value={filtroEntidad || "none"} onValueChange={(v) => setFiltroEntidad(v === "none" ? "" : v)}>
+                  <Select value={filtroEntidad || undefined} onValueChange={(v) => setFiltroEntidad(v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="ENTIDAD" />
                     </SelectTrigger>
@@ -101,7 +101,6 @@ export default function FinanzasTesoreriaPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">ENTIDAD</SelectItem>
                       {entidadesOptions.map((nombre) => (
                         <SelectItem key={nombre} value={nombre}>
                           {nombre}
@@ -116,8 +115,8 @@ export default function FinanzasTesoreriaPageClient({
                   onLimpiar={() => setFiltroTitular("")}
                 >
                   <Select
-                    value={filtroTitular || "none"}
-                    onValueChange={(v) => setFiltroTitular(v === "none" ? "" : v)}
+                    value={filtroTitular || undefined}
+                    onValueChange={(v) => setFiltroTitular(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="TITULAR" />
@@ -128,7 +127,6 @@ export default function FinanzasTesoreriaPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TITULAR</SelectItem>
                       {titularesOptions.map((titular) => (
                         <SelectItem key={titular} value={titular}>
                           {titular}
@@ -143,8 +141,8 @@ export default function FinanzasTesoreriaPageClient({
                   onLimpiar={() => setFiltroTipoCaja("")}
                 >
                   <Select
-                    value={filtroTipoCaja || "none"}
-                    onValueChange={(v) => setFiltroTipoCaja(v === "none" ? "" : v)}
+                    value={filtroTipoCaja || undefined}
+                    onValueChange={(v) => setFiltroTipoCaja(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="TIPO CAJA" />
@@ -155,7 +153,6 @@ export default function FinanzasTesoreriaPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="none">TIPO CAJA</SelectItem>
                       {tiposCajaOptions.map((tipo) => (
                         <SelectItem key={tipo} value={tipo}>
                           {etiquetaTipoCajaEnPantalla(tipo as TipoCajaTesoreria)}

@@ -405,9 +405,9 @@ export default function GenerarPedidoToolbarButton({
           <div className="flex w-full min-w-0 flex-col gap-4">
             <div className="w-full min-w-0">
               <Select
-                value={sucursal || "none"}
+                value={sucursal || undefined}
                 onValueChange={(v) => {
-                  const next = v === "none" ? "" : (v as SucursalPedido);
+                  const next = v as SucursalPedido;
                   setSucursal(next);
                   setTipos([]);
                   setProveedor("");
@@ -422,7 +422,6 @@ export default function GenerarPedidoToolbarButton({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">SUCURSAL</SelectItem>
                   {SUCURSALES.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
                       {s.label}
@@ -513,8 +512,8 @@ export default function GenerarPedidoToolbarButton({
 
             <div className="w-full min-w-0">
               <Select
-                value={proveedor || "none"}
-                onValueChange={(v) => setProveedor(v === "none" ? "" : v)}
+                value={proveedor || undefined}
+                onValueChange={(v) => setProveedor(v)}
                 disabled={!sucursal || tipos.length === 0 || cargandoProveedores}
               >
                 <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
@@ -538,7 +537,6 @@ export default function GenerarPedidoToolbarButton({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">PROVEEDOR</SelectItem>
                   {proveedoresActivos.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}

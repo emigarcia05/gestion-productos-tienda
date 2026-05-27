@@ -145,8 +145,8 @@ export default function FiltrosComparacionCategorias({
         <FilaFiltrosDesplegables>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={proveedorActual || "none"}
-              onValueChange={(v) => handleProveedor(v === "none" ? "" : v)}
+              value={proveedorActual || undefined}
+              onValueChange={(v) => handleProveedor(v)}
             >
               <SelectTrigger id="filtro-cc-proveedor" className="input-filtro-unificado">
                 <SelectValue placeholder="PROVEEDOR" />
@@ -157,7 +157,6 @@ export default function FiltrosComparacionCategorias({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PROVEEDOR</SelectItem>
                 {proveedores.map((pr) => (
                   <SelectItem key={pr.id} value={pr.id}>
                     {pr.nombre}
@@ -168,8 +167,8 @@ export default function FiltrosComparacionCategorias({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={categoriaIdActual || "none"}
-              onValueChange={(v) => handleCategoria(v === "none" ? "" : v)}
+              value={categoriaIdActual || undefined}
+              onValueChange={(v) => handleCategoria(v)}
             >
               <SelectTrigger id="filtro-cc-categoria" className="input-filtro-unificado">
                 <SelectValue placeholder="CATEGORÍA" />
@@ -180,7 +179,6 @@ export default function FiltrosComparacionCategorias({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">CATEGORÍA</SelectItem>
                 {arbol.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.nombre}
@@ -191,8 +189,8 @@ export default function FiltrosComparacionCategorias({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={subcategoriaIdActual || "none"}
-              onValueChange={(v) => handleSubcategoria(v === "none" ? "" : v)}
+              value={subcategoriaIdActual || undefined}
+              onValueChange={(v) => handleSubcategoria(v)}
               disabled={!categoriaIdActual}
             >
               <SelectTrigger id="filtro-cc-subcategoria" className="input-filtro-unificado">
@@ -204,7 +202,6 @@ export default function FiltrosComparacionCategorias({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUBCATEGORÍA</SelectItem>
                 {subcategoriasOpciones.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.nombre}
@@ -215,8 +212,8 @@ export default function FiltrosComparacionCategorias({
           </div>
           <div className={FILTER_SELECT_WRAPPER_CLASS}>
             <Select
-              value={presentacionIdActual || "none"}
-              onValueChange={(v) => handlePresentacion(v === "none" ? "" : v)}
+              value={presentacionIdActual || undefined}
+              onValueChange={(v) => handlePresentacion(v)}
               disabled={!subcategoriaIdActual}
             >
               <SelectTrigger id="filtro-cc-presentacion" className="input-filtro-unificado">
@@ -228,7 +225,6 @@ export default function FiltrosComparacionCategorias({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">PRESENTACIÓN</SelectItem>
                 {presentacionesOpciones.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.nombre}

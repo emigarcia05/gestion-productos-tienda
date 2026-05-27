@@ -266,8 +266,8 @@ export default function TiendaCalcLitrosPageClient({
               </Select>
 
               <Select
-                value={tipoPinturaId || "none"}
-                onValueChange={(value) => setTipoPinturaId(value === "none" ? "" : value)}
+                value={tipoPinturaId || undefined}
+                onValueChange={(value) => setTipoPinturaId(value)}
               >
                 <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>
                   <SelectValue placeholder="TIPO DE PINTURA" />
@@ -278,7 +278,6 @@ export default function TiendaCalcLitrosPageClient({
                   align="start"
                   className="select-content-filtro"
                 >
-                  <SelectItem value="none">TIPO DE PINTURA</SelectItem>
                   {tiposPintura.map((row) => (
                     <SelectItem key={row.id} value={row.id}>
                       {row.tipoPintura}
