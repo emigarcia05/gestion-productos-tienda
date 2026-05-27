@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PaginacionClient from "@/components/shared/PaginacionClient";
-import { fmtPrecio, fmtNumero } from "@/lib/format";
+import { fmtPrecio, fmtPorcentajeTabla } from "@/lib/format";
 import {
   tableEmptyStateContainerVariants,
   tableEmptyStateMessageVariants,
@@ -94,11 +94,6 @@ const SUBFILA_DETALLE_CLASS = "tabla-fila-detalle-competencia";
 const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
 const SUBFILA_CELDA_HUECA_CLASS = "tabla-fila-detalle-competencia-hueca";
 
-function fmtPorcentajeTabla(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "—";
-  return `${fmtNumero(n)}%`;
-}
-
 function fmtPrecioTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "—";
   return `$${fmtPrecio(n)}`;
@@ -137,12 +132,12 @@ function DetalleDescuentosFila({
   conColumnaAcciones: boolean;
 }) {
   const items: { label: string; value: string }[] = [
-    { label: "DESC. PROV.", value: fmtPorcentajeTabla(fila.dtoProveedor) },
-    { label: "DESC. MARCA", value: fmtPorcentajeTabla(fila.dtoMarca) },
-    { label: "DESC. RUBRO", value: fmtPorcentajeTabla(fila.dtoRubro) },
-    { label: "DESC. CANT.", value: fmtPorcentajeTabla(fila.dtoCantidad) },
-    { label: "DESC. FINAN.", value: fmtPorcentajeTabla(fila.dtoFinanciero) },
-    { label: "CX. TRANSP.", value: fmtPorcentajeTabla(fila.cxTransporte) },
+    { label: "DESC. PROV.", value: fmtPorcentajeTabla(fila.dtoProveedor) || "—" },
+    { label: "DESC. MARCA", value: fmtPorcentajeTabla(fila.dtoMarca) || "—" },
+    { label: "DESC. RUBRO", value: fmtPorcentajeTabla(fila.dtoRubro) || "—" },
+    { label: "DESC. CANT.", value: fmtPorcentajeTabla(fila.dtoCantidad) || "—" },
+    { label: "DESC. FINAN.", value: fmtPorcentajeTabla(fila.dtoFinanciero) || "—" },
+    { label: "CX. TRANSP.", value: fmtPorcentajeTabla(fila.cxTransporte) || "—" },
   ];
 
   const colsDetalle = 4;

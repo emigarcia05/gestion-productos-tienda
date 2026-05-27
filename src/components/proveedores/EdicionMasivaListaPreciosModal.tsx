@@ -20,6 +20,10 @@ import {
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
 } from "@/actions/listaPrecios";
+import {
+  formatPorcentaje0a100Input,
+  parsePorcentaje0a100Input,
+} from "@/lib/format";
 
 interface MarcaOption {
   id: string;
@@ -31,25 +35,21 @@ interface RubroOption {
   nombre: string;
 }
 
-const CAMPOS_NUMERICOS: { key: keyof ActualizacionMasivaListaPrecios; label: string }[] = [
+type PercentKey = keyof Pick<
+  ActualizacionMasivaListaPrecios,
+  "dtoProveedor" | "dtoMarca" | "dtoRubro" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
+>;
+
+const CAMPOS_PORCENTAJE: { key: PercentKey; label: string }[] = [
   { key: "dtoProveedor", label: "DESC. PROVEEDOR (%)" },
   { key: "dtoMarca", label: "DESC. MARCA (%)" },
   { key: "dtoRubro", label: "DESC. RUBRO (%)" },
   { key: "dtoCantidad", label: "DESC. CANTIDAD (%)" },
   { key: "dtoFinanciero", label: "DESC. FINAN. (%)" },
   { key: "cxTransporte", label: "CX. TRANSPORTE (%)" },
-  { key: "cotizacionDolar", label: "COTIZACIÓN DÓLAR" },
 ];
 
-const VALORES_VACIOS: ActualizacionMasivaListaPrecios = {
-  dtoProveedor: undefined,
-  dtoMarca: undefined,
-  dtoRubro: undefined,
-  dtoCantidad: undefined,
-  dtoFinanciero: undefined,
-  cxTransporte: undefined,
-  cotizacionDolar: undefined,
-};
+const PERCENT_INPUT_PATTERN = /^\d{0,3}([.,]\d{0,2})?$/;
 
 interface BaseProps {
   marcas: MarcaOption[];
@@ -84,20 +84,14 @@ function parsePxListaProveedor(value: string): number | undefined {
   return Math.round(n);
 }
 
-function valoresDesdeFila(fila: FilaListaPrecioParaCliente) {
+function percentInputsDesdeFila(fila: FilaListaPrecioParaCliente): Partial<Record<PercentKey, string>> {
   return {
-    marcaNombre: fila.marca ?? "",
-    rubroNombre: fila.rubro ?? "",
-    values: {
-      dtoProveedor: fila.dtoProveedor,
-      dtoMarca: fila.dtoMarca,
-      dtoRubro: fila.dtoRubro,
-      dtoCantidad: fila.dtoCantidad,
-      dtoFinanciero: fila.dtoFinanciero,
-      cxTransporte: fila.cxTransporte,
-      cotizacionDolar: undefined,
-    },
-    pxListaProveedor: String(Math.round(Number(fila.pxListaProveedor) || 0)),
+    dtoProveedor: formatPorcentaje0a100Input(fila.dtoProveedor),
+    dtoMarca: formatPorcentaje0a100Input(fila.dtoMarca),
+    dtoRubro: formatPorcentaje0a100Input(fila.dtoRubro),
+    dtoCantidad: formatPorcentaje0a100Input(fila.dtoCantidad),
+    dtoFinanciero: formatPorcentaje0a100Input(fila.dtoFinanciero),
+    cxTransporte: formatPorcentaje0a100Input(fila.cxTransporte),
   };
 }
 
@@ -112,7 +106,8 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const [pending, setPending] = useState(false);
   const [marcaNombre, setMarcaNombre] = useState("");
   const [rubroNombre, setRubroNombre] = useState("");
-  const [values, setValues] = useState<ActualizacionMasivaListaPrecios>(VALORES_VACIOS);
+  const [percentInputs, setPercentInputs] = useState<Partial<Record<PercentKey, string>>>({});
+  const [cotizacionDolar, setCotizacionDolar] = useState("");
   const [pxListaProveedor, setPxListaProveedor] = useState("");
   const filaActual = filaMode ? props.fila : null;
 
@@ -124,46 +119,53 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
 
   useEffect(() => {
     if (!filaMode || !open || !filaActual) return;
-    const inicial = valoresDesdeFila(filaActual);
-    setMarcaNombre(inicial.marcaNombre);
-    setRubroNombre(inicial.rubroNombre);
-    setValues(inicial.values);
-    setPxListaProveedor(inicial.pxListaProveedor);
+    setMarcaNombre(filaActual.marca ?? "");
+    setRubroNombre(filaActual.rubro ?? "");
+    setPercentInputs(percentInputsDesdeFila(filaActual));
+    setCotizacionDolar("");
+    setPxListaProveedor(String(Math.round(Number(filaActual.pxListaProveedor) || 0)));
   }, [filaMode, open, filaActual]);
 
   function resetForm() {
     setMarcaNombre("");
     setRubroNombre("");
-    setValues(VALORES_VACIOS);
+    setPercentInputs({});
+    setCotizacionDolar("");
     setPxListaProveedor("");
   }
 
-  function handleChange(key: keyof ActualizacionMasivaListaPrecios, value: string) {
-    const num = value === "" ? undefined : parseInt(value, 10);
-    if (num !== undefined && (Number.isNaN(num) || num < 0)) return;
-    setValues((prev) => ({ ...prev, [key]: num }));
+  function handlePercentInputChange(key: PercentKey, raw: string) {
+    const trimmed = raw.trim();
+    if (trimmed !== "" && !PERCENT_INPUT_PATTERN.test(trimmed)) return;
+    setPercentInputs((prev) => ({ ...prev, [key]: raw }));
+  }
+
+  function validatePercentInputs(): string | null {
+    for (const { key, label } of CAMPOS_PORCENTAJE) {
+      const raw = percentInputs[key];
+      if (raw === undefined || raw.trim() === "") continue;
+      const parsed = parsePorcentaje0a100Input(raw);
+      if (parsed === undefined) {
+        return `${label}: ingresá un valor entre 0 y 100 con hasta 2 decimales.`;
+      }
+    }
+    return null;
   }
 
   function buildPayload(): ActualizacionMasivaListaPrecios {
     const data: ActualizacionMasivaListaPrecios = {};
     if (marcaNombre) data.marca = marcaNombre;
     if (rubroNombre) data.rubro = rubroNombre;
-    if (values.dtoProveedor !== undefined && !Number.isNaN(values.dtoProveedor))
-      data.dtoProveedor = values.dtoProveedor;
-    if (values.dtoMarca !== undefined && !Number.isNaN(values.dtoMarca)) data.dtoMarca = values.dtoMarca;
-    if (values.dtoRubro !== undefined && !Number.isNaN(values.dtoRubro)) data.dtoRubro = values.dtoRubro;
-    if (values.dtoCantidad !== undefined && !Number.isNaN(values.dtoCantidad))
-      data.dtoCantidad = values.dtoCantidad;
-    if (values.dtoFinanciero !== undefined && !Number.isNaN(values.dtoFinanciero))
-      data.dtoFinanciero = values.dtoFinanciero;
-    if (values.cxTransporte !== undefined && !Number.isNaN(values.cxTransporte))
-      data.cxTransporte = values.cxTransporte;
-    if (
-      values.cotizacionDolar !== undefined &&
-      !Number.isNaN(values.cotizacionDolar) &&
-      values.cotizacionDolar > 0
-    )
-      data.cotizacionDolar = values.cotizacionDolar;
+
+    for (const { key } of CAMPOS_PORCENTAJE) {
+      const raw = percentInputs[key];
+      if (raw === undefined || raw.trim() === "") continue;
+      const parsed = parsePorcentaje0a100Input(raw);
+      if (parsed !== undefined) data[key] = parsed;
+    }
+
+    const cotizacion = parsePxListaProveedor(cotizacionDolar);
+    if (cotizacion !== undefined && cotizacion > 0) data.cotizacionDolar = cotizacion;
 
     if (filaMode) {
       const px = parsePxListaProveedor(pxListaProveedor);
@@ -174,6 +176,12 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   }
 
   async function handleGuardar() {
+    const percentError = validatePercentInputs();
+    if (percentError) {
+      toast.error(percentError);
+      return;
+    }
+
     const data = buildPayload();
     if (Object.keys(data).length === 0) {
       toast.error("Ingresá al menos un valor para actualizar.");
@@ -277,24 +285,40 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
             </SelectContent>
           </Select>
         </div>
-        {CAMPOS_NUMERICOS.map(({ key, label }) => (
+        {CAMPOS_PORCENTAJE.map(({ key, label }) => (
           <div key={key} className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
             <Label htmlFor={key} className="text-right font-medium">
               {label}
             </Label>
             <Input
               id={key}
-              type="number"
-              min={key === "cotizacionDolar" ? 1 : 0}
-              max={key === "cotizacionDolar" ? undefined : 100}
-              step={1}
-              placeholder="—"
-              value={values[key] ?? ""}
-              onChange={(e) => handleChange(key, e.target.value)}
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={percentInputs[key] ?? ""}
+              onChange={(e) => handlePercentInputChange(key, e.target.value)}
               className="tabular-nums border-primary"
             />
           </div>
         ))}
+        <p id="dtoProveedor-hint" className="col-span-2 text-xs text-muted-foreground text-right">
+          Porcentajes: 0 a 100, hasta 2 decimales.
+        </p>
+        <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
+          <Label htmlFor="cotizacionDolar" className="text-right font-medium">
+            COTIZACIÓN DÓLAR
+          </Label>
+          <Input
+            id="cotizacionDolar"
+            type="number"
+            min={1}
+            step={1}
+            placeholder="—"
+            value={cotizacionDolar}
+            onChange={(e) => setCotizacionDolar(e.target.value)}
+            className="tabular-nums border-primary"
+          />
+        </div>
       </div>
     </div>
   );

@@ -72,12 +72,12 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     marca: f.marca ?? null,
     rubro: f.rubro ?? null,
     pxListaProveedor: Number(f.pxListaProveedor),
-    dtoProveedor: f.dtoProveedor,
-    dtoMarca: f.dtoMarca,
-    dtoRubro: f.dtoRubro,
-    dtoCantidad: f.dtoCantidad,
-    dtoFinanciero: f.dtoFinanciero,
-    cxTransporte: f.cxTransporte,
+    dtoProveedor: Number(f.dtoProveedor),
+    dtoMarca: Number(f.dtoMarca),
+    dtoRubro: Number(f.dtoRubro),
+    dtoCantidad: Number(f.dtoCantidad),
+    dtoFinanciero: Number(f.dtoFinanciero),
+    cxTransporte: Number(f.cxTransporte),
     pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
       ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
@@ -181,12 +181,12 @@ export async function getListaPreciosConTiendaFiltrada(
     // Siempre exponer el campo para que módulos como "Px. Vta. Sugeridos"
     // puedan renderizar la columna aunque no filtren por soloPxSugerido.
     pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null,
-    dtoProveedor: f.dtoProveedor,
-    dtoMarca: f.dtoMarca,
-    dtoRubro: f.dtoRubro,
-    dtoCantidad: f.dtoCantidad,
-    dtoFinanciero: f.dtoFinanciero,
-    cxTransporte: f.cxTransporte,
+    dtoProveedor: Number(f.dtoProveedor),
+    dtoMarca: Number(f.dtoMarca),
+    dtoRubro: Number(f.dtoRubro),
+    dtoCantidad: Number(f.dtoCantidad),
+    dtoFinanciero: Number(f.dtoFinanciero),
+    cxTransporte: Number(f.cxTransporte),
     pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
       ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
@@ -435,7 +435,7 @@ export interface ActualizacionMasivaListaPrecios {
 
 /**
  * Actualiza dto_rubro, dto_cantidad y/o cx_transporte en los registros con id en la lista.
- * Valores en porcentaje (0-100). Solo actualiza los campos presentes en data.
+ * Valores en porcentaje (0–100, hasta 2 decimales). Solo actualiza los campos presentes en data.
  * Usa SQL crudo para evitar fallos con Prisma 7 + adapter-pg ("column not available").
  * Un solo UPDATE en BD; eficiente para 100–10.000 filas.
  */

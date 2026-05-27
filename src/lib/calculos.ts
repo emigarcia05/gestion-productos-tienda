@@ -1,6 +1,7 @@
-/** Clamp de porcentaje 0–100 (para dto_*, cx_transporte). */
+/** Clamp de porcentaje 0–100 con hasta 2 decimales (para dto_*, cx_transporte). */
 export function clampPercent(value: number): number {
-  return Math.round(Math.max(0, Math.min(100, value)));
+  const capped = Math.max(0, Math.min(100, value));
+  return Math.round(capped * 100) / 100;
 }
 
 /**
