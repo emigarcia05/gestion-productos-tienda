@@ -1012,6 +1012,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **`/gestion-productos/proveedores/lista-precios`** — la grilla elimina columnas **MARCA** y **RUBRO** (se mantienen en barra de filtros), agrega columna **ACCIONES** con botón ícono **Editar** por fila (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`) y abre modal en modo individual usando el mismo componente de **Edición Masiva**.*
 
+*Última actualización (2026-05-27): **`ListaPreciosTablaConFiltros`** — vista principal: **COD. EXT.**, **PROV.** (solo sin filtro proveedor), **DESCRIPCION** (tienda + proveedor + marca/rubro), **PX. LISTA PROV.**, **PX. FINAL**, **DET.** (chevron expande descuentos) y **ACCIONES** (editar). Subfila con **DESC. PROV./MARCA/RUBRO/CANT./FINAN.** y **CX. TRANSP.** reutiliza clases `tabla-fila-detalle-competencia-*`; vacíos numéricos muestran **—**.*
+
 *Última actualización (2026-05-27): **`/gestion-productos/pedidos/generar-pedido`** — en el filtro desplegable **TIPO DE PEDIDO** se elimina el checkbox cuadrado por opción; cada opción se selecciona al hacer click en toda la fila y marca estado con ícono **Check** (tilde) a la derecha.*
 
 *Última actualización (2026-05-27): **Filtros desplegables (regla global de UX)** — en `FilterBar` y filtros equivalentes, la máscara/placeholder del filtro (**PROVEEDOR**, **MARCA**, **RUBRO**, **SUCURSAL**, etc.) no debe repetirse como `SelectItem` dentro de la lista desplegable. El estado “sin filtro” se representa con `value` vacío (`undefined` en `Select`) y limpieza mediante `onLimpiar`/`LimpiarFiltrosButton`.*
