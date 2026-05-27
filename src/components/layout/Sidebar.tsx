@@ -120,16 +120,16 @@ const MODULES: NavModule[] = [
     icon: <LifeBuoy className={iconClass} />,
     submodules: [
       {
-        href: "/gestion-productos/tienda/calc-tintometrico",
-        label: "Calc. Tintométrico",
-        icon: <Pipette className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.tienda.tintoLts,
-      },
-      {
         href: "/gestion-productos/proveedores/sugeridos",
         label: "Px. Vta. Sugeridos",
         icon: <FileSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.proveedores.sugeridos,
+      },
+      {
+        href: "/gestion-productos/tienda/calc-tintometrico",
+        label: "Calc. Tintométrico",
+        icon: <Pipette className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.tienda.tintoLts,
       },
       {
         href: "/gestion-productos/tienda/calc-litros",

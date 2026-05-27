@@ -6,6 +6,7 @@ import { Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,10 +21,11 @@ import {
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
 } from "@/actions/listaPrecios";
+import { formatPorcentaje0a100Input, parsePorcentaje0a100Input } from "@/lib/format";
 import {
-  formatPorcentaje0a100Input,
-  parsePorcentaje0a100Input,
-} from "@/lib/format";
+  parsePorcentajeCentNormalized,
+  porcentajeCentFromNumber,
+} from "@/lib/porcentajeCentMask";
 
 interface MarcaOption {
   id: string;
@@ -35,20 +37,20 @@ interface RubroOption {
   nombre: string;
 }
 
-type PercentKey = keyof Pick<
+type PercentCentKey = keyof Pick<
   ActualizacionMasivaListaPrecios,
-  "dtoProveedor" | "dtoMarca" | "dtoRubro" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
+  "dtoProveedor" | "dtoMarca" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
 >;
 
-const CAMPOS_PORCENTAJE: { key: PercentKey; label: string }[] = [
+const CAMPOS_PORCENTAJE_CENT: { key: PercentCentKey; label: string }[] = [
   { key: "dtoProveedor", label: "DESC. PROVEEDOR (%)" },
   { key: "dtoMarca", label: "DESC. MARCA (%)" },
-  { key: "dtoRubro", label: "DESC. RUBRO (%)" },
   { key: "dtoCantidad", label: "DESC. CANTIDAD (%)" },
   { key: "dtoFinanciero", label: "DESC. FINAN. (%)" },
   { key: "cxTransporte", label: "CX. TRANSPORTE (%)" },
 ];
 
+const PERCENT_RUBRO_KEY = "dtoRubro" as const;
 const PERCENT_INPUT_PATTERN = /^\d{0,3}([.,]\d{0,2})?$/;
 
 interface BaseProps {
@@ -84,14 +86,13 @@ function parsePxListaProveedor(value: string): number | undefined {
   return Math.round(n);
 }
 
-function percentInputsDesdeFila(fila: FilaListaPrecioParaCliente): Partial<Record<PercentKey, string>> {
+function centInputsDesdeFila(fila: FilaListaPrecioParaCliente): Partial<Record<PercentCentKey, string>> {
   return {
-    dtoProveedor: formatPorcentaje0a100Input(fila.dtoProveedor),
-    dtoMarca: formatPorcentaje0a100Input(fila.dtoMarca),
-    dtoRubro: formatPorcentaje0a100Input(fila.dtoRubro),
-    dtoCantidad: formatPorcentaje0a100Input(fila.dtoCantidad),
-    dtoFinanciero: formatPorcentaje0a100Input(fila.dtoFinanciero),
-    cxTransporte: formatPorcentaje0a100Input(fila.cxTransporte),
+    dtoProveedor: porcentajeCentFromNumber(fila.dtoProveedor),
+    dtoMarca: porcentajeCentFromNumber(fila.dtoMarca),
+    dtoCantidad: porcentajeCentFromNumber(fila.dtoCantidad),
+    dtoFinanciero: porcentajeCentFromNumber(fila.dtoFinanciero),
+    cxTransporte: porcentajeCentFromNumber(fila.cxTransporte),
   };
 }
 
@@ -106,7 +107,10 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const [pending, setPending] = useState(false);
   const [marcaNombre, setMarcaNombre] = useState("");
   const [rubroNombre, setRubroNombre] = useState("");
-  const [percentInputs, setPercentInputs] = useState<Partial<Record<PercentKey, string>>>({});
+  const [percentCentNormalized, setPercentCentNormalized] = useState<
+    Partial<Record<PercentCentKey, string>>
+  >({});
+  const [percentRubroInput, setPercentRubroInput] = useState("");
   const [cotizacionDolar, setCotizacionDolar] = useState("");
   const [pxListaProveedor, setPxListaProveedor] = useState("");
   const filaActual = filaMode ? props.fila : null;
@@ -121,7 +125,8 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     if (!filaMode || !open || !filaActual) return;
     setMarcaNombre(filaActual.marca ?? "");
     setRubroNombre(filaActual.rubro ?? "");
-    setPercentInputs(percentInputsDesdeFila(filaActual));
+    setPercentCentNormalized(centInputsDesdeFila(filaActual));
+    setPercentRubroInput(formatPorcentaje0a100Input(filaActual.dtoRubro));
     setCotizacionDolar("");
     setPxListaProveedor(String(Math.round(Number(filaActual.pxListaProveedor) || 0)));
   }, [filaMode, open, filaActual]);
@@ -129,24 +134,31 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   function resetForm() {
     setMarcaNombre("");
     setRubroNombre("");
-    setPercentInputs({});
+    setPercentCentNormalized({});
+    setPercentRubroInput("");
     setCotizacionDolar("");
     setPxListaProveedor("");
   }
 
-  function handlePercentInputChange(key: PercentKey, raw: string) {
+  function handleRubroPercentChange(raw: string) {
     const trimmed = raw.trim();
     if (trimmed !== "" && !PERCENT_INPUT_PATTERN.test(trimmed)) return;
-    setPercentInputs((prev) => ({ ...prev, [key]: raw }));
+    setPercentRubroInput(raw);
   }
 
   function validatePercentInputs(): string | null {
-    for (const { key, label } of CAMPOS_PORCENTAJE) {
-      const raw = percentInputs[key];
-      if (raw === undefined || raw.trim() === "") continue;
-      const parsed = parsePorcentaje0a100Input(raw);
+    for (const { key, label } of CAMPOS_PORCENTAJE_CENT) {
+      const norm = percentCentNormalized[key];
+      if (norm === undefined || norm.trim() === "") continue;
+      const parsed = parsePorcentajeCentNormalized(norm);
       if (parsed === undefined) {
-        return `${label}: ingresá un valor entre 0 y 100 con hasta 2 decimales.`;
+        return `${label}: ingresá un valor mayor a 0 y menor a 100.`;
+      }
+    }
+    if (percentRubroInput.trim() !== "") {
+      const parsed = parsePorcentaje0a100Input(percentRubroInput);
+      if (parsed === undefined) {
+        return `DESC. RUBRO (%): ingresá un valor entre 0 y 100 con hasta 2 decimales.`;
       }
     }
     return null;
@@ -157,11 +169,16 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     if (marcaNombre) data.marca = marcaNombre;
     if (rubroNombre) data.rubro = rubroNombre;
 
-    for (const { key } of CAMPOS_PORCENTAJE) {
-      const raw = percentInputs[key];
-      if (raw === undefined || raw.trim() === "") continue;
-      const parsed = parsePorcentaje0a100Input(raw);
+    for (const { key } of CAMPOS_PORCENTAJE_CENT) {
+      const norm = percentCentNormalized[key];
+      if (norm === undefined || norm.trim() === "") continue;
+      const parsed = parsePorcentajeCentNormalized(norm);
       if (parsed !== undefined) data[key] = parsed;
+    }
+
+    if (percentRubroInput.trim() !== "") {
+      const parsed = parsePorcentaje0a100Input(percentRubroInput);
+      if (parsed !== undefined) data.dtoRubro = parsed;
     }
 
     const cotizacion = parsePxListaProveedor(cotizacionDolar);
@@ -285,24 +302,38 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
             </SelectContent>
           </Select>
         </div>
-        {CAMPOS_PORCENTAJE.map(({ key, label }) => (
+        {CAMPOS_PORCENTAJE_CENT.map(({ key, label }) => (
           <div key={key} className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
             <Label htmlFor={key} className="text-right font-medium">
               {label}
             </Label>
-            <Input
+            <PorcentajeCentInput
               id={key}
-              type="text"
-              inputMode="decimal"
               placeholder="0,00"
-              value={percentInputs[key] ?? ""}
-              onChange={(e) => handlePercentInputChange(key, e.target.value)}
-              className="tabular-nums border-primary"
+              valueNormalized={percentCentNormalized[key] ?? ""}
+              onValueNormalizedChange={(next) =>
+                setPercentCentNormalized((prev) => ({ ...prev, [key]: next }))
+              }
             />
           </div>
         ))}
-        <p id="dtoProveedor-hint" className="col-span-2 text-xs text-muted-foreground text-right">
-          Porcentajes: 0 a 100, hasta 2 decimales.
+        <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
+          <Label htmlFor={PERCENT_RUBRO_KEY} className="text-right font-medium">
+            DESC. RUBRO (%)
+          </Label>
+          <Input
+            id={PERCENT_RUBRO_KEY}
+            type="text"
+            inputMode="decimal"
+            placeholder="0,00"
+            value={percentRubroInput}
+            onChange={(e) => handleRubroPercentChange(e.target.value)}
+            className="tabular-nums border-primary"
+          />
+        </div>
+        <p className="col-span-2 text-xs text-muted-foreground text-right">
+          Descuentos y CX. transporte: solo números, 2 decimales (ej. 1 → 0,01; 125 → 1,25). Mayor a 0 y menor a
+          100.
         </p>
         <div className="grid grid-cols-[1.5fr_minmax(0,1fr)] gap-2 items-center py-1">
           <Label htmlFor="cotizacionDolar" className="text-right font-medium">

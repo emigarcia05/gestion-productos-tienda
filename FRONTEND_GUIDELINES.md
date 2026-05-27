@@ -735,7 +735,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 - Rutas placeholder: **`/estadisticas-productos`** (página “A construir” con `SectionHeader`).
 - **Jerarquía canónica de URLs (2026-03):** para el área **Gestión Productos** usar siempre prefijo **`/gestion-productos`** con estructura **área/módulo/submódulo**:
   - Proveedores: `/gestion-productos/proveedores`, `/gestion-productos/proveedores/lista-precios`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/proveedores/comparacion-categorias`, `/gestion-productos/proveedores/lista`.
-  - Ayuda Vendedor: `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/procesos`, `/gestion-productos/tienda/control-stock`.
+  - Ayuda Vendedor: `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`, `/gestion-productos/procesos`, `/gestion-productos/tienda/control-stock`.
   - Análisis de Precios: `/gestion-productos/tienda/comp-proveedores`, `/gestion-productos/precios-competencia` (**Px Competencia**), `/gestion-productos/tienda/cx-px-tienda` (**Cx & Px Tienda**), `/gestion-productos/proveedores/comparacion-categorias`.
   - Procesos: `/gestion-productos/procesos` (guías de importación DUX tras exportar Excel).
   - **Vinculacion Con Prov.** (`src/app/tienda/page.tsx`, URL canónica **`/gestion-productos/tienda/comp-proveedores`**): al abrir sin query de filtros carga **todos** los ítems de **`prod_precios_tienda`** paginados (`getTiendaPageData`); los filtros en URL **reducen** el listado. Cabecera **`ClassicFilteredTableLayout`** título **Vinculacion Con Prov.**; **`FiltrosTienda`** (orden): **MARCA** → **RUBRO** → **SUB-RUBRO** → **PROV. VINC.** (`?proveedor=`, proveedores mercadería) → **VINCULADO** (`?vinculado=no|si`); paginación con **`PAGE_SIZE`**. Grilla **`TablaTienda`**: **COD. TIENDA**, **DESCRIPCIÓN**, **VINCULACIÓN** (doble clic abre **`VincularModal`** si permiso `vinculos`).
@@ -797,7 +797,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 ### Orden y labels — Sidebar Gestión Productos (`Sidebar.tsx`)
 
-**AYUDA VENDEDOR** (rol **simple**): `Calc. Tintométrico`, `Px. Vta. Sugeridos`, `Calc. Litros`, `Procesos`, `Control Stock`.
+**AYUDA VENDEDOR** (rol **simple**): `Px. Vta. Sugeridos`, `Calc. Tintométrico`, `Calc. Litros`, `Procesos`, `Control Stock`.
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
@@ -1014,7 +1014,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **`ListaPreciosTablaConFiltros`** — vista principal: **COD. EXT.**, **PROV.** (solo sin filtro proveedor), **DESCRIPCION** (tienda + proveedor + marca/rubro), **PX. LISTA PROV.**, **PX. FINAL**, **DET.** (chevron expande descuentos) y **ACCIONES** (editar). Subfila con **DESC. PROV./MARCA/RUBRO/CANT./FINAN.** y **CX. TRANSP.** reutiliza clases `tabla-fila-detalle-competencia-*`; vacíos numéricos muestran **—**.*
 
-*Última actualización (2026-05-27): **Porcentajes lista precios (0–100, 2 decimales)** — en **`EdicionMasivaListaPreciosModal`** (masiva y fila) los campos **DESC. *** y **CX. TRANSPORTE** usan `parsePorcentaje0a100Input` / `formatPorcentaje0a100Input` (`@/lib/format`); validación al guardar y en backend (`porcentajeListaPreciosSchema`). Tabla/subfila: `fmtPorcentajeTabla` (es-AR, dos decimales + `%`).*
+*Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, **DESC. PROVEEDOR / MARCA / CANTIDAD / FINAN. / CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS: cada dígito → 2 decimales visibles, ej. `1`→`0,01`, `125`→`1,25`; válido **&gt; 0** y **&lt; 100**). **DESC. RUBRO** mantiene texto libre con `parsePorcentaje0a100Input`. Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
 
 *Última actualización (2026-05-27): **`/gestion-productos/pedidos/generar-pedido`** — en el filtro desplegable **TIPO DE PEDIDO** se elimina el checkbox cuadrado por opción; cada opción se selecciona al hacer click en toda la fila y marca estado con ícono **Check** (tilde) a la derecha.*
 
