@@ -18,6 +18,18 @@ export type CompetenciaCxPxFiltro = {
 /** IVA % para netear px lista en marcación Cx & Px Tienda. */
 export const CX_PX_MARCACION_IVA_PCT = 21;
 
+/** Tolerancia en pesos (enteros) al comparar `px_lista_tienda` (DUX) vs PX LISTA (export / diff). */
+export const CX_PX_DIFF_PRECIO_MARGEN_ABSOLUTO = 5;
+
+/** Hay diferencia si |a − b| (redondeado) es mayor que el margen (ej. 102 vs 107 → no; 102 vs 108 → sí). */
+export function preciosListaDifierenMasQueMargen(
+  pxListaTienda: number,
+  pxReferencia: number,
+  margenAbsoluto: number = CX_PX_DIFF_PRECIO_MARGEN_ABSOLUTO
+): boolean {
+  return Math.abs(Math.round(pxListaTienda) - Math.round(pxReferencia)) > margenAbsoluto;
+}
+
 /**
  * Marcación visual: ((pxLista / (1 + IVA%)) / cxProd) − 1) × 100, redondeada a 2 decimales.
  * Reutiliza `calcMargenSinIvaPct` (`src/lib/calculos.ts`).

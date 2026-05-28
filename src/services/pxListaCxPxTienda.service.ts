@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
-import { PX_LISTA_SELECCION_PROM, type OpcionPxListaCompetidor } from "@/lib/cxPxTienda";
+import {
+  PX_LISTA_SELECCION_PROM,
+  preciosListaDifierenMasQueMargen,
+  type OpcionPxListaCompetidor,
+} from "@/lib/cxPxTienda";
 import { buildMapPxVtaSugerido } from "@/services/competenciaPxSugerido.service";
 
 export type CompetenciaPxListaCtx = {
@@ -136,9 +140,9 @@ export async function validarCompetenciaPxLista(
   return { ok: true };
 }
 
-/** Compara espejo DUX vs precio configurado persistido en Cx & Px. */
+/** Compara espejo DUX vs PX LISTA con margen absoluto (`CX_PX_DIFF_PRECIO_MARGEN_ABSOLUTO`). */
 export function pxListaTiendaDifiereDeCxPx(pxListaTiendaDux: number, pxListaCxPx: number): boolean {
-  return Math.round(pxListaTiendaDux) !== Math.round(pxListaCxPx);
+  return preciosListaDifierenMasQueMargen(pxListaTiendaDux, pxListaCxPx);
 }
 
 export async function resolverPxListaCxPxAlGuardar(
