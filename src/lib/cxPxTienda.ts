@@ -60,7 +60,7 @@ export interface ItemCxPxTiendaParaTabla {
   id: string;
   codTienda: string;
   descripcion: string;
-  codExtCostoLista: string | null;
+  codExtCostoCompra: string | null;
   costoPromedio: number | null;
   opcionesProveedor: OpcionCostoCxProdProveedor[];
   /** `prom` = Cx. Prom.; si no, `cod_ext` del proveedor persistido o elegido. */

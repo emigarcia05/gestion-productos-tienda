@@ -23,7 +23,7 @@ export const getCxPxTiendaPageParamsSchema = z.object({
   vincCosto: queryOpcional.pipe(
     z.union([z.literal(VINC_COSTO_SIN), z.literal(VINC_COSTO_UNO), z.literal(VINC_COSTO_MAS)]).optional()
   ),
-  /** `prom` = Cx. Prom. (`cod_ext_costo_lista` nulo); si no, `id` de proveedor de la fila FK persistida. */
+  /** `prom` = Cx. Prom. (`cod_ext_costo_compra` nulo); si no, `id` de proveedor de la fila FK persistida. */
   costoProv: queryOpcional.pipe(
     z.union([z.literal(CX_PROD_SELECCION_PROM), z.string().min(1).max(128)]).optional()
   ),

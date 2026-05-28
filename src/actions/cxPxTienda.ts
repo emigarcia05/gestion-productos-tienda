@@ -201,7 +201,7 @@ export async function getCxPxTiendaPageData(params: {
   } else if (costoProv) {
     // CX PROVEEDOR: filtra por proveedor configurado en la columna CX PROD.
     andParts.push({
-      codExtCostoLista: { not: null },
+      codExtCostoCompra: { not: null },
       costoListaProveedor: {
         idProveedor: costoProv,
       },
@@ -310,7 +310,7 @@ const guardarCostoCxProdSchema = z.object({
   seleccion: z.union([z.literal(CX_PROD_SELECCION_PROM), z.string().min(1).max(128)]),
 });
 
-/** Persiste costo Cx prod.: proveedor → `cod_ext_costo_lista`; Cx. Prom. → limpia FK (solo promedio en UI). */
+/** Persiste costo Cx prod.: proveedor → `cod_ext_costo_compra`; Cx. Prom. → limpia FK (solo promedio en UI). */
 export async function guardarCostoCxProdTiendaAction(
   raw: unknown
 ): Promise<ActionResult> {

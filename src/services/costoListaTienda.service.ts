@@ -1,5 +1,5 @@
 /**
- * Costo lista para Cx/Px Tienda: `prod_precios_tienda.cod_ext_costo_lista` → `prod_precios_provee`.
+ * Costo lista para Cx/Px Tienda: `prod_precios_tienda.cod_ext_costo_compra` → `prod_precios_provee`.
  * `costo_compra` / `proveedor` en tienda siguen siendo espejo DUX (sync).
  */
 import type { ServiceResult } from "@/types";
@@ -30,7 +30,7 @@ function toNum(n: unknown): number {
 export type CostoCxPxResuelto = {
   costoCompra: number;
   proveedorLabel: string | null;
-  codExtCostoLista: string | null;
+  codExtCostoCompra: string | null;
   /** true si el valor viene de FK persistida (no de fallback en lectura). */
   desdeFkPersistida: boolean;
 };
@@ -67,7 +67,7 @@ export async function establecerCodExtCostoLista(
   try {
     await prisma.listaPrecioTienda.update({
       where: { codTienda },
-      data: { codExtCostoLista: codExt },
+      data: { codExtCostoCompra: codExt },
     });
     return { success: true, data: undefined };
   } catch (e) {
@@ -82,8 +82,8 @@ export async function limpiarCodExtCostoListaSiCoincide(
   codExt: string
 ): Promise<void> {
   await prisma.listaPrecioTienda.updateMany({
-    where: { codTienda, codExtCostoLista: codExt },
-    data: { codExtCostoLista: null },
+    where: { codTienda, codExtCostoCompra: codExt },
+    data: { codExtCostoCompra: null },
   });
 }
 
@@ -95,9 +95,9 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
 ): Promise<void> {
   const tienda = await prisma.listaPrecioTienda.findUnique({
     where: { codTienda },
-    select: { codExtCostoLista: true, proveedor: true },
+    select: { codExtCostoCompra: true, proveedor: true },
   });
-  if (!tienda || tienda.codExtCostoLista) return;
+  if (!tienda || tienda.codExtCostoCompra) return;
 
   const candidatos = await prisma.listaPrecioProveedor.findMany({
     where: { codTiendaVinculo: codTienda, habilitado: true },
@@ -111,7 +111,7 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
   if (candidatos.length === 1) {
     await prisma.listaPrecioTienda.update({
       where: { codTienda },
-      data: { codExtCostoLista: candidatos[0].codExt },
+      data: { codExtCostoCompra: candidatos[0].codExt },
     });
     return;
   }
@@ -126,7 +126,7 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
   if (matchDux) {
     await prisma.listaPrecioTienda.update({
       where: { codTienda },
-      data: { codExtCostoLista: matchDux.codExt },
+      data: { codExtCostoCompra: matchDux.codExt },
     });
   }
 }
@@ -135,7 +135,7 @@ type FilaTiendaCostoInput = {
   codTienda: string;
   proveedor: string | null;
   costoCompra: unknown;
-  codExtCostoLista: string | null;
+  codExtCostoCompra: string | null;
   costoListaProveedor: {
     pxCompraFinalSinIva: unknown;
     proveedor: { nombre: string; prefijo: string | null };
@@ -153,7 +153,7 @@ export async function resolverCostoCxPxParaFila(
   const costoDux = toNum(row.costoCompra);
   const proveedorDux = row.proveedor?.trim() || null;
 
-  if (row.costoListaProveedor && row.codExtCostoLista) {
+  if (row.costoListaProveedor && row.codExtCostoCompra) {
     const lp = row.costoListaProveedor;
     const px = toNum(lp.pxCompraFinalSinIva);
     const label =
@@ -163,7 +163,7 @@ export async function resolverCostoCxPxParaFila(
     return {
       costoCompra: px > 0 ? px : costoDux,
       proveedorLabel: label ?? proveedorDux,
-      codExtCostoLista: row.codExtCostoLista,
+      codExtCostoCompra: row.codExtCostoCompra,
       desdeFkPersistida: true,
     };
   }
@@ -179,7 +179,7 @@ export async function resolverCostoCxPxParaFila(
     return {
       costoCompra: px > 0 ? px : costoDux,
       proveedorLabel: label ?? proveedorDux,
-      codExtCostoLista: c.codExt,
+      codExtCostoCompra: c.codExt,
       desdeFkPersistida: false,
     };
   }
@@ -196,7 +196,7 @@ export async function resolverCostoCxPxParaFila(
     return {
       costoCompra: px > 0 ? px : costoDux,
       proveedorLabel: label ?? proveedorDux,
-      codExtCostoLista: matchDux.codExt,
+      codExtCostoCompra: matchDux.codExt,
       desdeFkPersistida: false,
     };
   }
@@ -204,7 +204,7 @@ export async function resolverCostoCxPxParaFila(
   return {
     costoCompra: costoDux,
     proveedorLabel: proveedorDux,
-    codExtCostoLista: null,
+    codExtCostoCompra: null,
     desdeFkPersistida: false,
   };
 }
@@ -245,7 +245,7 @@ export async function limpiarCodExtCostoLista(codTienda: string): Promise<Servic
   try {
     await prisma.listaPrecioTienda.update({
       where: { codTienda },
-      data: { codExtCostoLista: null },
+      data: { codExtCostoCompra: null },
     });
     return { success: true, data: undefined };
   } catch (e) {

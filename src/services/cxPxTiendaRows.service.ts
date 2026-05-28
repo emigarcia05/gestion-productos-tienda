@@ -22,7 +22,7 @@ export const filaCxPxSelect = {
   codTienda: true,
   descripcionTienda: true,
   costoCompra: true,
-  codExtCostoLista: true,
+  codExtCostoCompra: true,
   pxListaTienda: true,
   pxListaCxPx: true,
   competenciaIdPxLista: true,
@@ -32,7 +32,7 @@ export type FilaCxPxDb = {
   codTienda: string;
   descripcionTienda: string | null;
   costoCompra: unknown;
-  codExtCostoLista: string | null;
+  codExtCostoCompra: string | null;
   pxListaTienda: unknown;
   pxListaCxPx: unknown;
   competenciaIdPxLista: string | null;
@@ -75,11 +75,11 @@ export function mapFilaCxPx(
   let costoMostrado = costoPromedio ?? costoDux;
 
   if (
-    r.codExtCostoLista &&
-    opcionesProveedor.some((o) => o.codExt === r.codExtCostoLista)
+    r.codExtCostoCompra &&
+    opcionesProveedor.some((o) => o.codExt === r.codExtCostoCompra)
   ) {
-    seleccion = r.codExtCostoLista;
-    const op = opcionesProveedor.find((o) => o.codExt === r.codExtCostoLista);
+    seleccion = r.codExtCostoCompra;
+    const op = opcionesProveedor.find((o) => o.codExt === r.codExtCostoCompra);
     costoMostrado = op && op.costo > 0 ? op.costo : costoDux;
   } else if (opcionesProveedor.length === 1) {
     seleccion = opcionesProveedor[0].codExt;
@@ -115,7 +115,7 @@ export function mapFilaCxPx(
     id: r.codTienda,
     codTienda: r.codTienda,
     descripcion: r.descripcionTienda ?? "",
-    codExtCostoLista: r.codExtCostoLista,
+    codExtCostoCompra: r.codExtCostoCompra,
     costoPromedio,
     opcionesProveedor,
     seleccion,

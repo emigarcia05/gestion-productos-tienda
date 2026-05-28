@@ -544,7 +544,7 @@ model ListaPrecioTienda {
   proveedor       String?
   descripcionTienda String? @map("descripcion_tienda")
   /** FK a `prod_precios_provee.cod_ext`: costo Cx = px_compra_final_sin_iva de esa fila (no lo pisa el sync DUX). */
-  codExtCostoLista String? @map("cod_ext_costo_lista")
+  codExtCostoCompra String? @map("cod_ext_costo_compra")
   /** true si es producto de marca propia TiendaColor: no se vincula con prod_precios_provee y se excluye del filtro VINCULADO=NO. Editable desde VincularModal; el sync DUX no lo toca. */
   esProductoPropio Boolean @default(false) @map("es_producto_propio")
   /** FK a `prod_competencia.id`: px lista mostrado en Cx & Px (NULL = PX PROM.). */
@@ -562,7 +562,7 @@ model ListaPrecioTienda {
 
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
-  costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [codExtCostoLista], references: [codExt], onDelete: SetNull)
+  costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [codExtCostoCompra], references: [codExt], onDelete: SetNull)
   competenciaPxLista      ProdCompetencia?       @relation("PxListaEnTienda", fields: [competenciaIdPxLista], references: [id], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
 
