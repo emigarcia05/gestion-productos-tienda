@@ -6,7 +6,7 @@ import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { ItemTiendaParaTabla, ProveedorTintoLts } from "@/actions/tienda";
-import type { Rol } from "@/lib/permisos";
+import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 interface Props {
   items: ItemTiendaParaTabla[];
@@ -43,6 +43,7 @@ export default function CompProveedoresPageClient({
   vinculado,
   paginaNum,
 }: Props) {
+  const puedeEditarCxProd = puede(rol, PERMISOS.cxPxTienda.acceso);
   const filters = (
     <FiltrosTienda
       marcas={marcas.map((m) => m.marca)}
@@ -61,10 +62,14 @@ export default function CompProveedoresPageClient({
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
-      <ClassicFilteredTableLayout title="Vinculacion Con Prov." filters={filters}>
+      <ClassicFilteredTableLayout title="Cx Compra" filters={filters}>
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <TablaTienda items={items} rol={rol} />
+            <TablaTienda
+              items={items}
+              rol={rol}
+              puedeEditarCxProd={puedeEditarCxProd}
+            />
           </div>
           {totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">

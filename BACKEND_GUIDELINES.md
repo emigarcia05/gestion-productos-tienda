@@ -163,12 +163,15 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - Evitar tomar solo `costo_compra` de tienda cuando el contrato sea el precio de lista proveedor calculado en `prod_precios_provee`.
 - Migración de columna física: **`20260514120000_rename_prod_precios_provee_px_compra_final_sin_iva`** (`px_compra_final` → `px_compra_final_sin_iva`, misma expresión GENERATED).
 
-### 1.9 Listado Vinculacion Con Prov. (`getTiendaPageData`)
+### 1.9 Listado Cx Compra (`getTiendaPageData`)
+
+> **Cx Compra** (nombre vigente; antes «Vinculacion Con Prov.» / «Vinc. Con Prov.»). URL canónica sin cambio: `/gestion-productos/tienda/comp-proveedores`.
 
 - **`getTiendaPageData`**: sin filtros en URL lista **todo** `prod_precios_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
 - Filtro de URL **`proveedor`** (renombrado **PROV. VINC.** en la UI): valor = **id (CUID) del proveedor**; matchea `listaPreciosProveedores: { some: { idProveedor, habilitado: true } }`. Tolerante a URLs legacy con texto: si el valor no parsea como CUID (`prismaCuidSchema.safeParse`) se ignora silenciosamente y no se aplica el filtro (no rompe la pantalla). Ver §1.4.2.
 - Filtro de URL **`vinculado`**: `vinculado=no` → `AND [ { listaPreciosProveedores: { none: {} } }, { esProductoPropio: false } ]` (los **Productos TiendaColor** quedan fuera porque nunca se vinculan); `vinculado=si` → `{ listaPreciosProveedores: { some: {} } }`. Otros valores se ignoran.
 - `ItemTiendaParaTabla` incluye `esProductoPropio: boolean` (mapeado desde `prod_precios_tienda.es_producto_propio`) para que `TablaTienda` muestre badge **PROPIO** en la columna VINCULACIÓN.
+- **Unificación CX PROD. (2026-05-28):** `getTiendaPageData` enriquece cada fila con **`cxProd: CxProdDatosFila`** vía **`buildCxProdMapDesdeFilas`** (`src/services/cxPxTiendaRows.service.ts` → **`mapCxProdDesdeCandidatos`**, misma regla que Cx & Px Tienda). **`guardarCostoCxProdTiendaAction`** revalida también **`/gestion-productos/tienda/comp-proveedores`** y **`/tienda`**.
 
 ### 1.9b Producto TiendaColor (`es_producto_propio`)
 
@@ -178,7 +181,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Action** `setProductoPropioTiendaAction` (`src/actions/productoPropioTienda.ts`): gate doble `puede(rol, PERMISOS.tienda.acceso)` + `esEditor()` (mismo patrón que `vincularProducto` / `desvincularProducto`); payload `unknown` validado con Zod (`{ codTienda, esPropio }`); revalida `/tienda`, `/gestion-productos/tienda/comp-proveedores`, `/gestion-productos/tienda/cx-px-tienda`.
 - **`getVinculos`** (`src/actions/vinculos.ts`) incluye `esProductoPropio` en `VinculosItemTiendaPayload` para que **VincularModal** sepa el estado al abrirse y renderice el botón toggle correcto.
 
-### 1.10 Margen sin IVA (Vinculacion Con Prov., modal `/tienda`)
+### 1.10 Margen sin IVA (Cx Compra — modal vínculos `/tienda`)
 
 - El modal **Vínculos Con Proveedores** ya no muestra margen; `precioLista` / `porcIva` en `ItemTiendaParaTabla` siguen disponibles para otros usos. `calcMargenSinIvaPct` (`src/lib/calculos.ts`) permanece por si otro módulo lo necesita.
 
@@ -995,7 +998,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
-- **`tienda.ts`**: `getTiendaPageData` y `getUltimoSync` comprueban `getRol()` + `puede()`. **Vinc. Con Prov.** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control de Aumentos** eliminado por completo (2026-05-28; será reimplementado más adelante). `convertirEnProveedor` eliminada (acción muerta).
+- **`tienda.ts`**: `getTiendaPageData` y `getUltimoSync` comprueban `getRol()` + `puede()`. **Cx Compra** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control de Aumentos** eliminado por completo (2026-05-28; será reimplementado más adelante). `convertirEnProveedor` eliminada (acción muerta).
 - **`cxPxTienda.ts`**: `getCxPxTiendaPageData` — listado paginado con filtros `q`, `marca`, `vincCosto`, `costoProv`, `pxLista`, `marcacionOrden`; `getCxPxTiendaPageParamsSchema` (Zod). Permiso `PERMISOS.cxPxTienda.acceso` (solo **editor**). Regla de filtros: `vincCosto` cuenta vínculos por `cod_tienda_vinculo` en `prod_precios_provee` (no solo habilitados), `costoProv` filtra por `id_proveedor` de `cx_px_cx_cod_ext`, `pxLista` por `id_proveedor` de la competencia de `cx_px_px_comp_ref`. FK `cx_px_cx_cod_ext` y `cx_px_px_comp_ref` (ver §1.10b). **`costoListaTienda.service.ts`** / **`pxListaCxPxTienda.service.ts`**.
 - **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`. En **`create`** y **`update`** se persisten las columnas sincronizadas desde DUX **excepto `cod_ext` y `proveedor`** (congelados desde 2026-05-28 — ver §1.4.2). Al finalizar la sync elimina de `prod_precios_tienda` los `cod_tienda` que ya no llegaron en la corrida actual desde DUX.
 - **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).

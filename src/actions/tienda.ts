@@ -6,8 +6,18 @@ import { filtroTexto } from "@/lib/busqueda";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
+import type { CxProdDatosFila } from "@/lib/cxPxTienda";
+import { CX_PROD_SELECCION_PROM } from "@/lib/cxPxTienda";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
+import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
+
+const CX_PROD_FILA_VACIA: CxProdDatosFila = {
+  opcionesProveedor: [],
+  seleccion: CX_PROD_SELECCION_PROM,
+  costoPromedio: null,
+  costoMostrado: 0,
+};
 
 /** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y filtro `vinculado` sin resultados. */
 async function getTiendaEmptyWithOpciones() {
@@ -72,6 +82,8 @@ export interface ItemTiendaParaTabla {
   /** true si fue marcado como Producto TiendaColor desde VincularModal (no vincula con prod_precios_provee). */
   esProductoPropio: boolean;
   _count: { productos: number };
+  /** Costo producto (misma lógica que Cx & Px Tienda / columna CX PROD.). */
+  cxProd: CxProdDatosFila;
 }
 
 export interface ProveedorTintoLts {
@@ -206,6 +218,14 @@ export async function getTiendaPageData(params: {
     ])
   );
 
+  const cxProdMap = await buildCxProdMapDesdeFilas(
+    rows.map((r) => ({
+      codTienda: r.codTienda,
+      costoCompra: r.costoCompra,
+      cxPxCxCodExt: r.cxPxCxCodExt,
+    }))
+  );
+
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
     const proveedorTexto = r.proveedor?.trim() ?? null;
     const prefijo = proveedorTexto ? nombreToPrefijo.get(proveedorTexto.toLowerCase()) ?? proveedorTexto : null;
@@ -228,6 +248,7 @@ export async function getTiendaPageData(params: {
       habilitado: true,
       esProductoPropio: r.esProductoPropio,
       _count: { productos: r._count.listaPreciosProveedores },
+      cxProd: cxProdMap.get(r.codTienda) ?? CX_PROD_FILA_VACIA,
     };
   });
 

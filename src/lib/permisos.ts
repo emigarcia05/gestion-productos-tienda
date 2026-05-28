@@ -65,7 +65,7 @@ export const PERMISOS = {
 
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
-    /** Vinc. Con Prov. (/gestion-productos/tienda/comp-proveedores). Módulo Análisis de Precios — solo editor. */
+    /** Cx Compra (/gestion-productos/tienda/comp-proveedores). Módulo Análisis de Precios — solo editor. */
     acceso: { simple: false, editor: true },
     /** Calc. Tintométrico y Calc. Litros (/tienda/tintometrico, /tienda/litros). */
     tintoLts: { simple: true, editor: true },

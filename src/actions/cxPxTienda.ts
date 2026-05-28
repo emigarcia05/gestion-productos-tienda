@@ -338,6 +338,8 @@ export async function guardarCostoCxProdTiendaAction(
   }
 
   revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+  revalidatePath("/gestion-productos/tienda/comp-proveedores");
+  revalidatePath("/tienda");
   revalidatePath("/tienda/cx-px");
   return { ok: true, data: undefined };
 }

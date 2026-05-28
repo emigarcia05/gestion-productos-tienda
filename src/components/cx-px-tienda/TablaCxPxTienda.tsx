@@ -19,14 +19,10 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import CeldaCxProdTienda from "@/components/shared/CeldaCxProdTienda";
+import { guardarPxListaTiendaAction } from "@/actions/cxPxTienda";
 import {
-  guardarCostoCxProdTiendaAction,
-  guardarPxListaTiendaAction,
-} from "@/actions/cxPxTienda";
-import {
-  CX_PROD_SELECCION_PROM,
   PX_LISTA_SELECCION_PROM,
-  costoCxProdMostrado,
   marcacionCxPxDeItem,
   pxListaMostrado,
   type ItemCxPxTiendaParaTabla,
@@ -46,17 +42,6 @@ export default function TablaCxPxTienda({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  function handleCambioCx(codTienda: string, seleccion: string) {
-    startTransition(async () => {
-      const res = await guardarCostoCxProdTiendaAction({ codTienda, seleccion });
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      router.refresh();
-    });
-  }
 
   function handleCambioPxLista(codTienda: string, seleccion: string) {
     startTransition(async () => {
@@ -92,8 +77,6 @@ export default function TablaCxPxTienda({
           <EmptyTableRow colSpan={COL_COUNT} message={MENSAJE_SIN_RESULTADOS} />
         ) : (
           items.map((item) => {
-            const sinVinculosCx = item.opcionesProveedor.length === 0;
-            const costoVista = costoCxProdMostrado(item);
             const pxListaVista = pxListaMostrado(item);
             const sinOpcionesPxLista = item.opcionesPxLista.length === 0;
             const marcacion = marcacionCxPxDeItem(item);
@@ -104,42 +87,11 @@ export default function TablaCxPxTienda({
                   {item.descripcion}
                 </TableCell>
                 <TableCell className="celda-datos min-w-0">
-                  <div className="grid w-full min-w-0 grid-cols-2 items-center gap-1.5">
-                    <Select
-                      value={item.seleccion}
-                      onValueChange={(v) => handleCambioCx(item.codTienda, v)}
-                      disabled={!puedeEditar || isPending || sinVinculosCx}
-                    >
-                      <SelectTrigger
-                        className={cn(
-                          "input-filtro-unificado h-8 w-full min-w-0",
-                          !puedeEditar && "pointer-events-none opacity-80"
-                        )}
-                        aria-label={`Costo producto ${item.codTienda}`}
-                      >
-                        <SelectValue placeholder="CX PROD." />
-                      </SelectTrigger>
-                      <SelectContent
-                        position="popper"
-                        side="bottom"
-                        align="start"
-                        className="select-content-filtro"
-                      >
-                        <SelectItem value={CX_PROD_SELECCION_PROM}>CX. PROM.</SelectItem>
-                        {item.opcionesProveedor.map((op) => (
-                          <SelectItem key={op.codExt} value={op.codExt}>
-                            {op.etiqueta}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span
-                      className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 block w-full"
-                      aria-label="Costo seleccionado"
-                    >
-                      ${fmtPrecio(costoVista)}
-                    </span>
-                  </div>
+                  <CeldaCxProdTienda
+                    codTienda={item.codTienda}
+                    cxProd={item}
+                    puedeEditar={puedeEditar && !isPending}
+                  />
                 </TableCell>
                 <TableCell className="celda-datos min-w-0">
                   <div className="grid w-full min-w-0 grid-cols-2 items-center gap-1.5">

@@ -1,7 +1,7 @@
 /**
  * Marca de "Producto TiendaColor" (producto propio) en `prod_precios_tienda.es_producto_propio`.
  * Si está en `true`, el ítem no se vincula con `prod_precios_provee` y se excluye del filtro VINCULADO=NO
- * en /gestion-productos/tienda/comp-proveedores. Marcar como propio exige cero vínculos vigentes
+ * en Cx Compra (/gestion-productos/tienda/comp-proveedores). Marcar como propio exige cero vínculos vigentes
  * (rechazo explícito; la desvinculación se hace manualmente desde el modal Vínculos Con Proveedores).
  */
 import type { ServiceResult } from "@/types";

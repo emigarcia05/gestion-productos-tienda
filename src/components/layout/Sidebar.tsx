@@ -177,7 +177,7 @@ const MODULES: NavModule[] = [
     submodules: [
       {
         href: "/gestion-productos/tienda/comp-proveedores",
-        label: "Vinc. Con Prov.",
+        label: "Cx Compra",
         icon: <Link2 className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.tienda.acceso,
       },

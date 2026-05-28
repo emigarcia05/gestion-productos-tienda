@@ -197,9 +197,9 @@
   /** Sombra de la tarjeta que envuelve la tabla principal (p. ej. Comp. Proveedores, Generar Pedido, Pedido Urgente). Evitar `shadow-[0_4px_12px_rgba(...)]` en JSX. */
   --card-tabla-envoltorio-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
-  /* ─── Tablas: altura oficial (referencia: módulo Vinculacion Con Prov. / TablaTienda). SSOT para todas las tablas. */
+  /* ─── Tablas: altura oficial (referencia: módulo Cx Compra / TablaTienda). SSOT para todas las tablas. */
   /* Encabezado global: altura fija para 2 líneas de texto (se aplica siempre, aunque el título use 1 línea). */
-  /* Valor de referencia tomado de Vinculacion Con Prov.: 2.125rem. */
+  /* Valor de referencia tomado de Cx Compra: 2.125rem. */
   --tabla-thead-lines: 2;
   --tabla-thead-line-height: 1.15;
   --tabla-thead-padding-y: 0.2rem;
@@ -799,7 +799,7 @@
   justify-content: center !important;
   gap: 0 !important;
 }
-/* Botón de selección en encabezado (Vinculacion Con Prov.): superficie blanca con tilde azul visible. */
+/* Botón de selección en encabezado (Cx Compra): superficie blanca con tilde azul visible. */
 .tabla-gestion-compacta thead th .tabla-head-toggle {
   width: calc(var(--tabla-thead-height) - 0.7rem) !important;
   height: calc(var(--tabla-thead-height) - 0.7rem) !important;
@@ -1152,7 +1152,7 @@
   width: 100%;
 }
 
-/* Tabla Tienda / Vinculacion Con Prov.: COD. TIENDA 15% + DESCRIPCIÓN 67% + VINCULACIÓN 18%. */
+/* Tabla Tienda / Cx Compra: COD. TIENDA 12% + DESCRIPCIÓN 46% + VINCULACIÓN 12% + CX PROD. 30%. */
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
