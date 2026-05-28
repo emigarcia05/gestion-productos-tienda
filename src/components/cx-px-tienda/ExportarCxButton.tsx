@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarCostoCxDiffAction } from "@/actions/cxPxTienda";
 import { descargarExcelCostoCx } from "@/lib/exportCostoCxExcelClient";
+import ModalSinProductosExportar from "@/components/cx-px-tienda/ModalSinProductosExportar";
 
 export default function ExportarCxButton() {
   const [exportando, setExportando] = useState(false);
+  const [modalSinProductos, setModalSinProductos] = useState(false);
 
   async function handleExportar() {
     setExportando(true);
@@ -20,9 +22,7 @@ export default function ExportarCxButton() {
         return;
       }
       if (res.data.filas.length === 0) {
-        toast.message(
-          "No hay productos con diferencia entre costo compra (DUX) y el costo del proveedor seleccionado en CX PROD."
-        );
+        setModalSinProductos(true);
         return;
       }
       descargarExcelCostoCx(res.data.filas);
@@ -33,24 +33,30 @@ export default function ExportarCxButton() {
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="default"
-          size="default"
-          className="btn-primario-gestion gap-2 shrink-0"
-          disabled={exportando}
-          onClick={() => void handleExportar()}
-        >
-          <Download className="h-4 w-4 shrink-0" />
-          {exportando ? "Exportando..." : "Exportar Cx"}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        Control de costos: compara costo compra (DUX) con CX PROD. (proveedor o promedio CX. PROM.).
-        Excel CODIGO + COSTO solo si hay diferencia
-      </TooltipContent>
-    </Tooltip>
+    <>
+      <ModalSinProductosExportar
+        open={modalSinProductos}
+        onOpenChange={setModalSinProductos}
+      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="default"
+            size="default"
+            className="btn-primario-gestion gap-2 shrink-0"
+            disabled={exportando}
+            onClick={() => void handleExportar()}
+          >
+            <Download className="h-4 w-4 shrink-0" />
+            {exportando ? "Exportando..." : "Exportar Cx"}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          Control de costos: compara costo compra (DUX) con CX PROD. (proveedor o promedio CX. PROM.).
+          Excel CODIGO + COSTO solo si hay diferencia
+        </TooltipContent>
+      </Tooltip>
+    </>
   );
 }

@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarPxListaCxDiffAction } from "@/actions/cxPxTienda";
 import { descargarExcelPxListaCx } from "@/lib/exportPxListaCxExcelClient";
+import ModalSinProductosExportar from "@/components/cx-px-tienda/ModalSinProductosExportar";
 
 export default function ExportarPxButton() {
   const [exportando, setExportando] = useState(false);
+  const [modalSinProductos, setModalSinProductos] = useState(false);
 
   async function handleExportar() {
     setExportando(true);
@@ -20,9 +22,7 @@ export default function ExportarPxButton() {
         return;
       }
       if (res.data.filas.length === 0) {
-        toast.message(
-          "No hay productos con diferencia entre px lista (DUX) y el precio del competidor seleccionado en PX LISTA."
-        );
+        setModalSinProductos(true);
         return;
       }
       descargarExcelPxListaCx(res.data.filas);
@@ -33,24 +33,30 @@ export default function ExportarPxButton() {
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="default"
-          size="default"
-          className="btn-primario-gestion gap-2 shrink-0"
-          disabled={exportando}
-          onClick={() => void handleExportar()}
-        >
-          <Download className="h-4 w-4 shrink-0" />
-          {exportando ? "Exportando..." : "Exportar Px"}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        Control de precios: compara px lista (DUX) con PX LISTA (competidor o promedio PX. PROM.).
-        Excel CODIGO + PORC UTILIDAD solo si hay diferencia
-      </TooltipContent>
-    </Tooltip>
+    <>
+      <ModalSinProductosExportar
+        open={modalSinProductos}
+        onOpenChange={setModalSinProductos}
+      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="default"
+            size="default"
+            className="btn-primario-gestion gap-2 shrink-0"
+            disabled={exportando}
+            onClick={() => void handleExportar()}
+          >
+            <Download className="h-4 w-4 shrink-0" />
+            {exportando ? "Exportando..." : "Exportar Px"}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          Control de precios: compara px lista (DUX) con PX LISTA (competidor o promedio PX. PROM.).
+          Excel CODIGO + PORC UTILIDAD solo si hay diferencia
+        </TooltipContent>
+      </Tooltip>
+    </>
   );
 }
