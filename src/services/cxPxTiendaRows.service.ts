@@ -1,11 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import {
   CX_PROD_SELECCION_PROM,
-  PX_LISTA_SELECCION_PROM,
   type CxProdDatosFila,
-  type ItemCxPxTiendaParaTabla,
   type OpcionCostoCxProdProveedor,
-  type OpcionPxListaCompetidor,
 } from "@/lib/cxPxTienda";
 import {
   calcularCostoPromedioVinculos,
@@ -13,55 +10,16 @@ import {
   etiquetaProveedorCosto,
   listarCandidatosCostoPorCodTienda,
 } from "@/services/costoListaTienda.service";
-import {
-  buildMapOpcionesPxListaPorCodTienda,
-  pxListaMostradoParaSeleccion,
-  type CompetenciaPxListaCtx,
-} from "@/services/pxListaCxPxTienda.service";
 
-export const filaCxPxSelect = {
-  codTienda: true,
-  descripcionTienda: true,
-  costoCompra: true,
-  cxPxCxCodExt: true,
-  pxListaTienda: true,
-  pxListaCxPx: true,
-  cxPxPxCompRef: true,
-} as const;
-
-export type FilaCxPxDb = {
+export type FilaCxProdDb = {
   codTienda: string;
-  descripcionTienda: string | null;
   costoCompra: unknown;
-  cxPxCxCodExt: string | null;
-  pxListaTienda: unknown;
-  pxListaCxPx: unknown;
-  cxPxPxCompRef: string | null;
+  costoCompraCodExt: string | null;
 };
-
-export type FilaCxProdDb = Pick<FilaCxPxDb, "codTienda" | "costoCompra" | "cxPxCxCodExt">;
 
 type CandidatoCostoVinculo = Awaited<
   ReturnType<typeof listarCandidatosCostoPorCodTienda>
 >[number];
-
-export async function listarCompetenciasPxListaCtx(): Promise<CompetenciaPxListaCtx[]> {
-  const rows = await prisma.prodCompetencia.findMany({
-    orderBy: { nombre: "asc" },
-    select: {
-      id: true,
-      nombre: true,
-      idProveedor: true,
-      proveedor: { select: { prefijo: true } },
-    },
-  });
-  return rows.map((c) => ({
-    id: c.id,
-    nombre: c.nombre,
-    idProveedor: c.idProveedor,
-    prefijoProveedor: c.proveedor?.prefijo?.trim() || null,
-  }));
-}
 
 async function cargarVinculosCostoPorCodTienda(codTiendas: string[]) {
   if (codTiendas.length === 0) return new Map<string, CandidatoCostoVinculo[]>();
@@ -87,10 +45,10 @@ async function cargarVinculosCostoPorCodTienda(codTiendas: string[]) {
   return vinculosPorTienda;
 }
 
-/** Mapeo compartido de CX PROD. (Comp. Proveedores + Cx & Px Tienda). */
+/** Mapeo de CX PROD. para Cx Compra y exportación de costos. */
 export function mapCxProdDesdeCandidatos(
   costoCompra: unknown,
-  cxPxCxCodExt: string | null,
+  costoCompraCodExt: string | null,
   candidatos: CandidatoCostoVinculo[]
 ): CxProdDatosFila {
   const costoDux = Number(costoCompra) || 0;
@@ -106,9 +64,9 @@ export function mapCxProdDesdeCandidatos(
   let seleccion: typeof CX_PROD_SELECCION_PROM | string = CX_PROD_SELECCION_PROM;
   let costoMostrado = costoPromedio ?? costoDux;
 
-  if (cxPxCxCodExt && opcionesProveedor.some((o) => o.codExt === cxPxCxCodExt)) {
-    seleccion = cxPxCxCodExt;
-    const op = opcionesProveedor.find((o) => o.codExt === cxPxCxCodExt);
+  if (costoCompraCodExt && opcionesProveedor.some((o) => o.codExt === costoCompraCodExt)) {
+    seleccion = costoCompraCodExt;
+    const op = opcionesProveedor.find((o) => o.codExt === costoCompraCodExt);
     costoMostrado = op && op.costo > 0 ? op.costo : costoDux;
   } else if (opcionesProveedor.length === 1) {
     seleccion = opcionesProveedor[0].codExt;
@@ -124,7 +82,6 @@ export function mapCxProdDesdeCandidatos(
   };
 }
 
-/** CX PROD. por `cod_tienda` sin cargar competencias ni px lista. */
 export async function buildCxProdMapDesdeFilas(
   rows: FilaCxProdDb[]
 ): Promise<Map<string, CxProdDatosFila>> {
@@ -137,76 +94,10 @@ export async function buildCxProdMapDesdeFilas(
       r.codTienda,
       mapCxProdDesdeCandidatos(
         r.costoCompra,
-        r.cxPxCxCodExt,
+        r.costoCompraCodExt,
         vinculosPorTienda.get(r.codTienda) ?? []
       )
     );
   }
   return map;
-}
-
-export function mapFilaCxPx(
-  r: FilaCxPxDb,
-  candidatos: CandidatoCostoVinculo[],
-  opcionesPxLista: OpcionPxListaCompetidor[]
-): ItemCxPxTiendaParaTabla {
-  const cxProd = mapCxProdDesdeCandidatos(r.costoCompra, r.cxPxCxCodExt, candidatos);
-  const pxListaTiendaDux = Number(r.pxListaTienda) || 0;
-
-  let seleccionPxLista: typeof PX_LISTA_SELECCION_PROM | string = PX_LISTA_SELECCION_PROM;
-  if (
-    r.cxPxPxCompRef &&
-    opcionesPxLista.some((o) => o.competenciaId === r.cxPxPxCompRef)
-  ) {
-    seleccionPxLista = r.cxPxPxCompRef;
-  } else if (opcionesPxLista.length === 1) {
-    seleccionPxLista = opcionesPxLista[0].competenciaId;
-  }
-
-  const pxListaCalculado = pxListaMostradoParaSeleccion(
-    seleccionPxLista,
-    opcionesPxLista,
-    pxListaTiendaDux
-  );
-  const pxListaCxPxRaw = r.pxListaCxPx != null ? Number(r.pxListaCxPx) : null;
-  const pxListaCxPxPersistido =
-    pxListaCxPxRaw != null && Number.isFinite(pxListaCxPxRaw) && pxListaCxPxRaw > 0
-      ? Math.round(pxListaCxPxRaw)
-      : null;
-  const pxListaMostrado = pxListaCxPxPersistido ?? pxListaCalculado;
-
-  return {
-    id: r.codTienda,
-    codTienda: r.codTienda,
-    descripcion: r.descripcionTienda ?? "",
-    cxPxCxCodExt: r.cxPxCxCodExt,
-    ...cxProd,
-    pxListaTiendaDux,
-    pxListaCxPxPersistido,
-    cxPxPxCompRef: r.cxPxPxCompRef,
-    opcionesPxLista,
-    seleccionPxLista,
-    pxListaMostrado,
-  };
-}
-
-export async function buildItemsCxPxDesdeFilas(
-  rows: FilaCxPxDb[],
-  competenciasPxLista: CompetenciaPxListaCtx[]
-): Promise<ItemCxPxTiendaParaTabla[]> {
-  const codTiendas = rows.map((r) => r.codTienda);
-  const vinculosPorTienda = await cargarVinculosCostoPorCodTienda(codTiendas);
-
-  const opcionesPxListaMap = await buildMapOpcionesPxListaPorCodTienda(
-    codTiendas,
-    competenciasPxLista
-  );
-
-  return rows.map((r) =>
-    mapFilaCxPx(
-      r,
-      vinculosPorTienda.get(r.codTienda) ?? [],
-      opcionesPxListaMap.get(r.codTienda) ?? []
-    )
-  );
 }

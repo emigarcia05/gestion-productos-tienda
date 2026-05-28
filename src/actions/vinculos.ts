@@ -25,8 +25,7 @@ const listarParaVincularFiltrosSchema = z.object({
 
 export type VinculosItemTiendaPayload = {
   productos: ProductoCompleto[];
-  cxPxCxCodExt: string | null;
-  esProductoPropio: boolean;
+  costoCompraCodExt: string | null;
 };
 
 export async function getVinculos(
@@ -44,7 +43,7 @@ export async function getVinculos(
       getProductosVinculadosPorItemTienda(parsedId.data),
       prisma.listaPrecioTienda.findUnique({
         where: { codTienda: parsedId.data },
-        select: { cxPxCxCodExt: true, esProductoPropio: true },
+        select: { costoCompraCodExt: true },
       }),
     ]);
     if (!productosRes.success) return productosRes;
@@ -53,8 +52,7 @@ export async function getVinculos(
       success: true,
       data: {
         productos: productosRes.data,
-        cxPxCxCodExt: tienda.cxPxCxCodExt,
-        esProductoPropio: tienda.esProductoPropio,
+        costoCompraCodExt: tienda.costoCompraCodExt,
       },
     };
   } catch (e) {
@@ -134,7 +132,6 @@ export async function vincularProducto(
     });
     await autoAsignarCodExtCostoListaTrasVincular(parsedItem.data);
     revalidatePath("/tienda");
-    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al vincular el producto.";
@@ -178,7 +175,6 @@ export async function desvincularProducto(
       data: { codTiendaVinculo: null },
     });
     revalidatePath("/tienda");
-    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al desvincular el producto.";
@@ -188,7 +184,7 @@ export async function desvincularProducto(
 
 /**
  * Define qué fila `prod_precios_provee` alimenta CX. COMPRA / costo base de comparación.
- * - `productoListaCodExt = string` → fija FK `cx_px_cx_cod_ext` al `codExt` indicado.
+ * - `productoListaCodExt = string` → fija FK `costo_compra_cod_ext` al `codExt` indicado.
  * - `productoListaCodExt = null` → destilda: limpia la FK (vuelve a Cx. Prom. / sin base).
  */
 export async function establecerCostoListaTiendaAction(
@@ -217,6 +213,5 @@ export async function establecerCostoListaTiendaAction(
   }
   revalidatePath("/tienda");
   revalidatePath("/gestion-productos/tienda/comp-proveedores");
-  revalidatePath("/gestion-productos/tienda/cx-px-tienda");
   return { ok: true, data: undefined };
 }

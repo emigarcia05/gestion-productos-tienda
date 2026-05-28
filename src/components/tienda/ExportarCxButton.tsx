@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarCostoCxDiffAction } from "@/actions/cxPxTienda";
 import { descargarExcelCostoCx } from "@/lib/exportCostoCxExcelClient";
-import ModalSinProductosExportar from "@/components/cx-px-tienda/ModalSinProductosExportar";
+import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 
 export default function ExportarCxButton() {
   const [exportando, setExportando] = useState(false);

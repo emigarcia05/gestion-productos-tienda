@@ -2,65 +2,58 @@
 
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import ExportarCxButton from "@/components/tienda/ExportarCxButton";
-import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
+import TablaPxListas from "@/components/px-listas/TablaPxListas";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type {
-  ItemTiendaParaTabla,
-  ProveedorOpcionFiltro,
-  ProveedorTintoLts,
-} from "@/actions/tienda";
-import { PERMISOS, puede, type Rol } from "@/lib/permisos";
+import type { ItemPxListasParaTabla } from "@/actions/pxListas";
+import type { ProveedorTintoLts } from "@/actions/tienda";
+
+const BASE_PATH = "/gestion-productos/tienda/cx-px-tienda";
 
 interface Props {
-  items: ItemTiendaParaTabla[];
+  items: ItemPxListasParaTabla[];
   total: number;
   totalPaginas: number;
   proveedores: ProveedorTintoLts[];
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
-  proveedoresCxCompra: ProveedorOpcionFiltro[];
-  rol: Rol;
+  subRubros: Array<{ subRubro: string }>;
   q: string;
   rubro: string;
-  cxCompra: string;
+  subRubro: string;
   marca: string;
   proveedor: string;
   vinculado: string;
   paginaNum: number;
 }
 
-export default function CompProveedoresPageClient({
+export default function PxListasPageClient({
   items,
   total,
   totalPaginas,
   proveedores,
   marcas,
   rubros,
-  proveedoresCxCompra,
-  rol,
+  subRubros,
   q,
   rubro,
-  cxCompra,
+  subRubro,
   marca,
   proveedor,
   vinculado,
   paginaNum,
 }: Props) {
-  const puedeEditarCxProd = puede(rol, PERMISOS.cxPxTienda.acceso);
   const filters = (
     <FiltrosTienda
-      modoFiltroTercero="cxCompra"
       marcas={marcas.map((m) => m.marca)}
       rubros={rubros.map((r) => r.rubro)}
+      subRubros={subRubros.map((s) => s.subRubro)}
       proveedores={proveedores}
-      proveedoresCxCompra={proveedoresCxCompra}
       totalItems={total}
       qActual={q}
       marcaActual={marca}
       rubroActual={rubro}
-      cxCompraActual={cxCompra}
+      subRubroActual={subRubro}
       proveedorActual={proveedor}
       vinculadoActual={vinculado}
     />
@@ -68,28 +61,16 @@ export default function CompProveedoresPageClient({
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gris">
-      <ClassicFilteredTableLayout
-        title="Cx Compra"
-        filters={filters}
-        actions={
-          puedeEditarCxProd ? (
-            <ExportarCxButton />
-          ) : undefined
-        }
-      >
+      <ClassicFilteredTableLayout title="Px Listas" filters={filters}>
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <TablaTienda
-              items={items}
-              rol={rol}
-              puedeEditarCxProd={puedeEditarCxProd}
-            />
+            <TablaPxListas items={items} />
           </div>
           {totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
-                basePath="/gestion-productos/tienda/comp-proveedores"
-                params={{ q, rubro, cxCompra, marca, proveedor, vinculado }}
+                basePath={BASE_PATH}
+                params={{ q, rubro, subRubro, marca, proveedor, vinculado }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}

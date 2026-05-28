@@ -58,8 +58,9 @@ export const PERMISOS = {
     editar: { simple: false, editor: true }, // CRUD competidores + sincronizar precios desde webs
   },
 
-  // ─── Módulo Cx y Px Tienda (/gestion-productos/tienda/cx-px-tienda) ──────────
+  // ─── Px Listas + CX PROD. en Cx Compra (edición celda + Exportar Cx) ───────
   cxPxTienda: {
+    /** Px Listas (/gestion-productos/tienda/cx-px-tienda) y edición CX PROD. / Exportar Cx en Cx Compra. */
     acceso: { simple: false, editor: true },
   },
 

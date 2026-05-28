@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, Tag, Check } from "lucide-react";
+import { Link2, Plus, Loader2, Trash2, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -27,7 +27,6 @@ import {
   desvincularProducto,
   establecerCostoListaTiendaAction,
 } from "@/actions/vinculos";
-import { setProductoPropioTiendaAction } from "@/actions/productoPropioTienda";
 import { calcPxCompraFinal } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
 import SeleccionarProductoModal from "./SeleccionarProductoModal";
@@ -137,8 +136,7 @@ export default function VincularModal({
   const [vinculados, setVinculados] = useState<ProductoConProveedor[]>([]);
   const [cargando, setCargando] = useState(false);
   const [cantidad, setCantidad] = useState(cantidadInicial);
-  const [esPropio, setEsPropio] = useState(false);
-  /** `cod_ext` (FK `cx_px_cx_cod_ext`) de la fila tildada como base; `null` = sin base (Cx. Prom.). */
+  /** `cod_ext` (FK `costo_compra_cod_ext`) de la fila tildada como base; `null` = sin base (Cx. Prom.). */
   const [codExtBase, setCodExtBase] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -148,33 +146,11 @@ export default function VincularModal({
     getVinculos(itemTiendaId).then((result) => {
       if (result.success) {
         setVinculados(result.data.productos);
-        setEsPropio(result.data.esProductoPropio);
-        setCodExtBase(result.data.cxPxCxCodExt);
+        setCodExtBase(result.data.costoCompraCodExt);
       } else toast.error(result.error);
       setCargando(false);
     });
   }, [open, itemTiendaId]);
-
-  function handleToggleProductoPropio() {
-    const nuevoValor = !esPropio;
-    startTransition(async () => {
-      const res = await setProductoPropioTiendaAction({
-        codTienda: itemTiendaId,
-        esPropio: nuevoValor,
-      });
-      if (res.ok) {
-        setEsPropio(nuevoValor);
-        router.refresh();
-        toast.success(
-          nuevoValor
-            ? "Marcado como Producto TiendaColor."
-            : "Producto TiendaColor desmarcado."
-        );
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
 
   const prefijoPrincipal = (prefijoProveedor ?? "").trim().toLowerCase();
 
@@ -266,7 +242,7 @@ export default function VincularModal({
         if (refreshed.success) {
           setVinculados(refreshed.data.productos);
           setCantidad(refreshed.data.productos.length);
-          setCodExtBase(refreshed.data.cxPxCxCodExt);
+          setCodExtBase(refreshed.data.costoCompraCodExt);
         } else {
           setVinculados((prev) => [
             ...prev,
@@ -319,24 +295,6 @@ export default function VincularModal({
               {puedeEditar ? (
                 <Button
                   size="sm"
-                  variant="default"
-                  className="gap-1.5"
-                  onClick={handleToggleProductoPropio}
-                  disabled={isPending}
-                  aria-pressed={esPropio}
-                  title={
-                    esPropio
-                      ? "Quitar marca de Producto TiendaColor."
-                      : "Marcar como Producto TiendaColor (no se vincula con proveedores)."
-                  }
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  Producto TiendaColor
-                </Button>
-              ) : null}
-              {puedeEditar && !esPropio ? (
-                <Button
-                  size="sm"
                   className="gap-1.5"
                   onClick={() => setAbrirSelector(true)}
                   disabled={isPending}
@@ -363,15 +321,6 @@ export default function VincularModal({
               <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
                 Cargando...
-              </div>
-            ) : esPropio ? (
-              <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-                <Tag className="h-5 w-5 text-primary" aria-hidden />
-                <p className="text-sm font-semibold text-foreground">Producto TiendaColor</p>
-                <p className="text-xs text-muted-foreground max-w-sm">
-                  Este ítem está marcado como producto propio. No se vincula con proveedores
-                  y queda excluido del filtro <strong>VINCULADO = NO</strong>.
-                </p>
               </div>
             ) : vinculados.length === 0 ? (
               <p className="p-4 text-center text-sm text-muted-foreground">Sin vínculos aún.</p>
