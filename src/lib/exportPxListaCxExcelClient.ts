@@ -10,7 +10,7 @@ export function descargarExcelPxListaCx(filas: FilaExportPxListaCx[]): void {
     }));
     const hoja = XLSX.utils.json_to_sheet(hojaFilas);
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "Px Marcacion");
+    XLSX.utils.book_append_sheet(libro, hoja, "Px Lista");
     hoja["!cols"] = [{ wch: 18 }, { wch: 14 }];
     const nombre = `Exportar Px ${formatDdMmYyHhMmNombreArchivoArgentina(new Date())}.xls`;
     XLSX.writeFile(libro, nombre, { bookType: "xls" });

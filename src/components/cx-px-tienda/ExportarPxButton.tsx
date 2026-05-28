@@ -21,7 +21,7 @@ export default function ExportarPxButton() {
       }
       if (res.data.filas.length === 0) {
         toast.message(
-          "No hay productos con diferencia entre px lista DUX y PX LISTA configurado en Cx & Px."
+          "No hay productos con diferencia entre px lista (DUX) y el precio del competidor seleccionado en PX LISTA."
         );
         return;
       }
@@ -48,7 +48,8 @@ export default function ExportarPxButton() {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Excel con CODIGO y PORC UTILIDAD (marcación); solo ítems donde px lista DUX ≠ PX LISTA
+        Control de precios: compara px lista (DUX) con PX LISTA (competidor o promedio PX. PROM.).
+        Excel CODIGO + PORC UTILIDAD solo si hay diferencia
       </TooltipContent>
     </Tooltip>
   );

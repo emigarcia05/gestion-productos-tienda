@@ -379,7 +379,7 @@ export async function guardarPxListaTiendaAction(
   return { ok: true, data: undefined };
 }
 
-/** Excel CODIGO + PORC UTILIDAD (marcación): solo filas con `px_lista_tienda` ≠ PX LISTA Cx & Px. */
+/** Excel CODIGO + PORC UTILIDAD: `px_lista_tienda` (DUX) ≠ PX LISTA (competencia / PX. PROM.). */
 export async function exportarPxListaCxDiffAction(): Promise<
   ActionResult<{ filas: FilaExportPxListaCx[] }>
 > {
