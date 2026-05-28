@@ -183,7 +183,7 @@ export async function guardarPxListaCxPxConfig(
     await prisma.listaPrecioTienda.update({
       where: { codTienda },
       data: {
-        competenciaIdPxLista: seleccion === PX_LISTA_SELECCION_PROM ? null : seleccion,
+        cxPxPxCompRef: seleccion === PX_LISTA_SELECCION_PROM ? null : seleccion,
         pxListaCxPx,
       },
     });

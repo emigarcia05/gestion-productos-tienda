@@ -23,11 +23,11 @@ export const getCxPxTiendaPageParamsSchema = z.object({
   vincCosto: queryOpcional.pipe(
     z.union([z.literal(VINC_COSTO_SIN), z.literal(VINC_COSTO_UNO), z.literal(VINC_COSTO_MAS)]).optional()
   ),
-  /** `prom` = Cx. Prom. (`cod_ext_costo_compra` nulo); si no, `id` de proveedor de la fila FK persistida. */
+  /** `prom` = Cx. Prom. (`cx_px_cx_cod_ext` nulo); si no, `id` de proveedor de la fila FK persistida. */
   costoProv: queryOpcional.pipe(
     z.union([z.literal(CX_PROD_SELECCION_PROM), z.string().min(1).max(128)]).optional()
   ),
-  /** `prom` = Px. Prom. (`competencia_id_px_lista` nulo); si no, `id` del competidor persistido. */
+  /** `prom` = Px. Prom. (`cx_px_px_comp_ref` nulo); si no, `id` del competidor persistido. */
   pxLista: queryOpcional.pipe(
     z.union([z.literal(PX_LISTA_SELECCION_PROM), prismaCuidSchema]).optional()
   ),

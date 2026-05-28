@@ -21,7 +21,7 @@ export type BackfillPxListaCxPxResult = {
 };
 
 export type BackfillPxListaCxPxOptions = {
-  /** Solo filas sin persistencia previa (`competencia_id_px_lista` y `px_lista_cx_px` vacíos). */
+  /** Solo filas sin persistencia previa (`cx_px_px_comp_ref` y `px_lista_cx_px` vacíos). */
   soloVacios?: boolean;
   dryRun?: boolean;
 };
@@ -37,7 +37,7 @@ export async function backfillPxListaCxPxDesdeGrilla(
   const competencias = await listarCompetenciasPxListaCtx();
 
   const where = soloVacios
-    ? { competenciaIdPxLista: null, pxListaCxPx: null }
+    ? { cxPxPxCompRef: null, pxListaCxPx: null }
     : {};
 
   const codTiendas = (

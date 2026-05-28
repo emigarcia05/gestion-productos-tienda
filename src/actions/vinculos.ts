@@ -25,7 +25,7 @@ const listarParaVincularFiltrosSchema = z.object({
 
 export type VinculosItemTiendaPayload = {
   productos: ProductoCompleto[];
-  codExtCostoCompra: string | null;
+  cxPxCxCodExt: string | null;
   esProductoPropio: boolean;
 };
 
@@ -44,7 +44,7 @@ export async function getVinculos(
       getProductosVinculadosPorItemTienda(parsedId.data),
       prisma.listaPrecioTienda.findUnique({
         where: { codTienda: parsedId.data },
-        select: { codExtCostoCompra: true, esProductoPropio: true },
+        select: { cxPxCxCodExt: true, esProductoPropio: true },
       }),
     ]);
     if (!productosRes.success) return productosRes;
@@ -53,7 +53,7 @@ export async function getVinculos(
       success: true,
       data: {
         productos: productosRes.data,
-        codExtCostoCompra: tienda.codExtCostoCompra,
+        cxPxCxCodExt: tienda.cxPxCxCodExt,
         esProductoPropio: tienda.esProductoPropio,
       },
     };
@@ -188,7 +188,7 @@ export async function desvincularProducto(
 
 /**
  * Define qué fila `prod_precios_provee` alimenta CX. COMPRA / costo base de comparación.
- * - `productoListaCodExt = string` → fija FK `cod_ext_costo_compra` al `codExt` indicado.
+ * - `productoListaCodExt = string` → fija FK `cx_px_cx_cod_ext` al `codExt` indicado.
  * - `productoListaCodExt = null` → destilda: limpia la FK (vuelve a Cx. Prom. / sin base).
  */
 export async function establecerCostoListaTiendaAction(

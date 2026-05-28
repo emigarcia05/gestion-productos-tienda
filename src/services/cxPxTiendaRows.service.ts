@@ -22,20 +22,20 @@ export const filaCxPxSelect = {
   codTienda: true,
   descripcionTienda: true,
   costoCompra: true,
-  codExtCostoCompra: true,
+  cxPxCxCodExt: true,
   pxListaTienda: true,
   pxListaCxPx: true,
-  competenciaIdPxLista: true,
+  cxPxPxCompRef: true,
 } as const;
 
 export type FilaCxPxDb = {
   codTienda: string;
   descripcionTienda: string | null;
   costoCompra: unknown;
-  codExtCostoCompra: string | null;
+  cxPxCxCodExt: string | null;
   pxListaTienda: unknown;
   pxListaCxPx: unknown;
-  competenciaIdPxLista: string | null;
+  cxPxPxCompRef: string | null;
 };
 
 export async function listarCompetenciasPxListaCtx(): Promise<CompetenciaPxListaCtx[]> {
@@ -75,11 +75,11 @@ export function mapFilaCxPx(
   let costoMostrado = costoPromedio ?? costoDux;
 
   if (
-    r.codExtCostoCompra &&
-    opcionesProveedor.some((o) => o.codExt === r.codExtCostoCompra)
+    r.cxPxCxCodExt &&
+    opcionesProveedor.some((o) => o.codExt === r.cxPxCxCodExt)
   ) {
-    seleccion = r.codExtCostoCompra;
-    const op = opcionesProveedor.find((o) => o.codExt === r.codExtCostoCompra);
+    seleccion = r.cxPxCxCodExt;
+    const op = opcionesProveedor.find((o) => o.codExt === r.cxPxCxCodExt);
     costoMostrado = op && op.costo > 0 ? op.costo : costoDux;
   } else if (opcionesProveedor.length === 1) {
     seleccion = opcionesProveedor[0].codExt;
@@ -91,10 +91,10 @@ export function mapFilaCxPx(
 
   let seleccionPxLista: typeof PX_LISTA_SELECCION_PROM | string = PX_LISTA_SELECCION_PROM;
   if (
-    r.competenciaIdPxLista &&
-    opcionesPxLista.some((o) => o.competenciaId === r.competenciaIdPxLista)
+    r.cxPxPxCompRef &&
+    opcionesPxLista.some((o) => o.competenciaId === r.cxPxPxCompRef)
   ) {
-    seleccionPxLista = r.competenciaIdPxLista;
+    seleccionPxLista = r.cxPxPxCompRef;
   } else if (opcionesPxLista.length === 1) {
     seleccionPxLista = opcionesPxLista[0].competenciaId;
   }
@@ -115,14 +115,14 @@ export function mapFilaCxPx(
     id: r.codTienda,
     codTienda: r.codTienda,
     descripcion: r.descripcionTienda ?? "",
-    codExtCostoCompra: r.codExtCostoCompra,
+    cxPxCxCodExt: r.cxPxCxCodExt,
     costoPromedio,
     opcionesProveedor,
     seleccion,
     costoMostrado,
     pxListaTiendaDux,
     pxListaCxPxPersistido,
-    competenciaIdPxLista: r.competenciaIdPxLista,
+    cxPxPxCompRef: r.cxPxPxCompRef,
     opcionesPxLista,
     seleccionPxLista,
     pxListaMostrado,

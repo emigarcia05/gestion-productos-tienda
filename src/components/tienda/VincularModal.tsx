@@ -138,7 +138,7 @@ export default function VincularModal({
   const [cargando, setCargando] = useState(false);
   const [cantidad, setCantidad] = useState(cantidadInicial);
   const [esPropio, setEsPropio] = useState(false);
-  /** `cod_ext` (FK `cod_ext_costo_compra`) de la fila tildada como base; `null` = sin base (Cx. Prom.). */
+  /** `cod_ext` (FK `cx_px_cx_cod_ext`) de la fila tildada como base; `null` = sin base (Cx. Prom.). */
   const [codExtBase, setCodExtBase] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -149,7 +149,7 @@ export default function VincularModal({
       if (result.success) {
         setVinculados(result.data.productos);
         setEsPropio(result.data.esProductoPropio);
-        setCodExtBase(result.data.codExtCostoCompra);
+        setCodExtBase(result.data.cxPxCxCodExt);
       } else toast.error(result.error);
       setCargando(false);
     });
@@ -266,7 +266,7 @@ export default function VincularModal({
         if (refreshed.success) {
           setVinculados(refreshed.data.productos);
           setCantidad(refreshed.data.productos.length);
-          setCodExtBase(refreshed.data.codExtCostoCompra);
+          setCodExtBase(refreshed.data.cxPxCxCodExt);
         } else {
           setVinculados((prev) => [
             ...prev,

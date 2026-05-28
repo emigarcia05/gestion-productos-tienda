@@ -543,12 +543,12 @@ model ListaPrecioTienda {
   /** Histórico DUX: a partir de 2026-05-28 ya no se sincroniza. La relación tienda ↔ proveedor se infiere de `listaPreciosProveedores` (vínculos manuales). */
   proveedor       String?
   descripcionTienda String? @map("descripcion_tienda")
-  /** FK a `prod_precios_provee.cod_ext`: costo Cx = px_compra_final_sin_iva de esa fila (no lo pisa el sync DUX). */
-  codExtCostoCompra String? @map("cod_ext_costo_compra")
+  /** FK a `prod_precios_provee.cod_ext`: costo Cx & Px (CX PROD.); no lo pisa el sync DUX. */
+  cxPxCxCodExt      String? @map("cx_px_cx_cod_ext")
   /** true si es producto de marca propia TiendaColor: no se vincula con prod_precios_provee y se excluye del filtro VINCULADO=NO. Editable desde VincularModal; el sync DUX no lo toca. */
   esProductoPropio Boolean @default(false) @map("es_producto_propio")
-  /** FK a `prod_competencia.id`: px lista mostrado en Cx & Px (NULL = PX PROM.). */
-  competenciaIdPxLista String? @map("competencia_id_px_lista")
+  /** FK a `prod_competencia.id`: competidor de referencia PX LISTA en Cx & Px (NULL = PX PROM.). */
+  cxPxPxCompRef     String? @map("cx_px_px_comp_ref")
   /** Precio entero en pesos persistido al guardar PX LISTA en Cx & Px (≠ espejo DUX `px_lista_tienda`). */
   pxListaCxPx     Decimal? @map("px_lista_cx_px") @db.Decimal(14, 4)
   costoCompra     Decimal  @map("costo_compra") @db.Decimal(14, 4) // espejo DUX (sync)
@@ -562,8 +562,8 @@ model ListaPrecioTienda {
 
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
-  costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [codExtCostoCompra], references: [codExt], onDelete: SetNull)
-  competenciaPxLista      ProdCompetencia?       @relation("PxListaEnTienda", fields: [competenciaIdPxLista], references: [id], onDelete: SetNull)
+  costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [cxPxCxCodExt], references: [codExt], onDelete: SetNull)
+  competenciaPxLista      ProdCompetencia?       @relation("PxListaEnTienda", fields: [cxPxPxCompRef], references: [id], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
 
   @@map("prod_precios_tienda")

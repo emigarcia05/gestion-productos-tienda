@@ -81,7 +81,7 @@ export interface ItemCxPxTiendaParaTabla {
   id: string;
   codTienda: string;
   descripcion: string;
-  codExtCostoCompra: string | null;
+  cxPxCxCodExt: string | null;
   costoPromedio: number | null;
   opcionesProveedor: OpcionCostoCxProdProveedor[];
   /** `prom` = Cx. Prom.; si no, `cod_ext` del proveedor persistido o elegido. */
@@ -90,7 +90,7 @@ export interface ItemCxPxTiendaParaTabla {
   pxListaTiendaDux: number;
   /** Valor persistido en `px_lista_cx_px` (null = aún no guardado en Cx & Px). */
   pxListaCxPxPersistido: number | null;
-  competenciaIdPxLista: string | null;
+  cxPxPxCompRef: string | null;
   opcionesPxLista: OpcionPxListaCompetidor[];
   /** `prom` = Px. Prom. (promedio competidores con precio); si no, `competenciaId`. */
   seleccionPxLista: typeof PX_LISTA_SELECCION_PROM | string;

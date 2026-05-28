@@ -24,7 +24,7 @@ async function main() {
       ? "Modo dry-run (sin escribir en BD)…"
       : todos
         ? "Backfill PX LISTA (todos los ítems según grilla)…"
-        : "Backfill PX LISTA (solo competencia_id_px_lista y px_lista_cx_px vacíos)…"
+        : "Backfill PX LISTA (solo cx_px_px_comp_ref y px_lista_cx_px vacíos)…"
   );
 
   const res = await backfillPxListaCxPxDesdeGrilla({
