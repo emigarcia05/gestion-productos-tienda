@@ -140,7 +140,7 @@ export async function validarCompetenciaPxLista(
   return { ok: true };
 }
 
-/** Compara espejo DUX vs PX LISTA con margen absoluto (`CX_PX_DIFF_PRECIO_MARGEN_ABSOLUTO`). */
+/** Compara espejo DUX vs PX LISTA con margen % (`CX_PX_DIFF_PRECIO_MARGEN_PCT`). */
 export function pxListaTiendaDifiereDeCxPx(pxListaTiendaDux: number, pxListaCxPx: number): boolean {
   return preciosListaDifierenMasQueMargen(pxListaTiendaDux, pxListaCxPx);
 }

@@ -28,8 +28,8 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Control de precios de venta: compara `px_lista_tienda` (DUX) con **PX LISTA** (margen absoluto 5:
- * |DUX − ref| ≤ 5 → sin diferencia). 
+ * Control de precios de venta: compara `px_lista_tienda` (DUX) con **PX LISTA** (margen **0,02 %**
+ * sobre el mayor de los dos; ver `CX_PX_DIFF_PRECIO_MARGEN_PCT`).
  * de la grilla (`pxListaMostradoParaSeleccion`: competidor elegido → `prod_precios_competencia` /
  * sugerido; **PX. PROM.** → promedio competidores con precio).
  * Excel: CODIGO = `cod_tienda`, PORC UTILIDAD = marcación con ese px competencia y CX PROD.

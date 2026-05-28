@@ -18,16 +18,25 @@ export type CompetenciaCxPxFiltro = {
 /** IVA % para netear px lista en marcación Cx & Px Tienda. */
 export const CX_PX_MARCACION_IVA_PCT = 21;
 
-/** Tolerancia en pesos (enteros) al comparar `px_lista_tienda` (DUX) vs PX LISTA (export / diff). */
-export const CX_PX_DIFF_PRECIO_MARGEN_ABSOLUTO = 5;
+/** Tolerancia relativa (%) al comparar `px_lista_tienda` (DUX) vs PX LISTA (export / diff). */
+export const CX_PX_DIFF_PRECIO_MARGEN_PCT = 0.02;
 
-/** Hay diferencia si |a − b| (redondeado) es mayor que el margen (ej. 102 vs 107 → no; 102 vs 108 → sí). */
+/**
+ * Hay diferencia si |a − b| supera el umbral porcentual sobre el mayor de los dos (enteros).
+ * Umbral = max(a, b) × (margenPct / 100).
+ */
 export function preciosListaDifierenMasQueMargen(
   pxListaTienda: number,
   pxReferencia: number,
-  margenAbsoluto: number = CX_PX_DIFF_PRECIO_MARGEN_ABSOLUTO
+  margenPct: number = CX_PX_DIFF_PRECIO_MARGEN_PCT
 ): boolean {
-  return Math.abs(Math.round(pxListaTienda) - Math.round(pxReferencia)) > margenAbsoluto;
+  const a = Math.round(pxListaTienda);
+  const b = Math.round(pxReferencia);
+  const diff = Math.abs(a - b);
+  if (diff === 0) return false;
+  const base = Math.max(a, b, 1);
+  const umbral = base * (margenPct / 100);
+  return diff > umbral;
 }
 
 /**

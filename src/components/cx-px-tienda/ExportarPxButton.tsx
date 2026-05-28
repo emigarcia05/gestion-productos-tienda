@@ -53,7 +53,7 @@ export default function ExportarPxButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-        Control de precios: px lista (DUX) vs PX LISTA; tolerancia ±5 (102 vs 107 no exporta; vs 108 sí).
+        Control de precios: px lista (DUX) vs PX LISTA; tolerancia 0,02 % sobre el mayor de los dos.
         Excel CODIGO + PORC UTILIDAD solo si hay diferencia
         </TooltipContent>
       </Tooltip>
