@@ -801,7 +801,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
-**ANALISIS DE PRECIOS** (rol **editor**, orden): `Cx Compra` → `Px Listas` → `Px Competencia` → `Comp. Por Cat.`. **`Cx Compra`**: grilla con **CX PROD.** + **`ExportarCxButton`**. **`Px Listas`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado con filtros de tienda; columnas **COD. TIENDA**, **DESCRIPCIÓN**, **PX. LISTA DUX** (`px_lista_tienda`). Permiso `PERMISOS.cxPxTienda.acceso`. Componentes `@/components/px-listas/`.
+**ANALISIS DE PRECIOS** (rol **editor**, orden): `Cx Compra` → `Px Listas` → `Px Competencia` → `Comp. Por Cat.`. **`Cx Compra`**: grilla con **CX PROD.** + **`ExportarCxButton`**. **`Px Listas`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado con filtros de tienda. Grilla **`TablaPxListas`**: **DESCRIPCIÓN**, **DET PRECIO** (`Select`: PX MANUAL + competidores del ítem), **PX LISTA** (input si manual; solo lectura si competencia), **MARCACION** (`(PX LISTA / costo_compra) / 1,21`, 2 decimales). Edición: `guardarPxListaTiendaAction`. Permiso `PERMISOS.cxPxTienda.acceso`. Componentes `@/components/px-listas/`.
 
 ### Stock — No mostrar modal al entrar (`/stock`)
 

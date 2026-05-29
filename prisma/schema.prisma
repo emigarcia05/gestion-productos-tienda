@@ -558,8 +558,25 @@ model ListaPrecioTienda {
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
   costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [costoCompraCodExt], references: [codExt], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
+  marcacion               ProdPrecioTiendaMarcacion?
 
   @@map("prod_precios_tienda")
+}
+
+/// Detalle de precio y px lista manual en módulo Px Listas (una lista por ítem; extensible a N listas).
+model ProdPrecioTiendaMarcacion {
+  codTienda         String   @id @map("cod_tienda")
+  /** true = PX MANUAL; false = precio desde competencia (`competencia_id`). */
+  detPrecioManual   Boolean  @default(true) @map("det_precio_manual")
+  competenciaId     String?  @map("competencia_id")
+  pxListaManual     Decimal? @map("px_lista_manual") @db.Decimal(14, 4)
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  listaPrecioTienda ListaPrecioTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  competencia       ProdCompetencia?  @relation(fields: [competenciaId], references: [id], onDelete: SetNull)
+
+  @@index([competenciaId], map: "prod_precios_tienda_marcacion_competencia_id_idx")
+  @@map("prod_precios_tienda_marcacion")
 }
 
 /// Competidores externos (nombre + URLs del sitio para búsqueda de precios).
@@ -579,6 +596,7 @@ model ProdCompetencia {
 
   proveedor Proveedor? @relation(fields: [idProveedor], references: [id], onDelete: SetNull)
   precios ProdPrecioCompetencia[]
+  marcacionesTienda ProdPrecioTiendaMarcacion[]
 
   @@index([idProveedor], map: "prod_competencia_id_proveedor_idx")
   @@map("prod_competencia")

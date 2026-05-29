@@ -5,8 +5,9 @@ import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import TablaPxListas from "@/components/px-listas/TablaPxListas";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type { ItemPxListasParaTabla } from "@/actions/pxListas";
+import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import type { ProveedorTintoLts } from "@/actions/tienda";
+import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 const BASE_PATH = "/gestion-productos/tienda/cx-px-tienda";
 
@@ -18,6 +19,7 @@ interface Props {
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
   subRubros: Array<{ subRubro: string }>;
+  rol: Rol;
   q: string;
   rubro: string;
   subRubro: string;
@@ -35,6 +37,7 @@ export default function PxListasPageClient({
   marcas,
   rubros,
   subRubros,
+  rol,
   q,
   rubro,
   subRubro,
@@ -43,6 +46,7 @@ export default function PxListasPageClient({
   vinculado,
   paginaNum,
 }: Props) {
+  const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
   const filters = (
     <FiltrosTienda
       marcas={marcas.map((m) => m.marca)}
@@ -64,7 +68,7 @@ export default function PxListasPageClient({
       <ClassicFilteredTableLayout title="Px Listas" filters={filters}>
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <TablaPxListas items={items} />
+            <TablaPxListas items={items} puedeEditar={puedeEditar} />
           </div>
           {totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">

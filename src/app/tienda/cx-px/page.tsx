@@ -58,6 +58,7 @@ export default async function PxListasPage({ searchParams }: Props) {
       marcas={marcas}
       rubros={rubros}
       subRubros={subRubros}
+      rol={rol}
       q={q}
       rubro={rubro}
       subRubro={subRubro}
