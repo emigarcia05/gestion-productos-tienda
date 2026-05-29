@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import {
   DET_PRECIO_MANUAL,
-  DET_PRECIO_SUGERIDO,
   calcMarcacionPxLista,
   type DetPrecioSeleccion,
   type ItemPxListasParaTabla,
@@ -10,8 +9,8 @@ import {
 } from "@/lib/pxListas";
 import {
   aplicarPrioridadPrecioMostrar,
+  buildMapPxSugeridoCompetenciaPorCodTienda,
   buildMapPxVtaSugerido,
-  buildMapPxVtaSugeridoPorCodTienda,
 } from "@/services/competenciaPxSugerido.service";
 import type { PxListaConfigPersistida } from "@/services/pxListasConfig.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
@@ -35,25 +34,76 @@ function vinculoDesdeRow(row: {
   };
 }
 
+/** Competidor guardado → sugerido → primero en lista (ya ordenada por nombre). */
+function elegirCompetidorPreferido(
+  opciones: OpcionCompetenciaPxLista[],
+  competenciaSugeridoId: string | null,
+  configCompetenciaId: string | null
+): string {
+  if (
+    configCompetenciaId &&
+    opciones.some((o) => o.competenciaId === configCompetenciaId)
+  ) {
+    return configCompetenciaId;
+  }
+  if (
+    competenciaSugeridoId &&
+    opciones.some((o) => o.competenciaId === competenciaSugeridoId)
+  ) {
+    return competenciaSugeridoId;
+  }
+  return opciones[0]!.competenciaId;
+}
+
 function resolverDetPrecioSeleccion(
   config: PxListaConfigPersistida | undefined,
-  pxPrecioSugerido: number | null
+  competenciaSugeridoId: string | null,
+  opciones: OpcionCompetenciaPxLista[]
 ): DetPrecioSeleccion {
-  if (config) return config.detPrecioSeleccion;
-  if (pxPrecioSugerido != null && pxPrecioSugerido > 0) return DET_PRECIO_SUGERIDO;
-  return DET_PRECIO_MANUAL;
+  if (opciones.length === 0) return DET_PRECIO_MANUAL;
+
+  const configCompetenciaId =
+    config && config.detPrecioSeleccion !== DET_PRECIO_MANUAL
+      ? config.detPrecioSeleccion
+      : null;
+
+  return elegirCompetidorPreferido(opciones, competenciaSugeridoId, configCompetenciaId);
 }
 
 function resolverPxLista(
   detPrecioSeleccion: DetPrecioSeleccion,
   pxListaManual: number | null,
-  pxPrecioSugerido: number | null,
   opciones: OpcionCompetenciaPxLista[]
 ): number | null {
   if (detPrecioSeleccion === DET_PRECIO_MANUAL) return pxListaManual;
-  if (detPrecioSeleccion === DET_PRECIO_SUGERIDO) return pxPrecioSugerido;
   const op = opciones.find((o) => o.competenciaId === detPrecioSeleccion);
   return op?.px ?? null;
+}
+
+function enriquecerOpcionesConSugerido(
+  opciones: OpcionCompetenciaPxLista[],
+  sugerido: {
+    competenciaId: string;
+    competenciaNombre: string;
+    px: number;
+  } | null
+): OpcionCompetenciaPxLista[] {
+  if (!sugerido) return opciones;
+  if (opciones.some((o) => o.competenciaId === sugerido.competenciaId)) {
+    return opciones.map((o) =>
+      o.competenciaId === sugerido.competenciaId
+        ? { ...o, px: o.px ?? sugerido.px }
+        : o
+    );
+  }
+  return [
+    ...opciones,
+    {
+      competenciaId: sugerido.competenciaId,
+      nombre: sugerido.competenciaNombre,
+      px: sugerido.px,
+    },
+  ];
 }
 
 export async function buildPxListasItemsDesdeFilas(
@@ -68,7 +118,7 @@ export async function buildPxListasItemsDesdeFilas(
 
   const codTiendas = filas.map((f) => f.codTienda);
 
-  const [preciosRows, pxSugeridoPorCodTienda] = await Promise.all([
+  const [preciosRows, sugeridoPorCodTienda] = await Promise.all([
     prisma.prodPrecioCompetencia.findMany({
       where: { codTienda: { in: codTiendas } },
       select: {
@@ -84,7 +134,7 @@ export async function buildPxListasItemsDesdeFilas(
       },
       orderBy: { competencia: { nombre: "asc" } },
     }),
-    buildMapPxVtaSugeridoPorCodTienda(codTiendas),
+    buildMapPxSugeridoCompetenciaPorCodTienda(codTiendas),
   ]);
 
   const idProveedores = [
@@ -115,18 +165,19 @@ export async function buildPxListasItemsDesdeFilas(
 
   return filas.map((f) => {
     const config = configMap.get(f.codTienda);
-    const opciones = opcionesPorCod.get(f.codTienda) ?? [];
-    const pxPrecioSugerido = pxSugeridoPorCodTienda.get(f.codTienda) ?? null;
-    const detPrecioSeleccion = resolverDetPrecioSeleccion(config, pxPrecioSugerido);
-    const esManual = detPrecioSeleccion === DET_PRECIO_MANUAL;
-    const esSugerido = detPrecioSeleccion === DET_PRECIO_SUGERIDO;
-    const pxListaManual = config?.pxListaManual ?? null;
-    const pxLista = resolverPxLista(
-      detPrecioSeleccion,
-      pxListaManual,
-      pxPrecioSugerido,
+    const sugerido = sugeridoPorCodTienda.get(f.codTienda) ?? null;
+    const opciones = enriquecerOpcionesConSugerido(
+      opcionesPorCod.get(f.codTienda) ?? [],
+      sugerido
+    ).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const detPrecioSeleccion = resolverDetPrecioSeleccion(
+      config,
+      sugerido?.competenciaId ?? null,
       opciones
     );
+    const esManual = detPrecioSeleccion === DET_PRECIO_MANUAL;
+    const pxListaManual = config?.pxListaManual ?? null;
+    const pxLista = resolverPxLista(detPrecioSeleccion, pxListaManual, opciones);
 
     return {
       id: f.codTienda,
@@ -135,12 +186,11 @@ export async function buildPxListasItemsDesdeFilas(
       costoCompra: f.costoCompra,
       detPrecioSeleccion,
       opcionesCompetencia: opciones,
-      pxPrecioSugerido,
+      pxPrecioSugerido: sugerido?.px ?? null,
       pxLista,
       pxListaManual,
       marcacion: pxLista != null ? calcMarcacionPxLista(pxLista, f.costoCompra) : null,
       esDetPrecioManual: esManual,
-      esDetPrecioSugerido: esSugerido,
     };
   });
 }

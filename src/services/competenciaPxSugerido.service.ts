@@ -74,14 +74,21 @@ export async function countVinculosRelevablesCompetencia(params: {
   });
 }
 
+export type PxSugeridoCompetenciaPorCodTienda = {
+  px: number;
+  competenciaId: string;
+  competenciaNombre: string;
+  idProveedor: string;
+};
+
 /**
- * Por `cod_tienda`: `px_vta_sugerido` del vínculo habilitado más reciente en `prod_precios_provee`.
- * Un producto puede tener varios proveedores; se toma el `updated_at` más nuevo con precio > 0.
+ * Por `cod_tienda`: `px_vta_sugerido` del vínculo habilitado más reciente y el competidor
+ * de `prod_competencia` asociado a ese proveedor (`id_proveedor`).
  */
-export async function buildMapPxVtaSugeridoPorCodTienda(
+export async function buildMapPxSugeridoCompetenciaPorCodTienda(
   codTiendas: string[]
-): Promise<Map<string, number>> {
-  const map = new Map<string, number>();
+): Promise<Map<string, PxSugeridoCompetenciaPorCodTienda>> {
+  const map = new Map<string, PxSugeridoCompetenciaPorCodTienda>();
   if (codTiendas.length === 0) return map;
 
   const rows = await prisma.listaPrecioProveedor.findMany({
@@ -91,15 +98,50 @@ export async function buildMapPxVtaSugeridoPorCodTienda(
       pxVtaSugerido: { not: null, gt: 0 },
     },
     orderBy: { updatedAt: "desc" },
-    select: { codTiendaVinculo: true, pxVtaSugerido: true },
+    select: { codTiendaVinculo: true, idProveedor: true, pxVtaSugerido: true },
   });
+
+  const idProveedores = [...new Set(rows.map((r) => r.idProveedor))];
+  const competenciasPorProveedor = new Map<
+    string,
+    { id: string; nombre: string }
+  >();
+  if (idProveedores.length > 0) {
+    const competencias = await prisma.prodCompetencia.findMany({
+      where: { idProveedor: { in: idProveedores } },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, idProveedor: true },
+    });
+    for (const c of competencias) {
+      if (!c.idProveedor || competenciasPorProveedor.has(c.idProveedor)) continue;
+      competenciasPorProveedor.set(c.idProveedor, { id: c.id, nombre: c.nombre });
+    }
+  }
 
   for (const row of rows) {
     const cod = row.codTiendaVinculo;
     if (!cod || map.has(cod)) continue;
     const n = Number(row.pxVtaSugerido);
-    if (Number.isFinite(n) && n > 0) map.set(cod, Math.round(n));
+    if (!Number.isFinite(n) || n <= 0) continue;
+    const comp = competenciasPorProveedor.get(row.idProveedor);
+    if (!comp) continue;
+    map.set(cod, {
+      px: Math.round(n),
+      competenciaId: comp.id,
+      competenciaNombre: comp.nombre,
+      idProveedor: row.idProveedor,
+    });
   }
+  return map;
+}
+
+/** @deprecated Usar `buildMapPxSugeridoCompetenciaPorCodTienda`. */
+export async function buildMapPxVtaSugeridoPorCodTienda(
+  codTiendas: string[]
+): Promise<Map<string, number>> {
+  const detalle = await buildMapPxSugeridoCompetenciaPorCodTienda(codTiendas);
+  const map = new Map<string, number>();
+  for (const [cod, d] of detalle) map.set(cod, d.px);
   return map;
 }
 

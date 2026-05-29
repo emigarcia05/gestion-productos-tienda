@@ -1,13 +1,7 @@
 /** Valor del select DET PRECIO cuando el precio es manual. */
 export const DET_PRECIO_MANUAL = "manual" as const;
 
-/** Px. lista desde `prod_precios_provee.px_vta_sugerido` del vínculo habilitado al `cod_tienda`. */
-export const DET_PRECIO_SUGERIDO = "sugerido" as const;
-
-export type DetPrecioSeleccion =
-  | typeof DET_PRECIO_MANUAL
-  | typeof DET_PRECIO_SUGERIDO
-  | string;
+export type DetPrecioSeleccion = typeof DET_PRECIO_MANUAL | string;
 
 export type OpcionCompetenciaPxLista = {
   competenciaId: string;
@@ -28,7 +22,6 @@ export type ItemPxListasParaTabla = {
   pxListaManual: number | null;
   marcacion: number | null;
   esDetPrecioManual: boolean;
-  esDetPrecioSugerido: boolean;
 };
 
 /** Decimales visibles de la columna MARCACION en Px Listas. */

@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { DET_PRECIO_MANUAL, DET_PRECIO_SUGERIDO } from "@/lib/pxListas";
+import { DET_PRECIO_MANUAL } from "@/lib/pxListas";
 import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import type { ServiceResult } from "@/types";
 
 export type PxListaConfigPersistida = {
-  detPrecioSeleccion: typeof DET_PRECIO_MANUAL | typeof DET_PRECIO_SUGERIDO | string;
+  detPrecioSeleccion: typeof DET_PRECIO_MANUAL | string;
   pxListaManual: number | null;
 };
 
@@ -28,7 +28,7 @@ export async function obtenerMapPxListaConfig(
     map.set(row.codTienda, {
       detPrecioSeleccion: row.detPrecioManual
         ? DET_PRECIO_MANUAL
-        : (row.competenciaId ?? DET_PRECIO_SUGERIDO),
+        : (row.competenciaId ?? DET_PRECIO_MANUAL),
       pxListaManual: row.pxListaManual != null ? Number(row.pxListaManual) : null,
     });
   }
@@ -46,9 +46,8 @@ export async function guardarPxListaConfig(
   }
 
   const esManual = detPrecioSeleccion === DET_PRECIO_MANUAL;
-  const esSugerido = detPrecioSeleccion === DET_PRECIO_SUGERIDO;
   let competenciaId: string | null = null;
-  if (!esManual && !esSugerido) {
+  if (!esManual) {
     const parsedComp = prismaCuidSchema.safeParse(detPrecioSeleccion);
     if (!parsedComp.success) {
       return { success: false, error: "Competidor inválido." };

@@ -23,11 +23,7 @@ import {
 import PxListaCxPxCelda from "@/components/tienda/PxListaCxPxCelda";
 import { guardarPxListaTiendaAction } from "@/actions/pxListas";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
-import {
-  DET_PRECIO_MANUAL,
-  DET_PRECIO_SUGERIDO,
-  fmtMarcacionPxLista,
-} from "@/lib/pxListas";
+import { DET_PRECIO_MANUAL, fmtMarcacionPxLista } from "@/lib/pxListas";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -46,10 +42,6 @@ function pxListaParaMarcacion(
 ): number | null {
   if (item.esDetPrecioManual) {
     const px = pxListaManualDraft ?? item.pxListaManual ?? item.pxLista;
-    return px != null && px > 0 ? px : null;
-  }
-  if (item.esDetPrecioSugerido) {
-    const px = item.pxPrecioSugerido;
     return px != null && px > 0 ? px : null;
   }
   return item.pxLista;
@@ -111,13 +103,9 @@ function FilaPxListas({
             align="start"
             className="select-content-filtro max-h-64"
           >
-                    <SelectItem
-                      value={DET_PRECIO_SUGERIDO}
-                      disabled={item.pxPrecioSugerido == null}
-                    >
-                      PX SUGERIDO
-                    </SelectItem>
-                    <SelectItem value={DET_PRECIO_MANUAL}>PX MANUAL</SelectItem>
+                    {item.opcionesCompetencia.length === 0 && (
+                      <SelectItem value={DET_PRECIO_MANUAL}>PX MANUAL</SelectItem>
+                    )}
                     {item.opcionesCompetencia.map((op) => (
               <SelectItem key={op.competenciaId} value={op.competenciaId}>
                 {op.nombre}
