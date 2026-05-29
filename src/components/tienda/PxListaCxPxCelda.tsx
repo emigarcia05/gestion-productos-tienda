@@ -61,7 +61,7 @@ export default function PxListaCxPxCelda({
   if (!puedeEditar) {
     return (
       <span
-        className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0 inline-block w-full"
+        className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 inline-block w-full"
         aria-label="Precio lista seleccionado"
         title={title}
       >
@@ -72,7 +72,7 @@ export default function PxListaCxPxCelda({
 
   return (
     <div
-      className={cn(shellClassName, "px-lista-celda-shell flex items-center justify-end gap-0 px-2")}
+      className={cn(shellClassName, "px-lista-celda-shell flex items-center justify-center gap-0 px-2")}
       title={title}
     >
       <span
@@ -111,7 +111,7 @@ export default function PxListaCxPxCelda({
         }}
         className={cn(
           "min-w-0 flex-1 border-0 bg-transparent p-0 h-auto min-h-0 shadow-none",
-          "text-right text-sm font-medium tabular-nums leading-none text-foreground",
+          "text-center text-sm font-medium tabular-nums leading-none text-foreground",
           "outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
           disabled && "pointer-events-none opacity-80"
         )}

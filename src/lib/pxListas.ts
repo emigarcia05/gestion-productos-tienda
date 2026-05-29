@@ -40,6 +40,18 @@ export function calcMarcacionPxLista(pxLista: number, costoCompra: number): numb
   return roundMarcacionPxLista(valor);
 }
 
+/** Inversa de `calcMarcacionPxLista`: PX LISTA entero en pesos. */
+export function calcPxListaDesdeMarcacionPxLista(
+  marcacion: number,
+  costoCompra: number
+): number | null {
+  if (!(marcacion > 0) || !(costoCompra > 0)) return null;
+  if (!Number.isFinite(marcacion) || !Number.isFinite(costoCompra)) return null;
+  const px = marcacion * costoCompra * 1.21;
+  if (!Number.isFinite(px) || px <= 0) return null;
+  return Math.round(px);
+}
+
 export function fmtMarcacionPxLista(pxLista: number | null, costoCompra: number): string {
   if (pxLista == null) return "—";
   const m = calcMarcacionPxLista(pxLista, costoCompra);

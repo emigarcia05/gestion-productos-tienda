@@ -55,11 +55,20 @@ function elegirCompetidorPreferido(
   return opciones[0]!.competenciaId;
 }
 
+function opcionesConPrecioRegistrado(
+  opciones: OpcionCompetenciaPxLista[]
+): OpcionCompetenciaPxLista[] {
+  return opciones.filter((o) => o.px != null && o.px > 0);
+}
+
 function resolverDetPrecioSeleccion(
   config: PxListaConfigPersistida | undefined,
   competenciaSugeridoId: string | null,
   opciones: OpcionCompetenciaPxLista[]
 ): DetPrecioSeleccion {
+  if (config?.detPrecioSeleccion === DET_PRECIO_MANUAL) {
+    return DET_PRECIO_MANUAL;
+  }
   if (opciones.length === 0) return DET_PRECIO_MANUAL;
 
   const configCompetenciaId =
@@ -88,7 +97,7 @@ function enriquecerOpcionesConSugerido(
     px: number;
   } | null
 ): OpcionCompetenciaPxLista[] {
-  if (!sugerido) return opciones;
+  if (!sugerido || !(sugerido.px > 0)) return opciones;
   if (opciones.some((o) => o.competenciaId === sugerido.competenciaId)) {
     return opciones.map((o) =>
       o.competenciaId === sugerido.competenciaId
@@ -154,11 +163,13 @@ export async function buildPxListasItemsDesdeFilas(
           null)
         : null;
     const vinculo = aplicarPrioridadPrecioMostrar(vinculoDesdeRow(row), pxSugeridoComp);
+    const px = vinculo.pxCompetencia;
+    if (px == null || !(px > 0)) continue;
     const list = opcionesPorCod.get(row.codTienda) ?? [];
     list.push({
       competenciaId: row.competenciaId,
       nombre: row.competencia.nombre,
-      px: vinculo.pxCompetencia,
+      px,
     });
     opcionesPorCod.set(row.codTienda, list);
   }
@@ -166,9 +177,11 @@ export async function buildPxListasItemsDesdeFilas(
   return filas.map((f) => {
     const config = configMap.get(f.codTienda);
     const sugerido = sugeridoPorCodTienda.get(f.codTienda) ?? null;
-    const opciones = enriquecerOpcionesConSugerido(
-      opcionesPorCod.get(f.codTienda) ?? [],
-      sugerido
+    const opciones = opcionesConPrecioRegistrado(
+      enriquecerOpcionesConSugerido(
+        opcionesPorCod.get(f.codTienda) ?? [],
+        sugerido
+      )
     ).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     const detPrecioSeleccion = resolverDetPrecioSeleccion(
       config,

@@ -1159,6 +1159,13 @@
 .tabla-px-listas-listado tbody td.celda-px-lista-col .px-lista-celda-shell {
   transition: none !important;
   cursor: default;
+  justify-content: center;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col .px-lista-celda-shell input {
+  text-align: center;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col > span {
+  text-align: center;
 }
 .tabla-px-listas-listado tbody td.celda-px-lista-col .px-lista-celda-shell:hover {
   border-color: var(--primary) !important;
@@ -1179,6 +1186,38 @@
 .tabla-px-listas-listado tbody td.celda-px-lista-col input:hover,
 .tabla-px-listas-listado tbody td.celda-px-lista-col input:focus,
 .tabla-px-listas-listado tbody td.celda-px-lista-col input:focus-visible {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Columna MARCACION (modo PX MANUAL): mismos estilos que PX LISTA. */
+.tabla-px-listas-listado tbody td.celda-marcacion-col {
+  cursor: default;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col .px-lista-celda-shell {
+  transition: none !important;
+  cursor: default;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col .px-lista-celda-shell:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col .px-lista-celda-shell:focus-within {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent) !important;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col input {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  max-height: none !important;
+  height: auto !important;
+  cursor: text;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col input:hover,
+.tabla-px-listas-listado tbody td.celda-marcacion-col input:focus,
+.tabla-px-listas-listado tbody td.celda-marcacion-col input:focus-visible {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
