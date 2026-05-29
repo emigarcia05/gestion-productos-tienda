@@ -8,7 +8,7 @@ import {
   VINC_COSTO_SIN,
   VINC_COSTO_UNO,
 } from "@/lib/cxPxTienda";
-import { prismaCuidSchema } from "@/lib/validations/common";
+import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 
 /** Query vacío (`""`) → `undefined` para no romper el enum en Zod. */
 const queryOpcional = z.preprocess(
@@ -38,4 +38,11 @@ export const getCxPxTiendaPageParamsSchema = z.object({
       .optional()
   ),
   pagina: queryOpcional.pipe(z.string().max(20).optional()),
+});
+
+/** Valor manual de PX LISTA en grilla (pesos enteros, blur → persistencia). */
+export const guardarPxListaCxPxValorSchema = z.object({
+  codTienda: listaPreciosCodTiendaSchema,
+  seleccion: z.union([z.literal(PX_LISTA_SELECCION_PROM), prismaCuidSchema]),
+  pxLista: z.number().int().min(1).max(999_999_999),
 });

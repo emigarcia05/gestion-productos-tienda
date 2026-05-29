@@ -8,7 +8,10 @@ import { filtroTexto } from "@/lib/busqueda";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
-import { getCxPxTiendaPageParamsSchema } from "@/lib/validations/cxPxTienda";
+import {
+  getCxPxTiendaPageParamsSchema,
+  guardarPxListaCxPxValorSchema,
+} from "@/lib/validations/cxPxTienda";
 import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import {
@@ -377,6 +380,41 @@ export async function guardarPxListaTiendaAction(
   revalidatePath("/gestion-productos/tienda/cx-px-tienda");
   revalidatePath("/tienda/cx-px");
   return { ok: true, data: undefined };
+}
+
+/** Persiste el importe manual de PX LISTA (`px_lista_cx_px`) sin cambiar la selección del desplegable. */
+export async function guardarPxListaCxPxValorAction(
+  raw: unknown
+): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = guardarPxListaCxPxValorSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+
+  const { codTienda, seleccion, pxLista } = parsed.data;
+
+  try {
+    const competencias = await listarCompetenciasPxListaCtx();
+    const res = await guardarPxListaCxPxConfig(codTienda, seleccion, pxLista, competencias);
+    if (!res.success) return { ok: false, error: res.error };
+
+    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+    revalidatePath("/tienda/cx-px");
+    return { ok: true, data: undefined };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo guardar el precio.",
+    };
+  }
 }
 
 /** Excel CODIGO + PORC UTILIDAD: `px_lista_tienda` (DUX) ≠ PX LISTA (competencia / PX. PROM.). */

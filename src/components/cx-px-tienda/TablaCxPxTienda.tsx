@@ -19,8 +19,10 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import PxListaCxPxCelda from "@/components/cx-px-tienda/PxListaCxPxCelda";
 import {
   guardarCostoCxProdTiendaAction,
+  guardarPxListaCxPxValorAction,
   guardarPxListaTiendaAction,
 } from "@/actions/cxPxTienda";
 import {
@@ -31,7 +33,7 @@ import {
   pxListaMostrado,
   type ItemCxPxTiendaParaTabla,
 } from "@/lib/cxPxTienda";
-import { fmtMarcacionPct, fmtPrecio } from "@/lib/format";
+import { fmtMarcacionCxPxPct, fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const COL_COUNT = 4;
@@ -69,13 +71,28 @@ export default function TablaCxPxTienda({
     });
   }
 
+  function handleCommitPxListaValor(
+    codTienda: string,
+    seleccion: string,
+    pxLista: number
+  ) {
+    startTransition(async () => {
+      const res = await guardarPxListaCxPxValorAction({ codTienda, seleccion, pxLista });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   return (
     <Table variant="compact" scrollX={false} className="tabla-cx-px-tienda-listado">
       <colgroup>
-        <col className="w-[45%]" />
-        <col className="w-[22%]" />
-        <col className="w-[22%]" />
-        <col className="w-[11%]" />
+        <col className="w-[50%]" />
+        <col className="w-[20%]" />
+        <col className="w-[20%]" />
+        <col className="w-[10%]" />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
@@ -97,6 +114,10 @@ export default function TablaCxPxTienda({
             const pxListaVista = pxListaMostrado(item);
             const sinOpcionesPxLista = item.opcionesPxLista.length === 0;
             const marcacion = marcacionCxPxDeItem(item);
+            const pxListaTitle =
+              sinOpcionesPxLista && item.seleccionPxLista === PX_LISTA_SELECCION_PROM
+                ? "Px. lista tienda (DUX)"
+                : undefined;
 
             return (
               <TableRow key={item.id}>
@@ -171,17 +192,19 @@ export default function TablaCxPxTienda({
                         ))}
                       </SelectContent>
                     </Select>
-                    <span
-                      className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 block w-full"
-                      aria-label="Precio lista seleccionado"
-                      title={
-                        sinOpcionesPxLista && item.seleccionPxLista === PX_LISTA_SELECCION_PROM
-                          ? "Px. lista tienda (DUX)"
-                          : undefined
+                    <PxListaCxPxCelda
+                      pesosCommit={pxListaVista}
+                      puedeEditar={puedeEditar}
+                      disabled={isPending}
+                      title={pxListaTitle}
+                      onCommit={(px) =>
+                        handleCommitPxListaValor(
+                          item.codTienda,
+                          item.seleccionPxLista,
+                          px
+                        )
                       }
-                    >
-                      ${fmtPrecio(pxListaVista)}
-                    </span>
+                    />
                   </div>
                 </TableCell>
                 <TableCell
@@ -191,7 +214,7 @@ export default function TablaCxPxTienda({
                   )}
                 >
                   {marcacion != null ? (
-                    <span aria-label="Marcación">{fmtMarcacionPct(marcacion)}</span>
+                    <span aria-label="Marcación">{fmtMarcacionCxPxPct(marcacion)}</span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}

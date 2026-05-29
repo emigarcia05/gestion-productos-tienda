@@ -18,6 +18,14 @@ export type CompetenciaCxPxFiltro = {
 /** IVA % para netear px lista en marcación Cx & Px Tienda. */
 export const CX_PX_MARCACION_IVA_PCT = 21;
 
+/** Decimales de la marcación en grilla Cx & Px y exportación Px. */
+export const CX_PX_MARCACION_DECIMALES = 5;
+
+export function roundMarcacionCxPx(value: number): number {
+  const factor = 10 ** CX_PX_MARCACION_DECIMALES;
+  return Math.round(value * factor) / factor;
+}
+
 /** Tolerancia relativa (%) al comparar `px_lista_tienda` (DUX) vs PX LISTA (export / diff). */
 export const CX_PX_DIFF_PRECIO_MARGEN_PCT = 0.02;
 
@@ -40,7 +48,8 @@ export function preciosListaDifierenMasQueMargen(
 }
 
 /**
- * Marcación visual: ((pxLista / (1 + IVA%)) / cxProd) − 1) × 100, redondeada a 2 decimales.
+ * Marcación visual: ((pxLista / (1 + IVA%)) / cxProd) − 1) × 100, redondeada a
+ * `CX_PX_MARCACION_DECIMALES` (5).
  * Reutiliza `calcMargenSinIvaPct` (`src/lib/calculos.ts`).
  */
 export function calcMarcacionCxPxTienda(
@@ -50,7 +59,7 @@ export function calcMarcacionCxPxTienda(
 ): number | null {
   const raw = calcMargenSinIvaPct(pxLista, cxProd, porcIva);
   if (raw == null) return null;
-  return Math.round(raw * 100) / 100;
+  return roundMarcacionCxPx(raw);
 }
 
 /** Query `vincCosto` en Cx & Px Tienda. */

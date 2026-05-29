@@ -17,7 +17,7 @@ import {
 
 export interface FilaExportPxListaCx {
   codigo: string;
-  /** Columna Excel PORC UTILIDAD (= marcación Cx & Px, 2 decimales). */
+  /** Columna Excel PORC UTILIDAD (= marcación Cx & Px, 5 decimales). */
   importe: number;
 }
 
