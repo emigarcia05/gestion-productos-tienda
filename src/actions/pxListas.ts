@@ -5,7 +5,7 @@ import { getTiendaPageData } from "@/actions/tienda";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { DET_PRECIO_MANUAL } from "@/lib/pxListas";
+import { DET_PRECIO_MANUAL, DET_PRECIO_SUGERIDO } from "@/lib/pxListas";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import {
@@ -16,7 +16,11 @@ import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
 
 const guardarPxListaSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
-  detPrecioSeleccion: z.union([z.literal(DET_PRECIO_MANUAL), z.string().min(1).max(128)]),
+  detPrecioSeleccion: z.union([
+    z.literal(DET_PRECIO_MANUAL),
+    z.literal(DET_PRECIO_SUGERIDO),
+    z.string().min(1).max(128),
+  ]),
   pxListaManual: z.number().finite().nonnegative().nullable().optional(),
 });
 

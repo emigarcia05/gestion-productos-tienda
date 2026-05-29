@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import {
   DET_PRECIO_MANUAL,
+  DET_PRECIO_SUGERIDO,
   calcMarcacionPxLista,
   type DetPrecioSeleccion,
   type ItemPxListasParaTabla,
@@ -10,6 +11,7 @@ import {
 import {
   aplicarPrioridadPrecioMostrar,
   buildMapPxVtaSugerido,
+  buildMapPxVtaSugeridoPorCodTienda,
 } from "@/services/competenciaPxSugerido.service";
 import type { PxListaConfigPersistida } from "@/services/pxListasConfig.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
@@ -33,6 +35,27 @@ function vinculoDesdeRow(row: {
   };
 }
 
+function resolverDetPrecioSeleccion(
+  config: PxListaConfigPersistida | undefined,
+  pxPrecioSugerido: number | null
+): DetPrecioSeleccion {
+  if (config) return config.detPrecioSeleccion;
+  if (pxPrecioSugerido != null && pxPrecioSugerido > 0) return DET_PRECIO_SUGERIDO;
+  return DET_PRECIO_MANUAL;
+}
+
+function resolverPxLista(
+  detPrecioSeleccion: DetPrecioSeleccion,
+  pxListaManual: number | null,
+  pxPrecioSugerido: number | null,
+  opciones: OpcionCompetenciaPxLista[]
+): number | null {
+  if (detPrecioSeleccion === DET_PRECIO_MANUAL) return pxListaManual;
+  if (detPrecioSeleccion === DET_PRECIO_SUGERIDO) return pxPrecioSugerido;
+  const op = opciones.find((o) => o.competenciaId === detPrecioSeleccion);
+  return op?.px ?? null;
+}
+
 export async function buildPxListasItemsDesdeFilas(
   filas: Array<{
     codTienda: string;
@@ -45,21 +68,24 @@ export async function buildPxListasItemsDesdeFilas(
 
   const codTiendas = filas.map((f) => f.codTienda);
 
-  const preciosRows = await prisma.prodPrecioCompetencia.findMany({
-    where: { codTienda: { in: codTiendas } },
-    select: {
-      codTienda: true,
-      competenciaId: true,
-      urlProducto: true,
-      tipoPagina: true,
-      pxCompetencia: true,
-      estado: true,
-      errorMensaje: true,
-      relevadoAt: true,
-      competencia: { select: { id: true, nombre: true, idProveedor: true } },
-    },
-    orderBy: { competencia: { nombre: "asc" } },
-  });
+  const [preciosRows, pxSugeridoPorCodTienda] = await Promise.all([
+    prisma.prodPrecioCompetencia.findMany({
+      where: { codTienda: { in: codTiendas } },
+      select: {
+        codTienda: true,
+        competenciaId: true,
+        urlProducto: true,
+        tipoPagina: true,
+        pxCompetencia: true,
+        estado: true,
+        errorMensaje: true,
+        relevadoAt: true,
+        competencia: { select: { id: true, nombre: true, idProveedor: true } },
+      },
+      orderBy: { competencia: { nombre: "asc" } },
+    }),
+    buildMapPxVtaSugeridoPorCodTienda(codTiendas),
+  ]);
 
   const idProveedores = [
     ...new Set(
@@ -68,18 +94,16 @@ export async function buildPxListasItemsDesdeFilas(
         .filter((id): id is string => Boolean(id))
     ),
   ];
-  const pxSugeridoMap = await buildMapPxVtaSugerido(codTiendas, idProveedores);
+  const pxSugeridoCompetidorMap = await buildMapPxVtaSugerido(codTiendas, idProveedores);
 
   const opcionesPorCod = new Map<string, OpcionCompetenciaPxLista[]>();
   for (const row of preciosRows) {
-    const pxSugerido =
+    const pxSugeridoComp =
       row.competencia.idProveedor != null
-        ? (pxSugeridoMap.get(`${row.codTienda}:${row.competencia.idProveedor}`) ?? null)
+        ? (pxSugeridoCompetidorMap.get(`${row.codTienda}:${row.competencia.idProveedor}`) ??
+          null)
         : null;
-    const vinculo = aplicarPrioridadPrecioMostrar(
-      vinculoDesdeRow(row),
-      pxSugerido
-    );
+    const vinculo = aplicarPrioridadPrecioMostrar(vinculoDesdeRow(row), pxSugeridoComp);
     const list = opcionesPorCod.get(row.codTienda) ?? [];
     list.push({
       competenciaId: row.competenciaId,
@@ -92,18 +116,17 @@ export async function buildPxListasItemsDesdeFilas(
   return filas.map((f) => {
     const config = configMap.get(f.codTienda);
     const opciones = opcionesPorCod.get(f.codTienda) ?? [];
-    const detPrecioSeleccion: DetPrecioSeleccion =
-      config?.detPrecioSeleccion ?? DET_PRECIO_MANUAL;
+    const pxPrecioSugerido = pxSugeridoPorCodTienda.get(f.codTienda) ?? null;
+    const detPrecioSeleccion = resolverDetPrecioSeleccion(config, pxPrecioSugerido);
     const esManual = detPrecioSeleccion === DET_PRECIO_MANUAL;
+    const esSugerido = detPrecioSeleccion === DET_PRECIO_SUGERIDO;
     const pxListaManual = config?.pxListaManual ?? null;
-
-    let pxLista: number | null = null;
-    if (esManual) {
-      pxLista = pxListaManual;
-    } else {
-      const op = opciones.find((o) => o.competenciaId === detPrecioSeleccion);
-      pxLista = op?.px ?? null;
-    }
+    const pxLista = resolverPxLista(
+      detPrecioSeleccion,
+      pxListaManual,
+      pxPrecioSugerido,
+      opciones
+    );
 
     return {
       id: f.codTienda,
@@ -112,10 +135,12 @@ export async function buildPxListasItemsDesdeFilas(
       costoCompra: f.costoCompra,
       detPrecioSeleccion,
       opcionesCompetencia: opciones,
+      pxPrecioSugerido,
       pxLista,
       pxListaManual,
       marcacion: pxLista != null ? calcMarcacionPxLista(pxLista, f.costoCompra) : null,
       esDetPrecioManual: esManual,
+      esDetPrecioSugerido: esSugerido,
     };
   });
 }

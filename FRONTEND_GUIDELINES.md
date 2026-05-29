@@ -801,7 +801,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
-**ANALISIS DE PRECIOS** (rol **editor**, orden): `Cx Compra` → `Px Listas` → `Px Competencia` → `Comp. Por Cat.`. **`Cx Compra`**: grilla con **CX PROD.** + **`ExportarCxButton`**. **`Px Listas`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado con filtros de tienda. Grilla **`TablaPxListas`**: **DESCRIPCIÓN**, **DET PRECIO** (`Select`: PX MANUAL + competidores del ítem), **PX LISTA** (input si manual; solo lectura si competencia), **MARCACION** (`(PX LISTA / costo_compra) / 1,21`, 2 decimales). Edición: `guardarPxListaTiendaAction`. Permiso `PERMISOS.cxPxTienda.acceso`. Componentes `@/components/px-listas/`.
+**ANALISIS DE PRECIOS** (rol **editor**, orden): `Cx Compra` → `Px Listas` → `Px Competencia` → `Comp. Por Cat.`. **`Cx Compra`**: grilla con **CX PROD.** + **`ExportarCxButton`**. **`Px Listas`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado con filtros de tienda. Grilla **`TablaPxListas`**: `<colgroup>` 50/20/20/10; **DESCRIPCIÓN**, **DET PRECIO** (`Select`: **PX SUGERIDO** — `px_vta_sugerido` del proveedor vinculado al `cod_tienda`; **PX MANUAL**; competidores), **PX LISTA** (manual → **`PxListaCxPxCelda`** con marcación en vivo; sugerido/competencia → solo lectura), **MARCACION** (`calcMarcacionPxLista`, 5 decimales). Sin config guardada: default **PX SUGERIDO** si hay precio en lista proveedor. Permiso `PERMISOS.cxPxTienda.acceso`. Componentes `@/components/px-listas/` + `@/components/tienda/PxListaCxPxCelda.tsx`.
 
 ### Stock — No mostrar modal al entrar (`/stock`)
 

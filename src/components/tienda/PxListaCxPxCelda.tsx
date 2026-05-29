@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { fmtPrecio } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -25,12 +24,21 @@ export default function PxListaCxPxCelda({
   puedeEditar,
   disabled,
   title,
+  shellClassName,
+  onDraftChange,
+  onDraftEnd,
   onCommit,
 }: {
   pesosCommit: number;
   puedeEditar: boolean;
   disabled?: boolean;
   title?: string;
+  /** Recuadro (misma altura que Select DET PRECIO). */
+  shellClassName?: string;
+  /** Cada tecla: pesos enteros en borrador (marcación en vivo en la fila). */
+  onDraftChange?: (pesos: number) => void;
+  /** Al salir del campo sin persistir cambios. */
+  onDraftEnd?: () => void;
   onCommit: (pesos: number) => void;
 }) {
   const [digits, setDigits] = useState(() => digitosDesdePesos(pesosCommit));
@@ -44,41 +52,52 @@ export default function PxListaCxPxCelda({
 
   const pesosVista = pesosDesdeDigitos(digits);
   const displayCuerpo = fmtPrecio(pesosVista);
+  const displayPrecio = `$${displayCuerpo}`;
+
+  function emitDraft(nextDigits: string) {
+    onDraftChange?.(pesosDesdeDigitos(nextDigits));
+  }
 
   if (!puedeEditar) {
     return (
       <span
-        className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 block w-full"
+        className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0 inline-block w-full"
         aria-label="Precio lista seleccionado"
         title={title}
       >
-        ${displayCuerpo}
+        {displayPrecio}
       </span>
     );
   }
 
   return (
-    <div className="relative w-full min-w-0">
+    <div
+      className={cn(shellClassName, "px-lista-celda-shell flex items-center justify-end gap-0 px-2")}
+      title={title}
+    >
       <span
-        className="pointer-events-none absolute left-1.5 top-1/2 z-[1] -translate-y-1/2 text-sm font-medium text-foreground tabular-nums"
+        className="shrink-0 text-sm font-medium text-foreground tabular-nums leading-none"
         aria-hidden
       >
         $
       </span>
-      <Input
+      <input
         type="text"
         inputMode="numeric"
         autoComplete="off"
         disabled={disabled}
-        title={title}
         aria-label="Precio lista"
         value={displayCuerpo}
         onFocus={() => {
           setFocused(true);
-          setDigits(digitosDesdePesos(pesosCommit));
+          const initial = digitosDesdePesos(pesosCommit);
+          setDigits(initial);
+          emitDraft(initial);
         }}
         onChange={(e) => {
-          setDigits(e.target.value.replace(/\D/g, "").slice(0, 9));
+          const next = e.target.value.replace(/\D/g, "").slice(0, 9);
+          setDigits(next);
+          emitDraft(next);
         }}
         onBlur={() => {
           setFocused(false);
@@ -86,11 +105,14 @@ export default function PxListaCxPxCelda({
           setDigits(digitosDesdePesos(next));
           if (next > 0 && next !== Math.round(pesosCommit)) {
             onCommit(next);
+          } else {
+            onDraftEnd?.();
           }
         }}
         className={cn(
-          "input-filtro-unificado h-8 w-full min-w-0 pl-5 pr-2",
-          "tabular-nums text-center text-sm font-medium",
+          "min-w-0 flex-1 border-0 bg-transparent p-0 h-auto min-h-0 shadow-none",
+          "text-right text-sm font-medium tabular-nums leading-none text-foreground",
+          "outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
           disabled && "pointer-events-none opacity-80"
         )}
       />

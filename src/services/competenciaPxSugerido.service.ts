@@ -74,6 +74,35 @@ export async function countVinculosRelevablesCompetencia(params: {
   });
 }
 
+/**
+ * Por `cod_tienda`: `px_vta_sugerido` del vínculo habilitado más reciente en `prod_precios_provee`.
+ * Un producto puede tener varios proveedores; se toma el `updated_at` más nuevo con precio > 0.
+ */
+export async function buildMapPxVtaSugeridoPorCodTienda(
+  codTiendas: string[]
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  if (codTiendas.length === 0) return map;
+
+  const rows = await prisma.listaPrecioProveedor.findMany({
+    where: {
+      codTiendaVinculo: { in: codTiendas },
+      habilitado: true,
+      pxVtaSugerido: { not: null, gt: 0 },
+    },
+    orderBy: { updatedAt: "desc" },
+    select: { codTiendaVinculo: true, pxVtaSugerido: true },
+  });
+
+  for (const row of rows) {
+    const cod = row.codTiendaVinculo;
+    if (!cod || map.has(cod)) continue;
+    const n = Number(row.pxVtaSugerido);
+    if (Number.isFinite(n) && n > 0) map.set(cod, Math.round(n));
+  }
+  return map;
+}
+
 /** Clave `codTienda:idProveedor` → precio entero en pesos. */
 export async function buildMapPxVtaSugerido(
   codTiendas: string[],

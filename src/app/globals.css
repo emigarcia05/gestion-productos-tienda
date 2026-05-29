@@ -1152,6 +1152,38 @@
   width: 100%;
 }
 
+/* Columna PX LISTA: sin efecto visual al pasar el mouse (solo feedback al enfocar para editar). */
+.tabla-px-listas-listado tbody td.celda-px-lista-col {
+  cursor: default;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col .px-lista-celda-shell {
+  transition: none !important;
+  cursor: default;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col .px-lista-celda-shell:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col .px-lista-celda-shell:focus-within {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent) !important;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col input {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  max-height: none !important;
+  height: auto !important;
+  cursor: text;
+}
+.tabla-px-listas-listado tbody td.celda-px-lista-col input:hover,
+.tabla-px-listas-listado tbody td.celda-px-lista-col input:focus,
+.tabla-px-listas-listado tbody td.celda-px-lista-col input:focus-visible {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* Tabla Tienda / Cx Compra: COD. TIENDA 12% + DESCRIPCIÓN 46% + VINCULACIÓN 12% + CX PROD. 30%. */
 .tabla-tienda-listado {
   table-layout: fixed;
