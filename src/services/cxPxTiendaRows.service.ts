@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import {
   CX_PROD_SELECCION_PROM,
-  PX_LISTA_SELECCION_PROM,
-  type ItemCxPxTiendaParaTabla,
+  type CxProdDatosFila,
   type OpcionCostoCxProdProveedor,
-  type OpcionPxListaCompetidor,
 } from "@/lib/cxPxTienda";
 import {
   calcularCostoPromedioVinculos,
@@ -12,56 +10,48 @@ import {
   etiquetaProveedorCosto,
   listarCandidatosCostoPorCodTienda,
 } from "@/services/costoListaTienda.service";
-import {
-  buildMapOpcionesPxListaPorCodTienda,
-  pxListaMostradoParaSeleccion,
-  type CompetenciaPxListaCtx,
-} from "@/services/pxListaCxPxTienda.service";
 
-export const filaCxPxSelect = {
-  codTienda: true,
-  descripcionTienda: true,
-  costoCompra: true,
-  cxPxCxCodExt: true,
-  pxListaTienda: true,
-  pxListaCxPx: true,
-  cxPxPxCompRef: true,
-} as const;
-
-export type FilaCxPxDb = {
+export type FilaCxProdDb = {
   codTienda: string;
-  descripcionTienda: string | null;
   costoCompra: unknown;
-  cxPxCxCodExt: string | null;
-  pxListaTienda: unknown;
-  pxListaCxPx: unknown;
-  cxPxPxCompRef: string | null;
+  costoCompraCodExt: string | null;
 };
 
-export async function listarCompetenciasPxListaCtx(): Promise<CompetenciaPxListaCtx[]> {
-  const rows = await prisma.prodCompetencia.findMany({
-    orderBy: { nombre: "asc" },
+type CandidatoCostoVinculo = Awaited<
+  ReturnType<typeof listarCandidatosCostoPorCodTienda>
+>[number];
+
+async function cargarVinculosCostoPorCodTienda(codTiendas: string[]) {
+  if (codTiendas.length === 0) return new Map<string, CandidatoCostoVinculo[]>();
+
+  const vinculos = await prisma.listaPrecioProveedor.findMany({
+    where: { codTiendaVinculo: { in: codTiendas }, habilitado: true },
     select: {
-      id: true,
-      nombre: true,
-      idProveedor: true,
-      proveedor: { select: { prefijo: true } },
+      codExt: true,
+      codTiendaVinculo: true,
+      pxCompraFinalSinIva: true,
+      proveedor: { select: { nombre: true, prefijo: true } },
     },
+    orderBy: [{ proveedor: { nombre: "asc" } }],
   });
-  return rows.map((c) => ({
-    id: c.id,
-    nombre: c.nombre,
-    idProveedor: c.idProveedor,
-    prefijoProveedor: c.proveedor?.prefijo?.trim() || null,
-  }));
+
+  const vinculosPorTienda = new Map<string, CandidatoCostoVinculo[]>();
+  for (const v of vinculos) {
+    if (!v.codTiendaVinculo) continue;
+    const lista = vinculosPorTienda.get(v.codTiendaVinculo) ?? [];
+    lista.push(v);
+    vinculosPorTienda.set(v.codTiendaVinculo, lista);
+  }
+  return vinculosPorTienda;
 }
 
-export function mapFilaCxPx(
-  r: FilaCxPxDb,
-  candidatos: Awaited<ReturnType<typeof listarCandidatosCostoPorCodTienda>>,
-  opcionesPxLista: OpcionPxListaCompetidor[]
-): ItemCxPxTiendaParaTabla {
-  const costoDux = Number(r.costoCompra) || 0;
+/** Mapeo de CX PROD. para Cx Compra y exportación de costos. */
+export function mapCxProdDesdeCandidatos(
+  costoCompra: unknown,
+  costoCompraCodExt: string | null,
+  candidatos: CandidatoCostoVinculo[]
+): CxProdDatosFila {
+  const costoDux = Number(costoCompra) || 0;
   const costoPromedio = calcularCostoPromedioVinculos(candidatos);
 
   const opcionesProveedor: OpcionCostoCxProdProveedor[] = candidatos.map((c) => ({
@@ -74,12 +64,9 @@ export function mapFilaCxPx(
   let seleccion: typeof CX_PROD_SELECCION_PROM | string = CX_PROD_SELECCION_PROM;
   let costoMostrado = costoPromedio ?? costoDux;
 
-  if (
-    r.cxPxCxCodExt &&
-    opcionesProveedor.some((o) => o.codExt === r.cxPxCxCodExt)
-  ) {
-    seleccion = r.cxPxCxCodExt;
-    const op = opcionesProveedor.find((o) => o.codExt === r.cxPxCxCodExt);
+  if (costoCompraCodExt && opcionesProveedor.some((o) => o.codExt === costoCompraCodExt)) {
+    seleccion = costoCompraCodExt;
+    const op = opcionesProveedor.find((o) => o.codExt === costoCompraCodExt);
     costoMostrado = op && op.costo > 0 ? op.costo : costoDux;
   } else if (opcionesProveedor.length === 1) {
     seleccion = opcionesProveedor[0].codExt;
@@ -87,85 +74,30 @@ export function mapFilaCxPx(
       opcionesProveedor[0].costo > 0 ? opcionesProveedor[0].costo : costoDux;
   }
 
-  const pxListaTiendaDux = Number(r.pxListaTienda) || 0;
-
-  let seleccionPxLista: typeof PX_LISTA_SELECCION_PROM | string = PX_LISTA_SELECCION_PROM;
-  if (
-    r.cxPxPxCompRef &&
-    opcionesPxLista.some((o) => o.competenciaId === r.cxPxPxCompRef)
-  ) {
-    seleccionPxLista = r.cxPxPxCompRef;
-  } else if (opcionesPxLista.length === 1) {
-    seleccionPxLista = opcionesPxLista[0].competenciaId;
-  }
-
-  const pxListaCalculado = pxListaMostradoParaSeleccion(
-    seleccionPxLista,
-    opcionesPxLista,
-    pxListaTiendaDux
-  );
-  const pxListaCxPxRaw = r.pxListaCxPx != null ? Number(r.pxListaCxPx) : null;
-  const pxListaCxPxPersistido =
-    pxListaCxPxRaw != null && Number.isFinite(pxListaCxPxRaw) && pxListaCxPxRaw > 0
-      ? Math.round(pxListaCxPxRaw)
-      : null;
-  const pxListaMostrado = pxListaCxPxPersistido ?? pxListaCalculado;
-
   return {
-    id: r.codTienda,
-    codTienda: r.codTienda,
-    descripcion: r.descripcionTienda ?? "",
-    cxPxCxCodExt: r.cxPxCxCodExt,
-    costoPromedio,
     opcionesProveedor,
     seleccion,
+    costoPromedio,
     costoMostrado,
-    pxListaTiendaDux,
-    pxListaCxPxPersistido,
-    cxPxPxCompRef: r.cxPxPxCompRef,
-    opcionesPxLista,
-    seleccionPxLista,
-    pxListaMostrado,
   };
 }
 
-export async function buildItemsCxPxDesdeFilas(
-  rows: FilaCxPxDb[],
-  competenciasPxLista: CompetenciaPxListaCtx[]
-): Promise<ItemCxPxTiendaParaTabla[]> {
-  const codTiendas = rows.map((r) => r.codTienda);
-  const vinculos =
-    codTiendas.length > 0
-      ? await prisma.listaPrecioProveedor.findMany({
-          where: { codTiendaVinculo: { in: codTiendas }, habilitado: true },
-          select: {
-            codExt: true,
-            codTiendaVinculo: true,
-            pxCompraFinalSinIva: true,
-            proveedor: { select: { nombre: true, prefijo: true } },
-          },
-          orderBy: [{ proveedor: { nombre: "asc" } }],
-        })
-      : [];
-
-  const vinculosPorTienda = new Map<string, typeof vinculos>();
-  for (const v of vinculos) {
-    if (!v.codTiendaVinculo) continue;
-    const lista = vinculosPorTienda.get(v.codTiendaVinculo) ?? [];
-    lista.push(v);
-    vinculosPorTienda.set(v.codTiendaVinculo, lista);
+export async function buildCxProdMapDesdeFilas(
+  rows: FilaCxProdDb[]
+): Promise<Map<string, CxProdDatosFila>> {
+  const vinculosPorTienda = await cargarVinculosCostoPorCodTienda(
+    rows.map((r) => r.codTienda)
+  );
+  const map = new Map<string, CxProdDatosFila>();
+  for (const r of rows) {
+    map.set(
+      r.codTienda,
+      mapCxProdDesdeCandidatos(
+        r.costoCompra,
+        r.costoCompraCodExt,
+        vinculosPorTienda.get(r.codTienda) ?? []
+      )
+    );
   }
-
-  const opcionesPxListaMap = await buildMapOpcionesPxListaPorCodTienda(
-    codTiendas,
-    competenciasPxLista
-  );
-
-  return rows.map((r) =>
-    mapFilaCxPx(
-      r,
-      vinculosPorTienda.get(r.codTienda) ?? [],
-      opcionesPxListaMap.get(r.codTienda) ?? []
-    )
-  );
+  return map;
 }

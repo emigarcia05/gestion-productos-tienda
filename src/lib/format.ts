@@ -1,5 +1,3 @@
-import { CX_PX_MARCACION_DECIMALES, roundMarcacionCxPx } from "@/lib/cxPxTienda";
-
 /** Opciones estándar: 0 decimales, punto como separador de miles (ej. 1.500). */
 const OPCIONES_ENTERO = { minimumFractionDigits: 0, maximumFractionDigits: 0 } as const;
 
@@ -57,16 +55,6 @@ export function fmtPorcentajeTabla(n: number | null | undefined): string {
   const s = v.toLocaleString("es-AR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
-  return `${s}%`;
-}
-
-/** Marcación Cx & Px Tienda (`CX_PX_MARCACION_DECIMALES`, es-AR), sufijo `%`. */
-export function fmtMarcacionCxPxPct(n: number): string {
-  const v = roundMarcacionCxPx(n);
-  const s = v.toLocaleString("es-AR", {
-    minimumFractionDigits: CX_PX_MARCACION_DECIMALES,
-    maximumFractionDigits: CX_PX_MARCACION_DECIMALES,
   });
   return `${s}%`;
 }

@@ -23,34 +23,46 @@ import { cn } from "@/lib/utils";
 
 const FOCUS_KEY = "filtros-tienda-focus";
 
+type ProveedorFiltro = { id: string; nombre: string; prefijo: string };
+
 interface Props {
   marcas: string[];
   rubros: string[];
-  subRubros: string[];
-  proveedores: { id: string; nombre: string; prefijo: string }[];
+  /** Solo si `modoFiltroTercero` = `subRubro` (p. ej. Px Listas). */
+  subRubros?: string[];
+  proveedores: ProveedorFiltro[];
   totalItems: number;
   qActual: string;
   marcaActual: string;
   rubroActual: string;
-  subRubroActual: string;
+  subRubroActual?: string;
+  /** Solo si `modoFiltroTercero` = `cxCompra` (Cx Compra). */
+  proveedoresCxCompra?: ProveedorFiltro[];
+  cxCompraActual?: string;
   proveedorActual: string;
   vinculadoActual: string;
+  /** Cx Compra: tercer desplegable = CX COMPRA; por defecto SUB-RUBRO. */
+  modoFiltroTercero?: "subRubro" | "cxCompra";
 }
 
 export default function FiltrosTienda({
   marcas,
   rubros,
-  subRubros,
+  subRubros = [],
   proveedores,
   totalItems,
   qActual,
   marcaActual,
   rubroActual,
-  subRubroActual,
+  subRubroActual = "",
+  proveedoresCxCompra = [],
+  cxCompraActual = "",
   proveedorActual,
   vinculadoActual,
+  modoFiltroTercero = "subRubro",
 }: Props) {
   const pathname = usePathname();
+  const usaCxCompra = modoFiltroTercero === "cxCompra";
 
   const {
     q,
@@ -73,7 +85,7 @@ export default function FiltrosTienda({
     q ||
     marcaActual ||
     rubroActual ||
-    subRubroActual ||
+    (usaCxCompra ? cxCompraActual : subRubroActual) ||
     proveedorActual ||
     vinculadoActual
   );
@@ -83,6 +95,7 @@ export default function FiltrosTienda({
     marca?: string;
     rubro?: string;
     subRubro?: string;
+    cxCompra?: string;
     proveedor?: string;
     vinculado?: string;
   }) {
@@ -92,6 +105,8 @@ export default function FiltrosTienda({
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const subRubroVal =
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
+    const cxCompraVal =
+      updates.cxCompra !== undefined ? updates.cxCompra : cxCompraActual;
     const proveedorVal =
       updates.proveedor !== undefined ? updates.proveedor : proveedorActual;
     const vincVal =
@@ -99,20 +114,31 @@ export default function FiltrosTienda({
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
-    if (subRubroVal) p.set("subRubro", subRubroVal);
+    if (usaCxCompra) {
+      if (cxCompraVal) p.set("cxCompra", cxCompraVal);
+    } else if (subRubroVal) {
+      p.set("subRubro", subRubroVal);
+    }
     if (proveedorVal) p.set("proveedor", proveedorVal);
     if (vincVal) p.set("vinculado", vincVal);
     window.location.href = `${pathname}?${p.toString()}`;
   }
 
   function handleMarca(value: string) {
-    navigate({ marca: value, rubro: "", subRubro: "" });
+    navigate(
+      usaCxCompra
+        ? { marca: value, rubro: "", cxCompra: "" }
+        : { marca: value, rubro: "", subRubro: "" }
+    );
   }
   function handleRubro(value: string) {
-    navigate({ rubro: value, subRubro: "" });
+    navigate(usaCxCompra ? { rubro: value, cxCompra: "" } : { rubro: value, subRubro: "" });
   }
   function handleSubRubro(value: string) {
     navigate({ subRubro: value });
+  }
+  function handleCxCompra(value: string) {
+    navigate({ cxCompra: value });
   }
   function handleProveedor(value: string) {
     navigate({ proveedor: value });
@@ -188,35 +214,68 @@ export default function FiltrosTienda({
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>
-          <FiltroIndividualContainer
-            className={FILTER_SELECT_WRAPPER_CLASS}
-            activo={Boolean(subRubroActual)}
-            onLimpiar={() => handleSubRubro("")}
-          >
-            <Select
-              value={subRubroActual || undefined}
-              onValueChange={(v) => handleSubRubro(v)}
+          {usaCxCompra ? (
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(cxCompraActual)}
+              onLimpiar={() => handleCxCompra("")}
             >
-              <SelectTrigger
-                id="filtro-tienda-subrubro"
-                className="input-filtro-unificado"
+              <Select
+                value={cxCompraActual || undefined}
+                onValueChange={(v) => handleCxCompra(v)}
               >
-                <SelectValue placeholder="SUB-RUBRO" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
+                <SelectTrigger
+                  id="filtro-tienda-cx-compra"
+                  className="input-filtro-unificado"
+                >
+                  <SelectValue placeholder="CX COMPRA" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {proveedoresCxCompra.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.prefijo ? `[${p.prefijo}] ` : ""}
+                      {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
+          ) : (
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(subRubroActual)}
+              onLimpiar={() => handleSubRubro("")}
+            >
+              <Select
+                value={subRubroActual || undefined}
+                onValueChange={(v) => handleSubRubro(v)}
               >
-                {subRubros.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FiltroIndividualContainer>
+                <SelectTrigger
+                  id="filtro-tienda-subrubro"
+                  className="input-filtro-unificado"
+                >
+                  <SelectValue placeholder="SUB-RUBRO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {subRubros.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
+          )}
           <FiltroIndividualContainer
             className={FILTER_SELECT_WRAPPER_CLASS}
             activo={Boolean(proveedorActual)}

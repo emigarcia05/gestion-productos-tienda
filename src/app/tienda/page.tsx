@@ -10,7 +10,7 @@ interface Props {
   searchParams: Promise<{
     q?: string;
     rubro?: string;
-    subRubro?: string;
+    cxCompra?: string;
     marca?: string;
     proveedor?: string;
     vinculado?: string;
@@ -26,7 +26,7 @@ export default async function TiendaPage({ searchParams }: Props) {
   const {
     q = "",
     rubro = "",
-    subRubro = "",
+    cxCompra = "",
     marca = "",
     proveedor = "",
     pagina = "1",
@@ -35,11 +35,11 @@ export default async function TiendaPage({ searchParams }: Props) {
   const vLower = vRaw.toLowerCase();
   const vinculado = vLower === "no" || vLower === "si" ? vLower : "";
 
-  const { items, total, totalPaginas, proveedores, marcas, rubros, subRubros } =
+  const { items, total, totalPaginas, proveedores, proveedoresCxCompra, marcas, rubros } =
     await getTiendaPageData({
       q,
       rubro,
-      subRubro,
+      cxCompra,
       marca,
       proveedor,
       vinculado: vinculado || undefined,
@@ -55,11 +55,11 @@ export default async function TiendaPage({ searchParams }: Props) {
       proveedores={proveedores}
       marcas={marcas}
       rubros={rubros}
-      subRubros={subRubros}
+      proveedoresCxCompra={proveedoresCxCompra}
       rol={rol}
       q={q}
       rubro={rubro}
-      subRubro={subRubro}
+      cxCompra={cxCompra}
       marca={marca}
       proveedor={proveedor}
       vinculado={vinculado}

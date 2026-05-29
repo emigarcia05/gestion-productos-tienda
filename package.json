@@ -24,8 +24,7 @@
     "db:fix-lista-precios-proveedores-columnas": "tsx scripts/fix-lista-precios-proveedores-columnas.ts",
     "db:simulate-api-tienda": "tsx scripts/simulate-api-lista-precios-tienda.ts",
     "db:export-excel": "tsx scripts/export-db-to-excel.ts",
-    "db:seed-competencia": "tsx scripts/seed-prod-competencia.ts",
-    "db:backfill-px-lista-cx-px": "tsx scripts/backfill-px-lista-cx-px.ts"
+    "db:seed-competencia": "tsx scripts/seed-prod-competencia.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",

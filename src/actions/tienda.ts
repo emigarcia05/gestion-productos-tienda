@@ -6,20 +6,84 @@ import { filtroTexto } from "@/lib/busqueda";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE } from "@/lib/pagination";
+import type { CxProdDatosFila } from "@/lib/cxPxTienda";
+import { CX_PROD_SELECCION_PROM } from "@/lib/cxPxTienda";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
+import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
+
+const CX_PROD_FILA_VACIA: CxProdDatosFila = {
+  opcionesProveedor: [],
+  seleccion: CX_PROD_SELECCION_PROM,
+  costoPromedio: null,
+  costoMostrado: 0,
+};
+
+export type ProveedorOpcionFiltro = {
+  id: string;
+  nombre: string;
+  prefijo: string;
+};
+
+const proveedorCxCompraSelect = {
+  id: true,
+  nombre: true,
+  prefijo: true,
+} as const;
+
+/** Proveedores con al menos un ítem tienda que usa su fila en CX PROD. (`costo_compra_cod_ext`). */
+async function listarProveedoresCxCompraOpciones(): Promise<ProveedorOpcionFiltro[]> {
+  const rows = await prisma.proveedor.findMany({
+    where: {
+      proveedorMercaderia: true,
+      listaPrecios: {
+        some: { costoListaEnTiendas: { some: {} } },
+      },
+    },
+    select: proveedorCxCompraSelect,
+    orderBy: { nombre: "asc" },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    prefijo: p.prefijo ?? "",
+  }));
+}
 
 /** Respuesta vacía con opciones de filtros (marcas, rubros, subRubros, proveedores) para reutilizar en sinFiltros y filtro `vinculado` sin resultados. */
 async function getTiendaEmptyWithOpciones() {
-  const [proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
-    prisma.proveedor.findMany({
-      where: { proveedorMercaderia: true },
-      select: { id: true, nombre: true, prefijo: true, codigoUnico: true, coeficienteTintometrico: true },
-    }),
-    prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: { rubro: { not: null } }, orderBy: { rubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: { subRubro: { not: null } }, orderBy: { subRubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: { marca: { not: null } }, orderBy: { marca: "asc" } }),
-  ]);
+  const [proveedores, proveedoresCxCompra, rubrosDistinct, subRubrosDistinct, marcasDistinct] =
+    await Promise.all([
+      prisma.proveedor.findMany({
+        where: { proveedorMercaderia: true },
+        select: {
+          id: true,
+          nombre: true,
+          prefijo: true,
+          codigoUnico: true,
+          coeficienteTintometrico: true,
+        },
+      }),
+      listarProveedoresCxCompraOpciones(),
+      prisma.listaPrecioTienda.findMany({
+        select: { rubro: true },
+        distinct: ["rubro"],
+        where: { rubro: { not: null } },
+        orderBy: { rubro: "asc" },
+      }),
+      prisma.listaPrecioTienda.findMany({
+        select: { subRubro: true },
+        distinct: ["subRubro"],
+        where: { subRubro: { not: null } },
+        orderBy: { subRubro: "asc" },
+      }),
+      prisma.listaPrecioTienda.findMany({
+        select: { marca: true },
+        distinct: ["marca"],
+        where: { marca: { not: null } },
+        orderBy: { marca: "asc" },
+      }),
+    ]);
   return {
     items: [] as ItemTiendaParaTabla[],
     total: 0,
@@ -30,6 +94,7 @@ async function getTiendaEmptyWithOpciones() {
       codigoUnico: p.codigoUnico,
       coeficienteTintometrico: Number(p.coeficienteTintometrico),
     })),
+    proveedoresCxCompra,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
@@ -69,9 +134,9 @@ export interface ItemTiendaParaTabla {
   /** Derivado de DUX: ambos depósitos informan `ctd_disponible` no nulo. */
   stockeable: boolean;
   habilitado: boolean;
-  /** true si fue marcado como Producto TiendaColor desde VincularModal (no vincula con prod_precios_provee). */
-  esProductoPropio: boolean;
   _count: { productos: number };
+  /** Costo producto (columna CX PROD. en Cx Compra). */
+  cxProd: CxProdDatosFila;
 }
 
 export interface ProveedorTintoLts {
@@ -117,6 +182,7 @@ export async function getTiendaPageData(params: {
   q?: string;
   rubro?: string;
   subRubro?: string;
+  cxCompra?: string;
   marca?: string;
   proveedor?: string;
   vinculado?: string;
@@ -135,6 +201,7 @@ export async function getTiendaPageData(params: {
     q = "",
     rubro = "",
     subRubro = "",
+    cxCompra = "",
     marca = "",
     proveedor = "",
     vinculado: vinculadoRaw = "",
@@ -150,6 +217,13 @@ export async function getTiendaPageData(params: {
   if (rubro) andParts.push({ rubro });
   if (subRubro) andParts.push({ subRubro });
   if (marca) andParts.push({ marca });
+  // Filtro CX COMPRA: ítems cuyo CX PROD. apunta a una fila lista de ese proveedor (`costo_compra_cod_ext`).
+  const cxCompraIdParsed = prismaCuidSchema.safeParse(cxCompra);
+  if (cxCompraIdParsed.success) {
+    andParts.push({
+      costoListaProveedor: { idProveedor: cxCompraIdParsed.data },
+    });
+  }
   // Filtro PROV. VINC.: ítems con al menos un vínculo manual habilitado al proveedor seleccionado (idProveedor, CUID).
   // Tolerante con URLs legacy: si el valor no parsea como CUID, se ignora el filtro (no rompe la pantalla).
   const proveedorIdParsed = prismaCuidSchema.safeParse(proveedor);
@@ -161,10 +235,9 @@ export async function getTiendaPageData(params: {
     });
   }
 
-  /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. Los productos propios TiendaColor se excluyen de `no` (nunca van a vincularse). */
+  /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. */
   if (vinculado === "no") {
     andParts.push({ listaPreciosProveedores: { none: {} } });
-    andParts.push({ esProductoPropio: false });
   } else if (vinculado === "si") {
     andParts.push({ listaPreciosProveedores: { some: {} } });
   }
@@ -181,29 +254,60 @@ export async function getTiendaPageData(params: {
   const whereRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] } : { rubro: { not: null } };
   const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { subRubro: { not: null } }] } : { subRubro: { not: null } };
 
-  const [rows, total, proveedores, rubrosDistinct, subRubrosDistinct, marcasDistinct] = await Promise.all([
-    prisma.listaPrecioTienda.findMany({
-      where,
-      orderBy: [{ descripcionTienda: "asc" }],
-      include: { _count: { select: { listaPreciosProveedores: true } } },
-      skip,
-      take: PAGE_SIZE,
-    }),
-    prisma.listaPrecioTienda.count({ where }),
-    prisma.proveedor.findMany({
-      where: { proveedorMercaderia: true },
-      select: { id: true, nombre: true, prefijo: true, codigoUnico: true, coeficienteTintometrico: true },
-    }),
-    prisma.listaPrecioTienda.findMany({ select: { rubro: true }, distinct: ["rubro"], where: whereRubros, orderBy: { rubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { subRubro: true }, distinct: ["subRubro"], where: whereSubRubros, orderBy: { subRubro: "asc" } }),
-    prisma.listaPrecioTienda.findMany({ select: { marca: true }, distinct: ["marca"], where: whereMarcas, orderBy: { marca: "asc" } }),
-  ]);
+  const [rows, total, proveedores, proveedoresCxCompra, rubrosDistinct, subRubrosDistinct, marcasDistinct] =
+    await Promise.all([
+      prisma.listaPrecioTienda.findMany({
+        where,
+        orderBy: [{ descripcionTienda: "asc" }],
+        include: { _count: { select: { listaPreciosProveedores: true } } },
+        skip,
+        take: PAGE_SIZE,
+      }),
+      prisma.listaPrecioTienda.count({ where }),
+      prisma.proveedor.findMany({
+        where: { proveedorMercaderia: true },
+        select: {
+          id: true,
+          nombre: true,
+          prefijo: true,
+          codigoUnico: true,
+          coeficienteTintometrico: true,
+        },
+      }),
+      listarProveedoresCxCompraOpciones(),
+      prisma.listaPrecioTienda.findMany({
+        select: { rubro: true },
+        distinct: ["rubro"],
+        where: whereRubros,
+        orderBy: { rubro: "asc" },
+      }),
+      prisma.listaPrecioTienda.findMany({
+        select: { subRubro: true },
+        distinct: ["subRubro"],
+        where: whereSubRubros,
+        orderBy: { subRubro: "asc" },
+      }),
+      prisma.listaPrecioTienda.findMany({
+        select: { marca: true },
+        distinct: ["marca"],
+        where: whereMarcas,
+        orderBy: { marca: "asc" },
+      }),
+    ]);
 
   const nombreToPrefijo = new Map(
     proveedores.map((p) => [
       p.nombre.toLowerCase().trim(),
       (p.prefijo?.trim() || p.codigoUnico) as string,
     ])
+  );
+
+  const cxProdMap = await buildCxProdMapDesdeFilas(
+    rows.map((r) => ({
+      codTienda: r.codTienda,
+      costoCompra: r.costoCompra,
+      costoCompraCodExt: r.costoCompraCodExt,
+    }))
   );
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
@@ -226,8 +330,8 @@ export async function getTiendaPageData(params: {
       stockMaipu: r.stockMaipu,
       stockeable: r.stockeable,
       habilitado: true,
-      esProductoPropio: r.esProductoPropio,
       _count: { productos: r._count.listaPreciosProveedores },
+      cxProd: cxProdMap.get(r.codTienda) ?? CX_PROD_FILA_VACIA,
     };
   });
 
@@ -243,6 +347,7 @@ export async function getTiendaPageData(params: {
       codigoUnico: p.codigoUnico,
       coeficienteTintometrico: Number(p.coeficienteTintometrico),
     })),
+    proveedoresCxCompra,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),

@@ -10,13 +10,13 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import CeldaCxProdTienda from "@/components/shared/CeldaCxProdTienda";
 import VincularModal from "./VincularModal";
-import { Badge } from "@/components/ui/badge";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import type { ItemTiendaParaTabla } from "@/actions/tienda";
 import { cn } from "@/lib/utils";
 
-const COL_COUNT = 3;
+const COL_COUNT = 4;
 
 const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
 const MENSAJE_SIN_RESULTADOS = "No se encontraron items.";
@@ -25,10 +25,12 @@ export default function TablaTienda({
   items,
   rol,
   sinFiltros = false,
+  puedeEditarCxProd = false,
 }: {
   items: ItemTiendaParaTabla[];
   rol: Rol;
   sinFiltros?: boolean;
+  puedeEditarCxProd?: boolean;
 }) {
   const col = PERMISOS.tienda.tabla;
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
@@ -37,11 +39,18 @@ export default function TablaTienda({
   return (
     <>
       <Table variant="compact" scrollX={false} className="tabla-tienda-listado">
+        <colgroup>
+          <col className="w-[12%]" />
+          <col className="w-[46%]" />
+          <col className="w-[12%]" />
+          <col className="w-[30%]" />
+        </colgroup>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[15%]">COD. TIENDA</TableHead>
-            <TableHead className="w-[67%]">DESCRIPCIÓN</TableHead>
-            <TableHead className="w-[18%]">VINCULACIÓN</TableHead>
+            <TableHead>COD. TIENDA</TableHead>
+            <TableHead>DESCRIPCIÓN</TableHead>
+            <TableHead>VINCULACIÓN</TableHead>
+            <TableHead className="tabla-bloque-secundario-head-divider">CX PROD.</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -62,16 +71,22 @@ export default function TablaTienda({
                   <TableCell
                     className={cn(
                       "celda-datos celda-numero tabular-nums",
-                      n === 0 && !item.esProductoPropio && "text-muted-foreground"
+                      n === 0 && "text-muted-foreground"
                     )}
                   >
-                    {item.esProductoPropio ? (
-                      <Badge variant="secondary" className="font-semibold tracking-wide">
-                        PROPIO
-                      </Badge>
-                    ) : (
-                      textoVinculacion
+                    {textoVinculacion}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "celda-datos min-w-0 tabla-bloque-secundario-cell-divider"
                     )}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                  >
+                    <CeldaCxProdTienda
+                      codTienda={item.codItem}
+                      cxProd={item.cxProd}
+                      puedeEditar={puedeEditarCxProd}
+                    />
                   </TableCell>
                 </TableRow>
               );

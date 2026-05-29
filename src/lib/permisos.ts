@@ -58,14 +58,15 @@ export const PERMISOS = {
     editar: { simple: false, editor: true }, // CRUD competidores + sincronizar precios desde webs
   },
 
-  // ─── Módulo Cx y Px Tienda (/gestion-productos/tienda/cx-px-tienda) ──────────
+  // ─── Px Listas + CX PROD. en Cx Compra (edición celda + Exportar Cx) ───────
   cxPxTienda: {
+    /** Px Listas (/gestion-productos/tienda/cx-px-tienda) y edición CX PROD. / Exportar Cx en Cx Compra. */
     acceso: { simple: false, editor: true },
   },
 
   // ─── Página /tienda (y submódulos en sidebar) ──────────────────────────────
   tienda: {
-    /** Vinc. Con Prov. (/gestion-productos/tienda/comp-proveedores). Módulo Análisis de Precios — solo editor. */
+    /** Cx Compra (/gestion-productos/tienda/comp-proveedores). Módulo Análisis de Precios — solo editor. */
     acceso: { simple: false, editor: true },
     /** Calc. Tintométrico y Calc. Litros (/tienda/tintometrico, /tienda/litros). */
     tintoLts: { simple: true, editor: true },

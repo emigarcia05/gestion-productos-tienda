@@ -1,10 +1,6 @@
 import { CX_PROD_SELECCION_PROM, costoCxProdMostrado } from "@/lib/cxPxTienda";
 import { prisma } from "@/lib/prisma";
-import {
-  buildItemsCxPxDesdeFilas,
-  filaCxPxSelect,
-  listarCompetenciasPxListaCtx,
-} from "@/services/cxPxTiendaRows.service";
+import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
 
 export interface FilaExportCostoCx {
   codigo: string;
@@ -23,13 +19,10 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Control de costos: compara `costo_compra` (DUX) con el valor mostrado en **CX PROD.** de la grilla
- * (`costoCxProdMostrado`: proveedor elegido → `px_compra_final_sin_iva`; **CX. PROM.** → promedio vínculos).
+ * Control de costos: compara `costo_compra` (DUX) con el valor mostrado en **CX PROD.**
  * Excel: CODIGO = `cod_tienda`, COSTO = ese costo CX PROD. (entero redondeado).
  */
 export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
-  const competenciasPxLista = await listarCompetenciasPxListaCtx();
-
   const rows = await prisma.listaPrecioTienda.findMany({
     where: {
       listaPreciosProveedores: {
@@ -37,21 +30,25 @@ export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[
       },
     },
     select: {
-      ...filaCxPxSelect,
+      codTienda: true,
       costoCompra: true,
+      costoCompraCodExt: true,
     },
     orderBy: { codTienda: "asc" },
   });
 
-  const costoCompraPorCodTienda = new Map(
-    rows.map((r) => [r.codTienda, toNum(r.costoCompra)])
+  const cxProdMap = await buildCxProdMapDesdeFilas(
+    rows.map((r) => ({
+      codTienda: r.codTienda,
+      costoCompra: r.costoCompra,
+      costoCompraCodExt: r.costoCompraCodExt,
+    }))
   );
 
-  const items = await buildItemsCxPxDesdeFilas(rows, competenciasPxLista);
-
   const filas: FilaExportCostoCx[] = [];
-  for (const item of items) {
-    if (item.opcionesProveedor.length === 0) continue;
+  for (const row of rows) {
+    const item = cxProdMap.get(row.codTienda);
+    if (!item || item.opcionesProveedor.length === 0) continue;
 
     if (item.seleccion === CX_PROD_SELECCION_PROM) {
       if (item.costoPromedio == null || item.costoPromedio <= 0) continue;
@@ -61,11 +58,11 @@ export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[
     }
 
     const costoCxProd = costoCxProdMostrado(item);
-    const costoDux = costoCompraPorCodTienda.get(item.codTienda) ?? 0;
+    const costoDux = toNum(row.costoCompra);
     if (!costosCompraDifieren(costoDux, costoCxProd)) continue;
 
     filas.push({
-      codigo: item.codTienda,
+      codigo: row.codTienda,
       costo: Math.round(costoCxProd),
     });
   }

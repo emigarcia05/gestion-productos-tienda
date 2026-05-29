@@ -177,21 +177,21 @@ const MODULES: NavModule[] = [
     submodules: [
       {
         href: "/gestion-productos/tienda/comp-proveedores",
-        label: "Vinc. Con Prov.",
+        label: "Cx Compra",
         icon: <Link2 className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.tienda.acceso,
+      },
+      {
+        href: "/gestion-productos/tienda/cx-px-tienda",
+        label: "Px Listas",
+        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.cxPxTienda.acceso,
       },
       {
         href: "/gestion-productos/precios-competencia",
         label: "Px Competencia",
         icon: <GitCompare className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.competenciaPrecios.acceso,
-      },
-      {
-        href: "/gestion-productos/tienda/cx-px-tienda",
-        label: "Cx & Px Tienda",
-        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.cxPxTienda.acceso,
       },
       {
         href: "/gestion-productos/proveedores/comparacion-categorias",
@@ -300,11 +300,11 @@ function getOpenModule(pathname: string): SidebarModuleId {
     return "ayuda-vendedor";
   }
   if (
-    pathname.startsWith("/gestion-productos/tienda/cx-px-tienda") ||
-    pathname.startsWith("/tienda/cx-px") ||
     pathname.startsWith("/gestion-productos/tienda/comp-proveedores") ||
+    pathname.startsWith("/gestion-productos/tienda/cx-px-tienda") ||
     pathname === "/gestion-productos/tienda" ||
     pathname.startsWith("/tienda/comp-proveedores") ||
+    pathname.startsWith("/tienda/cx-px") ||
     pathname === "/tienda" ||
     pathname.startsWith("/gestion-productos/precios-competencia") ||
     pathname.startsWith("/precios-competencia") ||
