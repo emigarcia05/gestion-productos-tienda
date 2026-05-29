@@ -1,5 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { DET_PRECIO_MANUAL } from "@/lib/pxListas";
+import { DET_PRECIO_MANUAL, calcMarcacionPxLista, roundMarcacionPxLista } from "@/lib/pxListas";
 import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { persistirMarcacionPxLista } from "@/services/pxListasMarcacion.service";
 import type { ServiceResult } from "@/types";
@@ -42,7 +43,8 @@ export async function obtenerMapPxListaConfig(
 export async function guardarPxListaConfig(
   codTienda: string,
   detPrecioSeleccion: string,
-  pxListaManual: number | null
+  pxListaManual: number | null,
+  marcacionManual?: number | null
 ): Promise<ServiceResult> {
   const parsedCod = listaPreciosCodTiendaSchema.safeParse(codTienda);
   if (!parsedCod.success) {
@@ -77,6 +79,22 @@ export async function guardarPxListaConfig(
     }
   }
 
+  let marcacionDb: Prisma.Decimal | null = null;
+  if (esManual) {
+    if (marcacionManual != null && marcacionManual > 0) {
+      marcacionDb = new Prisma.Decimal(roundMarcacionPxLista(marcacionManual));
+    } else if (pxListaManual != null && pxListaManual > 0) {
+      const tienda = await prisma.listaPrecioTienda.findUnique({
+        where: { codTienda: parsedCod.data },
+        select: { costoCompra: true },
+      });
+      if (tienda) {
+        const m = calcMarcacionPxLista(Number(pxListaManual), Number(tienda.costoCompra));
+        if (m != null) marcacionDb = new Prisma.Decimal(m);
+      }
+    }
+  }
+
   await prisma.prodPrecioTiendaMarcacion.upsert({
     where: { codTienda: parsedCod.data },
     create: {
@@ -84,15 +102,23 @@ export async function guardarPxListaConfig(
       detPrecioManual: esManual,
       competenciaId,
       pxListaManual: esManual && pxListaManual != null ? pxListaManual : null,
+      marcacion: marcacionDb,
     },
     update: {
       detPrecioManual: esManual,
       competenciaId,
-      ...(esManual ? { pxListaManual: pxListaManual ?? null } : {}),
+      ...(esManual
+        ? {
+            pxListaManual: pxListaManual ?? null,
+            marcacion: marcacionDb,
+          }
+        : {}),
     },
   });
 
-  await persistirMarcacionPxLista(parsedCod.data);
+  if (esManual && marcacionManual === undefined) {
+    await persistirMarcacionPxLista(parsedCod.data);
+  }
 
   return { success: true, data: undefined };
 }

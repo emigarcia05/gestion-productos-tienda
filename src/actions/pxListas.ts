@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { DET_PRECIO_MANUAL } from "@/lib/pxListas";
+import { DET_PRECIO_MANUAL, roundMarcacionPxLista } from "@/lib/pxListas";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import {
@@ -18,6 +18,7 @@ const guardarPxListaSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
   detPrecioSeleccion: z.union([z.literal(DET_PRECIO_MANUAL), z.string().min(1).max(128)]),
   pxListaManual: z.number().finite().nonnegative().nullable().optional(),
+  marcacion: z.number().finite().positive().nullable().optional(),
 });
 
 /** Listado paginado **Px Listas** con DET PRECIO, PX LISTA y MARCACION. */
@@ -51,11 +52,13 @@ export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionRe
     return { ok: false, error: "Datos inválidos." };
   }
 
-  const { codTienda, detPrecioSeleccion, pxListaManual } = parsed.data;
+  const { codTienda, detPrecioSeleccion, pxListaManual, marcacion } = parsed.data;
+  const esManual = detPrecioSeleccion === DET_PRECIO_MANUAL;
   const res = await guardarPxListaConfig(
     codTienda,
     detPrecioSeleccion,
-    detPrecioSeleccion === DET_PRECIO_MANUAL ? (pxListaManual ?? null) : null
+    esManual ? (pxListaManual ?? null) : null,
+    esManual && marcacion != null ? roundMarcacionPxLista(marcacion) : undefined
   );
   if (!res.success) return { ok: false, error: res.error };
 

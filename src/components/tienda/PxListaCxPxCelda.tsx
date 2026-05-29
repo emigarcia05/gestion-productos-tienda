@@ -28,6 +28,8 @@ export default function PxListaCxPxCelda({
   onDraftChange,
   onDraftEnd,
   onCommit,
+  /** Al blur con PX válido, persiste aunque el entero no haya cambiado (p. ej. recalcular marcación). */
+  persistirAlBlurConValorValido = false,
 }: {
   pesosCommit: number;
   puedeEditar: boolean;
@@ -40,6 +42,7 @@ export default function PxListaCxPxCelda({
   /** Al salir del campo sin persistir cambios. */
   onDraftEnd?: () => void;
   onCommit: (pesos: number) => void;
+  persistirAlBlurConValorValido?: boolean;
 }) {
   const [digits, setDigits] = useState(() => digitosDesdePesos(pesosCommit));
   const [focused, setFocused] = useState(false);
@@ -103,7 +106,10 @@ export default function PxListaCxPxCelda({
           setFocused(false);
           const next = pesosDesdeDigitos(digits);
           setDigits(digitosDesdePesos(next));
-          if (next > 0 && next !== Math.round(pesosCommit)) {
+          if (
+            next > 0 &&
+            (persistirAlBlurConValorValido || next !== Math.round(pesosCommit))
+          ) {
             onCommit(next);
           } else {
             onDraftEnd?.();

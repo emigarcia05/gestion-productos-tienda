@@ -1198,6 +1198,13 @@
 .tabla-px-listas-listado tbody td.celda-marcacion-col .px-lista-celda-shell {
   transition: none !important;
   cursor: default;
+  justify-content: center;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col .px-lista-celda-shell input {
+  text-align: center;
+}
+.tabla-px-listas-listado tbody td.celda-marcacion-col > span {
+  text-align: center;
 }
 .tabla-px-listas-listado tbody td.celda-marcacion-col .px-lista-celda-shell:hover {
   border-color: var(--primary) !important;

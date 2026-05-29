@@ -37,6 +37,7 @@ export default function MarcacionPxListaCelda({
   onDraftChange,
   onDraftEnd,
   onCommit,
+  persistirAlBlurConValorValido = false,
 }: {
   marcacionCommit: number | null;
   puedeEditar: boolean;
@@ -45,6 +46,7 @@ export default function MarcacionPxListaCelda({
   onDraftChange?: (marcacion: number) => void;
   onDraftEnd?: () => void;
   onCommit: (marcacion: number) => void;
+  persistirAlBlurConValorValido?: boolean;
 }) {
   const commitVal = marcacionCommit != null && marcacionCommit > 0 ? marcacionCommit : 0;
   const [texto, setTexto] = useState(() =>
@@ -66,7 +68,7 @@ export default function MarcacionPxListaCelda({
   if (!puedeEditar) {
     return (
       <span
-        className="celda-numero tabular-nums text-right text-sm font-medium text-foreground min-w-0 inline-block w-full"
+        className="celda-numero tabular-nums text-center text-sm font-medium text-foreground min-w-0 inline-block w-full"
         aria-label="Marcación"
       >
         {commitVal > 0 ? fmtMarcacionValor(commitVal) : "—"}
@@ -78,7 +80,7 @@ export default function MarcacionPxListaCelda({
     <div
       className={cn(
         shellClassName,
-        "px-lista-celda-shell flex items-center justify-end px-2"
+        "px-lista-celda-shell flex items-center justify-center px-2"
       )}
     >
       <input
@@ -102,7 +104,11 @@ export default function MarcacionPxListaCelda({
         onBlur={() => {
           setFocused(false);
           const parsed = parseMarcacionPxListaInput(texto);
-          if (parsed != null && parsed !== roundMarcacionPxLista(commitVal)) {
+          if (
+            parsed != null &&
+            (persistirAlBlurConValorValido ||
+              parsed !== roundMarcacionPxLista(commitVal))
+          ) {
             setTexto(fmtMarcacionValor(parsed));
             onCommit(parsed);
           } else {
@@ -112,7 +118,7 @@ export default function MarcacionPxListaCelda({
         }}
         className={cn(
           "min-w-0 w-full border-0 bg-transparent p-0 h-auto min-h-0 shadow-none",
-          "text-right text-sm font-medium tabular-nums leading-none text-foreground",
+          "text-center text-sm font-medium tabular-nums leading-none text-foreground",
           "outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
           disabled && "pointer-events-none opacity-80"
         )}
