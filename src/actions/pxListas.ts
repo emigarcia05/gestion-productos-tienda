@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getTiendaPageData } from "@/actions/tienda";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
@@ -10,9 +9,10 @@ import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import {
   guardarPxListaConfig,
-  obtenerMapPxListaConfig,
 } from "@/services/pxListasConfig.service";
-import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
+import { getPxListasPageDataFromDb } from "@/services/pxListasPage.service";
+import { listarFilasExportPxDiff } from "@/services/exportPxDiff.service";
+import type { FilaExportPx } from "@/services/exportPxDiff.service";
 
 const guardarPxListaSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
@@ -24,24 +24,17 @@ const guardarPxListaSchema = z.object({
 export async function getPxListasPageData(params: {
   q?: string;
   rubro?: string;
-  subRubro?: string;
   marca?: string;
-  proveedor?: string;
-  vinculado?: string;
+  detPrecio?: string;
+  ordenMarcacion?: string;
   pagina?: string;
 }) {
-  const data = await getTiendaPageData(params);
-  const codTiendas = data.items.map((i) => i.codItem);
-  const configMap = await obtenerMapPxListaConfig(codTiendas);
-  const items = await buildPxListasItemsDesdeFilas(
-    data.items.map((row) => ({
-      codTienda: row.codItem,
-      descripcion: row.descripcion,
-      costoCompra: row.costo,
-    })),
-    configMap
-  );
-  return { ...data, items };
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    const vacio = await getPxListasPageDataFromDb({});
+    return { ...vacio, items: [], total: 0, totalPaginas: 1 };
+  }
+  return getPxListasPageDataFromDb(params);
 }
 
 export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionResult> {
@@ -69,4 +62,23 @@ export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionRe
   revalidatePath("/gestion-productos/tienda/cx-px-tienda");
   revalidatePath("/tienda/cx-px");
   return { ok: true, data: undefined };
+}
+
+/** Excel CODIGO + PORC UTILIDAD: marcación DUX ≠ marcación persistida en Px Listas. */
+export async function exportarPxDiffAction(): Promise<
+  ActionResult<{ filas: FilaExportPx[] }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  try {
+    const filas = await listarFilasExportPxDiff();
+    return { ok: true, data: { filas } };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
+    };
+  }
 }

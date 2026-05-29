@@ -570,6 +570,8 @@ model ProdPrecioTiendaMarcacion {
   detPrecioManual   Boolean  @default(true) @map("det_precio_manual")
   competenciaId     String?  @map("competencia_id")
   pxListaManual     Decimal? @map("px_lista_manual") @db.Decimal(14, 4)
+  /// Marcación Px Listas persistida: (px_lista_efectivo / costo_compra) / 1,21 (5 decimales).
+  marcacion         Decimal? @db.Decimal(14, 5)
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   listaPrecioTienda ListaPrecioTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)

@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getPxListasPageData } from "@/actions/pxListas";
+import { esOrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
+import type { OrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
 import PxListasPageClient from "@/components/px-listas/PxListasPageClient";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -10,10 +12,9 @@ interface Props {
   searchParams: Promise<{
     q?: string;
     rubro?: string;
-    subRubro?: string;
     marca?: string;
-    proveedor?: string;
-    vinculado?: string;
+    detPrecio?: string;
+    ordenMarcacion?: string;
     pagina?: string;
   }>;
 }
@@ -28,23 +29,23 @@ export default async function PxListasPage({ searchParams }: Props) {
   const {
     q = "",
     rubro = "",
-    subRubro = "",
     marca = "",
-    proveedor = "",
+    detPrecio = "",
+    ordenMarcacion: ordenMarcacionRaw = "",
     pagina = "1",
   } = sp;
-  const vRaw = sp.vinculado ?? "";
-  const vLower = vRaw.toLowerCase();
-  const vinculado = vLower === "no" || vLower === "si" ? vLower : "";
 
-  const { items, total, totalPaginas, proveedores, marcas, rubros, subRubros } =
+  const ordenMarcacion: OrdenMarcacionPxListas = esOrdenMarcacionPxListas(ordenMarcacionRaw)
+    ? ordenMarcacionRaw
+    : "";
+
+  const { items, total, totalPaginas, marcas, rubros, competidores } =
     await getPxListasPageData({
       q,
       rubro,
-      subRubro,
       marca,
-      proveedor,
-      vinculado: vinculado || undefined,
+      detPrecio,
+      ordenMarcacion,
       pagina,
     });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
@@ -54,17 +55,15 @@ export default async function PxListasPage({ searchParams }: Props) {
       items={items}
       total={total}
       totalPaginas={totalPaginas}
-      proveedores={proveedores}
       marcas={marcas}
       rubros={rubros}
-      subRubros={subRubros}
+      competidores={competidores}
       rol={rol}
       q={q}
       rubro={rubro}
-      subRubro={subRubro}
       marca={marca}
-      proveedor={proveedor}
-      vinculado={vinculado}
+      detPrecio={detPrecio}
+      ordenMarcacion={ordenMarcacion}
       paginaNum={paginaNum}
     />
   );

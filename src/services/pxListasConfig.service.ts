@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { DET_PRECIO_MANUAL } from "@/lib/pxListas";
 import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
+import { persistirMarcacionPxLista } from "@/services/pxListasMarcacion.service";
 import type { ServiceResult } from "@/types";
 
 export type PxListaConfigPersistida = {
   detPrecioSeleccion: typeof DET_PRECIO_MANUAL | string;
   pxListaManual: number | null;
+  marcacion: number | null;
 };
 
 export async function obtenerMapPxListaConfig(
@@ -21,6 +23,7 @@ export async function obtenerMapPxListaConfig(
       detPrecioManual: true,
       competenciaId: true,
       pxListaManual: true,
+      marcacion: true,
     },
   });
 
@@ -30,6 +33,7 @@ export async function obtenerMapPxListaConfig(
         ? DET_PRECIO_MANUAL
         : (row.competenciaId ?? DET_PRECIO_MANUAL),
       pxListaManual: row.pxListaManual != null ? Number(row.pxListaManual) : null,
+      marcacion: row.marcacion != null ? Number(row.marcacion) : null,
     });
   }
   return map;
@@ -87,6 +91,8 @@ export async function guardarPxListaConfig(
       ...(esManual ? { pxListaManual: pxListaManual ?? null } : {}),
     },
   });
+
+  await persistirMarcacionPxLista(parsedCod.data);
 
   return { success: true, data: undefined };
 }
