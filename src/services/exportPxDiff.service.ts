@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import {
-  calcMarcacionViejaDesdeDux,
-  marcacionesPxListasDifieren,
-  porcUtilidadDesdeMarcacionPxLista,
-} from "@/services/pxListasMarcacion.service";
+import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
+import { obtenerMapPxListaConfig } from "@/services/pxListasConfig.service";
+
+const BATCH_SIZE = 150;
 
 export interface FilaExportPx {
   codigo: string;
-  porcUtilidad: number;
+  /** PX LISTA a importar en DUX (pesos enteros), según configuración actual del módulo. */
+  importe: number;
 }
 
 function toNum(n: unknown): number {
@@ -17,19 +17,20 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Exporta ítems con fila en `prod_precios_tienda_marcacion` cuya marcación persistida
- * difiere de la marcación DUX (`px_lista_tienda` + `costo_compra`).
+ * Exporta solo ítems cuyo **PX LISTA efectivo** (grilla Px Listas) difiere del espejo DUX
+ * `px_lista_tienda` en pesos enteros. Evita falsos positivos por comparar solo la
+ * columna `marcacion` guardada (decimales) cuando el importe en DUX ya coincide.
  */
 export async function listarFilasExportPxDiff(): Promise<FilaExportPx[]> {
   const rows = await prisma.prodPrecioTiendaMarcacion.findMany({
     where: { marcacion: { not: null } },
     select: {
       codTienda: true,
-      marcacion: true,
       listaPrecioTienda: {
         select: {
-          pxListaTienda: true,
+          descripcionTienda: true,
           costoCompra: true,
+          pxListaTienda: true,
         },
       },
     },
@@ -37,22 +38,37 @@ export async function listarFilasExportPxDiff(): Promise<FilaExportPx[]> {
   });
 
   const filas: FilaExportPx[] = [];
-  for (const row of rows) {
-    const costo = toNum(row.listaPrecioTienda.costoCompra);
-    const pxDux = toNum(row.listaPrecioTienda.pxListaTienda);
-    const marcacionNueva = row.marcacion != null ? Number(row.marcacion) : null;
-    if (marcacionNueva == null || !(costo > 0) || !(pxDux > 0)) continue;
 
-    const marcacionVieja = calcMarcacionViejaDesdeDux(pxDux, costo);
-    if (!marcacionesPxListasDifieren(marcacionVieja, marcacionNueva)) continue;
+  for (let offset = 0; offset < rows.length; offset += BATCH_SIZE) {
+    const chunk = rows.slice(offset, offset + BATCH_SIZE);
+    const codTiendas = chunk.map((r) => r.codTienda);
+    const configMap = await obtenerMapPxListaConfig(codTiendas);
 
-    const porcUtilidad = porcUtilidadDesdeMarcacionPxLista(marcacionNueva, costo);
-    if (porcUtilidad == null) continue;
+    const baseFilas = chunk.map((r) => ({
+      codTienda: r.codTienda,
+      descripcion: r.listaPrecioTienda.descripcionTienda ?? "",
+      costoCompra: toNum(r.listaPrecioTienda.costoCompra),
+    }));
 
-    filas.push({
-      codigo: row.codTienda,
-      porcUtilidad: Math.round(porcUtilidad * 100) / 100,
-    });
+    const items = await buildPxListasItemsDesdeFilas(baseFilas, configMap);
+    const itemPorCod = new Map(items.map((i) => [i.codItem, i]));
+
+    for (const row of chunk) {
+      const pxDux = Math.round(toNum(row.listaPrecioTienda.pxListaTienda));
+      const item = itemPorCod.get(row.codTienda);
+      const pxLista = item?.pxLista;
+
+      if (pxLista == null || !(pxLista > 0) || !(pxDux > 0)) continue;
+
+      const importe = Math.round(pxLista);
+      if (importe === pxDux) continue;
+
+      filas.push({
+        codigo: row.codTienda,
+        importe,
+      });
+    }
   }
+
   return filas;
 }

@@ -67,7 +67,7 @@ export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionRe
   return { ok: true, data: undefined };
 }
 
-/** Excel CODIGO + PORC UTILIDAD: marcación DUX ≠ marcación persistida en Px Listas. */
+/** Excel CODIGO + IMPORTE: PX LISTA del módulo ≠ `px_lista_tienda` DUX (pesos enteros). */
 export async function exportarPxDiffAction(): Promise<
   ActionResult<{ filas: FilaExportPx[] }>
 > {
