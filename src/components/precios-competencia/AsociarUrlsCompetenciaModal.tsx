@@ -170,9 +170,18 @@ export default function AsociarUrlsCompetenciaModal({
                   <span className="flex min-h-full w-full items-center justify-center text-center text-sm font-semibold text-foreground">
                     {f.nombre}
                   </span>
-                  <div className="flex flex-col gap-2 min-w-0">
+                  <div
+                    className={cn(
+                      "min-w-0",
+                      urlBloqueada
+                        ? "flex min-h-full w-full items-center justify-center"
+                        : "flex flex-col gap-2"
+                    )}
+                  >
                     {urlBloqueada ? (
-                      <p className="text-sm font-medium text-foreground">Px Sugerido</p>
+                      <p className="text-sm font-medium text-foreground text-center">
+                        Px Sugerido
+                      </p>
                     ) : (
                       <>
                         {f.reglas.length > 0 ? (
