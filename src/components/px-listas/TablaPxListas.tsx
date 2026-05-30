@@ -37,10 +37,7 @@ import {
   calcMarcacionPxLista,
   fmtMarcacionPxLista,
 } from "@/lib/pxListas";
-import {
-  calcularResumenPreciosCompetenciaFila,
-  listarCompetidoresConFalloRelevamiento,
-} from "@/lib/competenciaPreciosFilaResumen";
+import { vinculosArrayToRecord } from "@/lib/pxListasVinculos";
 import { useManualPxMarcacionDraft } from "@/lib/hooks/useManualPxMarcacionDraft";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { fmtPrecio } from "@/lib/format";
@@ -97,18 +94,10 @@ function FilaPxListas({
     marcacionGuardada: item.marcacion,
   });
 
-  const pxListaParaResumen = item.pxLista != null && item.pxLista > 0 ? item.pxLista : 0;
-  const resumenExpand = calcularResumenPreciosCompetenciaFila(
-    item.vinculosPorCompetencia,
-    competencias,
-    pxListaParaResumen
-  );
-  const detalle = resumenExpand.competidoresOrdenados;
-  const fallos = listarCompetidoresConFalloRelevamiento(
-    item.vinculosPorCompetencia,
-    competencias
-  );
+  const detalle = item.competidoresPrecioDetalle;
+  const fallos = item.competidoresFalloDetalle;
   const filasDetalle = detalle.length + fallos.length;
+  const vinculosPorCompetencia = vinculosArrayToRecord(item.vinculosCompetencia);
 
   return (
     <Fragment>
@@ -218,10 +207,10 @@ function FilaPxListas({
           )}
         </TableCell>
         <TableCell className="celda-datos tabular-nums text-center tabla-bloque-secundario-cell-divider">
-          {resumenExpand.pxPromedio != null ? fmtPrecio(resumenExpand.pxPromedio) : "—"}
+          {item.pxPromedio != null ? fmtPrecio(item.pxPromedio) : "—"}
         </TableCell>
         <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
-          <CeldaDifPct pct={resumenExpand.difPctTiendaVsPromedio} />
+          <CeldaDifPct pct={item.difPctTiendaVsPromedio} />
         </TableCell>
         <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
           <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
@@ -263,7 +252,7 @@ function FilaPxListas({
           codTienda={item.codItem}
           detalle={detalle}
           fallos={fallos}
-          vinculosPorCompetencia={item.vinculosPorCompetencia}
+          vinculosPorCompetencia={vinculosPorCompetencia}
         />
       ) : null}
     </Fragment>
@@ -287,7 +276,7 @@ export default function TablaPxListas({
   const [asociarFila, setAsociarFila] = useState<{
     codTienda: string;
     descripcion: string;
-    vinculosPorCompetencia: ItemPxListasParaTabla["vinculosPorCompetencia"];
+    vinculosPorCompetencia: ReturnType<typeof vinculosArrayToRecord>;
   } | null>(null);
 
   function toggleDetalle(codTienda: string) {
@@ -381,7 +370,7 @@ export default function TablaPxListas({
                   setAsociarFila({
                     codTienda: item.codItem,
                     descripcion: item.descripcion,
-                    vinculosPorCompetencia: item.vinculosPorCompetencia,
+                    vinculosPorCompetencia: vinculosArrayToRecord(item.vinculosCompetencia),
                   })
                 }
                 onGuardarDetPrecio={guardarDetPrecio}

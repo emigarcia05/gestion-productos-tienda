@@ -1,4 +1,8 @@
-import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+import type {
+  CompetidorFalloRelevamientoFila,
+  CompetidorPrecioFila,
+} from "@/lib/competenciaPreciosFilaResumen";
+import type { VinculoCompetenciaPxListas } from "@/lib/pxListasVinculos";
 
 /** Valor del select DET PRECIO cuando el precio es manual. */
 export const DET_PRECIO_MANUAL = "manual" as const;
@@ -27,7 +31,11 @@ export type ItemPxListasParaTabla = {
   /** Promedio de todos los competidores con precio (scraping o Px Sugerido); DIF vs PX LISTA de la fila. */
   pxPromedio: number | null;
   difPctTiendaVsPromedio: number | null;
-  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>;
+  /** Precalculado en servidor para grilla (serializable). */
+  competidoresPrecioDetalle: CompetidorPrecioFila[];
+  competidoresFalloDetalle: CompetidorFalloRelevamientoFila[];
+  /** Vínculos por competidor (array para RSC → cliente). */
+  vinculosCompetencia: VinculoCompetenciaPxListas[];
 };
 
 /** Decimales visibles de la columna MARCACION en Px Listas. */

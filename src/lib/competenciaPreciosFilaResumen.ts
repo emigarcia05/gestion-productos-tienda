@@ -1,4 +1,5 @@
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
+import type { OpcionCompetenciaPxLista } from "@/lib/pxListas";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
@@ -30,6 +31,37 @@ function difPctVsBase(precio: number, base: number): number | null {
   return ((precio - base) / base) * 100;
 }
 
+const VINCULO_VACIO: DatoVinculoCompetenciaCliente = {
+  urlProducto: null,
+  tipoPagina: null,
+  pxCompetencia: null,
+  estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+  errorMensaje: null,
+  relevadoAt: null,
+  urlBloqueadaPorPxSugerido: false,
+};
+
+/** Alinea vínculos con `opcionesCompetencia` (DET PRECIO) para promedio y detalle. */
+export function fusionarVinculosConOpcionesPxListas(
+  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
+  opciones: OpcionCompetenciaPxLista[]
+): Record<string, DatoVinculoCompetenciaCliente> {
+  const out = { ...vinculosPorCompetencia };
+  for (const op of opciones) {
+    if (op.px == null || !(op.px > 0)) continue;
+    const prev = out[op.competenciaId] ?? VINCULO_VACIO;
+    if (prev.pxCompetencia != null && prev.pxCompetencia > 0) continue;
+    const sinUrl = !prev.urlProducto?.trim();
+    out[op.competenciaId] = {
+      ...prev,
+      pxCompetencia: op.px,
+      estado: ESTADO_RELEVAMIENTO_COMPETENCIA.OK,
+      urlBloqueadaPorPxSugerido: prev.urlBloqueadaPorPxSugerido || sinUrl,
+    };
+  }
+  return out;
+}
+
 /** Competidores con precio a mostrar (scraping OK o Px. Vta. Sugerido vía `aplicarPrioridadPrecioMostrar`). */
 export function listarCompetidoresConPrecioOk(
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
@@ -49,6 +81,41 @@ export function listarCompetidoresConPrecioOk(
     });
   }
   return items.sort((a, b) => a.px - b.px);
+}
+
+/**
+ * Px Listas: incluye precios de vínculos y de `opcionesCompetencia` (p. ej. sugerido sin fila PPC).
+ */
+export function listarCompetidoresConPrecioPxListas(
+  opciones: OpcionCompetenciaPxLista[],
+  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
+  competencias: CompetenciaParaCliente[],
+  pxListaTienda: number
+): CompetidorPrecioFila[] {
+  const vinculos = fusionarVinculosConOpcionesPxListas(vinculosPorCompetencia, opciones);
+  const desdeVinculos = listarCompetidoresConPrecioOk(
+    vinculos,
+    competencias,
+    pxListaTienda
+  );
+  const idsYa = new Set(desdeVinculos.map((x) => x.competenciaId));
+  const competenciasPorId = new Map(competencias.map((c) => [c.id, c]));
+
+  for (const op of opciones) {
+    if (idsYa.has(op.competenciaId)) continue;
+    if (op.px == null || !(op.px > 0)) continue;
+    const c = competenciasPorId.get(op.competenciaId);
+    desdeVinculos.push({
+      competenciaId: op.competenciaId,
+      nombre: op.nombre,
+      prefijo3: c ? abreviaturaCompetidorEnGrilla(c) : op.nombre.slice(0, 3).toUpperCase(),
+      px: op.px,
+      difPctVsTienda: difPctVsBase(op.px, pxListaTienda),
+    });
+    idsYa.add(op.competenciaId);
+  }
+
+  return desdeVinculos.sort((a, b) => a.px - b.px);
 }
 
 export interface CompetidorFalloRelevamientoFila {
@@ -96,6 +163,41 @@ export function calcularResumenPreciosCompetenciaFila(
     competencias,
     pxListaTienda
   );
+  return resumenDesdeCompetidoresOrdenados(competidoresOrdenados, pxListaTienda);
+}
+
+export type ResumenPreciosPxListas = ResumenPreciosCompetenciaFila & {
+  competidoresFalloDetalle: CompetidorFalloRelevamientoFila[];
+};
+
+/** Promedio / DIF TIENDA / detalle expandido para Px Listas (incluye precios sugeridos). */
+export function calcularResumenPreciosPxListas(
+  opciones: OpcionCompetenciaPxLista[],
+  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
+  competencias: CompetenciaParaCliente[],
+  pxListaTienda: number
+): ResumenPreciosPxListas {
+  const vinculos = fusionarVinculosConOpcionesPxListas(vinculosPorCompetencia, opciones);
+  const competidoresOrdenados = listarCompetidoresConPrecioPxListas(
+    opciones,
+    vinculos,
+    competencias,
+    pxListaTienda
+  );
+  const competidoresFalloDetalle = listarCompetidoresConFalloRelevamiento(
+    vinculos,
+    competencias
+  );
+  return {
+    ...resumenDesdeCompetidoresOrdenados(competidoresOrdenados, pxListaTienda),
+    competidoresFalloDetalle,
+  };
+}
+
+function resumenDesdeCompetidoresOrdenados(
+  competidoresOrdenados: CompetidorPrecioFila[],
+  pxListaTienda: number
+): ResumenPreciosCompetenciaFila {
   if (competidoresOrdenados.length === 0) {
     return {
       pxPromedio: null,
@@ -115,3 +217,4 @@ export function calcularResumenPreciosCompetenciaFila(
     competidoresOrdenados,
   };
 }
+

@@ -12,7 +12,11 @@ import {
   buildMapPxSugeridoCompetenciaPorCodTienda,
   buildMapPxVtaSugerido,
 } from "@/services/competenciaPxSugerido.service";
-import { calcularResumenPreciosCompetenciaFila } from "@/lib/competenciaPreciosFilaResumen";
+import {
+  calcularResumenPreciosPxListas,
+  fusionarVinculosConOpcionesPxListas,
+} from "@/lib/competenciaPreciosFilaResumen";
+import { vinculosRecordToArray } from "@/lib/pxListasVinculos";
 import {
   competenciaSelect,
   mapCompetenciaRow,
@@ -257,11 +261,14 @@ export async function buildPxListasItemsDesdeFilas(
     const pxLista = resolverPxLista(detPrecioSeleccion, pxListaManual, opciones);
     const vinculos = vinculosMap.get(f.codTienda) ?? {};
     const pxListaParaResumen = pxLista != null && pxLista > 0 ? pxLista : 0;
-    const resumen = calcularResumenPreciosCompetenciaFila(
+    const resumen = calcularResumenPreciosPxListas(
+      opciones,
       vinculos,
       competencias,
       pxListaParaResumen
     );
+    const vinculosFusionados = fusionarVinculosConOpcionesPxListas(vinculos, opciones);
+    const competenciaIds = competencias.map((c) => c.id);
 
     return {
       id: f.codTienda,
@@ -277,7 +284,9 @@ export async function buildPxListasItemsDesdeFilas(
       esDetPrecioManual: esManual,
       pxPromedio: resumen.pxPromedio,
       difPctTiendaVsPromedio: resumen.difPctTiendaVsPromedio,
-      vinculosPorCompetencia: vinculos,
+      competidoresPrecioDetalle: resumen.competidoresOrdenados,
+      competidoresFalloDetalle: resumen.competidoresFalloDetalle,
+      vinculosCompetencia: vinculosRecordToArray(vinculosFusionados, competenciaIds),
     };
   });
 
