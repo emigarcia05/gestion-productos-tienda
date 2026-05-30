@@ -30,6 +30,7 @@ function difPctVsBase(precio: number, base: number): number | null {
   return ((precio - base) / base) * 100;
 }
 
+/** Competidores con precio a mostrar (scraping OK o Px. Vta. Sugerido vía `aplicarPrioridadPrecioMostrar`). */
 export function listarCompetidoresConPrecioOk(
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[],
@@ -38,7 +39,7 @@ export function listarCompetidoresConPrecioOk(
   const items: CompetidorPrecioFila[] = [];
   for (const c of competencias) {
     const v = vinculosPorCompetencia[c.id];
-    if (v?.estado !== ESTADO_RELEVAMIENTO_COMPETENCIA.OK || v.pxCompetencia == null) continue;
+    if (v?.pxCompetencia == null || !(v.pxCompetencia > 0)) continue;
     items.push({
       competenciaId: c.id,
       nombre: c.nombre,
@@ -66,6 +67,7 @@ export function listarCompetidoresConFalloRelevamiento(
   const items: CompetidorFalloRelevamientoFila[] = [];
   for (const c of competencias) {
     const v = vinculosPorCompetencia[c.id];
+    if (v?.urlBloqueadaPorPxSugerido) continue;
     if (!v?.urlProducto?.trim()) continue;
     if (
       v.estado !== ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR &&

@@ -24,7 +24,7 @@ export type ItemPxListasParaTabla = {
   pxListaManual: number | null;
   marcacion: number | null;
   esDetPrecioManual: boolean;
-  /** Promedio de precios de competidores con relevamiento OK (vs PX LISTA de la fila). */
+  /** Promedio de todos los competidores con precio (scraping o Px Sugerido); DIF vs PX LISTA de la fila. */
   pxPromedio: number | null;
   difPctTiendaVsPromedio: number | null;
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>;

@@ -172,76 +172,79 @@ export default function AsociarUrlsCompetenciaModal({
                   </span>
                   <div className="flex flex-col gap-2 min-w-0">
                     {urlBloqueada ? (
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Precio desde{" "}
-                        <span className="font-medium text-foreground">Px. Vta. Sugerido</span> del
-                        proveedor asociado. La URL no aplica para este producto.
-                      </p>
-                    ) : null}
-                    {f.reglas.length > 0 ? (
-                      <div>
-                        <select
-                          className="input-filtro-unificado w-full"
-                          value={f.tipoPagina}
-                          disabled={!puedeEditar || saving || urlBloqueada}
-                          aria-label={`Tipo de página — ${f.nombre}`}
-                          onChange={(e) =>
-                            setFilas((prev) =>
-                              prev.map((row, i) =>
-                                i === index ? { ...row, tipoPagina: e.target.value } : row
-                              )
-                            )
-                          }
-                        >
-                          {f.reglas.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : null}
-                    <div>
-                      <div className="relative w-full min-w-0">
-                        <Input
-                          value={f.url}
-                          disabled={!puedeEditar || saving}
-                          aria-label={`URL del producto — ${f.nombre}`}
-                          onChange={(e) =>
-                            setFilas((prev) =>
-                              prev.map((row, i) => (i === index ? { ...row, url: e.target.value } : row))
-                            )
-                          }
-                          placeholder="https://..."
-                          className={cn(puedeEditar && "pr-10")}
-                        />
-                        {puedeEditar && !urlBloqueada ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disabled={saving || !f.url.trim()}
-                            className={cn(
-                              TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                              "absolute right-0 top-0 !h-9 !w-9 shrink-0 !p-0",
-                            )}
-                            aria-label={`Borrar URL de ${f.nombre}`}
-                            title="Borrar URL"
-                            onClick={() =>
-                              setFilas((prev) =>
-                                prev.map((row, i) => (i === index ? { ...row, url: "" } : row))
-                              )
-                            }
-                          >
-                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                          </Button>
+                      <p className="text-sm font-medium text-foreground">Px Sugerido</p>
+                    ) : (
+                      <>
+                        {f.reglas.length > 0 ? (
+                          <div>
+                            <select
+                              className="input-filtro-unificado w-full"
+                              value={f.tipoPagina}
+                              disabled={!puedeEditar || saving}
+                              aria-label={`Tipo de página — ${f.nombre}`}
+                              onChange={(e) =>
+                                setFilas((prev) =>
+                                  prev.map((row, i) =>
+                                    i === index ? { ...row, tipoPagina: e.target.value } : row
+                                  )
+                                )
+                              }
+                            >
+                              {f.reglas.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.nombre}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         ) : null}
-                      </div>
-                    </div>
-                    <RelevamientoUltimoMensaje
-                      vinculo={vinculosPorCompetencia[f.competenciaId]}
-                      tieneUrlEnEdicion={!!f.url.trim()}
-                    />
+                        <div>
+                          <div className="relative w-full min-w-0">
+                            <Input
+                              value={f.url}
+                              disabled={!puedeEditar || saving}
+                              aria-label={`URL del producto — ${f.nombre}`}
+                              onChange={(e) =>
+                                setFilas((prev) =>
+                                  prev.map((row, i) =>
+                                    i === index ? { ...row, url: e.target.value } : row
+                                  )
+                                )
+                              }
+                              placeholder="https://..."
+                              className={cn(puedeEditar && "pr-10")}
+                            />
+                            {puedeEditar ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disabled={saving || !f.url.trim()}
+                                className={cn(
+                                  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                                  "absolute right-0 top-0 !h-9 !w-9 shrink-0 !p-0",
+                                )}
+                                aria-label={`Borrar URL de ${f.nombre}`}
+                                title="Borrar URL"
+                                onClick={() =>
+                                  setFilas((prev) =>
+                                    prev.map((row, i) =>
+                                      i === index ? { ...row, url: "" } : row
+                                    )
+                                  )
+                                }
+                              >
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                        <RelevamientoUltimoMensaje
+                          vinculo={vinculosPorCompetencia[f.competenciaId]}
+                          tieneUrlEnEdicion={!!f.url.trim()}
+                        />
+                      </>
+                    )}
                   </div>
                 </li>
               );

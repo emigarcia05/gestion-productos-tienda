@@ -218,10 +218,10 @@ function FilaPxListas({
           )}
         </TableCell>
         <TableCell className="celda-datos tabular-nums text-center tabla-bloque-secundario-cell-divider">
-          {item.pxPromedio != null ? fmtPrecio(item.pxPromedio) : "—"}
+          {resumenExpand.pxPromedio != null ? fmtPrecio(resumenExpand.pxPromedio) : "—"}
         </TableCell>
         <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
-          <CeldaDifPct pct={item.difPctTiendaVsPromedio} />
+          <CeldaDifPct pct={resumenExpand.difPctTiendaVsPromedio} />
         </TableCell>
         <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
           <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
