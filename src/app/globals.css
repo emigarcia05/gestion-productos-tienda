@@ -1230,22 +1230,10 @@
   outline: none !important;
 }
 
-/* Tabla Tienda / Cx Compra: COD. TIENDA 12% + DESCRIPCIÓN 46% + VINCULACIÓN 12% + CX PROD. 30%. */
+/* Tabla Tienda / Cx Compra: 5 columnas 12/38/10/28/12 % (colgroup en TablaTienda). */
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
-}
-.tabla-tienda-listado thead th:nth-child(1),
-.tabla-tienda-listado tbody td:nth-child(1) {
-  width: 15%;
-}
-.tabla-tienda-listado thead th:nth-child(2),
-.tabla-tienda-listado tbody td:nth-child(2) {
-  width: 67%;
-}
-.tabla-tienda-listado thead th:nth-child(3),
-.tabla-tienda-listado tbody td:nth-child(3) {
-  width: 18%;
 }
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */

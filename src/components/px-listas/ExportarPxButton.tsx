@@ -53,8 +53,8 @@ export default function ExportarPxButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          Compara PX LISTA del módulo con `px_lista_tienda` de DUX (pesos enteros).
-          Excel CODIGO + IMPORTE solo si el precio a importar es distinto
+          Compara PX LISTA del módulo con DUX. Excel CODIGO + Importe (marcación de la
+          grilla) solo si el precio en pesos difiere
         </TooltipContent>
       </Tooltip>
     </>

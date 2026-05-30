@@ -36,7 +36,7 @@ import {
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
-/** Forma que espera VincularModal al seleccionar (id + datos para lista y toast). */
+/** Forma que espera TablaTienda (Cx Compra) al seleccionar un producto proveedor. */
 export type ProductoConProveedor = {
   id: string;
   proveedorId: string;
@@ -56,7 +56,7 @@ interface Props {
   excluirItemTiendaId: string;
   /** IDs de proveedor (`global_proveedores`) ya vinculados; se excluyen filas de esos proveedores. */
   idsProveedoresYaVinculados?: string[];
-  /** Mismo encabezado que en **Vínculos Con Proveedores** (`VincularModal`). */
+  /** Mismo encabezado que en el detalle expandido de **Cx Compra**. */
   itemDescripcion: string;
   marca?: string | null;
   rubro?: string | null;

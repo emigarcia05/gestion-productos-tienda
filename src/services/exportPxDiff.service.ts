@@ -1,3 +1,4 @@
+import { roundMarcacionPxLista } from "@/lib/pxListas";
 import { prisma } from "@/lib/prisma";
 import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
 import { obtenerMapPxListaConfig } from "@/services/pxListasConfig.service";
@@ -6,8 +7,8 @@ const BATCH_SIZE = 150;
 
 export interface FilaExportPx {
   codigo: string;
-  /** PX LISTA a importar en DUX (pesos enteros), según configuración actual del módulo. */
-  importe: number;
+  /** Marcación de la grilla (columna Excel «Importe»). */
+  marcacion: number;
 }
 
 function toNum(n: unknown): number {
@@ -17,9 +18,8 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Exporta solo ítems cuyo **PX LISTA efectivo** (grilla Px Listas) difiere del espejo DUX
- * `px_lista_tienda` en pesos enteros. Evita falsos positivos por comparar solo la
- * columna `marcacion` guardada (decimales) cuando el importe en DUX ya coincide.
+ * Exporta ítems cuyo **PX LISTA efectivo** difiere de `px_lista_tienda` en DUX (pesos enteros).
+ * La columna Excel **Importe** lleva la **marcación** de la grilla (5 decimales).
  */
 export async function listarFilasExportPxDiff(): Promise<FilaExportPx[]> {
   const rows = await prisma.prodPrecioTiendaMarcacion.findMany({
@@ -56,16 +56,19 @@ export async function listarFilasExportPxDiff(): Promise<FilaExportPx[]> {
     for (const row of chunk) {
       const pxDux = Math.round(toNum(row.listaPrecioTienda.pxListaTienda));
       const item = itemPorCod.get(row.codTienda);
-      const pxLista = item?.pxLista;
+      if (!item) continue;
+      const pxLista = item.pxLista;
 
       if (pxLista == null || !(pxLista > 0) || !(pxDux > 0)) continue;
 
-      const importe = Math.round(pxLista);
-      if (importe === pxDux) continue;
+      if (Math.round(pxLista) === pxDux) continue;
+
+      const marcacion = item.marcacion;
+      if (marcacion == null || !(marcacion > 0)) continue;
 
       filas.push({
         codigo: row.codTienda,
-        importe,
+        marcacion: roundMarcacionPxLista(marcacion),
       });
     }
   }
