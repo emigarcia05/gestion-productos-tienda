@@ -10,6 +10,10 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { getPxListasPageParamsSchema } from "@/lib/validations/pxListas";
+import {
+  listCompetencias,
+  type CompetenciaParaCliente,
+} from "@/services/competencia.service";
 import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
 import { obtenerMapPxListaConfig } from "@/services/pxListasConfig.service";
 
@@ -71,8 +75,16 @@ function compareItemsPorMarcacion(
   return a.descripcion.localeCompare(b.descripcion, "es");
 }
 
-async function getPxListasPageEmpty() {
-  const [marcasDistinct, rubrosDistinct, competidores] = await Promise.all([
+async function getPxListasPageEmpty(): Promise<{
+  items: ItemPxListasParaTabla[];
+  total: number;
+  totalPaginas: number;
+  marcas: Array<{ marca: string }>;
+  rubros: Array<{ rubro: string }>;
+  competidores: CompetidorFiltroPxListas[];
+  competencias: CompetenciaParaCliente[];
+}> {
+  const [marcasDistinct, rubrosDistinct, competidores, competencias] = await Promise.all([
     prisma.listaPrecioTienda.findMany({
       select: { marca: true },
       distinct: ["marca"],
@@ -86,14 +98,16 @@ async function getPxListasPageEmpty() {
       orderBy: { rubro: "asc" },
     }),
     listarCompetidoresFiltroDetPrecio(),
+    listCompetencias(),
   ]);
   return {
-    items: [] as ItemPxListasParaTabla[],
+    items: [],
     total: 0,
     totalPaginas: 1,
     marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => ({ marca: m.marca! })),
     rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => ({ rubro: r.rubro! })),
     competidores,
+    competencias,
   };
 }
 
@@ -173,13 +187,23 @@ export async function getPxListasPageDataFromDb(params: {
       costoCompra: Number(r.costoCompra),
     }));
     const configMap = await obtenerMapPxListaConfig(filas.map((f) => f.codTienda));
-    let items = await buildPxListasItemsDesdeFilas(filas, configMap);
-    items = [...items].sort((a, b) => compareItemsPorMarcacion(a, b, ordenMarcacion));
+    const built = await buildPxListasItemsDesdeFilas(filas, configMap);
+    let items = [...built.items].sort((a, b) =>
+      compareItemsPorMarcacion(a, b, ordenMarcacion)
+    );
     const total = items.length;
     const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
     const skip = (paginaNum - 1) * PAGE_SIZE;
     items = items.slice(skip, skip + PAGE_SIZE);
-    return { items, total, totalPaginas, marcas, rubros, competidores };
+    return {
+      items,
+      total,
+      totalPaginas,
+      marcas,
+      rubros,
+      competidores,
+      competencias: built.competencias,
+    };
   }
 
   const skip = (paginaNum - 1) * PAGE_SIZE;
@@ -200,8 +224,8 @@ export async function getPxListasPageDataFromDb(params: {
     costoCompra: Number(r.costoCompra),
   }));
   const configMap = await obtenerMapPxListaConfig(filas.map((f) => f.codTienda));
-  const items = await buildPxListasItemsDesdeFilas(filas, configMap);
+  const { items, competencias } = await buildPxListasItemsDesdeFilas(filas, configMap);
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
 
-  return { items, total, totalPaginas, marcas, rubros, competidores };
+  return { items, total, totalPaginas, marcas, rubros, competidores, competencias };
 }

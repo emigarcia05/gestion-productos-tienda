@@ -169,6 +169,9 @@ export async function POST(request: Request) {
       errores: result.errores,
     });
     revalidatePath("/precios-competencia");
+    revalidatePath("/gestion-productos/precios-competencia");
+    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+    revalidatePath("/tienda/cx-px");
     const competenciaNombre =
       parsed.data.todos === true
         ? `Todos (${competidoresSync.length} competidores)`

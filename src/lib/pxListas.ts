@@ -1,3 +1,5 @@
+import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+
 /** Valor del select DET PRECIO cuando el precio es manual. */
 export const DET_PRECIO_MANUAL = "manual" as const;
 
@@ -22,6 +24,10 @@ export type ItemPxListasParaTabla = {
   pxListaManual: number | null;
   marcacion: number | null;
   esDetPrecioManual: boolean;
+  /** Promedio de precios de competidores con relevamiento OK (vs PX LISTA de la fila). */
+  pxPromedio: number | null;
+  difPctTiendaVsPromedio: number | null;
+  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>;
 };
 
 /** Decimales visibles de la columna MARCACION en Px Listas. */

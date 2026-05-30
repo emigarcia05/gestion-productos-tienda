@@ -34,12 +34,22 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/proveedores/competencia-precios",
-        destination: "/gestion-productos/precios-competencia",
+        destination: "/gestion-productos/tienda/cx-px-tienda",
         permanent: true,
       },
       {
         source: "/gestion-productos/proveedores/competencia-precios",
-        destination: "/gestion-productos/precios-competencia",
+        destination: "/gestion-productos/tienda/cx-px-tienda",
+        permanent: true,
+      },
+      {
+        source: "/gestion-productos/precios-competencia",
+        destination: "/gestion-productos/tienda/cx-px-tienda",
+        permanent: true,
+      },
+      {
+        source: "/precios-competencia",
+        destination: "/gestion-productos/tienda/cx-px-tienda",
         permanent: true,
       },
       {

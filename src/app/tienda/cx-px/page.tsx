@@ -39,7 +39,7 @@ export default async function PxListasPage({ searchParams }: Props) {
     ? ordenMarcacionRaw
     : "";
 
-  const { items, total, totalPaginas, marcas, rubros, competidores } =
+  const { items, total, totalPaginas, marcas, rubros, competidores, competencias } =
     await getPxListasPageData({
       q,
       rubro,
@@ -58,6 +58,7 @@ export default async function PxListasPage({ searchParams }: Props) {
       marcas={marcas}
       rubros={rubros}
       competidores={competidores}
+      competencias={competencias}
       rol={rol}
       q={q}
       rubro={rubro}

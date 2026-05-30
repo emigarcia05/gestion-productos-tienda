@@ -9,6 +9,7 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import type { OrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import type { CompetidorFiltroPxListas } from "@/services/pxListasPage.service";
+import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 const BASE_PATH = "/gestion-productos/tienda/cx-px-tienda";
@@ -20,6 +21,7 @@ interface Props {
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
   competidores: CompetidorFiltroPxListas[];
+  competencias: CompetenciaParaCliente[];
   rol: Rol;
   q: string;
   rubro: string;
@@ -36,6 +38,7 @@ export default function PxListasPageClient({
   marcas,
   rubros,
   competidores,
+  competencias,
   rol,
   q,
   rubro,
@@ -45,6 +48,7 @@ export default function PxListasPageClient({
   paginaNum,
 }: Props) {
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
+  const puedeEditarEnlaces = puede(rol, PERMISOS.competenciaPrecios.editar);
   const filters = (
     <FiltrosPxListas
       marcas={marcas.map((m) => m.marca)}
@@ -68,7 +72,12 @@ export default function PxListasPageClient({
       >
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <TablaPxListas items={items} puedeEditar={puedeEditar} />
+            <TablaPxListas
+              items={items}
+              competencias={competencias}
+              puedeEditar={puedeEditar}
+              puedeEditarEnlaces={puedeEditarEnlaces}
+            />
           </div>
           {totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">

@@ -50,7 +50,7 @@ export async function listarFilasExportPxDiff(): Promise<FilaExportPx[]> {
       costoCompra: toNum(r.listaPrecioTienda.costoCompra),
     }));
 
-    const items = await buildPxListasItemsDesdeFilas(baseFilas, configMap);
+    const { items } = await buildPxListasItemsDesdeFilas(baseFilas, configMap);
     const itemPorCod = new Map(items.map((i) => [i.codItem, i]));
 
     for (const row of chunk) {

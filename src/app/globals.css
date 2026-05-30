@@ -1146,7 +1146,7 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
-/* Tabla Px Listas: 50% + 20% + 20% + 10% (colgroup en TablaPxListas). */
+/* Tabla Px Listas: 7 columnas 28/14/12/12/12/12/10 % (colgroup en TablaPxListas). */
 .tabla-px-listas-listado {
   table-layout: fixed;
   width: 100%;

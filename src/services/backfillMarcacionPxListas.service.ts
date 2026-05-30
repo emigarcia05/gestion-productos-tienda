@@ -53,7 +53,7 @@ export async function backfillMarcacionPxListasTodos(options?: {
       costoCompra: Number(r.costoCompra),
     }));
 
-    const items = await buildPxListasItemsDesdeFilas(filas, configMap);
+    const { items } = await buildPxListasItemsDesdeFilas(filas, configMap);
 
     for (const item of items) {
       totalProcesados += 1;

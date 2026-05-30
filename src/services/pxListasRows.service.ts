@@ -12,8 +12,31 @@ import {
   buildMapPxSugeridoCompetenciaPorCodTienda,
   buildMapPxVtaSugerido,
 } from "@/services/competenciaPxSugerido.service";
+import { calcularResumenPreciosCompetenciaFila } from "@/lib/competenciaPreciosFilaResumen";
+import {
+  competenciaSelect,
+  mapCompetenciaRow,
+  type CompetenciaParaCliente,
+} from "@/services/competencia.service";
 import type { PxListaConfigPersistida } from "@/services/pxListasConfig.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+
+export type BuildPxListasItemsResult = {
+  items: ItemPxListasParaTabla[];
+  competencias: CompetenciaParaCliente[];
+};
+
+function vinculoVacio(): DatoVinculoCompetenciaCliente {
+  return {
+    urlProducto: null,
+    tipoPagina: null,
+    pxCompetencia: null,
+    estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+    errorMensaje: null,
+    relevadoAt: null,
+    urlBloqueadaPorPxSugerido: false,
+  };
+}
 
 function vinculoDesdeRow(row: {
   urlProducto: string | null;
@@ -122,12 +145,18 @@ export async function buildPxListasItemsDesdeFilas(
     costoCompra: number;
   }>,
   configMap: Map<string, PxListaConfigPersistida>
-): Promise<ItemPxListasParaTabla[]> {
-  if (filas.length === 0) return [];
+): Promise<BuildPxListasItemsResult> {
+  if (filas.length === 0) {
+    const competenciasRows = await prisma.prodCompetencia.findMany({
+      orderBy: { nombre: "asc" },
+      select: competenciaSelect,
+    });
+    return { items: [], competencias: competenciasRows.map(mapCompetenciaRow) };
+  }
 
   const codTiendas = filas.map((f) => f.codTienda);
 
-  const [preciosRows, sugeridoPorCodTienda] = await Promise.all([
+  const [preciosRows, sugeridoPorCodTienda, competenciasRows] = await Promise.all([
     prisma.prodPrecioCompetencia.findMany({
       where: { codTienda: { in: codTiendas } },
       select: {
@@ -144,7 +173,13 @@ export async function buildPxListasItemsDesdeFilas(
       orderBy: { competencia: { nombre: "asc" } },
     }),
     buildMapPxSugeridoCompetenciaPorCodTienda(codTiendas),
+    prisma.prodCompetencia.findMany({
+      orderBy: { nombre: "asc" },
+      select: competenciaSelect,
+    }),
   ]);
+
+  const competencias = competenciasRows.map(mapCompetenciaRow);
 
   const idProveedores = [
     ...new Set(
@@ -155,6 +190,22 @@ export async function buildPxListasItemsDesdeFilas(
   ];
   const pxSugeridoCompetidorMap = await buildMapPxVtaSugerido(codTiendas, idProveedores);
 
+  const pxSugeridoParaCompetencia = (
+    codTienda: string,
+    competenciaId: string
+  ): number | null => {
+    const idProveedor = competencias.find((c) => c.id === competenciaId)?.idProveedor;
+    if (!idProveedor) return null;
+    return pxSugeridoCompetidorMap.get(`${codTienda}:${idProveedor}`) ?? null;
+  };
+
+  const vinculosMap = new Map<string, Record<string, DatoVinculoCompetenciaCliente>>();
+  for (const cod of codTiendas) {
+    const entry: Record<string, DatoVinculoCompetenciaCliente> = {};
+    for (const c of competencias) entry[c.id] = vinculoVacio();
+    vinculosMap.set(cod, entry);
+  }
+
   const opcionesPorCod = new Map<string, OpcionCompetenciaPxLista[]>();
   for (const row of preciosRows) {
     const pxSugeridoComp =
@@ -163,6 +214,10 @@ export async function buildPxListasItemsDesdeFilas(
           null)
         : null;
     const vinculo = aplicarPrioridadPrecioMostrar(vinculoDesdeRow(row), pxSugeridoComp);
+    const entry = vinculosMap.get(row.codTienda);
+    if (entry) {
+      entry[row.competenciaId] = vinculo;
+    }
     const px = vinculo.pxCompetencia;
     if (px == null || !(px > 0)) continue;
     const list = opcionesPorCod.get(row.codTienda) ?? [];
@@ -174,7 +229,16 @@ export async function buildPxListasItemsDesdeFilas(
     opcionesPorCod.set(row.codTienda, list);
   }
 
-  return filas.map((f) => {
+  for (const [codTienda, entry] of vinculosMap) {
+    for (const c of competencias) {
+      entry[c.id] = aplicarPrioridadPrecioMostrar(
+        entry[c.id] ?? vinculoVacio(),
+        pxSugeridoParaCompetencia(codTienda, c.id)
+      );
+    }
+  }
+
+  const items = filas.map((f) => {
     const config = configMap.get(f.codTienda);
     const sugerido = sugeridoPorCodTienda.get(f.codTienda) ?? null;
     const opciones = opcionesConPrecioRegistrado(
@@ -191,6 +255,13 @@ export async function buildPxListasItemsDesdeFilas(
     const esManual = detPrecioSeleccion === DET_PRECIO_MANUAL;
     const pxListaManual = config?.pxListaManual ?? null;
     const pxLista = resolverPxLista(detPrecioSeleccion, pxListaManual, opciones);
+    const vinculos = vinculosMap.get(f.codTienda) ?? {};
+    const pxListaParaResumen = pxLista != null && pxLista > 0 ? pxLista : 0;
+    const resumen = calcularResumenPreciosCompetenciaFila(
+      vinculos,
+      competencias,
+      pxListaParaResumen
+    );
 
     return {
       id: f.codTienda,
@@ -204,6 +275,11 @@ export async function buildPxListasItemsDesdeFilas(
       pxListaManual,
       marcacion: pxLista != null ? calcMarcacionPxLista(pxLista, f.costoCompra) : null,
       esDetPrecioManual: esManual,
+      pxPromedio: resumen.pxPromedio,
+      difPctTiendaVsPromedio: resumen.difPctTiendaVsPromedio,
+      vinculosPorCompetencia: vinculos,
     };
   });
+
+  return { items, competencias };
 }

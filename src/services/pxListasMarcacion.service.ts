@@ -40,7 +40,7 @@ export async function persistirMarcacionPxLista(codTienda: string): Promise<void
   const configMap = await obtenerMapPxListaConfig([codTienda]);
   if (!configMap.has(codTienda)) return;
 
-  const [item] = await buildPxListasItemsDesdeFilas(
+  const { items } = await buildPxListasItemsDesdeFilas(
     [
       {
         codTienda: tienda.codTienda,
@@ -51,7 +51,7 @@ export async function persistirMarcacionPxLista(codTienda: string): Promise<void
     configMap
   );
 
-  const marcacion = item?.marcacion ?? null;
+  const marcacion = items[0]?.marcacion ?? null;
   await prisma.prodPrecioTiendaMarcacion.update({
     where: { codTienda },
     data: {

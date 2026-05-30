@@ -27,6 +27,13 @@ import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
 const PATH = "/precios-competencia";
 
+function revalidateCompetenciaPreciosPaths() {
+  revalidatePath(PATH);
+  revalidatePath("/gestion-productos/precios-competencia");
+  revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+  revalidatePath("/tienda/cx-px");
+}
+
 async function gateAcceso(): Promise<{ ok: false; error: string } | null> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.competenciaPrecios.acceso)) {
@@ -120,7 +127,7 @@ export async function createCompetenciaAction(
       };
     }
     const row = await competenciaService.createCompetencia(parsed.data);
-    revalidatePath(PATH);
+    revalidateCompetenciaPreciosPaths();
     return { ok: true, data: row };
   } catch (e) {
     const message = e instanceof Error ? e.message : "No se pudo crear el competidor.";
@@ -152,7 +159,7 @@ export async function updateCompetenciaAction(
       };
     }
     const row = await competenciaService.updateCompetencia(parsed.data);
-    revalidatePath(PATH);
+    revalidateCompetenciaPreciosPaths();
     return { ok: true, data: row };
   } catch (e) {
     const message = e instanceof Error ? e.message : "No se pudo actualizar el competidor.";
@@ -172,7 +179,7 @@ export async function deleteCompetenciaAction(raw: unknown): Promise<ActionResul
       return { ok: false, error: "ID inválido." };
     }
     await competenciaService.deleteCompetencia(parsed.data.id);
-    revalidatePath(PATH);
+    revalidateCompetenciaPreciosPaths();
     return { ok: true, data: undefined };
   } catch (e) {
     return {
@@ -201,7 +208,7 @@ export async function guardarUrlVinculoCompetenciaAction(
       };
     }
     const row = await guardarUrlVinculoCompetencia(parsed.data);
-    revalidatePath(PATH);
+    revalidateCompetenciaPreciosPaths();
     return { ok: true, data: row };
   } catch (e) {
     return {
