@@ -1,3 +1,4 @@
+import { calcMargenSinIvaPct } from "@/lib/calculos";
 import type {
   CompetidorFalloRelevamientoFila,
   CompetidorPrecioFila,
@@ -46,12 +47,14 @@ export function roundMarcacionPxLista(value: number): number {
   return Math.round(value * factor) / factor;
 }
 
-/** Marcación Px Listas: (PX LISTA / costo_compra) / 1,21 — cinco decimales. */
+/**
+ * Marcación Px Listas: % utilidad sin IVA — ((px/costo)/1,21 − 1)×100.
+ * Antes se persistía el factor multiplicador (px/costo/1,21); migración 20260528260000.
+ */
 export function calcMarcacionPxLista(pxLista: number, costoCompra: number): number | null {
-  if (!(pxLista > 0) || !(costoCompra > 0)) return null;
-  if (!Number.isFinite(pxLista) || !Number.isFinite(costoCompra)) return null;
-  const valor = pxLista / costoCompra / 1.21;
-  return roundMarcacionPxLista(valor);
+  const m = calcMargenSinIvaPct(pxLista, costoCompra);
+  if (m == null) return null;
+  return roundMarcacionPxLista(m);
 }
 
 /** Inversa de `calcMarcacionPxLista`: PX LISTA entero en pesos. */
@@ -59,9 +62,11 @@ export function calcPxListaDesdeMarcacionPxLista(
   marcacion: number,
   costoCompra: number
 ): number | null {
-  if (!(marcacion > 0) || !(costoCompra > 0)) return null;
   if (!Number.isFinite(marcacion) || !Number.isFinite(costoCompra)) return null;
-  const px = marcacion * costoCompra * 1.21;
+  if (!(costoCompra > 0)) return null;
+  const factor = 1 + marcacion / 100;
+  if (!(factor > 0)) return null;
+  const px = factor * costoCompra * 1.21;
   if (!Number.isFinite(px) || px <= 0) return null;
   return Math.round(px);
 }

@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client";
-import { calcMargenSinIvaPct } from "@/lib/calculos";
 import {
   calcMarcacionPxLista,
   roundMarcacionPxLista,
@@ -8,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
 import { obtenerMapPxListaConfig } from "@/services/pxListasConfig.service";
 
-/** Marcación “vieja” (espejo DUX): `(px_lista_tienda / 1,21) / costo_compra`. */
+/** Marcación del espejo DUX (`px_lista_tienda`) con la fórmula vigente (% utilidad sin IVA). */
 export function calcMarcacionViejaDesdeDux(
   pxListaTienda: number,
   costoCompra: number
@@ -61,12 +60,11 @@ export async function persistirMarcacionPxLista(codTienda: string): Promise<void
   });
 }
 
-/** % utilidad sin IVA para export DUX a partir de la marcación persistida. */
+/** % utilidad sin IVA a partir de la marcación persistida (ya en escala porcentual). */
 export function porcUtilidadDesdeMarcacionPxLista(
   marcacion: number,
-  costoCompra: number
+  _costoCompra?: number
 ): number | null {
-  if (!(marcacion > 0) || !(costoCompra > 0)) return null;
-  const pxLista = marcacion * costoCompra * 1.21;
-  return calcMargenSinIvaPct(pxLista, costoCompra);
+  if (!Number.isFinite(marcacion)) return null;
+  return roundMarcacionPxLista(marcacion);
 }
