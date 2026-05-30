@@ -11,7 +11,10 @@ import FiltrosPxListas from "@/components/px-listas/FiltrosPxListas";
 import TablaPxListas from "@/components/px-listas/TablaPxListas";
 import GestionCompetidoresModal from "@/components/precios-competencia/GestionCompetidoresModal";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type { OrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
+import type {
+  FiltroPxPromedioPxListas,
+  OrdenMarcacionPxListas,
+} from "@/lib/pxListasFiltros";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import type { CompetidorFiltroPxListas } from "@/services/pxListasPage.service";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
@@ -32,6 +35,7 @@ interface Props {
   rubro: string;
   marca: string;
   detPrecio: string;
+  filtroPxPromedio: FiltroPxPromedioPxListas;
   ordenMarcacion: OrdenMarcacionPxListas;
   paginaNum: number;
 }
@@ -49,6 +53,7 @@ export default function PxListasPageClient({
   rubro,
   marca,
   detPrecio,
+  filtroPxPromedio,
   ordenMarcacion,
   paginaNum,
 }: Props) {
@@ -85,6 +90,7 @@ export default function PxListasPageClient({
       marcaActual={marca}
       rubroActual={rubro}
       detPrecioActual={detPrecio}
+      filtroPxPromedioActual={filtroPxPromedio}
       ordenMarcacionActual={ordenMarcacion}
     />
   );
@@ -109,7 +115,7 @@ export default function PxListasPageClient({
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
                 basePath={BASE_PATH}
-                params={{ q, rubro, marca, detPrecio, ordenMarcacion }}
+                params={{ q, rubro, marca, detPrecio, filtroPxPromedio, ordenMarcacion }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}

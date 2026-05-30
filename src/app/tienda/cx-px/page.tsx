@@ -1,7 +1,13 @@
 import { redirect } from "next/navigation";
 import { getPxListasPageData } from "@/actions/pxListas";
-import { esOrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
-import type { OrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
+import {
+  esFiltroPxPromedioPxListas,
+  esOrdenMarcacionPxListas,
+} from "@/lib/pxListasFiltros";
+import type {
+  FiltroPxPromedioPxListas,
+  OrdenMarcacionPxListas,
+} from "@/lib/pxListasFiltros";
 import PxListasPageClient from "@/components/px-listas/PxListasPageClient";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -14,6 +20,7 @@ interface Props {
     rubro?: string;
     marca?: string;
     detPrecio?: string;
+    filtroPxPromedio?: string;
     ordenMarcacion?: string;
     pagina?: string;
   }>;
@@ -31,12 +38,18 @@ export default async function PxListasPage({ searchParams }: Props) {
     rubro = "",
     marca = "",
     detPrecio = "",
+    filtroPxPromedio: filtroPxPromedioRaw = "",
     ordenMarcacion: ordenMarcacionRaw = "",
     pagina = "1",
   } = sp;
 
   const ordenMarcacion: OrdenMarcacionPxListas = esOrdenMarcacionPxListas(ordenMarcacionRaw)
     ? ordenMarcacionRaw
+    : "";
+  const filtroPxPromedio: FiltroPxPromedioPxListas = esFiltroPxPromedioPxListas(
+    filtroPxPromedioRaw
+  )
+    ? filtroPxPromedioRaw
     : "";
 
   const { items, total, totalPaginas, marcas, rubros, competidores, competencias } =
@@ -45,6 +58,7 @@ export default async function PxListasPage({ searchParams }: Props) {
       rubro,
       marca,
       detPrecio,
+      filtroPxPromedio,
       ordenMarcacion,
       pagina,
     });
@@ -64,6 +78,7 @@ export default async function PxListasPage({ searchParams }: Props) {
       rubro={rubro}
       marca={marca}
       detPrecio={detPrecio}
+      filtroPxPromedio={filtroPxPromedio}
       ordenMarcacion={ordenMarcacion}
       paginaNum={paginaNum}
     />

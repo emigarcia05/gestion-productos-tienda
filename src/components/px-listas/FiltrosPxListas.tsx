@@ -19,8 +19,11 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import { DET_PRECIO_MANUAL } from "@/lib/pxListas";
 import {
+  OPCIONES_FILTRO_PX_PROMEDIO_PX_LISTAS,
   OPCIONES_ORDEN_MARCACION_PX_LISTAS,
+  type FiltroPxPromedioPxListas,
   type OrdenMarcacionPxListas,
 } from "@/lib/pxListasFiltros";
 import type { CompetidorFiltroPxListas } from "@/services/pxListasPage.service";
@@ -37,6 +40,7 @@ interface Props {
   marcaActual: string;
   rubroActual: string;
   detPrecioActual: string;
+  filtroPxPromedioActual: FiltroPxPromedioPxListas;
   ordenMarcacionActual: OrdenMarcacionPxListas;
 }
 
@@ -49,6 +53,7 @@ export default function FiltrosPxListas({
   marcaActual,
   rubroActual,
   detPrecioActual,
+  filtroPxPromedioActual,
   ordenMarcacionActual,
 }: Props) {
   const pathname = usePathname();
@@ -76,6 +81,7 @@ export default function FiltrosPxListas({
     marcaActual ||
     rubroActual ||
     detPrecioActual ||
+    filtroPxPromedioActual ||
     ordenMarcacionActual
   );
 
@@ -84,6 +90,7 @@ export default function FiltrosPxListas({
     marca?: string;
     rubro?: string;
     detPrecio?: string;
+    filtroPxPromedio?: FiltroPxPromedioPxListas;
     ordenMarcacion?: OrdenMarcacionPxListas;
   }) {
     const p = new URLSearchParams();
@@ -92,6 +99,10 @@ export default function FiltrosPxListas({
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const detPrecioVal =
       updates.detPrecio !== undefined ? updates.detPrecio : detPrecioActual;
+    const filtroPxPromedioVal =
+      updates.filtroPxPromedio !== undefined
+        ? updates.filtroPxPromedio
+        : filtroPxPromedioActual;
     const ordenVal =
       updates.ordenMarcacion !== undefined
         ? updates.ordenMarcacion
@@ -100,6 +111,7 @@ export default function FiltrosPxListas({
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (detPrecioVal) p.set("detPrecio", detPrecioVal);
+    if (filtroPxPromedioVal) p.set("filtroPxPromedio", filtroPxPromedioVal);
     if (ordenVal) p.set("ordenMarcacion", ordenVal);
     const query = p.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
@@ -193,9 +205,41 @@ export default function FiltrosPxListas({
                 align="start"
                 className="select-content-filtro max-h-64"
               >
+                <SelectItem value={DET_PRECIO_MANUAL}>PX MANUAL</SelectItem>
                 {competidores.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(filtroPxPromedioActual)}
+            onLimpiar={() => navigate({ filtroPxPromedio: "" })}
+          >
+            <Select
+              value={filtroPxPromedioActual || undefined}
+              onValueChange={(v) =>
+                navigate({ filtroPxPromedio: v as FiltroPxPromedioPxListas })
+              }
+            >
+              <SelectTrigger
+                id="filtro-px-listas-px-promedio"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="PX PROMEDIO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {OPCIONES_FILTRO_PX_PROMEDIO_PX_LISTAS.map((op) => (
+                  <SelectItem key={op.value} value={op.value}>
+                    {op.label}
                   </SelectItem>
                 ))}
               </SelectContent>

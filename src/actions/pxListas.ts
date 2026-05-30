@@ -27,6 +27,7 @@ export async function getPxListasPageData(params: {
   rubro?: string;
   marca?: string;
   detPrecio?: string;
+  filtroPxPromedio?: string;
   ordenMarcacion?: string;
   pagina?: string;
 }) {

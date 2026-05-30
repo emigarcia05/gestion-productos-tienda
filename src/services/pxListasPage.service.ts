@@ -2,8 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { filtroTexto } from "@/lib/busqueda";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import {
+  esDetPrecioFiltroManual,
+  esFiltroPxPromedioPxListas,
   esOrdenMarcacionPxListas,
+  filtrarItemsPxListasEnMemoria,
   ORDEN_MARCACION_DESC,
+  requierePostProcesoPxListas,
+  type FiltroPxPromedioPxListas,
   type OrdenMarcacionPxListas,
 } from "@/lib/pxListasFiltros";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -39,6 +44,9 @@ function buildWherePxListas(params: {
   if (textFilter.AND?.length) andParts.push(textFilter);
   if (params.rubro) andParts.push({ rubro: params.rubro });
   if (params.marca) andParts.push({ marca: params.marca });
+  if (esDetPrecioFiltroManual(params.detPrecio)) {
+    return andParts.length ? { AND: andParts } : {};
+  }
   const detPrecioParsed = prismaCuidSchema.safeParse(params.detPrecio);
   if (detPrecioParsed.success) {
     andParts.push({
@@ -111,11 +119,55 @@ async function getPxListasPageEmpty(): Promise<{
   };
 }
 
+async function listarItemsPxListasPostProcesados(
+  where: Prisma.ListaPrecioTiendaWhereInput,
+  opts: {
+    detPrecio: string;
+    filtroPxPromedio: FiltroPxPromedioPxListas;
+    ordenMarcacion: OrdenMarcacionPxListas;
+    paginaNum: number;
+  }
+) {
+  const selectBase = {
+    codTienda: true,
+    descripcionTienda: true,
+    costoCompra: true,
+  } as const;
+
+  const rows = await prisma.listaPrecioTienda.findMany({
+    where,
+    select: selectBase,
+    orderBy: [{ descripcionTienda: "asc" }],
+  });
+  const filas: FilaPxListasBase[] = rows.map((r) => ({
+    codTienda: r.codTienda,
+    descripcion: r.descripcionTienda ?? "",
+    costoCompra: Number(r.costoCompra),
+  }));
+  const configMap = await obtenerMapPxListaConfig(filas.map((f) => f.codTienda));
+  const built = await buildPxListasItemsDesdeFilas(filas, configMap);
+  let items = filtrarItemsPxListasEnMemoria(built.items, {
+    detPrecio: opts.detPrecio,
+    filtroPxPromedio: opts.filtroPxPromedio,
+  });
+  if (opts.ordenMarcacion) {
+    items = [...items].sort((a, b) =>
+      compareItemsPorMarcacion(a, b, opts.ordenMarcacion)
+    );
+  }
+  const total = items.length;
+  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
+  const skip = (opts.paginaNum - 1) * PAGE_SIZE;
+  items = items.slice(skip, skip + PAGE_SIZE);
+  return { items, total, totalPaginas, competencias: built.competencias };
+}
+
 export async function getPxListasPageDataFromDb(params: {
   q?: string;
   rubro?: string;
   marca?: string;
   detPrecio?: string;
+  filtroPxPromedio?: string;
   ordenMarcacion?: string;
   pagina?: string;
 }) {
@@ -129,6 +181,7 @@ export async function getPxListasPageDataFromDb(params: {
     rubro = "",
     marca = "",
     detPrecio = "",
+    filtroPxPromedio: filtroPxPromedioRaw = "",
     ordenMarcacion: ordenMarcacionRaw = "",
     pagina = "1",
   } = parsed.data;
@@ -136,9 +189,19 @@ export async function getPxListasPageDataFromDb(params: {
   const ordenMarcacion: OrdenMarcacionPxListas = esOrdenMarcacionPxListas(ordenMarcacionRaw)
     ? ordenMarcacionRaw
     : "";
+  const filtroPxPromedio: FiltroPxPromedioPxListas = esFiltroPxPromedioPxListas(
+    filtroPxPromedioRaw
+  )
+    ? filtroPxPromedioRaw
+    : "";
 
   const where = buildWherePxListas({ q, rubro, marca, detPrecio });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
+  const postProceso = requierePostProcesoPxListas({
+    ordenMarcacion,
+    detPrecio,
+    filtroPxPromedio,
+  });
 
   const andPartsOnlyQ: Prisma.ListaPrecioTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
@@ -175,26 +238,14 @@ export async function getPxListasPageDataFromDb(params: {
     costoCompra: true,
   } as const;
 
-  if (ordenMarcacion) {
-    const rows = await prisma.listaPrecioTienda.findMany({
-      where,
-      select: selectBase,
-      orderBy: [{ descripcionTienda: "asc" }],
-    });
-    const filas: FilaPxListasBase[] = rows.map((r) => ({
-      codTienda: r.codTienda,
-      descripcion: r.descripcionTienda ?? "",
-      costoCompra: Number(r.costoCompra),
-    }));
-    const configMap = await obtenerMapPxListaConfig(filas.map((f) => f.codTienda));
-    const built = await buildPxListasItemsDesdeFilas(filas, configMap);
-    let items = [...built.items].sort((a, b) =>
-      compareItemsPorMarcacion(a, b, ordenMarcacion)
-    );
-    const total = items.length;
-    const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
-    const skip = (paginaNum - 1) * PAGE_SIZE;
-    items = items.slice(skip, skip + PAGE_SIZE);
+  if (postProceso) {
+    const { items, total, totalPaginas, competencias } =
+      await listarItemsPxListasPostProcesados(where, {
+        detPrecio,
+        filtroPxPromedio,
+        ordenMarcacion,
+        paginaNum,
+      });
     return {
       items,
       total,
@@ -202,7 +253,7 @@ export async function getPxListasPageDataFromDb(params: {
       marcas,
       rubros,
       competidores,
-      competencias: built.competencias,
+      competencias,
     };
   }
 
