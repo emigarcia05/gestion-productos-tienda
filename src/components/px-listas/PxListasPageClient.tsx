@@ -1,10 +1,15 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Users } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import { Button } from "@/components/ui/button";
 import ExportarPxButton from "@/components/px-listas/ExportarPxButton";
 import FiltrosPxListas from "@/components/px-listas/FiltrosPxListas";
 import TablaPxListas from "@/components/px-listas/TablaPxListas";
+import GestionCompetidoresModal from "@/components/precios-competencia/GestionCompetidoresModal";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { OrdenMarcacionPxListas } from "@/lib/pxListasFiltros";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
@@ -47,8 +52,29 @@ export default function PxListasPageClient({
   ordenMarcacion,
   paginaNum,
 }: Props) {
+  const router = useRouter();
+  const [gestionCompetidoresOpen, setGestionCompetidoresOpen] = useState(false);
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
   const puedeEditarEnlaces = puede(rol, PERMISOS.competenciaPrecios.editar);
+  const puedeGestionarCompetidores = puede(rol, PERMISOS.competenciaPrecios.editar);
+
+  const headerActions =
+    puedeEditar || puedeGestionarCompetidores ? (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {puedeGestionarCompetidores ? (
+          <Button
+            type="button"
+            variant="default"
+            className="btn-primario-gestion gap-2 shrink-0"
+            onClick={() => setGestionCompetidoresOpen(true)}
+          >
+            <Users className="h-4 w-4 shrink-0" aria-hidden />
+            Gestionar Competidores
+          </Button>
+        ) : null}
+        {puedeEditar ? <ExportarPxButton /> : null}
+      </div>
+    ) : undefined;
   const filters = (
     <FiltrosPxListas
       marcas={marcas.map((m) => m.marca)}
@@ -68,7 +94,7 @@ export default function PxListasPageClient({
       <ClassicFilteredTableLayout
         title="Px Listas"
         filters={filters}
-        actions={puedeEditar ? <ExportarPxButton /> : undefined}
+        actions={headerActions}
       >
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
@@ -93,6 +119,13 @@ export default function PxListasPageClient({
           )}
         </div>
       </ClassicFilteredTableLayout>
+      {puedeGestionarCompetidores ? (
+        <GestionCompetidoresModal
+          open={gestionCompetidoresOpen}
+          onOpenChange={setGestionCompetidoresOpen}
+          onChanged={() => router.refresh()}
+        />
+      ) : null}
     </div>
   );
 }
