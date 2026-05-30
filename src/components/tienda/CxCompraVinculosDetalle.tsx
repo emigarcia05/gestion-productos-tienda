@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Check, Loader2, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -87,6 +87,7 @@ function SubfilaVinculo({
     <TableRow
       className={cn(
         SUBFILA_DETALLE_CLASS,
+        "tabla-fila-detalle-cx-compra-vinculo",
         esUltima && "tabla-fila-detalle-competencia--cierre",
         "hover:bg-transparent"
       )}
@@ -105,28 +106,43 @@ function SubfilaVinculo({
       >
         {producto.proveedor.prefijo}
       </TableCell>
-      <TableCell className={cn("celda-datos text-center", SUBFILA_CELDA_BLOQUE_CLASS)}>
-        <div className="flex flex-col items-center justify-center gap-0.5">
-          <span className="tabular-nums text-xs font-semibold">${fmtPrecio(px)}</span>
-          <CeldaVariacion px={px} pxBase={pxBase} esBase={esBase} />
-          {puedeEditar ? (
-            <label className="mt-0.5 inline-flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground">
+      <TableCell
+        className={cn(
+          "celda-datos p-1 text-center tabla-bloque-secundario-cell-divider",
+          SUBFILA_CELDA_BLOQUE_CLASS
+        )}
+      >
+        <div className="cx-compra-subfila-cx-prod">
+          <div className="cx-compra-subfila-cx-prod__fila cx-compra-subfila-cx-prod__fila--base">
+            {puedeEditar ? (
               <input
                 type="checkbox"
                 checked={esBase}
                 onChange={() => onToggleBase(producto)}
                 disabled={isPending}
-                className="h-3.5 w-3.5 accent-primary"
+                className={cn(
+                  "h-4 w-4 cursor-pointer accent-primary",
+                  isPending && "cursor-not-allowed opacity-60"
+                )}
                 aria-label={
                   esBase
-                    ? `Quitar base (${producto.proveedor.prefijo})`
-                    : `Marcar ${producto.proveedor.prefijo} como base`
+                    ? `Quitar base de comparación (${producto.proveedor.prefijo})`
+                    : `Marcar ${producto.proveedor.prefijo} como base de comparación`
+                }
+                title={
+                  esBase
+                    ? "Esta fila es la base. Click para destildar (Cx. Prom.)."
+                    : "Marcar como base para calcular variaciones del resto."
                 }
               />
-              <Check className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
-              <span>BASE</span>
-            </label>
-          ) : null}
+            ) : null}
+          </div>
+          <div className="cx-compra-subfila-cx-prod__fila cx-compra-subfila-cx-prod__fila--variacion">
+            <CeldaVariacion px={px} pxBase={pxBase} esBase={esBase} />
+          </div>
+          <div className="cx-compra-subfila-cx-prod__fila cx-compra-subfila-cx-prod__fila--precio">
+            <span className="tabular-nums text-xs font-semibold">${fmtPrecio(px)}</span>
+          </div>
         </div>
       </TableCell>
       <TableCell className={cn("celda-datos celda-datos--accion-relleno-fila", SUBFILA_CELDA_HUECA_CLASS)}>

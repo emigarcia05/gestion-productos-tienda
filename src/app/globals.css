@@ -1001,6 +1001,14 @@
   border-bottom: none !important;
 }
 
+/* Cx Compra — subfila con 3 franjas en CX PROD. (base / variación / precio). */
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-cx-compra-vinculo,
+.tabla-gestion-compacta tbody tr.tabla-fila-detalle-cx-compra-vinculo td {
+  height: auto !important;
+  min-height: 4.25rem !important;
+  max-height: none !important;
+}
+
 /**
  * Botones #0072BB en filas de tabla: `size="icon"` del componente Button impone `size-9` (2.25rem)
  * y estiraba la fila por encima de `--tabla-body-row-min-height` (2rem). Cuadrado = alto útil
@@ -1234,6 +1242,26 @@
 .tabla-tienda-listado {
   table-layout: fixed;
   width: 100%;
+}
+
+/* Subfilas Cx Compra — columna CX PROD.: 3 franjas con altura fija para alinear entre filas. */
+.cx-compra-subfila-cx-prod {
+  display: grid;
+  grid-template-rows: 1.375rem 1.25rem 1.375rem;
+  width: 100%;
+  margin-inline: auto;
+  max-width: 11rem;
+}
+.cx-compra-subfila-cx-prod__fila {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+.cx-compra-subfila-cx-prod__fila--base input[type="checkbox"] {
+  display: block;
+  margin: 0;
 }
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */
