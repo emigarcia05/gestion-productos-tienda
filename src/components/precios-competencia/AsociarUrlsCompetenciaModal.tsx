@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2 } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
+import AgregarProveedorUrlCompetenciaModal from "@/components/precios-competencia/AgregarProveedorUrlCompetenciaModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
@@ -18,6 +19,9 @@ import { guardarUrlVinculoCompetenciaAction } from "@/actions/competenciaPrecios
 import RelevamientoUltimoMensaje from "@/components/precios-competencia/RelevamientoUltimoMensaje";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+
+/** Ancho del modal Asociar URLs: ~50 % más que `size="lg"` (`max-w-xl` = 36rem). */
+const ASOCIAR_URLS_MODAL_MAX_WIDTH = "max-w-[54rem]";
 
 interface Props {
   open: boolean;
@@ -83,9 +87,8 @@ export default function AsociarUrlsCompetenciaModal({
   const [filas, setFilas] = useState<FilaUrl[]>([]);
   const [idsUrlAEliminar, setIdsUrlAEliminar] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
-  const [busquedaProveedor, setBusquedaProveedor] = useState("");
-  const [listaAgregarAbierta, setListaAgregarAbierta] = useState(false);
-  const bloqueAgregarRef = useRef<HTMLDivElement>(null);
+  const [busquedaFiltro, setBusquedaFiltro] = useState("");
+  const [agregarProveedorOpen, setAgregarProveedorOpen] = useState(false);
 
   const filasIniciales = useMemo((): FilaUrl[] => {
     return competencias.map((c) =>
@@ -104,17 +107,11 @@ export default function AsociarUrlsCompetenciaModal({
     [filas]
   );
 
-  const competidoresSinUrl = useMemo(() => {
-    const q = normalizarBusqueda(busquedaProveedor);
-    return competencias.filter((c) => {
-      if (idsEnLista.has(c.id)) return false;
-      const v = vinculosPorCompetencia[c.id];
-      if (v?.urlBloqueadaPorPxSugerido) return false;
-      if ((v?.urlProducto ?? "").trim() !== "") return false;
-      if (!q) return true;
-      return c.nombre.toLowerCase().includes(q);
-    });
-  }, [competencias, idsEnLista, vinculosPorCompetencia, busquedaProveedor]);
+  const filasFiltradas = useMemo(() => {
+    const q = normalizarBusqueda(busquedaFiltro);
+    if (!q) return filas;
+    return filas.filter((f) => f.nombre.toLowerCase().includes(q));
+  }, [filas, busquedaFiltro]);
 
   function filaTieneCambios(f: FilaUrl): boolean {
     if (f.urlBloqueadaPorPxSugerido) return false;
@@ -131,34 +128,18 @@ export default function AsociarUrlsCompetenciaModal({
     if (!open) return;
     setFilas(filasIniciales.filter(filaTieneUrlAsociada));
     setIdsUrlAEliminar(new Set());
-    setBusquedaProveedor("");
-    setListaAgregarAbierta(false);
+    setBusquedaFiltro("");
+    setAgregarProveedorOpen(false);
   }, [open, filasIniciales]);
-
-  useEffect(() => {
-    if (!listaAgregarAbierta) return;
-    function onPointerDown(e: MouseEvent) {
-      if (
-        bloqueAgregarRef.current &&
-        !bloqueAgregarRef.current.contains(e.target as Node)
-      ) {
-        setListaAgregarAbierta(false);
-      }
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [listaAgregarAbierta]);
 
   const agregarCompetidor = (competenciaId: string) => {
     const c = competencias.find((x) => x.id === competenciaId);
     if (!c) return;
     const f = buildFilaUrl(c, vinculosPorCompetencia[c.id]);
     setFilas((prev) => [...prev, f]);
-    setListaAgregarAbierta(false);
-    setBusquedaProveedor("");
   };
 
-  const quitarUrl = (competenciaId: string) => {
+  const eliminarFila = (competenciaId: string) => {
     const ini = filasInicialesPorId.get(competenciaId);
     if (ini?.url.trim()) {
       setIdsUrlAEliminar((prev) => new Set(prev).add(competenciaId));
@@ -214,46 +195,50 @@ export default function AsociarUrlsCompetenciaModal({
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <AppModal
-        size="lg"
-        title="Asociar URLs"
-        actions={
-          puedeEditar ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={saving}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                disabled={saving}
-                onClick={() => void handleGuardar()}
-              >
-                Guardar
-              </Button>
-            </>
-          ) : (
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
-          )
-        }
-      >
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-foreground">
-            <span className="font-semibold">{codTienda}</span>
-            {descripcion ? ` — ${descripcion}` : null}
-          </p>
+  const gridCols =
+    "grid-cols-[2.25rem_minmax(0,9rem)_minmax(0,11rem)_1fr]";
 
-          {puedeEditar ? (
-            <div ref={bloqueAgregarRef} className="flex flex-col gap-1">
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <AppModal
+          size="lg"
+          className={ASOCIAR_URLS_MODAL_MAX_WIDTH}
+          title="Asociar URLs"
+          actions={
+            puedeEditar ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={saving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="default"
+                  disabled={saving}
+                  onClick={() => void handleGuardar()}
+                >
+                  Guardar
+                </Button>
+              </>
+            ) : (
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cerrar
+              </Button>
+            )
+          }
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-foreground">
+              <span className="font-semibold">{codTienda}</span>
+              {descripcion ? ` — ${descripcion}` : null}
+            </p>
+
+            {filas.length > 0 ? (
               <div className="flex items-center gap-2">
                 <div className="relative min-w-0 flex-1">
                   <Search
@@ -261,122 +246,130 @@ export default function AsociarUrlsCompetenciaModal({
                     aria-hidden
                   />
                   <Input
-                    value={busquedaProveedor}
-                    onChange={(e) => setBusquedaProveedor(e.target.value)}
+                    value={busquedaFiltro}
+                    onChange={(e) => setBusquedaFiltro(e.target.value)}
                     placeholder="Buscar proveedor..."
                     disabled={saving}
                     className={cn("w-full pl-9", INPUT_FILTER_CLASS)}
-                    aria-label="Buscar proveedor para agregar URL"
-                    onFocus={() => setListaAgregarAbierta(true)}
+                    aria-label="Filtrar proveedores con URL cargada"
                   />
                 </div>
+                {puedeEditar ? (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="icon"
+                    className="btn-primario-gestion shrink-0"
+                    disabled={saving}
+                    aria-label="Agregar proveedor sin URL"
+                    title="Agregar proveedor"
+                    onClick={() => setAgregarProveedorOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" aria-hidden />
+                  </Button>
+                ) : null}
+              </div>
+            ) : puedeEditar ? (
+              <div className="flex justify-end">
                 <Button
                   type="button"
                   variant="default"
-                  size="icon"
-                  className="btn-primario-gestion shrink-0"
+                  className="btn-primario-gestion gap-2"
                   disabled={saving}
-                  aria-expanded={listaAgregarAbierta}
-                  aria-label="Agregar proveedor sin URL"
-                  title="Agregar proveedor"
-                  onClick={() => setListaAgregarAbierta((v) => !v)}
+                  onClick={() => setAgregarProveedorOpen(true)}
                 >
-                  <Plus className="h-4 w-4" aria-hidden />
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                  Agregar Proveedor
                 </Button>
               </div>
-              {listaAgregarAbierta ? (
-                <ul
-                  className="max-h-40 overflow-y-auto rounded-md border border-border bg-card py-1 shadow-sm"
-                  role="listbox"
-                  aria-label="Proveedores sin URL para este producto"
-                >
-                  {competidoresSinUrl.length === 0 ? (
-                    <li className="px-3 py-2 text-sm text-muted-foreground">
-                      {busquedaProveedor.trim()
-                        ? "No hay proveedores que coincidan."
-                        : "Todos los proveedores con URL ya están en la lista."}
-                    </li>
-                  ) : (
-                    competidoresSinUrl.map((c) => (
-                      <li key={c.id} role="option">
-                        <button
-                          type="button"
-                          className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                          onClick={() => agregarCompetidor(c.id)}
-                        >
-                          {c.nombre}
-                        </button>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              ) : null}
-            </div>
-          ) : null}
+            ) : null}
 
-          {competencias.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay competidores registrados.</p>
-          ) : filas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay URLs asociadas para este producto. Usá el buscador y el botón + para
-              agregar un proveedor.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,11rem)_1fr] gap-3 px-0.5">
-                <ModalMicroLabel className="text-center">Proveedor</ModalMicroLabel>
-                <ModalMicroLabel>Ficha de Producto</ModalMicroLabel>
-                <ModalMicroLabel>URL</ModalMicroLabel>
-              </div>
-              <ul className="flex flex-col gap-3">
-                {filas.map((f) => {
-                  const index = filas.findIndex(
-                    (row) => row.competenciaId === f.competenciaId
-                  );
-                  const urlBloqueada = f.urlBloqueadaPorPxSugerido;
-                  return (
-                    <li
-                      key={f.competenciaId}
-                      className="flex flex-col gap-2 border-b border-border pb-3 last:border-0 last:pb-0"
-                    >
-                      <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,11rem)_1fr] gap-3 items-center">
-                        <span className="text-center text-sm font-semibold text-foreground">
-                          {f.nombre}
-                        </span>
-                        {urlBloqueada ? (
-                          <p className="text-sm font-medium text-foreground text-center col-span-2">
-                            Px Sugerido
-                          </p>
-                        ) : (
-                          <>
-                            {f.reglas.length > 0 ? (
-                              <select
-                                className="input-filtro-unificado w-full min-w-0"
-                                value={f.tipoPagina}
-                                disabled={!puedeEditar || saving}
-                                aria-label={`Ficha de producto — ${f.nombre}`}
-                                onChange={(e) =>
-                                  setFilas((prev) =>
-                                    prev.map((row, i) =>
-                                      i === index
-                                        ? { ...row, tipoPagina: e.target.value }
-                                        : row
+            {competencias.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay competidores registrados.</p>
+            ) : filas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay URLs asociadas para este producto. Usá el botón + para agregar un
+                proveedor.
+              </p>
+            ) : filasFiltradas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Ningún proveedor coincide con la búsqueda.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className={cn("grid gap-3 px-0.5", gridCols)}>
+                  <span className="sr-only">Eliminar</span>
+                  <ModalMicroLabel className="text-center">Proveedor</ModalMicroLabel>
+                  <ModalMicroLabel>Ficha de Producto</ModalMicroLabel>
+                  <ModalMicroLabel>URL</ModalMicroLabel>
+                </div>
+                <ul className="flex flex-col gap-3">
+                  {filasFiltradas.map((f) => {
+                    const index = filas.findIndex(
+                      (row) => row.competenciaId === f.competenciaId
+                    );
+                    const urlBloqueada = f.urlBloqueadaPorPxSugerido;
+                    return (
+                      <li
+                        key={f.competenciaId}
+                        className="flex flex-col gap-2 border-b border-border pb-3 last:border-0 last:pb-0"
+                      >
+                        <div className={cn("grid gap-3 items-center", gridCols)}>
+                          {puedeEditar ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={saving}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                              aria-label={`Quitar ${f.nombre} de la lista`}
+                              title="Quitar proveedor"
+                              onClick={() => eliminarFila(f.competenciaId)}
+                            >
+                              <Trash2
+                                className={TABLE_ROW_ACTION_ICON_CLASS}
+                                aria-hidden
+                              />
+                            </Button>
+                          ) : (
+                            <span />
+                          )}
+                          <span className="text-center text-sm font-semibold text-foreground">
+                            {f.nombre}
+                          </span>
+                          {urlBloqueada ? (
+                            <p className="text-sm font-medium text-foreground text-center col-span-2">
+                              Px Sugerido
+                            </p>
+                          ) : (
+                            <>
+                              {f.reglas.length > 0 ? (
+                                <select
+                                  className="input-filtro-unificado w-full min-w-0"
+                                  value={f.tipoPagina}
+                                  disabled={!puedeEditar || saving}
+                                  aria-label={`Ficha de producto — ${f.nombre}`}
+                                  onChange={(e) =>
+                                    setFilas((prev) =>
+                                      prev.map((row, i) =>
+                                        i === index
+                                          ? { ...row, tipoPagina: e.target.value }
+                                          : row
+                                      )
                                     )
-                                  )
-                                }
-                              >
-                                {f.reglas.map((r) => (
-                                  <option key={r.id} value={r.id}>
-                                    {r.nombre}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                Sin reglas configuradas
-                              </span>
-                            )}
-                            <div className="relative min-w-0">
+                                  }
+                                >
+                                  {f.reglas.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                      {r.nombre}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  Sin reglas configuradas
+                                </span>
+                              )}
                               <Input
                                 value={f.url}
                                 disabled={!puedeEditar || saving}
@@ -389,46 +382,42 @@ export default function AsociarUrlsCompetenciaModal({
                                   )
                                 }
                                 placeholder="https://..."
-                                className={cn(puedeEditar && "pr-10")}
+                                className="min-w-0"
                               />
-                              {puedeEditar ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  disabled={saving || !f.url.trim()}
-                                  className={cn(
-                                    TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                                    "absolute right-0 top-0 !h-9 !w-9 shrink-0 !p-0"
-                                  )}
-                                  aria-label={`Borrar URL de ${f.nombre}`}
-                                  title="Borrar URL"
-                                  onClick={() => quitarUrl(f.competenciaId)}
-                                >
-                                  <Trash2
-                                    className={TABLE_ROW_ACTION_ICON_CLASS}
-                                    aria-hidden
-                                  />
-                                </Button>
-                              ) : null}
+                            </>
+                          )}
+                        </div>
+                        {!urlBloqueada ? (
+                          <div className={cn("grid gap-3", gridCols)}>
+                            <span />
+                            <div className="col-span-3">
+                              <RelevamientoUltimoMensaje
+                                vinculo={vinculosPorCompetencia[f.competenciaId]}
+                                tieneUrlEnEdicion={!!f.url.trim()}
+                              />
                             </div>
-                          </>
-                        )}
-                      </div>
-                      {!urlBloqueada ? (
-                        <RelevamientoUltimoMensaje
-                          vinculo={vinculosPorCompetencia[f.competenciaId]}
-                          tieneUrlEnEdicion={!!f.url.trim()}
-                        />
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-      </AppModal>
-    </Dialog>
+                          </div>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+        </AppModal>
+      </Dialog>
+
+      {puedeEditar ? (
+        <AgregarProveedorUrlCompetenciaModal
+          open={agregarProveedorOpen}
+          onOpenChange={setAgregarProveedorOpen}
+          competencias={competencias}
+          idsEnLista={idsEnLista}
+          vinculosPorCompetencia={vinculosPorCompetencia}
+          onSeleccionar={agregarCompetidor}
+        />
+      ) : null}
+    </>
   );
 }
