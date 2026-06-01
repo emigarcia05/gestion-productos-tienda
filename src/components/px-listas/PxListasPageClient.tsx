@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import ExportarPxButton from "@/components/px-listas/ExportarPxButton";
 import FiltrosPxListas from "@/components/px-listas/FiltrosPxListas";
 import TablaPxListas from "@/components/px-listas/TablaPxListas";
-import ListaCompetidoresPxListas from "@/components/px-listas/ListaCompetidoresPxListas";
 import GestionCompetidoresModal from "@/components/precios-competencia/GestionCompetidoresModal";
 import SincronizarCompetenciaModal from "@/components/precios-competencia/SincronizarCompetenciaModal";
 import CompetenciaSyncProgresoBanner from "@/components/precios-competencia/CompetenciaSyncProgresoBanner";
@@ -119,36 +118,28 @@ export default function PxListasPageClient({
         title="Px Listas"
         filters={filters}
         actions={headerActions}
-        contentWidth="full"
       >
-        <div className="flex h-full min-h-0 flex-1 gap-3">
-          <ListaCompetidoresPxListas
-            competencias={competencias}
-            puedeActualizar={puedeGestionarCompetidores}
-            onActualizado={() => router.refresh()}
-          />
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5">
-            <div className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1">
-              <TablaPxListas
-                items={items}
-                competencias={competencias}
-                puedeEditar={puedeEditar}
-                puedeEditarEnlaces={puedeEditarEnlaces}
+        <div className="flex flex-col h-full min-h-0 gap-0.5">
+          <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+            <TablaPxListas
+              items={items}
+              competencias={competencias}
+              puedeEditar={puedeEditar}
+              puedeEditarEnlaces={puedeEditarEnlaces}
+            />
+          </div>
+          {totalPaginas > 1 && (
+            <div className="flex justify-end pt-2 shrink-0">
+              <PaginacionTabla
+                basePath={BASE_PATH}
+                params={{ q, rubro, marca, detPrecio, filtroPxPromedio, ordenMarcacion }}
+                paginaActual={paginaNum}
+                totalPaginas={totalPaginas}
+                total={total}
+                pageSize={PAGE_SIZE}
               />
             </div>
-            {totalPaginas > 1 ? (
-              <div className="flex shrink-0 justify-end pt-2">
-                <PaginacionTabla
-                  basePath={BASE_PATH}
-                  params={{ q, rubro, marca, detPrecio, filtroPxPromedio, ordenMarcacion }}
-                  paginaActual={paginaNum}
-                  totalPaginas={totalPaginas}
-                  total={total}
-                  pageSize={PAGE_SIZE}
-                />
-              </div>
-            ) : null}
-          </div>
+          )}
         </div>
       </ClassicFilteredTableLayout>
       {puedeGestionarCompetidores ? (
