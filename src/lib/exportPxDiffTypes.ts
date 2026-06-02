@@ -44,8 +44,3 @@ export interface InformeAumentosPxExport {
   resumen: ResumenAumentosPromedioPxExport;
   detalleProductos: DetalleProductosAumentosPxExport;
 }
-
-export interface ExportPxDiffPayload {
-  filas: FilaExportPx[];
-  informeAumentos: InformeAumentosPxExport;
-}

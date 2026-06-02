@@ -11,7 +11,7 @@ const PAGE_HEIGHT = 297;
 const CONTENT_WIDTH = PAGE_WIDTH - 2 * MARGIN;
 
 const PRIMARY_RGB = { r: 0, g: 114, b: 187 }; // #0072BB
-const RUBRO_LINE_RGB = { r: 169, g: 214, b: 241 }; // azul suave (#a9d6f1)
+const RUBRO_LINE_RGB = { r: 186, g: 218, b: 244 }; // divisor fino entre rubros (#bae4f4)
 const MARCA_FILL_A_RGB = { r: 255, g: 255, b: 255 };
 const MARCA_FILL_B_RGB = { r: 244, g: 248, b: 252 };
 const MUTED_RGB = { r: 100, g: 116, b: 139 };
@@ -85,16 +85,34 @@ function drawDocHeader(ctx: PdfCtx, fechaDoc: Date): void {
   ctx.y += 8;
 }
 
+function startNewPage(ctx: PdfCtx): void {
+  ctx.doc.addPage();
+  ctx.y = MARGIN;
+}
+
+/** Título de sección en MAYÚSCULAS y centrado. */
 function drawSectionHeading(ctx: PdfCtx, title: string): void {
-  ensureSpace(ctx, SECTION_GAP + 6);
+  ensureSpace(ctx, SECTION_GAP + 4);
   const { doc } = ctx;
-  doc.setFillColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
-  doc.rect(MARGIN, ctx.y, CONTENT_WIDTH, 7, "F");
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
   doc.setFontSize(SECTION_SIZE);
   doc.setFont("helvetica", "bold");
-  doc.text(title, MARGIN + 3, ctx.y + 4.8);
-  ctx.y += 9;
+  doc.text(title.toUpperCase(), MARGIN + CONTENT_WIDTH / 2, ctx.y + 5, {
+    align: "center",
+  });
+  ctx.y += 10;
+}
+
+function drawRubroDividerLine(ctx: PdfCtx, y: number): void {
+  ctx.doc.setDrawColor(RUBRO_LINE_RGB.r, RUBRO_LINE_RGB.g, RUBRO_LINE_RGB.b);
+  ctx.doc.setLineWidth(0.2);
+  ctx.doc.line(COL_RUBRO_X, y, COL_PCT_X + COL_PCT_W, y);
+}
+
+function drawMarcaDividerLine(ctx: PdfCtx, y: number): void {
+  ctx.doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
+  ctx.doc.setLineWidth(0.55);
+  ctx.doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y);
 }
 
 function measureWrappedLines(
@@ -134,8 +152,8 @@ function drawResumenTable(ctx: PdfCtx, informe: InformeAumentosPxExport): void {
   doc.setFontSize(HEADER_SIZE);
   doc.setFont("helvetica", "bold");
   const hy = ctx.y + 4.8;
-  doc.text("MARCA", MARGIN + 2, hy);
-  doc.text("RUBRO", COL_RUBRO_X + 1, hy);
+  doc.text("MARCA", MARGIN + COL_MARCA_W / 2, hy, { align: "center" });
+  doc.text("RUBRO", COL_RUBRO_X + COL_RUBRO_W / 2, hy, { align: "center" });
   doc.text("AUM. PROM.", COL_PCT_X + COL_PCT_W / 2, hy, { align: "center" });
   ctx.y += HEADER_H;
 
@@ -196,22 +214,16 @@ function drawResumenTable(ctx: PdfCtx, informe: InformeAumentosPxExport): void {
       doc.setTextColor(c.r, c.g, c.b);
       doc.text(row.pctText, COL_PCT_X + 1, rubroY);
 
-      if (i < rubroRows.length - 1) {
-        const sepY = rubroY + row.h;
-        doc.setDrawColor(RUBRO_LINE_RGB.r, RUBRO_LINE_RGB.g, RUBRO_LINE_RGB.b);
-        doc.setLineWidth(0.35);
-        doc.line(COL_RUBRO_X, sepY, COL_PCT_X + COL_PCT_W, sepY);
-      }
-
       rubroY += row.h;
+
+      if (i < rubroRows.length - 1) {
+        drawRubroDividerLine(ctx, rubroY);
+      }
     }
 
     ctx.y += totalBlockH;
 
-    doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
-    doc.setLineWidth(0.55);
-    doc.line(MARGIN, ctx.y, MARGIN + CONTENT_WIDTH, ctx.y);
-
+    drawMarcaDividerLine(ctx, ctx.y);
     ctx.y += 0.8;
     marcaIdx += 1;
   }
@@ -317,7 +329,8 @@ export function generarPdfAumentosPx(
   drawDocHeader(ctx, fechaDoc);
   drawSectionHeading(ctx, "Resumen");
   drawResumenTable(ctx, informe);
-  drawSectionHeading(ctx, "Detalle Por Producto");
+  startNewPage(ctx);
+  drawSectionHeading(ctx, "Detalle");
   drawDetalleProductos(ctx, informe);
 
   const buf = doc.output("arraybuffer");

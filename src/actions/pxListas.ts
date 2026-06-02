@@ -12,7 +12,8 @@ import {
 } from "@/services/pxListasConfig.service";
 import { getPxListasPageDataFromDb } from "@/services/pxListasPage.service";
 import type { FilaExportPx, InformeAumentosPxExport } from "@/lib/exportPxDiffTypes";
-import { obtenerExportPxDiffPayload } from "@/services/exportPxDiff.service";
+import { listarFilasExportPxDiff } from "@/services/exportPxDiff.service";
+import { obtenerInformeAumentosCostos } from "@/services/exportResumenAumentos.service";
 
 const guardarPxListaSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
@@ -77,7 +78,7 @@ export async function exportarPxDiffAction(): Promise<
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const { filas } = await obtenerExportPxDiffPayload();
+    const filas = await listarFilasExportPxDiff();
     return { ok: true, data: { filas } };
   } catch (e) {
     return {
@@ -96,7 +97,7 @@ export async function exportarResumenAumentosPxAction(): Promise<
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const { informeAumentos } = await obtenerExportPxDiffPayload();
+    const informeAumentos = await obtenerInformeAumentosCostos();
     return { ok: true, data: { informeAumentos } };
   } catch (e) {
     return {

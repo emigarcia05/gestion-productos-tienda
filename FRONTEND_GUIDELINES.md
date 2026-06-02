@@ -1023,7 +1023,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, descuentos y **CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS; válido **&gt; 0** y **&lt; 100**). Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
 
-*Última actualización (2026-06-02): **PDF aumentos** (`generarPdfAumentosPx.ts`): segmentos **Resumen** (tabla MARCA/RUBRO/AUM. PROM., zebra por marca, línea #0072BB entre marcas, línea azul suave entre rubros) y **Detalle Por Producto** (jerarquía marca → rubro → `descripción - %`). **`ExportarResumenAumentosButton`** en Cx Compra; **`ExportarCxButton`** / **`ExportarPxButton`**: solo Excel.*
+*Última actualización (2026-06-02): **PDF aumentos** — cálculo por **costo compra**: viejo = `prod_precios_tienda.costo_compra`, nuevo = `prod_precios_provee.px_compra_final_sin_iva` vía `costo_compra_cod_ext`; fórmula `((nuevo/viejo)−1)×100`. Layout: **RESUMEN** / **DETALLE** (salto de página), tabla con encabezados centrados. **`ExportarResumenAumentosButton`** en Cx Compra; **`ExportarCxButton`** / **`ExportarPxButton`**: solo Excel.*
 
 *Última actualización (2026-05-28): **`Cx & Px Tienda`** — **`ExportarPxButton`**: mismo criterio que **Exportar Cx** para precios de venta — `px_lista_tienda` (DUX) vs **PX LISTA** (competidor / **PX. PROM.**); Excel **CODIGO** + **PORC UTILIDAD** (marcación) solo diferencias.*
 

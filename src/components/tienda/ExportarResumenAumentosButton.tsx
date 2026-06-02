@@ -57,8 +57,8 @@ export default function ExportarResumenAumentosButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          PDF en dos partes: resumen por marca/rubro y detalle por producto (solo precios
-          modificados vs DUX)
+          PDF: aumentos de costo (proveedor vinculado vs costo compra tienda) por marca,
+          rubro y producto
         </TooltipContent>
       </Tooltip>
     </>
