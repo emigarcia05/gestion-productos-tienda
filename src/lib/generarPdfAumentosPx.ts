@@ -118,6 +118,13 @@ function drawMarcaDividerLine(ctx: PdfCtx, y: number): void {
   ctx.doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y);
 }
 
+/** Divisor fino #0072BB entre ítems del detalle por producto. */
+function drawDetalleItemDividerLine(ctx: PdfCtx, y: number): void {
+  ctx.doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
+  ctx.doc.setLineWidth(0.2);
+  ctx.doc.line(MARGIN + 7, y, MARGIN + CONTENT_WIDTH, y);
+}
+
 function measureWrappedLines(
   doc: jsPDF,
   text: string,
@@ -293,7 +300,10 @@ function drawDetalleProductos(ctx: PdfCtx, informe: InformeAumentosPxExport): vo
       }
       ctx.y += rubroLines.length * (ROW_H - 0.4) + 1;
 
-      for (const prod of rubroBloque.productos) {
+      const detalleItemDividerYs: number[] = [];
+
+      for (let pi = 0; pi < rubroBloque.productos.length; pi++) {
+        const prod = rubroBloque.productos[pi]!;
         const linea = `${prod.descripcion}${DETALLE_DESC_PCT_SEP}${formatPctAumento(prod.aumentoPct)}`;
         const prodLines = measureWrappedLines(
           ctx.doc,
@@ -313,6 +323,13 @@ function drawDetalleProductos(ctx: PdfCtx, informe: InformeAumentosPxExport): vo
           py += ROW_H - 0.5;
         }
         ctx.y += prodH;
+        if (pi < rubroBloque.productos.length - 1) {
+          detalleItemDividerYs.push(ctx.y);
+        }
+      }
+
+      for (const sepY of detalleItemDividerYs) {
+        drawDetalleItemDividerLine(ctx, sepY);
       }
 
       ctx.y += 1.5;
