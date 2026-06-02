@@ -11,7 +11,9 @@ import {
   guardarPxListaConfig,
 } from "@/services/pxListasConfig.service";
 import { getPxListasPageDataFromDb } from "@/services/pxListasPage.service";
-import { listarFilasExportPxDiff } from "@/services/exportPxDiff.service";
+import { generarPdfAumentosPx } from "@/lib/generarPdfAumentosPx";
+import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
+import { obtenerExportPxDiffPayload } from "@/services/exportPxDiff.service";
 import type { FilaExportPx } from "@/services/exportPxDiff.service";
 
 const guardarPxListaSchema = z.object({
@@ -68,17 +70,33 @@ export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionRe
   return { ok: true, data: undefined };
 }
 
-/** Excel CODIGO + IMPORTE: PX LISTA del módulo ≠ `px_lista_tienda` DUX (pesos enteros). */
+/** Excel CODIGO + IMPORTE y PDF de aumentos promedio por marca/rubro (solo diferencias vs DUX). */
 export async function exportarPxDiffAction(): Promise<
-  ActionResult<{ filas: FilaExportPx[] }>
+  ActionResult<{
+    filas: FilaExportPx[];
+    pdfBase64: string;
+    pdfFilename: string;
+  }>
 > {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const filas = await listarFilasExportPxDiff();
-    return { ok: true, data: { filas } };
+    const { filas, resumenAumentos } = await obtenerExportPxDiffPayload();
+    const generadoAt = new Date();
+    const pdfBuffer = generarPdfAumentosPx(resumenAumentos, {
+      fechaDocumento: generadoAt,
+    });
+    const pdfFilename = `Aumentos Px ${formatDdMmYyHhMmNombreArchivoArgentina(generadoAt)}.pdf`;
+    return {
+      ok: true,
+      data: {
+        filas,
+        pdfBase64: Buffer.from(pdfBuffer).toString("base64"),
+        pdfFilename,
+      },
+    };
   } catch (e) {
     return {
       ok: false,

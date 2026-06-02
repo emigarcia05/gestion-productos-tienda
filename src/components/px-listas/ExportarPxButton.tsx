@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarPxDiffAction } from "@/actions/pxListas";
 import { descargarExcelPx } from "@/lib/exportPxExcelClient";
+import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 
 export default function ExportarPxButton() {
@@ -26,7 +27,10 @@ export default function ExportarPxButton() {
         return;
       }
       descargarExcelPx(res.data.filas);
-      toast.success(`${res.data.filas.length} producto(s) exportado(s).`);
+      descargarPdfBase64(res.data.pdfBase64, res.data.pdfFilename);
+      toast.success(
+        `${res.data.filas.length} producto(s) exportado(s) (Excel y PDF de aumentos).`
+      );
     } finally {
       setExportando(false);
     }
@@ -53,8 +57,8 @@ export default function ExportarPxButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          Compara PX LISTA del módulo con DUX. Excel CODIGO + Importe (marcación de la
-          grilla) solo si el precio en pesos difiere
+          Compara PX LISTA del módulo con DUX. Descarga Excel (CODIGO + marcación) y PDF con
+          aumentos promedio por marca y rubro, solo donde hubo diferencias
         </TooltipContent>
       </Tooltip>
     </>
