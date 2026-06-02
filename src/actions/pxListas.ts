@@ -68,24 +68,40 @@ export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionRe
   return { ok: true, data: undefined };
 }
 
-/** Excel CODIGO + IMPORTE y resumen para PDF (solo diferencias vs DUX; PDF en cliente). */
+/** Excel CODIGO + IMPORTE (solo diferencias PX LISTA vs DUX). */
 export async function exportarPxDiffAction(): Promise<
-  ActionResult<{
-    filas: FilaExportPx[];
-    resumenAumentos: ResumenAumentosPromedioPxExport;
-  }>
+  ActionResult<{ filas: FilaExportPx[] }>
 > {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const payload = await obtenerExportPxDiffPayload();
-    return { ok: true, data: payload };
+    const { filas } = await obtenerExportPxDiffPayload();
+    return { ok: true, data: { filas } };
   } catch (e) {
     return {
       ok: false,
       error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
+    };
+  }
+}
+
+/** Resumen de aumentos promedio por marca/rubro (PDF en cliente; **Cx Compra**). */
+export async function exportarResumenAumentosPxAction(): Promise<
+  ActionResult<{ resumenAumentos: ResumenAumentosPromedioPxExport }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  try {
+    const { resumenAumentos } = await obtenerExportPxDiffPayload();
+    return { ok: true, data: { resumenAumentos } };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo generar el resumen de aumentos.",
     };
   }
 }
