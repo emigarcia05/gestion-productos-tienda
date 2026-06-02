@@ -3,7 +3,7 @@
  */
 import { jsPDF } from "jspdf";
 import { formatFechaLargaNotaPedidoArgentina } from "@/lib/fechaArgentina";
-import type { ResumenAumentosPromedioPxExport } from "@/services/exportPxDiff.service";
+import type { ResumenAumentosPromedioPxExport } from "@/lib/exportPxDiffTypes";
 
 const MARGIN = 16;
 const PRIMARY_RGB = { r: 0, g: 114, b: 187 };

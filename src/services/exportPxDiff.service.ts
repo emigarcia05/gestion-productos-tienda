@@ -1,34 +1,24 @@
+import type {
+  ExportPxDiffPayload,
+  FilaExportPx,
+  MarcaAumentosPromedioPx,
+  ResumenAumentosPromedioPxExport,
+  RubroAumentoPromedioPx,
+} from "@/lib/exportPxDiffTypes";
 import { roundMarcacionPxLista } from "@/lib/pxListas";
 import { prisma } from "@/lib/prisma";
 import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
 import { obtenerMapPxListaConfig } from "@/services/pxListasConfig.service";
 
+export type {
+  ExportPxDiffPayload,
+  FilaExportPx,
+  MarcaAumentosPromedioPx,
+  ResumenAumentosPromedioPxExport,
+  RubroAumentoPromedioPx,
+} from "@/lib/exportPxDiffTypes";
+
 const BATCH_SIZE = 150;
-
-export interface FilaExportPx {
-  codigo: string;
-  /** Marcación de la grilla (columna Excel «Importe»). */
-  marcacion: number;
-}
-
-export interface RubroAumentoPromedioPx {
-  rubro: string;
-  aumentoPromedioPct: number;
-}
-
-export interface MarcaAumentosPromedioPx {
-  marca: string;
-  rubros: RubroAumentoPromedioPx[];
-}
-
-export interface ResumenAumentosPromedioPxExport {
-  marcas: MarcaAumentosPromedioPx[];
-}
-
-export interface ExportPxDiffPayload {
-  filas: FilaExportPx[];
-  resumenAumentos: ResumenAumentosPromedioPxExport;
-}
 
 function toNum(n: unknown): number {
   if (n == null) return 0;

@@ -11,10 +11,8 @@ import {
   guardarPxListaConfig,
 } from "@/services/pxListasConfig.service";
 import { getPxListasPageDataFromDb } from "@/services/pxListasPage.service";
-import { generarPdfAumentosPx } from "@/lib/generarPdfAumentosPx";
-import { formatDdMmHhMmResumenAumentosArgentina } from "@/lib/fechaArgentina";
+import type { FilaExportPx, ResumenAumentosPromedioPxExport } from "@/lib/exportPxDiffTypes";
 import { obtenerExportPxDiffPayload } from "@/services/exportPxDiff.service";
-import type { FilaExportPx } from "@/services/exportPxDiff.service";
 
 const guardarPxListaSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
@@ -70,12 +68,11 @@ export async function guardarPxListaTiendaAction(raw: unknown): Promise<ActionRe
   return { ok: true, data: undefined };
 }
 
-/** Excel CODIGO + IMPORTE y PDF de aumentos promedio por marca/rubro (solo diferencias vs DUX). */
+/** Excel CODIGO + IMPORTE y resumen para PDF (solo diferencias vs DUX; PDF en cliente). */
 export async function exportarPxDiffAction(): Promise<
   ActionResult<{
     filas: FilaExportPx[];
-    pdfBase64: string;
-    pdfFilename: string;
+    resumenAumentos: ResumenAumentosPromedioPxExport;
   }>
 > {
   const rol = await getRol();
@@ -83,20 +80,8 @@ export async function exportarPxDiffAction(): Promise<
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const { filas, resumenAumentos } = await obtenerExportPxDiffPayload();
-    const generadoAt = new Date();
-    const pdfBuffer = generarPdfAumentosPx(resumenAumentos, {
-      fechaDocumento: generadoAt,
-    });
-    const pdfFilename = `Resumen Aumentos ${formatDdMmHhMmResumenAumentosArgentina(generadoAt)}.pdf`;
-    return {
-      ok: true,
-      data: {
-        filas,
-        pdfBase64: Buffer.from(pdfBuffer).toString("base64"),
-        pdfFilename,
-      },
-    };
+    const payload = await obtenerExportPxDiffPayload();
+    return { ok: true, data: payload };
   } catch (e) {
     return {
       ok: false,

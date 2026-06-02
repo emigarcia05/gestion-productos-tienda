@@ -1,5 +1,6 @@
 import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
-import type { FilaExportPx } from "@/services/exportPxDiff.service";
+import type { FilaExportPx, ResumenAumentosPromedioPxExport } from "@/lib/exportPxDiffTypes";
+import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
 
 /** Excel `.xls` (misma convención que Exportar Cx). */
 export async function descargarExcelPx(filas: FilaExportPx[]): Promise<void> {
@@ -24,13 +25,13 @@ function esperarMs(ms: number): Promise<void> {
 
 /**
  * Descarga Excel y PDF en secuencia (evita que el navegador bloquee la segunda descarga).
+ * El PDF se genera en el cliente con jsPDF.
  */
 export async function descargarExportPxCompleto(
   filas: FilaExportPx[],
-  pdf: { base64: string; filename: string }
+  resumenAumentos: ResumenAumentosPromedioPxExport
 ): Promise<void> {
   await descargarExcelPx(filas);
-  await esperarMs(200);
-  const { descargarPdfBase64 } = await import("@/lib/descargarPdfBase64");
-  descargarPdfBase64(pdf.base64, pdf.filename);
+  await esperarMs(350);
+  await descargarPdfResumenAumentosPx(resumenAumentos);
 }

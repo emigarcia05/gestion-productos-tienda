@@ -25,14 +25,7 @@ export default function ExportarPxButton() {
         setModalSinProductos(true);
         return;
       }
-      if (!res.data.pdfBase64?.trim() || !res.data.pdfFilename?.trim()) {
-        toast.error("No se recibió el PDF del servidor. Recargá la página e intentá de nuevo.");
-        return;
-      }
-      await descargarExportPxCompleto(res.data.filas, {
-        base64: res.data.pdfBase64,
-        filename: res.data.pdfFilename,
-      });
+      await descargarExportPxCompleto(res.data.filas, res.data.resumenAumentos);
       toast.success(
         `${res.data.filas.length} producto(s) exportado(s) (Excel y PDF de aumentos).`
       );
