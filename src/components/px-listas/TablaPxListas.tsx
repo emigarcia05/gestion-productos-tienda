@@ -50,7 +50,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const COL_COUNT = 7;
-const COL_WIDTHS = [40, 14, 12, 12, 8, 8, 6] as const;
+const COL_WIDTHS = [38, 14, 12, 12, 8, 8, 8] as const;
 const MENSAJE_SIN_RESULTADOS = "No se encontraron ítems.";
 
 const CAMPO_FILA_PX_LISTAS_CLASS = cn(
