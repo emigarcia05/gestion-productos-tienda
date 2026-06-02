@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarPxDiffAction } from "@/actions/pxListas";
-import { descargarExcelPx } from "@/lib/exportPxExcelClient";
-import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
+import { descargarExportPxCompleto } from "@/lib/exportPxExcelClient";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 
 export default function ExportarPxButton() {
@@ -26,10 +25,20 @@ export default function ExportarPxButton() {
         setModalSinProductos(true);
         return;
       }
-      descargarExcelPx(res.data.filas);
-      descargarPdfBase64(res.data.pdfBase64, res.data.pdfFilename);
+      if (!res.data.pdfBase64?.trim() || !res.data.pdfFilename?.trim()) {
+        toast.error("No se recibió el PDF del servidor. Recargá la página e intentá de nuevo.");
+        return;
+      }
+      await descargarExportPxCompleto(res.data.filas, {
+        base64: res.data.pdfBase64,
+        filename: res.data.pdfFilename,
+      });
       toast.success(
         `${res.data.filas.length} producto(s) exportado(s) (Excel y PDF de aumentos).`
+      );
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "No se pudieron descargar los archivos de exportación."
       );
     } finally {
       setExportando(false);
