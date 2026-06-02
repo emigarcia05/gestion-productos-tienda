@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useState, useTransition } from "react";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Link2 } from "lucide-react";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,8 +18,7 @@ import CeldaCxProdTienda from "@/components/shared/CeldaCxProdTienda";
 import CxCompraVinculosDetalle, {
   recargarVinculosItemTienda,
 } from "@/components/tienda/CxCompraVinculosDetalle";
-import SeleccionarProductoModal from "@/components/tienda/SeleccionarProductoModal";
-import { vincularProducto } from "@/actions/vinculos";
+import VincularCxCompraModal from "@/components/tienda/VincularCxCompraModal";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import type { ItemTiendaParaTabla } from "@/actions/tienda";
 import {
@@ -60,6 +59,7 @@ function FilaTienda({
 }) {
   const n = item._count.productos;
   const textoVinculacion = n === 0 ? "-" : String(n);
+  const esPropio = item.esProductoPropio;
 
   return (
     <Fragment>
@@ -73,10 +73,16 @@ function FilaTienda({
         <TableCell
           className={cn(
             "celda-datos celda-numero tabular-nums text-center",
-            n === 0 && "text-muted-foreground"
+            !esPropio && n === 0 && "text-muted-foreground"
           )}
         >
-          {textoVinculacion}
+          {esPropio ? (
+            <Badge variant="secondary" className="font-semibold tracking-wide">
+              PROPIO
+            </Badge>
+          ) : (
+            textoVinculacion
+          )}
         </TableCell>
         <TableCell
           className="celda-datos min-w-0 tabla-bloque-secundario-cell-divider"
@@ -125,6 +131,7 @@ function FilaTienda({
           key={`${item.id}-${detalleKey}`}
           itemTiendaId={item.id}
           prefijoProveedor={item.proveedorDux}
+          esProductoPropio={item.esProductoPropio}
           puedeEditar={puedeVincular}
         />
       ) : null}
@@ -148,8 +155,7 @@ export default function TablaTienda({
   const puedeVincular = puede(rol, col.vinculos);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   const [detalleKeys, setDetalleKeys] = useState<Record<string, number>>({});
-  const [vincularItem, setVincularItem] = useState<VincularItemState | null>(null);
-  const [, startTransition] = useTransition();
+  const [vinculosModalItem, setVinculosModalItem] = useState<VincularItemState | null>(null);
 
   function toggleDetalle(itemId: string) {
     setExpandidos((prev) => {
@@ -169,36 +175,9 @@ export default function TablaTienda({
 
   async function abrirVincular(item: ItemTiendaParaTabla) {
     const data = await recargarVinculosItemTienda(item.id);
-    setVincularItem({
+    setVinculosModalItem({
       item,
       idsProveedoresYaVinculados: data?.productos.map((p) => p.proveedorId) ?? [],
-    });
-  }
-
-  function handleSeleccionar(producto: {
-    id: string;
-    proveedorId: string;
-    codigoExterno: string;
-  }) {
-    if (!vincularItem) return;
-    const { item } = vincularItem;
-    if (vincularItem.idsProveedoresYaVinculados.includes(producto.proveedorId)) {
-      toast.error(
-        "Ya existe un vínculo con ese proveedor. No se puede tener dos vinculaciones del mismo proveedor."
-      );
-      return;
-    }
-    setVincularItem(null);
-    startTransition(async () => {
-      const res = await vincularProducto(item.id, producto.id);
-      if (res.ok) {
-        toast.success(`Vinculado: ${producto.codigoExterno}`);
-        setExpandidos((prev) => new Set(prev).add(item.id));
-        bumpDetalleKey(item.id);
-        router.refresh();
-      } else {
-        toast.error(res.error);
-      }
     });
   }
 
@@ -246,17 +225,20 @@ export default function TablaTienda({
         </TableBody>
       </Table>
 
-      {vincularItem ? (
-        <SeleccionarProductoModal
+      {vinculosModalItem ? (
+        <VincularCxCompraModal
           open
-          onClose={() => setVincularItem(null)}
-          onSeleccionar={handleSeleccionar}
-          excluirItemTiendaId={vincularItem.item.id}
-          idsProveedoresYaVinculados={vincularItem.idsProveedoresYaVinculados}
-          itemDescripcion={vincularItem.item.descripcion}
-          marca={vincularItem.item.marca}
-          rubro={vincularItem.item.rubro}
-          subRubro={vincularItem.item.subRubro}
+          onOpenChange={(o) => !o && setVinculosModalItem(null)}
+          item={vinculosModalItem.item}
+          idsProveedoresYaVinculados={vinculosModalItem.idsProveedoresYaVinculados}
+          puedeEditar={puedeVincular}
+          onChanged={() => {
+            setDetalleKeys((prev) => ({
+              ...prev,
+              [vinculosModalItem.item.id]: (prev[vinculosModalItem.item.id] ?? 0) + 1,
+            }));
+            router.refresh();
+          }}
         />
       ) : null}
     </>

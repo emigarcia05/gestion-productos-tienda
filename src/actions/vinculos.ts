@@ -26,6 +26,7 @@ const listarParaVincularFiltrosSchema = z.object({
 export type VinculosItemTiendaPayload = {
   productos: ProductoCompleto[];
   costoCompraCodExt: string | null;
+  esProductoPropio: boolean;
 };
 
 export async function getVinculos(
@@ -43,7 +44,7 @@ export async function getVinculos(
       getProductosVinculadosPorItemTienda(parsedId.data),
       prisma.listaPrecioTienda.findUnique({
         where: { codTienda: parsedId.data },
-        select: { costoCompraCodExt: true },
+        select: { costoCompraCodExt: true, esProductoPropio: true },
       }),
     ]);
     if (!productosRes.success) return productosRes;
@@ -53,6 +54,7 @@ export async function getVinculos(
       data: {
         productos: productosRes.data,
         costoCompraCodExt: tienda.costoCompraCodExt,
+        esProductoPropio: tienda.esProductoPropio,
       },
     };
   } catch (e) {
@@ -107,6 +109,18 @@ export async function vincularProducto(
   }
   try {
     const { prisma } = await import("@/lib/prisma");
+    const tienda = await prisma.listaPrecioTienda.findUnique({
+      where: { codTienda: parsedItem.data },
+      select: { esProductoPropio: true },
+    });
+    if (!tienda) return { ok: false, error: "Ítem de tienda no encontrado." };
+    if (tienda.esProductoPropio) {
+      return {
+        ok: false,
+        error:
+          "Este ítem está marcado como producto propio TiendaColor. Quitá esa marca antes de vincular proveedores.",
+      };
+    }
     const producto = await prisma.listaPrecioProveedor.findUnique({
       where: { codExt: parsedProducto.data },
       select: { idProveedor: true },

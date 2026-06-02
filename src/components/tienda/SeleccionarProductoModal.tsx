@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,13 +26,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Tag } from "lucide-react";
+import { setProductoPropioTiendaAction } from "@/actions/tienda";
 import { FiltroIndividualContainer } from "@/components/FilterBar";
 import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import {
   TableEmptyState,
   modalListLoadingVariants,
+  tableEmptyStateContainerVariants,
+  tableEmptyStateMessageVariants,
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +64,10 @@ interface Props {
   marca?: string | null;
   rubro?: string | null;
   subRubro?: string | null;
+  /** Permite marcar producto propio en el panel sin filtros. */
+  puedeEditar?: boolean;
+  esProductoPropio?: boolean;
+  onProductoPropioChanged?: () => void;
 }
 
 export default function SeleccionarProductoModal({
@@ -73,6 +80,9 @@ export default function SeleccionarProductoModal({
   marca,
   rubro,
   subRubro,
+  puedeEditar = false,
+  esProductoPropio = false,
+  onProductoPropioChanged,
 }: Props) {
   const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
   const [proveedorId, setProveedorId] = useState("");
@@ -83,6 +93,13 @@ export default function SeleccionarProductoModal({
     { codTienda: string; descripcion: string | null; prefijo: string } | null
   >(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [esPropio, setEsPropio] = useState(esProductoPropio);
+  const [togglePropioPending, startTogglePropio] = useTransition();
+
+  useEffect(() => {
+    if (!open) return;
+    setEsPropio(esProductoPropio);
+  }, [open, esProductoPropio]);
 
   useEffect(() => {
     if (!open) return;
@@ -164,6 +181,31 @@ export default function SeleccionarProductoModal({
   const MENSAJE_SIN_FILTRO =
     "APLICÁ AL MENOS UN FILTRO (PROVEEDOR O DESCRIPCIÓN) PARA VER LOS PRODUCTOS.";
 
+  function handleToggleProductoPropio() {
+    if (!puedeEditar) return;
+    const siguiente = !esPropio;
+    startTogglePropio(async () => {
+      const res = await setProductoPropioTiendaAction({
+        codTienda: excluirItemTiendaId,
+        esProductoPropio: siguiente,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setEsPropio(res.data.esProductoPropio);
+      toast.success(
+        res.data.esProductoPropio
+          ? "Marcado como producto propio."
+          : "Ya no es producto propio."
+      );
+      onProductoPropioChanged?.();
+      if (res.data.esProductoPropio) {
+        onClose();
+      }
+    });
+  }
+
   return (
     <>
     <Dialog
@@ -235,7 +277,31 @@ export default function SeleccionarProductoModal({
             {/* Encabezado (fijo, fuera del scroll) + Tabla (solo cuerpo con scroll). Mismo ancho de columnas con table-fixed. */}
             <div className="flex-1 min-h-0 flex flex-col pt-3 pb-3">
               {!hayFiltros ? (
-                <TableEmptyState message={MENSAJE_SIN_FILTRO} placement="panel" />
+                <div
+                  className={cn(
+                    tableEmptyStateContainerVariants({ placement: "panel" }),
+                    "flex flex-col items-center justify-center gap-4"
+                  )}
+                >
+                  <span
+                    className={cn(tableEmptyStateMessageVariants({ maxWidth: "readable" }))}
+                  >
+                    {MENSAJE_SIN_FILTRO}
+                  </span>
+                  {puedeEditar ? (
+                    <Button
+                      type="button"
+                      variant="default"
+                      className="btn-primario-gestion gap-2"
+                      aria-pressed={esPropio}
+                      disabled={togglePropioPending}
+                      onClick={() => handleToggleProductoPropio()}
+                    >
+                      <Tag className="h-4 w-4 shrink-0" aria-hidden />
+                      Producto Propio
+                    </Button>
+                  ) : null}
+                </div>
               ) : loading ? (
                 <div
                   className={cn(modalListLoadingVariants({ padding: "panel" }))}

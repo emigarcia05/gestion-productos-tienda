@@ -11,6 +11,11 @@ import { CX_PROD_SELECCION_PROM } from "@/lib/cxPxTienda";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
+import { setProductoPropioTienda } from "@/services/productoPropioTienda.service";
+import { setProductoPropioTiendaSchema } from "@/lib/validations/productoPropioTienda";
+import { revalidatePath } from "next/cache";
+import { esEditor } from "@/lib/sesion";
+import type { ActionResult } from "@/lib/types";
 
 const CX_PROD_FILA_VACIA: CxProdDatosFila = {
   opcionesProveedor: [],
@@ -137,6 +142,8 @@ export interface ItemTiendaParaTabla {
   _count: { productos: number };
   /** Costo producto (columna CX PROD. en Cx Compra). */
   cxProd: CxProdDatosFila;
+  /** Producto propio TiendaColor (sin vínculos a lista proveedor). */
+  esProductoPropio: boolean;
 }
 
 export interface ProveedorTintoLts {
@@ -235,9 +242,12 @@ export async function getTiendaPageData(params: {
     });
   }
 
-  /* Filtro VINCULADO: sin ningún `prod_precios_provee` vinculado vs. al menos uno. */
+  /* Filtro VINCULADO: sin vínculo vs. con vínculo; los productos propios no cuentan como «no vinculados». */
   if (vinculado === "no") {
-    andParts.push({ listaPreciosProveedores: { none: {} } });
+    andParts.push({
+      esProductoPropio: false,
+      listaPreciosProveedores: { none: {} },
+    });
   } else if (vinculado === "si") {
     andParts.push({ listaPreciosProveedores: { some: {} } });
   }
@@ -332,6 +342,7 @@ export async function getTiendaPageData(params: {
       habilitado: true,
       _count: { productos: r._count.listaPreciosProveedores },
       cxProd: cxProdMap.get(r.codTienda) ?? CX_PROD_FILA_VACIA,
+      esProductoPropio: r.esProductoPropio,
     };
   });
 
@@ -353,6 +364,34 @@ export async function getTiendaPageData(params: {
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     totalPaginas,
   };
+}
+
+export async function setProductoPropioTiendaAction(
+  raw: unknown
+): Promise<ActionResult<{ esProductoPropio: boolean }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.tabla.vinculos)) {
+    return { ok: false, error: "Sin permisos para gestionar vínculos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+  const parsed = setProductoPropioTiendaSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  try {
+    const data = await setProductoPropioTienda(
+      parsed.data.codTienda,
+      parsed.data.esProductoPropio
+    );
+    revalidatePath("/tienda");
+    revalidatePath("/gestion-productos/tienda/comp-proveedores");
+    return { ok: true, data };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "No se pudo actualizar el producto propio.";
+    return { ok: false, error: msg };
+  }
 }
 
 

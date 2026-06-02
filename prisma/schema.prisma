@@ -553,6 +553,8 @@ model ListaPrecioTienda {
   stockeable      Boolean  @default(true)
   lastSync        DateTime @default(now()) @map("last_sync")
   ultimaExportacionExcel DateTime? @map("ultima_exportacion_excel")
+  /// Producto propio TiendaColor: no admite vínculos con `prod_precios_provee`; el sync DUX no modifica este flag.
+  esProductoPropio Boolean @default(false) @map("es_producto_propio")
 
   marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
