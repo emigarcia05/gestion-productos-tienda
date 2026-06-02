@@ -38,8 +38,15 @@ const COL_RUBRO_X = MARGIN + COL_MARCA_W;
 const COL_RUBRO_W = CONTENT_WIDTH - COL_MARCA_W - COL_PCT_W - COL_GAP_RUBRO_PCT;
 const COL_PCT_X = COL_RUBRO_X + COL_RUBRO_W + COL_GAP_RUBRO_PCT;
 
-/** Separación fija entre descripción y % en el detalle por producto. */
-const DETALLE_DESC_PCT_SEP = "   ";
+const DET_MARCA_ROW_PAD = 1.2;
+const DET_RUBRO_ROW_PAD = 0.8;
+const DET_ITEM_ROW_PAD = 0.35;
+const DET_DESC_INDENT = 6;
+const DET_RUBRO_INDENT = 3;
+const DET_COL_PCT_W = 22;
+const DET_DESC_X = MARGIN + DET_DESC_INDENT;
+const DET_PCT_X = MARGIN + CONTENT_WIDTH - DET_COL_PCT_W;
+const DET_DESC_W = DET_PCT_X - DET_DESC_X - 2;
 
 export type GenerarPdfAumentosPxOptions = {
   fechaDocumento?: Date;
@@ -118,11 +125,25 @@ function drawMarcaDividerLine(ctx: PdfCtx, y: number): void {
   ctx.doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y);
 }
 
-/** Divisor fino #0072BB entre ítems del detalle por producto. */
-function drawDetalleItemDividerLine(ctx: PdfCtx, y: number): void {
+/** Divisor grueso #0072BB (bloque marca). */
+function drawDetalleMarcaLine(ctx: PdfCtx, y: number): void {
   ctx.doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
-  ctx.doc.setLineWidth(0.2);
-  ctx.doc.line(MARGIN + 7, y, MARGIN + CONTENT_WIDTH, y);
+  ctx.doc.setLineWidth(0.55);
+  ctx.doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y);
+}
+
+/** Divisor medio #0072BB (subencabezado rubro). */
+function drawDetalleRubroLine(ctx: PdfCtx, y: number): void {
+  ctx.doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
+  ctx.doc.setLineWidth(0.35);
+  ctx.doc.line(MARGIN + DET_RUBRO_INDENT, y, MARGIN + CONTENT_WIDTH, y);
+}
+
+/** Divisor muy fino #0072BB (entre filas de producto). */
+function drawDetalleItemLine(ctx: PdfCtx, y: number): void {
+  ctx.doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
+  ctx.doc.setLineWidth(0.15);
+  ctx.doc.line(MARGIN + DET_DESC_INDENT, y, MARGIN + CONTENT_WIDTH, y);
 }
 
 function measureWrappedLines(
@@ -244,102 +265,117 @@ function drawResumenTable(ctx: PdfCtx, informe: InformeAumentosPxExport): void {
   }
 }
 
+function measureRowHeight(
+  doc: jsPDF,
+  lines: string[],
+  minH: number,
+  lineStep: number
+): number {
+  return Math.max(minH, lines.length * lineStep);
+}
+
+function drawDetalleMarcaHeader(ctx: PdfCtx, marca: string): void {
+  const { doc } = ctx;
+  const marcaLines = measureWrappedLines(doc, marca, CONTENT_WIDTH - 2, DET_MARCA_SIZE);
+  const rowH = measureRowHeight(doc, marcaLines, ROW_H, ROW_H - 0.2);
+  ensureSpace(ctx, rowH + DET_MARCA_ROW_PAD + 1);
+
+  doc.setFontSize(DET_MARCA_SIZE);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
+  let ty = ctx.y + 4;
+  for (const ml of marcaLines) {
+    doc.text(ml, MARGIN, ty);
+    ty += ROW_H - 0.2;
+  }
+  ctx.y += rowH;
+  drawDetalleMarcaLine(ctx, ctx.y);
+  ctx.y += DET_MARCA_ROW_PAD;
+}
+
+function drawDetalleRubroHeader(ctx: PdfCtx, rubro: string): void {
+  const { doc } = ctx;
+  const rubroLines = measureWrappedLines(
+    doc,
+    rubro,
+    CONTENT_WIDTH - DET_RUBRO_INDENT - 2,
+    DET_RUBRO_SIZE
+  );
+  const rowH = measureRowHeight(doc, rubroLines, ROW_H - 0.5, ROW_H - 0.4);
+  ensureSpace(ctx, rowH + DET_RUBRO_ROW_PAD + 1);
+
+  doc.setFontSize(DET_RUBRO_SIZE);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 17, 17);
+  let ty = ctx.y + 3.8;
+  for (const rl of rubroLines) {
+    doc.text(rl, MARGIN + DET_RUBRO_INDENT, ty);
+    ty += ROW_H - 0.4;
+  }
+  ctx.y += rowH;
+  drawDetalleRubroLine(ctx, ctx.y);
+  ctx.y += DET_RUBRO_ROW_PAD;
+}
+
+function drawDetalleProductoRow(
+  ctx: PdfCtx,
+  descripcion: string,
+  aumentoPct: number
+): void {
+  const { doc } = ctx;
+  const pctText = formatPctAumento(aumentoPct);
+  const descLines = measureWrappedLines(doc, descripcion, DET_DESC_W, DET_PROD_SIZE);
+  const rowH = measureRowHeight(doc, descLines, ROW_H - 0.3, ROW_H - 0.5);
+  ensureSpace(ctx, rowH + DET_ITEM_ROW_PAD + 0.2);
+
+  doc.setFontSize(DET_PROD_SIZE);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(17, 17, 17);
+  let dy = ctx.y + 3.6;
+  for (const dl of descLines) {
+    doc.text(dl, DET_DESC_X, dy);
+    dy += ROW_H - 0.5;
+  }
+
+  const c = pctColor(aumentoPct);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(c.r, c.g, c.b);
+  doc.text(pctText, DET_PCT_X + DET_COL_PCT_W - 1, ctx.y + 3.6, { align: "right" });
+
+  ctx.y += rowH;
+}
+
 function drawDetalleProductos(ctx: PdfCtx, informe: InformeAumentosPxExport): void {
   const { detalleProductos } = informe;
   if (detalleProductos.marcas.length === 0) return;
 
-  ctx.y += 4;
+  ctx.y += 2;
 
-  for (const marcaBloque of detalleProductos.marcas) {
-    const marcaLines = measureWrappedLines(
-      ctx.doc,
-      marcaBloque.marca,
-      CONTENT_WIDTH,
-      DET_MARCA_SIZE
-    );
-    const marcaH = marcaLines.length * (ROW_H - 0.2) + 2;
-    ensureSpace(ctx, marcaH + ROW_H);
+  const marcas = detalleProductos.marcas;
+  for (let mi = 0; mi < marcas.length; mi++) {
+    const marcaBloque = marcas[mi]!;
 
-    ctx.doc.setFontSize(DET_MARCA_SIZE);
-    ctx.doc.setFont("helvetica", "bold");
-    ctx.doc.setTextColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
-    let my = ctx.y + 4;
-    for (const ml of marcaLines) {
-      ctx.doc.text(ml, MARGIN, my);
-      my += ROW_H - 0.2;
-    }
-    ctx.y += marcaH;
+    drawDetalleMarcaHeader(ctx, marcaBloque.marca);
 
     for (const rubroBloque of marcaBloque.rubros) {
-      const rubroLines = measureWrappedLines(
-        ctx.doc,
-        rubroBloque.rubro,
-        CONTENT_WIDTH - 4,
-        DET_RUBRO_SIZE
-      );
-      let rubroBlockH = rubroLines.length * (ROW_H - 0.4) + 1;
-      for (const prod of rubroBloque.productos) {
-        const lineText = `${prod.descripcion}${DETALLE_DESC_PCT_SEP}${formatPctAumento(prod.aumentoPct)}`;
-        const prodLines = measureWrappedLines(
-          ctx.doc,
-          lineText,
-          CONTENT_WIDTH - 10,
-          DET_PROD_SIZE
-        );
-        rubroBlockH += prodLines.length * (ROW_H - 0.5) + 0.4;
-      }
-      ensureSpace(ctx, rubroBlockH);
+      drawDetalleRubroHeader(ctx, rubroBloque.rubro);
 
-      ctx.doc.setFontSize(DET_RUBRO_SIZE);
-      ctx.doc.setFont("helvetica", "bold");
-      ctx.doc.setTextColor(17, 17, 17);
-      let ry = ctx.y + 3.8;
-      for (const rl of rubroLines) {
-        ctx.doc.text(rl, MARGIN + 3, ry);
-        ry += ROW_H - 0.4;
-      }
-      ctx.y += rubroLines.length * (ROW_H - 0.4) + 1;
-
-      const detalleItemDividerYs: number[] = [];
-
-      for (let pi = 0; pi < rubroBloque.productos.length; pi++) {
-        const prod = rubroBloque.productos[pi]!;
-        const linea = `${prod.descripcion}${DETALLE_DESC_PCT_SEP}${formatPctAumento(prod.aumentoPct)}`;
-        const prodLines = measureWrappedLines(
-          ctx.doc,
-          linea,
-          CONTENT_WIDTH - 10,
-          DET_PROD_SIZE
-        );
-        const prodH = Math.max(ROW_H - 0.3, prodLines.length * (ROW_H - 0.5));
-        ensureSpace(ctx, prodH);
-
-        ctx.doc.setFontSize(DET_PROD_SIZE);
-        ctx.doc.setFont("helvetica", "normal");
-        ctx.doc.setTextColor(17, 17, 17);
-        let py = ctx.y + 3.6;
-        for (const pl of prodLines) {
-          ctx.doc.text(pl, MARGIN + 7, py);
-          py += ROW_H - 0.5;
-        }
-        ctx.y += prodH;
-        if (pi < rubroBloque.productos.length - 1) {
-          detalleItemDividerYs.push(ctx.y);
+      const productos = rubroBloque.productos;
+      for (let pi = 0; pi < productos.length; pi++) {
+        const prod = productos[pi]!;
+        drawDetalleProductoRow(ctx, prod.descripcion, prod.aumentoPct);
+        if (pi < productos.length - 1) {
+          drawDetalleItemLine(ctx, ctx.y);
+          ctx.y += DET_ITEM_ROW_PAD;
         }
       }
-
-      for (const sepY of detalleItemDividerYs) {
-        drawDetalleItemDividerLine(ctx, sepY);
-      }
-
-      ctx.y += 1.5;
     }
 
-    ctx.y += 3;
-    ctx.doc.setDrawColor(PRIMARY_RGB.r, PRIMARY_RGB.g, PRIMARY_RGB.b);
-    ctx.doc.setLineWidth(0.4);
-    ctx.doc.line(MARGIN, ctx.y, MARGIN + CONTENT_WIDTH, ctx.y);
-    ctx.y += 5;
+    if (mi < marcas.length - 1) {
+      ctx.y += 1;
+      drawDetalleMarcaLine(ctx, ctx.y);
+      ctx.y += DET_MARCA_ROW_PAD;
+    }
   }
 }
 
