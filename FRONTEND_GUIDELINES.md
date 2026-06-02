@@ -1023,7 +1023,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, descuentos y **CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS; válido **&gt; 0** y **&lt; 100**). Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
 
-*Última actualización (2026-06-02): **`Px Listas`** — **`ExportarPxButton`**: al exportar descarga **Excel** (CODIGO + marcación) y **PDF** «Aumentos Promedio Por Marca Y Rubro» (`generarPdfAumentosPx.ts`): columnas marca | rubros con % promedio; solo pares marca/rubro con productos cuya PX LISTA difiere de DUX; layout jsPDF marca #0072BB, porcentajes en verde/rojo según signo.*
+*Última actualización (2026-06-02): **`Px Listas`** — **`ExportarPxButton`**: al exportar descarga **Excel** (CODIGO + marcación) y **PDF** «Aumentos Promedio Por Marca Y Rubro» (`generarPdfAumentosPx.ts`); nombre de archivo `Resumen Aumentos {dd-mm hh-mm}.pdf` (Argentina).*
 
 *Última actualización (2026-05-28): **`Cx & Px Tienda`** — **`ExportarPxButton`**: mismo criterio que **Exportar Cx** para precios de venta — `px_lista_tienda` (DUX) vs **PX LISTA** (competidor / **PX. PROM.**); Excel **CODIGO** + **PORC UTILIDAD** (marcación) solo diferencias.*
 

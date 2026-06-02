@@ -68,6 +68,18 @@ export function formatFechaHoraCompletaArgentina(d: Date): string {
     .trim();
 }
 
+/** Sello PDF resumen aumentos Px: `02-06 14-30` (día-mes y hora-minuto, sin año). */
+export function formatDdMmHhMmResumenAumentosArgentina(d: Date): string {
+  const m = toPartMap(d, {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${m.day}-${m.month} ${m.hour}-${m.minute}`;
+}
+
 /** Sello para nombres de archivo: `25-03-26 14:30`. */
 export function formatDdMmYyHhMmNombreArchivoArgentina(d: Date): string {
   const m = toPartMap(d, {

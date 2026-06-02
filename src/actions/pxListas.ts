@@ -12,7 +12,7 @@ import {
 } from "@/services/pxListasConfig.service";
 import { getPxListasPageDataFromDb } from "@/services/pxListasPage.service";
 import { generarPdfAumentosPx } from "@/lib/generarPdfAumentosPx";
-import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
+import { formatDdMmHhMmResumenAumentosArgentina } from "@/lib/fechaArgentina";
 import { obtenerExportPxDiffPayload } from "@/services/exportPxDiff.service";
 import type { FilaExportPx } from "@/services/exportPxDiff.service";
 
@@ -88,7 +88,7 @@ export async function exportarPxDiffAction(): Promise<
     const pdfBuffer = generarPdfAumentosPx(resumenAumentos, {
       fechaDocumento: generadoAt,
     });
-    const pdfFilename = `Aumentos Px ${formatDdMmYyHhMmNombreArchivoArgentina(generadoAt)}.pdf`;
+    const pdfFilename = `Resumen Aumentos ${formatDdMmHhMmResumenAumentosArgentina(generadoAt)}.pdf`;
     return {
       ok: true,
       data: {
