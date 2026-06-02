@@ -1157,6 +1157,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-21): **Etiquetas de campo en modales** — regla global: color `foreground` (negro de UI), no `muted`, en `label` / `Label` / `ModalMicroLabel` / `MODAL_*_LABEL_CLASS`; `globals.css` (`--modal-field-label-color`) en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]`; migración de micro-etiquetas legacy en modales Finanzas a `ModalMicroLabel`.*
 
+*Última actualización (2026-06-02): **PDF matriz lista precios** — botón **Convertir PDF a Excel** en **`ListaPreciosPageClient`** (`ConvertirPdfListaPreciosModal`): upload PDF, campo **DESDE PÁGINA** (default 9), preview **DESCRIPCIÓN | PRESENT. | PX. LISTA**, descarga `.xls` vía `@/lib/exportListaPreciosPdfMatrizExcelClient` (patrón `exportPxExcelClient`). Mismo permiso que import CSV. Sin progreso en sidebar (no es import a BD).*
+
 ---
 
 **Para IA:** El archivo `.cursorrules` en la raíz indica que este documento (FRONTEND_GUIDELINES.md) es la **referencia obligatoria** al crear o modificar código frontend. Usar la sección "Guía para IA" y el checklist de la sección 4 en cada tarea.

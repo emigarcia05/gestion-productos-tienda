@@ -1356,3 +1356,21 @@ La UI de configuración de competidores **debe** permitir asignar `idProveedor` 
 *Última actualización (2026-05-28): **Px Listas** — `getPxListasPageData` en `src/actions/pxListas.ts`; URL canónica `/gestion-productos/tienda/cx-px-tienda`; permiso `PERMISOS.cxPxTienda.acceso`.*
 
 *Última actualización (2026-05-30): **Unificación Px Competencia → Px Listas** — grilla con PX PROMEDIO, DIF TIENDA, detalle y URLs; `getPxListasPageData` incluye `competencias`; `/gestion-productos/precios-competencia` redirige a Px Listas. Scraping desde **`PxListasPageClient`** (`SincronizarCompetenciaModal` → `POST /api/sync-competencia-precios`; permiso `competenciaPrecios.editar`).*
+
+### PDF matriz → Excel (Lista Precios, fase 1 — sin BD)
+
+Conversión de listas en PDF con estructura matricial (filas = descripción, columnas = presentaciones) a filas tabulares para export Excel. **No persiste** en `prod_precios_provee` en esta fase.
+
+| Pieza | Ubicación |
+|-------|-----------|
+| Aplanado puro | `@/lib/listaPreciosPdfMatriz` — `aplanarMatrizListaPrecios`, regla `Un.` sin sufijo en `descripcionExport` |
+| Servicio PDF | `@/services/parseListaPreciosPdfMatriz.service.ts` — `pdfjs-dist` (legacy build), heurística posicional X/Y |
+| Validación | `@/lib/validations/parseListaPreciosPdfMatriz.ts` |
+| API | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**); gate `guardListaPreciosImportarEsEditor` |
+| Test manual | `npx tsx scripts/test-aplanar-pdf-matriz.ts` |
+
+**Presentaciones de referencia:** `Un.`, `¼`, `½`, `1 L`, `4 L`, `10 L`, `20 L`. Páginas anteriores a `paginaInicio` se omiten (índice).
+
+**Pendiente calibración:** sin PDF fixture en repo, la extracción posicional puede requerir ajuste de umbrales (`COLUMN_GAP`, `Y_TOLERANCE`) o migrar a script Python (`pdfplumber`) si el PDF real no alinea columnas.
+
+*Última actualización (2026-06-02): **PDF matriz lista precios** — parse + aplanado + API; export Excel en cliente; sin import a BD.*

@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import ImportarListaPreciosModal from "@/components/proveedores/ImportarListaPreciosModal";
+import ConvertirPdfListaPreciosModal from "@/components/proveedores/ConvertirPdfListaPreciosModal";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
@@ -78,7 +79,12 @@ export default function ListaPreciosPageClient({
   const actions =
     puedeImportar || puedeEdicionMasiva ? (
       <div className="flex items-center gap-2">
-        {puedeImportar && <ImportarListaPreciosModal proveedores={proveedores} />}
+        {puedeImportar && (
+          <>
+            <ImportarListaPreciosModal proveedores={proveedores} />
+            <ConvertirPdfListaPreciosModal proveedores={proveedores} />
+          </>
+        )}
         {puedeEdicionMasiva && (
           <EdicionMasivaListaPreciosModal
             filteredIds={filteredIds}

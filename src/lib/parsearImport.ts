@@ -2,7 +2,7 @@
  * Convierte strings de precio con formato variado a número.
  * Soporta: "$6.399", "6.399,50", "6399.50", "6,399.50"
  */
-function parsePrecio(raw: string): number {
+export function parsePrecio(raw: string): number {
   let s = raw.replace(/[$\s]/g, "");
   const tieneComa = s.includes(",");
   const tienePunto = s.includes(".");

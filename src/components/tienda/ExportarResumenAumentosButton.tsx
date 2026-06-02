@@ -46,9 +46,9 @@ export default function ExportarResumenAumentosButton() {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="default"
-            className="gap-2 shrink-0"
+            className="btn-primario-gestion gap-2 shrink-0"
             disabled={exportando}
             onClick={() => void handleExportar()}
           >
