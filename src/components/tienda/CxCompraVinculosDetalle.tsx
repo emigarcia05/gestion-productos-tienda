@@ -99,9 +99,13 @@ function SubfilaVinculo({
         </span>
       </TableCell>
       <TableCell
-        className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)}
-        aria-hidden
-      />
+        className={cn(
+          "celda-datos celda-mono text-center text-xs font-medium text-foreground",
+          SUBFILA_CELDA_BLOQUE_CLASS
+        )}
+      >
+        {producto.proveedor.prefijo}
+      </TableCell>
       <TableCell
         className={cn(
           "celda-datos p-1 min-w-0 tabla-bloque-secundario-cell-divider",
@@ -110,12 +114,7 @@ function SubfilaVinculo({
       >
         <div className="cx-compra-subfila-cx-prod">
           <div className="cx-compra-subfila-cx-prod__col cx-compra-subfila-cx-prod__col--ctrl">
-            <div
-              className="input-filtro-unificado flex h-8 w-full min-w-0 items-center justify-center text-sm font-medium text-foreground"
-              aria-label={`Proveedor ${producto.proveedor.prefijo}`}
-            >
-              {producto.proveedor.prefijo}
-            </div>
+            <div className="cx-compra-subfila-cx-prod__precio-spacer" aria-hidden />
             <div className="cx-compra-subfila-cx-prod__meta">
               <div className="cx-compra-subfila-cx-prod__meta-base">
                 {puedeEditar ? (
