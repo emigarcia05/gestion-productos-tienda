@@ -85,8 +85,11 @@ function DetalleCompetidorFila({
       )}
     >
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos max-w-0 text-right", SUBFILA_CELDA_BLOQUE_CLASS)}>
-        <span className="block truncate font-medium text-foreground" title={item.nombre}>
+      <TableCell className={cn("celda-datos max-w-0 !text-right", SUBFILA_CELDA_BLOQUE_CLASS)}>
+        <span
+          className="block truncate text-right font-medium text-foreground"
+          title={item.nombre}
+        >
           {item.nombre}
         </span>
       </TableCell>
@@ -380,6 +383,7 @@ export default function CompetenciaPreciosTabla({
             setAsociarFila(null);
             onReload();
           }}
+          onVinculosActualizados={onReload}
         />
       ) : null}
     </div>

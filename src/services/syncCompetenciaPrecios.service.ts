@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { shouldAbortCompetenciaSyncInDb } from "@/lib/competenciaPreciosProgressDb";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import {
+  aplicarPrioridadPrecioMostrar,
   countVinculosRelevablesCompetencia,
   obtenerPxVtaSugeridoParaCompetencia,
   whereVinculosRelevablesCompetencia,
 } from "@/services/competenciaPxSugerido.service";
 import { extraerPrecioDesdeUrlProducto } from "@/services/competenciaPrecioScraping.service";
+import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
 const DELAY_MS = 300;
 
@@ -231,4 +233,237 @@ export async function syncCompetenciaPrecios(
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const vinculoRelevadoSelect = {
+  urlProducto: true,
+  tipoPagina: true,
+  pxCompetencia: true,
+  estado: true,
+  errorMensaje: true,
+  relevadoAt: true,
+} as const;
+
+function mapVinculoRelevado(row: {
+  urlProducto: string | null;
+  tipoPagina: string | null;
+  pxCompetencia: { toString(): string } | null;
+  estado: string;
+  errorMensaje: string | null;
+  relevadoAt: Date | null;
+}): DatoVinculoCompetenciaCliente {
+  return {
+    urlProducto: row.urlProducto,
+    tipoPagina: row.tipoPagina,
+    pxCompetencia: row.pxCompetencia != null ? Number(row.pxCompetencia) : null,
+    estado: row.estado,
+    errorMensaje: row.errorMensaje,
+    relevadoAt: row.relevadoAt?.toISOString() ?? null,
+    urlBloqueadaPorPxSugerido: false,
+  };
+}
+
+/**
+ * Releva un solo vínculo producto×competidor (sin lock ni progreso de sync masivo).
+ */
+export async function relevarVinculoCompetenciaUnico(params: {
+  codTienda: string;
+  competenciaId: string;
+}): Promise<DatoVinculoCompetenciaCliente> {
+  const { codTienda, competenciaId } = params;
+
+  const competencia = await prisma.prodCompetencia.findUnique({
+    where: { id: competenciaId },
+    select: { configExtraccion: true, idProveedor: true },
+  });
+  if (!competencia) {
+    throw new Error("Competidor no encontrado.");
+  }
+
+  const idProveedor = competencia.idProveedor;
+  const now = new Date();
+
+  if (idProveedor) {
+    const pxSugerido = await obtenerPxVtaSugeridoParaCompetencia(
+      codTienda,
+      idProveedor
+    );
+    if (pxSugerido != null) {
+      await prisma.prodCompetencia.update({
+        where: { id: competenciaId },
+        data: { ultimaComparacionAt: now },
+      });
+      const row = await prisma.prodPrecioCompetencia.findUnique({
+        where: {
+          codTienda_competenciaId: { codTienda, competenciaId },
+        },
+        select: vinculoRelevadoSelect,
+      });
+      const base = row
+        ? mapVinculoRelevado(row)
+        : mapVinculoRelevado({
+            urlProducto: null,
+            tipoPagina: null,
+            pxCompetencia: null,
+            estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+            errorMensaje: null,
+            relevadoAt: null,
+          });
+      return aplicarPrioridadPrecioMostrar(base, pxSugerido);
+    }
+  }
+
+  const vinculo = await prisma.prodPrecioCompetencia.findUnique({
+    where: {
+      codTienda_competenciaId: { codTienda, competenciaId },
+    },
+    select: {
+      urlProducto: true,
+      tipoPagina: true,
+    },
+  });
+
+  const url = vinculo?.urlProducto?.trim() || null;
+  if (!url) {
+    throw new Error("No hay URL cargada para relevar.");
+  }
+
+  const tipoPagina = vinculo?.tipoPagina?.trim() || null;
+
+  try {
+    const resultado = await extraerPrecioDesdeUrlProducto(url, {
+      configExtraccion: competencia.configExtraccion,
+      tipoPagina,
+    });
+
+    if (!resultado.ok) {
+      await prisma.prodPrecioCompetencia.update({
+        where: {
+          codTienda_competenciaId: { codTienda, competenciaId },
+        },
+        data: {
+          pxCompetencia: null,
+          estado: ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR,
+          errorMensaje: resultado.error.slice(0, 500),
+          relevadoAt: now,
+        },
+      });
+    } else if (resultado.precio != null) {
+      await prisma.prodPrecioCompetencia.update({
+        where: {
+          codTienda_competenciaId: { codTienda, competenciaId },
+        },
+        data: {
+          pxCompetencia: new Prisma.Decimal(resultado.precio),
+          estado: ESTADO_RELEVAMIENTO_COMPETENCIA.OK,
+          errorMensaje: null,
+          relevadoAt: now,
+        },
+      });
+    } else {
+      await prisma.prodPrecioCompetencia.update({
+        where: {
+          codTienda_competenciaId: { codTienda, competenciaId },
+        },
+        data: {
+          pxCompetencia: null,
+          estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_PRECIO,
+          errorMensaje: null,
+          relevadoAt: now,
+        },
+      });
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error desconocido.";
+    await prisma.prodPrecioCompetencia.update({
+      where: {
+        codTienda_competenciaId: { codTienda, competenciaId },
+      },
+      data: {
+        pxCompetencia: null,
+        estado: ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR,
+        errorMensaje: msg.slice(0, 500),
+        relevadoAt: now,
+      },
+    });
+  }
+
+  await prisma.prodCompetencia.update({
+    where: { id: competenciaId },
+    data: { ultimaComparacionAt: now },
+  });
+
+  const row = await prisma.prodPrecioCompetencia.findUnique({
+    where: {
+      codTienda_competenciaId: { codTienda, competenciaId },
+    },
+    select: vinculoRelevadoSelect,
+  });
+  if (!row) {
+    throw new Error("No se encontró el vínculo tras relevar.");
+  }
+
+  return aplicarPrioridadPrecioMostrar(mapVinculoRelevado(row), null);
+}
+
+export interface RelevarVinculosPorCodTiendaResult {
+  procesados: number;
+  encontrados: number;
+  vacios: number;
+  errores: number;
+}
+
+/**
+ * Releva todos los vínculos relevables de un producto tienda (URLs + Px sugerido).
+ * Sin lock ni progreso de sync masivo.
+ */
+export async function relevarVinculosPorCodTienda(
+  codTienda: string
+): Promise<RelevarVinculosPorCodTiendaResult> {
+  const competencias = await prisma.prodCompetencia.findMany({
+    select: { id: true, idProveedor: true },
+  });
+
+  const result: RelevarVinculosPorCodTiendaResult = {
+    procesados: 0,
+    encontrados: 0,
+    vacios: 0,
+    errores: 0,
+  };
+
+  for (const c of competencias) {
+    const relevable = await countVinculosRelevablesCompetencia({
+      competenciaId: c.id,
+      idProveedor: c.idProveedor,
+      codTienda,
+    });
+    if (relevable === 0) continue;
+
+    try {
+      const vinculo = await relevarVinculoCompetenciaUnico({
+        codTienda,
+        competenciaId: c.id,
+      });
+      result.procesados++;
+      if (vinculo.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.OK) {
+        result.encontrados++;
+      } else if (vinculo.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR) {
+        result.errores++;
+      } else {
+        result.vacios++;
+      }
+    } catch {
+      result.errores++;
+    }
+
+    await delay(DELAY_MS);
+  }
+
+  if (result.procesados === 0) {
+    throw new Error(
+      "No hay URLs asociadas ni precios sugeridos para relevar en este producto."
+    );
+  }
+
+  return result;
 }

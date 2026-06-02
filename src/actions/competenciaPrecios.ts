@@ -10,6 +10,8 @@ import {
   deleteCompetenciaSchema,
   competenciaPreciosFiltrosSchema,
   guardarUrlVinculoSchema,
+  relevarUrlVinculoSchema,
+  relevarUrlsProductoSchema,
   updateCompetenciaSchema,
 } from "@/lib/validations/competenciaPrecios";
 import { prisma } from "@/lib/prisma";
@@ -18,6 +20,11 @@ import {
   guardarUrlVinculoCompetencia,
   type DatoVinculoCompetenciaCliente,
 } from "@/services/competenciaVinculo.service";
+import {
+  relevarVinculoCompetenciaUnico,
+  relevarVinculosPorCodTienda,
+  type RelevarVinculosPorCodTiendaResult,
+} from "@/services/syncCompetenciaPrecios.service";
 import {
   getCompetenciaPreciosList,
   type CompetenciaPreciosListResult,
@@ -214,6 +221,59 @@ export async function guardarUrlVinculoCompetenciaAction(
     return {
       ok: false,
       error: e instanceof Error ? e.message : "No se pudo guardar la URL.",
+    };
+  }
+}
+
+export async function relevarUrlVinculoCompetenciaAction(
+  raw: unknown
+): Promise<ActionResult<DatoVinculoCompetenciaCliente>> {
+  try {
+    const denied = await gateEditar();
+    if (denied) return denied;
+    const parsed = relevarUrlVinculoSchema.safeParse(raw);
+    if (!parsed.success) {
+      const msg = parsed.error.flatten().fieldErrors;
+      return {
+        ok: false,
+        error:
+          msg.codTienda?.[0] ??
+          msg.competenciaId?.[0] ??
+          "Datos inválidos.",
+      };
+    }
+    const row = await relevarVinculoCompetenciaUnico(parsed.data);
+    revalidateCompetenciaPreciosPaths();
+    return { ok: true, data: row };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo relevar la URL.",
+    };
+  }
+}
+
+export async function relevarUrlsProductoCompetenciaAction(
+  raw: unknown
+): Promise<ActionResult<RelevarVinculosPorCodTiendaResult>> {
+  try {
+    const denied = await gateEditar();
+    if (denied) return denied;
+    const parsed = relevarUrlsProductoSchema.safeParse(raw);
+    if (!parsed.success) {
+      const msg = parsed.error.flatten().fieldErrors;
+      return {
+        ok: false,
+        error: msg.codTienda?.[0] ?? "Datos inválidos.",
+      };
+    }
+    const result = await relevarVinculosPorCodTienda(parsed.data.codTienda);
+    revalidateCompetenciaPreciosPaths();
+    return { ok: true, data: result };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo relevar las URLs.",
     };
   }
 }

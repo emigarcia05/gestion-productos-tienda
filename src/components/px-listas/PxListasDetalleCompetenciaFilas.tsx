@@ -35,11 +35,14 @@ function DetalleCompetidorOk({
       <TableCell
         colSpan={2}
         className={cn(
-          "celda-datos max-w-0 text-right tabla-bloque-secundario-cell-divider",
+          "celda-datos max-w-0 !text-right tabla-bloque-secundario-cell-divider",
           SUBFILA_CELDA_BLOQUE_CLASS
         )}
       >
-        <span className="block truncate font-medium text-foreground" title={item.nombre}>
+        <span
+          className="block truncate text-right font-medium text-foreground"
+          title={item.nombre}
+        >
           {item.nombre}
         </span>
       </TableCell>
@@ -76,7 +79,7 @@ function DetalleCompetidorFallo({
       <TableCell
         colSpan={2}
         className={cn(
-          "celda-datos py-2 text-right tabla-bloque-secundario-cell-divider",
+          "celda-datos py-2 !text-right tabla-bloque-secundario-cell-divider",
           SUBFILA_CELDA_BLOQUE_CLASS
         )}
       >

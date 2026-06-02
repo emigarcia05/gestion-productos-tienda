@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import AgregarProveedorUrlCompetenciaModal from "@/components/precios-competencia/AgregarProveedorUrlCompetenciaModal";
@@ -15,13 +15,23 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { guardarUrlVinculoCompetenciaAction } from "@/actions/competenciaPrecios";
+import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
+import {
+  guardarUrlVinculoCompetenciaAction,
+  relevarUrlVinculoCompetenciaAction,
+} from "@/actions/competenciaPrecios";
 import RelevamientoUltimoMensaje from "@/components/precios-competencia/RelevamientoUltimoMensaje";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
 /** Ancho del modal Asociar URLs: ~50 % más que `size="lg"` (`max-w-xl` = 36rem). */
 const ASOCIAR_URLS_MODAL_MAX_WIDTH = "max-w-[54rem]";
+
+/** Botón compacto #0072BB en grilla del modal (7×7 rem). */
+const MODAL_ROW_ACTION_BTN_CLASS = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!h-7 !w-7 min-h-7 min-w-7 shrink-0 !p-0"
+);
 
 interface Props {
   open: boolean;
@@ -32,6 +42,8 @@ interface Props {
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>;
   puedeEditar: boolean;
   onGuardado: () => void;
+  /** Refresca datos de la grilla sin cerrar el modal (p. ej. tras relevar una URL). */
+  onVinculosActualizados?: () => void;
 }
 
 type FilaUrl = {
@@ -83,10 +95,17 @@ export default function AsociarUrlsCompetenciaModal({
   vinculosPorCompetencia,
   puedeEditar,
   onGuardado,
+  onVinculosActualizados,
 }: Props) {
   const [filas, setFilas] = useState<FilaUrl[]>([]);
+  const [vinculosLocal, setVinculosLocal] = useState<
+    Record<string, DatoVinculoCompetenciaCliente>
+  >({});
   const [idsUrlAEliminar, setIdsUrlAEliminar] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [relevandoCompetenciaId, setRelevandoCompetenciaId] = useState<string | null>(
+    null
+  );
   const [busquedaFiltro, setBusquedaFiltro] = useState("");
   const [agregarProveedorOpen, setAgregarProveedorOpen] = useState(false);
 
@@ -124,19 +143,32 @@ export default function AsociarUrlsCompetenciaModal({
     return false;
   }
 
+  function filaPuedeRelevar(f: FilaUrl): boolean {
+    if (f.urlBloqueadaPorPxSugerido) return true;
+    return !!vinculosLocal[f.competenciaId]?.urlProducto?.trim();
+  }
+
   useEffect(() => {
     if (!open) return;
     setFilas(filasIniciales.filter(filaTieneUrlAsociada));
+    setVinculosLocal(vinculosPorCompetencia);
     setIdsUrlAEliminar(new Set());
     setBusquedaFiltro("");
     setAgregarProveedorOpen(false);
-  }, [open, filasIniciales]);
+    setRelevandoCompetenciaId(null);
+  }, [open, filasIniciales, vinculosPorCompetencia]);
 
   const agregarCompetidor = (competenciaId: string) => {
     const c = competencias.find((x) => x.id === competenciaId);
     if (!c) return;
     const f = buildFilaUrl(c, vinculosPorCompetencia[c.id]);
     setFilas((prev) => [...prev, f]);
+  };
+
+  const limpiarUrl = (index: number) => {
+    setFilas((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, url: "" } : row))
+    );
   };
 
   const eliminarFila = (competenciaId: string) => {
@@ -147,14 +179,55 @@ export default function AsociarUrlsCompetenciaModal({
     setFilas((prev) => prev.filter((f) => f.competenciaId !== competenciaId));
   };
 
+  const handleRelevar = async (f: FilaUrl) => {
+    if (!puedeEditar || filaTieneCambios(f)) return;
+    setRelevandoCompetenciaId(f.competenciaId);
+    try {
+      const result = await relevarUrlVinculoCompetenciaAction({
+        codTienda,
+        competenciaId: f.competenciaId,
+      });
+      if (!result.ok) {
+        toast.error(`${f.nombre}: ${result.error}`);
+        return;
+      }
+      setVinculosLocal((prev) => ({
+        ...prev,
+        [f.competenciaId]: result.data,
+      }));
+      if (result.data.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.OK) {
+        toast.success(`${f.nombre}: precio relevado.`);
+      } else if (result.data.estado === ESTADO_RELEVAMIENTO_COMPETENCIA.ERROR) {
+        toast.error(
+          `${f.nombre}: ${result.data.errorMensaje?.trim() || "Error al relevar."}`
+        );
+      } else {
+        toast.message(`${f.nombre}: la página no devolvió un precio detectable.`);
+      }
+      onVinculosActualizados?.();
+    } finally {
+      setRelevandoCompetenciaId(null);
+    }
+  };
+
   const handleGuardar = async () => {
     if (!puedeEditar) return;
-    const filasAGuardar = filas.filter(filaTieneCambios);
-    const idsBorrar = [...idsUrlAEliminar].filter(
-      (id) => !filasAGuardar.some((f) => f.competenciaId === id)
+    const filasConUrl = filas.filter(
+      (f) => filaTieneCambios(f) && f.url.trim() !== ""
     );
+    const idsBorrarPorUrlVaciada = filas
+      .filter((f) => {
+        if (f.urlBloqueadaPorPxSugerido || f.url.trim() !== "") return false;
+        if (!filaTieneCambios(f)) return false;
+        const ini = filasInicialesPorId.get(f.competenciaId);
+        return !!ini?.url.trim();
+      })
+      .map((f) => f.competenciaId);
+    const idsBorrar = [
+      ...new Set([...idsUrlAEliminar, ...idsBorrarPorUrlVaciada]),
+    ].filter((id) => !filasConUrl.some((f) => f.competenciaId === id));
 
-    if (filasAGuardar.length === 0 && idsBorrar.length === 0) {
+    if (filasConUrl.length === 0 && idsBorrar.length === 0) {
       toast.message("No hay cambios para guardar.");
       return;
     }
@@ -174,7 +247,7 @@ export default function AsociarUrlsCompetenciaModal({
           return;
         }
       }
-      for (const f of filasAGuardar) {
+      for (const f of filasConUrl) {
         const result = await guardarUrlVinculoCompetenciaAction({
           codTienda,
           competenciaId: f.competenciaId,
@@ -196,7 +269,10 @@ export default function AsociarUrlsCompetenciaModal({
   };
 
   const gridCols =
-    "grid-cols-[2.25rem_minmax(0,9rem)_minmax(0,11rem)_1fr]";
+    "grid-cols-[5.5rem_minmax(0,9rem)_minmax(0,11rem)_1fr]";
+  const gridRowClass = cn("grid gap-3 items-center", gridCols);
+  const accionesDeshabilitadas =
+    saving || relevandoCompetenciaId !== null;
 
   return (
     <>
@@ -212,14 +288,14 @@ export default function AsociarUrlsCompetenciaModal({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  disabled={saving}
+                  disabled={saving || relevandoCompetenciaId !== null}
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="button"
                   variant="default"
-                  disabled={saving}
+                  disabled={saving || relevandoCompetenciaId !== null}
                   onClick={() => void handleGuardar()}
                 >
                   Guardar
@@ -238,7 +314,7 @@ export default function AsociarUrlsCompetenciaModal({
               {descripcion ? ` — ${descripcion}` : null}
             </p>
 
-            {filas.length > 0 ? (
+            {competencias.length > 0 && (puedeEditar || filas.length > 0) ? (
               <div className="flex items-center gap-2">
                 <div className="relative min-w-0 flex-1">
                   <Search
@@ -249,7 +325,7 @@ export default function AsociarUrlsCompetenciaModal({
                     value={busquedaFiltro}
                     onChange={(e) => setBusquedaFiltro(e.target.value)}
                     placeholder="Buscar proveedor..."
-                    disabled={saving}
+                    disabled={saving || filas.length === 0}
                     className={cn("w-full pl-9", INPUT_FILTER_CLASS)}
                     aria-label="Filtrar proveedores con URL cargada"
                   />
@@ -260,7 +336,7 @@ export default function AsociarUrlsCompetenciaModal({
                     variant="default"
                     size="icon"
                     className="btn-primario-gestion shrink-0"
-                    disabled={saving}
+                    disabled={saving || relevandoCompetenciaId !== null}
                     aria-label="Agregar proveedor sin URL"
                     title="Agregar proveedor"
                     onClick={() => setAgregarProveedorOpen(true)}
@@ -268,19 +344,6 @@ export default function AsociarUrlsCompetenciaModal({
                     <Plus className="h-4 w-4" aria-hidden />
                   </Button>
                 ) : null}
-              </div>
-            ) : puedeEditar ? (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="default"
-                  className="btn-primario-gestion gap-2"
-                  disabled={saving}
-                  onClick={() => setAgregarProveedorOpen(true)}
-                >
-                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                  Agregar Proveedor
-                </Button>
               </div>
             ) : null}
 
@@ -297,11 +360,11 @@ export default function AsociarUrlsCompetenciaModal({
               </p>
             ) : (
               <div className="flex flex-col gap-2">
-                <div className={cn("grid gap-3 px-0.5", gridCols)}>
-                  <span className="sr-only">Eliminar</span>
-                  <ModalMicroLabel className="text-center">Proveedor</ModalMicroLabel>
-                  <ModalMicroLabel>Ficha de Producto</ModalMicroLabel>
-                  <ModalMicroLabel>URL</ModalMicroLabel>
+                <div className={gridRowClass}>
+                  <span className="sr-only">Relevar y quitar</span>
+                  <ModalMicroLabel align="center">Proveedor</ModalMicroLabel>
+                  <ModalMicroLabel align="left">Ficha de Producto</ModalMicroLabel>
+                  <ModalMicroLabel align="left">URL</ModalMicroLabel>
                 </div>
                 <ul className="flex flex-col gap-3">
                   {filasFiltradas.map((f) => {
@@ -314,23 +377,52 @@ export default function AsociarUrlsCompetenciaModal({
                         key={f.competenciaId}
                         className="flex flex-col gap-2 border-b border-border pb-3 last:border-0 last:pb-0"
                       >
-                        <div className={cn("grid gap-3 items-center", gridCols)}>
+                        <div className={gridRowClass}>
                           {puedeEditar ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              disabled={saving}
-                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                              aria-label={`Quitar ${f.nombre} de la lista`}
-                              title="Quitar proveedor"
-                              onClick={() => eliminarFila(f.competenciaId)}
-                            >
-                              <Trash2
-                                className={TABLE_ROW_ACTION_ICON_CLASS}
-                                aria-hidden
-                              />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              {filaPuedeRelevar(f) ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={
+                                    accionesDeshabilitadas || filaTieneCambios(f)
+                                  }
+                                  className={MODAL_ROW_ACTION_BTN_CLASS}
+                                  aria-label={`Relevar URL — ${f.nombre}`}
+                                  title={
+                                    filaTieneCambios(f)
+                                      ? "Guardá los cambios antes de relevar"
+                                      : "Relevar URL"
+                                  }
+                                  onClick={() => void handleRelevar(f)}
+                                >
+                                  <RefreshCw
+                                    className={cn(
+                                      TABLE_ROW_ACTION_ICON_CLASS,
+                                      relevandoCompetenciaId === f.competenciaId &&
+                                        "animate-spin"
+                                    )}
+                                    aria-hidden
+                                  />
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disabled={accionesDeshabilitadas}
+                                className={MODAL_ROW_ACTION_BTN_CLASS}
+                                aria-label={`Quitar ${f.nombre} de la lista`}
+                                title="Quitar proveedor"
+                                onClick={() => eliminarFila(f.competenciaId)}
+                              >
+                                <Trash2
+                                  className={TABLE_ROW_ACTION_ICON_CLASS}
+                                  aria-hidden
+                                />
+                              </Button>
+                            </div>
                           ) : (
                             <span />
                           )}
@@ -347,7 +439,7 @@ export default function AsociarUrlsCompetenciaModal({
                                 <select
                                   className="input-filtro-unificado w-full min-w-0"
                                   value={f.tipoPagina}
-                                  disabled={!puedeEditar || saving}
+                                  disabled={!puedeEditar || accionesDeshabilitadas}
                                   aria-label={`Ficha de producto — ${f.nombre}`}
                                   onChange={(e) =>
                                     setFilas((prev) =>
@@ -370,20 +462,45 @@ export default function AsociarUrlsCompetenciaModal({
                                   Sin reglas configuradas
                                 </span>
                               )}
-                              <Input
-                                value={f.url}
-                                disabled={!puedeEditar || saving}
-                                aria-label={`URL del producto — ${f.nombre}`}
-                                onChange={(e) =>
-                                  setFilas((prev) =>
-                                    prev.map((row, i) =>
-                                      i === index ? { ...row, url: e.target.value } : row
+                              <div className="relative min-w-0">
+                                <Input
+                                  value={f.url}
+                                  disabled={!puedeEditar || accionesDeshabilitadas}
+                                  aria-label={`URL del producto — ${f.nombre}`}
+                                  onChange={(e) =>
+                                    setFilas((prev) =>
+                                      prev.map((row, i) =>
+                                        i === index ? { ...row, url: e.target.value } : row
+                                      )
                                     )
-                                  )
-                                }
-                                placeholder="https://..."
-                                className="min-w-0"
-                              />
+                                  }
+                                  placeholder="https://..."
+                                  className={cn(
+                                    "min-w-0",
+                                    puedeEditar && f.url.trim() !== "" && "pr-10"
+                                  )}
+                                />
+                                {puedeEditar && f.url.trim() !== "" ? (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={saving || relevandoCompetenciaId !== null}
+                                    className={cn(
+                                      MODAL_ROW_ACTION_BTN_CLASS,
+                                      "absolute right-1 top-1/2 -translate-y-1/2"
+                                    )}
+                                    aria-label={`Borrar URL — ${f.nombre}`}
+                                    title="Borrar URL"
+                                    onClick={() => limpiarUrl(index)}
+                                  >
+                                    <Trash2
+                                      className={TABLE_ROW_ACTION_ICON_CLASS}
+                                      aria-hidden
+                                    />
+                                  </Button>
+                                ) : null}
+                              </div>
                             </>
                           )}
                         </div>
@@ -392,7 +509,7 @@ export default function AsociarUrlsCompetenciaModal({
                             <span />
                             <div className="col-span-3">
                               <RelevamientoUltimoMensaje
-                                vinculo={vinculosPorCompetencia[f.competenciaId]}
+                                vinculo={vinculosLocal[f.competenciaId]}
                                 tieneUrlEnEdicion={!!f.url.trim()}
                               />
                             </div>

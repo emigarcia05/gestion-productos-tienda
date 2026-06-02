@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { ChevronDown, ChevronUp, Link2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,13 +31,14 @@ import {
   PxListasDetalleVacio,
 } from "@/components/px-listas/PxListasDetalleCompetenciaFilas";
 import { guardarPxListaTiendaAction } from "@/actions/pxListas";
+import { relevarUrlsProductoCompetenciaAction } from "@/actions/competenciaPrecios";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import {
   DET_PRECIO_MANUAL,
   calcMarcacionPxLista,
   fmtMarcacionPxLista,
 } from "@/lib/pxListas";
-import { vinculosArrayToRecord } from "@/lib/pxListasVinculos";
+import { vinculosArrayToRecord, productoTieneVinculosRelevables } from "@/lib/pxListasVinculos";
 import { useManualPxMarcacionDraft } from "@/lib/hooks/useManualPxMarcacionDraft";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { fmtPrecio } from "@/lib/format";
@@ -65,6 +66,8 @@ function FilaPxListas({
   expandido,
   onToggleDetalle,
   onAsociarUrls,
+  onRelevarUrls,
+  relevandoCodTienda,
   onGuardarDetPrecio,
   onGuardarManual,
 }: {
@@ -76,6 +79,8 @@ function FilaPxListas({
   expandido: boolean;
   onToggleDetalle: () => void;
   onAsociarUrls: () => void;
+  onRelevarUrls: () => void;
+  relevandoCodTienda: string | null;
   onGuardarDetPrecio: (
     codTienda: string,
     detPrecioSeleccion: string,
@@ -98,6 +103,7 @@ function FilaPxListas({
   const fallos = item.competidoresFalloDetalle;
   const filasDetalle = detalle.length + fallos.length;
   const vinculosPorCompetencia = vinculosArrayToRecord(item.vinculosCompetencia);
+  const puedeRelevarUrls = productoTieneVinculosRelevables(item.vinculosCompetencia);
 
   return (
     <Fragment>
@@ -230,16 +236,42 @@ function FilaPxListas({
               )}
             </Button>
             {puedeEditarEnlaces ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                aria-label="Asociar URL"
-                onClick={onAsociarUrls}
-              >
-                <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                  aria-label="Asociar URL"
+                  onClick={onAsociarUrls}
+                >
+                  <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={
+                    !puedeRelevarUrls || isPending || relevandoCodTienda !== null
+                  }
+                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                  aria-label="Relevar URLs asociadas"
+                  title={
+                    puedeRelevarUrls
+                      ? "Relevar URLs asociadas"
+                      : "No hay URLs asociadas para relevar"
+                  }
+                  onClick={onRelevarUrls}
+                >
+                  <RefreshCw
+                    className={cn(
+                      TABLE_ROW_ACTION_ICON_CLASS,
+                      relevandoCodTienda === item.codItem && "animate-spin"
+                    )}
+                    aria-hidden
+                  />
+                </Button>
+              </>
             ) : null}
           </div>
         </TableCell>
@@ -273,6 +305,7 @@ export default function TablaPxListas({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
+  const [relevandoCodTienda, setRelevandoCodTienda] = useState<string | null>(null);
   const [asociarFila, setAsociarFila] = useState<{
     codTienda: string;
     descripcion: string;
@@ -327,6 +360,27 @@ export default function TablaPxListas({
     });
   }
 
+  function relevarUrlsProducto(codTienda: string) {
+    setRelevandoCodTienda(codTienda);
+    startTransition(async () => {
+      try {
+        const res = await relevarUrlsProductoCompetenciaAction({ codTienda });
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        const { procesados, encontrados, vacios, errores } = res.data;
+        const erroresTxt = errores > 0 ? `, ${errores} con error` : "";
+        toast.success(
+          `${procesados} competidor${procesados !== 1 ? "es" : ""}: ${encontrados} con precio, ${vacios} sin precio${erroresTxt}.`
+        );
+        router.refresh();
+      } finally {
+        setRelevandoCodTienda(null);
+      }
+    });
+  }
+
   return (
     <>
       <Table variant="compact" scrollX={false} className="tabla-px-listas-listado">
@@ -373,6 +427,8 @@ export default function TablaPxListas({
                     vinculosPorCompetencia: vinculosArrayToRecord(item.vinculosCompetencia),
                   })
                 }
+                onRelevarUrls={() => relevarUrlsProducto(item.codItem)}
+                relevandoCodTienda={relevandoCodTienda}
                 onGuardarDetPrecio={guardarDetPrecio}
                 onGuardarManual={guardarManual}
               />
@@ -393,6 +449,7 @@ export default function TablaPxListas({
             setAsociarFila(null);
             router.refresh();
           }}
+          onVinculosActualizados={() => router.refresh()}
         />
       ) : null}
     </>

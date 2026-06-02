@@ -95,6 +95,15 @@ export const guardarUrlVinculoSchema = z.object({
     }),
 });
 
+export const relevarUrlVinculoSchema = z.object({
+  codTienda: listaPreciosCodTiendaSchema,
+  competenciaId: prismaCuidSchema,
+});
+
+export const relevarUrlsProductoSchema = z.object({
+  codTienda: listaPreciosCodTiendaSchema,
+});
+
 export const syncCompetenciaPreciosBodySchema = z
   .object({
     competenciaId: prismaCuidSchema.optional(),

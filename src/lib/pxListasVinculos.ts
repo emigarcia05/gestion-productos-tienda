@@ -31,3 +31,12 @@ export function vinculosRecordToArray(
     }),
   }));
 }
+
+/** true si el producto tiene al menos un vínculo con URL o Px. Vta. Sugerido. */
+export function productoTieneVinculosRelevables(
+  vinculos: VinculoCompetenciaPxListas[]
+): boolean {
+  return vinculos.some(
+    (v) => v.urlBloqueadaPorPxSugerido || !!v.urlProducto?.trim()
+  );
+}
