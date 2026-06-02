@@ -1,9 +1,14 @@
 import type {
+  DetalleProductosAumentosPxExport,
   ExportPxDiffPayload,
   FilaExportPx,
+  InformeAumentosPxExport,
   MarcaAumentosPromedioPx,
+  MarcaDetalleProductosPx,
+  ProductoAumentoPxDetalle,
   ResumenAumentosPromedioPxExport,
   RubroAumentoPromedioPx,
+  RubroDetalleProductosPx,
 } from "@/lib/exportPxDiffTypes";
 import { roundMarcacionPxLista } from "@/lib/pxListas";
 import { prisma } from "@/lib/prisma";
@@ -11,11 +16,16 @@ import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
 import { obtenerMapPxListaConfig } from "@/services/pxListasConfig.service";
 
 export type {
+  DetalleProductosAumentosPxExport,
   ExportPxDiffPayload,
   FilaExportPx,
+  InformeAumentosPxExport,
   MarcaAumentosPromedioPx,
+  MarcaDetalleProductosPx,
+  ProductoAumentoPxDetalle,
   ResumenAumentosPromedioPxExport,
   RubroAumentoPromedioPx,
+  RubroDetalleProductosPx,
 } from "@/lib/exportPxDiffTypes";
 
 const BATCH_SIZE = 150;
@@ -31,53 +41,85 @@ function pctAumentoPxListaVsDux(pxLista: number, pxDux: number): number | null {
   return ((pxLista - pxDux) / pxDux) * 100;
 }
 
-function agruparAumentosPromedioPorMarcaRubro(
-  acumulador: Map<string, { marca: string; rubro: string; suma: number; cant: number }>,
+type AcumuladorRubro = {
+  marca: string;
+  rubro: string;
+  suma: number;
+  cant: number;
+  productos: ProductoAumentoPxDetalle[];
+};
+
+function agruparItemInformeAumentos(
+  acumulador: Map<string, AcumuladorRubro>,
   marcaRaw: string | null | undefined,
   rubroRaw: string | null | undefined,
+  descripcionRaw: string | null | undefined,
   pct: number
 ): void {
   const marca = marcaRaw?.trim() ?? "";
   const rubro = rubroRaw?.trim() ?? "";
   if (!marca || !rubro) return;
+
+  const descripcion = (descripcionRaw?.trim() || "Sin descripción").slice(0, 256);
   const key = `${marca}\u0000${rubro}`;
   const prev = acumulador.get(key);
   if (prev) {
     prev.suma += pct;
     prev.cant += 1;
+    prev.productos.push({ descripcion, aumentoPct: pct });
     return;
   }
-  acumulador.set(key, { marca, rubro, suma: pct, cant: 1 });
+  acumulador.set(key, {
+    marca,
+    rubro,
+    suma: pct,
+    cant: 1,
+    productos: [{ descripcion, aumentoPct: pct }],
+  });
 }
 
-function buildResumenDesdeAcumulador(
-  acumulador: Map<string, { marca: string; rubro: string; suma: number; cant: number }>
-): ResumenAumentosPromedioPxExport {
-  const porMarca = new Map<string, RubroAumentoPromedioPx[]>();
+function buildInformeDesdeAcumulador(
+  acumulador: Map<string, AcumuladorRubro>
+): InformeAumentosPxExport {
+  const porMarcaResumen = new Map<string, RubroAumentoPromedioPx[]>();
+  const porMarcaDetalle = new Map<string, RubroDetalleProductosPx[]>();
 
-  for (const { marca, rubro, suma, cant } of acumulador.values()) {
+  for (const { marca, rubro, suma, cant, productos } of acumulador.values()) {
     const aumentoPromedioPct = suma / cant;
-    const rubros = porMarca.get(marca) ?? [];
-    rubros.push({ rubro, aumentoPromedioPct });
-    porMarca.set(marca, rubros);
+
+    const rubrosResumen = porMarcaResumen.get(marca) ?? [];
+    rubrosResumen.push({ rubro, aumentoPromedioPct });
+    porMarcaResumen.set(marca, rubrosResumen);
+
+    const productosOrdenados = [...productos].sort((a, b) =>
+      a.descripcion.localeCompare(b.descripcion, "es", { sensitivity: "base" })
+    );
+    const rubrosDetalle = porMarcaDetalle.get(marca) ?? [];
+    rubrosDetalle.push({ rubro, productos: productosOrdenados });
+    porMarcaDetalle.set(marca, rubrosDetalle);
   }
 
-  const marcas: MarcaAumentosPromedioPx[] = [...porMarca.entries()]
-    .sort(([a], [b]) => a.localeCompare(b, "es", { sensitivity: "base" }))
-    .map(([marca, rubros]) => ({
-      marca,
-      rubros: rubros.sort((a, b) =>
-        a.rubro.localeCompare(b.rubro, "es", { sensitivity: "base" })
-      ),
-    }));
+  const sortRubros = <T extends { rubro: string }>(rubros: T[]) =>
+    rubros.sort((a, b) => a.rubro.localeCompare(b.rubro, "es", { sensitivity: "base" }));
 
-  return { marcas };
+  const marcasResumen: MarcaAumentosPromedioPx[] = [...porMarcaResumen.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "es", { sensitivity: "base" }))
+    .map(([marca, rubros]) => ({ marca, rubros: sortRubros(rubros) }));
+
+  const marcasDetalle: MarcaDetalleProductosPx[] = [...porMarcaDetalle.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "es", { sensitivity: "base" }))
+    .map(([marca, rubros]) => ({ marca, rubros: sortRubros(rubros) }));
+
+  return {
+    resumen: { marcas: marcasResumen },
+    detalleProductos: { marcas: marcasDetalle },
+  };
 }
 
 /**
  * Exporta ítems cuyo **PX LISTA efectivo** difiere de `px_lista_tienda` en DUX (pesos enteros).
  * La columna Excel **Importe** lleva la **marcación** de la grilla (5 decimales).
- * Además arma el resumen de **aumentos promedio** por marca/rubro (solo ítems con diferencia).
+ * Además arma resumen y detalle para el PDF de aumentos.
  */
 export async function obtenerExportPxDiffPayload(): Promise<ExportPxDiffPayload> {
   const rows = await prisma.prodPrecioTiendaMarcacion.findMany({
@@ -98,10 +140,7 @@ export async function obtenerExportPxDiffPayload(): Promise<ExportPxDiffPayload>
   });
 
   const filas: FilaExportPx[] = [];
-  const acumuladorAumentos = new Map<
-    string,
-    { marca: string; rubro: string; suma: number; cant: number }
-  >();
+  const acumuladorAumentos = new Map<string, AcumuladorRubro>();
 
   for (let offset = 0; offset < rows.length; offset += BATCH_SIZE) {
     const chunk = rows.slice(offset, offset + BATCH_SIZE);
@@ -124,7 +163,6 @@ export async function obtenerExportPxDiffPayload(): Promise<ExportPxDiffPayload>
       const pxLista = item.pxLista;
 
       if (pxLista == null || !(pxLista > 0) || !(pxDux > 0)) continue;
-
       if (Math.round(pxLista) === pxDux) continue;
 
       const marcacion = item.marcacion;
@@ -137,10 +175,11 @@ export async function obtenerExportPxDiffPayload(): Promise<ExportPxDiffPayload>
 
       const pct = pctAumentoPxListaVsDux(pxLista, pxDux);
       if (pct == null) continue;
-      agruparAumentosPromedioPorMarcaRubro(
+      agruparItemInformeAumentos(
         acumuladorAumentos,
         row.listaPrecioTienda.marca,
         row.listaPrecioTienda.rubro,
+        row.listaPrecioTienda.descripcionTienda,
         pct
       );
     }
@@ -148,7 +187,7 @@ export async function obtenerExportPxDiffPayload(): Promise<ExportPxDiffPayload>
 
   return {
     filas,
-    resumenAumentos: buildResumenDesdeAcumulador(acumuladorAumentos),
+    informeAumentos: buildInformeDesdeAcumulador(acumuladorAumentos),
   };
 }
 

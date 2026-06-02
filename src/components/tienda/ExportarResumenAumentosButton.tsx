@@ -21,11 +21,11 @@ export default function ExportarResumenAumentosButton() {
         toast.error(res.error ?? "No se pudo exportar el resumen.");
         return;
       }
-      if (res.data.resumenAumentos.marcas.length === 0) {
+      if (res.data.informeAumentos.resumen.marcas.length === 0) {
         setModalSinProductos(true);
         return;
       }
-      await descargarPdfResumenAumentosPx(res.data.resumenAumentos);
+      await descargarPdfResumenAumentosPx(res.data.informeAumentos);
       toast.success("Resumen de aumentos exportado en PDF.");
     } catch (e) {
       toast.error(
@@ -57,8 +57,8 @@ export default function ExportarResumenAumentosButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          PDF con aumentos promedio por marca y rubro (solo precios de venta modificados vs
-          DUX)
+          PDF en dos partes: resumen por marca/rubro y detalle por producto (solo precios
+          modificados vs DUX)
         </TooltipContent>
       </Tooltip>
     </>

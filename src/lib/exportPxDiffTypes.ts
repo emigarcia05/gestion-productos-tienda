@@ -20,7 +20,32 @@ export interface ResumenAumentosPromedioPxExport {
   marcas: MarcaAumentosPromedioPx[];
 }
 
+export interface ProductoAumentoPxDetalle {
+  descripcion: string;
+  aumentoPct: number;
+}
+
+export interface RubroDetalleProductosPx {
+  rubro: string;
+  productos: ProductoAumentoPxDetalle[];
+}
+
+export interface MarcaDetalleProductosPx {
+  marca: string;
+  rubros: RubroDetalleProductosPx[];
+}
+
+export interface DetalleProductosAumentosPxExport {
+  marcas: MarcaDetalleProductosPx[];
+}
+
+/** Datos completos para el PDF de resumen de aumentos. */
+export interface InformeAumentosPxExport {
+  resumen: ResumenAumentosPromedioPxExport;
+  detalleProductos: DetalleProductosAumentosPxExport;
+}
+
 export interface ExportPxDiffPayload {
   filas: FilaExportPx[];
-  resumenAumentos: ResumenAumentosPromedioPxExport;
+  informeAumentos: InformeAumentosPxExport;
 }

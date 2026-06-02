@@ -11,7 +11,7 @@ import {
   guardarPxListaConfig,
 } from "@/services/pxListasConfig.service";
 import { getPxListasPageDataFromDb } from "@/services/pxListasPage.service";
-import type { FilaExportPx, ResumenAumentosPromedioPxExport } from "@/lib/exportPxDiffTypes";
+import type { FilaExportPx, InformeAumentosPxExport } from "@/lib/exportPxDiffTypes";
 import { obtenerExportPxDiffPayload } from "@/services/exportPxDiff.service";
 
 const guardarPxListaSchema = z.object({
@@ -87,17 +87,17 @@ export async function exportarPxDiffAction(): Promise<
   }
 }
 
-/** Resumen de aumentos promedio por marca/rubro (PDF en cliente; **Cx Compra**). */
+/** Informe de aumentos (resumen + detalle por producto; PDF en cliente; **Cx Compra**). */
 export async function exportarResumenAumentosPxAction(): Promise<
-  ActionResult<{ resumenAumentos: ResumenAumentosPromedioPxExport }>
+  ActionResult<{ informeAumentos: InformeAumentosPxExport }>
 > {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const { resumenAumentos } = await obtenerExportPxDiffPayload();
-    return { ok: true, data: { resumenAumentos } };
+    const { informeAumentos } = await obtenerExportPxDiffPayload();
+    return { ok: true, data: { informeAumentos } };
   } catch (e) {
     return {
       ok: false,
