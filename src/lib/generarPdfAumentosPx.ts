@@ -38,6 +38,9 @@ const COL_RUBRO_X = MARGIN + COL_MARCA_W;
 const COL_RUBRO_W = CONTENT_WIDTH - COL_MARCA_W - COL_PCT_W - COL_GAP_RUBRO_PCT;
 const COL_PCT_X = COL_RUBRO_X + COL_RUBRO_W + COL_GAP_RUBRO_PCT;
 
+/** Separación fija entre descripción y % en el detalle por producto. */
+const DETALLE_DESC_PCT_SEP = "   ";
+
 export type GenerarPdfAumentosPxOptions = {
   fechaDocumento?: Date;
 };
@@ -196,6 +199,8 @@ function drawResumenTable(ctx: PdfCtx, informe: InformeAumentosPxExport): void {
     }
 
     let rubroY = ctx.y + 4.2;
+    const rubroDividerYs: number[] = [];
+
     for (let i = 0; i < rubroRows.length; i++) {
       const row = rubroRows[i]!;
       const rubroTextLines = measureWrappedLines(doc, row.rubro, COL_RUBRO_W - 2, BODY_SIZE);
@@ -215,10 +220,13 @@ function drawResumenTable(ctx: PdfCtx, informe: InformeAumentosPxExport): void {
       doc.text(row.pctText, COL_PCT_X + 1, rubroY);
 
       rubroY += row.h;
-
       if (i < rubroRows.length - 1) {
-        drawRubroDividerLine(ctx, rubroY);
+        rubroDividerYs.push(rubroY);
       }
+    }
+
+    for (const sepY of rubroDividerYs) {
+      drawRubroDividerLine(ctx, sepY);
     }
 
     ctx.y += totalBlockH;
@@ -264,7 +272,7 @@ function drawDetalleProductos(ctx: PdfCtx, informe: InformeAumentosPxExport): vo
       );
       let rubroBlockH = rubroLines.length * (ROW_H - 0.4) + 1;
       for (const prod of rubroBloque.productos) {
-        const lineText = `${prod.descripcion} - ${formatPctAumento(prod.aumentoPct)}`;
+        const lineText = `${prod.descripcion}${DETALLE_DESC_PCT_SEP}${formatPctAumento(prod.aumentoPct)}`;
         const prodLines = measureWrappedLines(
           ctx.doc,
           lineText,
@@ -286,7 +294,7 @@ function drawDetalleProductos(ctx: PdfCtx, informe: InformeAumentosPxExport): vo
       ctx.y += rubroLines.length * (ROW_H - 0.4) + 1;
 
       for (const prod of rubroBloque.productos) {
-        const linea = `${prod.descripcion} - ${formatPctAumento(prod.aumentoPct)}`;
+        const linea = `${prod.descripcion}${DETALLE_DESC_PCT_SEP}${formatPctAumento(prod.aumentoPct)}`;
         const prodLines = measureWrappedLines(
           ctx.doc,
           linea,
