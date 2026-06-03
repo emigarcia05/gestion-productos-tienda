@@ -1134,3 +1134,50 @@ export async function ajustarCantidadesParaGenerarPedido(params: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * Tras generar el PDF de un proveedor, borra solo sus ítems URGENTE/TINTOMÉTRICO en la sucursal.
+ * No debe afectar pedidos del mismo tipo de otros proveedores.
+ */
+export async function limpiarPedidoMercaderiaTrasGenerarPdf(params: {
+  sucursalId: string;
+  proveedorId: string;
+  tipos: string[];
+}): Promise<void> {
+  const pid = params.proveedorId.trim();
+  if (!pid || !params.sucursalId) return;
+
+  const tiposBorrar = params.tipos.filter(
+    (t) => t === TIPO_URGENTE || t === TIPO_TINTOMETRICO
+  );
+  if (tiposBorrar.length === 0) return;
+
+  if (tiposBorrar.includes(TIPO_TINTOMETRICO)) {
+    await prisma.prodPedMerc2.deleteMany({
+      where: {
+        sucursalId: params.sucursalId,
+        tipoDePedido: TIPO_TINTOMETRICO,
+        tintometricoProveedor: pid,
+      },
+    });
+  }
+
+  if (tiposBorrar.includes(TIPO_URGENTE)) {
+    const filasLp = await prisma.listaPrecioProveedor.findMany({
+      where: { idProveedor: pid },
+      select: { codExt: true },
+    });
+    const codExts = filasLp
+      .map((r) => r.codExt?.trim())
+      .filter((c): c is string => !!c);
+    if (codExts.length > 0) {
+      await prisma.prodPedMerc2.deleteMany({
+        where: {
+          sucursalId: params.sucursalId,
+          tipoDePedido: TIPO_URGENTE,
+          urgenteCodExt: { in: codExts },
+        },
+      });
+    }
+  }
+}

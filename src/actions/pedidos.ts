@@ -20,6 +20,7 @@ import {
   upsertPedidoTintometricoItems,
   type ItemPedidoTintometricoPayload,
   deletePedidoTintometricoItem,
+  limpiarPedidoMercaderiaTrasGenerarPdf,
 } from "@/services/pedidosEnvio.service";
 import { crearPedidoHistoriaSnapshot } from "@/services/pedidosHistoria.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
@@ -676,17 +677,12 @@ export async function generarPdfEnviarPedidoAction(params: {
 
     const sentViaWhatsApp = false;
 
-    // Al "enviar" (generar y devolver el PDF), limpiar `prod_ped_merc` de los tipos
-    // URGENTE/TINTOMETRICO para la sucursal configurada.
-    const tiposBorrar = tipos.filter((t) => t === "URGENTE" || t === "TINTOMETRICO");
-    if (sucursalRow?.id && tiposBorrar.length > 0) {
-      await prisma.prodPedMerc2.deleteMany({
-        where: {
-          sucursalId: sucursalRow.id,
-          tipoDePedido: { in: tiposBorrar },
-        },
-      });
-    }
+    // Solo ítems del proveedor del PDF (no borrar URGENTE/TINTOMÉTRICO de otros proveedores).
+    await limpiarPedidoMercaderiaTrasGenerarPdf({
+      sucursalId: sucursalRow.id,
+      proveedorId: proveedorId.trim(),
+      tipos,
+    });
 
     // Refrescar listados afectados para que no queden ítems viejos.
     revalidatePedidosMercaderiaListados();

@@ -18,7 +18,7 @@ import FilterBar, {
   FilterRowSearch,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedidos";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
@@ -201,26 +201,24 @@ export default function FiltrosEnviarPedido({
                 {OPCIONES_TIPO.map((opt) => {
                   const selected = tipos.includes(opt.value);
                   return (
-                    <button
+                    <label
                       key={opt.value}
-                      type="button"
                       role="option"
                       aria-selected={selected}
-                      onClick={() => toggleTipo(opt.value)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm font-medium hover:bg-muted",
+                        "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
                         selected && "bg-muted"
                       )}
                     >
-                      <span>{opt.label}</span>
-                      <Check
-                        className={cn(
-                          "h-4 w-4 shrink-0 text-primary transition-opacity",
-                          selected ? "opacity-100" : "opacity-0"
-                        )}
-                        aria-hidden
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleTipo(opt.value)}
+                        className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                        aria-label={opt.label}
                       />
-                    </button>
+                      <span>{opt.label}</span>
+                    </label>
                   );
                 })}
               </div>

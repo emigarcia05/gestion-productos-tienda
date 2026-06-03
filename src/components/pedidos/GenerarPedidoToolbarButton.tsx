@@ -22,7 +22,6 @@ import {
 import { DropdownMenu } from "radix-ui";
 import {
   AlertCircle,
-  Check,
   CheckCircle2,
   ChevronDown,
   Loader2,
@@ -476,35 +475,43 @@ export default function GenerarPedidoToolbarButton({
                     sideOffset={4}
                     collisionPadding={8}
                   >
-                    {OPCIONES_TIPO.map((opt) => (
-                      <DropdownMenu.CheckboxItem
-                        key={opt.value}
-                        className={cn(
-                          "relative flex cursor-pointer items-center gap-2 rounded-sm py-2 pr-8 pl-2 text-sm font-medium outline-none select-none",
-                          "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-muted"
-                        )}
-                        checked={tipos.includes(opt.value)}
-                        onCheckedChange={(checked) => {
-                          if (checked === true) {
-                            setTipos((prev) =>
-                              prev.includes(opt.value) ? prev : [...prev, opt.value]
-                            );
-                          } else {
-                            setTipos((prev) => {
-                              const next = prev.filter((k) => k !== opt.value);
-                              if (next.length === 0) setProveedor("");
-                              return next;
-                            });
-                          }
-                        }}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <DropdownMenu.ItemIndicator className="absolute right-2 flex size-4 items-center justify-center text-primary">
-                          <Check className="size-4" aria-hidden />
-                        </DropdownMenu.ItemIndicator>
-                        {opt.label}
-                      </DropdownMenu.CheckboxItem>
-                    ))}
+                    {OPCIONES_TIPO.map((opt) => {
+                      const selected = tipos.includes(opt.value);
+                      return (
+                        <DropdownMenu.Item
+                          key={opt.value}
+                          className={cn(
+                            "cursor-pointer rounded-sm px-2 py-1.5 text-sm font-medium outline-none select-none",
+                            "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-muted"
+                          )}
+                          onSelect={(e) => e.preventDefault()}
+                          asChild
+                        >
+                          <label className="flex w-full cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => {
+                                if (selected) {
+                                  setTipos((prev) => {
+                                    const next = prev.filter((k) => k !== opt.value);
+                                    if (next.length === 0) setProveedor("");
+                                    return next;
+                                  });
+                                } else {
+                                  setTipos((prev) =>
+                                    prev.includes(opt.value) ? prev : [...prev, opt.value]
+                                  );
+                                }
+                              }}
+                              className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                              aria-label={opt.label}
+                            />
+                            <span>{opt.label}</span>
+                          </label>
+                        </DropdownMenu.Item>
+                      );
+                    })}
                   </DropdownMenu.Content>
                 </DropdownMenu.Portal>
               </DropdownMenu.Root>

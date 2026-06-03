@@ -799,7 +799,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
 2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`
-   - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar **`prod_ped_merc`** (URGENTE/TINTOMÉTRICO cuando corresponda).
+   - Uso: llamada desde `generarPdfEnviarPedidoAction` para crear cabecera + items del snapshot justo antes de limpiar **`prod_ped_merc`** del proveedor del PDF (URGENTE/TINTOMÉTRICO vía `limpiarPedidoMercaderiaTrasGenerarPdf`).
    - Crea `PedidoHistoria` con `estado = "PENDIENTE"`.
    - Reutiliza **`getItemsYProveedorParaEnviar`** (mismas filas que el PDF): datos desde **`prod_ped_merc`** con proveedor y cantidades ya resueltas.
   - Consolidación por `cod_tienda` para `PedidoHistoriaItem` (fallback `1503` solo si no se puede resolver un código válido en alguna línea).
@@ -1004,7 +1004,7 @@ Antes de entregar código nuevo o modificado, verificar:
 - Estandarizar respuestas de error: no `throw`, sí `ActionResult` con `error`.
 - Documentar uso de `getRol()` + `puede()` para permisos granulares.
 - PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden; las filas van **ordenadas alfabéticamente** por el texto de **DESCRIPCION** (`localeCompare` `es`, `sensitivity: "base"`). Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`). El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`. Opción **`fechaDocumento`** en `generarPdfPedido`: al **volver a descargar** desde historial (`descargarPdfPedidoHistoriaAction`) usar `generado_at` del snapshot para encabezado y nombre de archivo, no la fecha actual. En celdas `COD.` y `DESCRIPCION`, el texto debe hacer wrap en múltiples líneas dentro de la columna y **no** truncarse con `...`.
-- Al ejecutar el botón de **Generar Pedido** (server action `generarPdfEnviarPedidoAction`), limpiar **`prod_ped_merc`** (tipos `URGENTE` y/o `TINTOMETRICO`) para la `sucursal` enviada, y revalidar las rutas afectadas (`/pedidos/enviar`, `/pedidos/urgente`, `/pedidos/tintometrico`).
+- Al ejecutar el botón de **Generar Pedido** (`generarPdfEnviarPedidoAction`), limpiar **`prod_ped_merc`** solo del **proveedor** del PDF: URGENTE por `urgente_cod_ext` ∈ catálogo del proveedor; TINTOMÉTRICO por `tintometrico_proveedor` = `proveedorId` (`limpiarPedidoMercaderiaTrasGenerarPdf`). No borrar ítems de otros proveedores en la misma sucursal. Revalidar rutas de pedidos afectadas.
 
 ### 5.4 Cambios aplicados en esta auditoría
 
