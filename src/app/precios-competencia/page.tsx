@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Px Competencia unificado en Px Listas. */
+/** Redirige a la pantalla canónica Px Competencia. */
 export default function PreciosCompetenciaRedirectPage() {
   redirect("/gestion-productos/tienda/cx-px-tienda");
 }

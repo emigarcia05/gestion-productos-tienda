@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Link2 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,10 @@ import CeldaCxProdTienda from "@/components/shared/CeldaCxProdTienda";
 import CxCompraVinculosDetalle, {
   recargarVinculosItemTienda,
 } from "@/components/tienda/CxCompraVinculosDetalle";
-import VincularCxCompraModal from "@/components/tienda/VincularCxCompraModal";
+import SeleccionarProductoModal, {
+  type ProductoConProveedor,
+} from "@/components/tienda/SeleccionarProductoModal";
+import { vincularProducto } from "@/actions/vinculos";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import type { ItemTiendaParaTabla } from "@/actions/tienda";
 import {
@@ -155,7 +159,8 @@ export default function TablaTienda({
   const puedeVincular = puede(rol, col.vinculos);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   const [detalleKeys, setDetalleKeys] = useState<Record<string, number>>({});
-  const [vinculosModalItem, setVinculosModalItem] = useState<VincularItemState | null>(null);
+  const [vincularModalItem, setVincularModalItem] = useState<VincularItemState | null>(null);
+  const [, startVinculo] = useTransition();
 
   function toggleDetalle(itemId: string) {
     setExpandidos((prev) => {
@@ -175,9 +180,25 @@ export default function TablaTienda({
 
   async function abrirVincular(item: ItemTiendaParaTabla) {
     const data = await recargarVinculosItemTienda(item.id);
-    setVinculosModalItem({
+    setVincularModalItem({
       item,
       idsProveedoresYaVinculados: data?.productos.map((p) => p.proveedorId) ?? [],
+    });
+  }
+
+  function handleSeleccionarProducto(producto: ProductoConProveedor) {
+    if (!vincularModalItem) return;
+    const { item } = vincularModalItem;
+    startVinculo(async () => {
+      const res = await vincularProducto(item.id, producto.id);
+      if (res.ok) {
+        toast.success(`Vinculado: ${producto.codigoExterno}`);
+        setVincularModalItem(null);
+        bumpDetalleKey(item.id);
+        router.refresh();
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 
@@ -225,18 +246,22 @@ export default function TablaTienda({
         </TableBody>
       </Table>
 
-      {vinculosModalItem ? (
-        <VincularCxCompraModal
+      {vincularModalItem ? (
+        <SeleccionarProductoModal
           open
-          onOpenChange={(o) => !o && setVinculosModalItem(null)}
-          item={vinculosModalItem.item}
-          idsProveedoresYaVinculados={vinculosModalItem.idsProveedoresYaVinculados}
+          onClose={() => setVincularModalItem(null)}
+          onSeleccionar={handleSeleccionarProducto}
+          excluirItemTiendaId={vincularModalItem.item.id}
+          idsProveedoresYaVinculados={vincularModalItem.idsProveedoresYaVinculados}
+          itemDescripcion={vincularModalItem.item.descripcion}
+          marca={vincularModalItem.item.marca}
+          rubro={vincularModalItem.item.rubro}
+          subRubro={vincularModalItem.item.subRubro}
           puedeEditar={puedeVincular}
-          onChanged={() => {
-            setDetalleKeys((prev) => ({
-              ...prev,
-              [vinculosModalItem.item.id]: (prev[vinculosModalItem.item.id] ?? 0) + 1,
-            }));
+          esProductoPropio={vincularModalItem.item.esProductoPropio}
+          onProductoPropioChanged={() => {
+            bumpDetalleKey(vincularModalItem.item.id);
+            setVincularModalItem(null);
             router.refresh();
           }}
         />

@@ -51,6 +51,15 @@ export interface ItemPedidoTintometricoPersistido {
   descripcion: string;
 }
 
+/** Sucursal habilitada para flujos de pedido de mercadería (`global_sucursales.pedido`). */
+export async function sucursalPedidoHabilitada(codigo: string): Promise<boolean> {
+  const row = await prisma.sucursal.findUnique({
+    where: { codigo: codigo.trim() },
+    select: { pedido: true },
+  });
+  return row?.pedido === true;
+}
+
 async function getSucursalIdByCodigo(codigo: SucursalPedidoEnvio): Promise<string> {
   const sucursal = await prisma.sucursal.findUnique({
     where: { codigo },

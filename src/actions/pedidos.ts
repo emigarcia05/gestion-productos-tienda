@@ -21,6 +21,7 @@ import {
   type ItemPedidoTintometricoPayload,
   deletePedidoTintometricoItem,
   limpiarPedidoMercaderiaTrasGenerarPdf,
+  sucursalPedidoHabilitada,
 } from "@/services/pedidosEnvio.service";
 import { crearPedidoHistoriaSnapshot } from "@/services/pedidosHistoria.service";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
@@ -28,7 +29,6 @@ import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/types";
 import { PAGE_SIZE } from "@/lib/pagination";
-import { z } from "zod";
 import { revalidatePedidosMercaderiaListados } from "@/lib/revalidatePedidosMercaderia";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import {
@@ -37,9 +37,19 @@ import {
 } from "@/services/sobreStock.service";
 import {
   getPedidoUrgenteDataParamsSchema,
+  getEnviarPedidoDataParamsSchema,
   getEnviarPedidoTablaParamsSchema,
 } from "@/lib/validations/pedidosLectura";
-import { listaPreciosCodExtSchema } from "@/lib/validations/common";
+import {
+  comprobarItemsParaGenerarPedidoSchema,
+  deleteTintometricoItemSchema,
+  generarPdfEnviarPedidoSchema,
+  getSobreStockReposicionParaModalSchema,
+  listarProveedoresConPedidoActivoSchema,
+  syncPedidoUrgenteEnvioSchema,
+  upsertPedidoTintometricoItemsSchema,
+  upsertPedidoUrgenteItemSchema,
+} from "@/lib/validations/pedidosMutaciones";
 
 /** Token liviano para polling en pantallas de pedido (cambios en Posición IVA). */
 export async function getPosicionIvaComparacionRevisionTokenAction(): Promise<{
@@ -166,25 +176,18 @@ export async function getEnviarPedidoData(params?: {
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { proveedores: [] };
   }
-  const sucursalTrim = params?.sucursal?.trim() ?? "";
-  const sucursalCodigo =
-    sucursalTrim && SUCURSALES_VALIDAS.includes(sucursalTrim as SucursalPedidoEnvio)
-      ? sucursalTrim
-      : "";
-  const tipos = params?.tipos ?? [];
+  const parsed = getEnviarPedidoDataParamsSchema.safeParse(params ?? {});
+  if (!parsed.success) {
+    return { proveedores: [] };
+  }
+  const sucursalCodigo = parsed.data.sucursal ?? "";
+  const tipos = parsed.data.tipos ?? [];
   const proveedores = await getProveedoresConPedidoActivo({
     sucursalCodigo: sucursalCodigo || undefined,
     tipos,
   });
   return { proveedores };
 }
-
-const listarProveedoresPedidoActivoSchema = z.object({
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  tipos: z
-    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
-    .min(1, "Al menos un tipo de pedido."),
-});
 
 /** Proveedores con pedido activo para el modal Generar Pedido (según sucursal y tipos). */
 export async function listarProveedoresConPedidoActivoAction(
@@ -194,7 +197,7 @@ export async function listarProveedoresConPedidoActivoAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const parsed = listarProveedoresPedidoActivoSchema.safeParse(raw);
+  const parsed = listarProveedoresConPedidoActivoSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos." };
   }
@@ -237,10 +240,7 @@ export async function getEnviarPedidoTablaData(params: {
     return { items: [] };
   }
   const { sucursal, proveedor, tipos, q } = parsed.data;
-  const sucursalFiltro =
-    sucursal.trim() && SUCURSALES_VALIDAS.includes(sucursal as SucursalPedidoEnvio)
-      ? sucursal.trim()
-      : undefined;
+  const sucursalFiltro = sucursal || undefined;
   if (sucursalFiltro && !(await sucursalPedidoHabilitada(sucursalFiltro))) {
     return { items: [] };
   }
@@ -254,14 +254,6 @@ export async function getEnviarPedidoTablaData(params: {
   return { items };
 }
 
-const comprobarItemsGenerarPedidoSchema = z.object({
-  proveedorId: z.string().min(1, "Proveedor requerido."),
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  tipos: z
-    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
-    .min(1, "Al menos un tipo de pedido."),
-});
-
 /**
  * Indica si existen ítems con cantidad a pedir > 0 para generar el PDF (misma lógica que la tabla Generar Pedido).
  */
@@ -272,7 +264,7 @@ export async function comprobarItemsParaGenerarPedidoAction(
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const parsed = comprobarItemsGenerarPedidoSchema.safeParse(raw);
+  const parsed = comprobarItemsParaGenerarPedidoSchema.safeParse(raw);
   if (!parsed.success) {
     const f = parsed.error.flatten().fieldErrors;
     const msg =
@@ -298,58 +290,6 @@ export async function comprobarItemsParaGenerarPedidoAction(
     return { ok: false, error: message };
   }
 }
-
-const SUCURSALES_VALIDAS: SucursalPedidoEnvio[] = ["guaymallen", "maipu"];
-
-async function sucursalPedidoHabilitada(codigo: string): Promise<boolean> {
-  const row = await prisma.sucursal.findUnique({
-    where: { codigo },
-    select: { pedido: true },
-  });
-  return row?.pedido === true;
-}
-
-const syncPedidoUrgenteEnvioSchema = z.object({
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  items: z
-    .array(
-      z.object({
-        id: z.string().min(1).max(128),
-        cant: z.number().int().min(0),
-      })
-    )
-    .max(100_000),
-});
-
-const generarPdfEnviarPedidoSchema = z.object({
-  proveedorId: z.string().min(1).max(128),
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  tipos: z
-    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
-    .min(1, "Al menos un tipo de pedido."),
-  /**
-   * Si algún ítem con `cod_tienda` tiene sobrestock en la otra sucursal, no se persiste
-   * historial/PDF hasta que `confirmarSobreStock` sea true (segunda llamada tras el modal).
-   */
-  confirmarSobreStock: z.boolean().optional().default(false),
-  ajustesSobreStock: z
-    .array(
-      z.object({
-        idItemPedidoEnvio: z.string().min(1).max(128),
-        cantPedir: z.number().int().min(0).max(1_000_000),
-      })
-    )
-    .max(5_000)
-    .optional(),
-});
-
-const getSobreStockReposicionParaModalSchema = z.object({
-  proveedorId: z.string().min(1).max(128),
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  tipos: z
-    .array(z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]))
-    .min(1, "Al menos un tipo de pedido."),
-});
 
 export async function getSobreStockReposicionParaModalAction(
   raw: unknown
@@ -400,14 +340,13 @@ export async function getSobreStockReposicionParaModalAction(
  * Reemplaza todos los ítems URGENTE de esa sucursal por el conjunto enviado.
  */
 export async function syncPedidoUrgenteEnvioAction(
-  sucursal: string,
-  items: ItemPedidoUrgentePayload[]
+  raw: unknown
 ): Promise<ActionResult<{ creados: number }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const rawParsed = syncPedidoUrgenteEnvioSchema.safeParse({ sucursal, items });
+  const rawParsed = syncPedidoUrgenteEnvioSchema.safeParse(raw);
   if (!rawParsed.success) {
     return { ok: false, error: "Datos inválidos para sincronizar el pedido urgente." };
   }
@@ -427,12 +366,6 @@ export async function syncPedidoUrgenteEnvioAction(
     return { ok: false, error: message };
   }
 }
-
-const upsertPedidoUrgenteItemSchema = z.object({
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  listaPrecioProveedorId: listaPreciosCodExtSchema,
-  cant: z.number().int().min(0),
-});
 
 export async function upsertPedidoUrgenteMercaderiaItemAction(raw: unknown): Promise<ActionResult<void>> {
   const rol = await getRol();
@@ -465,28 +398,15 @@ const TIPO_LABEL: Record<string, string> = {
   REPOSICION: "Reposición",
 };
 
-const pedidoTintometricoItemSchema = z.object({
-  sucursalCodigo: z.enum(["guaymallen", "maipu"]),
-  proveedorId: z.string().min(1, "Proveedor inválido."),
-  codTienda: z.string().min(1, "Cod. Tienda requerido."),
-  codTintometrico: z.string().min(1, "Código tintométrico requerido.").max(120),
-  cantidad: z.number().int().min(1, "Cant. debe ser mayor a 0."),
-  descripcion: z.string().min(1, "Descripción requerida."),
-});
-
 export async function upsertPedidoTintometricoItemsAction(
-  items: ItemPedidoTintometricoPayload[]
+  raw: unknown
 ): Promise<ActionResult<{ actualizados: number }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
 
-  if (!Array.isArray(items) || items.length === 0) {
-    return { ok: false, error: "No hay ítems para guardar." };
-  }
-
-  const parsed = z.array(pedidoTintometricoItemSchema).safeParse(items);
+  const parsed = upsertPedidoTintometricoItemsSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "Datos de ítems tintométricos inválidos." };
   }
@@ -509,21 +429,6 @@ export async function upsertPedidoTintometricoItemsAction(
   }
   return { ok: true, data: { actualizados } };
 }
-
-const deleteTintometricoItemByIdSchema = z.object({
-  id: z.string().uuid("ID inválido."),
-});
-
-const deleteTintometricoItemLegacySchema = z.object({
-  sucursalCodigo: z.enum(["guaymallen", "maipu"]),
-  proveedorId: z.string().min(1, "Proveedor inválido."),
-  codExt: z.string().min(1, "Cod. ext. requerido."),
-});
-
-const deleteTintometricoItemSchema = z.union([
-  deleteTintometricoItemByIdSchema,
-  deleteTintometricoItemLegacySchema,
-]);
 
 export async function deletePedidoTintometricoItemAction(
   raw: unknown
@@ -554,16 +459,7 @@ export async function deletePedidoTintometricoItemAction(
 }
 
 /** Genera el PDF del pedido y limpia ítems enviados según el flujo del módulo. */
-export async function generarPdfEnviarPedidoAction(params: {
-  proveedorId: string;
-  sucursal: string;
-  tipos: string[];
-  confirmarSobreStock?: boolean;
-  ajustesSobreStock?: Array<{
-    idItemPedidoEnvio: string;
-    cantPedir: number;
-  }>;
-}): Promise<
+export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
   ActionResult<{
     pdfBase64: string;
     whatsapp: string | null;
@@ -577,7 +473,7 @@ export async function generarPdfEnviarPedidoAction(params: {
   if (!puede(rol, PERMISOS.pedidos.acceso)) {
     return { ok: false, error: "Sin permisos para pedidos." };
   }
-  const parsedParams = generarPdfEnviarPedidoSchema.safeParse(params);
+  const parsedParams = generarPdfEnviarPedidoSchema.safeParse(raw);
   if (!parsedParams.success) {
     const flat = parsedParams.error.flatten();
     const msg =

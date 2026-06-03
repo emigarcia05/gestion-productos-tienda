@@ -1,0 +1,97 @@
+import { z } from "zod";
+import {
+  listaPreciosCodExtSchema,
+  prismaCuidSchema,
+  uuidSchema,
+} from "@/lib/validations/common";
+import {
+  sucursalPedidoCodigoSchema,
+  tiposPedidoMercaderiaSchema,
+} from "@/lib/validations/pedidosLectura";
+
+/** Proveedor del flujo Generar Pedido / envío (`Proveedor.id` = CUID). */
+export const proveedorIdPedidoSchema = prismaCuidSchema;
+
+export const listarProveedoresConPedidoActivoSchema = z.object({
+  sucursal: sucursalPedidoCodigoSchema,
+  tipos: tiposPedidoMercaderiaSchema,
+});
+
+export const comprobarItemsParaGenerarPedidoSchema = z.object({
+  proveedorId: proveedorIdPedidoSchema,
+  sucursal: sucursalPedidoCodigoSchema,
+  tipos: tiposPedidoMercaderiaSchema,
+});
+
+export const generarPdfEnviarPedidoSchema = z.object({
+  proveedorId: proveedorIdPedidoSchema,
+  sucursal: sucursalPedidoCodigoSchema,
+  tipos: tiposPedidoMercaderiaSchema,
+  /**
+   * Si algún ítem con `cod_tienda` tiene sobrestock en la otra sucursal, no se persiste
+   * historial/PDF hasta que `confirmarSobreStock` sea true (segunda llamada tras el modal).
+   */
+  confirmarSobreStock: z.boolean().optional().default(false),
+  ajustesSobreStock: z
+    .array(
+      z.object({
+        idItemPedidoEnvio: uuidSchema,
+        cantPedir: z.number().int().min(0).max(1_000_000),
+      })
+    )
+    .max(5_000)
+    .optional(),
+});
+
+export const getSobreStockReposicionParaModalSchema = z.object({
+  proveedorId: proveedorIdPedidoSchema,
+  sucursal: sucursalPedidoCodigoSchema,
+  tipos: tiposPedidoMercaderiaSchema,
+});
+
+export const syncPedidoUrgenteEnvioSchema = z.object({
+  sucursal: sucursalPedidoCodigoSchema,
+  items: z
+    .array(
+      z.object({
+        id: listaPreciosCodExtSchema,
+        cant: z.number().int().min(0),
+      })
+    )
+    .max(100_000),
+});
+
+export const upsertPedidoUrgenteItemSchema = z.object({
+  sucursal: sucursalPedidoCodigoSchema,
+  listaPrecioProveedorId: listaPreciosCodExtSchema,
+  cant: z.number().int().min(0),
+});
+
+export const pedidoTintometricoItemSchema = z.object({
+  sucursalCodigo: sucursalPedidoCodigoSchema,
+  proveedorId: proveedorIdPedidoSchema,
+  codTienda: z.string().min(1, "Cod. Tienda requerido.").max(200),
+  codTintometrico: z.string().min(1, "Código tintométrico requerido.").max(120),
+  cantidad: z.number().int().min(1, "Cant. debe ser mayor a 0."),
+  descripcion: z.string().min(1, "Descripción requerida.").max(500),
+});
+
+export const upsertPedidoTintometricoItemsSchema = z
+  .array(pedidoTintometricoItemSchema)
+  .min(1, "No hay ítems para guardar.")
+  .max(5_000);
+
+export const deleteTintometricoItemByIdSchema = z.object({
+  id: uuidSchema,
+});
+
+export const deleteTintometricoItemLegacySchema = z.object({
+  sucursalCodigo: sucursalPedidoCodigoSchema,
+  proveedorId: proveedorIdPedidoSchema,
+  codExt: z.string().min(1, "Cod. ext. requerido.").max(200),
+});
+
+export const deleteTintometricoItemSchema = z.union([
+  deleteTintometricoItemByIdSchema,
+  deleteTintometricoItemLegacySchema,
+]);

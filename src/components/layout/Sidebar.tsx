@@ -183,7 +183,7 @@ const MODULES: NavModule[] = [
       },
       {
         href: "/gestion-productos/tienda/cx-px-tienda",
-        label: "Px Listas",
+        label: "Px Competencia",
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.cxPxTienda.acceso,
       },

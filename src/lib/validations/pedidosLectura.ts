@@ -1,4 +1,20 @@
 import { z } from "zod";
+import { prismaCuidSchema } from "@/lib/validations/common";
+
+export const sucursalPedidoCodigoSchema = z.enum(["guaymallen", "maipu"]);
+
+export const tipoPedidoMercaderiaSchema = z.enum([
+  "URGENTE",
+  "TINTOMETRICO",
+  "REPOSICION",
+]);
+
+export const tiposPedidoMercaderiaSchema = z
+  .array(tipoPedidoMercaderiaSchema)
+  .min(1, "Al menos un tipo de pedido.");
+
+/** Filtro proveedor en URL de `/pedidos/enviar`: vacío = sin filtro, o CUID válido. */
+export const proveedorFiltroPedidoSchema = z.union([z.literal(""), prismaCuidSchema]);
 
 export const getPedidoUrgenteDataParamsSchema = z.object({
   sucursal: z.string().max(50).optional(),
@@ -8,11 +24,14 @@ export const getPedidoUrgenteDataParamsSchema = z.object({
   pedido: z.string().max(100).optional(),
 });
 
-const tipoPedidoTablaSchema = z.enum(["URGENTE", "TINTOMETRICO", "REPOSICION"]);
+export const getEnviarPedidoDataParamsSchema = z.object({
+  sucursal: sucursalPedidoCodigoSchema.optional(),
+  tipos: z.array(tipoPedidoMercaderiaSchema).max(10).optional(),
+});
 
 export const getEnviarPedidoTablaParamsSchema = z.object({
-  sucursal: z.string().max(50).default(""),
-  proveedor: z.string().max(128).default(""),
-  tipos: z.array(tipoPedidoTablaSchema).max(10).default([]),
+  sucursal: z.union([z.literal(""), sucursalPedidoCodigoSchema]).default(""),
+  proveedor: proveedorFiltroPedidoSchema.default(""),
+  tipos: z.array(tipoPedidoMercaderiaSchema).max(10).default([]),
   q: z.string().max(500).optional(),
 });

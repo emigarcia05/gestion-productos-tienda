@@ -10,7 +10,7 @@ export async function descargarExcelPx(filas: FilaExportPx[]): Promise<void> {
   }));
   const hoja = XLSX.utils.json_to_sheet(hojaFilas);
   const libro = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(libro, hoja, "Px Listas");
+  XLSX.utils.book_append_sheet(libro, hoja, "Px Competencia");
   hoja["!cols"] = [{ wch: 18 }, { wch: 16 }];
   const nombre = `Exportar Px ${formatDdMmYyHhMmNombreArchivoArgentina(new Date())}.xls`;
   XLSX.writeFile(libro, nombre, { bookType: "xls" });
