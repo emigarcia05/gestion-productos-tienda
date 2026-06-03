@@ -12,6 +12,8 @@ export const parseListaPreciosPdfMatrizQuerySchema = z.object({
     .max(500)
     .optional()
     .default(PAGINA_INICIO_PDF_MATRIZ_DEFAULT),
+  /** Filas tabulares a omitir al inicio (índice, encabezados previos a la matriz). */
+  filasIgnorar: z.coerce.number().int().min(0).max(10_000).optional().default(0),
 });
 
 export const filaPdfMatrizNormalizadaSchema = z.object({
@@ -26,6 +28,7 @@ export const parseListaPreciosPdfMatrizResponseSchema = z.object({
   filas: z.array(filaPdfMatrizNormalizadaSchema),
   meta: z.object({
     paginaInicioUsada: z.number().int().min(1),
+    filasIgnoradasUsadas: z.number().int().min(0),
     paginasProcesadas: z.number().int().min(0),
     filasOmitidasVacias: z.number().int().min(0),
     advertencias: z.array(z.string()),

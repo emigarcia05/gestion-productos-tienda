@@ -28,7 +28,10 @@ const filasTabulares = [
   ["Latex Blanco", "", "", "", "", "", "$10", "$20"],
 ];
 
-const result = parseMatrizTabularListaPrecios(filasTabulares, 9);
+const result = parseMatrizTabularListaPrecios(filasTabulares, {
+  paginaInicioUsada: 9,
+  filasIgnorar: 0,
+});
 assert(result.filas.length === 3, `Esperadas 3 filas, got ${result.filas.length}`);
 
 const maq = result.filas.find((f) => f.descripcionBase === "Maquina amoladora");

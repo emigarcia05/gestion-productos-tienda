@@ -1366,7 +1366,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 | Aplanado puro | `@/lib/listaPreciosPdfMatriz` — `aplanarMatrizListaPrecios`, regla `Un.` sin sufijo en `descripcionExport` |
 | Servicio PDF | `@/services/parseListaPreciosPdfMatriz.service.ts` — `pdfjs-dist` (legacy build), heurística posicional X/Y |
 | Validación | `@/lib/validations/parseListaPreciosPdfMatriz.ts` |
-| API | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**); gate `guardListaPreciosImportarEsEditor` |
+| API | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**, `filasIgnorar` default **0**); gate `guardListaPreciosImportarEsEditor` |
 | Test manual | `npx tsx scripts/test-aplanar-pdf-matriz.ts` |
 
 **Presentaciones de referencia:** `Un.`, `¼`, `½`, `1 L`, `4 L`, `10 L`, `20 L`. Páginas anteriores a `paginaInicio` se omiten (índice).

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { FileText, Upload, Download, Loader2, ChevronDown } from "lucide-react";
+import { FileText, Upload, Download, Loader2, ChevronDown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -29,7 +29,7 @@ interface Props {
   proveedores: Proveedor[];
 }
 
-type Estado = "idle" | "procesando" | "preview" | "error";
+type Estado = "idle" | "config" | "procesando" | "preview" | "error";
 
 function fmtPrecio(n: number): string {
   return n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -38,9 +38,11 @@ function fmtPrecio(n: number): string {
 export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
   const [open, setOpen] = useState(false);
   const [estado, setEstado] = useState<Estado>("idle");
+  const [archivoPendiente, setArchivoPendiente] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [paginaInicio, setPaginaInicio] = useState(String(PAGINA_INICIO_PDF_MATRIZ_DEFAULT));
+  const [filasIgnorar, setFilasIgnorar] = useState("0");
   const [proveedorId, setProveedorId] = useState("");
   const [filas, setFilas] = useState<FilaPdfMatrizNormalizadaDto[]>([]);
   const [advertencias, setAdvertencias] = useState<string[]>([]);
@@ -49,11 +51,13 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
 
   const resetForm = useCallback(() => {
     setEstado("idle");
+    setArchivoPendiente(null);
     setFileName(null);
     setFilas([]);
     setAdvertencias([]);
     setErrorMsg(null);
     setPaginaInicio(String(PAGINA_INICIO_PDF_MATRIZ_DEFAULT));
+    setFilasIgnorar("0");
   }, []);
 
   const handleClose = useCallback(
@@ -64,83 +68,90 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
     [resetForm]
   );
 
-  const procesarPdf = useCallback(
-    async (file: File) => {
-      const pagina = Number.parseInt(paginaInicio, 10);
-      if (!Number.isFinite(pagina) || pagina < 1) {
-        toast.error("Ingresá una página de inicio válida (≥ 1).");
-        return;
-      }
+  const seleccionarArchivo = useCallback((file: File) => {
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Solo se aceptan archivos PDF.");
+      return;
+    }
+    setArchivoPendiente(file);
+    setFileName(file.name);
+    setFilas([]);
+    setAdvertencias([]);
+    setErrorMsg(null);
+    setEstado("config");
+  }, []);
 
-      setEstado("procesando");
-      setErrorMsg(null);
-      setFilas([]);
-      setAdvertencias([]);
-      setFileName(file.name);
+  const procesarPdf = useCallback(async () => {
+    if (!archivoPendiente) return;
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("paginaInicio", String(pagina));
+    const pagina = Number.parseInt(paginaInicio, 10);
+    if (!Number.isFinite(pagina) || pagina < 1) {
+      toast.error("Ingresá una página de inicio válida (≥ 1).");
+      return;
+    }
 
-      try {
-        const res = await fetch("/api/parse-lista-precios-pdf", {
-          method: "POST",
-          body: formData,
-        });
-        const data = (await res.json()) as {
-          ok?: boolean;
-          error?: string;
-          filas?: FilaPdfMatrizNormalizadaDto[];
-          meta?: { advertencias?: string[] };
-        };
+    const ignorar = Number.parseInt(filasIgnorar, 10);
+    if (!Number.isFinite(ignorar) || ignorar < 0) {
+      toast.error("Ingresá cuántas filas ignorar (número ≥ 0).");
+      return;
+    }
 
-        if (!res.ok || !data.ok) {
-          const msg = data.error ?? "No se pudo procesar el PDF.";
-          setErrorMsg(msg);
-          setEstado("error");
-          toast.error(msg);
-          return;
-        }
+    setEstado("procesando");
+    setErrorMsg(null);
+    setFilas([]);
+    setAdvertencias([]);
 
-        const filasResult = data.filas ?? [];
-        setFilas(filasResult);
-        setAdvertencias(data.meta?.advertencias ?? []);
-        setEstado("preview");
+    const formData = new FormData();
+    formData.append("file", archivoPendiente);
+    formData.append("paginaInicio", String(pagina));
+    formData.append("filasIgnorar", String(ignorar));
 
-        if (filasResult.length === 0) {
-          toast.warning("El PDF no produjo ítems con precio. Revisá la página de inicio.");
-        } else {
-          toast.success(`${filasResult.length} ítem(s) listos para exportar.`);
-        }
-      } catch {
-        const msg = "Error de conexión al procesar el PDF.";
+    try {
+      const res = await fetch("/api/parse-lista-precios-pdf", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        filas?: FilaPdfMatrizNormalizadaDto[];
+        meta?: { advertencias?: string[] };
+      };
+
+      if (!res.ok || !data.ok) {
+        const msg = data.error ?? "No se pudo procesar el PDF.";
         setErrorMsg(msg);
         setEstado("error");
         toast.error(msg);
-      }
-    },
-    [paginaInicio]
-  );
-
-  const loadFile = useCallback(
-    (file: File) => {
-      if (!file.name.toLowerCase().endsWith(".pdf")) {
-        toast.error("Solo se aceptan archivos PDF.");
         return;
       }
-      void procesarPdf(file);
-    },
-    [procesarPdf]
-  );
+
+      const filasResult = data.filas ?? [];
+      setFilas(filasResult);
+      setAdvertencias(data.meta?.advertencias ?? []);
+      setEstado("preview");
+
+      if (filasResult.length === 0) {
+        toast.warning("El PDF no produjo ítems con precio. Revisá página y filas a ignorar.");
+      } else {
+        toast.success(`${filasResult.length} ítem(s) listos para exportar.`);
+      }
+    } catch {
+      const msg = "Error de conexión al procesar el PDF.";
+      setErrorMsg(msg);
+      setEstado("error");
+      toast.error(msg);
+    }
+  }, [archivoPendiente, paginaInicio, filasIgnorar]);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
-      if (file) loadFile(file);
+      if (file) seleccionarArchivo(file);
     },
-    [loadFile]
+    [seleccionarArchivo]
   );
 
   const prefijoProveedor = proveedores.find((p) => p.id === proveedorId)?.prefijo;
@@ -150,6 +161,8 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
     descargarExcelListaPreciosPdfMatriz(filas, { prefijoProveedor });
     toast.success("Excel descargado.");
   }
+
+  const enConfig = estado === "config" && !!archivoPendiente;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -169,6 +182,12 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancelar
             </Button>
+            {enConfig && (
+              <Button onClick={() => void procesarPdf()} className="gap-2 min-w-[150px]">
+                <ArrowRight className="h-4 w-4" />
+                Iniciar Conversión
+              </Button>
+            )}
             {filas.length > 0 && (
               <Button onClick={handleDescargarExcel} className="gap-2 min-w-[150px]">
                 <Download className="h-4 w-4" />
@@ -185,7 +204,8 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
               <select
                 value={proveedorId}
                 onChange={(e) => setProveedorId(e.target.value)}
-                className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary"
+                disabled={estado === "procesando"}
+                className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary disabled:opacity-50"
               >
                 <option value="">SIN PROVEEDOR…</option>
                 {proveedores.map((p) => (
@@ -198,19 +218,45 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-[1fr_8rem] gap-x-4 gap-y-3 items-center">
-            <span className="text-sm font-medium text-foreground">DESDE PÁGINA</span>
-            <input
-              type="number"
-              min={1}
-              value={paginaInicio}
-              onChange={(e) => setPaginaInicio(e.target.value)}
-              disabled={estado === "procesando"}
-              className="input-filtro-unificado w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary tabular-nums"
-            />
+          {enConfig && (
+            <div className="rounded-lg border border-primary/30 bg-muted/30 p-3 space-y-3">
+              <p className="text-sm font-medium text-foreground">
+                Antes de convertir, indicá qué omitir del PDF
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Filas a ignorar: líneas del extracto (títulos, encabezados repetidos) al inicio de cada
+                página procesada. Desde página: salta el índice al comienzo del documento.
+              </p>
+              <div className="grid grid-cols-[1fr_8rem] gap-x-4 gap-y-3 items-center">
+                <span className="text-sm font-medium text-foreground">FILAS A IGNORAR</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={filasIgnorar}
+                  onChange={(e) => setFilasIgnorar(e.target.value)}
+                  className="input-filtro-unificado w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary tabular-nums"
+                  aria-label="Cantidad de filas a ignorar al inicio del extracto"
+                />
+                <span className="text-sm font-medium text-foreground">DESDE PÁGINA</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={paginaInicio}
+                  onChange={(e) => setPaginaInicio(e.target.value)}
+                  className="input-filtro-unificado w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary tabular-nums"
+                />
+              </div>
+              {fileName && (
+                <p className="text-xs text-muted-foreground truncate">
+                  Archivo: {fileName}
+                </p>
+              )}
+            </div>
+          )}
 
+          <div className="grid grid-cols-[1fr_10rem] gap-x-4 gap-y-3 items-center">
             <span className="text-sm font-medium text-foreground min-w-0 truncate">
-              {fileName ? "MODIFICAR PDF" : "ADJUNTAR PDF"}
+              {fileName ? "CAMBIAR PDF" : "ADJUNTAR PDF"}
             </span>
             <div className="flex gap-2 w-full min-w-0">
               <button
@@ -225,7 +271,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
                 }}
                 className="flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-muted/60 text-muted-foreground border border-border hover:bg-muted disabled:opacity-50"
               >
-                {fileName ? "MODIFICAR PDF" : "ADJUNTAR PDF"}
+                {fileName ? "CAMBIAR PDF" : "ADJUNTAR PDF"}
               </button>
               <input
                 ref={fileInputRef}
@@ -234,7 +280,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) loadFile(f);
+                  if (f) seleccionarArchivo(f);
                 }}
               />
             </div>
@@ -254,7 +300,9 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
               onDrop={onDrop}
             >
               <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
-              <span className="text-sm text-muted-foreground">Arrastrá un PDF o usá Adjuntar PDF</span>
+              <span className="text-sm text-muted-foreground">
+                Arrastrá un PDF; luego indicá las filas a ignorar
+              </span>
             </div>
           )}
 

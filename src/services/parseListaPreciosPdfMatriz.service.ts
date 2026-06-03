@@ -8,16 +8,26 @@ import { PAGINA_INICIO_PDF_MATRIZ_DEFAULT } from "@/lib/validations/parseListaPr
 
 export interface ParseListaPreciosPdfMatrizOptions {
   paginaInicio?: number;
+  /** Cantidad de filas tabulares extraídas a descartar desde el inicio. */
+  filasIgnorar?: number;
 }
 
 export interface ParseListaPreciosPdfMatrizResult {
   filas: ReturnType<typeof aplanarMatrizListaPrecios>["filas"];
   meta: {
     paginaInicioUsada: number;
+    filasIgnoradasUsadas: number;
     paginasProcesadas: number;
     filasOmitidasVacias: number;
     advertencias: string[];
   };
+}
+
+/** Omite las primeras N filas del texto tabular extraído del PDF. */
+export function omitirFilasTabularesInicio(filas: string[][], filasIgnorar: number): string[][] {
+  const n = Math.max(0, Math.floor(filasIgnorar));
+  if (n === 0) return filas;
+  return filas.slice(n);
 }
 
 interface TextToken {
@@ -225,11 +235,24 @@ export async function parseListaPreciosPdfMatriz(
   options?: ParseListaPreciosPdfMatrizOptions
 ): Promise<ParseListaPreciosPdfMatrizResult> {
   const paginaInicioUsada = options?.paginaInicio ?? PAGINA_INICIO_PDF_MATRIZ_DEFAULT;
+  const filasIgnoradasUsadas = Math.max(0, Math.floor(options?.filasIgnorar ?? 0));
   const advertencias: string[] = [];
 
-  const { filas: filasTabulares, paginasProcesadas, advertencias: advPdf } =
+  const { filas: filasExtraidas, paginasProcesadas, advertencias: advPdf } =
     await extraerFilasTabularesDesdePdf(buffer, paginaInicioUsada);
   advertencias.push(...advPdf);
+
+  if (filasIgnoradasUsadas > 0) {
+    if (filasIgnoradasUsadas >= filasExtraidas.length) {
+      advertencias.push(
+        `Se ignoraron ${filasIgnoradasUsadas} filas pero el PDF solo aportó ${filasExtraidas.length} fila(s) tabular(es).`
+      );
+    } else {
+      advertencias.push(`Se ignoraron las primeras ${filasIgnoradasUsadas} fila(s) tabular(es) del extracto.`);
+    }
+  }
+
+  const filasTabulares = omitirFilasTabularesInicio(filasExtraidas, filasIgnoradasUsadas);
 
   const matriz = construirMatrizDesdeFilasTabulares(filasTabulares, advertencias);
   const { filas, meta: metaAplanado } = aplanarMatrizListaPrecios(matriz);
@@ -237,7 +260,7 @@ export async function parseListaPreciosPdfMatriz(
 
   if (matriz.filas.length === 0 && filas.length === 0) {
     advertencias.push(
-      "No se extrajeron filas de producto. Probá ajustar «Desde Página» o verificá el formato del PDF."
+      "No se extrajeron filas de producto. Probá ajustar página de inicio, filas a ignorar o el formato del PDF."
     );
   }
 
@@ -245,6 +268,7 @@ export async function parseListaPreciosPdfMatriz(
     filas,
     meta: {
       paginaInicioUsada,
+      filasIgnoradasUsadas,
       paginasProcesadas,
       filasOmitidasVacias: metaAplanado.filasOmitidasVacias,
       advertencias,
@@ -255,10 +279,16 @@ export async function parseListaPreciosPdfMatriz(
 /** Expuesto para tests con matrices JSON sin PDF. */
 export function parseMatrizTabularListaPrecios(
   filasTabulares: string[][],
-  paginaInicioUsada = PAGINA_INICIO_PDF_MATRIZ_DEFAULT
+  options?: { paginaInicioUsada?: number; filasIgnorar?: number }
 ): ParseListaPreciosPdfMatrizResult {
+  const paginaInicioUsada = options?.paginaInicioUsada ?? PAGINA_INICIO_PDF_MATRIZ_DEFAULT;
+  const filasIgnoradasUsadas = Math.max(0, Math.floor(options?.filasIgnorar ?? 0));
   const advertencias: string[] = [];
-  const matriz = construirMatrizDesdeFilasTabulares(filasTabulares, advertencias);
+  const filasRecortadas = omitirFilasTabularesInicio(filasTabulares, filasIgnoradasUsadas);
+  if (filasIgnoradasUsadas > 0) {
+    advertencias.push(`Se ignoraron las primeras ${filasIgnoradasUsadas} fila(s) tabular(es) del extracto.`);
+  }
+  const matriz = construirMatrizDesdeFilasTabulares(filasRecortadas, advertencias);
   const { filas, meta: metaAplanado } = aplanarMatrizListaPrecios(matriz);
   advertencias.push(...metaAplanado.advertencias);
 
@@ -266,6 +296,7 @@ export function parseMatrizTabularListaPrecios(
     filas,
     meta: {
       paginaInicioUsada,
+      filasIgnoradasUsadas,
       paginasProcesadas: 0,
       filasOmitidasVacias: metaAplanado.filasOmitidasVacias,
       advertencias,

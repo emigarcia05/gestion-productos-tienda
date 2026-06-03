@@ -9,7 +9,7 @@ import { parseListaPreciosPdfMatriz } from "@/services/parseListaPreciosPdfMatri
 export const maxDuration = 120;
 
 /**
- * POST multipart: file (PDF) + paginaInicio (opcional, default 9).
+ * POST multipart: file (PDF) + paginaInicio (opcional, default 9) + filasIgnorar (opcional, default 0).
  * Normaliza matriz a filas { descripcionExport, presentacion, precio } sin persistir en BD.
  */
 export async function POST(request: Request) {
@@ -39,13 +39,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const paginaRaw = formData.get("paginaInicio");
   const parsedQuery = parseListaPreciosPdfMatrizQuerySchema.safeParse({
-    paginaInicio: paginaRaw ?? undefined,
+    paginaInicio: formData.get("paginaInicio") ?? undefined,
+    filasIgnorar: formData.get("filasIgnorar") ?? undefined,
   });
   if (!parsedQuery.success) {
     return NextResponse.json(
-      { ok: false, error: "Página de inicio inválida (número entero ≥ 1)." },
+      { ok: false, error: "Parámetros inválidos (página ≥ 1, filas a ignorar ≥ 0)." },
       { status: 400 }
     );
   }
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
   try {
     const result = await parseListaPreciosPdfMatriz(buffer, {
       paginaInicio: parsedQuery.data.paginaInicio,
+      filasIgnorar: parsedQuery.data.filasIgnorar,
     });
 
     return NextResponse.json({
