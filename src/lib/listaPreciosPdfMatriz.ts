@@ -70,10 +70,18 @@ export function buildDescripcionExport(descripcionBase: string, presentacion: st
   return `${base} ${pres}`.replace(/\s+/g, " ").trim();
 }
 
-/** Celda sin precio utilizable (vacía, guión, consultar, etc.). */
+/** Marcador del proveedor en PDF (sin precio / no aplica); se ignora en celdas y descripciones. */
+export const SIMBOLO_IGNORAR_PDF_MATRIZ = "▲";
+
+/** Quita ▲ y normaliza espacios en texto extraído del PDF. */
+export function limpiarTextoPdfMatriz(raw: string): string {
+  return raw.replace(/▲/g, "").replace(/\s+/g, " ").trim();
+}
+
+/** Celda sin precio utilizable (vacía, guión, consultar, ▲, etc.). */
 export function celdaPrecioEsVacia(raw: string | undefined | null): boolean {
   if (raw == null) return true;
-  const t = raw.replace(/\s+/g, " ").trim();
+  const t = limpiarTextoPdfMatriz(raw);
   if (!t) return true;
   const lower = t.toLowerCase();
   if (lower === "—" || lower === "-" || lower === "–" || lower === "n/a" || lower === "s/c") return true;
@@ -83,7 +91,7 @@ export function celdaPrecioEsVacia(raw: string | undefined | null): boolean {
 
 export function parsePrecioMatriz(raw: string): number | null {
   if (celdaPrecioEsVacia(raw)) return null;
-  const n = parsePrecio(raw!);
+  const n = parsePrecio(limpiarTextoPdfMatriz(raw));
   if (!Number.isFinite(n) || n <= 0) return null;
   return n;
 }
@@ -106,7 +114,7 @@ export function aplanarMatrizListaPrecios(
   }
 
   for (const fila of matriz.filas) {
-    const descripcionBase = fila.descripcionBase.replace(/\s+/g, " ").trim();
+    const descripcionBase = limpiarTextoPdfMatriz(fila.descripcionBase);
     if (!descripcionBase) continue;
 
     for (const pres of presentaciones) {

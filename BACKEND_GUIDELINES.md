@@ -1369,7 +1369,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 | API | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**, `filasIgnorar` default **0**); gate `guardListaPreciosImportarEsEditor` |
 | Test manual | `npx tsx scripts/test-aplanar-pdf-matriz.ts` |
 
-**Presentaciones de referencia:** `Un.`, `¼`, `½`, `1 L`, `4 L`, `10 L`, `20 L`. Páginas anteriores a `paginaInicio` se omiten (índice).
+**Presentaciones de referencia:** `Un.`, `¼`, `½`, `1 L`, `4 L`, `10 L`, `20 L`. Páginas anteriores a `paginaInicio` se omiten (índice). El símbolo **`▲`** se ignora (celda vacía / se quita del texto) vía `limpiarTextoPdfMatriz` en `@/lib/listaPreciosPdfMatriz`.
 
 **Vercel / serverless:** precargar el worker con `@/lib/pdfjsServerLoad` (`globalThis.pdfjsWorker`) antes de `getDocument`; `next.config.ts` incluye `outputFileTracingIncludes` para `pdf.worker.mjs`. Sin eso aparece *Setting up fake worker failed*.
 

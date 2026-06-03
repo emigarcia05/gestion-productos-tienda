@@ -1157,7 +1157,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-21): **Etiquetas de campo en modales** — regla global: color `foreground` (negro de UI), no `muted`, en `label` / `Label` / `ModalMicroLabel` / `MODAL_*_LABEL_CLASS`; `globals.css` (`--modal-field-label-color`) en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]`; migración de micro-etiquetas legacy en modales Finanzas a `ModalMicroLabel`.*
 
-*Última actualización (2026-06-02): **PDF matriz lista precios** — **`ConvertirPdfListaPreciosModal`**: al adjuntar PDF aparece paso de configuración (**FILAS A IGNORAR**, **DESDE PÁGINA**) y botón **Iniciar Conversión**; luego preview y **Descargar Excel** (`.xls`). Mismo permiso que import CSV.*
+*Última actualización (2026-06-02): **PDF matriz lista precios** — **`ConvertirPdfListaPreciosModal`**: configuración (**FILAS A IGNORAR**, **DESDE PÁGINA**), preview **DESCRIPCIÓN | PX. LISTA** (la presentación va embebida en la descripción, ej. `Latex Blanco 10 L`), Excel con columnas **DESCRIPCION** y **PRECIO** solamente.*
 
 ---
 

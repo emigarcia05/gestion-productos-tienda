@@ -336,16 +336,14 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
                 <Table scrollX={false}>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[55%]">DESCRIPCIÓN</TableHead>
-                      <TableHead className="w-[20%]">PRESENT.</TableHead>
-                      <TableHead className="w-[25%]">PX. LISTA</TableHead>
+                      <TableHead className="w-[70%]">DESCRIPCIÓN</TableHead>
+                      <TableHead className="w-[30%]">PX. LISTA</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filas.map((f, i) => (
-                      <TableRow key={`${f.descripcionExport}-${f.presentacion}-${i}`}>
+                      <TableRow key={`${f.descripcionExport}-${i}`}>
                         <TableCell className="celda-datos">{f.descripcionExport}</TableCell>
-                        <TableCell className="celda-datos">{f.presentacion}</TableCell>
                         <TableCell className="celda-datos tabular-nums">{fmtPrecio(f.precio)}</TableCell>
                       </TableRow>
                     ))}

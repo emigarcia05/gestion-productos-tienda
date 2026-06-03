@@ -1,6 +1,7 @@
 import {
   aplanarMatrizListaPrecios,
   filaPareceEncabezadoPresentaciones,
+  limpiarTextoPdfMatriz,
   normalizarPresentacion,
   type MatrizListaPreciosPdf,
 } from "@/lib/listaPreciosPdfMatriz";
@@ -57,7 +58,9 @@ function tokensFromTextContent(items: unknown[]): TextToken[] {
     if (typeof rec.str !== "string" || !rec.str.trim()) continue;
     const tr = rec.transform;
     if (!Array.isArray(tr) || tr.length < 6) continue;
-    tokens.push({ x: tr[4], y: tr[5], str: rec.str.trim() });
+    const str = limpiarTextoPdfMatriz(rec.str);
+    if (!str) continue;
+    tokens.push({ x: tr[4], y: tr[5], str });
   }
   return tokens;
 }
@@ -112,8 +115,8 @@ function mergeTokensInRow(row: TextToken[]): string[] {
     }
     prevX = c.x;
   }
-  cells.push(buf.trim());
-  return cells;
+  cells.push(limpiarTextoPdfMatriz(buf));
+  return cells.map(limpiarTextoPdfMatriz);
 }
 
 function indiceInicioPresentaciones(celdas: string[]): number {

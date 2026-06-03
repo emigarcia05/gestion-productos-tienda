@@ -5,6 +5,7 @@
 import {
   aplanarMatrizListaPrecios,
   buildDescripcionExport,
+  celdaPrecioEsVacia,
   esPresentacionUnidad,
 } from "../src/lib/listaPreciosPdfMatriz";
 import { parseMatrizTabularListaPrecios } from "../src/services/parseListaPreciosPdfMatriz.service";
@@ -50,5 +51,12 @@ const { filas } = aplanarMatrizListaPrecios({
   ],
 });
 assert(filas.length === 2, "Ignora vacíos");
+
+assert(celdaPrecioEsVacia("▲"), "▲ cuenta como celda vacía");
+const { filas: sinTriangulo } = aplanarMatrizListaPrecios({
+  presentaciones: ["Un.", "10 L"],
+  filas: [{ descripcionBase: "Producto ▲ test", celdas: { "Un.": "▲", "10 L": "$5" } }],
+});
+assert(sinTriangulo.length === 1 && sinTriangulo[0]!.descripcionExport === "Producto test 10 L", "Ignora ▲");
 
 console.log("OK — test-aplanar-pdf-matriz");
