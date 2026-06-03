@@ -1371,6 +1371,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 **Presentaciones de referencia:** `Un.`, `¼`, `½`, `1 L`, `4 L`, `10 L`, `20 L`. Páginas anteriores a `paginaInicio` se omiten (índice).
 
+**Vercel / serverless:** precargar el worker con `@/lib/pdfjsServerLoad` (`globalThis.pdfjsWorker`) antes de `getDocument`; `next.config.ts` incluye `outputFileTracingIncludes` para `pdf.worker.mjs`. Sin eso aparece *Setting up fake worker failed*.
+
 **Pendiente calibración:** sin PDF fixture en repo, la extracción posicional puede requerir ajuste de umbrales (`COLUMN_GAP`, `Y_TOLERANCE`) o migrar a script Python (`pdfplumber`) si el PDF real no alinea columnas.
 
 *Última actualización (2026-06-02): **PDF matriz lista precios** — parse + aplanado + API; export Excel en cliente; sin import a BD.*

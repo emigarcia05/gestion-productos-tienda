@@ -4,6 +4,7 @@ import {
   normalizarPresentacion,
   type MatrizListaPreciosPdf,
 } from "@/lib/listaPreciosPdfMatriz";
+import { getPdfJsServer } from "@/lib/pdfjsServerLoad";
 import { PAGINA_INICIO_PDF_MATRIZ_DEFAULT } from "@/lib/validations/parseListaPreciosPdfMatriz";
 
 export interface ParseListaPreciosPdfMatrizOptions {
@@ -197,7 +198,7 @@ async function extraerFilasTabularesDesdePdf(
   paginaInicio: number
 ): Promise<{ filas: string[][]; paginasProcesadas: number; advertencias: string[] }> {
   const advertencias: string[] = [];
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await getPdfJsServer();
 
   const doc = await pdfjs.getDocument({
     data: new Uint8Array(buffer),

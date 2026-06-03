@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /** pdfjs-dist en API routes (parse PDF matriz lista precios). */
-  serverExternalPackages: ["pdfjs-dist"],
+  /** Worker de pdfjs-dist en el bundle serverless (Vercel). Ver `@/lib/pdfjsServerLoad`. */
+  outputFileTracingIncludes: {
+    "/api/parse-lista-precios-pdf": [
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    ],
+  },
   /** Evita fallos de TLS al descargar Geist en `next/font` durante `next build` (p. ej. entornos corporativos). */
   experimental: {
     turbopackUseSystemTlsCerts: true,
