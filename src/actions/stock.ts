@@ -10,7 +10,10 @@ import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
-import { getIdDepositoPorSucursalCodigo } from "@/services/prodTiendaStock.service";
+import {
+  getIdDepositoPorSucursalCodigo,
+  whereProdTiendaStockeable,
+} from "@/services/prodTiendaStock.service";
 
 export type Sucursal = "guaymallen" | "maipu";
 
@@ -91,7 +94,7 @@ export async function getControlStock(
   const idDepositoSucursal = getIdDepositoPorSucursalCodigo(sucursal);
 
   function baseWhere(exclude?: "marca" | "rubro"): Prisma.ProdTiendaWhereInput[] {
-    const parts: Prisma.ProdTiendaWhereInput[] = [{ stockeable: true }];
+    const parts: Prisma.ProdTiendaWhereInput[] = [whereProdTiendaStockeable()];
     if (textFilter.AND?.length) parts.push(textFilter);
     if (exclude !== "marca" && marca) parts.push({ marca });
     if (exclude !== "rubro" && rubro) parts.push({ rubro });

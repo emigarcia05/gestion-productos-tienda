@@ -19,10 +19,13 @@ import {
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
 import {
+  buildMapStockeable,
   buildMapsStockSucursalesPrincipales,
   getIdDepositoPorSucursalCodigo,
+  getStockeableFromMap,
   getStockReal,
   getStockSucursalPrincipal,
+  isStockeableCodTienda,
   type MapsStockSucursalesPrincipales,
 } from "@/services/prodTiendaStock.service";
 
@@ -104,13 +107,12 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         codTienda: true,
         proveedor: true,
         descripcionTienda: true,
-        stockeable: true,
       },
     });
     if (!tienda) {
       return { ok: false, error: "No se encontró el producto en prod_precios_tienda." };
     }
-    if (!tienda.stockeable) {
+    if (!(await isStockeableCodTienda(codTienda.trim()))) {
       return {
         ok: false,
         error:
@@ -627,7 +629,6 @@ export async function getItemsTablaEnviarPedido(params: {
             codExt: true,
             proveedor: true,
             descripcionTienda: true,
-            stockeable: true,
           },
         })
       : [];
@@ -642,7 +643,8 @@ export async function getItemsTablaEnviarPedido(params: {
   }
 
   const codTiendasArr = [...codTiendasLookup];
-  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows, stockMaps] = await Promise.all([
+  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows, stockMaps, stockeableMap] =
+    await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
     codExts.size > 0
@@ -661,6 +663,7 @@ export async function getItemsTablaEnviarPedido(params: {
         })
       : Promise.resolve([]),
     buildMapsStockSucursalesPrincipales(codTiendasArr),
+    buildMapStockeable(codTiendasArr),
   ]);
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
@@ -718,7 +721,7 @@ export async function getItemsTablaEnviarPedido(params: {
         punto: r.reposicionPuntoPedido,
         cantConf: r.reposicionCantConf,
         stock,
-        stockeable: tienda.stockeable,
+        stockeable: getStockeableFromMap(stockeableMap, codTi),
       });
       // Reposición debe reflejar siempre stock/regla vigentes.
       // No usar `reposicionCantPedir` persistido porque puede quedar desfasado
@@ -895,7 +898,6 @@ export async function getItemsYProveedorParaEnviar(
             codExt: true,
             proveedor: true,
             descripcionTienda: true,
-            stockeable: true,
           },
         })
       : [];
@@ -910,7 +912,7 @@ export async function getItemsYProveedorParaEnviar(
   }
 
   const codTiendasArrPdf = [...codTiendasLookup];
-  const [ivaSaldoReposicionPdf, lpPorCodTiendaReposPdf, lpRowsPdf, stockMapsPdf] =
+  const [ivaSaldoReposicionPdf, lpPorCodTiendaReposPdf, lpRowsPdf, stockMapsPdf, stockeableMapPdf] =
     await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
@@ -930,6 +932,7 @@ export async function getItemsYProveedorParaEnviar(
         })
       : Promise.resolve([]),
     buildMapsStockSucursalesPrincipales(codTiendasArrPdf),
+    buildMapStockeable(codTiendasArrPdf),
   ]);
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
@@ -987,7 +990,7 @@ export async function getItemsYProveedorParaEnviar(
         punto: r.reposicionPuntoPedido,
         cantConf: r.reposicionCantConf,
         stock,
-        stockeable: tienda.stockeable,
+        stockeable: getStockeableFromMap(stockeableMapPdf, codTi),
       });
       // Reposición debe reflejar siempre stock/regla vigentes.
       // No usar `reposicionCantPedir` persistido porque puede quedar desfasado

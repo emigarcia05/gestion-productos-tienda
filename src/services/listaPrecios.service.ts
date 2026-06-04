@@ -14,7 +14,9 @@ import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cantPedirReposicionMerc2 } from "@/services/pedidosEnvio.service";
 import {
+  buildMapStockeable,
   buildMapsStockSucursalesPrincipales,
+  getStockeableFromMap,
   getStockSucursalPrincipal,
 } from "@/services/prodTiendaStock.service";
 import {
@@ -764,17 +766,22 @@ async function mercaderiaMapsDesdeMerc2(
           where: { codTienda: { in: codTiendasRepo } },
           select: {
             codTienda: true,
-            stockeable: true,
           },
         })
       : [];
   const tiendaRepoPorCod = new Map(
     tiendaRowsRepo.map((t) => [t.codTienda.trim(), t])
   );
-  const stockMapsRepo =
+  const [stockMapsRepo, stockeableMapRepo] =
     codTiendasRepo.length > 0
-      ? await buildMapsStockSucursalesPrincipales(codTiendasRepo)
-      : { maipu: new Map<string, number>(), guaymallen: new Map<string, number>() };
+      ? await Promise.all([
+          buildMapsStockSucursalesPrincipales(codTiendasRepo),
+          buildMapStockeable(codTiendasRepo),
+        ])
+      : [
+          { maipu: new Map<string, number>(), guaymallen: new Map<string, number>() },
+          new Map<string, boolean>(),
+        ];
 
   for (const k of mercaderiaRepoSet) {
     const regla = reposicionReglaPorCodTienda.get(k);
@@ -787,7 +794,7 @@ async function mercaderiaMapsDesdeMerc2(
         punto: regla.punto,
         cantConf: regla.cantConf,
         stock,
-        stockeable: tienda.stockeable,
+        stockeable: getStockeableFromMap(stockeableMapRepo, k),
       });
     }
     mercaderiaMapRepo.set(k, cant);

@@ -14,7 +14,9 @@ import {
   upsertPedidoMercaderiaReposicionConfig,
 } from "@/services/pedidosEnvio.service";
 import {
+  buildMapStockeable,
   buildMapsStockSucursalesPrincipales,
+  getStockeableFromMap,
   getStockSucursalPrincipal,
 } from "@/services/prodTiendaStock.service";
 import {
@@ -277,10 +279,11 @@ export async function getReposicionData(
   }
 
   const codTiendasPage = rows.map((r) => r.codTienda.trim()).filter(Boolean);
-  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps] = await Promise.all([
+  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps, stockeableMap] = await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
     buildMapsStockSucursalesPrincipales(codTiendasPage),
+    buildMapStockeable(codTiendasPage),
   ]);
 
   const items: ItemReposicion[] = rows.map((r) => {
@@ -303,7 +306,7 @@ export async function getReposicionData(
       punto,
       cantConf: cantCfg,
       stock,
-      stockeable: r.stockeable,
+      stockeable: getStockeableFromMap(stockeableMap, codTienda),
     });
     return {
       idListaTienda: codTienda,

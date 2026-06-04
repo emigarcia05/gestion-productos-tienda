@@ -11,7 +11,6 @@ import { prisma } from "@/lib/prisma";
 import {
   fetchItemsPage,
   DUX_API_PAGE_LIMIT,
-  computeStockeableDesdeStocks,
   type ItemDux,
 } from "@/lib/duxApi";
 import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
@@ -68,7 +67,6 @@ function itemDuxToProdTiendaRecord(item: ItemDux) {
     marca: item.marca ?? null,
     descripcionTienda: item.descripcion ?? null,
     costoCompra: Number(item.costo) || 0,
-    stockeable: computeStockeableDesdeStocks(item.stocks),
     precios: item.precios,
     stocks: item.stocks,
   };
@@ -292,7 +290,6 @@ export async function syncListaPrecioTiendaFromDux(
                   idMarca,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
-                  stockeable: row.stockeable,
                 },
                 update: {
                   codTienda: row.codTienda,
@@ -302,7 +299,6 @@ export async function syncListaPrecioTiendaFromDux(
                   idMarca,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
-                  stockeable: row.stockeable,
                   lastSync: new Date(),
                 },
               });

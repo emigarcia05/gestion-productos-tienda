@@ -40,4 +40,5 @@ BEGIN
   EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'competencia_id_px_lista');
   EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'stock_maipu');
   EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'stock_guaymallen');
+  EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'stockeable');
 END $$;

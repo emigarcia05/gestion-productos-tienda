@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import {
   computeStockeableDesdeStocks,
   getIdDepositoGuaymallen,
@@ -15,6 +16,59 @@ export function getIdDepositoPorSucursalCodigo(codigo: string): number {
   return codigo.trim().toLowerCase() === "maipu"
     ? getIdDepositoMaipu()
     : getIdDepositoGuaymallen();
+}
+
+/** Filtro Prisma: ítem stockeable (ctd_disponible informado en Maipú y Guaymallén). */
+export function whereProdTiendaStockeable(): Prisma.ProdTiendaWhereInput {
+  const idMaipu = getIdDepositoMaipu();
+  const idGuay = getIdDepositoGuaymallen();
+  return {
+    AND: [
+      { stocks: { some: { idDeposito: idMaipu, ctdDisponible: { not: null } } } },
+      { stocks: { some: { idDeposito: idGuay, ctdDisponible: { not: null } } } },
+    ],
+  };
+}
+
+/** Mapa cod_tienda → stockeable según `prod_tienda_stock.ctd_disponible` en depósitos principales. */
+export async function buildMapStockeable(
+  codTiendas: string[]
+): Promise<Map<string, boolean>> {
+  const map = new Map<string, boolean>();
+  if (codTiendas.length === 0) return map;
+  const idMaipu = getIdDepositoMaipu();
+  const idGuay = getIdDepositoGuaymallen();
+  const rows = await prisma.prodTiendaStock.findMany({
+    where: {
+      codTienda: { in: codTiendas },
+      idDeposito: { in: [idMaipu, idGuay] },
+    },
+    select: { codTienda: true, idDeposito: true, ctdDisponible: true },
+  });
+  const maipuOk = new Set<string>();
+  const guayOk = new Set<string>();
+  for (const r of rows) {
+    if (r.ctdDisponible == null) continue;
+    if (r.idDeposito === idMaipu) maipuOk.add(r.codTienda);
+    if (r.idDeposito === idGuay) guayOk.add(r.codTienda);
+  }
+  for (const ct of codTiendas) {
+    const k = ct.trim();
+    map.set(k, maipuOk.has(k) && guayOk.has(k));
+  }
+  return map;
+}
+
+export function getStockeableFromMap(
+  map: Map<string, boolean>,
+  codTienda: string
+): boolean {
+  return map.get(codTienda.trim()) ?? false;
+}
+
+export async function isStockeableCodTienda(codTienda: string): Promise<boolean> {
+  const map = await buildMapStockeable([codTienda]);
+  return getStockeableFromMap(map, codTienda);
 }
 
 /** Stock real de un depósito DUX para un producto, o null si no existe fila. */

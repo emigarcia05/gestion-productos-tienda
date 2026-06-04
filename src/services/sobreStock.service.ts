@@ -7,7 +7,9 @@ import {
 } from "@/services/pedidosReposicionProveedor.service";
 import {
   buildMapStockPorDeposito,
+  buildMapStockeable,
   getIdDepositoPorSucursalCodigo,
+  getStockeableFromMap,
 } from "@/services/prodTiendaStock.service";
 
 export type OrigenDeteccionSobrestock = "LOCAL" | "OTRA_SUCURSAL";
@@ -106,7 +108,6 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
       codExt: true,
       codTienda: true,
       descripcionTienda: true,
-      stockeable: true,
     },
   });
 
@@ -116,10 +117,12 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (ct && !tiendaPorCodTienda.has(ct)) tiendaPorCodTienda.set(ct, t);
   }
 
-  const [ivaSaldoReposicion, lpPorCodTiendaOtra, stockOtraMap] = await Promise.all([
+  const [ivaSaldoReposicion, lpPorCodTiendaOtra, stockOtraMap, stockeableMap] =
+    await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas(codTiendas),
     buildMapStockPorDeposito(codTiendas, getIdDepositoPorSucursalCodigo(otraCodigo)),
+    buildMapStockeable(codTiendas),
   ]);
   const otherMerc2 = await prisma.prodPedMerc2.findMany({
     where: {
@@ -182,16 +185,15 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
   const items: SobreStockReposicionItem[] = [];
 
   for (const fila of filasConTienda) {
-    const tienda = tiendaPorCodTienda.get(fila.codTienda!.trim());
+    const codTienda = fila.codTienda!.trim();
+    const tienda = tiendaPorCodTienda.get(codTienda);
     if (!tienda) continue;
-    if (!tienda.stockeable) continue;
+    if (!getStockeableFromMap(stockeableMap, codTienda)) continue;
 
     const cx = normCodExt(tienda.codExt ?? "");
 
     const topePedidoRow =
       fila.tipoPedido === "REPOSICION" ? fila.reposicionCantConf : null;
-
-    const codTienda = fila.codTienda!.trim();
     const listOtra = otherListByCodTienda.get(codTienda);
     const debeEvaluarOtra =
       (listOtra?.length ?? 0) > 0 || Number(topePedidoRow ?? 0) > 0;

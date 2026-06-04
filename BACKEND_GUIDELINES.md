@@ -165,12 +165,12 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Prisma / Neon**: `DATABASE_URL` en `.env` debe usar el **pooler** de Neon para el runtime (`src/lib/prisma.ts`). Para migraciones, definir además **`DIRECT_URL`** (host **sin** `-pooler`): `prisma.config.ts` usa `DIRECT_URL` si existe; si no, cae a `DATABASE_URL`. Plantilla: `.env.example`.
 - **Migraciones ítems historial pedidos**: `20260322120000_*` y `20260322140000_*` son **idempotentes** (`to_regclass`) respecto de `prod_ped_historial_items` / `prod_ped_merc_historial`. `20260322200000_*` renombra `prod_ped_merc_historial` → `prod_ped_historial_merc` si aún existe el nombre intermedio.
 
-### 1.4.1 `stockeable` en `prod_tienda` (API DUX ítems)
+### 1.4.1 `stockeable` (derivado de `prod_tienda_stock`, sin columna en `prod_tienda`)
 
-- **Columna** `prod_tienda.stockeable` (`BOOLEAN NOT NULL`; migración `20260413120000_add_stockeable_prod_precios_tienda` sobre el nombre histórico `prod_precios_tienda`: default `true` en filas existentes hasta la próxima sync).
-- **Regla DUX**: En `src/lib/duxApi.ts`, `computeStockeableDesdeStocks(stocks[])` exige `ctd_disponible` **no nulo** en **Guaymallén** y **Maipú** (`getIdDepositoGuaymallen()` / `getIdDepositoMaipu()`; override `DUX_ID_STOCK_GUAYMALLEN` / `DUX_ID_STOCK_MAIPU`). Si falta la fila del depósito o `ctd_disponible` es JSON `null`, `stockeable` es `false`. Los enteros de stock en UI salen de **`prod_tienda_stock.stock_real`** (ver §1.4.5).
-- **Sync**: `syncListaPrecioTienda.service.ts` persiste `stockeable` en el upsert de **`prod_tienda`** y los depósitos en **`prod_tienda_stock`** (§1.4.5). En **`prod_tienda`** solo escribe catálogo DUX del ítem (`rubro`, `subRubro`, `marca`, `idMarca`, `descripcionTienda`, `costoCompra`, `stockeable`, `lastSync`). A partir de **2026-05-28** el sync **no** escribe `cod_ext` ni `proveedor` (§1.4.2). **No** persiste `px_lista_tienda` (§1.4.3) ni `stock_maipu` / `stock_guaymallen` (§1.4.5).
-- **Uso en negocio**: `getControlStock` restringe a `stockeable: true`; `getSobreStockOtraSucursalParaPedidoEnviar` no evalúa sobrestock para ítems con `stockeable: false`; `upsertPedidoMercaderiaReposicionConfig` rechaza configurar reposición por stock si el ítem no es stockeable. `getTiendaPageData` expone `stockeable` y stocks Maipú/Guaymallén vía `buildMapsStockSucursalesPrincipales` en `ItemTiendaParaTabla`.
+- **Sin columna en BD**: `prod_tienda.stockeable` eliminada (`20260604170000_drop_prod_tienda_stockeable`). La regla vive en **`prod_tienda_stock.ctd_disponible`** por depósito.
+- **Regla DUX**: `computeStockeableDesdeStocks` / `buildMapStockeable` en `prodTiendaStock.service.ts` (parseo en `duxApi.ts`): `ctd_disponible` **no nulo** en **Guaymallén** y **Maipú** (`getIdDepositoGuaymallen()` / `getIdDepositoMaipu()`). Filtro Prisma: `whereProdTiendaStockeable()`.
+- **Sync**: `syncListaPrecioTienda.service.ts` persiste `ctd_disponible` en **`prod_tienda_stock`**; **no** escribe flag en `prod_tienda`. Catálogo ítem: `rubro`, `subRubro`, `marca`, `idMarca`, `descripcionTienda`, `costoCompra`, `lastSync` (§1.4.2–1.4.5).
+- **Uso en negocio**: `getControlStock` → `whereProdTiendaStockeable()`; reposición/pedidos/tienda/sobrestock → `buildMapStockeable` / `isStockeableCodTienda`; UI sigue recibiendo `stockeable: boolean` en tipos cliente.
 
 ### 1.4.2 Vinculación tienda ↔ proveedor 100 % manual (`prod_tienda.cod_ext` y `proveedor` congelados)
 
@@ -230,6 +230,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | `prod_tienda.px_lista_tienda` | Precios por lista en `prod_tienda_listas_precios` (`20260604130000` + rename `20260604160000`) |
 | `prod_listas_precios_tienda` (nombre tabla) | Renombrada → `prod_tienda_listas_precios` (`20260604160000`) |
 | `prod_tienda.stock_maipu`, `prod_tienda.stock_guaymallen` | Stock por depósito en `prod_tienda_stock` (`20260604150000`) |
+| `prod_tienda.stockeable` | Derivado en runtime desde `prod_tienda_stock.ctd_disponible` (`20260604170000`) |
 | `px_lista_cx_px`, `cx_px_px_comp_ref`, `competencia_id_px_lista` | Submódulo Cx/Px legacy retirado (`20260528210000` + reconcile `20260604140000`) |
 | `prod_precios_tienda_marcacion`, `prod_precios_tienda_px_lista_config` | UI Px marcación eliminada (`20260528270000`) |
 | `movimientos_finanzas*`, `finanzas_rubros`, `finanzas_gastos`, `fin_bal_iva_deb` | Reemplazadas por esquema `fin_bal_*` / import IVA |
@@ -1174,7 +1175,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/services/listaPrecios.service.ts` | `upsertListaPrecios()`: optimiza el conteo `creados/actualizados` con un prefetch en chunks de `codProdProv`, evitando el `findUnique()` por fila (patrón N+1) sin cambiar la lógica final del `upsert`. |
 | `prisma/migrations/20260413120000_add_stockeable_prod_precios_tienda/migration.sql` | Columna `stockeable` en `prod_precios_tienda` (default `true` para legado). |
 | `src/lib/duxApi.ts` | `ItemDux.stockeable` y `mapItem`: ambos depósitos DUX con `ctd_disponible` no nulo → `true`. |
-| `src/services/syncListaPrecioTienda.service.ts` | Upsert persiste `stockeable`. |
+| `src/services/syncListaPrecioTienda.service.ts` | Upsert **no** persiste `stockeable` en `prod_tienda`; `ctd_disponible` en `prod_tienda_stock`. |
 | `src/actions/stock.ts`, `src/services/sobreStock.service.ts`, `src/services/pedidosEnvio.service.ts`, `src/actions/tienda.ts`, `src/components/tienda/TablaTienda.tsx` | Lecturas/filtros y reglas de reposición alineadas al flag. |
 
 ### 5.9 Tienda — módulo `Px. Tinto / Cal. Lts.` (lectura por rol)

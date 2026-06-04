@@ -12,7 +12,11 @@ import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
 import { buildMapPrecioListaPrincipal } from "@/services/prodListasPreciosTienda.service";
-import { buildMapsStockSucursalesPrincipales } from "@/services/prodTiendaStock.service";
+import {
+  buildMapStockeable,
+  buildMapsStockSucursalesPrincipales,
+  getStockeableFromMap,
+} from "@/services/prodTiendaStock.service";
 import { setProductoPropioTienda } from "@/services/productoPropioTienda.service";
 import { setProductoPropioTiendaSchema } from "@/lib/validations/productoPropioTienda";
 import { revalidatePath } from "next/cache";
@@ -309,9 +313,10 @@ export async function getTiendaPageData(params: {
     }))
   );
   const codTiendasPage = rows.map((r) => r.codTienda);
-  const [pxListaMap, stockMaps] = await Promise.all([
+  const [pxListaMap, stockMaps, stockeableMap] = await Promise.all([
     buildMapPrecioListaPrincipal(codTiendasPage),
     buildMapsStockSucursalesPrincipales(codTiendasPage),
+    buildMapStockeable(codTiendasPage),
   ]);
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
@@ -332,7 +337,7 @@ export async function getTiendaPageData(params: {
       precioMayorista: 0,
       stockGuaymallen: stockMaps.guaymallen.get(r.codTienda) ?? 0,
       stockMaipu: stockMaps.maipu.get(r.codTienda) ?? 0,
-      stockeable: r.stockeable,
+      stockeable: getStockeableFromMap(stockeableMap, r.codTienda),
       habilitado: true,
       _count: { productos: r._count.listaPreciosProveedores },
       cxProd: cxProdMap.get(r.codTienda) ?? CX_PROD_FILA_VACIA,
