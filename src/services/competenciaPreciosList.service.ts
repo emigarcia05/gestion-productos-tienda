@@ -18,7 +18,7 @@ import {
   aplicarPrioridadPrecioMostrar,
   buildMapPxVtaSugerido,
 } from "@/services/competenciaPxSugerido.service";
-import { buildMapPrecioListaPrincipal } from "@/services/prodListasPreciosTienda.service";
+import { buildMapPrecioListaPrincipal } from "@/services/prodTiendaPrecios.service";
 
 export interface FilaCompetenciaPrecios {
   codTienda: string;

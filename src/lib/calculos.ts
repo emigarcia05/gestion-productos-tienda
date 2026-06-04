@@ -49,3 +49,25 @@ export function calcMargenSinIvaPct(
   const neto = pxListaTienda / factorIva;
   return ((neto / costoCompra) - 1) * 100;
 }
+
+/** Inverso de `calcMargenSinIvaPct`: PX lista con IVA desde margen % sobre costo sin IVA. */
+export function calcPxListaDesdeMargenSinIvaPct(
+  margenPct: number,
+  costoCompra: number,
+  porcIva: number = 21
+): number | null {
+  if (!(costoCompra > 0) || !Number.isFinite(margenPct) || !Number.isFinite(costoCompra)) {
+    return null;
+  }
+  const factorIva = 1 + porcIva / 100;
+  if (!(factorIva > 0)) return null;
+  const neto = costoCompra * (1 + margenPct / 100);
+  const px = neto * factorIva;
+  if (!Number.isFinite(px) || px <= 0) return null;
+  return Math.round(px * 10000) / 10000;
+}
+
+/** Redondeo estándar de precio lista tienda (4 decimales, alineado a Prisma DECIMAL(14,4)). */
+export function roundPrecioListaTienda(value: number): number {
+  return Math.round(value * 10000) / 10000;
+}

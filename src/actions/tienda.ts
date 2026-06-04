@@ -11,7 +11,7 @@ import { CX_PROD_SELECCION_PROM } from "@/lib/cxPxTienda";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
-import { buildMapPrecioListaPrincipal } from "@/services/prodListasPreciosTienda.service";
+import { buildMapPrecioListaPrincipal } from "@/services/prodTiendaPrecios.service";
 import {
   buildMapStockeable,
   buildMapsStockSucursalesPrincipales,

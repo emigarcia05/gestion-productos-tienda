@@ -531,33 +531,45 @@ model Marca {
   @@map("prod_marcas")
 }
 
-/** Catálogo de listas de precio DUX (id + nombre). Se alimenta en sync desde `precios[]` de cada ítem. */
-model ProdListaDux {
-  idLista     Int      @id @map("id_lista")
-  nombre      String
-  activa      Boolean  @default(true)
-  ultimaSync  DateTime @default(now()) @map("ultima_sync")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+/** Catálogo de listas de precio DUX (`precios[].id` en API). Sync: alta/actualiza nombre; baja listas no vistas. */
+model ProdTiendaListaPrecio {
+  idLista     Int    @id @map("id_lista")
+  nombreLista String @map("nombre_lista")
 
-  preciosPorProducto ProdListaPrecioTienda[]
+  preciosPorProducto ProdTiendaPrecio[]
+  preciosEdicion      ProdTiendaPrecioEdicion[]
 
-  @@map("prod_listas_dux")
+  @@map("prod_tienda_listas_precios")
 }
 
 /** Precio por producto × lista DUX (`precios[]` del ítem en API). Origen de verdad multi-lista. */
-model ProdListaPrecioTienda {
+model ProdTiendaPrecio {
   codTienda  String   @map("cod_tienda")
   idLista    Int      @map("id_lista")
   precio     Decimal  @db.Decimal(14, 4)
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  prodTienda ProdTienda   @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
-  listaDux   ProdListaDux @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
+  prodTienda ProdTienda            @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  lista      ProdTiendaListaPrecio @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
 
   @@id([codTienda, idLista])
-  @@index([idLista], map: "prod_tienda_listas_precios_id_lista_idx")
-  @@map("prod_tienda_listas_precios")
+  @@index([idLista], map: "prod_tienda_precios_id_lista_idx")
+  @@map("prod_tienda_precios")
+}
+
+/** Precio editado en módulo Px Listas (no lo pisa el sync DUX). Comparación futura vs `prod_tienda_precios`. */
+model ProdTiendaPrecioEdicion {
+  codTienda String   @map("cod_tienda")
+  idLista   Int      @map("id_lista")
+  precio    Decimal  @db.Decimal(14, 4)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  prodTienda ProdTienda            @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  lista      ProdTiendaListaPrecio @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
+
+  @@id([codTienda, idLista])
+  @@index([idLista], map: "prod_tienda_precios_edicion_id_lista_idx")
+  @@map("prod_tienda_precios_edicion")
 }
 
 /** Catálogo de depósitos DUX (`stock[].id` en API). Se alimenta en sync desde `stock[]` de cada ítem. */
@@ -615,7 +627,8 @@ model ProdTienda {
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
   costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [costoCompraCodExt], references: [codExt], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
-  listasPrecios           ProdListaPrecioTienda[]
+  preciosLista            ProdTiendaPrecio[]
+  preciosListaEdicion     ProdTiendaPrecioEdicion[]
   stocks                  ProdTiendaStock[]
 
   @@map("prod_tienda")

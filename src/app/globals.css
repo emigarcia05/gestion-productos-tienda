@@ -1152,6 +1152,13 @@
   width: 100%;
 }
 
+/* Px Listas multi-lista: columnas dinámicas; scroll horizontal en contenedor-tabla-gestion. */
+.tabla-px-listas-precios {
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+}
+
 /* Columna PX LISTA: sin efecto visual al pasar el mouse (solo feedback al enfocar para editar). */
 .tabla-px-listas-listado tbody td.celda-px-lista-col {
   cursor: default;

@@ -1,0 +1,16 @@
+-- Edición manual Px Listas (baseline DUX permanece en prod_tienda_precios).
+CREATE TABLE "prod_tienda_precios_edicion" (
+  "cod_tienda" TEXT NOT NULL,
+  "id_lista" INTEGER NOT NULL,
+  "precio" DECIMAL(14, 4) NOT NULL,
+  "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT "prod_tienda_precios_edicion_pkey" PRIMARY KEY ("cod_tienda", "id_lista"),
+  CONSTRAINT "prod_tienda_precios_edicion_cod_tienda_fkey"
+    FOREIGN KEY ("cod_tienda") REFERENCES "prod_tienda"("cod_tienda") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "prod_tienda_precios_edicion_id_lista_fkey"
+    FOREIGN KEY ("id_lista") REFERENCES "prod_tienda_listas_precios"("id_lista") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE INDEX "prod_tienda_precios_edicion_id_lista_idx"
+  ON "prod_tienda_precios_edicion"("id_lista");

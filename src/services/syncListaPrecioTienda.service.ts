@@ -138,28 +138,23 @@ async function syncListasPreciosEnTransaccion(
   items: RecordProdTienda[],
   idListasVistas: Set<number>
 ): Promise<void> {
-  const now = new Date();
   for (const row of items) {
     const idsEnItem = new Set<number>();
     for (const pl of row.precios) {
       if (!Number.isFinite(pl.idLista)) continue;
       idsEnItem.add(pl.idLista);
       idListasVistas.add(pl.idLista);
-      await tx.prodListaDux.upsert({
+      await tx.prodTiendaListaPrecio.upsert({
         where: { idLista: pl.idLista },
         create: {
           idLista: pl.idLista,
-          nombre: pl.nombre,
-          activa: true,
-          ultimaSync: now,
+          nombreLista: pl.nombre,
         },
         update: {
-          nombre: pl.nombre,
-          activa: true,
-          ultimaSync: now,
+          nombreLista: pl.nombre,
         },
       });
-      await tx.prodListaPrecioTienda.upsert({
+      await tx.prodTiendaPrecio.upsert({
         where: {
           codTienda_idLista: { codTienda: row.codTienda, idLista: pl.idLista },
         },
@@ -174,14 +169,14 @@ async function syncListasPreciosEnTransaccion(
       });
     }
     if (idsEnItem.size > 0) {
-      await tx.prodListaPrecioTienda.deleteMany({
+      await tx.prodTiendaPrecio.deleteMany({
         where: {
           codTienda: row.codTienda,
           idLista: { notIn: [...idsEnItem] },
         },
       });
     } else {
-      await tx.prodListaPrecioTienda.deleteMany({
+      await tx.prodTiendaPrecio.deleteMany({
         where: { codTienda: row.codTienda },
       });
     }
@@ -195,7 +190,7 @@ export interface SyncProgressCallback {
 }
 
 /**
- * Sincroniza productos desde la API DUX hacia prod_tienda y prod_tienda_listas_precios.
+ * Sincroniza productos desde la API DUX hacia prod_tienda, prod_tienda_precios y catálogo prod_tienda_listas_precios.
  */
 export async function syncListaPrecioTiendaFromDux(
   options?: SyncProgressCallback
@@ -351,14 +346,17 @@ export async function syncListaPrecioTiendaFromDux(
 
   if (idListasVistasEnCorrida.size > 0) {
     try {
-      await prisma.prodListaDux.updateMany({
-        where: { idLista: { notIn: [...idListasVistasEnCorrida] } },
-        data: { activa: false },
+      const idsVistas = [...idListasVistasEnCorrida];
+      await prisma.prodTiendaPrecio.deleteMany({
+        where: { idLista: { notIn: idsVistas } },
+      });
+      await prisma.prodTiendaListaPrecio.deleteMany({
+        where: { idLista: { notIn: idsVistas } },
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      errores.push(`Marcar listas DUX inactivas: ${msg}`);
-      console.error("Error marcando listas DUX inactivas:", msg);
+      errores.push(`Eliminar listas DUX en desuso: ${msg}`);
+      console.error("Error eliminando listas DUX en desuso:", msg);
     }
   }
 

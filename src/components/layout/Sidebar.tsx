@@ -182,6 +182,12 @@ const MODULES: NavModule[] = [
         permiso: PERMISOS.tienda.acceso,
       },
       {
+        href: "/gestion-productos/tienda/px-listas",
+        label: "Px Listas",
+        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.cxPxTienda.acceso,
+      },
+      {
         href: "/gestion-productos/tienda/cx-px-tienda",
         label: "Px Competencia",
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
@@ -296,9 +302,11 @@ function getOpenModule(pathname: string): SidebarModuleId {
   if (
     pathname.startsWith("/gestion-productos/tienda/comp-proveedores") ||
     pathname.startsWith("/gestion-productos/tienda/cx-px-tienda") ||
+    pathname.startsWith("/gestion-productos/tienda/px-listas") ||
     pathname === "/gestion-productos/tienda" ||
     pathname.startsWith("/tienda/comp-proveedores") ||
     pathname.startsWith("/tienda/cx-px") ||
+    pathname.startsWith("/tienda/px-listas") ||
     pathname === "/tienda" ||
     pathname.startsWith("/gestion-productos/precios-competencia") ||
     pathname.startsWith("/precios-competencia") ||
@@ -329,6 +337,11 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/gestion-productos/proveedores/comparacion-categorias" || pathname === "/proveedores/comparacion-categorias";
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
+  if (href === "/gestion-productos/tienda/px-listas")
+    return (
+      pathname === "/gestion-productos/tienda/px-listas" ||
+      pathname.startsWith("/tienda/px-listas")
+    );
   if (href === "/gestion-productos/tienda/cx-px-tienda")
     return (
       pathname === "/gestion-productos/tienda/cx-px-tienda" ||

@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS "finanzas_gastos" CASCADE;
 DROP TABLE IF EXISTS "finanzas_rubros" CASCADE;
 DROP TABLE IF EXISTS "fin_bal_iva_deb" CASCADE;
 DROP TABLE IF EXISTS "tipos_pintura_rendimientos" CASCADE;
+DROP TABLE IF EXISTS "prod_listas_dux" CASCADE;
 
 -- ─── Columnas retiradas en prod_tienda (o nombre previo prod_precios_tienda) ─
 DO $$

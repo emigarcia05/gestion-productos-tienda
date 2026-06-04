@@ -1,0 +1,87 @@
+"use client";
+
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import FiltrosPxListasPrecios from "@/components/px-listas-precios/FiltrosPxListasPrecios";
+import TablaPxListasPrecios from "@/components/px-listas-precios/TablaPxListasPrecios";
+import { PAGE_SIZE } from "@/lib/pagination";
+import type { ItemPxListasPreciosTabla, ListaPrecioPxListasColumna } from "@/lib/pxListasPrecios";
+import { PERMISOS, puede, type Rol } from "@/lib/permisos";
+
+const BASE_PATH = "/gestion-productos/tienda/px-listas";
+
+interface Props {
+  items: ItemPxListasPreciosTabla[];
+  total: number;
+  totalPaginas: number;
+  listas: ListaPrecioPxListasColumna[];
+  marcas: Array<{ marca: string }>;
+  rubros: Array<{ rubro: string }>;
+  subRubros: Array<{ subRubro: string }>;
+  rol: Rol;
+  q: string;
+  rubro: string;
+  marca: string;
+  subRubro: string;
+  paginaNum: number;
+}
+
+export default function PxListasPreciosPageClient({
+  items,
+  total,
+  totalPaginas,
+  listas,
+  marcas,
+  rubros,
+  subRubros,
+  rol,
+  q,
+  rubro,
+  marca,
+  subRubro,
+  paginaNum,
+}: Props) {
+  const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
+
+  return (
+    <div className="area-page-shell bg-gris">
+      <ClassicFilteredTableLayout
+        title="Px Listas"
+        filters={
+          <FiltrosPxListasPrecios
+            marcas={marcas.map((m) => m.marca)}
+            rubros={rubros.map((r) => r.rubro)}
+            subRubros={subRubros.map((s) => s.subRubro)}
+            totalItems={total}
+            qActual={q}
+            marcaActual={marca}
+            rubroActual={rubro}
+            subRubroActual={subRubro}
+          />
+        }
+      >
+        <div className="flex h-full min-h-0 flex-col gap-0.5">
+          <div className="contenedor-tabla-gestion flex-1 min-h-0">
+            <TablaPxListasPrecios
+              items={items}
+              listas={listas}
+              puedeEditar={puedeEditar}
+            />
+          </div>
+          {totalPaginas > 1 ? (
+            <div className="flex shrink-0 justify-end pt-2">
+              <PaginacionTabla
+                basePath={BASE_PATH}
+                params={{ q, rubro, marca, subRubro }}
+                paginaActual={paginaNum}
+                totalPaginas={totalPaginas}
+                total={total}
+                pageSize={PAGE_SIZE}
+              />
+            </div>
+          ) : null}
+        </div>
+      </ClassicFilteredTableLayout>
+    </div>
+  );
+}

@@ -8,7 +8,7 @@ export async function getPrecioLista(
   codTienda: string,
   idLista: number
 ): Promise<number | null> {
-  const row = await prisma.prodListaPrecioTienda.findUnique({
+  const row = await prisma.prodTiendaPrecio.findUnique({
     where: { codTienda_idLista: { codTienda, idLista } },
     select: { precio: true },
   });
@@ -24,7 +24,7 @@ export async function getPrecioListaPrincipal(codTienda: string): Promise<number
 export async function getPreciosPorCodTienda(
   codTienda: string
 ): Promise<Map<number, number>> {
-  const rows = await prisma.prodListaPrecioTienda.findMany({
+  const rows = await prisma.prodTiendaPrecio.findMany({
     where: { codTienda },
     select: { idLista: true, precio: true },
   });
@@ -42,7 +42,7 @@ export async function buildMapPrecioListaPrincipal(
   const map = new Map<string, number>();
   if (codTiendas.length === 0) return map;
   const idLista = getIdPrecioListaPrincipal();
-  const rows = await prisma.prodListaPrecioTienda.findMany({
+  const rows = await prisma.prodTiendaPrecio.findMany({
     where: { codTienda: { in: codTiendas }, idLista },
     select: { codTienda: true, precio: true },
   });
