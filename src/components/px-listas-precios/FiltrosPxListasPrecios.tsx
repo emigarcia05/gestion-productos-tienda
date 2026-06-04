@@ -64,8 +64,6 @@ export default function FiltrosPxListasPrecios({
     },
   });
 
-  const hayFiltros = !!(q || marcaActual || rubroActual || subRubroActual);
-
   function navigate(updates: {
     q?: string;
     marca?: string;
@@ -86,6 +84,18 @@ export default function FiltrosPxListasPrecios({
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
+  function handleMarca(value: string) {
+    navigate({ marca: value, rubro: "", subRubro: "" });
+  }
+
+  function handleRubro(value: string) {
+    navigate({ rubro: value, subRubro: "" });
+  }
+
+  function handleSubRubro(value: string) {
+    navigate({ subRubro: value });
+  }
+
   function limpiarFiltros() {
     setQ("");
     router.push(pathname);
@@ -96,123 +106,112 @@ export default function FiltrosPxListasPrecios({
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
           <FiltroIndividualContainer
-            activo={!!marcaActual}
-            onLimpiar={() => navigate({ marca: "" })}
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(marcaActual)}
+            onLimpiar={() => handleMarca("")}
           >
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select
-                value={marcaActual || "__todas__"}
-                onValueChange={(v) =>
-                  navigate({ marca: v === "__todas__" ? "" : v })
-                }
+            <Select
+              value={marcaActual || undefined}
+              onValueChange={(v) => handleMarca(v)}
+            >
+              <SelectTrigger
+                id="filtro-px-listas-precios-marca"
+                className="input-filtro-unificado"
               >
-                <SelectTrigger
-                  id="filtro-px-listas-precios-marca"
-                  className="select-trigger-filtro"
-                >
-                  <SelectValue placeholder="MARCA" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  <SelectItem value="__todas__">TODAS</SelectItem>
-                  {marcas.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m.toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <SelectValue placeholder="MARCA" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {marcas.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FiltroIndividualContainer>
 
           <FiltroIndividualContainer
-            activo={!!rubroActual}
-            onLimpiar={() => navigate({ rubro: "" })}
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(rubroActual)}
+            onLimpiar={() => handleRubro("")}
           >
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select
-                value={rubroActual || "__todos__"}
-                onValueChange={(v) =>
-                  navigate({ rubro: v === "__todos__" ? "" : v })
-                }
+            <Select
+              value={rubroActual || undefined}
+              onValueChange={(v) => handleRubro(v)}
+            >
+              <SelectTrigger
+                id="filtro-px-listas-precios-rubro"
+                className="input-filtro-unificado"
               >
-                <SelectTrigger
-                  id="filtro-px-listas-precios-rubro"
-                  className="select-trigger-filtro"
-                >
-                  <SelectValue placeholder="RUBRO" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  <SelectItem value="__todos__">TODOS</SelectItem>
-                  {rubros.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r.toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <SelectValue placeholder="RUBRO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {rubros.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FiltroIndividualContainer>
 
           <FiltroIndividualContainer
-            activo={!!subRubroActual}
-            onLimpiar={() => navigate({ subRubro: "" })}
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(subRubroActual)}
+            onLimpiar={() => handleSubRubro("")}
           >
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select
-                value={subRubroActual || "__todos__"}
-                onValueChange={(v) =>
-                  navigate({ subRubro: v === "__todos__" ? "" : v })
-                }
+            <Select
+              value={subRubroActual || undefined}
+              onValueChange={(v) => handleSubRubro(v)}
+            >
+              <SelectTrigger
+                id="filtro-px-listas-precios-subrubro"
+                className="input-filtro-unificado"
               >
-                <SelectTrigger
-                  id="filtro-px-listas-precios-subrubro"
-                  className="select-trigger-filtro"
-                >
-                  <SelectValue placeholder="SUBRUBRO" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  <SelectItem value="__todos__">TODOS</SelectItem>
-                  {subRubros.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s.toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <SelectValue placeholder="SUB-RUBRO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {subRubros.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FiltroIndividualContainer>
         </FilaFiltrosDesplegables>
       </FilterRowSelection>
 
       <div className="flex items-center gap-3">
-        <FilterRowSearch>
+        <FilterRowSearch className="flex-1">
           <FiltroBusquedaInput
             id="filtro-px-listas-precios-busqueda"
-            inputRef={inputRef}
+            placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
             value={q}
             onChange={handleQChange}
             isDebouncing={isDebouncing}
-            placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+            inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-        <span className={cn(FILTER_COUNT_CLASS, "ml-auto shrink-0")}>
-          {totalItems} PRODUCTO(S)
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+          {totalItems.toLocaleString("es-AR")} PRODUCTO
+          {totalItems !== 1 ? "S" : ""}
         </span>
       </div>
     </FilterBar>

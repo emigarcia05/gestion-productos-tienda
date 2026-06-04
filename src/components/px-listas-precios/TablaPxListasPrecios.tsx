@@ -132,15 +132,25 @@ function CeldaPxLista({
 
   if (!puedeEditar) {
     return (
-      <span className="tabular-nums text-sm">
-        {display || "—"}
-      </span>
+      <div
+        className={cn(
+          "px-lista-celda-shell tabular-nums",
+          tieneEdicion && "px-lista-celda-shell--edicion"
+        )}
+      >
+        <span>{display || "—"}</span>
+      </div>
     );
   }
 
   if (editando) {
     return (
-      <div className="px-lista-celda-shell flex items-center justify-center gap-1">
+      <div
+        className={cn(
+          "px-lista-celda-shell gap-1",
+          tieneEdicion && "px-lista-celda-shell--edicion"
+        )}
+      >
         <input
           ref={inputRef}
           value={draft}
@@ -153,13 +163,13 @@ function CeldaPxLista({
               setEditando(false);
             }
           }}
-          className="w-full min-w-0 text-center text-sm tabular-nums bg-transparent border-0 outline-none focus:ring-0"
+          className="tabular-nums"
           autoFocus
           disabled={saving}
           aria-label="PX"
         />
         {saving ? (
-          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-foreground" />
         ) : null}
       </div>
     );
@@ -173,8 +183,8 @@ function CeldaPxLista({
         setEditando(true);
       }}
       className={cn(
-        "px-lista-celda-shell w-full text-center text-sm tabular-nums cursor-pointer",
-        tieneEdicion ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"
+        "px-lista-celda-shell tabular-nums",
+        tieneEdicion && "px-lista-celda-shell--edicion"
       )}
       title="Clic Para Editar PX"
     >
@@ -264,15 +274,15 @@ function CeldaMargenLista({
 
   if (!puedeEditar || !margenEditable) {
     return (
-      <span className="tabular-nums text-sm">
-        {margenDisplay ? `${margenDisplay}%` : "—"}
-      </span>
+      <div className="px-lista-celda-shell tabular-nums">
+        <span>{margenDisplay ? `${margenDisplay}%` : "—"}</span>
+      </div>
     );
   }
 
   if (editando) {
     return (
-      <div className="px-lista-celda-shell flex items-center justify-center gap-0.5">
+      <div className="px-lista-celda-shell gap-0.5">
         <input
           ref={inputRef}
           value={draft}
@@ -285,14 +295,14 @@ function CeldaMargenLista({
               setEditando(false);
             }
           }}
-          className="w-full min-w-0 text-center text-sm tabular-nums bg-transparent border-0 outline-none focus:ring-0"
+          className="tabular-nums"
           autoFocus
           disabled={saving}
           aria-label="Margen"
         />
-        <span className="text-xs text-muted-foreground">%</span>
+        <span className="px-lista-celda-sufijo-pct">%</span>
         {saving ? (
-          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-foreground" />
         ) : null}
       </div>
     );
@@ -305,7 +315,7 @@ function CeldaMargenLista({
         setDraft(margenDisplay);
         setEditando(true);
       }}
-      className="px-lista-celda-shell w-full text-center text-sm tabular-nums text-muted-foreground hover:text-foreground cursor-pointer"
+      className="px-lista-celda-shell tabular-nums"
       title="Clic Para Editar Margen"
     >
       {margenDisplay ? `${margenDisplay}%` : "—"}
