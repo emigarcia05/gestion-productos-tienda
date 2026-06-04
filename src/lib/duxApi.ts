@@ -6,7 +6,7 @@ export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/
 export const ID_PRECIO_LISTA      = 56994;
 export const ID_PRECIO_MAYORISTA  = 57160;
 
-/** Lista DUX “principal” (persistida en `prod_listas_precios_tienda`). Override: `DUX_ID_PRECIO_LISTA`. */
+/** Lista DUX “principal” (persistida en `prod_tienda_listas_precios`). Override: `DUX_ID_PRECIO_LISTA`. */
 export function getIdPrecioListaPrincipal(): number {
   const raw = process.env.DUX_ID_PRECIO_LISTA;
   if (raw != null && raw !== "") {
@@ -21,8 +21,37 @@ export type PrecioListaDux = {
   nombre: string;
   precio: number;
 };
-export const ID_STOCK_GUAYMALLEN  = 4565;
-export const ID_STOCK_MAIPU       = 16923;
+
+export type StockDepositoDux = {
+  idDeposito: number;
+  nombre: string;
+  stockReal: number;
+  /** `null` = DUX no informó `ctd_disponible` en ese depósito. */
+  ctdDisponible: number | null;
+};
+
+export const ID_STOCK_GUAYMALLEN = 4565;
+export const ID_STOCK_MAIPU = 16923;
+
+/** Depósito DUX Guaymallén. Override: `DUX_ID_STOCK_GUAYMALLEN`. */
+export function getIdDepositoGuaymallen(): number {
+  const raw = process.env.DUX_ID_STOCK_GUAYMALLEN;
+  if (raw != null && raw !== "") {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return Math.trunc(n);
+  }
+  return ID_STOCK_GUAYMALLEN;
+}
+
+/** Depósito DUX Maipú. Override: `DUX_ID_STOCK_MAIPU`. */
+export function getIdDepositoMaipu(): number {
+  const raw = process.env.DUX_ID_STOCK_MAIPU;
+  if (raw != null && raw !== "") {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return Math.trunc(n);
+  }
+  return ID_STOCK_MAIPU;
+}
 
 export interface ItemDux {
   codItem:         string;
@@ -38,9 +67,12 @@ export interface ItemDux {
   precioMayorista: number;
   /** Todas las listas del ítem en DUX (`precios[]`). */
   precios:         PrecioListaDux[];
+  /** Todos los depósitos del ítem en DUX (`stock[]`). Origen de verdad para persistencia. */
+  stocks:          StockDepositoDux[];
+  /** Derivados de `stocks` (Maipú / Guaymallén) para compatibilidad en tipos cliente. */
   stockGuaymallen: number;
   stockMaipu:      number;
-  /** true solo si DUX informa `ctd_disponible` no nulo en Guaymallén y en Maipú (si cualquier sucursal es null → false). */
+  /** true solo si DUX informa `ctd_disponible` no nulo en Guaymallén y en Maipú. */
   stockeable:      boolean;
   habilitado:      boolean;
 }
@@ -70,26 +102,34 @@ function isItemDuxRaw(val: unknown): val is ItemDuxRaw {
   return val !== null && typeof val === "object";
 }
 
-/**
- * `stockeable` se basa **solo** en `ctd_disponible` por depósito DUX (Guaymallén / Maipú).
- * Si **cualquiera** de las dos sucursales tiene `ctd_disponible` JSON `null` (o falta la fila del depósito), el producto es no stockeable.
- */
-function duxCtdDisponibleInformadoEnDeposito(raw: ItemDuxRaw, idDeposito: number): boolean {
-  if (!Array.isArray(raw.stock)) return false;
+function parseStocksDesdeRaw(raw: ItemDuxRaw): StockDepositoDux[] {
+  const stocks: StockDepositoDux[] = [];
+  if (!Array.isArray(raw.stock)) return stocks;
   for (const s of raw.stock) {
     if (s == null || typeof s !== "object") continue;
-    const entry = s as { id?: unknown; ctd_disponible?: unknown };
-    const sid = Number(entry.id);
-    if (!Number.isFinite(sid) || sid !== idDeposito) continue;
-    return entry.ctd_disponible != null;
+    const entry = s as { id?: unknown; stock_real?: unknown; ctd_disponible?: unknown };
+    const idDeposito = Number(entry.id);
+    if (!Number.isFinite(idDeposito)) continue;
+    const ctdRaw = entry.ctd_disponible;
+    stocks.push({
+      idDeposito,
+      nombre: `DEPOSITO ${idDeposito}`,
+      stockReal: Math.round(parseNum(entry.stock_real)),
+      ctdDisponible: ctdRaw != null ? parseNum(ctdRaw) : null,
+    });
   }
-  return false;
+  return stocks;
 }
 
-function duxStockeableDesdeRaw(raw: ItemDuxRaw): boolean {
+function stockRealFromStocks(stocks: StockDepositoDux[], idDeposito: number): number {
+  return stocks.find((s) => s.idDeposito === idDeposito)?.stockReal ?? 0;
+}
+
+/** Regla stockeable: `ctd_disponible` informado en Guaymallén y Maipú. */
+export function computeStockeableDesdeStocks(stocks: StockDepositoDux[]): boolean {
   return (
-    duxCtdDisponibleInformadoEnDeposito(raw, ID_STOCK_GUAYMALLEN) &&
-    duxCtdDisponibleInformadoEnDeposito(raw, ID_STOCK_MAIPU)
+    stocks.some((s) => s.idDeposito === getIdDepositoGuaymallen() && s.ctdDisponible != null) &&
+    stocks.some((s) => s.idDeposito === getIdDepositoMaipu() && s.ctdDisponible != null)
   );
 }
 
@@ -98,7 +138,7 @@ export function mapItem(raw: unknown): ItemDux {
     return {
       codItem: "", descripcion: "", rubro: null, subRubro: null, marca: null,
       proveedorDux: null, codigoExterno: null, costo: 0, porcIva: 0,
-      precioLista: 0, precioMayorista: 0, precios: [],
+      precioLista: 0, precioMayorista: 0, precios: [], stocks: [],
       stockGuaymallen: 0, stockMaipu: 0,
       stockeable: false,
       habilitado: false,
@@ -118,16 +158,8 @@ export function mapItem(raw: unknown): ItemDux {
     }
   }
   const idListaPrincipal = getIdPrecioListaPrincipal();
-  const stockMap: Record<number, number> = {};
-  if (Array.isArray(raw.stock)) {
-    for (const s of raw.stock) {
-      if (s == null || typeof s !== "object") continue;
-      const entry = s as { id?: number; stock_real?: unknown };
-      if (entry.id == null) continue;
-      stockMap[entry.id] = parseNum(entry.stock_real);
-    }
-  }
-  const stockeable = duxStockeableDesdeRaw(raw);
+  const stocks = parseStocksDesdeRaw(raw);
+  const stockeable = computeStockeableDesdeStocks(stocks);
   return {
     codItem:         String(raw.cod_item ?? ""),
     descripcion:     String(raw.item ?? ""),
@@ -141,8 +173,9 @@ export function mapItem(raw: unknown): ItemDux {
     precioLista:     precioMap[idListaPrincipal]     ?? 0,
     precioMayorista: precioMap[ID_PRECIO_MAYORISTA] ?? 0,
     precios,
-    stockGuaymallen: stockMap[ID_STOCK_GUAYMALLEN]  ?? 0,
-    stockMaipu:      stockMap[ID_STOCK_MAIPU]       ?? 0,
+    stocks,
+    stockGuaymallen: stockRealFromStocks(stocks, getIdDepositoGuaymallen()),
+    stockMaipu: stockRealFromStocks(stocks, getIdDepositoMaipu()),
     stockeable,
     habilitado:      raw.habilitado === "S",
   };

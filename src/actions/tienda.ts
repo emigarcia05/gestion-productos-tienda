@@ -12,6 +12,7 @@ import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
 import { buildMapPrecioListaPrincipal } from "@/services/prodListasPreciosTienda.service";
+import { buildMapsStockSucursalesPrincipales } from "@/services/prodTiendaStock.service";
 import { setProductoPropioTienda } from "@/services/productoPropioTienda.service";
 import { setProductoPropioTiendaSchema } from "@/lib/validations/productoPropioTienda";
 import { revalidatePath } from "next/cache";
@@ -307,7 +308,11 @@ export async function getTiendaPageData(params: {
       costoCompraCodExt: r.costoCompraCodExt,
     }))
   );
-  const pxListaMap = await buildMapPrecioListaPrincipal(rows.map((r) => r.codTienda));
+  const codTiendasPage = rows.map((r) => r.codTienda);
+  const [pxListaMap, stockMaps] = await Promise.all([
+    buildMapPrecioListaPrincipal(codTiendasPage),
+    buildMapsStockSucursalesPrincipales(codTiendasPage),
+  ]);
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
     const proveedorTexto = r.proveedor?.trim() ?? null;
@@ -325,8 +330,8 @@ export async function getTiendaPageData(params: {
       porcIva: 21,
       precioLista: pxListaMap.get(r.codTienda) ?? 0,
       precioMayorista: 0,
-      stockGuaymallen: r.stockGuaymallen,
-      stockMaipu: r.stockMaipu,
+      stockGuaymallen: stockMaps.guaymallen.get(r.codTienda) ?? 0,
+      stockMaipu: stockMaps.maipu.get(r.codTienda) ?? 0,
       stockeable: r.stockeable,
       habilitado: true,
       _count: { productos: r._count.listaPreciosProveedores },

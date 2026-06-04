@@ -5,6 +5,10 @@ import {
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
+import {
+  buildMapStockPorDeposito,
+  getIdDepositoPorSucursalCodigo,
+} from "@/services/prodTiendaStock.service";
 
 export type OrigenDeteccionSobrestock = "LOCAL" | "OTRA_SUCURSAL";
 
@@ -34,12 +38,6 @@ export interface SobreStockReposicionResult {
 
 function normCodExt(c: string): string {
   return (c ?? "").trim();
-}
-
-function getStockFieldBySucursal(
-  sucursal: SucursalPedidoEnvio
-): "stockMaipu" | "stockGuaymallen" {
-  return sucursal === "maipu" ? "stockMaipu" : "stockGuaymallen";
 }
 
 function otraSucursalPedido(s: SucursalPedidoEnvio): SucursalPedidoEnvio {
@@ -108,8 +106,6 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
       codExt: true,
       codTienda: true,
       descripcionTienda: true,
-      stockMaipu: true,
-      stockGuaymallen: true,
       stockeable: true,
     },
   });
@@ -120,12 +116,11 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (ct && !tiendaPorCodTienda.has(ct)) tiendaPorCodTienda.set(ct, t);
   }
 
-  const [ivaSaldoReposicion, lpPorCodTiendaOtra] = await Promise.all([
+  const [ivaSaldoReposicion, lpPorCodTiendaOtra, stockOtraMap] = await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas(codTiendas),
+    buildMapStockPorDeposito(codTiendas, getIdDepositoPorSucursalCodigo(otraCodigo)),
   ]);
-
-  const stockFieldOtra = getStockFieldBySucursal(otraCodigo);
   const otherMerc2 = await prisma.prodPedMerc2.findMany({
     where: {
       sucursalId: otraSucursalRow.id,
@@ -203,7 +198,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
 
     if (!debeEvaluarOtra) continue;
 
-    const stockOtra = Number(tienda[stockFieldOtra] ?? 0);
+    const stockOtra = stockOtraMap.get(codTienda) ?? 0;
     const topeParaOtra = resolverTopeOtraSucursal(codTienda, topePedidoRow);
     const ext = evaluarSobrestockEnValores(stockOtra, topeParaOtra);
     if (!ext) continue;

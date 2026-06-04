@@ -14,6 +14,10 @@ import {
   upsertPedidoMercaderiaReposicionConfig,
 } from "@/services/pedidosEnvio.service";
 import {
+  buildMapsStockSucursalesPrincipales,
+  getStockSucursalPrincipal,
+} from "@/services/prodTiendaStock.service";
+import {
   cargarListaPrecioReposicionPorCodTiendas,
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
@@ -272,12 +276,11 @@ export async function getReposicionData(
 
   }
 
-  const stockField = sucursal === "maipu" ? "stockMaipu" : "stockGuaymallen";
-
   const codTiendasPage = rows.map((r) => r.codTienda.trim()).filter(Boolean);
-  const [ivaSaldoReposicion, lpPorCodTienda] = await Promise.all([
+  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps] = await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
+    buildMapsStockSucursalesPrincipales(codTiendasPage),
   ]);
 
   const items: ItemReposicion[] = rows.map((r) => {
@@ -290,7 +293,7 @@ export async function getReposicionData(
     const regla = reglasMap.get(codTienda) ?? null;
     const idProveedor = provResuelto?.idProveedor ?? null;
     const nombreProveedor = provResuelto?.proveedor?.nombre ?? null;
-    const stock = Number(r[stockField] ?? 0);
+    const stock = getStockSucursalPrincipal(codTienda, sucursal, stockMaps);
     const forma = regla?.formaPedir ?? "";
     const punto = regla?.puntoReposicion ?? 0;
     const cantCfg = regla?.cant ?? 0;

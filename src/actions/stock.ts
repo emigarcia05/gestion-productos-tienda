@@ -10,6 +10,7 @@ import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import { getIdDepositoPorSucursalCodigo } from "@/services/prodTiendaStock.service";
 
 export type Sucursal = "guaymallen" | "maipu";
 
@@ -53,7 +54,7 @@ const emptyControlStock: ControlStockData = {
  * Datos para Control Stock desde prod_tienda.
  * Filtros: MARCA → marca, RUBRO → rubro, SUB-RUBRO → sub_rubro.
  * Opciones de cada desplegable según docs/FILTROS_DINAMICOS.md (valores que existen con los demás filtros).
- * STOCK = stock_maipu o stock_guaymallen según sucursal.
+ * STOCK = `prod_tienda_stock.stock_real` del depósito DUX de la sucursal (Maipú / Guaymallén).
  * Requiere permiso PERMISOS.stock.acceso.
  */
 export async function getControlStock(
@@ -86,6 +87,7 @@ export async function getControlStock(
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
+  const idDepositoSucursal = getIdDepositoPorSucursalCodigo(sucursal);
 
   function baseWhere(exclude?: "marca" | "rubro"): Prisma.ProdTiendaWhereInput[] {
     const parts: Prisma.ProdTiendaWhereInput[] = [{ stockeable: true }];
@@ -93,11 +95,14 @@ export async function getControlStock(
     if (exclude !== "marca" && marca) parts.push({ marca });
     if (exclude !== "rubro" && rubro) parts.push({ rubro });
     if (soloNegativo) {
-      parts.push(
-        sucursal === "maipu"
-          ? { stockMaipu: { lt: 0 } }
-          : { stockGuaymallen: { lt: 0 } }
-      );
+      parts.push({
+        stocks: {
+          some: {
+            idDeposito: idDepositoSucursal,
+            stockReal: { lt: 0 },
+          },
+        },
+      });
     }
     return parts;
   }
@@ -128,6 +133,12 @@ export async function getControlStock(
           : { descripcionTienda: "asc" },
       skip,
       take: PAGE_SIZE,
+      include: {
+        stocks: {
+          where: { idDeposito: idDepositoSucursal },
+          select: { stockReal: true },
+        },
+      },
     }),
     prisma.prodTienda.count({ where: whereItems }),
     prisma.prodTienda.findMany({
@@ -150,7 +161,7 @@ export async function getControlStock(
     descripcion: r.descripcionTienda ?? "",
     marca: r.marca,
     rubro: r.rubro,
-    stock: sucursal === "maipu" ? r.stockMaipu : r.stockGuaymallen,
+    stock: r.stocks[0]?.stockReal ?? 0,
     ultimaExportacionExcel: r.ultimaExportacionExcel,
   }));
 

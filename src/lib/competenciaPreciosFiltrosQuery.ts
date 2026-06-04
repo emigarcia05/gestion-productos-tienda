@@ -80,7 +80,7 @@ async function codTiendasDifPromedio(
   const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
     SELECT t.cod_tienda
     FROM prod_tienda t
-    INNER JOIN prod_listas_precios_tienda pl
+    INNER JOIN prod_tienda_listas_precios pl
       ON pl.cod_tienda = t.cod_tienda AND pl.id_lista = ${idLista}
     INNER JOIN prod_precios_competencia ppc ON ppc.cod_tienda = t.cod_tienda
     WHERE ppc.estado = ${ESTADO_RELEVAMIENTO_COMPETENCIA.OK}
@@ -98,7 +98,7 @@ async function codTiendasTiendaMasBarataQueCompetidor(
   const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
     SELECT DISTINCT t.cod_tienda
     FROM prod_tienda t
-    INNER JOIN prod_listas_precios_tienda pl
+    INNER JOIN prod_tienda_listas_precios pl
       ON pl.cod_tienda = t.cod_tienda AND pl.id_lista = ${idLista}
     INNER JOIN prod_precios_competencia ppc
       ON ppc.cod_tienda = t.cod_tienda
@@ -117,7 +117,7 @@ async function codTiendasTiendaMasCaraQueCompetidor(
   const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
     SELECT DISTINCT t.cod_tienda
     FROM prod_tienda t
-    INNER JOIN prod_listas_precios_tienda pl
+    INNER JOIN prod_tienda_listas_precios pl
       ON pl.cod_tienda = t.cod_tienda AND pl.id_lista = ${idLista}
     INNER JOIN prod_precios_competencia ppc
       ON ppc.cod_tienda = t.cod_tienda

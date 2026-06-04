@@ -38,4 +38,6 @@ BEGIN
   EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'px_lista_cx_px');
   EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'cx_px_px_comp_ref');
   EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'competencia_id_px_lista');
+  EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'stock_maipu');
+  EXECUTE format('ALTER TABLE %I DROP COLUMN IF EXISTS %I', tbl, 'stock_guaymallen');
 END $$;

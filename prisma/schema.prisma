@@ -556,8 +556,39 @@ model ProdListaPrecioTienda {
   listaDux   ProdListaDux @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
 
   @@id([codTienda, idLista])
-  @@index([idLista], map: "prod_listas_precios_tienda_id_lista_idx")
-  @@map("prod_listas_precios_tienda")
+  @@index([idLista], map: "prod_tienda_listas_precios_id_lista_idx")
+  @@map("prod_tienda_listas_precios")
+}
+
+/** Catálogo de depósitos DUX (`stock[].id` en API). Se alimenta en sync desde `stock[]` de cada ítem. */
+model ProdDepositoDux {
+  idDeposito  Int      @id @map("id_deposito")
+  nombre      String
+  activa      Boolean  @default(true)
+  ultimaSync  DateTime @default(now()) @map("ultima_sync")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  stocksPorProducto ProdTiendaStock[]
+
+  @@map("prod_depositos_dux")
+}
+
+/** Stock por producto × depósito DUX (`stock[]` del ítem en API). Origen de verdad multi-depósito. */
+model ProdTiendaStock {
+  codTienda      String   @map("cod_tienda")
+  idDeposito     Int      @map("id_deposito")
+  stockReal      Int      @default(0) @map("stock_real")
+  /** `null` = DUX no informó `ctd_disponible` en ese depósito (afecta `prod_tienda.stockeable`). */
+  ctdDisponible  Decimal? @map("ctd_disponible") @db.Decimal(14, 4)
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  prodTienda ProdTienda      @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  deposito   ProdDepositoDux @relation(fields: [idDeposito], references: [idDeposito], onDelete: Restrict)
+
+  @@id([codTienda, idDeposito])
+  @@index([idDeposito], map: "prod_tienda_stock_id_deposito_idx")
+  @@map("prod_tienda_stock")
 }
 
 // Alimentada solo por API externa (tabla prod_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
@@ -575,9 +606,7 @@ model ProdTienda {
   /** FK a `prod_precios_provee.cod_ext`: costo de compra elegido (CX PROD.); no lo pisa el sync DUX. */
   costoCompraCodExt String? @map("costo_compra_cod_ext")
   costoCompra     Decimal  @map("costo_compra") @db.Decimal(14, 4) // espejo DUX (sync)
-  stockMaipu      Int      @map("stock_maipu") @default(0)
-  stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
-  /** false si en la API DUX ítems falta `ctd_disponible` no nulo en Guaymallén o en Maipú; el producto no es stockeable. */
+  /** false si en la API DUX falta `ctd_disponible` no nulo en Guaymallén o Maipú (ver `prod_tienda_stock`). */
   stockeable      Boolean  @default(true)
   lastSync        DateTime @default(now()) @map("last_sync")
   ultimaExportacionExcel DateTime? @map("ultima_exportacion_excel")
@@ -589,6 +618,7 @@ model ProdTienda {
   costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [costoCompraCodExt], references: [codExt], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
   listasPrecios           ProdListaPrecioTienda[]
+  stocks                  ProdTiendaStock[]
 
   @@map("prod_tienda")
 }

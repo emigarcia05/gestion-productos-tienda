@@ -18,6 +18,13 @@ import {
   proveedorEtiquetaPedidoDesdeRow,
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
+import {
+  buildMapsStockSucursalesPrincipales,
+  getIdDepositoPorSucursalCodigo,
+  getStockReal,
+  getStockSucursalPrincipal,
+  type MapsStockSucursalesPrincipales,
+} from "@/services/prodTiendaStock.service";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -97,8 +104,6 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         codTienda: true,
         proveedor: true,
         descripcionTienda: true,
-        stockMaipu: true,
-        stockGuaymallen: true,
         stockeable: true,
       },
     });
@@ -123,9 +128,10 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
     }
 
     const stock =
-      sucursal === "maipu"
-        ? Number(tienda?.stockMaipu ?? 0)
-        : Number(tienda?.stockGuaymallen ?? 0);
+      (await getStockReal(
+        codT,
+        getIdDepositoPorSucursalCodigo(sucursal)
+      )) ?? 0;
     // Regla de negocio:
     // - Solo pedir si stock <= punto de reposición.
     // - CANT_FIJA: pedir la cantidad configurada.
@@ -477,11 +483,10 @@ export async function getProveedoresConPedidoActivo(params?: {
 
 function stockTiendaParaSucursalCodigo(
   codigoSucursal: string,
-  tienda: { stockMaipu: number; stockGuaymallen: number }
+  codTienda: string,
+  stockMaps: MapsStockSucursalesPrincipales
 ): number {
-  return codigoSucursal === "maipu"
-    ? Number(tienda.stockMaipu ?? 0)
-    : Number(tienda.stockGuaymallen ?? 0);
+  return getStockSucursalPrincipal(codTienda, codigoSucursal, stockMaps);
 }
 
 function proveedorEtiquetaDesdeRow(p: {
@@ -622,8 +627,6 @@ export async function getItemsTablaEnviarPedido(params: {
             codExt: true,
             proveedor: true,
             descripcionTienda: true,
-            stockMaipu: true,
-            stockGuaymallen: true,
             stockeable: true,
           },
         })
@@ -638,7 +641,8 @@ export async function getItemsTablaEnviarPedido(params: {
     if (ce) codExts.add(ce);
   }
 
-  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows] = await Promise.all([
+  const codTiendasArr = [...codTiendasLookup];
+  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows, stockMaps] = await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
     codExts.size > 0
@@ -656,6 +660,7 @@ export async function getItemsTablaEnviarPedido(params: {
           orderBy: [{ idProveedor: "asc" }],
         })
       : Promise.resolve([]),
+    buildMapsStockSucursalesPrincipales(codTiendasArr),
   ]);
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
@@ -707,7 +712,7 @@ export async function getItemsTablaEnviarPedido(params: {
       idProveedorResuelto = provRow.idProveedor;
       proveedorEtiqueta = proveedorEtiquetaPedidoDesdeRow(provRow.proveedor);
       descripcion = (tienda.descripcionTienda ?? "").trim();
-      const stock = stockTiendaParaSucursalCodigo(codigoSuc || "guaymallen", tienda);
+      const stock = stockTiendaParaSucursalCodigo(codigoSuc || "guaymallen", codTi, stockMaps);
       const computedRepos = cantPedirReposicionMerc2({
         forma: r.reposicionFormaPedido,
         punto: r.reposicionPuntoPedido,
@@ -890,8 +895,6 @@ export async function getItemsYProveedorParaEnviar(
             codExt: true,
             proveedor: true,
             descripcionTienda: true,
-            stockMaipu: true,
-            stockGuaymallen: true,
             stockeable: true,
           },
         })
@@ -906,7 +909,9 @@ export async function getItemsYProveedorParaEnviar(
     if (ce) codExts.add(ce);
   }
 
-  const [ivaSaldoReposicionPdf, lpPorCodTiendaReposPdf, lpRowsPdf] = await Promise.all([
+  const codTiendasArrPdf = [...codTiendasLookup];
+  const [ivaSaldoReposicionPdf, lpPorCodTiendaReposPdf, lpRowsPdf, stockMapsPdf] =
+    await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
     codExts.size > 0
@@ -924,6 +929,7 @@ export async function getItemsYProveedorParaEnviar(
           orderBy: [{ idProveedor: "asc" }],
         })
       : Promise.resolve([]),
+    buildMapsStockSucursalesPrincipales(codTiendasArrPdf),
   ]);
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
@@ -971,7 +977,11 @@ export async function getItemsYProveedorParaEnviar(
       descripcionProveedor = (provRow.descripcionProveedor ?? "").trim() || null;
       descripcionTienda = (tienda.descripcionTienda ?? "").trim() || null;
       codTienda = codTi;
-      const stock = stockTiendaParaSucursalCodigo(codigoSucursal || "guaymallen", tienda);
+      const stock = stockTiendaParaSucursalCodigo(
+        codigoSucursal || "guaymallen",
+        codTi,
+        stockMapsPdf
+      );
       const computedRepos = cantPedirReposicionMerc2({
         forma: r.reposicionFormaPedido,
         punto: r.reposicionPuntoPedido,

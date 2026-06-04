@@ -1,7 +1,7 @@
 /**
  * Sincronización de prod_tienda desde la API DUX ERP.
  * Fase 1: bucle paginado (50 ítems por petición) acumulando todos en memoria.
- * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda) + listas DUX multi-precio.
+ * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda) + stock/listas DUX multi-depósito y multi-precio.
  * Fase 3: limpieza de filas locales cuyo cod_tienda ya no llega desde DUX.
  * Fase 4: marcar inactivas listas DUX que no aparecieron en la corrida.
  */
@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import {
   fetchItemsPage,
   DUX_API_PAGE_LIMIT,
+  computeStockeableDesdeStocks,
   type ItemDux,
 } from "@/lib/duxApi";
 import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
@@ -67,14 +68,72 @@ function itemDuxToProdTiendaRecord(item: ItemDux) {
     marca: item.marca ?? null,
     descripcionTienda: item.descripcion ?? null,
     costoCompra: Number(item.costo) || 0,
-    stockMaipu: Math.round(Number(item.stockMaipu) || 0),
-    stockGuaymallen: Math.round(Number(item.stockGuaymallen) || 0),
-    stockeable: item.stockeable,
+    stockeable: computeStockeableDesdeStocks(item.stocks),
     precios: item.precios,
+    stocks: item.stocks,
   };
 }
 
 type RecordProdTienda = ReturnType<typeof itemDuxToProdTiendaRecord>;
+
+async function syncStocksEnTransaccion(
+  tx: Prisma.TransactionClient,
+  items: RecordProdTienda[],
+  idDepositosVistos: Set<number>
+): Promise<void> {
+  const now = new Date();
+  for (const row of items) {
+    const idsEnItem = new Set<number>();
+    for (const st of row.stocks) {
+      if (!Number.isFinite(st.idDeposito)) continue;
+      idsEnItem.add(st.idDeposito);
+      idDepositosVistos.add(st.idDeposito);
+      await tx.prodDepositoDux.upsert({
+        where: { idDeposito: st.idDeposito },
+        create: {
+          idDeposito: st.idDeposito,
+          nombre: st.nombre,
+          activa: true,
+          ultimaSync: now,
+        },
+        update: {
+          nombre: st.nombre,
+          activa: true,
+          ultimaSync: now,
+        },
+      });
+      await tx.prodTiendaStock.upsert({
+        where: {
+          codTienda_idDeposito: { codTienda: row.codTienda, idDeposito: st.idDeposito },
+        },
+        create: {
+          codTienda: row.codTienda,
+          idDeposito: st.idDeposito,
+          stockReal: st.stockReal,
+          ctdDisponible:
+            st.ctdDisponible != null ? new Prisma.Decimal(st.ctdDisponible) : null,
+        },
+        update: {
+          stockReal: st.stockReal,
+          ctdDisponible:
+            st.ctdDisponible != null ? new Prisma.Decimal(st.ctdDisponible) : null,
+        },
+      });
+    }
+    if (idsEnItem.size > 0) {
+      await tx.prodTiendaStock.deleteMany({
+        where: {
+          codTienda: row.codTienda,
+          idDeposito: { notIn: [...idsEnItem] },
+        },
+      });
+    } else {
+      await tx.prodTiendaStock.deleteMany({
+        where: { codTienda: row.codTienda },
+      });
+    }
+  }
+}
 
 async function syncListasPreciosEnTransaccion(
   tx: Prisma.TransactionClient,
@@ -138,7 +197,7 @@ export interface SyncProgressCallback {
 }
 
 /**
- * Sincroniza productos desde la API DUX hacia prod_tienda y prod_listas_precios_tienda.
+ * Sincroniza productos desde la API DUX hacia prod_tienda y prod_tienda_listas_precios.
  */
 export async function syncListaPrecioTiendaFromDux(
   options?: SyncProgressCallback
@@ -149,6 +208,7 @@ export async function syncListaPrecioTiendaFromDux(
 
   const todosLosProductos: RecordProdTienda[] = [];
   const idListasVistasEnCorrida = new Set<number>();
+  const idDepositosVistosEnCorrida = new Set<number>();
   let offset = 0;
   let totalApi = 0;
 
@@ -232,8 +292,6 @@ export async function syncListaPrecioTiendaFromDux(
                   idMarca,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
-                  stockMaipu: row.stockMaipu,
-                  stockGuaymallen: row.stockGuaymallen,
                   stockeable: row.stockeable,
                 },
                 update: {
@@ -244,13 +302,12 @@ export async function syncListaPrecioTiendaFromDux(
                   idMarca,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
-                  stockMaipu: row.stockMaipu,
-                  stockGuaymallen: row.stockGuaymallen,
                   stockeable: row.stockeable,
                   lastSync: new Date(),
                 },
               });
             }
+            await syncStocksEnTransaccion(tx, chunk, idDepositosVistosEnCorrida);
             await syncListasPreciosEnTransaccion(tx, chunk, idListasVistasEnCorrida);
           },
           { timeout: TRANSACTION_TIMEOUT_MS }
@@ -306,6 +363,19 @@ export async function syncListaPrecioTiendaFromDux(
       const msg = e instanceof Error ? e.message : String(e);
       errores.push(`Marcar listas DUX inactivas: ${msg}`);
       console.error("Error marcando listas DUX inactivas:", msg);
+    }
+  }
+
+  if (idDepositosVistosEnCorrida.size > 0) {
+    try {
+      await prisma.prodDepositoDux.updateMany({
+        where: { idDeposito: { notIn: [...idDepositosVistosEnCorrida] } },
+        data: { activa: false },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      errores.push(`Marcar depósitos DUX inactivos: ${msg}`);
+      console.error("Error marcando depósitos DUX inactivos:", msg);
     }
   }
 
