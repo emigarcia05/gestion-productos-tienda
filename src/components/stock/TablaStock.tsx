@@ -59,7 +59,7 @@ function exportarStockExcel(filas: FilaExportStockVariacion[]) {
   });
 }
 
-function fmtFecha(d: Date | null): string {
+function fmtFecha(d: Date | string | null): string {
   if (!d) return "";
   return formatDdMmHhMmArgentina(new Date(d));
 }

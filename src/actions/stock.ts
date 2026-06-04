@@ -22,7 +22,8 @@ export interface ItemStock {
   marca:           string | null;
   rubro:           string | null;
   stock:           number;
-  ultimaExportacionExcel: Date | null;
+  /** ISO 8601 (serializable RSC → cliente). */
+  ultimaExportacionExcel: string | null;
 }
 
 export interface ControlStockData {
@@ -121,59 +122,64 @@ export async function getControlStock(
   const whereMarcas = toWhereWithNotNull("marca");
   const whereRubros = toWhereWithNotNull("rubro");
 
-  const [rows, total, marcasDistinct, rubrosDistinct] = await Promise.all([
-    prisma.prodTienda.findMany({
-      where: whereItems,
-      orderBy:
-        orden === "segunTiempoControl"
-          ? [
-              { ultimaExportacionExcel: { sort: "asc", nulls: "first" } },
-              { descripcionTienda: "asc" },
-            ]
-          : { descripcionTienda: "asc" },
-      skip,
-      take: PAGE_SIZE,
-      include: {
-        stocks: {
-          where: { idDeposito: idDepositoSucursal },
-          select: { stockReal: true },
+  try {
+    const [rows, total, marcasDistinct, rubrosDistinct] = await Promise.all([
+      prisma.prodTienda.findMany({
+        where: whereItems,
+        orderBy:
+          orden === "segunTiempoControl"
+            ? [
+                { ultimaExportacionExcel: { sort: "asc", nulls: "first" } },
+                { descripcionTienda: "asc" },
+              ]
+            : { descripcionTienda: "asc" },
+        skip,
+        take: PAGE_SIZE,
+        include: {
+          stocks: {
+            where: { idDeposito: idDepositoSucursal },
+            select: { stockReal: true },
+          },
         },
-      },
-    }),
-    prisma.prodTienda.count({ where: whereItems }),
-    prisma.prodTienda.findMany({
-      select: { marca: true },
-      distinct: ["marca"],
-      where: whereMarcas,
-      orderBy: { marca: "asc" },
-    }),
-    prisma.prodTienda.findMany({
-      select: { rubro: true },
-      distinct: ["rubro"],
-      where: whereRubros,
-      orderBy: { rubro: "asc" },
-    }),
-  ]);
+      }),
+      prisma.prodTienda.count({ where: whereItems }),
+      prisma.prodTienda.findMany({
+        select: { marca: true },
+        distinct: ["marca"],
+        where: whereMarcas,
+        orderBy: { marca: "asc" },
+      }),
+      prisma.prodTienda.findMany({
+        select: { rubro: true },
+        distinct: ["rubro"],
+        where: whereRubros,
+        orderBy: { rubro: "asc" },
+      }),
+    ]);
 
-  const items: ItemStock[] = rows.map((r) => ({
-    id: r.codTienda,
-    codItem: r.codTienda,
-    descripcion: r.descripcionTienda ?? "",
-    marca: r.marca,
-    rubro: r.rubro,
-    stock: r.stocks[0]?.stockReal ?? 0,
-    ultimaExportacionExcel: r.ultimaExportacionExcel,
-  }));
+    const items: ItemStock[] = rows.map((r) => ({
+      id: r.codTienda,
+      codItem: r.codTienda,
+      descripcion: r.descripcionTienda ?? "",
+      marca: r.marca,
+      rubro: r.rubro,
+      stock: r.stocks[0]?.stockReal ?? 0,
+      ultimaExportacionExcel: r.ultimaExportacionExcel?.toISOString() ?? null,
+    }));
 
-  const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
+    const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
 
-  return {
-    items,
-    total,
-    totalPaginas,
-    marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
-    rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
-  };
+    return {
+      items,
+      total,
+      totalPaginas,
+      marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
+      rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
+    };
+  } catch (e) {
+    console.error("[getControlStock]", e);
+    return emptyControlStock;
+  }
 }
 
 const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);
