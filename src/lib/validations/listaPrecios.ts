@@ -2,6 +2,7 @@ import { z } from "zod";
 
 /** Lista no vacía de `cod_ext` para edición masiva en `prod_precios_provee`. */
 export { listaPreciosCodExtListSchema } from "@/lib/validations/common";
+import { prismaCuidSchema } from "@/lib/validations/common";
 
 function tieneMaxDosDecimales(n: number): boolean {
   return Math.abs(n * 100 - Math.round(n * 100)) < 1e-6;
@@ -27,6 +28,7 @@ export const actualizacionMasivaListaPreciosSchema = z.object({
   cotizacionDolar: z.number().positive().optional(),
   /** Precio de lista del proveedor (`prod_precios_provee.px_lista_proveedor`). */
   pxListaProveedor: z.number().min(0).optional(),
+  habilitado: z.boolean().optional(),
 });
 
 export type ActualizacionMasivaListaPreciosInput = z.infer<typeof actualizacionMasivaListaPreciosSchema>;
@@ -40,7 +42,7 @@ export const listaPreciosOpcionesFiltroSchema = z
 
 /** Filtros de las Actions de lectura de lista de precios (anti abuso de strings largos). */
 export const listaPreciosFiltrosLecturaSchema = z.object({
-  proveedorId: z.string().max(128).optional(),
+  proveedorId: prismaCuidSchema.optional(),
   marcaNombre: z.string().max(200).optional(),
   rubroNombre: z.string().max(200).optional(),
   busqueda: z.string().max(500).optional(),
@@ -51,3 +53,5 @@ export const listaPreciosFiltrosLecturaSchema = z.object({
     z.coerce.number().int().min(1).max(10_000).optional()
   ),
 });
+
+export type ListaPreciosFiltrosLecturaInput = z.infer<typeof listaPreciosFiltrosLecturaSchema>;

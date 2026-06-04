@@ -47,19 +47,6 @@ export const TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS =
 export const TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS =
   "flex h-full min-h-0 w-full flex-wrap items-center justify-center gap-1.5 box-border p-1.5";
 
-/**
- * @deprecated En tablas de gestión las acciones por fila usan siempre {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
- * (fondo #0072BB, ícono blanco). No combinar outline + icon-xs neutro.
- */
-export const TABLE_ROW_ICON_BUTTON_CLASS = "disabled:cursor-not-allowed";
-
-/**
- * @deprecated Las acciones destructivas en fila usan el mismo relleno corporativo que el resto;
- * no usar hover rojo en el botón (la confirmación sigue en modal o `confirm`).
- */
-export const TABLE_ROW_ICON_BUTTON_DESTRUCTIVE_HOVER_CLASS =
-  "hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive";
-
 /** Tamaño uniforme del ícono dentro de botones de acción en tabla. */
 export const TABLE_ROW_ACTION_ICON_CLASS = "h-4 w-4 shrink-0";
 

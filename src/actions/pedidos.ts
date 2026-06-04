@@ -18,7 +18,6 @@ import {
   type ItemPedidoUrgentePayload,
   upsertPedidoMercaderiaUrgenteItem,
   upsertPedidoTintometricoItems,
-  type ItemPedidoTintometricoPayload,
   deletePedidoTintometricoItem,
   limpiarPedidoMercaderiaTrasGenerarPdf,
   sucursalPedidoHabilitada,

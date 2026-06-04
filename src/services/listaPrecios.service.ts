@@ -13,11 +13,17 @@ import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cantPedirReposicionMerc2 } from "@/services/pedidosEnvio.service";
+import {
+  mapFilaListaPrecioToProductoProveedoresPage,
+  type ProductoProveedoresPage,
+} from "@/lib/productoProveedoresPage";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
 export interface FilaListaPrecioParaCliente {
   id: string;
   codExt: string;
+  codProdProveedor: string;
+  habilitado: boolean;
   /** Descripción efectiva para UI: primero tienda, fallback proveedor. */
   descripcion: string;
   descripcionProveedor: string;
@@ -34,7 +40,7 @@ export interface FilaListaPrecioParaCliente {
   dtoFinanciero: number;
   cxTransporte: number;
   pxCompraFinalSinIva: number | null;
-  proveedor: { id: string; prefijo: string; nombre: string } | null;
+  proveedor: { id: string; prefijo: string; nombre: string; codigoUnico: string } | null;
 }
 
 export interface ListaPreciosFiltradoOpciones {
@@ -66,6 +72,8 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
   return filas.map((f) => ({
     id: f.codExt,
     codExt: f.codExt,
+    codProdProveedor: f.codProdProveedor,
+    habilitado: f.habilitado,
     descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
@@ -80,7 +88,12 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
     cxTransporte: Number(f.cxTransporte),
     pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
-      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
+      ? {
+          id: f.proveedor.id,
+          prefijo: f.proveedor.prefijo ?? "",
+          nombre: f.proveedor.nombre,
+          codigoUnico: f.proveedor.codigoUnico,
+        }
       : null,
   }));
 }
@@ -172,6 +185,8 @@ export async function getListaPreciosConTiendaFiltrada(
   let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => ({
     id: f.codExt,
     codExt: f.codExt,
+    codProdProveedor: f.codProdProveedor,
+    habilitado: f.habilitado,
     descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
     descripcionProveedor: f.descripcionProveedor,
     descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
@@ -189,7 +204,12 @@ export async function getListaPreciosConTiendaFiltrada(
     cxTransporte: Number(f.cxTransporte),
     pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
-      ? { id: f.proveedor.id, prefijo: f.proveedor.prefijo ?? "", nombre: f.proveedor.nombre }
+      ? {
+          id: f.proveedor.id,
+          prefijo: f.proveedor.prefijo ?? "",
+          nombre: f.proveedor.nombre,
+          codigoUnico: f.proveedor.codigoUnico,
+        }
       : null,
   }));
 
@@ -431,6 +451,7 @@ export interface ActualizacionMasivaListaPrecios {
   cxTransporte?: number;
   cotizacionDolar?: number;
   pxListaProveedor?: number;
+  habilitado?: boolean;
 }
 
 /**
@@ -456,6 +477,7 @@ export async function actualizarListaPreciosMasivo(
     cxTransporte?: number;
     cotizacionDolar?: number;
     pxListaProveedor?: number;
+    habilitado?: boolean;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
   if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
@@ -469,11 +491,12 @@ export async function actualizarListaPreciosMasivo(
     updatePayload.cotizacionDolar = data.cotizacionDolar;
   if (data.pxListaProveedor !== undefined && data.pxListaProveedor >= 0)
     updatePayload.pxListaProveedor = data.pxListaProveedor;
+  if (data.habilitado !== undefined) updatePayload.habilitado = data.habilitado;
 
   if (Object.keys(updatePayload).length === 0) return { actualizados: 0 };
 
   const setClauses: string[] = [];
-  const params: (number | string | string[] | null)[] = [];
+  const params: (number | string | string[] | boolean | null)[] = [];
   if (updatePayload.marca !== undefined) {
     setClauses.push(`marca = $${params.length + 1}`);
     params.push(updatePayload.marca ?? null);
@@ -514,6 +537,10 @@ export async function actualizarListaPreciosMasivo(
     setClauses.push(`px_lista_proveedor = $${params.length + 1}`);
     params.push(updatePayload.pxListaProveedor);
   }
+  if (updatePayload.habilitado !== undefined) {
+    setClauses.push(`habilitado = $${params.length + 1}`);
+    params.push(updatePayload.habilitado);
+  }
   params.push(ids);
 
   try {
@@ -524,6 +551,85 @@ export async function actualizarListaPreciosMasivo(
     const msg = e instanceof Error ? e.message : String(e);
     return { actualizados: 0, error: msg };
   }
+}
+
+const MAX_COD_EXT_ACCION_MASIVA = 10_000;
+
+/** `cod_ext` de ítems de un proveedor (opcional búsqueda ≥3 caracteres), para acción masiva en `/proveedores`. */
+export async function listarCodExtListaPreciosPorProveedor(
+  proveedorId: string,
+  busqueda?: string
+): Promise<string[]> {
+  const { filas } = await getListaPreciosConTiendaFiltrada(
+    proveedorId,
+    undefined,
+    undefined,
+    busqueda?.trim() || undefined,
+    undefined,
+    undefined,
+    undefined,
+    MAX_COD_EXT_ACCION_MASIVA
+  );
+  return filas.map((f) => f.codExt);
+}
+
+/** Campos editables desde `/proveedores` (tabla legacy) → columnas `prod_precios_provee`. */
+export type CampoEditableProductoProveedoresPage =
+  | "descuentoRubro"
+  | "descuentoCantidad"
+  | "cxTransporte"
+  | "disponible";
+
+export function camposEditableProductoProveedoresToActualizacion(
+  campo: CampoEditableProductoProveedoresPage,
+  valor: number | boolean
+): ActualizacionMasivaListaPrecios {
+  switch (campo) {
+    case "descuentoRubro":
+      return { dtoRubro: valor as number };
+    case "descuentoCantidad":
+      return { dtoCantidad: valor as number };
+    case "cxTransporte":
+      return { cxTransporte: valor as number };
+    case "disponible":
+      return { habilitado: valor as boolean };
+    default:
+      return {};
+  }
+}
+
+export async function aplicarCampoMasivoListaPrecios(
+  proveedorId: string,
+  campo: CampoEditableProductoProveedoresPage,
+  valor: number | boolean,
+  busqueda?: string
+): Promise<{ afectados: number; error?: string }> {
+  const ids = await listarCodExtListaPreciosPorProveedor(proveedorId, busqueda);
+  if (ids.length === 0) return { afectados: 0 };
+  const data = camposEditableProductoProveedoresToActualizacion(campo, valor);
+  const result = await actualizarListaPreciosMasivo(ids, data);
+  return { afectados: result.actualizados, error: result.error };
+}
+
+/** Listado paginado para `/proveedores` (misma fuente que lista-precios). */
+export async function getProductosProveedoresPageFiltrados(params: {
+  proveedorId?: string;
+  busqueda?: string;
+  pagina?: number;
+}): Promise<{ productos: ProductoProveedoresPage[]; total: number; totalPaginas: number }> {
+  const { filas, total, totalPaginas } = await getListaPreciosConTiendaFiltrada(
+    params.proveedorId,
+    undefined,
+    undefined,
+    params.busqueda,
+    undefined,
+    undefined,
+    params.pagina
+  );
+  const productos = filas
+    .map(mapFilaListaPrecioToProductoProveedoresPage)
+    .filter((p): p is ProductoProveedoresPage => p != null);
+  return { productos, total, totalPaginas };
 }
 
 // ─── Pedido Urgente: ítems con descripción unificada ─────────────────

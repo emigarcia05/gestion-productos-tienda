@@ -14,7 +14,7 @@ import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 export type Sucursal = "guaymallen" | "maipu";
 
 export interface ItemStock {
-  /** `cod_tienda` (`prod_precios_tienda`); clave estable para tabla y export Excel. */
+  /** `cod_tienda` (`prod_tienda`); clave estable para tabla y export Excel. */
   id:              string;
   codItem:         string;
   descripcion:     string;
@@ -50,7 +50,7 @@ const emptyControlStock: ControlStockData = {
 };
 
 /**
- * Datos para Control Stock desde prod_precios_tienda.
+ * Datos para Control Stock desde prod_tienda.
  * Filtros: MARCA → marca, RUBRO → rubro, SUB-RUBRO → sub_rubro.
  * Opciones de cada desplegable según docs/FILTROS_DINAMICOS.md (valores que existen con los demás filtros).
  * STOCK = stock_maipu o stock_guaymallen según sucursal.

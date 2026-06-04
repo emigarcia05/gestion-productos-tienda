@@ -8,7 +8,6 @@ import ConvertirPdfListaPreciosModal from "@/components/proveedores/ConvertirPdf
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 interface ProveedorParaCliente {
   id: string;
@@ -27,22 +26,11 @@ interface RubroOption {
   nombre: string;
 }
 
+import type { ListaPreciosConOpcionesResult, ListaPreciosFiltrosLecturaInput } from "@/actions/listaPrecios";
+
 type FetchListaPreciosConOpcionesAction = (
-  proveedorId: string | undefined,
-  marcaNombre: string | undefined,
-  rubroNombre: string | undefined,
-  busqueda: string | undefined,
-  habilitado: boolean | undefined,
-  opciones?: { soloPxSugerido?: boolean },
-  pagina?: number
-) => Promise<{
-  filas: FilaListaPrecioParaCliente[];
-  total: number;
-  totalPaginas: number;
-  proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
-  marcasDisponibles: { id: string; nombre: string }[];
-  rubrosDisponibles: { id: string; nombre: string }[];
-}>;
+  params: ListaPreciosFiltrosLecturaInput
+) => Promise<ListaPreciosConOpcionesResult>;
 
 interface Props {
   proveedores: ProveedorParaCliente[];

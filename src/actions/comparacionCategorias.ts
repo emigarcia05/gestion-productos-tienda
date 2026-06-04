@@ -37,9 +37,10 @@ import {
   actualizarDtoExtraComparacionSchema,
 } from "@/lib/validations/comparacionCategorias";
 import { z } from "zod";
+import { prismaCuidSchema } from "@/lib/validations/common";
 
 const buscarProductosAsignarSchema = z.object({
-  proveedorId: z.string().max(128).optional(),
+  proveedorId: prismaCuidSchema.optional(),
   q: z.string().max(500).optional(),
 });
 
@@ -117,11 +118,10 @@ export async function getPresentacionesParaGestionAction(): Promise<ActionResult
 
 /** Buscar productos de lista precios para asignar a una categoría (modal). Misma forma que Vincular nuevo producto. */
 export async function buscarProductosParaAsignarAction(
-  proveedorId?: string,
-  q?: string
+  raw: unknown
 ): Promise<ActionResult<Awaited<ReturnType<typeof listarProductosProveedoresParaVincular>>>> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
-  const parsed = buscarProductosAsignarSchema.safeParse({ proveedorId, q });
+  const parsed = buscarProductosAsignarSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Parámetros de búsqueda inválidos." };
   try {
     const data = await listarProductosProveedoresParaVincular(

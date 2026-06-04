@@ -31,7 +31,6 @@ import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
-import { cn } from "@/lib/utils";
 
 const COL_COUNT = 4;
 const COL_WIDTHS = [46, 18, 18, 18] as const;
@@ -39,7 +38,6 @@ const MENSAJE_SIN_RESULTADOS = "No se encontraron ítems.";
 
 function FilaPxListas({
   item,
-  competencias,
   puedeEditarEnlaces,
   isPending,
   expandido,
@@ -49,7 +47,6 @@ function FilaPxListas({
   relevandoCodTienda,
 }: {
   item: ItemPxListasParaTabla;
-  competencias: CompetenciaParaCliente[];
   puedeEditarEnlaces: boolean;
   isPending: boolean;
   expandido: boolean;
@@ -230,7 +227,6 @@ export default function TablaPxListas({
               <FilaPxListas
                 key={item.id}
                 item={item}
-                competencias={competencias}
                 puedeEditarEnlaces={puedeEditarEnlaces}
                 isPending={isPending}
                 expandido={expandidos.has(item.codItem)}

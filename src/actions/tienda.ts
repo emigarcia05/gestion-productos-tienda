@@ -108,19 +108,6 @@ async function getTiendaEmptyWithOpciones() {
   };
 }
 
-/** Última sincronización (max last_sync de prod_precios_tienda). */
-export async function getUltimoSync() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acceso)) {
-    return null;
-  }
-  const row = await prisma.prodTienda.findFirst({
-    orderBy: { lastSync: "desc" },
-    select: { lastSync: true },
-  });
-  return row?.lastSync ?? null;
-}
-
 /** Tipo de ítem que espera la tabla /tienda (mapeado desde ProdTienda). */
 export interface ItemTiendaParaTabla {
   id: string;
@@ -182,7 +169,7 @@ export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
 }
 
 /**
- * Datos para la página /tienda desde prod_precios_tienda.
+ * Datos para la página /tienda desde prod_tienda.
  * Mapeo: cod_tienda → codItem, descripcion_tienda → descripcion, costo_compra → costo,
  * proveedor → proveedorDux (resuelto a prefijo de proveedores cuando hay match).
  */

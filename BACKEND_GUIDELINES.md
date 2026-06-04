@@ -24,7 +24,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean o mod
 - **Helpers**: `esEditor()` para “solo editor”; para permisos granulares usar `getRol()` y `puede(rol, PERMISOS.modulo.accion)` desde `@/lib/permisos`.
 - **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ProdPedMerc2`, `prod_rendimientos`). Validar con `prismaCuidSchema`, `uuidSchema` o `listaPreciosCodExtSchema` / `listaPreciosCodTiendaSchema` según el modelo; **no** mezclar `.uuid()` donde el identificador ya no sea UUID. Las filas de **`prod_precios_provee`** y **`prod_tienda`** usan claves naturales (`cod_ext`, `cod_tienda`), no UUID.
 - **Lecturas con datos sensibles** (precios, vínculos, catálogos):
-  - **Lista de precios** (`getListaPreciosFiltradaAction`, `getListaPreciosConOpcionesAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)`; entrada validada con `listaPreciosFiltrosLecturaSchema` (`@/lib/validations/listaPrecios`) — límites de longitud y `opciones` **estrictas** (`listaPreciosOpcionesFiltroSchema`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas (no controla si el campo se expone).
+  - **Lista de precios** (`getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`): `getRol()` + `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)` / `edicionMasiva`; payload **`unknown`** → `listaPreciosFiltrosLecturaSchema` o `{ ids, data }` con Zod. **`proveedorId`** en filtros: `prismaCuidSchema.optional()` (no `z.string().max(128)`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas.
   - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` y `getProveedoresNoMercaderia` su complemento (`= false`). Ambos reutilizan el índice `global_proveedores_proveedor_mercaderia_idx` (ver §1.11c).
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)` (**solo editor**); ítem tienda por `cod_tienda` (`listaPreciosCodTiendaSchema`); línea lista proveedor por `cod_ext` (`listaPreciosCodExtSchema`). Filtros de búsqueda acotados con Zod en la Action cuando aplique.
   - **Sincronización DUX lista tienda** (`GET`/`POST` `/api/sync-lista-precios-tienda`, más `syncProgressStore` / jobs internos que llaman `syncListaPrecioTiendaFromDux`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` en **POST**, **GET** bloqueante, **cancel**, **`GET …/status`** (helpers en `@/lib/apiRouteAuth`). En la matriz actual **`simple` y `editor`** tienen `sincronizar: true`. Sin sesión válida o sin permiso → `403` en todas esas rutas (no hay “progreso global” público por URL). **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”). **No** existe Server Action paralela para el mismo trabajo (evitar superficie invocable desde el cliente sin uso en UI). **Eliminado** el mock **`/api/sync-tienda`**: la UI usa solo `syncListaPrecioTiendaFromDux` mediante `/api/sync-lista-precios-tienda` (`useListaPreciosTiendaModalSync`).
@@ -55,9 +55,9 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 - **Integraciones DUX / compras** (`comprobantesProveedor.ts`; sync masivo vía `comprobantesProveedorDuxSync.service.ts` + `duxComprasApi.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo desde **Server Actions** (misma sensibilidad que otras escrituras financieras).
 - **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
 
-### 1.2.4 Acciones mock o legacy (`productos.ts`)
+### 1.2.4 Edición inline en `/proveedores` (`productos.ts`)
 
-- `editarProducto` / `aplicarCampoMasivo`: permiso alineado a lista de precios — `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)` (matriz actual: solo `editor`). Evita usar solo `esEditor()` sin anclar al permiso de producto del módulo.
+- `editarProducto` / `aplicarCampoMasivo`: permiso `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)`; payload `unknown` + Zod; persistencia en **`prod_precios_provee`** (no mock). Revalida `/proveedores` y `/proveedores/lista-precios`.
 
 ### 1.2.5 Auditoría de seguridad — patrones obligatorios (cierre 2026-05)
 
@@ -99,6 +99,46 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 ### 1.2.6 Superficie mínima y variables de entorno (post-auditoría 2026-05-10)
 
 - **Server Actions huérfanas**: si una Action no tiene call sites (`grep`/`tsserver`), **eliminarla** o integrarla de inmediato. Duplicar la misma operación ya cubierta por **Route Handler** (`app/api/…`) aumenta vectores CSRF/UI sin beneficio — preferir una sola entrada con el mismo gate (`getRol` + `puede`).
+
+### 1.2.7 Auditoría backend — seguridad y depuración (2026-06-04)
+
+**Depuración aplicada (no reintroducir):**
+
+| Eliminado | Motivo |
+|-----------|--------|
+| `getListaPreciosFiltradaAction` | Sin call sites; cubierta por `getListaPreciosConOpcionesAction`. |
+| `getUltimoSync` (`tienda.ts`) | Sin call sites; sync usa `sync_dux_status` / API route. |
+| `countVinculosConUrlCompetenciaAction` | Sin call sites; conteo en `competenciaPxSugerido.service` vía route sync. |
+| `MarcacionPxListaCelda` + `pxListasMarcacion.service.ts` | UI sin uso tras retiro de tabla `prod_precios_tienda_marcacion`. |
+
+**Contrato de payloads (refuerzo 2026-06):**
+
+- Lecturas/mutaciones desde cliente: parámetro **`raw: unknown`** + `.safeParse()` con esquema en `@/lib/validations/*` (ej. `getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`, `editarProducto`, `aplicarCampoMasivo`, `buscarProductosParaAsignarAction`).
+- El cliente pasa **un objeto** acorde al esquema (no argumentos posicionales sueltos en Actions nuevas).
+- **`listaPreciosFiltrosLecturaSchema.proveedorId`**: `prismaCuidSchema.optional()`.
+- **`buscarProductosAsignarSchema.proveedorId`**: `prismaCuidSchema.optional()`.
+
+**Gates corregidos:**
+
+| Action | Gate |
+|--------|------|
+| `crearProveedor` / `editarProveedor` / `eliminarProveedor` | `puede(rol, PERMISOS.proveedores.acciones.nuevoProveedor)` (antes solo `esEditor()` genérico). |
+| `actualizarCoeficientesTintometricosAction` | `puede(rol, PERMISOS.stock.acceso)` **y** `esEditor()` + `try/catch`. |
+
+**Tipado:** sin `any` en `src/` (TS 5.9).
+
+**Integración real `/proveedores` (2026-06-04, eficiencia/DRY):**
+
+- **`getProveedoresPageData`**: delega en `getProductosProveedoresPageFiltrados` (`listaPrecios.service.ts`) — misma query que lista-precios (`getListaPreciosConTiendaFiltrada`), sin `MOCK_PRODUCTOS`.
+- **`productos.ts`**: `editarProducto` / `aplicarCampoMasivo` persisten en **`prod_precios_provee`** vía `actualizarListaPreciosMasivo` / `aplicarCampoMasivoListaPrecios` (mapeo UI: `descuentoRubro`→`dto_rubro`, `disponible`→`habilitado`).
+- **Tipo compartido:** `ProductoProveedoresPage` en `src/lib/productoProveedoresPage.ts` (mapper desde `FilaListaPrecioParaCliente`).
+- **`FilaListaPrecioParaCliente`**: incluye `codProdProveedor`, `habilitado` y `proveedor.codigoUnico` para todas las lecturas de lista.
+- **`proveedoresPageParamsSchema`**: `proveedor` = `prismaCuidSchema.optional()`; `pagina` numérica acotada.
+
+**Herramientas de auditoría:**
+
+- Tablas Prisma: `node scripts/audit-schema-usage.mjs`
+- Server Actions huérfanas: `node scripts/audit-actions-usage.mjs` (o `grep` del nombre fuera de `src/actions/`).
 - **Lógica solo servidor**: integraciones sensibles que **no** deben exponerse como Server Actions invocables desde el navegador se mantienen en `src/services/` y solo las invocan Actions ya autorizadas. **No** re-exportar valores de runtime desde archivos `"use server"` (usar `@/lib/validations/*` o servicios sin `"use server"`).
 - **Catálogo de ENV**: todas las lecturas documentadas `process.env.*` deben estar listadas en **`.env.example`** (aunque sean opcionales), con una línea corta por variable. Valores obligatorios en producción (`SESSION_SECRET`, `DATABASE_URL`) deben estar comentados como tales al lado del ejemplo.
 - **`z.record` con IDs**: mapas cliente→servidor cuyas claves sean FK Prisma (`cuid`) deben tiparse con `z.record(prismaCuidSchema, …)` más un tope de cardinalidad (`superRefine` / `max`) para evitar payloads enormes (aplicado en `cargarImputacionesMesParamsSchema.ivaPorGastoFinalId`).
@@ -125,16 +165,16 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Prisma / Neon**: `DATABASE_URL` en `.env` debe usar el **pooler** de Neon para el runtime (`src/lib/prisma.ts`). Para migraciones, definir además **`DIRECT_URL`** (host **sin** `-pooler`): `prisma.config.ts` usa `DIRECT_URL` si existe; si no, cae a `DATABASE_URL`. Plantilla: `.env.example`.
 - **Migraciones ítems historial pedidos**: `20260322120000_*` y `20260322140000_*` son **idempotentes** (`to_regclass`) respecto de `prod_ped_historial_items` / `prod_ped_merc_historial`. `20260322200000_*` renombra `prod_ped_merc_historial` → `prod_ped_historial_merc` si aún existe el nombre intermedio.
 
-### 1.4.1 `stockeable` en `prod_precios_tienda` (API DUX ítems)
+### 1.4.1 `stockeable` en `prod_tienda` (API DUX ítems)
 
-- **Columna** `prod_precios_tienda.stockeable` (`BOOLEAN NOT NULL`; migración `20260413120000_add_stockeable_prod_precios_tienda`: default `true` en filas existentes hasta la próxima sync).
+- **Columna** `prod_tienda.stockeable` (`BOOLEAN NOT NULL`; migración `20260413120000_add_stockeable_prod_precios_tienda` sobre el nombre histórico `prod_precios_tienda`: default `true` en filas existentes hasta la próxima sync).
 - **Regla DUX**: En `src/lib/duxApi.ts`, `ItemDux.stockeable` se calcula **exclusivamente** con `ctd_disponible` por depósito. Debe existir la entrada de **Guaymallén** (`ID_STOCK_GUAYMALLEN`) y **Maipú** (`ID_STOCK_MAIPU`) y en **ambas** `ctd_disponible` debe ser **no nulo** (un `0` numérico o string numérico cuenta como informado). Si **cualquier** sucursal tiene `ctd_disponible` JSON `null` o falta la fila del depósito, `stockeable` es `false`. Los enteros `stock_maipu` / `stock_guaymallen` siguen tomándose de `stock_real` como hasta ahora.
 - **Sync**: `syncListaPrecioTienda.service.ts` incluye `stockeable` en create/update del upsert. Desde 2026-06, el upsert va a **`prod_tienda`** (tabla renombrada; Prisma **`ProdTienda`**, `prisma.prodTienda`) por **`cod_tienda`**. A partir de **2026-05-28** el sync **deja de escribir `cod_ext` y `proveedor`** (ver §1.4.2). En **`prod_tienda`** solo escribe `rubro`, `subRubro`, `marca`, `idMarca`, `descripcionTienda`, `costoCompra`, stocks, `stockeable` (+ `lastSync` en update). **No** persiste `px_lista_tienda` (columna eliminada — ver §1.4.3).
 - **Uso en negocio**: `getControlStock` restringe a `stockeable: true`; `getSobreStockOtraSucursalParaPedidoEnviar` no evalúa sobrestock para ítems con `stockeable: false`; `upsertPedidoMercaderiaReposicionConfig` rechaza configurar reposición por stock si el ítem no es stockeable. `getTiendaPageData` expone `stockeable` en `ItemTiendaParaTabla`.
 
-### 1.4.2 Vinculación tienda ↔ proveedor 100 % manual (`prod_precios_tienda.cod_ext` y `proveedor` congelados)
+### 1.4.2 Vinculación tienda ↔ proveedor 100 % manual (`prod_tienda.cod_ext` y `proveedor` congelados)
 
-- A partir de **2026-05-28** las columnas **`prod_precios_tienda.cod_ext`** y **`prod_precios_tienda.proveedor`** dejan de ser **fuente de verdad** para la vinculación tienda ↔ proveedor. La única relación vigente es **`prod_precios_provee.cod_tienda`** (vínculo manual creado desde **Vínculos Con Proveedores**, action `vincularProducto`).
+- A partir de **2026-05-28** las columnas **`prod_tienda.cod_ext`** y **`prod_tienda.proveedor`** dejan de ser **fuente de verdad** para la vinculación tienda ↔ proveedor. La única relación vigente es **`prod_precios_provee.cod_tienda`** (vínculo manual creado desde **Vínculos Con Proveedores**, action `vincularProducto`).
 - **Esquema**: migración **`20260528130000_prod_precios_tienda_cod_ext_nullable`** convierte `cod_ext` a `String?` (nullable). Los nuevos ítems sincronizados por DUX **no** persisten `cod_ext` ni `proveedor`; los registros existentes **se preservan** como snapshot histórico (no se nulea retroactivamente).
 - **Sync DUX** (`syncListaPrecioTienda.service.ts`): se eliminó el campo `cod_ext` (y `proveedor`) del `itemDuxToRecord` y de los bloques `create` / `update` del upsert. Se eliminó el llamado a `vincularProveedoresPorCodExt` (servicio borrado): el sync **ya no auto-vincula** filas de `prod_precios_provee` por `cod_ext`.
 - **Filtro PROV. VINC.** (`getTiendaPageData` en `src/actions/tienda.ts`): la query `?proveedor=<idProveedor>` ahora matchea **`listaPreciosProveedores: { some: { idProveedor, habilitado: true } }`** (CUID del proveedor); URLs legacy con texto se ignoran silenciosamente (parseo `prismaCuidSchema.safeParse`).
@@ -151,7 +191,47 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Sync** (`syncListaPrecioTienda.service.ts`): Fase 2 — upsert `prod_tienda` + `prod_listas_dux` + `prod_listas_precios_tienda` en la misma transacción por chunk. Fase 3 — `deleteMany` de `cod_tienda` ausentes (CASCADE en precios por lista). Fase 4 — marcar `prod_listas_dux.activa = false` fuera del set visto.
 - **Lecturas del precio “tienda” en UI** (DIF TIENDA, competencia, Cx Compra `precioLista`): **`prodListasPreciosTienda.service.ts`** — `getPrecioListaPrincipal`, `buildMapPrecioListaPrincipal`. El campo de dominio en tipos cliente puede seguir llamándose `pxListaTienda` (número), pero **no** existe en `prod_tienda`.
 - **SQL raw** (`competenciaPreciosFiltrosQuery.ts`): JOIN `prod_listas_precios_tienda pl` con `pl.id_lista = getIdPrecioListaPrincipal()` en lugar de `t.px_lista_tienda`.
-- **Migraciones**: `20260604120000_prod_tienda_listas_dux` (rename + tablas nuevas + backfill inicial lista 56994); `20260604130000_drop_prod_tienda_px_lista_tienda`.
+- **Migraciones**: `20260604120000_prod_tienda_listas_dux` (rename + tablas nuevas + backfill inicial lista 56994); `20260604130000_drop_prod_tienda_px_lista_tienda`; `20260604140000_reconcile_purge_legacy_db_objects` (reconciliación idempotente de tablas/columnas ya retiradas del código).
+
+### 1.4.4 Purga de esquema — auditoría 2026-06-04
+
+**Objetivo:** esquema mínimo alineado al código en `src/`. **Fase 1 (tablas):** ningún `@@map` del `schema.prisma` vigente es candidato a `DROP` — los **34 modelos** tienen uso activo (`prisma.<modelo>` o SQL raw documentado). **Fase 2 (columnas):** en tablas vigentes no quedan columnas huérfanas en Prisma; las retiradas del negocio ya tienen migración.
+
+**Mapa de tablas vigentes (Prisma → SQL):**
+
+| Dominio | Modelo Prisma | Tabla SQL |
+|--------|----------------|-----------|
+| Global | `Proveedor` | `global_proveedores` |
+| Global | `Sucursal` | `global_sucursales` |
+| Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
+| Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
+| Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual` |
+| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdListaDux`, `ProdListaPrecioTienda`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_listas_dux`, `prod_listas_precios_tienda`, `prod_tienda` |
+| Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
+| Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
+
+**Tabla en BD sin modelo Prisma (no eliminar):** `prod_rendimientos` — CRUD vía raw SQL en `tiposPinturaRendimientos.ts` (tintométrico / litros). **No** reintroducir como columna dinámica en `prod_tienda`.
+
+**Tablas/columnas eliminadas — no reintroducir:**
+
+| Objeto | Motivo retiro |
+|--------|----------------|
+| `prod_precios_tienda` (nombre tabla) | Renombrada → `prod_tienda` (`20260604120000`) |
+| `prod_tienda.px_lista_tienda` | Precios por lista en `prod_listas_precios_tienda` (`20260604130000`) |
+| `px_lista_cx_px`, `cx_px_px_comp_ref`, `competencia_id_px_lista` | Submódulo Cx/Px legacy retirado (`20260528210000` + reconcile `20260604140000`) |
+| `prod_precios_tienda_marcacion`, `prod_precios_tienda_px_lista_config` | UI Px marcación eliminada (`20260528270000`) |
+| `movimientos_finanzas*`, `finanzas_rubros`, `finanzas_gastos`, `fin_bal_iva_deb` | Reemplazadas por esquema `fin_bal_*` / import IVA |
+| `pedidos_urgente`, `pedidos_reposicion` | Reemplazadas por `prod_ped_merc` |
+
+**Columnas legacy que se mantienen en `prod_tienda` (no son huérfanas):**
+
+| Columna | Uso actual |
+|---------|------------|
+| `cod_ext`, `proveedor` | Snapshot histórico; lecturas Cx Compra, historial, reposición, filtros (`§1.4.2`). Sync **no** escribe. |
+| `costo_compra_cod_ext`, `costo_compra`, `es_producto_propio` | Cx Compra / sync parcial (`§1.10b`, producto propio). |
+| `ultima_exportacion_excel`, `last_sync` | Stock export + indicador sync. |
+
+**Procedimiento operativo:** (1) `node scripts/audit-schema-usage.mjs` tras cambios grandes; (2) nueva retirada → migración SQL con `IF EXISTS` + FKs en orden hijo→padre; (3) quitar campo de `schema.prisma` el mismo commit; (4) documentar fila en esta tabla.
 
 ### 1.6 Listados de solo lectura (catálogos)
 
@@ -1000,7 +1080,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
 
-- **`tienda.ts`**: `getTiendaPageData` y `getUltimoSync` comprueban `getRol()` + `puede()`. **Cx Compra** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control de Aumentos** eliminado por completo (2026-05-28; será reimplementado más adelante). `convertirEnProveedor` eliminada (acción muerta).
+- **`tienda.ts`**: `getTiendaPageData` y `getProveedoresTintoLts` comprueban `getRol()` + `puede()`. **Cx Compra** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control de Aumentos** eliminado por completo (2026-05-28; será reimplementado más adelante). `getUltimoSync` y `convertirEnProveedor` eliminadas (sin uso).
 - **`cxPxTienda.ts` (actions)**: `guardarCostoCxProdTiendaAction`, `exportarCostoCxDiffAction`. Permiso `PERMISOS.cxPxTienda.acceso` (solo **editor**). FK `costo_compra_cod_ext` (ver §1.10b). **`costoListaTienda.service.ts`**, **`cxPxTiendaRows.service.ts`**.
 - **`pxListas.ts` (actions)**: `getPxListasPageData` — módulo **Px Competencia** (`/gestion-productos/tienda/cx-px-tienda`; `px-listas/*`). **`exportarResumenAumentosPxAction`** (PDF aumentos; usado desde **Cx Compra**, no desde Px Competencia). **Eliminado (2026-05-28, pendiente reimplementación):** `guardarPxListaTiendaAction`, `exportarPxDiffAction`, flujo **DET PRECIO** / **PX LISTA** / **MARCACION** en UI, `exportPxDiff.service.ts`, `ExportarPxButton`. Listado actual: **`pxListasPage.service.ts`** — filtros `marca`, `rubro`, `filtroPxPromedio` (DIF TIENDA vs promedio; post-proceso en memoria); grilla **DESCRIPCIÓN**, **PX PROMEDIO**, **DIF TIENDA**, **ACCIONES** (detalle competidores, asociar/relevar URLs). DIF TIENDA usa `px_lista_tienda` (DUX) como referencia (`buildPxListasItemsDesdeFilas` → `calcularResumenPreciosPxListas`). Servicios: `pxListasRows.service.ts`. **Eliminada** tabla **`prod_precios_tienda_marcacion`** (migración `20260528270000_drop_prod_precios_tienda_marcacion`; antes `prod_precios_tienda_px_lista_config`). Sin `pxListasConfig.service` ni backfill. Helpers de marcación solo UI (futura reimplementación): `pxListasMarcacion.service.ts` (`calcMarcacionPxListaDesdePx`, sin persistencia en BD).
 - **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`. En **`create`** y **`update`** se persisten las columnas sincronizadas desde DUX **excepto `cod_ext` y `proveedor`** (congelados desde 2026-05-28 — ver §1.4.2). Al finalizar la sync elimina de `prod_precios_tienda` los `cod_tienda` que ya no llegaron en la corrida actual desde DUX.
@@ -1148,7 +1228,7 @@ Antes de entregar código nuevo o modificado, verificar:
 
 | Área | Cambio |
 |------|--------|
-| `src/actions/tienda.ts` | `getTiendaPageData`, `getUltimoSync`, `getProveedoresTintoLts`: `getRol` + `puede`. |
+| `src/actions/tienda.ts` | `getTiendaPageData`, `getProveedoresTintoLts`: `getRol` + `puede`. |
 | `src/actions/importar.ts` | `puede(importar)` + `esEditor` + `importarProductosSchema` / `importarListaPreciosProveedorSchema`. |
 | `src/lib/validations/importar.ts` | Esquemas de mapeo y límites de filas/celdas. |
 | `src/actions/pedidosHistoria.ts` | Mutaciones con `esEditor()`; listado: `proveedorId` normalizado con Zod. |

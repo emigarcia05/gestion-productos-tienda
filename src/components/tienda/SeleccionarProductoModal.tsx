@@ -98,7 +98,7 @@ export default function SeleccionarProductoModal({
 
   useEffect(() => {
     if (!open) return;
-    setEsPropio(esProductoPropio);
+    queueMicrotask(() => setEsPropio(esProductoPropio));
   }, [open, esProductoPropio]);
 
   useEffect(() => {

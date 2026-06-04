@@ -22,25 +22,13 @@ function fmtPorcentaje(n: number): string {
   return `${Math.round(n)}%`;
 }
 
-interface Producto {
-  id: string;
-  codProdProv: string;
-  codigoExterno: string;
-  descripcion: string;
-  precioLista: number;
-  precioVentaSugerido: number;
-  descuentoRubro: number;
-  descuentoCantidad: number;
-  cxTransporte: number;
-  disponible: boolean;
-  proveedor: { id: string; nombre: string; codigoUnico: string; prefijo: string };
-}
+import type { ProductoProveedoresPage } from "@/lib/productoProveedoresPage";
 
 const MENSAJE_SIN_FILTRO = "Aplicá al menos un filtro (Proveedor o búsqueda) para ver los productos.";
 const MENSAJE_SIN_RESULTADOS = "No se encontraron productos.";
 
 interface Props {
-  productos: Producto[];
+  productos: ProductoProveedoresPage[];
   rol: Rol;
   /** true cuando no hay filtros aplicados: se muestra mensaje para invitar a filtrar. */
   sinFiltros?: boolean;
@@ -74,7 +62,7 @@ function CeldaPorcentaje({
     if (num === valor) { setEditando(false); return; }
 
     startTransition(async () => {
-      const res = await editarProducto(productoId, { [campo]: num });
+      const res = await editarProducto({ id: productoId, campos: { [campo]: num } });
       if (res.ok) {
         onUpdate(productoId, campo, num);
       } else {
@@ -131,7 +119,7 @@ function CeldaDisponible({
 
   function handleChange(checked: boolean) {
     startTransition(async () => {
-      const res = await editarProducto(productoId, { disponible: checked });
+      const res = await editarProducto({ id: productoId, campos: { disponible: checked } });
       if (res.ok) {
         onUpdate(productoId, "disponible", checked);
       } else {

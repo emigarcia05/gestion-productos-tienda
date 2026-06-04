@@ -30,7 +30,7 @@ export interface ListaPreciosTiendaSyncCompletoInfo {
 
 /**
  * POST `/api/sync-lista-precios-tienda` + polling `/status`.
- * Reutilizable: `SyncDuxHeaderButton` (solo barra lateral) y `StockCard` + `SyncModal`.
+ * Reutilizable: `SyncStatusIndicator` (sidebar) y `SyncModal` en modales de sync.
  */
 export function useListaPreciosTiendaModalSync(
   onCompleto?: (info: ListaPreciosTiendaSyncCompletoInfo) => void,

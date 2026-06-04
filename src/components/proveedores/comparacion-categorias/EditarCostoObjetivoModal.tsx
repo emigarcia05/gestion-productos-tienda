@@ -85,10 +85,10 @@ export default function EditarCostoObjetivoModal({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setLoadingLista(true);
     const run = async () => {
-      const result = await buscarProductosParaAsignarAction(
-        proveedorId || undefined,
-        q.trim() || undefined
-      );
+      const result = await buscarProductosParaAsignarAction({
+        proveedorId: proveedorId || undefined,
+        q: q.trim() || undefined,
+      });
       setLoadingLista(false);
       if (result.ok && result.data) setRows(result.data);
       else setRows([]);

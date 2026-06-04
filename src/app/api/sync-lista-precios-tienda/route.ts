@@ -16,7 +16,7 @@ import { SyncListaPrecioTiendaCancelledError } from "@/services/syncListaPrecioT
 let syncInProgress = false;
 
 /**
- * GET: Ejecuta la sincronización DUX -> prod_precios_tienda (bloqueante).
+ * GET: Ejecuta la sincronización DUX -> prod_tienda + prod_listas_* (bloqueante).
  * Para prueba: abre en el navegador o usa curl http://localhost:3000/api/sync-lista-precios-tienda
  */
 export async function GET() {
@@ -29,7 +29,7 @@ export async function GET() {
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    console.error("Error en sync prod_precios_tienda:", message);
+    console.error("Error en sync prod_tienda:", message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -75,7 +75,7 @@ export async function POST() {
     }
     const message = e instanceof Error ? e.message : String(e);
     await setSyncDuxErrorInDb(message);
-    console.error("Error en sync prod_precios_tienda:", message);
+    console.error("Error en sync prod_tienda:", message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   } finally {
     syncInProgress = false;

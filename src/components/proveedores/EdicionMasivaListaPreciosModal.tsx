@@ -240,7 +240,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     }
     setPending(true);
     try {
-      const result = await actualizarListaPreciosMasivoAction(filteredIds, data);
+      const result = await actualizarListaPreciosMasivoAction({ ids: filteredIds, data });
       if (!result.ok) {
         toast.error(result.error ?? "Error al actualizar.");
         return;

@@ -65,10 +65,10 @@ export default function ElegirProductoReferenciaModal({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     queueMicrotask(() => setLoading(true));
     const run = async () => {
-      const result = await buscarProductosParaAsignarAction(
-        proveedorId || undefined,
-        q.trim() || undefined
-      );
+      const result = await buscarProductosParaAsignarAction({
+        proveedorId: proveedorId || undefined,
+        q: q.trim() || undefined,
+      });
       setLoading(false);
       if (result.ok && result.data) setRows(result.data);
       else setRows([]);

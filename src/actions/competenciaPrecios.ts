@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { prismaCuidSchema } from "@/lib/validations/common";
 import {
   createCompetenciaSchema,
   deleteCompetenciaSchema,
@@ -14,7 +13,6 @@ import {
   relevarUrlsProductoSchema,
   updateCompetenciaSchema,
 } from "@/lib/validations/competenciaPrecios";
-import { prisma } from "@/lib/prisma";
 import * as competenciaService from "@/services/competencia.service";
 import {
   guardarUrlVinculoCompetencia,
@@ -29,7 +27,6 @@ import {
   getCompetenciaPreciosList,
   type CompetenciaPreciosListResult,
 } from "@/services/competenciaPreciosList.service";
-import { countVinculosRelevablesCompetencia } from "@/services/competenciaPxSugerido.service";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
 const PATH = "/precios-competencia";
@@ -79,28 +76,6 @@ export async function getCompetenciaPreciosListAction(
     return await getCompetenciaPreciosList(parsed.data);
   } catch {
     return EMPTY_LIST;
-  }
-}
-
-export async function countVinculosConUrlCompetenciaAction(
-  competenciaId: unknown
-): Promise<number> {
-  try {
-    const denied = await gateAcceso();
-    if (denied) return 0;
-    const parsed = prismaCuidSchema.safeParse(competenciaId);
-    if (!parsed.success) return 0;
-    const competencia = await prisma.prodCompetencia.findUnique({
-      where: { id: parsed.data },
-      select: { idProveedor: true },
-    });
-    if (!competencia) return 0;
-    return countVinculosRelevablesCompetencia({
-      competenciaId: parsed.data,
-      idProveedor: competencia.idProveedor,
-    });
-  } catch {
-    return 0;
   }
 }
 

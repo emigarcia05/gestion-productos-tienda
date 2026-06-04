@@ -33,24 +33,11 @@ import {
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
-import type { ListaPreciosFiltradoOpciones } from "@/services/listaPrecios.service";
+import type { ListaPreciosConOpcionesResult, ListaPreciosFiltrosLecturaInput } from "@/actions/listaPrecios";
 
 type FetchListaPreciosConOpcionesAction = (
-  proveedorId: string | undefined,
-  marcaNombre: string | undefined,
-  rubroNombre: string | undefined,
-  busqueda: string | undefined,
-  habilitado: boolean | undefined,
-  opciones?: ListaPreciosFiltradoOpciones,
-  pagina?: number
-) => Promise<{
-  filas: FilaListaPrecioParaCliente[];
-  total: number;
-  totalPaginas: number;
-  proveedoresDisponibles: { id: string; nombre: string; prefijo: string }[];
-  marcasDisponibles: { id: string; nombre: string }[];
-  rubrosDisponibles: { id: string; nombre: string }[];
-}>;
+  params: ListaPreciosFiltrosLecturaInput
+) => Promise<ListaPreciosConOpcionesResult>;
 
 interface ProveedorOption {
   id: string;
@@ -112,15 +99,14 @@ export default function SugeridosTablaConFiltros({
     }
     let cancelled = false;
     queueMicrotask(() => setLoading(true));
-    fetchListaPreciosConOpcionesAction(
-      proveedorId || undefined,
-      marcaNombre || undefined,
-      undefined,
-      busqueda.trim() || undefined,
-      true,
-      undefined,
-      pagina
-    )
+    fetchListaPreciosConOpcionesAction({
+      proveedorId: proveedorId || undefined,
+      marcaNombre: marcaNombre || undefined,
+      busqueda: busqueda.trim() || undefined,
+      habilitado: true,
+      opciones: { soloPxSugerido: true },
+      pagina,
+    })
       .then((res) => {
         if (cancelled) return;
         setFilasData(res.filas);

@@ -1,7 +1,5 @@
 import { z } from "zod";
-
-/** IDs de producto en flujos mock o futuros registros con identificador string acotado. */
-const productoIdSchema = z.string().min(1).max(128);
+import { listaPreciosCodExtSchema } from "@/lib/validations/common";
 
 /** Campos editables de un producto (mock/ futuro). */
 export const camposEditablesProductoSchema = z.object({
@@ -14,7 +12,7 @@ export const camposEditablesProductoSchema = z.object({
 export type CamposEditablesInput = z.infer<typeof camposEditablesProductoSchema>;
 
 export const editarProductoSchema = z.object({
-  id: productoIdSchema,
+  id: listaPreciosCodExtSchema,
   campos: camposEditablesProductoSchema.refine(
     (c) => Object.keys(c).length > 0,
     "Al menos un campo debe enviarse."

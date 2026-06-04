@@ -4,7 +4,9 @@ import {
   ESTADO_RELEVAMIENTO_COMPETENCIA,
   etiquetaEstadoRelevamiento,
 } from "@/lib/competenciaRelevamiento";
+import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
+import { cn } from "@/lib/utils";
 
 const MENSAJE_SIN_PRECIO =
   "La página se descargó pero no se detectó precio. Revisá selectores, regex o tipo de página en Configuracion Competidor.";
@@ -67,11 +69,12 @@ export default function RelevamientoUltimoMensaje({ vinculo, tieneUrlEnEdicion }
 
   return (
     <div
-      className={
+      className={cn(
+        "px-2.5 py-2 text-xs",
         esError
-          ? "rounded-md border border-destructive/35 bg-destructive/5 px-2.5 py-2 text-xs"
-          : "rounded-md border border-amber-500/35 bg-amber-500/5 px-2.5 py-2 text-xs"
-      }
+          ? "rounded-md border border-destructive/35 bg-destructive/5"
+          : CALLOUT_WARNING_CLASS
+      )}
       role="status"
     >
       <p className="font-medium text-foreground">

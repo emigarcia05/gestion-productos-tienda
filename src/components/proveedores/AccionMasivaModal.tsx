@@ -78,7 +78,12 @@ export default function AccionMasivaModal({
     }
 
     startTransition(async () => {
-      const res = await aplicarCampoMasivo(proveedorId, campo, valorFinal, qEfectivo);
+      const res = await aplicarCampoMasivo({
+        proveedorId,
+        campo,
+        valor: valorFinal,
+        q: qEfectivo,
+      });
       if (res.ok) {
         setAfectados(res.data.afectados);
         toast.success(`Aplicado a ${res.data.afectados} productos.`);
