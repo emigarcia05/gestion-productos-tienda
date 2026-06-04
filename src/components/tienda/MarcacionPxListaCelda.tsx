@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   PX_LISTAS_MARCACION_DECIMALES,
   roundMarcacionPxLista,
-} from "@/lib/pxListas";
+} from "@/services/pxListasMarcacion.service";
 import { cn } from "@/lib/utils";
 
 const MARCACION_MAX = 999_999.99999;

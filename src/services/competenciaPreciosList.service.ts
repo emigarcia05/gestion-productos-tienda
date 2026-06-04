@@ -18,6 +18,7 @@ import {
   aplicarPrioridadPrecioMostrar,
   buildMapPxVtaSugerido,
 } from "@/services/competenciaPxSugerido.service";
+import { buildMapPrecioListaPrincipal } from "@/services/prodListasPreciosTienda.service";
 
 export interface FilaCompetenciaPrecios {
   codTienda: string;
@@ -65,7 +66,7 @@ export async function getCompetenciaPreciosList(
 
   const competencias = competenciasRows.map(mapCompetenciaRow);
 
-  const baseWhere: Prisma.ListaPrecioTiendaWhereInput = {
+  const baseWhere: Prisma.ProdTiendaWhereInput = {
     ...(q ? filtroTexto(q, ["codTienda", "descripcionTienda", "codExt"]) : {}),
   };
 
@@ -77,7 +78,7 @@ export async function getCompetenciaPreciosList(
     competenciaId: competenciaId || undefined,
   });
 
-  const where: Prisma.ListaPrecioTiendaWhereInput = {
+  const where: Prisma.ProdTiendaWhereInput = {
     AND: [
       baseWhere,
       ...(whereConfigurado ? [whereConfigurado] : []),
@@ -88,8 +89,8 @@ export async function getCompetenciaPreciosList(
   };
 
   const [total, productos] = await Promise.all([
-    prisma.listaPrecioTienda.count({ where }),
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.count({ where }),
+    prisma.prodTienda.findMany({
       where,
       orderBy: { descripcionTienda: "asc" },
       skip: skipForPagina(pagina),
@@ -97,7 +98,6 @@ export async function getCompetenciaPreciosList(
       select: {
         codTienda: true,
         descripcionTienda: true,
-        pxListaTienda: true,
         marca: true,
         rubro: true,
       },
@@ -105,6 +105,7 @@ export async function getCompetenciaPreciosList(
   ]);
 
   const codTiendas = productos.map((p) => p.codTienda);
+  const pxListaMap = await buildMapPrecioListaPrincipal(codTiendas);
   const idProveedoresCompetencia = [
     ...new Set(
       competencias.map((c) => c.idProveedor).filter((id): id is string => Boolean(id))
@@ -177,7 +178,7 @@ export async function getCompetenciaPreciosList(
   const filas: FilaCompetenciaPrecios[] = productos.map((p) => ({
     codTienda: p.codTienda,
     descripcionTienda: p.descripcionTienda,
-    pxListaTienda: Number(p.pxListaTienda),
+    pxListaTienda: pxListaMap.get(p.codTienda) ?? 0,
     marca: p.marca,
     rubro: p.rubro,
     vinculosPorCompetencia: vinculosMap.get(p.codTienda) ?? {},

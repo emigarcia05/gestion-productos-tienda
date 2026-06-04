@@ -1,8 +1,9 @@
 /**
- * Sincronización de lista_precios_tienda desde la API DUX ERP.
+ * Sincronización de prod_tienda desde la API DUX ERP.
  * Fase 1: bucle paginado (50 ítems por petición) acumulando todos en memoria.
- * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda como conflicto) para evitar timeout.
+ * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda) + listas DUX multi-precio.
  * Fase 3: limpieza de filas locales cuyo cod_tienda ya no llega desde DUX.
+ * Fase 4: marcar inactivas listas DUX que no aparecieron en la corrida.
  */
 
 import { Prisma } from "@prisma/client";
@@ -56,8 +57,8 @@ export interface SyncListaPrecioTiendaResult {
   errores: string[];
 }
 
-/** Mapea ítem DUX a la fila de upsert. Desde 2026-05-28 `cod_ext` y `proveedor` quedan fuera del sync (vinculación 100 % manual vía `prod_precios_provee.cod_tienda`). */
-function itemDuxToRecord(item: ItemDux) {
+/** Mapea ítem DUX a la fila de upsert prod_tienda. `cod_ext` y `proveedor` quedan fuera del sync (§1.4.2). */
+function itemDuxToProdTiendaRecord(item: ItemDux) {
   const codTienda = (item.codItem ?? "").trim() || COD_TIENDA;
   return {
     codTienda,
@@ -66,14 +67,69 @@ function itemDuxToRecord(item: ItemDux) {
     marca: item.marca ?? null,
     descripcionTienda: item.descripcion ?? null,
     costoCompra: Number(item.costo) || 0,
-    pxListaTienda: Number(item.precioLista) || 0,
     stockMaipu: Math.round(Number(item.stockMaipu) || 0),
     stockGuaymallen: Math.round(Number(item.stockGuaymallen) || 0),
     stockeable: item.stockeable,
+    precios: item.precios,
   };
 }
 
-type RecordTienda = ReturnType<typeof itemDuxToRecord>;
+type RecordProdTienda = ReturnType<typeof itemDuxToProdTiendaRecord>;
+
+async function syncListasPreciosEnTransaccion(
+  tx: Prisma.TransactionClient,
+  items: RecordProdTienda[],
+  idListasVistas: Set<number>
+): Promise<void> {
+  const now = new Date();
+  for (const row of items) {
+    const idsEnItem = new Set<number>();
+    for (const pl of row.precios) {
+      if (!Number.isFinite(pl.idLista)) continue;
+      idsEnItem.add(pl.idLista);
+      idListasVistas.add(pl.idLista);
+      await tx.prodListaDux.upsert({
+        where: { idLista: pl.idLista },
+        create: {
+          idLista: pl.idLista,
+          nombre: pl.nombre,
+          activa: true,
+          ultimaSync: now,
+        },
+        update: {
+          nombre: pl.nombre,
+          activa: true,
+          ultimaSync: now,
+        },
+      });
+      await tx.prodListaPrecioTienda.upsert({
+        where: {
+          codTienda_idLista: { codTienda: row.codTienda, idLista: pl.idLista },
+        },
+        create: {
+          codTienda: row.codTienda,
+          idLista: pl.idLista,
+          precio: new Prisma.Decimal(pl.precio),
+        },
+        update: {
+          precio: new Prisma.Decimal(pl.precio),
+        },
+      });
+    }
+    if (idsEnItem.size > 0) {
+      await tx.prodListaPrecioTienda.deleteMany({
+        where: {
+          codTienda: row.codTienda,
+          idLista: { notIn: [...idsEnItem] },
+        },
+      });
+    } else {
+      await tx.prodListaPrecioTienda.deleteMany({
+        where: { codTienda: row.codTienda },
+      });
+    }
+  }
+}
 
 export type SyncPhase = "sincronizando" | "guardando";
 
@@ -82,11 +138,7 @@ export interface SyncProgressCallback {
 }
 
 /**
- * Sincroniza productos desde la API DUX hacia lista_precios_tienda.
- * 1) Acumula todos los productos en memoria (array) recorriendo la API de 50 en 50.
- * 2) Al finalizar el bucle, persiste en Neon por chunks de 500 (ON CONFLICT cod_tienda DO UPDATE).
- * 3) Elimina de prod_precios_tienda los cod_tienda ausentes en la última sync.
- * totalProcesados = largo del array acumulado.
+ * Sincroniza productos desde la API DUX hacia prod_tienda y prod_listas_precios_tienda.
  */
 export async function syncListaPrecioTiendaFromDux(
   options?: SyncProgressCallback
@@ -95,13 +147,13 @@ export async function syncListaPrecioTiendaFromDux(
   const errores: string[] = [];
   const onProgress = options?.onProgress;
 
-  const todosLosProductos: RecordTienda[] = [];
+  const todosLosProductos: RecordProdTienda[] = [];
+  const idListasVistasEnCorrida = new Set<number>();
   let offset = 0;
   let totalApi = 0;
 
-  const countBefore = await prisma.listaPrecioTienda.count();
+  const countBefore = await prisma.prodTienda.count();
 
-  // ─── Fase 1: recorrer API y acumular en memoria (sin guardar en DB) ───
   const timeoutPromise = (): Promise<never> =>
     new Promise((_, reject) =>
       setTimeout(
@@ -120,7 +172,7 @@ export async function syncListaPrecioTiendaFromDux(
     if (total > 0 && totalApi === 0) totalApi = total;
     if (results.length === 0) break;
 
-    const batch = results.map(itemDuxToRecord).filter((r) => r.codTienda);
+    const batch = results.map(itemDuxToProdTiendaRecord).filter((r) => r.codTienda);
     todosLosProductos.push(...batch);
 
     const procesadosHastaAhora = todosLosProductos.length;
@@ -139,16 +191,13 @@ export async function syncListaPrecioTiendaFromDux(
 
   const totalSincronizados = todosLosProductos.length;
 
-  // ─── Fase 2: persistencia masiva por chunks de 500 (evitar timeout Neon) ───
-  // Prisma Decimal en PostgreSQL requiere Prisma.Decimal; deduplicar por codTienda (último gana).
-  // Marcas: se resuelve el texto de la API a la tabla prod_marcas y se asigna idMarca.
   if (totalSincronizados > 0) {
     await assertListaPrecioTiendaSyncNotCancelled();
     if (onProgress) onProgress(0, totalSincronizados, "guardando");
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
       await assertListaPrecioTiendaSyncNotCancelled();
       const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
-      const byCodTienda = new Map<string, RecordTienda>();
+      const byCodTienda = new Map<string, RecordProdTienda>();
       for (const row of chunkRaw) byCodTienda.set(row.codTienda, row);
       const chunk = Array.from(byCodTienda.values());
       try {
@@ -173,7 +222,7 @@ export async function syncListaPrecioTiendaFromDux(
             for (const row of chunk) {
               const nombreMarca = row.marca?.trim();
               const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
-              await tx.listaPrecioTienda.upsert({
+              await tx.prodTienda.upsert({
                 where: { codTienda: row.codTienda },
                 create: {
                   codTienda: row.codTienda,
@@ -183,7 +232,6 @@ export async function syncListaPrecioTiendaFromDux(
                   idMarca,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
-                  pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
                   stockMaipu: row.stockMaipu,
                   stockGuaymallen: row.stockGuaymallen,
                   stockeable: row.stockeable,
@@ -196,7 +244,6 @@ export async function syncListaPrecioTiendaFromDux(
                   idMarca,
                   descripcionTienda: row.descripcionTienda,
                   costoCompra: new Prisma.Decimal(row.costoCompra),
-                  pxListaTienda: new Prisma.Decimal(row.pxListaTienda),
                   stockMaipu: row.stockMaipu,
                   stockGuaymallen: row.stockGuaymallen,
                   stockeable: row.stockeable,
@@ -204,6 +251,7 @@ export async function syncListaPrecioTiendaFromDux(
                 },
               });
             }
+            await syncListasPreciosEnTransaccion(tx, chunk, idListasVistasEnCorrida);
           },
           { timeout: TRANSACTION_TIMEOUT_MS }
         );
@@ -222,7 +270,6 @@ export async function syncListaPrecioTiendaFromDux(
     }
   }
 
-  // ─── Fase 3: limpieza de cod_tienda ausentes en DUX ───────────────────────
   await assertListaPrecioTiendaSyncNotCancelled();
   try {
     const codTiendasRecibidos = new Set(
@@ -230,7 +277,7 @@ export async function syncListaPrecioTiendaFromDux(
         .map((r) => r.codTienda.trim())
         .filter((v) => v.length > 0)
     );
-    const existentes = await prisma.listaPrecioTienda.findMany({
+    const existentes = await prisma.prodTienda.findMany({
       select: { codTienda: true },
     });
     const codTiendasParaEliminar = existentes
@@ -239,7 +286,7 @@ export async function syncListaPrecioTiendaFromDux(
       .filter((v) => v.length > 0);
     for (let i = 0; i < codTiendasParaEliminar.length; i += CHUNK_DELETE_SIZE) {
       const chunk = codTiendasParaEliminar.slice(i, i + CHUNK_DELETE_SIZE);
-      await prisma.listaPrecioTienda.deleteMany({
+      await prisma.prodTienda.deleteMany({
         where: { codTienda: { in: chunk } },
       });
     }
@@ -249,8 +296,21 @@ export async function syncListaPrecioTiendaFromDux(
     console.error("Error en limpieza de cod_tienda ausentes:", msg);
   }
 
+  if (idListasVistasEnCorrida.size > 0) {
+    try {
+      await prisma.prodListaDux.updateMany({
+        where: { idLista: { notIn: [...idListasVistasEnCorrida] } },
+        data: { activa: false },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      errores.push(`Marcar listas DUX inactivas: ${msg}`);
+      console.error("Error marcando listas DUX inactivas:", msg);
+    }
+  }
+
   const duracionMs = Date.now() - inicioMs;
-  const countAfter = await prisma.listaPrecioTienda.count();
+  const countAfter = await prisma.prodTienda.count();
   const creados = Math.max(0, countAfter - countBefore);
   const actualizados = Math.max(0, totalSincronizados - creados);
 

@@ -87,7 +87,6 @@ function SubfilaVinculo({
     <TableRow
       className={cn(
         SUBFILA_DETALLE_CLASS,
-        "tabla-fila-detalle-cx-compra-vinculo",
         esUltima && "tabla-fila-detalle-competencia--cierre",
         "hover:bg-transparent"
       )}
@@ -113,47 +112,37 @@ function SubfilaVinculo({
         )}
       >
         <div className="cx-compra-subfila-cx-prod">
-          <div className="cx-compra-subfila-cx-prod__col cx-compra-subfila-cx-prod__col--ctrl">
-            <div className="cx-compra-subfila-cx-prod__precio-spacer" aria-hidden />
-            <div className="cx-compra-subfila-cx-prod__meta">
-              <div className="cx-compra-subfila-cx-prod__meta-base">
-                {puedeEditar ? (
-                  <input
-                    type="checkbox"
-                    checked={esBase}
-                    onChange={() => onToggleBase(producto)}
-                    disabled={isPending}
-                    className={cn(
-                      "h-4 w-4 cursor-pointer accent-primary",
-                      isPending && "cursor-not-allowed opacity-60"
-                    )}
-                    aria-label={
-                      esBase
-                        ? `Quitar base de comparación (${producto.proveedor.prefijo})`
-                        : `Marcar ${producto.proveedor.prefijo} como base de comparación`
-                    }
-                    title={
-                      esBase
-                        ? "Esta fila es la base. Click para destildar (Cx. Prom.)."
-                        : "Marcar como base para calcular variaciones del resto."
-                    }
-                  />
-                ) : null}
-              </div>
-              <div className="cx-compra-subfila-cx-prod__meta-var">
-                <CeldaVariacion px={px} pxBase={pxBase} esBase={esBase} />
-              </div>
-            </div>
+          <div className="cx-compra-subfila-cx-prod__meta">
+            {puedeEditar ? (
+              <input
+                type="checkbox"
+                checked={esBase}
+                onChange={() => onToggleBase(producto)}
+                disabled={isPending}
+                className={cn(
+                  "cursor-pointer accent-primary",
+                  isPending && "cursor-not-allowed opacity-60"
+                )}
+                aria-label={
+                  esBase
+                    ? `Quitar base de comparación (${producto.proveedor.prefijo})`
+                    : `Marcar ${producto.proveedor.prefijo} como base de comparación`
+                }
+                title={
+                  esBase
+                    ? "Esta fila es la base. Click para destildar (Cx. Prom.)."
+                    : "Marcar como base para calcular variaciones del resto."
+                }
+              />
+            ) : null}
+            <CeldaVariacion px={px} pxBase={pxBase} esBase={esBase} />
           </div>
-          <div className="cx-compra-subfila-cx-prod__col cx-compra-subfila-cx-prod__col--precio">
-            <div className="cx-compra-subfila-cx-prod__precio-spacer" aria-hidden />
-            <span
-              className="cx-compra-subfila-cx-prod__precio-vinculo celda-numero tabular-nums text-center text-sm font-medium text-foreground"
-              aria-label={`Costo ${producto.proveedor.prefijo}`}
-            >
-              ${fmtPrecio(px)}
-            </span>
-          </div>
+          <span
+            className="cx-compra-subfila-cx-prod__precio-vinculo celda-numero tabular-nums text-center text-sm font-medium text-foreground"
+            aria-label={`Costo ${producto.proveedor.prefijo}`}
+          >
+            ${fmtPrecio(px)}
+          </span>
         </div>
       </TableCell>
       <TableCell className={cn("celda-datos celda-datos--accion-relleno-fila", SUBFILA_CELDA_HUECA_CLASS)}>
@@ -188,8 +177,8 @@ export function CxCompraDetallePropio() {
       )}
     >
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell colSpan={3} className={cn("celda-datos py-3", SUBFILA_CELDA_BLOQUE_CLASS)}>
-        <p className="text-center text-sm text-muted-foreground">
+      <TableCell colSpan={3} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
+        <p className="truncate text-center text-xs text-muted-foreground">
           Producto propio TiendaColor — sin vínculos con proveedores.
         </p>
       </TableCell>
@@ -208,8 +197,8 @@ export function CxCompraDetalleVacio({ codTienda }: { codTienda: string }) {
       )}
     >
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell colSpan={3} className={cn("celda-datos py-2", SUBFILA_CELDA_BLOQUE_CLASS)}>
-        <p className="text-center text-sm text-muted-foreground">
+      <TableCell colSpan={3} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
+        <p className="truncate text-center text-xs text-muted-foreground">
           Sin vínculos con proveedores para {codTienda}.
         </p>
       </TableCell>
@@ -306,8 +295,8 @@ export default function CxCompraVinculosDetalle({
   if (cargando) {
     return (
       <TableRow className={cn(SUBFILA_DETALLE_CLASS, "hover:bg-transparent")}>
-        <TableCell colSpan={5} className={cn("celda-datos py-3", SUBFILA_CELDA_BLOQUE_CLASS)}>
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <TableCell colSpan={5} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
             Cargando vínculos...
           </div>

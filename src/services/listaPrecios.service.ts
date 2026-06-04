@@ -52,7 +52,7 @@ export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCli
       include: { proveedor: true },
       orderBy: { codExt: "asc" },
     }),
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.findMany({
       select: { codExt: true, descripcionTienda: true },
     }),
   ]);
@@ -132,7 +132,7 @@ export async function getListaPreciosConTiendaFiltrada(
             { codExt: { contains: token, mode: "insensitive" as const } },
             { marca: { contains: token, mode: "insensitive" as const } },
             { rubro: { contains: token, mode: "insensitive" as const } },
-            { listaPrecioTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
+            { prodTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
           ],
         })),
       });
@@ -157,7 +157,7 @@ export async function getListaPreciosConTiendaFiltrada(
   const codExts = [...new Set(filasRaw.map((r) => r.codExt))];
   const tiendaRows =
     codExts.length > 0
-      ? await prisma.listaPrecioTienda.findMany({
+      ? await prisma.prodTienda.findMany({
           where: { codExt: { in: codExts } },
           select: { codExt: true, descripcionTienda: true },
         })
@@ -299,7 +299,7 @@ export async function listarProductosProveedoresParaVincular(
     where,
     include: {
       proveedor: { select: { prefijo: true, nombre: true } },
-      listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
+      prodTienda: { select: { codTienda: true, descripcionTienda: true } },
     },
     orderBy: { codExt: "asc" },
     take: MAX_PRODUCTOS_VINCULAR,
@@ -314,10 +314,10 @@ export async function listarProductosProveedoresParaVincular(
     rubro: r.rubro ?? null,
     proveedor: { prefijo: r.proveedor.prefijo ?? "", nombre: r.proveedor.nombre },
     pxCompraFinalSinIva: r.pxCompraFinalSinIva != null ? Number(r.pxCompraFinalSinIva) : null,
-    tiendaVinculada: r.listaPrecioTienda
+    tiendaVinculada: r.prodTienda
       ? {
-          codTienda: r.listaPrecioTienda.codTienda,
-          descripcion: r.listaPrecioTienda.descripcionTienda,
+          codTienda: r.prodTienda.codTienda,
+          descripcion: r.prodTienda.descripcionTienda,
         }
       : null,
   }));
@@ -650,7 +650,7 @@ async function mercaderiaMapsDesdeMerc2(
   const codTiendasRepo = [...mercaderiaRepoSet];
   const tiendaRowsRepo =
     codTiendasRepo.length > 0
-      ? await prisma.listaPrecioTienda.findMany({
+      ? await prisma.prodTienda.findMany({
           where: { codTienda: { in: codTiendasRepo } },
           select: {
             codTienda: true,
@@ -704,13 +704,13 @@ function descripcionTiendaUnificadaParaGrupoPedidoUrgente(
   memberFilas: Array<{
     codExt: string;
     descripcionProveedor: string;
-    listaPrecioTienda: { descripcionTienda: string | null } | null;
+    prodTienda: { descripcionTienda: string | null } | null;
   }>,
   descripcionTiendaPorCodExt: Map<string, string>
 ): string {
   const candidates: string[] = [];
   for (const f of memberFilas) {
-    const rel = f.listaPrecioTienda?.descripcionTienda?.trim();
+    const rel = f.prodTienda?.descripcionTienda?.trim();
     const mapped = descripcionTiendaPorCodExt.get(f.codExt)?.trim();
     if (rel) candidates.push(rel);
     if (mapped) candidates.push(mapped);
@@ -766,7 +766,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
             { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
             { codExt: { contains: token, mode: "insensitive" as const } },
             {
-              listaPrecioTienda: {
+              prodTienda: {
                 descripcionTienda: { contains: token, mode: "insensitive" as const },
               },
             },
@@ -780,7 +780,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
 
   const includeListaPedidoUrgente = {
     proveedor: { select: { id: true, nombre: true, prefijo: true, iva: true } },
-    listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
+    prodTienda: { select: { codTienda: true, descripcionTienda: true } },
   } as const;
 
   /** Meta sin filtro de proveedor: conserva todos los miembros del grupo por `codTiendaVinculo`. */
@@ -844,7 +844,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
   const codExtsRes = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
     codExtsRes.length > 0
-      ? await prisma.listaPrecioTienda.findMany({
+      ? await prisma.prodTienda.findMany({
           where: { codExt: { in: codExtsRes } },
           select: { codExt: true, descripcionTienda: true },
         })
@@ -867,7 +867,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       ? await mercaderiaMapsDesdeMerc2(
           sucursalTrim,
           pairs,
-          filas.map((f) => f.listaPrecioTienda?.codTienda?.trim() ?? "").filter(Boolean)
+          filas.map((f) => f.prodTienda?.codTienda?.trim() ?? "").filter(Boolean)
         )
       : {
           mercaderiaMapUrgente: new Map<string, number>(),
@@ -880,7 +880,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
 
   function itemDesdeFila(f: FilaU): PedidoUrgenteItem {
     const key = `${f.idProveedor}:${f.codExt}`;
-    const descRel = f.listaPrecioTienda?.descripcionTienda?.trim();
+    const descRel = f.prodTienda?.descripcionTienda?.trim();
     const descTiendaMap = descripcionTiendaPorCodExt.get(f.codExt)?.trim();
     const descTienda = descRel || descTiendaMap || null;
     const cantUrgenteUi = mercaderiaMapUrgente.get(key) ?? 0;
@@ -894,8 +894,8 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
       ivaProveedor: f.proveedor.iva,
       cantPedidaUrgente: Math.max(0, Math.floor(cantUrgenteUi)),
-      confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
-      cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
+      confReposicion: mercaderiaRepoSet.has(f.prodTienda?.codTienda?.trim() ?? ""),
+      cantReposicion: mercaderiaMapRepo.get(f.prodTienda?.codTienda?.trim() ?? "") ?? 0,
       estaVinculadoTienda: tiendaListaId != null,
     };
   }
@@ -1011,7 +1011,7 @@ export async function getListaPreciosParaPedidoUrgente(
       if (codTiendas.length === 0) {
         return { items: [], total: 0, totalPaginas: 0 };
       }
-      andParts.push({ listaPrecioTienda: { codTienda: { in: codTiendas } } });
+      andParts.push({ prodTienda: { codTienda: { in: codTiendas } } });
     }
   }
 
@@ -1023,7 +1023,7 @@ export async function getListaPreciosParaPedidoUrgente(
           OR: [
             { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
             { codExt: { contains: token, mode: "insensitive" as const } },
-            { listaPrecioTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
+            { prodTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
           ],
         })),
       });
@@ -1039,7 +1039,7 @@ export async function getListaPreciosParaPedidoUrgente(
       where,
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
-        listaPrecioTienda: { select: { codTienda: true } },
+        prodTienda: { select: { codTienda: true } },
       },
       orderBy: { codExt: "asc" },
       skip,
@@ -1056,7 +1056,7 @@ export async function getListaPreciosParaPedidoUrgente(
   const codExts = [...new Set(filas.map((f) => f.codExt))];
   const tiendaRows =
     codExts.length > 0
-      ? await prisma.listaPrecioTienda.findMany({
+      ? await prisma.prodTienda.findMany({
           where: { codExt: { in: codExts } },
           select: { codExt: true, descripcionTienda: true },
         })
@@ -1080,7 +1080,7 @@ export async function getListaPreciosParaPedidoUrgente(
           sucursalTrim,
           pairs,
           filas
-            .map((f) => f.listaPrecioTienda?.codTienda?.trim() ?? "")
+            .map((f) => f.prodTienda?.codTienda?.trim() ?? "")
             .filter(Boolean)
         )
       : {
@@ -1102,8 +1102,8 @@ export async function getListaPreciosParaPedidoUrgente(
       descripcion: (descTienda?.trim() && descTienda) || f.descripcionProveedor,
       pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
       cantPedidaUrgente: cantUrgente,
-      confReposicion: mercaderiaRepoSet.has(f.listaPrecioTienda?.codTienda?.trim() ?? ""),
-      cantReposicion: mercaderiaMapRepo.get(f.listaPrecioTienda?.codTienda?.trim() ?? "") ?? 0,
+      confReposicion: mercaderiaRepoSet.has(f.prodTienda?.codTienda?.trim() ?? ""),
+      cantReposicion: mercaderiaMapRepo.get(f.prodTienda?.codTienda?.trim() ?? "") ?? 0,
       estaVinculadoTienda: tiendaListaId != null,
     };
   });

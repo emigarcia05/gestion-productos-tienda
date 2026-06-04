@@ -90,7 +90,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
 
   try {
     const sucursalId = await getSucursalIdByCodigo(sucursal);
-    const tienda = await prisma.listaPrecioTienda.findFirst({
+    const tienda = await prisma.prodTienda.findFirst({
       where: { codTienda: codTienda.trim() },
       select: {
         codExt: true,
@@ -183,7 +183,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
         codExt: true,
         codProdProveedor: true,
         descripcionProveedor: true,
-        listaPrecioTienda: {
+        prodTienda: {
           select: { codTienda: true, descripcionTienda: true },
         },
       },
@@ -255,7 +255,7 @@ export async function syncPedidoUrgenteEnvio(
       where: { codExt: { in: ids } },
       include: {
         proveedor: { select: { id: true } },
-        listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
+        prodTienda: { select: { codTienda: true, descripcionTienda: true } },
       },
     });
 
@@ -518,7 +518,7 @@ export type LpRowPick = {
   descripcionProveedor: string;
   codProdProveedor?: string | null;
   codTiendaVinculo: string | null;
-  listaPrecioTienda?: { codTienda: string } | null;
+  prodTienda?: { codTienda: string } | null;
   proveedor: { prefijo: string | null; nombre: string | null };
 };
 
@@ -615,7 +615,7 @@ export async function getItemsTablaEnviarPedido(params: {
   ]);
   const tiendas =
     codTiendasLookup.size > 0
-      ? await prisma.listaPrecioTienda.findMany({
+      ? await prisma.prodTienda.findMany({
           where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
             codTienda: true,
@@ -650,7 +650,7 @@ export async function getItemsTablaEnviarPedido(params: {
             codProdProveedor: true,
             descripcionProveedor: true,
             codTiendaVinculo: true,
-            listaPrecioTienda: { select: { codTienda: true } },
+            prodTienda: { select: { codTienda: true } },
             proveedor: { select: { prefijo: true, nombre: true } },
           },
           orderBy: [{ idProveedor: "asc" }],
@@ -883,7 +883,7 @@ export async function getItemsYProveedorParaEnviar(
   ]);
   const tiendas =
     codTiendasLookup.size > 0
-      ? await prisma.listaPrecioTienda.findMany({
+      ? await prisma.prodTienda.findMany({
           where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
             codTienda: true,
@@ -918,7 +918,7 @@ export async function getItemsYProveedorParaEnviar(
             codProdProveedor: true,
             descripcionProveedor: true,
             codTiendaVinculo: true,
-            listaPrecioTienda: { select: { codTienda: true } },
+            prodTienda: { select: { codTienda: true } },
             proveedor: { select: { prefijo: true, nombre: true } },
           },
           orderBy: [{ idProveedor: "asc" }],
@@ -994,7 +994,7 @@ export async function getItemsYProveedorParaEnviar(
       tintometricoDescripcion = null;
       descripcionProveedor = (provRow.descripcionProveedor ?? "").trim() || null;
       descripcionTienda = null;
-      codTienda = (provRow.listaPrecioTienda?.codTienda ?? "").trim() || null;
+      codTienda = (provRow.prodTienda?.codTienda ?? "").trim() || null;
       cantPedir = Math.max(0, Math.floor(Number(r.urgenteCantPedir) || 0));
     } else if (r.tipoDePedido === TIPO_TINTOMETRICO) {
       const idProv = (r.tintometricoProveedor ?? "").trim();

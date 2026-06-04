@@ -18,7 +18,7 @@ export default async function ListaPreciosPage() {
       orderBy: { nombre: "asc" },
       select: { id: true, nombre: true },
     }),
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.findMany({
       where: { rubro: { not: null } },
       distinct: ["rubro"],
       orderBy: { rubro: "asc" },

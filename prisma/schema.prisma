@@ -448,19 +448,19 @@ model ListaPrecioProveedor {
   dtoFinanciero     Decimal  @map("dto_financiero") @default(0) @db.Decimal(5, 2)
   cxTransporte      Decimal  @map("cx_transporte") @default(0) @db.Decimal(5, 2)
   pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: precio compra sin IVA; base * (1 - dtoTotal/100) * (1 + cx_transporte/100), dtoTotal capado 0-100
-  codTiendaVinculo String? @map("cod_tienda") // FK al ítem tienda (`prod_precios_tienda.cod_tienda`; 1 tienda → N proveedores)
+  codTiendaVinculo String? @map("cod_tienda") // FK al ítem tienda (`prod_tienda.cod_tienda`; 1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   habilitado         Boolean  @map("habilitado") @default(true) // mapea opción SÍ/NO del modal importar
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
-  listaPrecioTienda ListaPrecioTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
+  prodTienda ProdTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
   dtoExtraComparacion ComparacionDtoExtraItem?
   /** Ítems tienda que usan esta fila como costo lista en Cx/Px Tienda. */
-  costoListaEnTiendas ListaPrecioTienda[] @relation("CostoListaEnTienda")
+  costoListaEnTiendas ProdTienda[] @relation("CostoListaEnTienda")
 
   @@unique([idProveedor, codProdProveedor], map: "prod_precios_provee_id_proveedor_cod_prod_prov_key")
   @@map("prod_precios_provee")
@@ -526,13 +526,42 @@ model Marca {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  listaPreciosTienda ListaPrecioTienda[]
+  prodTiendas ProdTienda[]
 
   @@map("prod_marcas")
 }
 
-// Alimentada solo por API externa (tabla prod_precios_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
-model ListaPrecioTienda {
+/** Catálogo de listas de precio DUX (id + nombre). Se alimenta en sync desde `precios[]` de cada ítem. */
+model ProdListaDux {
+  idLista     Int      @id @map("id_lista")
+  nombre      String
+  activa      Boolean  @default(true)
+  ultimaSync  DateTime @default(now()) @map("ultima_sync")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  preciosPorProducto ProdListaPrecioTienda[]
+
+  @@map("prod_listas_dux")
+}
+
+/** Precio por producto × lista DUX (`precios[]` del ítem en API). Origen de verdad multi-lista. */
+model ProdListaPrecioTienda {
+  codTienda  String   @map("cod_tienda")
+  idLista    Int      @map("id_lista")
+  precio     Decimal  @db.Decimal(14, 4)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  prodTienda ProdTienda   @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  listaDux   ProdListaDux @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
+
+  @@id([codTienda, idLista])
+  @@index([idLista], map: "prod_listas_precios_tienda_id_lista_idx")
+  @@map("prod_listas_precios_tienda")
+}
+
+// Alimentada solo por API externa (tabla prod_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
+model ProdTienda {
   codTienda       String   @id @map("cod_tienda") // clave de negocio estable (PK); sync upsert por cod_tienda
   /** Histórico DUX: a partir de 2026-05-28 ya no se sincroniza (vinculación 100 % manual vía `prod_precios_provee.cod_tienda`). Se preservan valores legacy para trazabilidad. */
   codExt          String?  @map("cod_ext")
@@ -546,7 +575,6 @@ model ListaPrecioTienda {
   /** FK a `prod_precios_provee.cod_ext`: costo de compra elegido (CX PROD.); no lo pisa el sync DUX. */
   costoCompraCodExt String? @map("costo_compra_cod_ext")
   costoCompra     Decimal  @map("costo_compra") @db.Decimal(14, 4) // espejo DUX (sync)
-  pxListaTienda   Decimal  @map("px_lista_tienda") @db.Decimal(14, 4)
   stockMaipu      Int      @map("stock_maipu") @default(0)
   stockGuaymallen  Int      @map("stock_guaymallen") @default(0)
   /** false si en la API DUX ítems falta `ctd_disponible` no nulo en Guaymallén o en Maipú; el producto no es stockeable. */
@@ -556,31 +584,13 @@ model ListaPrecioTienda {
   /// Producto propio TiendaColor: no admite vínculos con `prod_precios_provee`; el sync DUX no modifica este flag.
   esProductoPropio Boolean @default(false) @map("es_producto_propio")
 
-  marcaRelation   Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
+  marcaRelation           Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
   costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [costoCompraCodExt], references: [codExt], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
-  marcacion               ProdPrecioTiendaMarcacion?
+  listasPrecios           ProdListaPrecioTienda[]
 
-  @@map("prod_precios_tienda")
-}
-
-/// Detalle de precio y px lista manual en módulo Px Listas (una lista por ítem; extensible a N listas).
-model ProdPrecioTiendaMarcacion {
-  codTienda         String   @id @map("cod_tienda")
-  /** true = PX MANUAL; false = precio desde competencia (`competencia_id`). */
-  detPrecioManual   Boolean  @default(true) @map("det_precio_manual")
-  competenciaId     String?  @map("competencia_id")
-  pxListaManual     Decimal? @map("px_lista_manual") @db.Decimal(14, 4)
-  /// Marcación Px Listas persistida: (px_lista_efectivo / costo_compra) / 1,21 (5 decimales).
-  marcacion         Decimal? @db.Decimal(14, 5)
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  listaPrecioTienda ListaPrecioTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
-  competencia       ProdCompetencia?  @relation(fields: [competenciaId], references: [id], onDelete: SetNull)
-
-  @@index([competenciaId], map: "prod_precios_tienda_marcacion_competencia_id_idx")
-  @@map("prod_precios_tienda_marcacion")
+  @@map("prod_tienda")
 }
 
 /// Competidores externos (nombre + URLs del sitio para búsqueda de precios).
@@ -600,7 +610,6 @@ model ProdCompetencia {
 
   proveedor Proveedor? @relation(fields: [idProveedor], references: [id], onDelete: SetNull)
   precios ProdPrecioCompetencia[]
-  marcacionesTienda ProdPrecioTiendaMarcacion[]
 
   @@index([idProveedor], map: "prod_competencia_id_proveedor_idx")
   @@map("prod_competencia")
@@ -623,7 +632,7 @@ model ProdPrecioCompetencia {
   relevadoAt    DateTime? @map("relevado_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  listaPrecioTienda ListaPrecioTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
   competencia       ProdCompetencia   @relation(fields: [competenciaId], references: [id], onDelete: Cascade)
 
   @@id([codTienda, competenciaId])

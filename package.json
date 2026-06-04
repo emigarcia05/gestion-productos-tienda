@@ -25,7 +25,6 @@
     "db:simulate-api-tienda": "tsx scripts/simulate-api-lista-precios-tienda.ts",
     "db:export-excel": "tsx scripts/export-db-to-excel.ts",
     "db:seed-competencia": "tsx scripts/seed-prod-competencia.ts",
-    "db:backfill-marcacion-px-listas": "tsx scripts/backfill-marcacion-px-listas.ts",
     "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts"
   },
   "dependencies": {

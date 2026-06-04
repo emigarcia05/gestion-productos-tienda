@@ -30,12 +30,9 @@ function DetalleCompetidorOk({
         "hover:bg-transparent"
       )}
     >
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       <TableCell
-        colSpan={2}
         className={cn(
-          "celda-datos max-w-0 !text-right tabla-bloque-secundario-cell-divider",
+          "celda-datos max-w-0 pl-6 !text-right",
           SUBFILA_CELDA_BLOQUE_CLASS
         )}
       >
@@ -46,10 +43,15 @@ function DetalleCompetidorOk({
           {item.nombre}
         </span>
       </TableCell>
-      <TableCell className={cn("celda-datos tabular-nums text-center", SUBFILA_CELDA_BLOQUE_CLASS)}>
+      <TableCell
+        className={cn(
+          "celda-datos tabular-nums text-center tabla-bloque-secundario-cell-divider",
+          SUBFILA_CELDA_BLOQUE_CLASS
+        )}
+      >
         {fmtPrecio(item.px)}
       </TableCell>
-      <TableCell className={cn("celda-datos text-center", SUBFILA_CELDA_BLOQUE_CLASS)}>
+      <TableCell className={cn("celda-datos text-center tabla-bloque-secundario-cell", SUBFILA_CELDA_BLOQUE_CLASS)}>
         <CeldaDifPct pct={item.difPctVsTienda} />
       </TableCell>
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
@@ -74,12 +76,10 @@ function DetalleCompetidorFallo({
         "hover:bg-transparent"
       )}
     >
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       <TableCell
         colSpan={2}
         className={cn(
-          "celda-datos py-2 !text-right tabla-bloque-secundario-cell-divider",
+          "celda-datos py-2 pl-6 !text-right tabla-bloque-secundario-cell-divider",
           SUBFILA_CELDA_BLOQUE_CLASS
         )}
       >
@@ -89,7 +89,6 @@ function DetalleCompetidorFallo({
         </div>
       </TableCell>
       <TableCell colSpan={2} className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }
@@ -104,22 +103,11 @@ export function PxListasDetalleVacio({ codTienda }: { codTienda: string }) {
         "hover:bg-transparent"
       )}
     >
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell
-        colSpan={2}
-        className={cn(
-          "celda-datos tabla-bloque-secundario-cell-divider",
-          SUBFILA_CELDA_BLOQUE_CLASS
-        )}
-        aria-hidden
-      />
-      <TableCell colSpan={2} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
+      <TableCell colSpan={4} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
         <p className="text-sm text-muted-foreground text-center">
           Sin precios relevados de competidores para este producto.
         </p>
       </TableCell>
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }

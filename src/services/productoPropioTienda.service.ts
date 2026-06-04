@@ -7,7 +7,7 @@ export async function setProductoPropioTienda(
   codTienda: string,
   esProductoPropio: boolean
 ): Promise<{ esProductoPropio: boolean }> {
-  const existe = await prisma.listaPrecioTienda.findUnique({
+  const existe = await prisma.prodTienda.findUnique({
     where: { codTienda },
     select: { codTienda: true },
   });
@@ -24,7 +24,7 @@ export async function setProductoPropioTienda(
     }
   }
 
-  await prisma.listaPrecioTienda.update({
+  await prisma.prodTienda.update({
     where: { codTienda },
     data: { esProductoPropio },
   });

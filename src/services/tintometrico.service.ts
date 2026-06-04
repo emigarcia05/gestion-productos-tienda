@@ -67,7 +67,7 @@ export async function buscarBasesTintometricas(
   take: number
 ): Promise<{ items: BaseTintometricaRow[]; total: number }> {
   const query = (q ?? "").trim();
-  const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [
+  const andParts: Prisma.ProdTiendaWhereInput[] = [
     { rubro: { equals: "Tintometrico", mode: "insensitive" as const } },
   ];
 
@@ -87,10 +87,10 @@ export async function buscarBasesTintometricas(
     }
   }
 
-  const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
+  const where: Prisma.ProdTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
   const [rows, total] = await Promise.all([
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.findMany({
       where,
       select: {
         codTienda: true,
@@ -102,7 +102,7 @@ export async function buscarBasesTintometricas(
       orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
       take,
     }),
-    prisma.listaPrecioTienda.count({ where }),
+    prisma.prodTienda.count({ where }),
   ]);
 
   return {

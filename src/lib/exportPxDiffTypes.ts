@@ -1,10 +1,4 @@
-/** Tipos compartidos exportación Px (cliente + servidor). */
-
-export interface FilaExportPx {
-  codigo: string;
-  /** Marcación de la grilla (columna Excel «Importe»). */
-  marcacion: number;
-}
+/** Tipos compartidos exportación / informes Px (PDF resumen aumentos). */
 
 export interface RubroAumentoPromedioPx {
   rubro: string;

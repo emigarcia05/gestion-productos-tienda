@@ -5,10 +5,7 @@ export const getPxListasPageParamsSchema = z.object({
   q: z.string().max(500).optional(),
   rubro: z.string().max(200).optional(),
   marca: z.string().max(200).optional(),
-  /** CUID competidor con vínculo PPC, o `manual` (PX MANUAL). */
-  detPrecio: z.string().max(128).optional(),
   /** `mayor-promedio` | `menor-promedio` (DIF TIENDA vs promedio). */
   filtroPxPromedio: z.string().max(32).optional(),
-  ordenMarcacion: z.string().max(32).optional(),
   pagina: z.string().max(20).optional(),
 });

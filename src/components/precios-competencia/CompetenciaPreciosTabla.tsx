@@ -124,7 +124,7 @@ function DetalleCompetidorFalloFila({
       )}
     >
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell colSpan={3} className={cn("celda-datos py-2", SUBFILA_CELDA_BLOQUE_CLASS)}>
+      <TableCell colSpan={3} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
         <div className="flex flex-col gap-1.5 max-w-full">
           <span className="text-sm font-medium text-foreground">{item.nombre}</span>
           <RelevamientoUltimoMensaje vinculo={vinculo} />

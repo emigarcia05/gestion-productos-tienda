@@ -11,6 +11,7 @@ import { CX_PROD_SELECCION_PROM } from "@/lib/cxPxTienda";
 import { getTiendaPageParamsSchema } from "@/lib/validations/tienda";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
+import { buildMapPrecioListaPrincipal } from "@/services/prodListasPreciosTienda.service";
 import { setProductoPropioTienda } from "@/services/productoPropioTienda.service";
 import { setProductoPropioTiendaSchema } from "@/lib/validations/productoPropioTienda";
 import { revalidatePath } from "next/cache";
@@ -70,19 +71,19 @@ async function getTiendaEmptyWithOpciones() {
         },
       }),
       listarProveedoresCxCompraOpciones(),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { rubro: true },
         distinct: ["rubro"],
         where: { rubro: { not: null } },
         orderBy: { rubro: "asc" },
       }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { subRubro: true },
         distinct: ["subRubro"],
         where: { subRubro: { not: null } },
         orderBy: { subRubro: "asc" },
       }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { marca: true },
         distinct: ["marca"],
         where: { marca: { not: null } },
@@ -113,14 +114,14 @@ export async function getUltimoSync() {
   if (!puede(rol, PERMISOS.tienda.acceso)) {
     return null;
   }
-  const row = await prisma.listaPrecioTienda.findFirst({
+  const row = await prisma.prodTienda.findFirst({
     orderBy: { lastSync: "desc" },
     select: { lastSync: true },
   });
   return row?.lastSync ?? null;
 }
 
-/** Tipo de ítem que espera la tabla /tienda (mapeado desde ListaPrecioTienda). */
+/** Tipo de ítem que espera la tabla /tienda (mapeado desde ProdTienda). */
 export interface ItemTiendaParaTabla {
   id: string;
   codItem: string;
@@ -218,7 +219,7 @@ export async function getTiendaPageData(params: {
   const vNorm = (vinculadoRaw ?? "").toLowerCase();
   const vinculado = vNorm === "no" || vNorm === "si" ? vNorm : "";
 
-  const andParts: Prisma.ListaPrecioTiendaWhereInput[] = [];
+  const andParts: Prisma.ProdTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
   if (textFilter.AND?.length) andParts.push(textFilter);
   if (rubro) andParts.push({ rubro });
@@ -252,28 +253,28 @@ export async function getTiendaPageData(params: {
     andParts.push({ listaPreciosProveedores: { some: {} } });
   }
 
-  const where: Prisma.ListaPrecioTiendaWhereInput = andParts.length ? { AND: andParts } : {};
+  const where: Prisma.ProdTiendaWhereInput = andParts.length ? { AND: andParts } : {};
 
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
   /* Opciones de filtros: cada desplegable muestra siempre la lista completa de su dimensión (ver docs/FILTROS_DINAMICOS.md). Solo se aplica filtro de búsqueda (q) si existe. */
-  const andPartsOnlyQ: Prisma.ListaPrecioTiendaWhereInput[] = [];
+  const andPartsOnlyQ: Prisma.ProdTiendaWhereInput[] = [];
   if (textFilter.AND?.length) andPartsOnlyQ.push(textFilter);
-  const whereMarcas: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { marca: { not: null } }] } : { marca: { not: null } };
-  const whereRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] } : { rubro: { not: null } };
-  const whereSubRubros: Prisma.ListaPrecioTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { subRubro: { not: null } }] } : { subRubro: { not: null } };
+  const whereMarcas: Prisma.ProdTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { marca: { not: null } }] } : { marca: { not: null } };
+  const whereRubros: Prisma.ProdTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] } : { rubro: { not: null } };
+  const whereSubRubros: Prisma.ProdTiendaWhereInput = andPartsOnlyQ.length ? { AND: [...andPartsOnlyQ, { subRubro: { not: null } }] } : { subRubro: { not: null } };
 
   const [rows, total, proveedores, proveedoresCxCompra, rubrosDistinct, subRubrosDistinct, marcasDistinct] =
     await Promise.all([
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         where,
         orderBy: [{ descripcionTienda: "asc" }],
         include: { _count: { select: { listaPreciosProveedores: true } } },
         skip,
         take: PAGE_SIZE,
       }),
-      prisma.listaPrecioTienda.count({ where }),
+      prisma.prodTienda.count({ where }),
       prisma.proveedor.findMany({
         where: { proveedorMercaderia: true },
         select: {
@@ -285,19 +286,19 @@ export async function getTiendaPageData(params: {
         },
       }),
       listarProveedoresCxCompraOpciones(),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { rubro: true },
         distinct: ["rubro"],
         where: whereRubros,
         orderBy: { rubro: "asc" },
       }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { subRubro: true },
         distinct: ["subRubro"],
         where: whereSubRubros,
         orderBy: { subRubro: "asc" },
       }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { marca: true },
         distinct: ["marca"],
         where: whereMarcas,
@@ -319,6 +320,7 @@ export async function getTiendaPageData(params: {
       costoCompraCodExt: r.costoCompraCodExt,
     }))
   );
+  const pxListaMap = await buildMapPrecioListaPrincipal(rows.map((r) => r.codTienda));
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
     const proveedorTexto = r.proveedor?.trim() ?? null;
@@ -334,7 +336,7 @@ export async function getTiendaPageData(params: {
       codigoExterno: r.codExt,
       costo: Number(r.costoCompra),
       porcIva: 21,
-      precioLista: Number(r.pxListaTienda),
+      precioLista: pxListaMap.get(r.codTienda) ?? 0,
       precioMayorista: 0,
       stockGuaymallen: r.stockGuaymallen,
       stockMaipu: r.stockMaipu,

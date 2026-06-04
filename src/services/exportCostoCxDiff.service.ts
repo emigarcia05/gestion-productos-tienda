@@ -23,7 +23,7 @@ function toNum(n: unknown): number {
  * Excel: CODIGO = `cod_tienda`, COSTO = ese costo CX PROD. (entero redondeado).
  */
 export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
-  const rows = await prisma.listaPrecioTienda.findMany({
+  const rows = await prisma.prodTienda.findMany({
     where: {
       listaPreciosProveedores: {
         some: { habilitado: true },

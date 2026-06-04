@@ -5,6 +5,22 @@ export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/
 // IDs fijos de precios y sucursales en el sistema Dux de TiendaColor
 export const ID_PRECIO_LISTA      = 56994;
 export const ID_PRECIO_MAYORISTA  = 57160;
+
+/** Lista DUX “principal” (persistida en `prod_listas_precios_tienda`). Override: `DUX_ID_PRECIO_LISTA`. */
+export function getIdPrecioListaPrincipal(): number {
+  const raw = process.env.DUX_ID_PRECIO_LISTA;
+  if (raw != null && raw !== "") {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return Math.trunc(n);
+  }
+  return ID_PRECIO_LISTA;
+}
+
+export type PrecioListaDux = {
+  idLista: number;
+  nombre: string;
+  precio: number;
+};
 export const ID_STOCK_GUAYMALLEN  = 4565;
 export const ID_STOCK_MAIPU       = 16923;
 
@@ -20,6 +36,8 @@ export interface ItemDux {
   porcIva:         number;
   precioLista:     number;
   precioMayorista: number;
+  /** Todas las listas del ítem en DUX (`precios[]`). */
+  precios:         PrecioListaDux[];
   stockGuaymallen: number;
   stockMaipu:      number;
   /** true solo si DUX informa `ctd_disponible` no nulo en Guaymallén y en Maipú (si cualquier sucursal es null → false). */
@@ -43,7 +61,7 @@ interface ItemDuxRaw {
   codigo_externo?: string | null;
   costo?: unknown;
   porc_iva?: unknown;
-  precios?: Array<{ id: number; precio?: unknown }>;
+  precios?: Array<{ id: number; nombre?: string; precio?: unknown }>;
   stock?: Array<{ id: number; stock_real?: unknown; ctd_disponible?: unknown }>;
   habilitado?: string;
 }
@@ -80,15 +98,26 @@ export function mapItem(raw: unknown): ItemDux {
     return {
       codItem: "", descripcion: "", rubro: null, subRubro: null, marca: null,
       proveedorDux: null, codigoExterno: null, costo: 0, porcIva: 0,
-      precioLista: 0, precioMayorista: 0, stockGuaymallen: 0, stockMaipu: 0,
+      precioLista: 0, precioMayorista: 0, precios: [],
+      stockGuaymallen: 0, stockMaipu: 0,
       stockeable: false,
       habilitado: false,
     };
   }
   const precioMap: Record<number, number> = {};
+  const precios: PrecioListaDux[] = [];
   if (Array.isArray(raw.precios)) {
-    for (const p of raw.precios) precioMap[p.id] = parseNum(p.precio);
+    for (const p of raw.precios) {
+      if (p == null || typeof p !== "object") continue;
+      const idLista = Number((p as { id?: unknown }).id);
+      if (!Number.isFinite(idLista)) continue;
+      const precio = parseNum((p as { precio?: unknown }).precio);
+      const nombre = String((p as { nombre?: unknown }).nombre ?? "").trim() || `LISTA ${idLista}`;
+      precioMap[idLista] = precio;
+      precios.push({ idLista, nombre, precio });
+    }
   }
+  const idListaPrincipal = getIdPrecioListaPrincipal();
   const stockMap: Record<number, number> = {};
   if (Array.isArray(raw.stock)) {
     for (const s of raw.stock) {
@@ -109,8 +138,9 @@ export function mapItem(raw: unknown): ItemDux {
     codigoExterno:   raw.codigo_externo ?? null,
     costo:           parseNum(raw.costo),
     porcIva:         parseNum(raw.porc_iva),
-    precioLista:     precioMap[ID_PRECIO_LISTA]     ?? 0,
+    precioLista:     precioMap[idListaPrincipal]     ?? 0,
     precioMayorista: precioMap[ID_PRECIO_MAYORISTA] ?? 0,
+    precios,
     stockGuaymallen: stockMap[ID_STOCK_GUAYMALLEN]  ?? 0,
     stockMaipu:      stockMap[ID_STOCK_MAIPU]       ?? 0,
     stockeable,

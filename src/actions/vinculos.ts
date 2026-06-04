@@ -42,7 +42,7 @@ export async function getVinculos(
     const { prisma } = await import("@/lib/prisma");
     const [productosRes, tienda] = await Promise.all([
       getProductosVinculadosPorItemTienda(parsedId.data),
-      prisma.listaPrecioTienda.findUnique({
+      prisma.prodTienda.findUnique({
         where: { codTienda: parsedId.data },
         select: { costoCompraCodExt: true, esProductoPropio: true },
       }),
@@ -109,7 +109,7 @@ export async function vincularProducto(
   }
   try {
     const { prisma } = await import("@/lib/prisma");
-    const tienda = await prisma.listaPrecioTienda.findUnique({
+    const tienda = await prisma.prodTienda.findUnique({
       where: { codTienda: parsedItem.data },
       select: { esProductoPropio: true },
     });
@@ -167,7 +167,7 @@ export async function desvincularProducto(
   if (!parsedItem.success || !parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
     const { prisma } = await import("@/lib/prisma");
-    const itemTienda = await prisma.listaPrecioTienda.findUnique({
+    const itemTienda = await prisma.prodTienda.findUnique({
       where: { codTienda: parsedItem.data },
       select: { codTienda: true },
     });

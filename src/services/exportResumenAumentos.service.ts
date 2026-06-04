@@ -90,7 +90,7 @@ function buildInforme(acumulador: Map<string, AcumuladorRubro>): InformeAumentos
  * Solo ítems con diferencia de costo y marca/rubro informados.
  */
 export async function obtenerInformeAumentosCostos(): Promise<InformeAumentosPxExport> {
-  const rows = await prisma.listaPrecioTienda.findMany({
+  const rows = await prisma.prodTienda.findMany({
     where: {
       costoCompraCodExt: { not: null },
       marca: { not: null },

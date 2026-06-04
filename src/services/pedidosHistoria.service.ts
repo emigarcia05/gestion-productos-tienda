@@ -298,7 +298,7 @@ export async function getPedidoHistoriaDetalle(params: {
     }
 
     const codTiendaSet = Array.from(new Set(pedido.items.map((i) => i.codTienda)));
-    const descRows = await prisma.listaPrecioTienda.findMany({
+    const descRows = await prisma.prodTienda.findMany({
       where: { codTienda: { in: codTiendaSet } },
       select: { codTienda: true, descripcionTienda: true, codExt: true },
       orderBy: [{ codTienda: "asc" }, { codExt: "asc" }],
@@ -386,7 +386,7 @@ export async function listarPedidosHistoria(params: {
 
     const tokens = normalizarTokensBusquedaHistorial(params.q);
     if (tokens.length > 0) {
-      const grouped = await prisma.listaPrecioTienda.groupBy({
+      const grouped = await prisma.prodTienda.groupBy({
         by: ["codTienda"],
         where: {
           AND: tokens.map((t) => ({
@@ -728,20 +728,20 @@ export async function getPedidoHistoriaPdfPayload(params: {
     const provRows = await prisma.listaPrecioProveedor.findMany({
       where: {
         idProveedor: pedido.proveedorId,
-        listaPrecioTienda: { codTienda: { in: cods } },
+        prodTienda: { codTienda: { in: cods } },
       },
       select: {
         codExt: true,
         codProdProveedor: true,
         descripcionProveedor: true,
-        listaPrecioTienda: { select: { codTienda: true, descripcionTienda: true } },
+        prodTienda: { select: { codTienda: true, descripcionTienda: true } },
       },
       orderBy: { codExt: "asc" },
     });
 
     const byCodTienda = new Map<string, (typeof provRows)[number]>();
     for (const row of provRows) {
-      const ct = row.listaPrecioTienda?.codTienda;
+      const ct = row.prodTienda?.codTienda;
       if (ct == null) continue;
       const key = normalizeCodTienda(ct);
       if (!byCodTienda.has(key)) byCodTienda.set(key, row);
@@ -752,7 +752,7 @@ export async function getPedidoHistoriaPdfPayload(params: {
         const key = normalizeCodTienda(it.codTienda);
         const match = byCodTienda.get(key);
         const descProv = (match?.descripcionProveedor ?? "").trim();
-        const descTienda = (match?.listaPrecioTienda?.descripcionTienda ?? "").trim();
+        const descTienda = (match?.prodTienda?.descripcionTienda ?? "").trim();
         return {
           codExt: (match?.codExt ?? "").trim(),
           codProveedor: (match?.codProdProveedor ?? "").trim(),

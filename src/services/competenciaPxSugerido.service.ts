@@ -47,7 +47,7 @@ export function whereVinculosRelevablesCompetencia(params: {
   }
 
   const conPxSugerido: Prisma.ProdPrecioCompetenciaWhereInput = {
-    listaPrecioTienda: {
+    prodTienda: {
       listaPreciosProveedores: {
         some: {
           idProveedor: params.idProveedor,

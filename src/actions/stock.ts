@@ -87,8 +87,8 @@ export async function getControlStock(
 
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
 
-  function baseWhere(exclude?: "marca" | "rubro"): Prisma.ListaPrecioTiendaWhereInput[] {
-    const parts: Prisma.ListaPrecioTiendaWhereInput[] = [{ stockeable: true }];
+  function baseWhere(exclude?: "marca" | "rubro"): Prisma.ProdTiendaWhereInput[] {
+    const parts: Prisma.ProdTiendaWhereInput[] = [{ stockeable: true }];
     if (textFilter.AND?.length) parts.push(textFilter);
     if (exclude !== "marca" && marca) parts.push({ marca });
     if (exclude !== "rubro" && rubro) parts.push({ rubro });
@@ -104,20 +104,20 @@ export async function getControlStock(
 
   const toWhereWithNotNull = (
     exclude: "marca" | "rubro"
-  ): Prisma.ListaPrecioTiendaWhereInput => {
+  ): Prisma.ProdTiendaWhereInput => {
     const parts = baseWhere(exclude);
     const key = exclude;
-    const notNull = { [key]: { not: null } } as Prisma.ListaPrecioTiendaWhereInput;
+    const notNull = { [key]: { not: null } } as Prisma.ProdTiendaWhereInput;
     return parts.length > 0 ? { AND: [...parts, notNull] } : notNull;
   };
 
-  const whereItems: Prisma.ListaPrecioTiendaWhereInput =
+  const whereItems: Prisma.ProdTiendaWhereInput =
     baseWhere().length > 0 ? { AND: baseWhere() } : {};
   const whereMarcas = toWhereWithNotNull("marca");
   const whereRubros = toWhereWithNotNull("rubro");
 
   const [rows, total, marcasDistinct, rubrosDistinct] = await Promise.all([
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.findMany({
       where: whereItems,
       orderBy:
         orden === "segunTiempoControl"
@@ -129,14 +129,14 @@ export async function getControlStock(
       skip,
       take: PAGE_SIZE,
     }),
-    prisma.listaPrecioTienda.count({ where: whereItems }),
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.count({ where: whereItems }),
+    prisma.prodTienda.findMany({
       select: { marca: true },
       distinct: ["marca"],
       where: whereMarcas,
       orderBy: { marca: "asc" },
     }),
-    prisma.listaPrecioTienda.findMany({
+    prisma.prodTienda.findMany({
       select: { rubro: true },
       distinct: ["rubro"],
       where: whereRubros,
@@ -182,7 +182,7 @@ export async function registrarExportacionExcelStock(ids: string[]): Promise<Act
   }
   try {
     const ahora = new Date();
-    await prisma.listaPrecioTienda.updateMany({
+    await prisma.prodTienda.updateMany({
       where: { codTienda: { in: parsed.data } },
       data: { ultimaExportacionExcel: ahora },
     });

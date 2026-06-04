@@ -65,7 +65,7 @@ export async function establecerCodExtCostoLista(
   if (!valid.success) return valid;
 
   try {
-    await prisma.listaPrecioTienda.update({
+    await prisma.prodTienda.update({
       where: { codTienda },
       data: { costoCompraCodExt: codExt },
     });
@@ -81,7 +81,7 @@ export async function limpiarCodExtCostoListaSiCoincide(
   codTienda: string,
   codExt: string
 ): Promise<void> {
-  await prisma.listaPrecioTienda.updateMany({
+  await prisma.prodTienda.updateMany({
     where: { codTienda, costoCompraCodExt: codExt },
     data: { costoCompraCodExt: null },
   });
@@ -93,7 +93,7 @@ export async function limpiarCodExtCostoListaSiCoincide(
 export async function autoAsignarCodExtCostoListaTrasVincular(
   codTienda: string
 ): Promise<void> {
-  const tienda = await prisma.listaPrecioTienda.findUnique({
+  const tienda = await prisma.prodTienda.findUnique({
     where: { codTienda },
     select: { costoCompraCodExt: true, proveedor: true },
   });
@@ -109,7 +109,7 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
   if (candidatos.length === 0) return;
 
   if (candidatos.length === 1) {
-    await prisma.listaPrecioTienda.update({
+    await prisma.prodTienda.update({
       where: { codTienda },
       data: { costoCompraCodExt: candidatos[0].codExt },
     });
@@ -124,7 +124,7 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
     )
   );
   if (matchDux) {
-    await prisma.listaPrecioTienda.update({
+    await prisma.prodTienda.update({
       where: { codTienda },
       data: { costoCompraCodExt: matchDux.codExt },
     });
@@ -243,7 +243,7 @@ export function calcularCostoPromedioVinculos(
 
 export async function limpiarCodExtCostoLista(codTienda: string): Promise<ServiceResult<void>> {
   try {
-    await prisma.listaPrecioTienda.update({
+    await prisma.prodTienda.update({
       where: { codTienda },
       data: { costoCompraCodExt: null },
     });

@@ -102,7 +102,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     ...new Set(filasConTienda.map((f) => f.codTienda!.trim())),
   ];
 
-  const tiendas = await prisma.listaPrecioTienda.findMany({
+  const tiendas = await prisma.prodTienda.findMany({
     where: { codTienda: { in: codTiendas } },
     select: {
       codExt: true,

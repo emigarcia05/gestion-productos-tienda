@@ -959,12 +959,12 @@
   vertical-align: middle;
 }
 
-/* Precios Competencia — subfilas: fondo inset (--gris-inset), alto fijo = encabezado; divisor #0072bb solo entre filas de datos (cols 2–4). */
+/* Subfilas expandibles: fondo inset (--gris-inset), mismo alto fijo que filas principales del tbody. */
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia,
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td {
-  height: var(--tabla-thead-height) !important;
-  min-height: var(--tabla-thead-height) !important;
-  max-height: var(--tabla-thead-height) !important;
+  height: var(--tabla-body-row-min-height) !important;
+  min-height: var(--tabla-body-row-min-height) !important;
+  max-height: var(--tabla-body-row-min-height) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia td.tabla-fila-detalle-competencia-hueca {
   background-color: var(--gris-inset) !important;
@@ -989,24 +989,16 @@
   background-color: var(--gris-inset) !important;
   color: var(--foreground) !important;
 }
-/* Última subfila del bloque: espacio inferior antes de la fila clásica siguiente. */
+/* Última subfila del bloque: mismo alto que el resto (sin padding extra). */
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre,
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre td {
-  height: auto !important;
-  min-height: var(--tabla-thead-height) !important;
-  max-height: none !important;
+  height: var(--tabla-body-row-min-height) !important;
+  min-height: var(--tabla-body-row-min-height) !important;
+  max-height: var(--tabla-body-row-min-height) !important;
 }
 .tabla-gestion-compacta tbody tr.tabla-fila-detalle-competencia--cierre td {
-  padding-bottom: 0.75rem !important;
+  padding-bottom: var(--tabla-body-cell-padding-y) !important;
   border-bottom: none !important;
-}
-
-/* Cx Compra — subfila con 3 franjas en CX PROD. (base / variación / precio). */
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-cx-compra-vinculo,
-.tabla-gestion-compacta tbody tr.tabla-fila-detalle-cx-compra-vinculo td {
-  height: auto !important;
-  min-height: 4.25rem !important;
-  max-height: none !important;
 }
 
 /**
@@ -1244,58 +1236,37 @@
   width: 100%;
 }
 
-/* Subfilas Cx Compra — columna CX PROD.: misma grilla 2 col que CeldaCxProdTienda (select | precio). */
+/* Subfilas Cx Compra — columna CX PROD.: una línea (base | variación | precio), alineada a CeldaCxProdTienda. */
 .cx-compra-subfila-cx-prod {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 0.375rem;
-  row-gap: 0.375rem;
   width: 100%;
   min-width: 0;
-  align-items: start;
-}
-.cx-compra-subfila-cx-prod__col {
-  display: flex;
-  flex-direction: column;
+  max-height: 100%;
   align-items: center;
-  gap: 0.375rem;
-  min-width: 0;
-}
-.cx-compra-subfila-cx-prod__col--ctrl {
-  width: 100%;
-}
-.cx-compra-subfila-cx-prod__col--precio {
-  width: 100%;
 }
 .cx-compra-subfila-cx-prod__meta {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 100%;
-  justify-items: center;
-  align-items: center;
-  column-gap: 0.25rem;
-}
-.cx-compra-subfila-cx-prod__meta-base,
-.cx-compra-subfila-cx-prod__meta-var {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  gap: 0.375rem;
+  min-width: 0;
 }
 .cx-compra-subfila-cx-prod__meta-base input[type="checkbox"] {
   display: block;
   margin: 0;
-}
-/* Alinea la fila de precio con la del select de la fila principal (h-8). */
-.cx-compra-subfila-cx-prod__precio-spacer {
-  height: 2rem;
-  width: 100%;
+  width: 0.875rem;
+  height: 0.875rem;
 }
 .cx-compra-subfila-cx-prod__precio-vinculo {
   display: block;
   width: 100%;
-  min-height: 1.25rem;
-  line-height: 1.25rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
 }
 
 /* Card usado como contenedor de tabla: sin padding vertical para que el encabezado quede al borde. */

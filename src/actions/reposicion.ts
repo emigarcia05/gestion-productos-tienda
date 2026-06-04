@@ -90,10 +90,10 @@ function baseWhere(
   sucursal: SucursalReposicion,
   params: GetReposicionParams,
   exclude?: "marca" | "rubro" | "subRubro"
-): Prisma.ListaPrecioTiendaWhereInput[] {
+): Prisma.ProdTiendaWhereInput[] {
   const { q = "", marca = "", rubro = "", subRubro = "" } = params;
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
-  const parts: Prisma.ListaPrecioTiendaWhereInput[] = [];
+  const parts: Prisma.ProdTiendaWhereInput[] = [];
   if (textFilter.AND?.length) parts.push(textFilter);
   if (exclude !== "marca" && marca) parts.push({ marca });
   if (exclude !== "rubro" && rubro) parts.push({ rubro });
@@ -163,7 +163,7 @@ export async function getReposicionData(
       : [];
 
   const baseParts = baseWhere(sucursal, paramsNorm);
-  const whereItems: Prisma.ListaPrecioTiendaWhereInput = (() => {
+  const whereItems: Prisma.ProdTiendaWhereInput = (() => {
     const parts = [...baseParts];
     if (configurado === "si") {
       // Si no hay configurados, devolvemos vacío rápido.
@@ -174,12 +174,12 @@ export async function getReposicionData(
   })();
   const toWhereWithNotNull = (
     exclude: "marca" | "rubro" | "subRubro"
-  ): Prisma.ListaPrecioTiendaWhereInput => {
+  ): Prisma.ProdTiendaWhereInput => {
     const parts = baseWhere(sucursal, paramsNorm, exclude);
     const key = exclude;
     const notNull = {
       [key]: { not: null },
-    } as Prisma.ListaPrecioTiendaWhereInput;
+    } as Prisma.ProdTiendaWhereInput;
     const extra = [];
     if (configurado === "si") {
       if (codTiendaList.length === 0) return { codTienda: { in: ["__none__"] } };
@@ -197,26 +197,26 @@ export async function getReposicionData(
 
   const [rows, total, marcasDistinct, rubrosDistinct, subRubrosDistinct] =
     await Promise.all([
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         where: whereItems,
         orderBy: { descripcionTienda: "asc" },
         skip,
         take: PAGE_SIZE,
       }),
-      prisma.listaPrecioTienda.count({ where: whereItems }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.count({ where: whereItems }),
+      prisma.prodTienda.findMany({
         select: { marca: true },
         distinct: ["marca"],
         where: whereMarcas,
         orderBy: { marca: "asc" },
       }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { rubro: true },
         distinct: ["rubro"],
         where: whereRubros,
         orderBy: { rubro: "asc" },
       }),
-      prisma.listaPrecioTienda.findMany({
+      prisma.prodTienda.findMany({
         select: { subRubro: true },
         distinct: ["subRubro"],
         where: whereSubRubros,
@@ -360,10 +360,10 @@ export async function getProductosReposicionSelector(
   const qNorm = parsedQ.success ? parsedQ.data.q : "";
 
   const textFilter = filtroTexto(qNorm, ["descripcionTienda", "codTienda"]);
-  const where: Prisma.ListaPrecioTiendaWhereInput =
+  const where: Prisma.ProdTiendaWhereInput =
     textFilter.AND?.length ? textFilter : {};
 
-  const rows = await prisma.listaPrecioTienda.findMany({
+  const rows = await prisma.prodTienda.findMany({
     where,
     orderBy: { descripcionTienda: "asc" },
     take: SELECTOR_LIMIT,

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getIdPrecioListaPrincipal } from "@/lib/duxApi";
 import {
   CONFIGURADO_FILTRO,
   DIF_PROMEDIO_FILTRO,
@@ -71,18 +72,21 @@ export async function codTiendasConPxRelevadoCompetidor(
 async function codTiendasDifPromedio(
   difPromedio: DifPromedioFiltro
 ): Promise<string[]> {
+  const idLista = getIdPrecioListaPrincipal();
   const operador =
     difPromedio === DIF_PROMEDIO_FILTRO.MAS_CARO
       ? Prisma.sql`>`
       : Prisma.sql`<`;
   const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
     SELECT t.cod_tienda
-    FROM prod_precios_tienda t
+    FROM prod_tienda t
+    INNER JOIN prod_listas_precios_tienda pl
+      ON pl.cod_tienda = t.cod_tienda AND pl.id_lista = ${idLista}
     INNER JOIN prod_precios_competencia ppc ON ppc.cod_tienda = t.cod_tienda
     WHERE ppc.estado = ${ESTADO_RELEVAMIENTO_COMPETENCIA.OK}
       AND ppc.px_competencia IS NOT NULL
-    GROUP BY t.cod_tienda, t.px_lista_tienda
-    HAVING t.px_lista_tienda ${operador} ROUND(AVG(ppc.px_competencia::numeric))
+    GROUP BY t.cod_tienda, pl.precio
+    HAVING pl.precio ${operador} ROUND(AVG(ppc.px_competencia::numeric))
   `;
   return rows.map((r) => r.cod_tienda);
 }
@@ -90,15 +94,18 @@ async function codTiendasDifPromedio(
 async function codTiendasTiendaMasBarataQueCompetidor(
   competenciaId: string
 ): Promise<string[]> {
+  const idLista = getIdPrecioListaPrincipal();
   const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
     SELECT DISTINCT t.cod_tienda
-    FROM prod_precios_tienda t
+    FROM prod_tienda t
+    INNER JOIN prod_listas_precios_tienda pl
+      ON pl.cod_tienda = t.cod_tienda AND pl.id_lista = ${idLista}
     INNER JOIN prod_precios_competencia ppc
       ON ppc.cod_tienda = t.cod_tienda
       AND ppc.competencia_id = ${competenciaId}
     WHERE ppc.estado = ${ESTADO_RELEVAMIENTO_COMPETENCIA.OK}
       AND ppc.px_competencia IS NOT NULL
-      AND t.px_lista_tienda < ppc.px_competencia
+      AND pl.precio < ppc.px_competencia
   `;
   return rows.map((r) => r.cod_tienda);
 }
@@ -106,15 +113,18 @@ async function codTiendasTiendaMasBarataQueCompetidor(
 async function codTiendasTiendaMasCaraQueCompetidor(
   competenciaId: string
 ): Promise<string[]> {
+  const idLista = getIdPrecioListaPrincipal();
   const rows = await prisma.$queryRaw<{ cod_tienda: string }[]>`
     SELECT DISTINCT t.cod_tienda
-    FROM prod_precios_tienda t
+    FROM prod_tienda t
+    INNER JOIN prod_listas_precios_tienda pl
+      ON pl.cod_tienda = t.cod_tienda AND pl.id_lista = ${idLista}
     INNER JOIN prod_precios_competencia ppc
       ON ppc.cod_tienda = t.cod_tienda
       AND ppc.competencia_id = ${competenciaId}
     WHERE ppc.estado = ${ESTADO_RELEVAMIENTO_COMPETENCIA.OK}
       AND ppc.px_competencia IS NOT NULL
-      AND t.px_lista_tienda > ppc.px_competencia
+      AND pl.precio > ppc.px_competencia
   `;
   return rows.map((r) => r.cod_tienda);
 }
@@ -153,7 +163,7 @@ export async function codTiendasFiltrosPrecioCompetencia(
 
 export function whereConfiguradoCompetencia(
   configurado: string
-): Prisma.ListaPrecioTiendaWhereInput | null {
+): Prisma.ProdTiendaWhereInput | null {
   if (configurado === CONFIGURADO_FILTRO.SI) {
     return {
       preciosCompetencia: {

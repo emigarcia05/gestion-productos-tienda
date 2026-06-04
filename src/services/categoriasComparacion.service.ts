@@ -130,7 +130,7 @@ export async function getProductosPorPresentacion(
 
 /** Marcas distintas de lista_tienda (prod_precios_tienda.marca) para filtros. */
 export async function getMarcasFromListaTienda(): Promise<string[]> {
-  const rows = await prisma.listaPrecioTienda.findMany({
+  const rows = await prisma.prodTienda.findMany({
     where: { marca: { not: null } },
     select: { marca: true },
     distinct: ["marca"],
@@ -141,7 +141,7 @@ export async function getMarcasFromListaTienda(): Promise<string[]> {
 
 /** Proveedores distintos de lista_tienda (prod_precios_tienda.proveedor) para filtros. */
 export async function getProveedoresFromListaTienda(): Promise<string[]> {
-  const rows = await prisma.listaPrecioTienda.findMany({
+  const rows = await prisma.prodTienda.findMany({
     where: { proveedor: { not: null } },
     select: { proveedor: true },
     distinct: ["proveedor"],
