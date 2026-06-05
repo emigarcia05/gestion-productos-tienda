@@ -4,6 +4,8 @@ import type { ServiceResult } from "@/types";
 import { prisma } from "@/lib/prisma";
 import { formatDdMmHhMmGuionesBajosArchivoArgentina } from "@/lib/fechaArgentina";
 import { incrementarUltimoComprobanteFacturaAfip } from "@/lib/prodPedUltComprobanteIncrement";
+import { getDuxIdEmpresaCompras } from "@/lib/duxComprasV2Api";
+import { getIdDepositoPorSucursalCodigo } from "@/services/prodTiendaStock.service";
 
 /** Prefijo de log uniforme. Loggear en el catch evita que los errores queden
  *  opacos detrás de "An error occurred in the Server Components render…". */
@@ -69,6 +71,34 @@ export interface ExportRecepcionPedidoExcelPayload {
   sheetName: string;
   filename: string;
   rows: RecepcionPedidoExcelRow[];
+}
+
+export interface RecepcionCompraProductoPreparado {
+  codItem: string;
+  ctd: number;
+  precioUnitario: number;
+}
+
+/** Datos compartidos entre Excel de recepción y POST DUX v2/compras. */
+export interface RecepcionCompraDatosPreparados {
+  tipoComprobante: TipoComprobanteRecepcion;
+  nroComprobante: string;
+  idProveedorDux: number;
+  fechaIso: string;
+  fechaImputacionContableIso: string;
+  depositoTexto: string;
+  idDeposito: number;
+  idEmpresa: number;
+  idSucursal: number;
+  productos: RecepcionCompraProductoPreparado[];
+  prefijoProveedor: string;
+}
+
+export interface PrepararRecepcionCompraDatosParams {
+  pedidoHistoriaId: string;
+  fechaFacturaIso: string;
+  totalPedidoIngreso?: number;
+  decisionFiscal?: boolean;
 }
 
 const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
@@ -167,6 +197,10 @@ function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
   return `${pad2(d)}-${pad2(m)}-${y}`;
 }
 
+function formatIsoYmd(y: number, m: number, d: number): string {
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
 function sumarDiasYmd(
   y: number,
   m: number,
@@ -260,17 +294,9 @@ function distribuirPreciosDiferenciales(params: {
   };
 }
 
-export async function getExportRecepcionPedidoExcelPayload(params: {
-  pedidoHistoriaId: string;
-  fechaFacturaIso: string; // YYYY-MM-DD
-  totalPedidoIngreso?: number;
-  /**
-   * SI/NO del modal "¿La compra genera comprobante fiscal?".
-   * Solo se usa cuando `proveedor.iva === PREGUNTA`. Para `SIEMPRE`/`NUNCA`
-   * la regla del enum prevalece y este valor se ignora.
-   */
-  decisionFiscal?: boolean;
-}): Promise<ServiceResult<ExportRecepcionPedidoExcelPayload>> {
+export async function prepararRecepcionCompraDatos(
+  params: PrepararRecepcionCompraDatosParams
+): Promise<ServiceResult<RecepcionCompraDatosPreparados>> {
   const { pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso, decisionFiscal } = params;
 
   const fechaParsed = fechaFacturaIsoSchema.safeParse(fechaFacturaIso);
@@ -283,23 +309,17 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       where: { id: pedidoHistoriaId },
       select: {
         total: true,
-        estado: true,
         proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } },
-        sucursal: { select: { deposito: true } },
+        sucursal: { select: { deposito: true, codigo: true, idDux: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
       },
     });
 
     if (!pedido) return { success: false, error: "Pedido no encontrado." };
 
-    // Defensa de shape: las FK son NOT NULL en BD, pero protegemos el acceso
-    // a `pedido.proveedor.iva` ante un cliente Prisma desactualizado o un
-    // dato corrupto. Sin este check, antes saltaba como TypeError ("Cannot
-    // read properties of undefined (reading 'iva')") atrapado por el catch
-    // externo con un mensaje confuso.
     if (!pedido.proveedor || !pedido.sucursal) {
       logServiceError(
-        "getExportRecepcionPedidoExcelPayload",
+        "prepararRecepcionCompraDatos",
         `relaciones incompletas: proveedor=${!!pedido.proveedor} sucursal=${!!pedido.sucursal} pedidoId=${pedidoHistoriaId}`
       );
       return {
@@ -308,13 +328,29 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       };
     }
 
+    const idProveedorRaw = (pedido.proveedor.idProveedorDux ?? "").trim();
+    const idProveedorDux = Number(idProveedorRaw);
+    if (!idProveedorRaw || !Number.isFinite(idProveedorDux) || idProveedorDux <= 0) {
+      return {
+        success: false,
+        error: "El proveedor no tiene un ID DUX válido para registrar la compra.",
+      };
+    }
+
+    const idSucursalRaw = (pedido.sucursal.idDux ?? "").trim();
+    const idSucursal = Number(idSucursalRaw);
+    if (!idSucursalRaw || !Number.isFinite(idSucursal) || idSucursal <= 0) {
+      return {
+        success: false,
+        error: "La sucursal no tiene un ID DUX válido para registrar la compra.",
+      };
+    }
+
     const tipoComprobante = resolverTipoComprobantePorIva(
       pedido.proveedor.iva,
       decisionFiscal
     );
     if (tipoComprobante === null) {
-      // proveedor.iva = PREGUNTA y la UI no envió decisionFiscal:
-      // la Action propaga este `error` y el cliente abre el modal de confirmación.
       return { success: false, error: ERROR_REQUIERE_DECISION_FISCAL };
     }
 
@@ -332,12 +368,10 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       };
     }
 
-    // Regla de negocio: FECHA se exporta como fecha seleccionada + 1 día.
-    // FECHA IMPUTACION CONTABLE mantiene la fecha seleccionada en recepción.
     const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);
     const { y: yMasUno, m: mMasUno, d: dMasUno } = sumarDiasYmd(y, m, d, 1);
-    const fechaFacturaExcel = formatExcelDdMmYyyyDash(yMasUno, mMasUno, dMasUno);
-    const fechaImputacionContableExcel = formatExcelDdMmYyyyDash(y, m, d);
+    const fechaIso = formatIsoYmd(yMasUno, mMasUno, dMasUno);
+    const fechaImputacionContableIso = formatIsoYmd(y, m, d);
 
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
@@ -351,7 +385,7 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       return {
         success: false,
         error:
-          "Falta un total válido para calcular precios en el Excel (ingresá TOTAL PEDIDO o registrá la recepción con total).",
+          "Falta un total válido para calcular precios (ingresá TOTAL PEDIDO o registrá la recepción con total).",
       };
     }
 
@@ -364,31 +398,71 @@ export async function getExportRecepcionPedidoExcelPayload(params: {
       return {
         success: false,
         error:
-          "No se pudo ajustar el total del Excel dentro de la tolerancia permitida (0,10).",
+          "No se pudo ajustar el total dentro de la tolerancia permitida (0,10).",
       };
     }
 
     const compRes = await reservarSiguienteComprobanteRecepcion(tipoComprobante);
     if (!compRes.success) return compRes;
-    const comprobanteExport = compRes.data;
 
-    const rows: RecepcionPedidoExcelRow[] = itemsRecibidos.map((it, index) => ({
-      "TIPO COMPROBANTE": tipoComprobante,
-      "COMPROBANTE": comprobanteExport,
-      "ID PROVEEDOR": (pedido.proveedor.idProveedorDux ?? "").trim(),
+    const idDeposito = getIdDepositoPorSucursalCodigo(pedido.sucursal.codigo);
+    const idEmpresa = getDuxIdEmpresaCompras();
+
+    return {
+      success: true,
+      data: {
+        tipoComprobante,
+        nroComprobante: compRes.data,
+        idProveedorDux,
+        fechaIso,
+        fechaImputacionContableIso,
+        depositoTexto: (pedido.sucursal.deposito ?? "").trim(),
+        idDeposito,
+        idEmpresa,
+        idSucursal,
+        productos: itemsRecibidos.map((it, index) => ({
+          codItem: it.codTienda,
+          ctd: it.cantRecibida,
+          precioUnitario: precios[index],
+        })),
+        prefijoProveedor: (pedido.proveedor.prefijo ?? "").trim() || "SIN_PREFIJO",
+      },
+    };
+  } catch (e) {
+    logServiceError("prepararRecepcionCompraDatos", e);
+    const msg = e instanceof Error ? e.message : "Error al preparar los datos de recepción.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function getExportRecepcionPedidoExcelPayload(
+  params: PrepararRecepcionCompraDatosParams
+): Promise<ServiceResult<ExportRecepcionPedidoExcelPayload>> {
+  try {
+    const prep = await prepararRecepcionCompraDatos(params);
+    if (!prep.success) return prep;
+
+    const { y, m, d } = parseIsoYmdParts(params.fechaFacturaIso);
+    const { y: yMasUno, m: mMasUno, d: dMasUno } = sumarDiasYmd(y, m, d, 1);
+    const fechaFacturaExcel = formatExcelDdMmYyyyDash(yMasUno, mMasUno, dMasUno);
+    const fechaImputacionContableExcel = formatExcelDdMmYyyyDash(y, m, d);
+
+    const rows: RecepcionPedidoExcelRow[] = prep.data.productos.map((it) => ({
+      "TIPO COMPROBANTE": prep.data.tipoComprobante,
+      "COMPROBANTE": prep.data.nroComprobante,
+      "ID PROVEEDOR": String(prep.data.idProveedorDux),
       "FECHA": fechaFacturaExcel,
       "FECHA IMPUTACION CONTABLE": fechaImputacionContableExcel,
       "REALIZA RECEPCION": "SI",
-      "DEPOSITO": (pedido.sucursal.deposito ?? "").trim(),
-      "CÓDIGO PRODUCTO": it.codTienda,
-      "CANTIDAD": it.cantRecibida,
-      "PRECIO": precios[index],
+      "DEPOSITO": prep.data.depositoTexto,
+      "CÓDIGO PRODUCTO": it.codItem,
+      "CANTIDAD": it.ctd,
+      "PRECIO": it.precioUnitario,
       "PRECIO INCLUYE IVA": "SI",
     }));
 
     const stamp = formatDdMmHhMmGuionesBajosArchivoArgentina(new Date());
-    const prefijoProveedor = (pedido.proveedor.prefijo ?? "").trim() || "SIN_PREFIJO";
-    const filename = `Recepcion Pedido - ${prefijoProveedor} - ${stamp}.xls`;
+    const filename = `Recepcion Pedido - ${prep.data.prefijoProveedor} - ${stamp}.xls`;
 
     return {
       success: true,

@@ -26,6 +26,7 @@ import {
 } from "@/actions/pedidosHistoria";
 import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
 import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
+import { registrarRecepcionCompraDuxAction } from "@/actions/registrarRecepcionCompraDux";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
 import MontoArInput from "@/components/shared/MontoArInput";
@@ -551,6 +552,57 @@ export default function PedidoHistoriaDetalleModal({
                 Cerrar
               </Button>
               {!locked ? (
+                <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="disabled:cursor-not-allowed"
+                  onClick={async () => {
+                    if (!pedidoHistoriaId) return;
+                    if (!puedeRegistrarEnDux) return;
+                    if (locked) return;
+                    if (guardando) return;
+
+                    const decision = await pedirDecisionFiscalSiAplica();
+                    if (decision === "cancelado") return;
+                    const decisionFiscal: boolean | undefined =
+                      typeof decision === "boolean" ? decision : undefined;
+
+                    setGuardando("post");
+                    try {
+                      const guardadoOk = await persistirRecepcionActual();
+                      if (!guardadoOk) return;
+
+                      const res = await registrarRecepcionCompraDuxAction({
+                        pedidoHistoriaId,
+                        fechaFacturaIso: fechaRecepcion,
+                        totalPedidoIngreso: Number(totalPedido),
+                        decisionFiscal,
+                      });
+                      if (!res.ok) {
+                        const line = res.error ?? "Error al registrar la compra en DUX.";
+                        toast.error(line);
+                        return;
+                      }
+                      const idCompra =
+                        res.data.idCompra != null
+                          ? ` (id compra ${res.data.idCompra})`
+                          : "";
+                      toast.success(
+                        `Compra registrada en DUX vía POST. Comprobante ${res.data.nroComprobante}${idCompra}.`
+                      );
+                    } catch {
+                      toast.error("Error inesperado al registrar la compra en DUX.");
+                    } finally {
+                      setGuardando(null);
+                    }
+                  }}
+                  disabled={
+                    !puedeRegistrarEnDux || bloquearNavegacionModalPorEdicionCantidad
+                  }
+                >
+                  Metodo Post
+                </Button>
                 <Button
                   type="button"
                   className="disabled:cursor-not-allowed"
@@ -614,6 +666,7 @@ export default function PedidoHistoriaDetalleModal({
                 >
                   Registrar En Dux
                 </Button>
+                </>
               ) : (
                 <>
                   {!modoCorreccionRecepcionado ? (

@@ -1009,9 +1009,28 @@ Función:
 
 ---
 
+### 2.9a POST DUX v2 `/compras` (registrar comprobante de compra)
+
+- **Cliente:** `src/lib/duxComprasV2Api.ts` — `postCompraV2`, auth **Bearer** (`DUX_API_TOKEN`), URL `…/services/v2/compras`. `getDuxIdEmpresaCompras()` lee `DUX_ID_EMPRESA_COMPRAS` (default **2482**, mismo criterio que sync §2.5a).
+- **Servicio:** `src/services/registrarRecepcionCompraDux.service.ts` — `registrarRecepcionCompraDux` arma el body y llama `postCompraV2`.
+- **Action:** `src/actions/registrarRecepcionCompraDux.ts` — `registrarRecepcionCompraDuxAction`; gate `PERMISOS.pedidos.acceso` (mismo que Excel recepción).
+- **SSOT de datos:** `prepararRecepcionCompraDatos` en `exportRecepcionPedidoExcel.service.ts` (compartido con Excel). Mapeo Excel → POST:
+  - `TIPO COMPROBANTE` → `tipo_comprobante` (`FACTURA` \| `Comprobante_Compra`, misma regla `resolverTipoComprobantePorIva`).
+  - `COMPROBANTE` → `nro_comprobante` (misma reserva en `prod_ped_ult_comp`; **sin rollback** si el POST falla).
+  - `ID PROVEEDOR` → `id_proveedor`; `global_sucursales.id_dux` → `id_sucursal`; depósito por `getIdDepositoPorSucursalCodigo` → `id_deposito`.
+  - `FECHA` (+1 día) → `fecha` ISO `YYYY-MM-DD`; `FECHA IMPUTACION CONTABLE` → `fecha_imputacion_contable`.
+  - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (`porc_descuento: 0`).
+- **Opcionales omitidos en v1:** `id_personal`, `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI).
+- **UI:** botón **Metodo Post** en `PedidoHistoriaDetalleModal` (prueba POST sin cerrar modal ni marcar `RECEPCIONADO`). Convive con **Registrar En Dux** (Excel + marcar local). Cuando el POST sea estable, retirar generación Excel del flujo principal.
+- **Doc DUX:** [Registrar comprobante de compra](https://duxsoftware.readme.io/reference/crear_compra).
+
+---
+
 ### 2.9 Servicio `exportRecepcionPedidoExcel.service.ts` (Excel recepción 97-2003)
 
 Objetivo: construir el payload (filas + filename) del Excel 97-2003 con formato DUX para una recepción de pedido.
+
+**Núcleo compartido:** `prepararRecepcionCompraDatos` devuelve `RecepcionCompraDatosPreparados` (usado también por §2.9a). `getExportRecepcionPedidoExcelPayload` solo formatea filas Excel desde ese resultado.
 
 Contrato (SSOT de integración + armado de filas):
 
@@ -1319,6 +1338,7 @@ Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` 
 | `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
 | `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
 | `exportRecepcionPedidoExcel.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
+| `registrarRecepcionCompraDux.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |
 | `finBalIvaDeb.ts` | finanzas + editor (import CSV) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
