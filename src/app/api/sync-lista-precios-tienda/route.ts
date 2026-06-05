@@ -82,7 +82,8 @@ export async function GET() {
 }
 
 /**
- * POST: un paso de sincronización. El cliente llama en bucle mientras `continuing === true`.
+ * POST: un paso de sincronización (~4 min máx. por invocación).
+ * El cliente encadena POST mientras `continuing === true` (catálogos grandes superan el límite Vercel).
  */
 export async function POST() {
   const rol = await getRol();

@@ -1,9 +1,7 @@
 /**
  * Sincronización de prod_tienda desde la API DUX ERP.
- * Fase 1: bucle paginado (50 ítems por petición) acumulando todos en memoria.
- * Fase 2: bulk upsert en Neon por chunks de 500 (cod_tienda) + stock/listas DUX multi-depósito y multi-precio.
- * Fase 3: limpieza de filas locales cuyo cod_tienda ya no llega desde DUX.
- * Fase 4: marcar inactivas listas DUX que no aparecieron en la corrida.
+ * Fase 1: bucle paginado (50 ítems por petición); tras cada página, persistencia en Neon
+ *           en paralelo con la espera de rate limit DUX (`DELAY_MS`).
  */
 
 import { Prisma } from "@prisma/client";
@@ -319,6 +317,50 @@ async function emitProgress(
   await onProgress(processed, total, phase);
 }
 
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Tras fetch DUX: persiste la página y actualiza estado.
+ * Pensado para ejecutarse en paralelo con `delayMs(DELAY_MS)` (rate limit).
+ */
+async function persistPaginaDuxYActualizarEstado(
+  batch: RecordProdTienda[],
+  worker: SyncDuxWorkerState,
+  totalApi: number,
+  fetchOffsetAntes: number,
+  apiFetchComplete: boolean,
+  onProgress: SyncProgressCallback["onProgress"]
+): Promise<SyncDuxWorkerState> {
+  await assertListaPrecioTiendaSyncNotCancelled();
+  const meta = await persistRecordBatch(batch, worker.meta);
+  const processed = worker.processed + batch.length;
+  const fetchOffset = fetchOffsetAntes + DUX_API_PAGE_LIMIT;
+
+  await saveSyncDuxWorkerStateInDb({
+    processed,
+    total: totalApi,
+    fetchOffset,
+    meta,
+    phase: "sincronizando",
+    apiFetchComplete,
+  });
+  await emitProgress(onProgress, processed, totalApi, "sincronizando");
+
+  const pct = totalApi > 0 ? Math.round((processed / totalApi) * 100) : 0;
+  console.log(`Sync DUX offset ${fetchOffset}: ${processed}/${totalApi} (${pct}%)`);
+
+  return {
+    ...worker,
+    processed,
+    fetchOffset,
+    total: totalApi,
+    meta,
+    apiFetchComplete,
+  };
+}
+
 function paginaTimeoutPromise(): Promise<never> {
   return new Promise((_, reject) =>
     setTimeout(
@@ -424,7 +466,15 @@ async function finalizeSyncWorker(
 }
 
 /**
- * Un paso reanudable: consulta DUX + persiste en Neon dentro de un presupuesto de tiempo.
+ * Un paso reanudable de sync DUX (límite serverless ~300 s en Vercel).
+ *
+ * **Dos optimizaciones complementarias (no excluyentes):**
+ * 1. **Pasos reanudables** — cada invocación trabaja como máximo `SYNC_STEP_TIME_BUDGET_MS`
+ *    (~4 min); si el catálogo crece, el cliente encadena POST con `continuing: true` y el
+ *    estado en `sync_dux_status` (`fetch_offset`, `meta`, …) permite retomar.
+ * 2. **Pipeline consulta/guardado** — tras cada página DUX, la persistencia corre en paralelo
+ *    con `delayMs(DELAY_MS)` para no sumar espera + guardado en cada lote.
+ *
  * El cliente debe llamar POST repetidamente mientras `continuing === true`.
  */
 export async function syncListaPrecioTiendaRunStep(
@@ -474,43 +524,52 @@ export async function syncListaPrecioTiendaRunStep(
         await saveSyncDuxWorkerStateInDb({ apiFetchComplete: true, total: totalApi });
         break;
       }
+      if (Date.now() + DELAY_MS >= deadline) break;
+      await delayMs(DELAY_MS);
+      worker = await getSyncDuxWorkerStateFromDb();
       continue;
     }
 
+    const fetchOffsetAntes = worker.fetchOffset;
+    const apiFetchComplete = !hasMore;
+
     try {
-      worker.meta = await persistRecordBatch(batch, worker.meta);
+      if (apiFetchComplete || Date.now() + DELAY_MS >= deadline) {
+        // Última página o sin tiempo para otra espera: persistir antes de salir del paso.
+        worker = await persistPaginaDuxYActualizarEstado(
+          batch,
+          worker,
+          totalApi,
+          fetchOffsetAntes,
+          apiFetchComplete,
+          onProgress
+        );
+      } else {
+        // Aprovechar la espera obligatoria DUX para guardar en Neon en paralelo.
+        worker = await Promise.all([
+          delayMs(DELAY_MS),
+          persistPaginaDuxYActualizarEstado(
+            batch,
+            worker,
+            totalApi,
+            fetchOffsetAntes,
+            false,
+            onProgress
+          ),
+        ]).then(([, w]) => w);
+        worker = await getSyncDuxWorkerStateFromDb();
+      }
     } catch (e) {
       if (e instanceof SyncListaPrecioTiendaCancelledError) throw e;
       const msg = e instanceof Error ? e.message : String(e);
-      errores.push(`Persistir offset ${worker.fetchOffset}: ${msg}`);
-      console.error(`Error persistiendo página DUX offset ${worker.fetchOffset}:`, msg);
+      errores.push(`Persistir offset ${fetchOffsetAntes}: ${msg}`);
+      console.error(`Error persistiendo página DUX offset ${fetchOffsetAntes}:`, msg);
       throw new Error(`No se pudo guardar productos en la base de datos. ${msg}`);
     }
 
-    worker.processed += batch.length;
-    worker.fetchOffset += DUX_API_PAGE_LIMIT;
-    worker.total = totalApi;
-
-    await saveSyncDuxWorkerStateInDb({
-      processed: worker.processed,
-      total: totalApi,
-      fetchOffset: worker.fetchOffset,
-      meta: worker.meta,
-      phase: "sincronizando",
-      apiFetchComplete: !hasMore,
-    });
-    await emitProgress(onProgress, worker.processed, totalApi, "sincronizando");
-
-    const pct = totalApi > 0 ? Math.round((worker.processed / totalApi) * 100) : 0;
-    console.log(
-      `Sync DUX offset ${worker.fetchOffset}: ${worker.processed}/${totalApi} (${pct}%)`
-    );
-
-    if (!hasMore) break;
-
-    if (Date.now() + DELAY_MS >= deadline) break;
-    await new Promise((r) => setTimeout(r, DELAY_MS));
-    worker = await getSyncDuxWorkerStateFromDb();
+    if (apiFetchComplete) break;
+    // Presupuesto de paso agotado: salir y dejar `continuing: true` para la siguiente invocación POST.
+    if (Date.now() >= deadline) break;
   }
 
   worker = await getSyncDuxWorkerStateFromDb();

@@ -771,7 +771,7 @@ Botón/indicador persistente en la parte inferior de la slidenav. El markup del 
 
 - **Estados**
   - **Reposo**: etiquetas por área (ver bullet **Ritmo vertical** arriba). **`Últ. Act.:** en **Gestión Productos** / **Estadísticas Productos** viene del polling (`lastCompletedAt` de lista precios). En **Finanzas** refleja la **última sync de compras exitosa en el cliente** (misma sesión; no es el timestamp de lista precios).
-  - **Sync lista precios en curso** (polling): **`MensajeProceso`** — **`SINCRONIZANDO PROD.`** mientras consulta DUX y persiste (mismo contador **X de Y**); **`GUARDANDO PROD.`** solo en limpieza final breve. El cliente encadena **`POST /api/sync-lista-precios-tienda`** mientras la respuesta trae **`continuing: true`** (pasos reanudables serverless). Si recargás con sync en curso, la sidebar **reanuda** sola. Al terminar: toast de éxito. **Doble clic** → cancelar (ver modal).
+  - **Sync lista precios en curso** (polling): **`SINCRONIZANDO PROD.`** / **`GUARDANDO PROD.`** (limpieza final). El cliente encadena **`POST /api/sync-lista-precios-tienda`** mientras **`continuing: true`** — **obligatorio** si el catálogo supera ~4 min por invocación Vercel; dentro de cada paso, guardado en paralelo con la espera DUX. Reanuda solo al recargar si quedó `running`. Toast al finalizar; doble clic → cancelar.
   - **Sync compras en curso** (Finanzas, action): **`MensajeProceso`** **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (mismo patrón que productos; ver `useSyncComprasProveedorDuxStatusPoll`).
 - **Feedback visual por estado**
   - **Reposo**: `bg-sidebar-accent` con hover suave (componente compartido).

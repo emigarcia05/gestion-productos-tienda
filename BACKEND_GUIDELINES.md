@@ -1506,7 +1506,9 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 **Pendiente calibración:** sin PDF fixture en repo, la extracción posicional puede requerir ajuste de umbrales (`COLUMN_GAP`, `Y_TOLERANCE`) o migrar a script Python (`pdfplumber`) si el PDF real no alinea columnas.
 
-*Última actualización (2026-06-04): **Sync DUX — pasos reanudables** — `sync_dux_status` guarda `fetch_offset`, `api_fetch_complete`, `started_at`, `meta`; cada POST procesa ~4 min (consulta DUX + persist inmediato por página); el cliente encadena POST hasta `continuing: false`. Limpieza final por `last_sync < started_at`. Migración `20260604200000_sync_dux_status_resume`.*
+*Última actualización (2026-06-04): **Sync DUX — dos capas** — (1) **Pasos reanudables** obligatorios: `syncListaPrecioTiendaRunStep` + `SYNC_STEP_TIME_BUDGET_MS` + estado en `sync_dux_status`; el cliente encadena POST con `continuing: true` (a más ítems, más pasos; no eliminar aunque se optimice tiempo). (2) **Pipeline** consulta/guardado en paralelo con `DELAY_MS` dentro de cada paso. Migración `20260604200000_sync_dux_status_resume`.*
+
+*Última actualización (2026-06-04): **Sync DUX — pipeline consulta/guardado** — tras cada página DUX (50 ítems), la persistencia en Neon corre en **`Promise.all` con `delayMs(DELAY_MS)`** para usar la espera de rate limit; tiempo por página ≈ `max(5s, persistencia)` en lugar de suma. Ver `persistPaginaDuxYActualizarEstado` en `syncListaPrecioTienda.service.ts`.*
 
 *Última actualización (2026-06-04): **Sync DUX — persistencia** — chunks de 25 ítems (3 tx: tienda/stock/precios), catálogos deduplicados, progreso await en BD, error si ningún chunk guarda; GET y POST unificados con progreso.*
 
