@@ -1031,7 +1031,7 @@ Función:
   - `COMPROBANTE` → `nro_comprobante` (misma reserva en `prod_ped_ult_comp`; **sin rollback** si el POST falla).
   - `ID PROVEEDOR` → `id_proveedor`; `global_sucursales.id_dux` → `id_sucursal`; depósito por `getIdDepositoPorSucursalCodigo` → `id_deposito`.
   - `FECHA` (+1 día) → `fecha` ISO `YYYY-MM-DD`; `FECHA IMPUTACION CONTABLE` → `fecha_imputacion_contable`.
-  - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (`porc_descuento: 0`) sobre el **total bruto con IVA** del usuario. **POST:** además `percepciones: [{ id_percepcion_impuesto: 11705, porc_percepcion: 21 }]` vía `getPercepcionesIvaCompraPost()` (override env `DUX_ID_PERCEPCION_IVA`, `DUX_PORC_PERCEPCION_IVA`).
+  - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (`porc_descuento: 0`) sobre el **total bruto con IVA** del usuario. **POST:** además `percepciones: [{ id_percepcion_impuesto: 11705, porc_percepcion: 0 }]` vía `getPercepcionesIvaCompraPost()` (override env `DUX_ID_PERCEPCION_IVA`, `DUX_PORC_PERCEPCION_IVA`).
 - **Opcionales omitidos en v1:** `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI). **`id_personal`**: requerido en negocio; se envía desde `global_personal.id_personal` tras selector en UI (§1.11e).
 - **UI:** botón **Metodo Post** en `PedidoHistoriaDetalleModal` (prueba POST sin cerrar modal ni marcar `RECEPCIONADO`). Convive con **Registrar En Dux** (Excel + marcar local). Cuando el POST sea estable, retirar generación Excel del flujo principal.
 - **Doc DUX:** [Registrar comprobante de compra](https://duxsoftware.readme.io/reference/crear_compra).
