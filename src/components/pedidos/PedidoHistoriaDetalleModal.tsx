@@ -153,6 +153,15 @@ export default function PedidoHistoriaDetalleModal({
   const decisionFiscalResolverRef = useRef<
     ((value: DecisionFiscalResult) => void) | null
   >(null);
+  /**
+   * Modal selector de personal DUX antes de **Metodo Post**.
+   * Misma promesa + ref que el flujo fiscal (`decisionFiscalResolverRef`).
+   */
+  type PersonalRecepcionResult = PersonalRecepcionSeleccion | "cancelado";
+  const [elegirPersonalOpen, setElegirPersonalOpen] = useState(false);
+  const personalRecepcionResolverRef = useRef<
+    ((value: PersonalRecepcionResult) => void) | null
+  >(null);
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
