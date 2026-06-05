@@ -7,7 +7,12 @@ import { useImportResult } from "@/components/import/ImportResultContext";
 
 const POLL_INTERVAL_MS = 1000;
 
-export default function ImportStatusIndicator() {
+interface Props {
+  /** Solo editor puede importar; evita polling 403 en usuarios simple. */
+  pollEnabled?: boolean;
+}
+
+export default function ImportStatusIndicator({ pollEnabled = true }: Props) {
   const { openResult, openError } = useImportResult();
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
@@ -20,6 +25,8 @@ export default function ImportStatusIndicator() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    if (!pollEnabled) return;
+
     function fetchStatus() {
       fetch("/api/import-lista-precios/status")
         .then((res) => (res.ok ? res.json() : null))
@@ -44,7 +51,7 @@ export default function ImportStatusIndicator() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, []);
+  }, [pollEnabled]);
 
   // Solo abrir modal cuando en esta sesión vimos la importación en curso y luego terminó (evita abrir al navegar con estado "done" persistido)
   useEffect(() => {

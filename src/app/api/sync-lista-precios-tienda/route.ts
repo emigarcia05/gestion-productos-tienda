@@ -12,6 +12,9 @@ import {
 } from "@/lib/syncDuxStatusDb";
 import { SyncListaPrecioTiendaCancelledError } from "@/services/syncListaPrecioTienda.service";
 
+/** Sync DUX puede demorar varios minutos (rate limit + persistencia por chunks). */
+export const maxDuration = 300;
+
 /** Evita ejecutar dos sincronizaciones a la vez (p. ej. doble clic). */
 let syncInProgress = false;
 

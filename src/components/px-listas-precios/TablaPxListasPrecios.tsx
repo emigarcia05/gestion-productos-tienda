@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -69,6 +68,16 @@ function CeldaPxLista({
   const display = fmtPxListaTabla(celda.pxEfectivo);
   const tieneEdicion = celda.pxEdicion != null;
 
+  function iniciarEdicion() {
+    setDraft(display);
+    setEditando(true);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      el?.focus();
+      el?.select();
+    });
+  }
+
   function commit() {
     const trimmed = draft.trim();
     if (trimmed === "") {
@@ -132,64 +141,41 @@ function CeldaPxLista({
 
   if (!puedeEditar) {
     return (
-      <div
-        className={cn(
-          "px-lista-celda-shell tabular-nums",
-          tieneEdicion && "px-lista-celda-shell--edicion"
-        )}
-      >
-        <span>{display || "—"}</span>
-      </div>
-    );
-  }
-
-  if (editando) {
-    return (
-      <div
-        className={cn(
-          "px-lista-celda-shell gap-1",
-          tieneEdicion && "px-lista-celda-shell--edicion"
-        )}
-      >
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") inputRef.current?.blur();
-            if (e.key === "Escape") {
-              setDraft(display);
-              setEditando(false);
-            }
-          }}
-          className="tabular-nums"
-          autoFocus
-          disabled={saving}
-          aria-label="PX"
-        />
-        {saving ? (
-          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-foreground" />
-        ) : null}
-      </div>
+      <span className="tabular-nums text-foreground">
+        {display || "—"}
+      </span>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        setDraft(display);
-        setEditando(true);
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      readOnly={!editando}
+      value={editando ? draft : display}
+      disabled={saving}
+      onFocus={() => {
+        if (!editando) iniciarEdicion();
+      }}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") inputRef.current?.blur();
+        if (e.key === "Escape") {
+          setDraft(display);
+          setEditando(false);
+          inputRef.current?.blur();
+        }
       }}
       className={cn(
-        "px-lista-celda-shell tabular-nums",
-        tieneEdicion && "px-lista-celda-shell--edicion"
+        "w-full min-w-0 text-center tabular-nums",
+        tieneEdicion && "px-lista-input--edicion"
       )}
+      aria-label="PX"
       title="Clic Para Editar PX"
-    >
-      {display || "—"}
-    </button>
+    />
   );
 }
 
@@ -215,6 +201,19 @@ function CeldaMargenLista({
   const margenDisplay =
     celda.margenPct != null ? formatPorcentaje0a100Input(celda.margenPct) : "";
   const margenEditable = costoCompra > 0;
+
+  const margenVista =
+    margenDisplay !== "" ? `${margenDisplay}%` : "";
+
+  function iniciarEdicion() {
+    setDraft(margenDisplay);
+    setEditando(true);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      el?.focus();
+      el?.select();
+    });
+  }
 
   function commit() {
     if (!margenEditable) {
@@ -274,52 +273,41 @@ function CeldaMargenLista({
 
   if (!puedeEditar || !margenEditable) {
     return (
-      <div className="px-lista-celda-shell tabular-nums">
-        <span>{margenDisplay ? `${margenDisplay}%` : "—"}</span>
-      </div>
-    );
-  }
-
-  if (editando) {
-    return (
-      <div className="px-lista-celda-shell gap-0.5">
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") inputRef.current?.blur();
-            if (e.key === "Escape") {
-              setDraft(margenDisplay);
-              setEditando(false);
-            }
-          }}
-          className="tabular-nums"
-          autoFocus
-          disabled={saving}
-          aria-label="Margen"
-        />
-        <span className="px-lista-celda-sufijo-pct">%</span>
-        {saving ? (
-          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-foreground" />
-        ) : null}
-      </div>
+      <span className="tabular-nums text-foreground">
+        {margenVista || "—"}
+      </span>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        setDraft(margenDisplay);
-        setEditando(true);
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      readOnly={!editando}
+      value={editando ? draft : margenVista}
+      disabled={saving}
+      onFocus={() => {
+        if (!editando) iniciarEdicion();
       }}
-      className="px-lista-celda-shell tabular-nums"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") inputRef.current?.blur();
+        if (e.key === "Escape") {
+          setDraft(margenDisplay);
+          setEditando(false);
+          inputRef.current?.blur();
+        }
+      }}
+      className={cn(
+        "w-full min-w-0 text-center tabular-nums",
+        celda.pxEdicion != null && "px-lista-input--edicion"
+      )}
+      aria-label="Margen"
       title="Clic Para Editar Margen"
-    >
-      {margenDisplay ? `${margenDisplay}%` : "—"}
-    </button>
+    />
   );
 }
 
@@ -405,7 +393,7 @@ export default function TablaPxListasPrecios({
               {item.preciosPorLista.flatMap((celda) => [
                 <TableCell
                   key={`${item.codTienda}-${celda.idLista}-px`}
-                  className="celda-datos celda-px-lista-col border-l border-border"
+                  className="celda-datos celda-numero celda-px-lista-col border-l border-border"
                 >
                   <CeldaPxLista
                     codTienda={item.codTienda}
@@ -419,7 +407,7 @@ export default function TablaPxListasPrecios({
                 </TableCell>,
                 <TableCell
                   key={`${item.codTienda}-${celda.idLista}-mg`}
-                  className="celda-datos celda-marcacion-col"
+                  className="celda-datos celda-numero celda-marcacion-col"
                 >
                   <CeldaMargenLista
                     codTienda={item.codTienda}

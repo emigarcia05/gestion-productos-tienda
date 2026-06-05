@@ -15,6 +15,8 @@ import { Dialog } from "@/components/ui/dialog";
 
 const POLL_INTERVAL_MS = 1500;
 
+type SyncListaPreciosPhase = "sincronizando" | "guardando";
+
 const SYNC_LABELS: Record<
   MainAppAreaId,
   { lineIdle: string; lineHover: string; ariaLabel: string }
@@ -46,11 +48,14 @@ export default function SyncStatusIndicator() {
   const [total, setTotal] = useState(0);
   const [lastCompletedAt, setLastCompletedAt] = useState<string | null>(null);
   const [lastComprasOkAt, setLastComprasOkAt] = useState<string | null>(null);
+  const [phase, setPhase] = useState<SyncListaPreciosPhase | null>(null);
   const [requestingStart, setRequestingStart] = useState(false);
   const [comprasSyncing, setComprasSyncing] = useState(false);
   const [cancelSyncModalOpen, setCancelSyncModalOpen] = useState(false);
   const [cancelSyncPending, setCancelSyncPending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevRunningRef = useRef(false);
+  const prevLastCompletedAtRef = useRef<string | null>(null);
 
   const comprasProgreso = useSyncComprasProveedorDuxStatusPoll(comprasSyncing);
 
@@ -60,10 +65,41 @@ export default function SyncStatusIndicator() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (!data) return;
-          setRunning(!!data.running);
+
+          const nowRunning = !!data.running;
+          const completedAt = data.lastCompletedAt ?? null;
+
+          if (prevRunningRef.current && !nowRunning) {
+            if (data.error) {
+              toast.error(String(data.error));
+            } else if (
+              completedAt &&
+              completedAt !== prevLastCompletedAtRef.current
+            ) {
+              const proc = Number(data.processed ?? 0);
+              const tot = Number(data.total ?? 0);
+              toast.success(
+                tot > 0
+                  ? `Sincronización finalizada: ${proc.toLocaleString("es-AR")} de ${tot.toLocaleString("es-AR")} productos.`
+                  : "Sincronización finalizada."
+              );
+            }
+          }
+
+          prevRunningRef.current = nowRunning;
+          if (completedAt != null) {
+            prevLastCompletedAtRef.current = completedAt;
+          }
+
+          setRunning(nowRunning);
           setProcessed(data.processed ?? 0);
           setTotal(data.total ?? 0);
-          setLastCompletedAt(data.lastCompletedAt ?? null);
+          setLastCompletedAt(completedAt);
+          setPhase(
+            data.phase === "guardando" || data.phase === "sincronizando"
+              ? data.phase
+              : null
+          );
         })
         .catch(() => {});
     }
@@ -147,7 +183,7 @@ export default function SyncStatusIndicator() {
       <>
         <MensajeProceso
           variant="sidebar"
-          mensaje="SINCRONIZANDO PROD."
+          mensaje={phase === "guardando" ? "GUARDANDO PROD." : "SINCRONIZANDO PROD."}
           detalle={total > 0 ? { procesados: processed, total } : "…"}
           onDoubleClick={() => setCancelSyncModalOpen(true)}
         />

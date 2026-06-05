@@ -10,6 +10,7 @@ interface StatusPayload {
   processed?: number;
   total?: number;
   remainingSeconds?: number;
+  phase?: "sincronizando" | "guardando";
 }
 
 function mapProgreso(data: StatusPayload): ListaPreciosTiendaModalProgreso | null {
@@ -19,7 +20,9 @@ function mapProgreso(data: StatusPayload): ListaPreciosTiendaModalProgreso | nul
   const rsRaw = data.remainingSeconds;
   const segsRestantes =
     typeof rsRaw === "number" && Number.isFinite(rsRaw) ? Math.max(0, Math.round(rsRaw)) : null;
-  return { procesados: processed, total, segsRestantes };
+  const phase =
+    data.phase === "guardando" || data.phase === "sincronizando" ? data.phase : undefined;
+  return { procesados: processed, total, segsRestantes, phase };
 }
 
 export interface ListaPreciosTiendaSyncCompletoInfo {
