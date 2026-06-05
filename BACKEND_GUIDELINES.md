@@ -411,7 +411,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - **No** duplicar el mapeo en el cliente. Si un nuevo flujo necesita usar la regla, importar y reutilizar `resolverTipoComprobantePorIva` desde `@/services/exportRecepcionPedidoExcel.service`.
   - **No** asumir un default cuando `iva = PREGUNTA` y falta `decisionFiscal`: la única respuesta correcta es el marker `REQUIERE_DECISION_FISCAL` (la decisión es responsabilidad del operador en UI).
   - Si una nueva integración (p. ej. PDF, otra API) necesita un mapeo análogo, agregar un helper hermano (`resolverTipoXxxPorIva`) y documentarlo aquí — **no** reusar el helper de Excel para semánticas distintas.
-  - `RecepcionPedidoExcelRow["PRECIO INCLUYE IVA"]` es el literal **`NO`**: el total ingresado se divide por **1,21** antes del reparto; los **PRECIO** unitarios van **sin IVA** (DUX suma IVA desde el maestro del ítem en POST; import Excel alineado).
+  - `RecepcionPedidoExcelRow["PRECIO INCLUYE IVA"]` es el literal **`SI`**: el total ingresado ya incluye IVA; los **PRECIO** unitarios se reparten sobre ese bruto.
 
 ### 1.11e Catálogo personal DUX (`global_personal`)
 
@@ -1031,7 +1031,7 @@ Función:
   - `COMPROBANTE` → `nro_comprobante` (misma reserva en `prod_ped_ult_comp`; **sin rollback** si el POST falla).
   - `ID PROVEEDOR` → `id_proveedor`; `global_sucursales.id_dux` → `id_sucursal`; depósito por `getIdDepositoPorSucursalCodigo` → `id_deposito`.
   - `FECHA` (+1 día) → `fecha` ISO `YYYY-MM-DD`; `FECHA IMPUTACION CONTABLE` → `fecha_imputacion_contable`.
-  - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (`porc_descuento: 0`). **Siempre:** el total ingresado (bruto, con IVA) se divide por **1,21** (`totalBrutoConIva21ANetoParaRecepcion`, centavos) **antes** del reparto (Excel y POST); DUX suma IVA desde el maestro del ítem.
+  - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (`porc_descuento: 0`) sobre el **total bruto con IVA** del usuario. **POST:** además `percepciones: [{ id_percepcion_impuesto: 11705, porc_percepcion: 21 }]` vía `getPercepcionesIvaCompraPost()` (override env `DUX_ID_PERCEPCION_IVA`, `DUX_PORC_PERCEPCION_IVA`).
 - **Opcionales omitidos en v1:** `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI). **`id_personal`**: requerido en negocio; se envía desde `global_personal.id_personal` tras selector en UI (§1.11e).
 - **UI:** botón **Metodo Post** en `PedidoHistoriaDetalleModal` (prueba POST sin cerrar modal ni marcar `RECEPCIONADO`). Convive con **Registrar En Dux** (Excel + marcar local). Cuando el POST sea estable, retirar generación Excel del flujo principal.
 - **Doc DUX:** [Registrar comprobante de compra](https://duxsoftware.readme.io/reference/crear_compra).
@@ -1060,7 +1060,7 @@ Contrato (SSOT de integración + armado de filas):
      - Columna **`COMPROBANTE`**: correlativo por tipo en **`prod_ped_ult_comp`** (§2.8), según **`TIPO COMPROBANTE`** resuelto, **después** de validar totales/precios.
      - **`TIPO COMPROBANTE`**: sigue `resolverTipoComprobantePorIva` + modal **PREGUNTA** (`ERROR_REQUIERE_DECISION_FISCAL`).
      - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
-     - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`NO`** (precios unitarios netos tras `total ÷ 1,21`).
+     - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`SI`** (total y precios unitarios con IVA incluido).
      - Calcula `PRECIO` distribuyendo el total elegido entre cantidades recibidas (tolerancia **0,10**).
    - Salida:
      - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.

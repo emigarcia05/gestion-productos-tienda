@@ -1,6 +1,7 @@
 import type { ServiceResult } from "@/types";
 import {
   type V2CrearCompraRequest,
+  getPercepcionesIvaCompraPost,
   postCompraV2,
 } from "@/lib/duxComprasV2Api";
 import {
@@ -36,6 +37,7 @@ export function mapRecepcionCompraDatosToV2PostBody(
       porc_descuento: 0,
       observaciones: "",
     })),
+    percepciones: getPercepcionesIvaCompraPost(),
   };
 }
 
