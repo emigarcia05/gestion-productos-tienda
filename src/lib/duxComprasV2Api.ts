@@ -12,30 +12,6 @@ export function getDuxIdEmpresaCompras(): number {
   return n;
 }
 
-/** Catálogo DUX: percepción IVA en compras (default 11705). Override: `DUX_ID_PERCEPCION_IVA`. */
-const DUX_ID_PERCEPCION_IVA_DEFAULT = 11705;
-/** Alícuota percepción IVA en POST compras (default 21). Override: `DUX_PORC_PERCEPCION_IVA`. */
-const DUX_PORC_PERCEPCION_IVA_DEFAULT = 21;
-
-/** Percepción IVA en POST v2/compras (`percepciones[]`). */
-export function getPercepcionesIvaCompraPost(): V2CompraPercepcionRequest[] {
-  const idRaw = process.env.DUX_ID_PERCEPCION_IVA;
-  const porcRaw = process.env.DUX_PORC_PERCEPCION_IVA;
-  const id =
-    idRaw != null && idRaw !== "" ? Number(idRaw) : DUX_ID_PERCEPCION_IVA_DEFAULT;
-  const porc =
-    porcRaw != null && porcRaw !== ""
-      ? Number(porcRaw)
-      : DUX_PORC_PERCEPCION_IVA_DEFAULT;
-  if (!Number.isFinite(id) || id <= 0) {
-    throw new Error("DUX_ID_PERCEPCION_IVA inválido.");
-  }
-  if (!Number.isFinite(porc) || porc <= 0) {
-    throw new Error("DUX_PORC_PERCEPCION_IVA inválido (debe ser > 0).");
-  }
-  return [{ id_percepcion_impuesto: id, porc_percepcion: porc }];
-}
-
 export interface V2CompraPercepcionRequest {
   id_percepcion_impuesto: number;
   porc_percepcion?: number;

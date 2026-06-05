@@ -1,10 +1,7 @@
 import type { ServiceResult } from "@/types";
+import { type V2CrearCompraRequest, postCompraV2 } from "@/lib/duxComprasV2Api";
 import {
-  type V2CrearCompraRequest,
-  getPercepcionesIvaCompraPost,
-  postCompraV2,
-} from "@/lib/duxComprasV2Api";
-import {
+  PRECIO_UNITARIO_RECEPCION_DECIMALES,
   prepararRecepcionCompraDatos,
   type RecepcionCompraDatosPreparados,
 } from "@/services/exportRecepcionPedidoExcel.service";
@@ -33,11 +30,10 @@ export function mapRecepcionCompraDatosToV2PostBody(
     productos: datos.productos.map((p) => ({
       cod_item: p.codItem,
       ctd: p.ctd,
-      precio_unitario: p.precioUnitario,
+      precio_unitario: Number(p.precioUnitario.toFixed(PRECIO_UNITARIO_RECEPCION_DECIMALES)),
       porc_descuento: 0,
       observaciones: "",
     })),
-    percepciones: getPercepcionesIvaCompraPost(),
   };
 }
 

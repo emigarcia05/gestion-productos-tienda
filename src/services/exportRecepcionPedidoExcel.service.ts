@@ -101,20 +101,28 @@ export interface PrepararRecepcionCompraDatosParams {
   decisionFiscal?: boolean;
 }
 
-/** Divisor IVA 21 %: total bruto (con IVA) → neto antes de repartir precios. */
+/** Divisor IVA 21 %: total con IVA → neto antes de repartir precios. */
 export const IVA_COMPRA_DIVISOR_NETO = 1.21;
 
+/** Decimales en `precio_unitario` / columna Excel PRECIO (reparto diferencial). */
+export const PRECIO_UNITARIO_RECEPCION_DECIMALES = 4;
+
+const PRECIO_UNITARIO_RECEPCION_FACTOR = 10 ** PRECIO_UNITARIO_RECEPCION_DECIMALES;
+
 /**
- * Total con IVA incluido (TOTAL PEDIDO) → neto sin IVA (÷ 1,21). Centavos antes
- * de `distribuirPreciosDiferenciales` (Excel y POST DUX).
+ * Total con IVA incluido (TOTAL PEDIDO) → neto sin IVA (÷ 1,21).
+ * Misma precisión que el reparto de precios ({@link PRECIO_UNITARIO_RECEPCION_DECIMALES} decimales).
  */
 export function totalBrutoConIva21ANetoParaRecepcion(totalBruto: number): number {
-  const centavos = Math.round(totalBruto * 100);
-  const netoCentavos = Math.round(centavos / IVA_COMPRA_DIVISOR_NETO);
-  return netoCentavos / 100;
+  const unidades = Math.round(totalBruto * PRECIO_UNITARIO_RECEPCION_FACTOR);
+  const netoUnidades = Math.round(unidades / IVA_COMPRA_DIVISOR_NETO);
+  return netoUnidades / PRECIO_UNITARIO_RECEPCION_FACTOR;
 }
 
-const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
+const AJUSTE_MAXIMO_PRECIO_UNITARIO = 0.1; // +/- 0,10 respecto al precio base
+const AJUSTE_MAXIMO_PRECIO_UNITARIO_UNITS = Math.round(
+  AJUSTE_MAXIMO_PRECIO_UNITARIO * PRECIO_UNITARIO_RECEPCION_FACTOR
+);
 const TOLERANCIA_TOTAL_EXPORTACION = 0.1; // diferencia máxima permitida contra total ingresado
 
 /** Correlativo **Comprobante_Compra** (sólo dígitos) en `prod_ped_ult_comp`. */
@@ -229,8 +237,12 @@ function sumarDiasYmd(
   };
 }
 
-function toCentavos(value: number): number {
-  return Math.round(value * 100);
+function toPrecioUnits(value: number): number {
+  return Math.round(value * PRECIO_UNITARIO_RECEPCION_FACTOR);
+}
+
+function fromPrecioUnits(units: number): number {
+  return units / PRECIO_UNITARIO_RECEPCION_FACTOR;
 }
 
 function distribuirPreciosDiferenciales(params: {
@@ -239,17 +251,17 @@ function distribuirPreciosDiferenciales(params: {
 }): { precios: number[]; totalCalculado: number; diferencia: number } {
   const { cantidades, totalObjetivo } = params;
   const sumaCantidades = cantidades.reduce((acc, c) => acc + c, 0);
-  const totalObjetivoCentavos = toCentavos(totalObjetivo);
-  const precioBaseCentavos =
-    sumaCantidades > 0 ? Math.round(totalObjetivoCentavos / sumaCantidades) : 0;
+  const totalObjetivoUnits = toPrecioUnits(totalObjetivo);
+  const precioBaseUnits =
+    sumaCantidades > 0 ? Math.round(totalObjetivoUnits / sumaCantidades) : 0;
 
-  const preciosCentavos = cantidades.map(() => precioBaseCentavos);
+  const preciosUnits = cantidades.map(() => precioBaseUnits);
   const deltas = cantidades.map(() => 0);
-  let diffCentavos =
-    totalObjetivoCentavos -
-    cantidades.reduce((acc, cant) => acc + cant * precioBaseCentavos, 0);
+  let diffUnits =
+    totalObjetivoUnits -
+    cantidades.reduce((acc, cant) => acc + cant * precioBaseUnits, 0);
 
-  // Ajuste grueso: incrementos/decrementos de 0.01 por ítem respetando tope +/-0.10.
+  // Ajuste fino: pasos de 10^-4 por ítem respetando tope +/-0,10.
   const indicesPorCantidadDesc = cantidades
     .map((cant, idx) => ({ idx, cant }))
     .sort((a, b) => b.cant - a.cant)
@@ -257,19 +269,19 @@ function distribuirPreciosDiferenciales(params: {
   const indicesPorCantidadAsc = [...indicesPorCantidadDesc].reverse();
 
   const aplicarPaso = (idx: number, paso: 1 | -1): boolean => {
-    if (paso > 0 && deltas[idx] >= AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS) return false;
-    if (paso < 0 && deltas[idx] <= -AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS) return false;
+    if (paso > 0 && deltas[idx] >= AJUSTE_MAXIMO_PRECIO_UNITARIO_UNITS) return false;
+    if (paso < 0 && deltas[idx] <= -AJUSTE_MAXIMO_PRECIO_UNITARIO_UNITS) return false;
     deltas[idx] += paso;
-    preciosCentavos[idx] += paso;
-    diffCentavos -= cantidades[idx] * paso;
+    preciosUnits[idx] += paso;
+    diffUnits -= cantidades[idx] * paso;
     return true;
   };
 
-  const intentosMaximos = cantidades.length * AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS * 4;
+  const intentosMaximos = cantidades.length * AJUSTE_MAXIMO_PRECIO_UNITARIO_UNITS * 4;
   let intentos = 0;
-  while (diffCentavos !== 0 && intentos < intentosMaximos) {
+  while (diffUnits !== 0 && intentos < intentosMaximos) {
     intentos += 1;
-    const signo: 1 | -1 = diffCentavos > 0 ? 1 : -1;
+    const signo: 1 | -1 = diffUnits > 0 ? 1 : -1;
     const candidatos = signo > 0 ? indicesPorCantidadDesc : indicesPorCantidadAsc;
     let mejorIdx = -1;
     let mejorError = Number.POSITIVE_INFINITY;
@@ -277,12 +289,12 @@ function distribuirPreciosDiferenciales(params: {
     for (const idx of candidatos) {
       const deltaActual = deltas[idx];
       if (
-        (signo > 0 && deltaActual >= AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS) ||
-        (signo < 0 && deltaActual <= -AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS)
+        (signo > 0 && deltaActual >= AJUSTE_MAXIMO_PRECIO_UNITARIO_UNITS) ||
+        (signo < 0 && deltaActual <= -AJUSTE_MAXIMO_PRECIO_UNITARIO_UNITS)
       ) {
         continue;
       }
-      const nuevoDiff = diffCentavos - cantidades[idx] * signo;
+      const nuevoDiff = diffUnits - cantidades[idx] * signo;
       const errorAbs = Math.abs(nuevoDiff);
       if (errorAbs < mejorError) {
         mejorError = errorAbs;
@@ -296,13 +308,17 @@ function distribuirPreciosDiferenciales(params: {
     if (!aplicado) break;
   }
 
-  const precios = preciosCentavos.map((c) => c / 100);
+  const precios = preciosUnits.map((u) =>
+    Number(fromPrecioUnits(u).toFixed(PRECIO_UNITARIO_RECEPCION_DECIMALES))
+  );
   const totalCalculado = cantidades.reduce((acc, cant, idx) => acc + cant * precios[idx], 0);
-  const diferencia = Number((totalObjetivo - totalCalculado).toFixed(2));
+  const diferencia = Number(
+    (totalObjetivo - totalCalculado).toFixed(PRECIO_UNITARIO_RECEPCION_DECIMALES)
+  );
 
   return {
     precios,
-    totalCalculado: Number(totalCalculado.toFixed(2)),
+    totalCalculado: Number(totalCalculado.toFixed(PRECIO_UNITARIO_RECEPCION_DECIMALES)),
     diferencia,
   };
 }
