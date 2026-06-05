@@ -18,35 +18,7 @@ export const maxDuration = 300;
 /** Evita ejecutar dos sincronizaciones a la vez (p. ej. doble clic). */
 let syncInProgress = false;
 
-/**
- * GET: Ejecuta la sincronización DUX -> prod_tienda + prod_listas_* (bloqueante).
- * Para prueba: abre en el navegador o usa curl http://localhost:3000/api/sync-lista-precios-tienda
- */
-export async function GET() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
-    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
-  }
-  try {
-    const result = await syncListaPrecioTiendaFromDux();
-    return NextResponse.json({ ok: true, ...result });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    console.error("Error en sync prod_tienda:", message);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
-}
-
-/**
- * POST: Ejecuta la sincronización y responde cuando termina (bloqueante).
- * Compatible con serverless: la función no devuelve hasta que el sync termina o falla.
- * El cliente debe esperar con timeout largo (ej. 5 min).
- */
-export async function POST() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
-    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
-  }
+async function ejecutarSyncListaPrecioTienda() {
   const current = await getSyncDuxStatusFromDb();
   if (syncInProgress || current.running) {
     return NextResponse.json(
@@ -54,16 +26,17 @@ export async function POST() {
       { status: 409 }
     );
   }
+
   syncInProgress = true;
   await startSyncDuxInDb();
   try {
     let finalProcessed = 0;
     let finalTotal = 0;
     const result = await syncListaPrecioTiendaFromDux({
-      onProgress(processed, total, phase) {
+      async onProgress(processed, total, phase) {
         finalProcessed = processed;
         finalTotal = total;
-        void setSyncDuxProgressInDb(processed, total, phase);
+        await setSyncDuxProgressInDb(processed, total, phase);
       },
     });
     await setSyncDuxSuccessInDb(finalProcessed, finalTotal);
@@ -83,4 +56,28 @@ export async function POST() {
   } finally {
     syncInProgress = false;
   }
+}
+
+/**
+ * GET: Ejecuta la sincronización DUX -> prod_tienda (bloqueante, con progreso en BD).
+ * Para prueba: abre en el navegador o usa curl http://localhost:3000/api/sync-lista-precios-tienda
+ */
+export async function GET() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
+    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
+  }
+  return ejecutarSyncListaPrecioTienda();
+}
+
+/**
+ * POST: Ejecuta la sincronización y responde cuando termina (bloqueante).
+ * Compatible con serverless: la función no devuelve hasta que el sync termina o falla.
+ */
+export async function POST() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
+    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
+  }
+  return ejecutarSyncListaPrecioTienda();
 }

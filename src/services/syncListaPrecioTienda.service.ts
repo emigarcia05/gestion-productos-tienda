@@ -35,12 +35,15 @@ async function assertListaPrecioTiendaSyncNotCancelled(): Promise<void> {
 const DELAY_MS = Math.max(5000, Number(process.env.DUX_SYNC_DELAY_MS) || 5000);
 const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 
-/** Tamaño de cada chunk al persistir en Neon (evitar timeout). */
-const CHUNK_PERSIST_SIZE = 500;
+/** Tamaño de cada chunk al persistir en Neon (muchas upserts anidadas por ítem). */
+const CHUNK_PERSIST_SIZE = Math.max(
+  5,
+  Math.min(100, Number(process.env.DUX_SYNC_CHUNK_SIZE) || 25)
+);
 const CHUNK_DELETE_SIZE = 500;
 
-/** Timeout (ms) de la transacción interactiva por chunk (500 upserts pueden superar 5s por defecto). */
-const TRANSACTION_TIMEOUT_MS = 60_000;
+/** Timeout (ms) por transacción de persistencia (chunks pequeños + catálogos deduplicados). */
+const TRANSACTION_TIMEOUT_MS = 120_000;
 
 /** Máximo segundos por petición de página; si no hay respuesta, se da por trabado. */
 const PAGINA_TIMEOUT_MS = 15_000;
@@ -74,32 +77,69 @@ function itemDuxToProdTiendaRecord(item: ItemDux) {
 
 type RecordProdTienda = ReturnType<typeof itemDuxToProdTiendaRecord>;
 
-async function syncStocksEnTransaccion(
+async function upsertDepositosCatalogoEnTransaccion(
   tx: Prisma.TransactionClient,
   items: RecordProdTienda[],
   idDepositosVistos: Set<number>
 ): Promise<void> {
   const now = new Date();
+  const unicos = new Map<number, string>();
+  for (const row of items) {
+    for (const st of row.stocks) {
+      if (!Number.isFinite(st.idDeposito)) continue;
+      unicos.set(st.idDeposito, st.nombre);
+    }
+  }
+  for (const [idDeposito, nombre] of unicos) {
+    idDepositosVistos.add(idDeposito);
+    await tx.prodDepositoDux.upsert({
+      where: { idDeposito },
+      create: {
+        idDeposito,
+        nombre,
+        activa: true,
+        ultimaSync: now,
+      },
+      update: {
+        nombre,
+        activa: true,
+        ultimaSync: now,
+      },
+    });
+  }
+}
+
+async function upsertListasCatalogoEnTransaccion(
+  tx: Prisma.TransactionClient,
+  items: RecordProdTienda[],
+  idListasVistas: Set<number>
+): Promise<void> {
+  const unicas = new Map<number, string>();
+  for (const row of items) {
+    for (const pl of row.precios) {
+      if (!Number.isFinite(pl.idLista)) continue;
+      unicas.set(pl.idLista, pl.nombre);
+    }
+  }
+  for (const [idLista, nombreLista] of unicas) {
+    idListasVistas.add(idLista);
+    await tx.prodTiendaListaPrecio.upsert({
+      where: { idLista },
+      create: { idLista, nombreLista },
+      update: { nombreLista },
+    });
+  }
+}
+
+async function syncStocksEnTransaccion(
+  tx: Prisma.TransactionClient,
+  items: RecordProdTienda[]
+): Promise<void> {
   for (const row of items) {
     const idsEnItem = new Set<number>();
     for (const st of row.stocks) {
       if (!Number.isFinite(st.idDeposito)) continue;
       idsEnItem.add(st.idDeposito);
-      idDepositosVistos.add(st.idDeposito);
-      await tx.prodDepositoDux.upsert({
-        where: { idDeposito: st.idDeposito },
-        create: {
-          idDeposito: st.idDeposito,
-          nombre: st.nombre,
-          activa: true,
-          ultimaSync: now,
-        },
-        update: {
-          nombre: st.nombre,
-          activa: true,
-          ultimaSync: now,
-        },
-      });
       await tx.prodTiendaStock.upsert({
         where: {
           codTienda_idDeposito: { codTienda: row.codTienda, idDeposito: st.idDeposito },
@@ -135,25 +175,13 @@ async function syncStocksEnTransaccion(
 
 async function syncListasPreciosEnTransaccion(
   tx: Prisma.TransactionClient,
-  items: RecordProdTienda[],
-  idListasVistas: Set<number>
+  items: RecordProdTienda[]
 ): Promise<void> {
   for (const row of items) {
     const idsEnItem = new Set<number>();
     for (const pl of row.precios) {
       if (!Number.isFinite(pl.idLista)) continue;
       idsEnItem.add(pl.idLista);
-      idListasVistas.add(pl.idLista);
-      await tx.prodTiendaListaPrecio.upsert({
-        where: { idLista: pl.idLista },
-        create: {
-          idLista: pl.idLista,
-          nombreLista: pl.nombre,
-        },
-        update: {
-          nombreLista: pl.nombre,
-        },
-      });
       await tx.prodTiendaPrecio.upsert({
         where: {
           codTienda_idLista: { codTienda: row.codTienda, idLista: pl.idLista },
@@ -183,10 +211,96 @@ async function syncListasPreciosEnTransaccion(
   }
 }
 
+async function persistProdTiendaChunk(chunk: RecordProdTienda[]): Promise<void> {
+  await prisma.$transaction(
+    async (tx) => {
+      const marcasUnicas = [
+        ...new Set(
+          chunk
+            .map((r) => r.marca?.trim())
+            .filter((n): n is string => Boolean(n && n.length > 0))
+        ),
+      ];
+      const mapaMarca = new Map<string, string>();
+      for (const nombre of marcasUnicas) {
+        const m = await tx.marca.upsert({
+          where: { nombre },
+          create: { nombre },
+          update: {},
+        });
+        mapaMarca.set(nombre, m.id);
+      }
+      for (const row of chunk) {
+        const nombreMarca = row.marca?.trim();
+        const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
+        await tx.prodTienda.upsert({
+          where: { codTienda: row.codTienda },
+          create: {
+            codTienda: row.codTienda,
+            rubro: row.rubro,
+            subRubro: row.subRubro,
+            marca: row.marca,
+            idMarca,
+            descripcionTienda: row.descripcionTienda,
+            costoCompra: new Prisma.Decimal(row.costoCompra),
+          },
+          update: {
+            codTienda: row.codTienda,
+            rubro: row.rubro,
+            subRubro: row.subRubro,
+            marca: row.marca,
+            idMarca,
+            descripcionTienda: row.descripcionTienda,
+            costoCompra: new Prisma.Decimal(row.costoCompra),
+            lastSync: new Date(),
+          },
+        });
+      }
+    },
+    { timeout: TRANSACTION_TIMEOUT_MS }
+  );
+}
+
+async function persistStockChunk(
+  chunk: RecordProdTienda[],
+  idDepositosVistos: Set<number>
+): Promise<void> {
+  await prisma.$transaction(
+    async (tx) => {
+      await upsertDepositosCatalogoEnTransaccion(tx, chunk, idDepositosVistos);
+      await syncStocksEnTransaccion(tx, chunk);
+    },
+    { timeout: TRANSACTION_TIMEOUT_MS }
+  );
+}
+
+async function persistPreciosChunk(
+  chunk: RecordProdTienda[],
+  idListasVistas: Set<number>
+): Promise<void> {
+  await prisma.$transaction(
+    async (tx) => {
+      await upsertListasCatalogoEnTransaccion(tx, chunk, idListasVistas);
+      await syncListasPreciosEnTransaccion(tx, chunk);
+    },
+    { timeout: TRANSACTION_TIMEOUT_MS }
+  );
+}
+
 export type SyncPhase = "sincronizando" | "guardando";
 
 export interface SyncProgressCallback {
-  onProgress?(processed: number, total: number, phase?: SyncPhase): void;
+  onProgress?(processed: number, total: number, phase?: SyncPhase): void | Promise<void>;
+}
+
+async function emitProgress(
+  onProgress: SyncProgressCallback["onProgress"],
+  processed: number,
+  total: number,
+  phase: SyncPhase
+): Promise<void> {
+  if (!onProgress) return;
+  await onProgress(processed, total, phase);
 }
 
 /**
@@ -229,7 +343,7 @@ export async function syncListaPrecioTiendaFromDux(
     todosLosProductos.push(...batch);
 
     const procesadosHastaAhora = todosLosProductos.length;
-    if (onProgress && totalApi > 0) onProgress(procesadosHastaAhora, totalApi, "sincronizando");
+    if (totalApi > 0) await emitProgress(onProgress, procesadosHastaAhora, totalApi, "sincronizando");
     const pct = totalApi > 0 ? Math.round((procesadosHastaAhora / totalApi) * 100) : 0;
     console.log(
       `Procesando offset ${offset} de un total de ${totalApi}... (${pct}% completado)`
@@ -243,68 +357,25 @@ export async function syncListaPrecioTiendaFromDux(
   }
 
   const totalSincronizados = todosLosProductos.length;
+  let chunksPersistidosOk = 0;
 
   if (totalSincronizados > 0) {
     await assertListaPrecioTiendaSyncNotCancelled();
-    if (onProgress) onProgress(0, totalSincronizados, "guardando");
+    await emitProgress(onProgress, 0, totalSincronizados, "guardando");
     for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
       await assertListaPrecioTiendaSyncNotCancelled();
       const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
       const byCodTienda = new Map<string, RecordProdTienda>();
       for (const row of chunkRaw) byCodTienda.set(row.codTienda, row);
       const chunk = Array.from(byCodTienda.values());
+      await emitProgress(onProgress, i, totalSincronizados, "guardando");
       try {
-        await prisma.$transaction(
-          async (tx) => {
-            const marcasUnicas = [
-              ...new Set(
-                chunk
-                  .map((r) => r.marca?.trim())
-                  .filter((n): n is string => Boolean(n && n.length > 0))
-              ),
-            ];
-            const mapaMarca = new Map<string, string>();
-            for (const nombre of marcasUnicas) {
-              const m = await tx.marca.upsert({
-                where: { nombre },
-                create: { nombre },
-                update: {},
-              });
-              mapaMarca.set(nombre, m.id);
-            }
-            for (const row of chunk) {
-              const nombreMarca = row.marca?.trim();
-              const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
-              await tx.prodTienda.upsert({
-                where: { codTienda: row.codTienda },
-                create: {
-                  codTienda: row.codTienda,
-                  rubro: row.rubro,
-                  subRubro: row.subRubro,
-                  marca: row.marca,
-                  idMarca,
-                  descripcionTienda: row.descripcionTienda,
-                  costoCompra: new Prisma.Decimal(row.costoCompra),
-                },
-                update: {
-                  codTienda: row.codTienda,
-                  rubro: row.rubro,
-                  subRubro: row.subRubro,
-                  marca: row.marca,
-                  idMarca,
-                  descripcionTienda: row.descripcionTienda,
-                  costoCompra: new Prisma.Decimal(row.costoCompra),
-                  lastSync: new Date(),
-                },
-              });
-            }
-            await syncStocksEnTransaccion(tx, chunk, idDepositosVistosEnCorrida);
-            await syncListasPreciosEnTransaccion(tx, chunk, idListasVistasEnCorrida);
-          },
-          { timeout: TRANSACTION_TIMEOUT_MS }
-        );
+        await persistProdTiendaChunk(chunk);
+        await persistStockChunk(chunk, idDepositosVistosEnCorrida);
+        await persistPreciosChunk(chunk, idListasVistasEnCorrida);
+        chunksPersistidosOk += 1;
         const persistedSoFar = Math.min(i + chunk.length, totalSincronizados);
-        if (onProgress) onProgress(persistedSoFar, totalSincronizados, "guardando");
+        await emitProgress(onProgress, persistedSoFar, totalSincronizados, "guardando");
         console.log(
           `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${persistedSoFar}/${totalSincronizados})`
         );
@@ -315,6 +386,11 @@ export async function syncListaPrecioTiendaFromDux(
         errores.push(`Chunk offset ${i}: ${msg}`);
         console.error(`Error persistiendo chunk en offset ${i}:`, msg, stack);
       }
+    }
+
+    if (chunksPersistidosOk === 0) {
+      const detalle = errores[0] ?? "Revisá migraciones y logs del servidor.";
+      throw new Error(`No se pudo guardar productos en la base de datos. ${detalle}`);
     }
   }
 
