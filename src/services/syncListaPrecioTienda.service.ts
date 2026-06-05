@@ -13,7 +13,13 @@ import {
   DUX_API_PAGE_LIMIT,
   type ItemDux,
 } from "@/lib/duxApi";
-import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
+import {
+  getSyncDuxStatusFromDb,
+  getSyncDuxWorkerStateFromDb,
+  saveSyncDuxWorkerStateInDb,
+  type SyncDuxWorkerMeta,
+  type SyncDuxWorkerState,
+} from "@/lib/syncDuxStatusDb";
 
 /** Se lanza cuando el usuario cancela la sync vía API (flag `running` en BD). */
 export class SyncListaPrecioTiendaCancelledError extends Error {
@@ -40,7 +46,8 @@ const CHUNK_PERSIST_SIZE = Math.max(
   5,
   Math.min(100, Number(process.env.DUX_SYNC_CHUNK_SIZE) || 25)
 );
-const CHUNK_DELETE_SIZE = 500;
+/** Segundos aproximados por lote de 50 ítems (delay + petición), para estimar tiempo restante. */
+export const SYNC_SECONDS_PER_BATCH = DELAY_MS / 1000 + 1.5;
 
 /** Timeout (ms) por transacción de persistencia (chunks pequeños + catálogos deduplicados). */
 const TRANSACTION_TIMEOUT_MS = 120_000;
@@ -48,8 +55,11 @@ const TRANSACTION_TIMEOUT_MS = 120_000;
 /** Máximo segundos por petición de página; si no hay respuesta, se da por trabado. */
 const PAGINA_TIMEOUT_MS = 15_000;
 
-/** Segundos aproximados por lote de 50 ítems (delay + petición), para estimar tiempo restante. */
-export const SYNC_SECONDS_PER_BATCH = DELAY_MS / 1000 + 1.5;
+/** Presupuesto de tiempo por invocación serverless (ms). Default 4 min (< límite Vercel 300 s). */
+export const SYNC_STEP_TIME_BUDGET_MS = Math.max(
+  60_000,
+  Math.min(280_000, Number(process.env.DUX_SYNC_STEP_BUDGET_MS) || 240_000)
+);
 
 export interface SyncListaPrecioTiendaResult {
   creados: number;
@@ -291,6 +301,12 @@ export type SyncPhase = "sincronizando" | "guardando";
 
 export interface SyncProgressCallback {
   onProgress?(processed: number, total: number, phase?: SyncPhase): void | Promise<void>;
+  timeBudgetMs?: number;
+}
+
+export interface SyncListaPrecioTiendaStepResult extends SyncListaPrecioTiendaResult {
+  done: boolean;
+  continuing: boolean;
 }
 
 async function emitProgress(
@@ -303,131 +319,74 @@ async function emitProgress(
   await onProgress(processed, total, phase);
 }
 
-/**
- * Sincroniza productos desde la API DUX hacia prod_tienda, prod_tienda_precios y catálogo prod_tienda_listas_precios.
- */
-export async function syncListaPrecioTiendaFromDux(
-  options?: SyncProgressCallback
+function paginaTimeoutPromise(): Promise<never> {
+  return new Promise((_, reject) =>
+    setTimeout(
+      () => reject(new Error("La petición a DUX no respondió a tiempo (15 s). Reintentá más tarde.")),
+      PAGINA_TIMEOUT_MS
+    )
+  );
+}
+
+async function persistRecordBatch(
+  items: RecordProdTienda[],
+  meta: SyncDuxWorkerMeta
+): Promise<SyncDuxWorkerMeta> {
+  const depSet = new Set(meta.depositosVistos);
+  const lisSet = new Set(meta.listasVistas);
+
+  for (let i = 0; i < items.length; i += CHUNK_PERSIST_SIZE) {
+    const slice = items.slice(i, i + CHUNK_PERSIST_SIZE);
+    const byCodTienda = new Map<string, RecordProdTienda>();
+    for (const row of slice) byCodTienda.set(row.codTienda, row);
+    const chunk = Array.from(byCodTienda.values());
+    if (chunk.length === 0) continue;
+
+    await persistProdTiendaChunk(chunk);
+    await persistStockChunk(chunk, depSet);
+    await persistPreciosChunk(chunk, lisSet);
+  }
+
+  return {
+    ...meta,
+    depositosVistos: [...depSet],
+    listasVistas: [...lisSet],
+  };
+}
+
+async function finalizeSyncWorker(
+  worker: SyncDuxWorkerState,
+  errores: string[],
+  onProgress: SyncProgressCallback["onProgress"]
 ): Promise<SyncListaPrecioTiendaResult> {
   const inicioMs = Date.now();
-  const errores: string[] = [];
-  const onProgress = options?.onProgress;
+  await saveSyncDuxWorkerStateInDb({
+    phase: "guardando",
+    processed: worker.processed,
+    total: worker.total,
+  });
+  await emitProgress(onProgress, worker.processed, worker.total, "guardando");
 
-  const todosLosProductos: RecordProdTienda[] = [];
-  const idListasVistasEnCorrida = new Set<number>();
-  const idDepositosVistosEnCorrida = new Set<number>();
-  let offset = 0;
-  let totalApi = 0;
-
-  const countBefore = await prisma.prodTienda.count();
-
-  const timeoutPromise = (): Promise<never> =>
-    new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error("La petición a DUX no respondió a tiempo (15 s). Reintentá más tarde.")),
-        PAGINA_TIMEOUT_MS
-      )
-    );
-
-  while (true) {
-    await assertListaPrecioTiendaSyncNotCancelled();
-    const { results, total, hasMore } = await Promise.race([
-      fetchItemsPage(offset, DUX_API_PAGE_LIMIT),
-      timeoutPromise(),
-    ]);
-
-    if (total > 0 && totalApi === 0) totalApi = total;
-    if (results.length === 0) break;
-
-    const batch = results.map(itemDuxToProdTiendaRecord).filter((r) => r.codTienda);
-    todosLosProductos.push(...batch);
-
-    const procesadosHastaAhora = todosLosProductos.length;
-    if (totalApi > 0) await emitProgress(onProgress, procesadosHastaAhora, totalApi, "sincronizando");
-    const pct = totalApi > 0 ? Math.round((procesadosHastaAhora / totalApi) * 100) : 0;
-    console.log(
-      `Procesando offset ${offset} de un total de ${totalApi}... (${pct}% completado)`
-    );
-
-    if (!hasMore || results.length === 0) break;
-
-    offset += DUX_API_PAGE_LIMIT;
-    await new Promise((r) => setTimeout(r, DELAY_MS));
-    await assertListaPrecioTiendaSyncNotCancelled();
-  }
-
-  const totalSincronizados = todosLosProductos.length;
-  let chunksPersistidosOk = 0;
-
-  if (totalSincronizados > 0) {
-    await assertListaPrecioTiendaSyncNotCancelled();
-    await emitProgress(onProgress, 0, totalSincronizados, "guardando");
-    for (let i = 0; i < todosLosProductos.length; i += CHUNK_PERSIST_SIZE) {
-      await assertListaPrecioTiendaSyncNotCancelled();
-      const chunkRaw = todosLosProductos.slice(i, i + CHUNK_PERSIST_SIZE);
-      const byCodTienda = new Map<string, RecordProdTienda>();
-      for (const row of chunkRaw) byCodTienda.set(row.codTienda, row);
-      const chunk = Array.from(byCodTienda.values());
-      await emitProgress(onProgress, i, totalSincronizados, "guardando");
-      try {
-        await persistProdTiendaChunk(chunk);
-        await persistStockChunk(chunk, idDepositosVistosEnCorrida);
-        await persistPreciosChunk(chunk, idListasVistasEnCorrida);
-        chunksPersistidosOk += 1;
-        const persistedSoFar = Math.min(i + chunk.length, totalSincronizados);
-        await emitProgress(onProgress, persistedSoFar, totalSincronizados, "guardando");
-        console.log(
-          `Persistido chunk ${Math.floor(i / CHUNK_PERSIST_SIZE) + 1}: ${chunk.length} productos (${persistedSoFar}/${totalSincronizados})`
-        );
-      } catch (e) {
-        if (e instanceof SyncListaPrecioTiendaCancelledError) throw e;
-        const msg = e instanceof Error ? e.message : String(e);
-        const stack = e instanceof Error ? e.stack : "";
-        errores.push(`Chunk offset ${i}: ${msg}`);
-        console.error(`Error persistiendo chunk en offset ${i}:`, msg, stack);
-      }
-    }
-
-    if (chunksPersistidosOk === 0) {
-      const detalle = errores[0] ?? "Revisá migraciones y logs del servidor.";
-      throw new Error(`No se pudo guardar productos en la base de datos. ${detalle}`);
-    }
-  }
-
-  await assertListaPrecioTiendaSyncNotCancelled();
-  try {
-    const codTiendasRecibidos = new Set(
-      todosLosProductos
-        .map((r) => r.codTienda.trim())
-        .filter((v) => v.length > 0)
-    );
-    const existentes = await prisma.prodTienda.findMany({
-      select: { codTienda: true },
-    });
-    const codTiendasParaEliminar = existentes
-      .filter((r) => !codTiendasRecibidos.has((r.codTienda ?? "").trim()))
-      .map((r) => r.codTienda.trim())
-      .filter((v) => v.length > 0);
-    for (let i = 0; i < codTiendasParaEliminar.length; i += CHUNK_DELETE_SIZE) {
-      const chunk = codTiendasParaEliminar.slice(i, i + CHUNK_DELETE_SIZE);
-      await prisma.prodTienda.deleteMany({
-        where: { codTienda: { in: chunk } },
-      });
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
-    console.error("Error en limpieza de cod_tienda ausentes:", msg);
-  }
-
-  if (idListasVistasEnCorrida.size > 0) {
+  if (worker.startedAt) {
     try {
-      const idsVistas = [...idListasVistasEnCorrida];
+      await prisma.prodTienda.deleteMany({
+        where: { lastSync: { lt: worker.startedAt } },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
+      console.error("Error en limpieza de cod_tienda ausentes:", msg);
+    }
+  }
+
+  const listasVistas = worker.meta.listasVistas;
+  if (listasVistas.length > 0) {
+    try {
       await prisma.prodTiendaPrecio.deleteMany({
-        where: { idLista: { notIn: idsVistas } },
+        where: { idLista: { notIn: listasVistas } },
       });
       await prisma.prodTiendaListaPrecio.deleteMany({
-        where: { idLista: { notIn: idsVistas } },
+        where: { idLista: { notIn: listasVistas } },
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -436,10 +395,11 @@ export async function syncListaPrecioTiendaFromDux(
     }
   }
 
-  if (idDepositosVistosEnCorrida.size > 0) {
+  const depositosVistos = worker.meta.depositosVistos;
+  if (depositosVistos.length > 0) {
     try {
       await prisma.prodDepositoDux.updateMany({
-        where: { idDeposito: { notIn: [...idDepositosVistosEnCorrida] } },
+        where: { idDeposito: { notIn: depositosVistos } },
         data: { activa: false },
       });
     } catch (e) {
@@ -449,17 +409,141 @@ export async function syncListaPrecioTiendaFromDux(
     }
   }
 
-  const duracionMs = Date.now() - inicioMs;
   const countAfter = await prisma.prodTienda.count();
-  const creados = Math.max(0, countAfter - countBefore);
-  const actualizados = Math.max(0, totalSincronizados - creados);
+  const creados = Math.max(0, countAfter - worker.meta.countBefore);
+  const actualizados = Math.max(0, worker.processed - creados);
 
   return {
     creados,
     actualizados,
-    totalProcesados: totalSincronizados,
-    totalApi,
-    duracionMs,
+    totalProcesados: worker.processed,
+    totalApi: worker.total,
+    duracionMs: Date.now() - inicioMs,
     errores,
   };
+}
+
+/**
+ * Un paso reanudable: consulta DUX + persiste en Neon dentro de un presupuesto de tiempo.
+ * El cliente debe llamar POST repetidamente mientras `continuing === true`.
+ */
+export async function syncListaPrecioTiendaRunStep(
+  options?: SyncProgressCallback
+): Promise<SyncListaPrecioTiendaStepResult> {
+  const timeBudgetMs = options?.timeBudgetMs ?? SYNC_STEP_TIME_BUDGET_MS;
+  const onProgress = options?.onProgress;
+  const deadline = Date.now() + timeBudgetMs;
+  const errores: string[] = [];
+  const stepStartedMs = Date.now();
+
+  let worker = await getSyncDuxWorkerStateFromDb();
+  if (!worker.running) {
+    throw new Error("No hay sincronización en curso.");
+  }
+
+  if (worker.apiFetchComplete) {
+    const result = await finalizeSyncWorker(worker, errores, onProgress);
+    return { ...result, done: true, continuing: false };
+  }
+
+  let totalApi = worker.total;
+
+  while (Date.now() < deadline) {
+    await assertListaPrecioTiendaSyncNotCancelled();
+
+    const { results, total, hasMore } = await Promise.race([
+      fetchItemsPage(worker.fetchOffset, DUX_API_PAGE_LIMIT),
+      paginaTimeoutPromise(),
+    ]);
+
+    if (total > 0 && totalApi === 0) totalApi = total;
+
+    if (results.length === 0) {
+      await saveSyncDuxWorkerStateInDb({
+        apiFetchComplete: true,
+        total: totalApi,
+      });
+      break;
+    }
+
+    const batch = results.map(itemDuxToProdTiendaRecord).filter((r) => r.codTienda);
+    if (batch.length === 0) {
+      worker.fetchOffset += DUX_API_PAGE_LIMIT;
+      await saveSyncDuxWorkerStateInDb({ fetchOffset: worker.fetchOffset, total: totalApi });
+      if (!hasMore) {
+        await saveSyncDuxWorkerStateInDb({ apiFetchComplete: true, total: totalApi });
+        break;
+      }
+      continue;
+    }
+
+    try {
+      worker.meta = await persistRecordBatch(batch, worker.meta);
+    } catch (e) {
+      if (e instanceof SyncListaPrecioTiendaCancelledError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      errores.push(`Persistir offset ${worker.fetchOffset}: ${msg}`);
+      console.error(`Error persistiendo página DUX offset ${worker.fetchOffset}:`, msg);
+      throw new Error(`No se pudo guardar productos en la base de datos. ${msg}`);
+    }
+
+    worker.processed += batch.length;
+    worker.fetchOffset += DUX_API_PAGE_LIMIT;
+    worker.total = totalApi;
+
+    await saveSyncDuxWorkerStateInDb({
+      processed: worker.processed,
+      total: totalApi,
+      fetchOffset: worker.fetchOffset,
+      meta: worker.meta,
+      phase: "sincronizando",
+      apiFetchComplete: !hasMore,
+    });
+    await emitProgress(onProgress, worker.processed, totalApi, "sincronizando");
+
+    const pct = totalApi > 0 ? Math.round((worker.processed / totalApi) * 100) : 0;
+    console.log(
+      `Sync DUX offset ${worker.fetchOffset}: ${worker.processed}/${totalApi} (${pct}%)`
+    );
+
+    if (!hasMore) break;
+
+    if (Date.now() + DELAY_MS >= deadline) break;
+    await new Promise((r) => setTimeout(r, DELAY_MS));
+    worker = await getSyncDuxWorkerStateFromDb();
+  }
+
+  worker = await getSyncDuxWorkerStateFromDb();
+
+  if (worker.apiFetchComplete) {
+    if (worker.processed === 0 && worker.total > 0) {
+      throw new Error("La consulta DUX terminó pero no se guardó ningún producto.");
+    }
+    if (Date.now() < deadline) {
+      const result = await finalizeSyncWorker(worker, errores, onProgress);
+      return { ...result, done: true, continuing: false };
+    }
+  }
+
+  return {
+    creados: 0,
+    actualizados: 0,
+    totalProcesados: worker.processed,
+    totalApi: worker.total,
+    duracionMs: Date.now() - stepStartedMs,
+    errores,
+    done: false,
+    continuing: true,
+  };
+}
+
+/** Ejecuta todos los pasos en la misma invocación (solo catálogos chicos o pruebas locales). */
+export async function syncListaPrecioTiendaFromDux(
+  options?: SyncProgressCallback
+): Promise<SyncListaPrecioTiendaResult> {
+  let last: SyncListaPrecioTiendaStepResult | null = null;
+  while (true) {
+    last = await syncListaPrecioTiendaRunStep(options);
+    if (last.done) return last;
+  }
 }

@@ -1506,6 +1506,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 **Pendiente calibración:** sin PDF fixture en repo, la extracción posicional puede requerir ajuste de umbrales (`COLUMN_GAP`, `Y_TOLERANCE`) o migrar a script Python (`pdfplumber`) si el PDF real no alinea columnas.
 
+*Última actualización (2026-06-04): **Sync DUX — pasos reanudables** — `sync_dux_status` guarda `fetch_offset`, `api_fetch_complete`, `started_at`, `meta`; cada POST procesa ~4 min (consulta DUX + persist inmediato por página); el cliente encadena POST hasta `continuing: false`. Limpieza final por `last_sync < started_at`. Migración `20260604200000_sync_dux_status_resume`.*
+
 *Última actualización (2026-06-04): **Sync DUX — persistencia** — chunks de 25 ítems (3 tx: tienda/stock/precios), catálogos deduplicados, progreso await en BD, error si ningún chunk guarda; GET y POST unificados con progreso.*
 
 *Última actualización (2026-06-04): **Sync DUX lista tienda — UX progreso** — fases `sincronizando` / `guardando` en `syncListaPrecioTiendaFromDux`; `maxDuration = 300` en POST/GET bloqueante; sidebar distingue mensajes y toast al finalizar. **Import status polling** solo con rol editor (evita 403 en logs).*

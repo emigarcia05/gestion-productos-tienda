@@ -56,8 +56,32 @@ export default function SyncStatusIndicator() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRunningRef = useRef(false);
   const prevLastCompletedAtRef = useRef<string | null>(null);
+  const syncStepsRunningRef = useRef(false);
 
   const comprasProgreso = useSyncComprasProveedorDuxStatusPoll(comprasSyncing);
+
+  async function runSyncStepsUntilDone() {
+    if (syncStepsRunningRef.current) return;
+    syncStepsRunningRef.current = true;
+    try {
+      let continuing = true;
+      while (continuing) {
+        const res = await fetch("/api/sync-lista-precios-tienda", { method: "POST" });
+        const data = res.ok ? await res.json().catch(() => null) : null;
+        if (!res.ok || !data?.ok) {
+          if (data?.error && !data?.cancelled) {
+            toast.error(String(data.error));
+          }
+          break;
+        }
+        continuing = !!data.continuing;
+      }
+    } catch {
+      toast.error("Error de red durante la sincronización.");
+    } finally {
+      syncStepsRunningRef.current = false;
+    }
+  }
 
   useEffect(() => {
     function fetchStatus() {
@@ -111,6 +135,12 @@ export default function SyncStatusIndicator() {
     };
   }, []);
 
+  useEffect(() => {
+    if (areaId === "finanzas") return;
+    if (!running || requestingStart || syncStepsRunningRef.current) return;
+    void runSyncStepsUntilDone();
+  }, [running, requestingStart, areaId]);
+
   async function handleStartSync() {
     if (running || requestingStart || comprasSyncing) return;
 
@@ -143,9 +173,7 @@ export default function SyncStatusIndicator() {
 
     setRequestingStart(true);
     try {
-      await fetch("/api/sync-lista-precios-tienda", { method: "POST" });
-    } catch {
-      // El polling reflejará el estado real.
+      await runSyncStepsUntilDone();
     } finally {
       setRequestingStart(false);
     }
