@@ -64,7 +64,7 @@ export interface RecepcionPedidoExcelRow {
   "CÓDIGO PRODUCTO": string;
   "CANTIDAD": number;
   "PRECIO": number;
-  "PRECIO INCLUYE IVA": "SI";
+  "PRECIO INCLUYE IVA": "NO";
 }
 
 export interface ExportRecepcionPedidoExcelPayload {
@@ -99,6 +99,19 @@ export interface PrepararRecepcionCompraDatosParams {
   fechaFacturaIso: string;
   totalPedidoIngreso?: number;
   decisionFiscal?: boolean;
+}
+
+/** Divisor IVA 21 %: total bruto ingresado → neto antes de repartir precios. */
+export const IVA_COMPRA_DIVISOR_NETO = 1.21;
+
+/**
+ * Total con IVA incluido (TOTAL PEDIDO) → neto sin IVA (21 %). Trabaja en centavos
+ * antes de `distribuirPreciosDiferenciales` (Excel y POST DUX).
+ */
+export function totalBrutoConIva21ANetoParaRecepcion(totalBruto: number): number {
+  const centavos = Math.round(totalBruto * 100);
+  const netoCentavos = Math.round(centavos / IVA_COMPRA_DIVISOR_NETO);
+  return netoCentavos / 100;
 }
 
 const AJUSTE_MAXIMO_PRECIO_UNITARIO_CENTAVOS = 10; // +/- 0.10 respecto al precio base
@@ -390,9 +403,10 @@ export async function prepararRecepcionCompraDatos(
     }
 
     const cantidades = itemsRecibidos.map((it) => it.cantRecibida);
+    const totalObjetivoDistribucion = totalBrutoConIva21ANetoParaRecepcion(totalParaPrecio);
     const { precios, diferencia } = distribuirPreciosDiferenciales({
       cantidades,
-      totalObjetivo: totalParaPrecio,
+      totalObjetivo: totalObjetivoDistribucion,
     });
     if (Math.abs(diferencia) > TOLERANCIA_TOTAL_EXPORTACION) {
       return {
@@ -458,7 +472,7 @@ export async function getExportRecepcionPedidoExcelPayload(
       "CÓDIGO PRODUCTO": it.codItem,
       "CANTIDAD": it.ctd,
       "PRECIO": it.precioUnitario,
-      "PRECIO INCLUYE IVA": "SI",
+      "PRECIO INCLUYE IVA": "NO",
     }));
 
     const stamp = formatDdMmHhMmGuionesBajosArchivoArgentina(new Date());
