@@ -2,8 +2,7 @@
 
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
-import ExportarCxButton from "@/components/tienda/ExportarCxButton";
-import ExportarResumenAumentosButton from "@/components/tienda/ExportarResumenAumentosButton";
+import ActCxButton from "@/components/tienda/ActCxButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -75,8 +74,7 @@ export default function CompProveedoresPageClient({
         actions={
           puedeEditarCxProd ? (
             <div className="flex shrink-0 items-center gap-2">
-              <ExportarCxButton />
-              <ExportarResumenAumentosButton />
+              <ActCxButton />
             </div>
           ) : undefined
         }

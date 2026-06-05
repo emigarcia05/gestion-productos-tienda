@@ -12,6 +12,7 @@ import {
   limpiarCodExtCostoLista,
 } from "@/services/costoListaTienda.service";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
+import { actualizarCostoCxEnDux } from "@/services/actualizarCostoCxDux.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 
 const guardarCostoCxProdSchema = z.object({
@@ -68,4 +69,33 @@ export async function exportarCostoCxDiffAction(): Promise<
       error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
     };
   }
+}
+
+/** POST DUX `/item/nuevoItem`: actualiza solo `cod_item` + `costo` (CX PROD. con diff). */
+export async function actualizarCostoCxDuxAction(): Promise<
+  ActionResult<{
+    cantidadEnviada: number;
+    lotes: number;
+    idProcesoUltimo: number | null;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const res = await actualizarCostoCxEnDux();
+  if (!res.success) return { ok: false, error: res.error };
+
+  return {
+    ok: true,
+    data: {
+      cantidadEnviada: res.data.cantidadEnviada,
+      lotes: res.data.lotes,
+      idProcesoUltimo: res.data.idProcesoUltimo,
+    },
+  };
 }
