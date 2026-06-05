@@ -16,7 +16,6 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { listGlobalPersonalAction } from "@/actions/globalPersonal";
 import type { GlobalPersonalItem } from "@/services/globalPersonal.service";
 import { cn } from "@/lib/utils";
@@ -34,8 +33,8 @@ export type PersonalRecepcionSeleccion = Pick<
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSeleccionar: (item: PersonalRecepcionSeleccion) => void;
-  /** Deshabilitar interacción mientras corre `registrarRecepcionCompraDuxAction`. */
+  onSeleccionar: (item: PersonalRecepcionSeleccion) => void | Promise<void>;
+  /** Deshabilitar interacción mientras corre el POST DUX y el marcado RECEPCIONADO. */
   pending?: boolean;
 }
 
@@ -49,6 +48,7 @@ export default function ElegirPersonalRecepcionModal({
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [personal, setPersonal] = useState<GlobalPersonalItem[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [filaSeleccionadaId, setFilaSeleccionadaId] = useState<number | null>(null);
 
   const cargarLista = useCallback(async () => {
     setCargando(true);
@@ -85,6 +85,7 @@ export default function ElegirPersonalRecepcionModal({
       setPersonal([]);
       setErrorCarga(null);
       setCargando(false);
+      setFilaSeleccionadaId(null);
       return;
     }
     void cargarLista();
@@ -108,6 +109,7 @@ export default function ElegirPersonalRecepcionModal({
       <AppModal
         title="Elegir Personal"
         size="md"
+        className="max-w-[35.2rem]"
         scrollBody
         actions={
           <div className="flex w-full justify-end">
@@ -123,31 +125,25 @@ export default function ElegirPersonalRecepcionModal({
         }
       >
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-foreground">
-            Elegí quién registra la compra en DUX.
-          </p>
-          <label className="flex flex-col gap-1">
-            <ModalMicroLabel>Buscar</ModalMicroLabel>
-            <Input
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value.toLocaleUpperCase("es-AR"))}
-              disabled={interaccionBloqueada || personal.length === 0}
-              placeholder="BUSCAR POR NOMBRE…"
-              aria-label="Buscar personal"
-              className="h-9"
-            />
-          </label>
+          <Input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value.toLocaleUpperCase("es-AR"))}
+            disabled={interaccionBloqueada || personal.length === 0}
+            placeholder="BUSCAR POR NOMBRE…"
+            aria-label="Buscar personal"
+            className="h-9"
+          />
           <div className="contenedor-tabla-gestion max-h-[min(18rem,40vh)] min-h-[8rem] w-full min-w-0 overflow-hidden">
             <Table variant="compact" scrollX={false} className="table-fixed w-full">
               <colgroup>
                 <col className="min-w-0" />
-                <col className="w-[3.25rem]" />
+                <col className="w-[6.5rem]" />
               </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="min-w-0">NOMBRE</TableHead>
-                  <TableHead className="w-[3.25rem] text-center tabla-bloque-secundario-head-divider">
-                    ACCIONES
+                  <TableHead className="w-[6.5rem] text-center tabla-bloque-secundario-head-divider">
+                    SELECCIONAR
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -195,14 +191,16 @@ export default function ElegirPersonalRecepcionModal({
                             className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                             aria-label={`Seleccionar ${p.nombrePersonal}`}
                             title="Seleccionar"
-                            onClick={() =>
-                              onSeleccionar({
+                            onClick={() => {
+                              if (interaccionBloqueada) return;
+                              setFilaSeleccionadaId(p.idPersonal);
+                              void onSeleccionar({
                                 idPersonal: p.idPersonal,
                                 nombrePersonal: p.nombrePersonal,
-                              })
-                            }
+                              });
+                            }}
                           >
-                            {pending ? (
+                            {pending && filaSeleccionadaId === p.idPersonal ? (
                               <Loader2
                                 className={cn(TABLE_ROW_ACTION_ICON_CLASS, "animate-spin")}
                                 aria-hidden

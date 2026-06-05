@@ -382,12 +382,12 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - Si se necesita un nuevo valor (p. ej. `RETENCION`), agregarlo al enum vía migración `ALTER TYPE "IvaProveedor" ADD VALUE 'XXX'` (no reescribir el enum; PostgreSQL no permite borrar valores). Documentar el nuevo caso de uso aquí.
   - **No** usar `iva` como FK ni como predicado masivo; si un reporte futuro requiere agrupar por política, evaluar primero la cardinalidad en datos reales antes de agregar índice.
 
-#### 1.11d.1 Regla `iva → TIPO COMPROBANTE` en exportación de recepción de pedidos
+#### 1.11d.1 Regla `iva → tipo comprobante` en recepción de pedidos (POST DUX)
 
-- **Dónde se aplica**: columna **TIPO COMPROBANTE** del Excel generado por `getExportRecepcionPedidoExcelPayload` (`src/services/exportRecepcionPedidoExcel.service.ts`), invocado por `exportarExcelRecepcionPedidoAction` (`src/actions/exportRecepcionPedidoExcel.ts`) desde el modal `PedidoHistoriaDetalleModal` en el flujo de **Recepción de Pedido** (`/pedidos/historial`).
+- **Dónde se aplica**: `tipo_comprobante` del POST DUX v2/compras, resuelto en `prepararRecepcionCompraDatos` (`src/services/exportRecepcionPedidoExcel.service.ts`) e invocado por `registrarRecepcionCompraDuxAction` desde **Registrar En Dux** en `PedidoHistoriaDetalleModal` (`/pedidos/historial`).
 - **Tabla del mapeo** (canonizada en helper `resolverTipoComprobantePorIva(iva, decisionFiscal)`):
 
-  | `proveedor.iva` | `decisionFiscal` (UI) | TIPO COMPROBANTE (Excel) |
+  | `proveedor.iva` | `decisionFiscal` (UI) | `tipo_comprobante` (POST DUX) |
   |---|---|---|
   | `SIEMPRE` | ignorado | `FACTURA` |
   | `NUNCA` | ignorado | `Comprobante_Compra` |
@@ -396,22 +396,22 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   | `PREGUNTA` | `null` / `undefined` | **error** `REQUIERE_DECISION_FISCAL` |
 
 - **Tipos**:
-  - `TipoComprobanteRecepcion = "FACTURA" | "Comprobante_Compra"` exportado desde el servicio (**FACTURA** en mayúsculas para coincidir con importación DUX). `RecepcionPedidoExcelRow["TIPO COMPROBANTE"]` usa esta unión.
-  - `ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL"` — constante exportada sólo desde **`exportRecepcionPedidoExcel.service.ts`**. Un archivo **`"use server"`** (p. ej. `actions/exportRecepcionPedidoExcel.ts`) **no** puede `export`-ar strings, objetos ni funciones síncronas: sólo **async functions** como Server Actions; re-exportar esa constante provocaba `invalid-use-server-value` en runtime.
+  - `TipoComprobanteRecepcion = "FACTURA" | "Comprobante_Compra"` exportado desde el servicio (**FACTURA** en mayúsculas para coincidir con DUX).
+  - `ERROR_REQUIERE_DECISION_FISCAL = "REQUIERE_DECISION_FISCAL"` — constante exportada sólo desde **`exportRecepcionPedidoExcel.service.ts`**. Un archivo **`"use server"`** no puede `export`-ar strings síncronos; re-exportar esa constante desde una Action provocaba `invalid-use-server-value` en runtime.
 - **Servicio** (`exportRecepcionPedidoExcel.service.ts`):
   - El `findUnique` de `pedidoHistoria` incluye `proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } }`.
-  - `getExportRecepcionPedidoExcelPayload` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }`. La columna Excel **COMPROBANTE** sale de **`prod_ped_ult_comp`** según tipo **FACTURA** vs **Comprobante_Compra** (ver §2.8).
-- **Action** (`actions/exportRecepcionPedidoExcel.ts`):
-  - Schema Zod agrega `decisionFiscal: z.boolean().optional()` (cliente envía `boolean` o no envía nada).
-  - La Action propaga `decisionFiscal` al servicio sin reinterpretar la regla. Si el servicio devuelve el marker `REQUIERE_DECISION_FISCAL`, viaja hasta el cliente como `error` para que el modal SI/NO se abra.
+  - `prepararRecepcionCompraDatos` recibe `decisionFiscal?: boolean` y aplica `resolverTipoComprobantePorIva(pedido.proveedor.iva, decisionFiscal)`. Si devuelve `null`, retorna `{ success: false, error: ERROR_REQUIERE_DECISION_FISCAL }`. El **nro comprobante** sale de **`prod_ped_ult_comp`** según tipo **FACTURA** vs **Comprobante_Compra** (ver §2.8).
+- **Action** (`actions/registrarRecepcionCompraDux.ts`):
+  - Schema Zod incluye `decisionFiscal: z.boolean().optional()`.
+  - Si el servicio devuelve `REQUIERE_DECISION_FISCAL`, viaja hasta el cliente como `error` para que el modal SI/NO se abra.
 - **Flujo cliente** (`PedidoHistoriaDetalleModal.tsx`):
-  - `getPedidoHistoriaDetalle` ahora expone **`proveedorIva: IvaProveedor`** en `PedidoHistoriaDetalle` (select Prisma `proveedor.iva`).
-  - El modal usa `pedirDecisionFiscalSiAplica()`: si `proveedorIva` ∈ {`SIEMPRE`, `NUNCA`} no abre nada y deja que el servicio resuelva; si es `PREGUNTA`, abre el componente nuevo `ConfirmarComprobanteFiscalModal` (Si/No) y espera la respuesta antes de invocar la Action. Cancelar el modal aborta la operación (no guarda recepción ni registra DUX). Aplicado en los 3 disparadores del export: **Registrar En Dux**, **Descargar Recepción** y **Guardar Corrección**.
+  - `getPedidoHistoriaDetalle` expone **`proveedorIva: IvaProveedor`** en `PedidoHistoriaDetalle`.
+  - El modal usa `pedirDecisionFiscalSiAplica()` antes de **Registrar En Dux**: si `proveedorIva` ∈ {`SIEMPRE`, `NUNCA`} no abre nada; si es `PREGUNTA`, abre `ConfirmarComprobanteFiscalModal` (Si/No). Cancelar aborta sin POST.
 - **Regla para futuras IAs**:
   - **No** duplicar el mapeo en el cliente. Si un nuevo flujo necesita usar la regla, importar y reutilizar `resolverTipoComprobantePorIva` desde `@/services/exportRecepcionPedidoExcel.service`.
   - **No** asumir un default cuando `iva = PREGUNTA` y falta `decisionFiscal`: la única respuesta correcta es el marker `REQUIERE_DECISION_FISCAL` (la decisión es responsabilidad del operador en UI).
   - Si una nueva integración (p. ej. PDF, otra API) necesita un mapeo análogo, agregar un helper hermano (`resolverTipoXxxPorIva`) y documentarlo aquí — **no** reusar el helper de Excel para semánticas distintas.
-  - `RecepcionPedidoExcelRow["PRECIO INCLUYE IVA"]` es el literal **`NO`**: el total ingresado (con IVA) se divide por **1,21** antes del reparto; precios unitarios **netos** con **4 decimales** (`PRECIO_UNITARIO_RECEPCION_DECIMALES`). POST **no** envía `percepciones[]` en v1.
+  - Precios unitarios **netos** con **4 decimales** (`PRECIO_UNITARIO_RECEPCION_DECIMALES`); total ingresado (con IVA) se divide por **1,21** antes del reparto. POST **no** envía `percepciones[]` en v1.
 
 ### 1.11e Catálogo personal DUX (`global_personal`)
 
@@ -421,8 +421,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Migración:** `20260605100000_add_global_personal`.
 - **Carga de datos:** manual (`INSERT`) o sync futuro desde API DUX *Consultar Personales*; no hay UI de alta en v1. Seed inicial (migración `20260605110000_seed_global_personal`): `14242873` FERNANDO PANAIA, `14045740` WALTER GARCIA, `1930206` EMILIANO GARCIA, `1930207` JUAN PABLOCHANTA.
 - **Lectura:** `listGlobalPersonal()` en `src/services/globalPersonal.service.ts`; Action `listGlobalPersonalAction` (`src/actions/globalPersonal.ts`) con gate `PERMISOS.pedidos.acceso`.
-- **Uso en recepción:** antes de `registrarRecepcionCompraDuxAction`, la UI debe pedir al operador qué personal registra la compra; el `idPersonal` elegido se envía en el payload y se mapea a `id_personal` del POST. Validación Zod: `z.coerce.number().int().positive()` (campo `idPersonal` en la Action).
-- **Pendiente frontend:** modal selector en `PedidoHistoriaDetalleModal` (listar con `listGlobalPersonalAction`, confirmar, pasar `idPersonal` a **Metodo Post** / flujo definitivo).
+- **Uso en recepción:** antes de `registrarRecepcionCompraDuxAction`, la UI debe pedir al operador qué personal registra la compra; el `idPersonal` elegido se envía en el payload y se mapea a `id_personal` del POST. Validación Zod: `z.coerce.number().int().positive()` (campo `idPersonal` en la Action). Selector: `ElegirPersonalRecepcionModal` enlazado a **Registrar En Dux**.
 
 ### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
 
@@ -481,7 +480,7 @@ Esta sección **es obligatoria** para todas las páginas RSC y existe para evita
 
 **E. Defensa de shape contra relaciones nulas**
 
-- Aunque las FK estén declaradas `NOT NULL`, los servicios que leen relaciones con `select.proveedor.{...}` o `select.sucursal.{...}` **deben** validar que la relación no sea `undefined` antes de leer subcampos (p. ej. `pedido.proveedor.iva`). En `getPedidoHistoriaDetalle`, `getPedidoHistoriaPdfPayload` y `getExportRecepcionPedidoExcelPayload` se devuelve un `ServiceResult` con error explícito si la relación viene incompleta y se loggea con el prefijo del módulo. Esto evita que un cliente Prisma desactualizado (entre deploys) se traduzca en `TypeError` genéricos.
+- Aunque las FK estén declaradas `NOT NULL`, los servicios que leen relaciones con `select.proveedor.{...}` o `select.sucursal.{...}` **deben** validar que la relación no sea `undefined` antes de leer subcampos (p. ej. `pedido.proveedor.iva`). En `getPedidoHistoriaDetalle`, `getPedidoHistoriaPdfPayload` y `prepararRecepcionCompraDatos` se devuelve un `ServiceResult` con error explícito si la relación viene incompleta y se loggea con el prefijo del módulo. Esto evita que un cliente Prisma desactualizado (entre deploys) se traduzca en `TypeError` genéricos.
 - En listados (`listarPedidosHistoria`) se usa el patrón menos estricto `r.proveedor?.nombre ?? "—"` para no romper el render del listado completo si una fila está corrupta.
 
 ---
@@ -946,7 +945,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
      - Actualiza únicamente `cant_recibida` (sin tocar `cant_pedida`).
 
 5b. `guardarRecepcionPedidoHistoria({ pedidoHistoriaId, items })`
-   - Uso: persistencia consolidada al final del flujo (botones **Registrar En Dux** / **Guardar Corrección**).
+   - Uso: persistencia consolidada al final del flujo (**Registrar En Dux** / **Guardar Corrección**).
    - Entrada: snapshot completo del modal (`id?`, `codTienda`, `cantPedida`, `cantRecibida`).
    - Reglas:
      - Si `id` existe, actualiza la fila.
@@ -1006,17 +1005,18 @@ Función:
 
 ---
 
-### 2.8 Recepción pedidos — correlativo COMPROBANTE (Excel)
+### 2.8 Recepción pedidos — correlativo COMPROBANTE (POST DUX)
 
 - **Eliminado (histórico):** consulta DUX `/compras` por sucursal y columna `recepcion_numero` en `prod_ped_historial` (migración `20260517100000_drop_recepcion_numero_prod_ped_historial`).
 - **Vigente — tabla `prod_ped_ult_comp`** (Prisma `ProdPedUltComp`): **dos filas fijas** con columnas `id`, `tipo_comprobante`, `ult_comprobante` y **único** por `tipo_comprobante` (migración `20260519103000_prod_ped_ult_comp_tipo_dos_filas`):
   - **`id = 1`**, `tipo_comprobante = Comprobante_Compra`, `ult_comprobante` inicial **`1234569011`** (sólo dígitos).
   - **`id = 2`**, `tipo_comprobante = FACTURA`, `ult_comprobante` inicial **`A-00000-00000027`** (formato AFIP `L-#####-########`).
-- **`getExportRecepcionPedidoExcelPayload`** (tras validar totales/precios): según **`resolverTipoComprobantePorIva`** (`FACTURA` vs `Comprobante_Compra`):
+- **`prepararRecepcionCompraDatos`** (tras validar totales/precios): según **`resolverTipoComprobantePorIva`** (`FACTURA` vs `Comprobante_Compra`):
   - **Comprobante_Compra:** `UPDATE prod_ped_ult_comp SET ult_comprobante = (btrim(ult_comprobante)::bigint + 1)::text WHERE id = 1 RETURNING ult_comprobante` (atómico).
   - **FACTURA:** transacción con `SELECT ult_comprobante FROM prod_ped_ult_comp WHERE id = 2 FOR UPDATE`, incremento del último tramo en **`incrementarUltimoComprobanteFacturaAfip`** (`src/lib/prodPedUltComprobanteIncrement.ts`), luego `UPDATE` con el nuevo valor.
-- El valor devuelto es el que se escribe en la columna **COMPROBANTE** del Excel (y queda persistido como último correlativo de ese tipo).
-- **Cada export exitoso** consume correlativo del tipo correspondiente (mismos disparadores que antes: descarga, registrar, corrección con Excel).
+- El valor devuelto es el `nro_comprobante` del POST DUX (y queda persistido como último correlativo de ese tipo).
+- **Cada POST exitoso** consume correlativo del tipo correspondiente.
+- **Eliminado (2026-06-04):** exportación Excel que también reservaba correlativo en descarga/registrar/corrección.
 - **Sync masivo** DUX compras: `comprobantesProveedorDuxSync.service.ts` + `duxComprasApi.ts` (§2.5a), independiente de esta tabla.
 
 ---
@@ -1025,50 +1025,38 @@ Función:
 
 - **Cliente:** `src/lib/duxComprasV2Api.ts` — `postCompraV2`, auth **Bearer** (`DUX_API_TOKEN`), URL `…/services/v2/compras`. `getDuxIdEmpresaCompras()` lee `DUX_ID_EMPRESA_COMPRAS` (default **2482**, mismo criterio que sync §2.5a).
 - **Servicio:** `src/services/registrarRecepcionCompraDux.service.ts` — `registrarRecepcionCompraDux` arma el body y llama `postCompraV2`.
-- **Action:** `src/actions/registrarRecepcionCompraDux.ts` — `registrarRecepcionCompraDuxAction`; gate `PERMISOS.pedidos.acceso` (mismo que Excel recepción).
-- **SSOT de datos:** `prepararRecepcionCompraDatos` en `exportRecepcionPedidoExcel.service.ts` (compartido con Excel). Mapeo Excel → POST:
+- **Action:** `src/actions/registrarRecepcionCompraDux.ts` — `registrarRecepcionCompraDuxAction`; gate `PERMISOS.pedidos.acceso`.
+- **SSOT de datos:** `prepararRecepcionCompraDatos` en `exportRecepcionPedidoExcel.service.ts`. Mapeo → POST:
   - `TIPO COMPROBANTE` → `tipo_comprobante` (`FACTURA` \| `Comprobante_Compra`, misma regla `resolverTipoComprobantePorIva`).
   - `COMPROBANTE` → `nro_comprobante` (misma reserva en `prod_ped_ult_comp`; **sin rollback** si el POST falla).
   - `ID PROVEEDOR` → `id_proveedor`; `global_sucursales.id_dux` → `id_sucursal`; depósito por `getIdDepositoPorSucursalCodigo` → `id_deposito`.
   - `FECHA` (+1 día) → `fecha` ISO `YYYY-MM-DD`; `FECHA IMPUTACION CONTABLE` → `fecha_imputacion_contable`.
   - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (**neto**, total usuario ÷ **1,21**, **4 decimales**). **No** se envía `percepciones[]` en v1 (DUX suma IVA desde el maestro del ítem).
 - **Opcionales omitidos en v1:** `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI). **`id_personal`**: requerido en negocio; se envía desde `global_personal.id_personal` tras selector en UI (§1.11e).
-- **UI:** botón **Metodo Post** en `PedidoHistoriaDetalleModal` (prueba POST sin cerrar modal ni marcar `RECEPCIONADO`). Convive con **Registrar En Dux** (Excel + marcar local). Cuando el POST sea estable, retirar generación Excel del flujo principal.
+- **UI:** botón **Registrar En Dux** en `PedidoHistoriaDetalleModal` — único flujo de registro: POST DUX + `marcarPedidoHistoriaRegistrado` (estado **RECEPCIONADO**). Sin exportación Excel.
 - **Doc DUX:** [Registrar comprobante de compra](https://duxsoftware.readme.io/reference/crear_compra).
 
 ---
 
-### 2.9 Servicio `exportRecepcionPedidoExcel.service.ts` (Excel recepción 97-2003)
+### 2.9 Servicio `exportRecepcionPedidoExcel.service.ts` (datos recepción → POST DUX)
 
-Objetivo: construir el payload (filas + filename) del Excel 97-2003 con formato DUX para una recepción de pedido.
+Objetivo: preparar `RecepcionCompraDatosPreparados` para el POST DUX v2/compras (`registrarRecepcionCompraDux`).
 
-**Núcleo compartido:** `prepararRecepcionCompraDatos` devuelve `RecepcionCompraDatosPreparados` (usado también por §2.9a). `getExportRecepcionPedidoExcelPayload` solo formatea filas Excel desde ese resultado.
+**SSOT:** `prepararRecepcionCompraDatos({ pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso?, decisionFiscal? })`
 
-Contrato (SSOT de integración + armado de filas):
+- Entrada:
+  - `pedidoHistoriaId`: `cuid()` del snapshot en `prod_ped_historial`
+  - `fechaFacturaIso`: `YYYY-MM-DD` (FECHA DE FACTURA desde el modal)
+  - `totalPedidoIngreso`: opcional; si falta, usa `prod_ped_historial.total` persistido (**> 0**)
+  - `decisionFiscal`: requerido cuando `proveedor.iva = PREGUNTA` (§1.11d.1)
+- Proceso:
+  - Lee proveedor, sucursal, ítems con `cant_recibida > 0`
+  - `fecha` POST = fecha ingresada + 1 día; `fecha_imputacion_contable` = fecha ingresada
+  - Reserva **nro comprobante** en `prod_ped_ult_comp` (§2.8) según `tipo_comprobante`
+  - Reparte precios netos (total ÷ 1,21) con **4 decimales** y tolerancia **0,10**
+- Salida: `RecepcionCompraDatosPreparados` → mapeo en `mapRecepcionCompraDatosToV2PostBody` (§2.9a)
 
-1. `getExportRecepcionPedidoExcelPayload({ pedidoHistoriaId, fechaFacturaIso, totalPedidoIngreso?, decisionFiscal? })`
-   - Entrada:
-     - `pedidoHistoriaId`: `cuid()` del snapshot en `prod_ped_historial`
-     - `fechaFacturaIso`: `YYYY-MM-DD` (FECHA DE FACTURA desde el modal)
-     - `totalPedidoIngreso`: opcional; si falta o no es válido, se usa `prod_ped_historial.total` **solo** si ya fue persistido al registrar recepción (**> 0**). Si ninguno sirve, error: *«Falta un total válido…»* (ya no hay respaldo desde DUX).
-   - Proceso:
-     - Lee desde DB:
-       - `prod_ped_historial.proveedor.id_proveedor_dux` => columna `ID PROVEEDOR`
-       - `prod_ped_historial.sucursal.deposito` => columna `DEPOSITO`
-       - `prod_ped_historial_merc.cod_tienda` y `cant_recibida` => `CÓDIGO PRODUCTO` y `CANTIDAD`
-     - En el Excel, `FECHA` se exporta en formato `DD-MM-AAAA` con **fecha ingresada + 1 día** (si el usuario carga `2026-04-14`, `FECHA` sale `15-04-2026`). `FECHA IMPUTACION CONTABLE` se exporta con la fecha ingresada original (`14-04-2026` en el ejemplo).
-     - Columna **`COMPROBANTE`**: correlativo por tipo en **`prod_ped_ult_comp`** (§2.8), según **`TIPO COMPROBANTE`** resuelto, **después** de validar totales/precios.
-     - **`TIPO COMPROBANTE`**: sigue `resolverTipoComprobantePorIva` + modal **PREGUNTA** (`ERROR_REQUIERE_DECISION_FISCAL`).
-     - Filtra ítems con `cant_recibida > 0` (no se exportan filas con `CANTIDAD = 0`).
-     - Columna **`PRECIO INCLUYE IVA`**: siempre el literal **`NO`** (precios netos tras `total ÷ 1,21`).
-     - Calcula `PRECIO` distribuyendo el total neto (÷ 1,21) entre cantidades recibidas con **4 decimales** por línea (tolerancia total **0,10**).
-   - Salida:
-     - `{ sheetName, filename, rows }` donde `rows` ya tiene las claves/cabeceras exactas del Excel.
-
-Notas:
-- Este servicio prepara el payload; la generación binaria del `.xls` vive en la Action `src/actions/exportRecepcionPedidoExcel.ts` (usa `xlsx` con `bookType: "xls"`).
-- Requiere la columna `global_sucursales.deposito` (TEXT), agregada en la migración `20260323090000_add_sucursales_deposito_column` (SQL histórico sobre `sucursales`).
-- La columna **`recepcion_numero`** fue **eliminada** de `prod_ped_historial` (migración `20260517100000_drop_recepcion_numero_prod_ped_historial`); el correlativo Excel ya no depende de ella.
+**Eliminado (2026-06-04):** exportación Excel 97-2003 (`getExportRecepcionPedidoExcelPayload`, Action `exportarExcelRecepcionPedidoAction`). El registro en DUX es solo vía **Registrar En Dux**.
 
 ---
 
@@ -1229,6 +1217,8 @@ Antes de entregar código nuevo o modificado, verificar:
   - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
 
+*Última actualización (2026-06-04): **Recepción pedidos** — eliminados `exportarExcelRecepcionPedidoAction` y `getExportRecepcionPedidoExcelPayload`; registro único vía POST DUX (**Registrar En Dux**). SSOT: `prepararRecepcionCompraDatos`. Ver §1.11d.1, §2.8, §2.9, §2.9a.*
+
 *Última actualización (2026-05-27): **Caja CHEQUE — `ult_actualizacion`** — al registrar, acreditar en cuenta o marcar pago a proveedor se actualiza `ult_actualizacion` de la caja origen (`touchUltActualizacionCajaTesoreria`); trigger ampliado en **`20260527120000_fin_tesoreria_touch_ult_actualizacion_cheques`**. Ver §2.5c.*
 
 *Última actualización (2026-05-26): **Cheques listado transferidos** — `listarChequesPorCajaId` con `tenenciaFiltro = transferidos`: `orderBy` por **`fecha_acreditacion` DESC** (antes `fecha_transferencia` DESC). Ver §2.5c (cheques).*
@@ -1349,7 +1339,6 @@ Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` 
 | `comparacionCategorias.ts` | comparacionCategorias.{acceso,editar} | ✓ | ✓ | ✓ | ✅ |
 | `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
 | `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `exportRecepcionPedidoExcel.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `globalPersonal.ts` | pedidos | n/a | ✓ | ✓ | ✅ |
 | `registrarRecepcionCompraDux.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
@@ -1403,12 +1392,12 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 - **Sesión defensiva** (`src/lib/sesion.ts`): `getRol()` atrapa cualquier excepción de iron-session y retorna `"simple"` con log `[sesion][getRol]`. Con esto, una cookie inválida ya no rompe el render; la página redirige a inicio si exige permiso.
 - **Logging server-side** con prefijo identificable en cada `catch` de:
   - `src/services/pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `getPedidoHistoriaDetalle`, `listarPedidosHistoria`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `guardarRecepcionPedidoHistoria`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `getPedidoHistoriaPdfPayload`, `eliminarPedidoHistoria`).
-  - `src/services/exportRecepcionPedidoExcel.service.ts` (`getExportRecepcionPedidoExcelPayload`).
+  - `src/services/exportRecepcionPedidoExcel.service.ts` (`prepararRecepcionCompraDatos`).
   - `src/actions/pedidosHistoria.ts` (helper `ejecutarActionSegura(scope, fn)` envolviendo las 9 Actions del módulo).
-  - `src/actions/exportRecepcionPedidoExcel.ts` (`exportarExcelRecepcionPedidoAction`, top-level `try/catch`).
+  - `src/actions/registrarRecepcionCompraDux.ts` (`registrarRecepcionCompraDuxAction`, top-level `try/catch`).
 - **Defensa de shape** ante `proveedor`/`sucursal` undefined en:
   - `getPedidoHistoriaDetalle` y `getPedidoHistoriaPdfPayload`: devuelven `ServiceResult` con error legible y log si la relación viene incompleta.
-  - `getExportRecepcionPedidoExcelPayload`: idéntico, antes de leer `pedido.proveedor.iva`.
+  - `prepararRecepcionCompraDatos`: idéntico, antes de leer `pedido.proveedor.iva`.
   - `listarPedidosHistoria`: `r.proveedor?.nombre ?? "—"` y `r.sucursal?.nombre ?? "—"` para no romper el listado completo si una fila trae datos corruptos.
 
 **Convención obligatoria para futuras IAs/módulos** (ver §1.5.1):

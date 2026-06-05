@@ -2,7 +2,6 @@ import { z } from "zod";
 import { IvaProveedor, Prisma } from "@prisma/client";
 import type { ServiceResult } from "@/types";
 import { prisma } from "@/lib/prisma";
-import { formatDdMmHhMmGuionesBajosArchivoArgentina } from "@/lib/fechaArgentina";
 import { incrementarUltimoComprobanteFacturaAfip } from "@/lib/prodPedUltComprobanteIncrement";
 import { getDuxIdEmpresaCompras } from "@/lib/duxComprasV2Api";
 import { getIdDepositoPorSucursalCodigo } from "@/services/prodTiendaStock.service";
@@ -51,26 +50,6 @@ export function resolverTipoComprobantePorIva(
   if (decisionFiscal === true) return "FACTURA";
   if (decisionFiscal === false) return "Comprobante_Compra";
   return null;
-}
-
-export interface RecepcionPedidoExcelRow {
-  "TIPO COMPROBANTE": TipoComprobanteRecepcion;
-  "COMPROBANTE": string;
-  "ID PROVEEDOR": string;
-  "FECHA": string;
-  "FECHA IMPUTACION CONTABLE": string;
-  "REALIZA RECEPCION": "SI";
-  "DEPOSITO": string;
-  "CÓDIGO PRODUCTO": string;
-  "CANTIDAD": number;
-  "PRECIO": number;
-  "PRECIO INCLUYE IVA": "NO";
-}
-
-export interface ExportRecepcionPedidoExcelPayload {
-  sheetName: string;
-  filename: string;
-  rows: RecepcionPedidoExcelRow[];
 }
 
 export interface RecepcionCompraProductoPreparado {
@@ -212,10 +191,6 @@ function pad2(n: number): string {
 function parseIsoYmdParts(iso: string): { y: number; m: number; d: number } {
   const [ys, ms, ds] = iso.split("-");
   return { y: Number(ys), m: Number(ms), d: Number(ds) };
-}
-
-function formatExcelDdMmYyyyDash(y: number, m: number, d: number): string {
-  return `${pad2(d)}-${pad2(m)}-${y}`;
 }
 
 function formatIsoYmd(y: number, m: number, d: number): string {
@@ -461,50 +436,6 @@ export async function prepararRecepcionCompraDatos(
   } catch (e) {
     logServiceError("prepararRecepcionCompraDatos", e);
     const msg = e instanceof Error ? e.message : "Error al preparar los datos de recepción.";
-    return { success: false, error: msg };
-  }
-}
-
-export async function getExportRecepcionPedidoExcelPayload(
-  params: PrepararRecepcionCompraDatosParams
-): Promise<ServiceResult<ExportRecepcionPedidoExcelPayload>> {
-  try {
-    const prep = await prepararRecepcionCompraDatos(params);
-    if (!prep.success) return prep;
-
-    const { y, m, d } = parseIsoYmdParts(params.fechaFacturaIso);
-    const { y: yMasUno, m: mMasUno, d: dMasUno } = sumarDiasYmd(y, m, d, 1);
-    const fechaFacturaExcel = formatExcelDdMmYyyyDash(yMasUno, mMasUno, dMasUno);
-    const fechaImputacionContableExcel = formatExcelDdMmYyyyDash(y, m, d);
-
-    const rows: RecepcionPedidoExcelRow[] = prep.data.productos.map((it) => ({
-      "TIPO COMPROBANTE": prep.data.tipoComprobante,
-      "COMPROBANTE": prep.data.nroComprobante,
-      "ID PROVEEDOR": String(prep.data.idProveedorDux),
-      "FECHA": fechaFacturaExcel,
-      "FECHA IMPUTACION CONTABLE": fechaImputacionContableExcel,
-      "REALIZA RECEPCION": "SI",
-      "DEPOSITO": prep.data.depositoTexto,
-      "CÓDIGO PRODUCTO": it.codItem,
-      "CANTIDAD": it.ctd,
-      "PRECIO": it.precioUnitario,
-      "PRECIO INCLUYE IVA": "NO",
-    }));
-
-    const stamp = formatDdMmHhMmGuionesBajosArchivoArgentina(new Date());
-    const filename = `Recepcion Pedido - ${prep.data.prefijoProveedor} - ${stamp}.xls`;
-
-    return {
-      success: true,
-      data: {
-        sheetName: "Recepción Pedido",
-        filename,
-        rows,
-      },
-    };
-  } catch (e) {
-    logServiceError("getExportRecepcionPedidoExcelPayload", e);
-    const msg = e instanceof Error ? e.message : "Error al preparar el Excel de recepción.";
     return { success: false, error: msg };
   }
 }

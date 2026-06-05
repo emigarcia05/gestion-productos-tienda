@@ -25,7 +25,6 @@ import {
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
-import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPedidoExcel";
 import { registrarRecepcionCompraDuxAction } from "@/actions/registrarRecepcionCompraDux";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
@@ -40,7 +39,6 @@ import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
-import { descargarExcelBase64 } from "@/lib/descargarExcelBase64";
 import {
   dateToIsoYmdArgentina,
   formatDdMmHhMmArgentina,
@@ -153,15 +151,16 @@ export default function PedidoHistoriaDetalleModal({
   const decisionFiscalResolverRef = useRef<
     ((value: DecisionFiscalResult) => void) | null
   >(null);
-  /**
-   * Modal selector de personal DUX antes de **Metodo Post**.
-   * Misma promesa + ref que el flujo fiscal (`decisionFiscalResolverRef`).
-   */
-  type PersonalRecepcionResult = PersonalRecepcionSeleccion | "cancelado";
+  /** Modal selector de personal DUX antes de **Registrar En Dux**. */
   const [elegirPersonalOpen, setElegirPersonalOpen] = useState(false);
-  const personalRecepcionResolverRef = useRef<
-    ((value: PersonalRecepcionResult) => void) | null
-  >(null);
+  /** Decisión fiscal pendiente del flujo **Registrar En Dux** (se consume al elegir personal). */
+  const decisionFiscalMetodoPostRef = useRef<boolean | undefined>(undefined);
+  /** Modal de éxito tras POST DUX + marcado RECEPCIONADO. */
+  const [recepcionDuxExitoOpen, setRecepcionDuxExitoOpen] = useState(false);
+  const [recepcionDuxExitoData, setRecepcionDuxExitoData] = useState<{
+    nroComprobante: string;
+    idCompra: number | null;
+  } | null>(null);
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
@@ -206,8 +205,8 @@ export default function PedidoHistoriaDetalleModal({
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
     }
-    // Para permitir "Descargar Recepcion" en modo RECEPCIONADO, alimentamos el campo con una fecha razonable.
-    // Hoy no existe persistencia de "FECHA FACTURA" en DB; usamos `generadoAt` del snapshot.
+    // Para pedidos RECEPCIONADO, alimentamos FECHA FACTURA con una fecha razonable
+    // (hoy no existe persistencia dedicada; usamos `generadoAt` del snapshot).
     if (res.data.estado === "RECEPCIONADO") {
       const d = toDate(res.data.generadoAt);
       if (d) setFechaRecepcion(dateToIsoYmdArgentina(d));
@@ -238,11 +237,10 @@ export default function PedidoHistoriaDetalleModal({
         decisionFiscalResolverRef.current = null;
       }
       setConfirmarFiscalOpen(false);
-      if (personalRecepcionResolverRef.current) {
-        personalRecepcionResolverRef.current("cancelado");
-        personalRecepcionResolverRef.current = null;
-      }
+      decisionFiscalMetodoPostRef.current = undefined;
       setElegirPersonalOpen(false);
+      setRecepcionDuxExitoOpen(false);
+      setRecepcionDuxExitoData(null);
     });
 
     void (async () => {
@@ -464,28 +462,64 @@ export default function PedidoHistoriaDetalleModal({
     setConfirmarFiscalOpen(next);
   }
 
-  /**
-   * Abre el selector de personal DUX antes de **Metodo Post**.
-   * Devuelve la fila elegida o `"cancelado"` si el operador cierra sin elegir.
-   */
-  async function pedirPersonalRecepcionSiAplica(): Promise<PersonalRecepcionResult> {
-    return await new Promise<PersonalRecepcionResult>((resolve) => {
-      personalRecepcionResolverRef.current = resolve;
-      setElegirPersonalOpen(true);
-    });
-  }
+  async function onSeleccionarPersonal(item: PersonalRecepcionSeleccion) {
+    if (!pedidoHistoriaId || guardando === "post") return;
 
-  function onSeleccionarPersonal(item: PersonalRecepcionSeleccion) {
-    personalRecepcionResolverRef.current?.(item);
-    personalRecepcionResolverRef.current = null;
+    setGuardando("post");
+    try {
+      const guardadoOk = await persistirRecepcionActual();
+      if (!guardadoOk) return;
+
+      const res = await registrarRecepcionCompraDuxAction({
+        pedidoHistoriaId,
+        fechaFacturaIso: fechaRecepcion,
+        totalPedidoIngreso: Number(totalPedido),
+        decisionFiscal: decisionFiscalMetodoPostRef.current,
+        idPersonal: item.idPersonal,
+      });
+      if (!res.ok) {
+        const line = res.error ?? "Error al registrar la compra en DUX.";
+        toast.error(line);
+        return;
+      }
+
+      const marcar = await marcarPedidoHistoriaRegistradoAction({
+        pedidoHistoriaId,
+        totalPedido: Number(totalPedido),
+      });
+      if (!marcar.ok) {
+        const line =
+          marcar.error ?? "Error al marcar el pedido como recepcionado.";
+        toast.error(line);
+        return;
+      }
+
+      setRecepcionDuxExitoData({
+        nroComprobante: res.data.nroComprobante,
+        idCompra: res.data.idCompra,
+      });
+      setRecepcionDuxExitoOpen(true);
+    } catch {
+      toast.error("Error inesperado al registrar la compra en DUX.");
+    } finally {
+      setGuardando(null);
+    }
   }
 
   function onOpenChangeElegirPersonal(next: boolean) {
+    if (!next && guardando === "post") return;
     if (!next) {
-      personalRecepcionResolverRef.current?.("cancelado");
-      personalRecepcionResolverRef.current = null;
+      decisionFiscalMetodoPostRef.current = undefined;
     }
     setElegirPersonalOpen(next);
+  }
+
+  function cerrarFlujoRecepcionDuxExitosa() {
+    setRecepcionDuxExitoOpen(false);
+    setRecepcionDuxExitoData(null);
+    decisionFiscalMetodoPostRef.current = undefined;
+    setElegirPersonalOpen(false);
+    handleModalOpenChange(false);
   }
 
   async function persistirRecepcionActual(): Promise<boolean> {
@@ -509,50 +543,6 @@ export default function PedidoHistoriaDetalleModal({
     } catch {
       toast.error("Error inesperado al guardar la recepción.");
       return false;
-    }
-  }
-
-  async function descargarRecepcionExcel(): Promise<boolean> {
-    if (!pedidoHistoriaId) return false;
-    const isoFecha =
-      fechaRecepcion.trim() !== ""
-        ? fechaRecepcion
-        : (() => {
-            const d = toDate(detalle?.generadoAt ?? null);
-            return d ? dateToIsoYmdArgentina(d) : "";
-          })();
-    if (!isoFecha) {
-      toast.error("No hay fecha para descargar la recepcion.");
-      return false;
-    }
-
-    const decision = await pedirDecisionFiscalSiAplica();
-    if (decision === "cancelado") return false;
-    const decisionFiscal: boolean | undefined =
-      typeof decision === "boolean" ? decision : undefined;
-
-    setGuardando("export");
-    try {
-      const excelRes = await exportarExcelRecepcionPedidoAction({
-        pedidoHistoriaId,
-        fechaFacturaIso: isoFecha,
-        totalPedidoIngreso: totalPedidoMontoPositivo(totalPedido)
-          ? Number(totalPedido)
-          : undefined,
-        decisionFiscal,
-      });
-      if (!excelRes.ok) {
-        const line = excelRes.error ?? "Error al generar el Excel.";
-        toast.error(line);
-        return false;
-      }
-      descargarExcelBase64(excelRes.data.excelBase64, excelRes.data.filename);
-      return true;
-    } catch {
-      toast.error("Error inesperado al generar el Excel.");
-      return false;
-    } finally {
-      setGuardando(null);
     }
   }
 
@@ -593,65 +583,6 @@ export default function PedidoHistoriaDetalleModal({
                 Cerrar
               </Button>
               {!locked ? (
-                <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="disabled:cursor-not-allowed"
-                  onClick={async () => {
-                    if (!pedidoHistoriaId) return;
-                    if (!puedeRegistrarEnDux) return;
-                    if (locked) return;
-                    if (guardando) return;
-
-                    const decision = await pedirDecisionFiscalSiAplica();
-                    if (decision === "cancelado") return;
-                    const decisionFiscal: boolean | undefined =
-                      typeof decision === "boolean" ? decision : undefined;
-
-                    const personal = await pedirPersonalRecepcionSiAplica();
-                    if (personal === "cancelado") return;
-
-                    setGuardando("post");
-                    try {
-                      const guardadoOk = await persistirRecepcionActual();
-                      if (!guardadoOk) {
-                        setElegirPersonalOpen(false);
-                        return;
-                      }
-
-                      const res = await registrarRecepcionCompraDuxAction({
-                        pedidoHistoriaId,
-                        fechaFacturaIso: fechaRecepcion,
-                        totalPedidoIngreso: Number(totalPedido),
-                        decisionFiscal,
-                        idPersonal: personal.idPersonal,
-                      });
-                      if (!res.ok) {
-                        const line = res.error ?? "Error al registrar la compra en DUX.";
-                        toast.error(line);
-                        return;
-                      }
-                      const idCompra =
-                        res.data.idCompra != null
-                          ? ` (id compra ${res.data.idCompra})`
-                          : "";
-                      toast.success(
-                        `Compra registrada en DUX vía POST. Comprobante ${res.data.nroComprobante}${idCompra}.`
-                      );
-                    } catch {
-                      toast.error("Error inesperado al registrar la compra en DUX.");
-                    } finally {
-                      setGuardando(null);
-                      setElegirPersonalOpen(false);
-                    }
-                  }}
-                  disabled={
-                    !puedeRegistrarEnDux || bloquearNavegacionModalPorEdicionCantidad
-                  }
-                >
-                  Metodo Post
-                </Button>
                 <Button
                   type="button"
                   className="disabled:cursor-not-allowed"
@@ -661,53 +592,11 @@ export default function PedidoHistoriaDetalleModal({
                     if (locked) return;
                     if (guardando) return;
 
-                    // Si proveedor.iva = PREGUNTA, primero confirmamos comprobante
-                    // fiscal (modal SI/NO). Cancelar el modal aborta el flujo
-                    // sin guardar ni registrar en DUX.
                     const decision = await pedirDecisionFiscalSiAplica();
                     if (decision === "cancelado") return;
-                    const decisionFiscal: boolean | undefined =
+                    decisionFiscalMetodoPostRef.current =
                       typeof decision === "boolean" ? decision : undefined;
-
-                    setGuardando("sync");
-                    try {
-                      const guardadoOk = await persistirRecepcionActual();
-                      if (!guardadoOk) return;
-                      // Secuencia requerida: primero generamos y descargamos el Excel (97-2003),
-                      // y luego registramos el pedido como "recibido" en DUX.
-                      const excelRes = await exportarExcelRecepcionPedidoAction({
-                        pedidoHistoriaId,
-                        fechaFacturaIso: fechaRecepcion,
-                        totalPedidoIngreso: Number(totalPedido),
-                        decisionFiscal,
-                      });
-                      if (!excelRes.ok) {
-                        const line =
-                          excelRes.error ?? "Error al generar el Excel.";
-                        toast.error(line);
-                        return;
-                      }
-                      descargarExcelBase64(
-                        excelRes.data.excelBase64,
-                        excelRes.data.filename
-                      );
-
-                      const res = await marcarPedidoHistoriaRegistradoAction({
-                        pedidoHistoriaId,
-                        totalPedido: Number(totalPedido),
-                      });
-                      if (!res.ok) {
-                        const line = res.error ?? "Error al registrar en DUX.";
-                        toast.error(line);
-                        return;
-                      }
-                      toast.success("Pedido registrado en DUX.");
-                      handleModalOpenChange(false);
-                    } catch {
-                      toast.error("Error inesperado al registrar la recepción.");
-                    } finally {
-                      setGuardando(null);
-                    }
+                    setElegirPersonalOpen(true);
                   }}
                   disabled={
                     !puedeRegistrarEnDux || bloquearNavegacionModalPorEdicionCantidad
@@ -715,7 +604,6 @@ export default function PedidoHistoriaDetalleModal({
                 >
                   Registrar En Dux
                 </Button>
-                </>
               ) : (
                 <>
                   {!modoCorreccionRecepcionado ? (
@@ -745,32 +633,13 @@ export default function PedidoHistoriaDetalleModal({
                       onClick={async () => {
                         const guardadoOk = await persistirRecepcionActual();
                         if (!guardadoOk) return;
-                        const ok = await descargarRecepcionExcel();
-                        if (!ok) return;
                         setModoCorreccionRecepcionado(false);
-                        toast.success(
-                          "Correccion de recepcion guardada y descarga actualizada."
-                        );
+                        toast.success("Correccion de recepcion guardada.");
                       }}
                     >
                       Guardar Correccion
                     </Button>
                   )}
-                  <Button
-                    type="button"
-                    className="disabled:cursor-not-allowed"
-                    disabled={
-                      guardando != null ||
-                      loading ||
-                      !pedidoHistoriaId ||
-                      bloquearNavegacionModalPorEdicionCantidad
-                    }
-                    onClick={async () => {
-                      await descargarRecepcionExcel();
-                    }}
-                  >
-                    Descargar Recepcion
-                  </Button>
                 </>
               )}
             </>
@@ -1230,6 +1099,39 @@ export default function PedidoHistoriaDetalleModal({
         onSeleccionar={onSeleccionarPersonal}
         pending={guardando === "post"}
       />
+      <Dialog
+        open={recepcionDuxExitoOpen}
+        onOpenChange={(next) => {
+          if (!next) return;
+        }}
+      >
+        <AppModal
+          title="Pedido Recepcionado"
+          size="sm"
+          actions={
+            <Button type="button" onClick={cerrarFlujoRecepcionDuxExitosa}>
+              Aceptar
+            </Button>
+          }
+        >
+          <p className="text-sm text-foreground">
+            El pedido fue recepcionado correctamente en DUX.
+          </p>
+          {recepcionDuxExitoData ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Comprobante{" "}
+              <span className="font-medium">{recepcionDuxExitoData.nroComprobante}</span>
+              {recepcionDuxExitoData.idCompra != null ? (
+                <>
+                  {" "}
+                  · id compra{" "}
+                  <span className="font-medium">{recepcionDuxExitoData.idCompra}</span>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+        </AppModal>
+      </Dialog>
     </>
   );
 }
