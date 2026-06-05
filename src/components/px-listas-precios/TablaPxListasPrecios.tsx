@@ -17,16 +17,18 @@ import {
   calcPxListaDesdeMargenSinIvaPct,
 } from "@/lib/calculos";
 import {
-  formatPorcentaje0a100Input,
-  parsePorcentaje0a100Input,
-} from "@/lib/format";
+  fmtMargenPxListaTabla,
+  fmtPxListaTabla,
+  formatMargenPxListaInput,
+  parseMargenPxListaInput,
+  roundPxListaEntero,
+} from "@/lib/pxListasPreciosFormat";
+import { parsePrecio } from "@/lib/parsearImport";
 import type {
   ItemPxListasPreciosTabla,
   ListaPrecioPxListasColumna,
   PrecioListaPxListasCelda,
 } from "@/lib/pxListasPrecios";
-import { fmtPxListaTabla } from "@/lib/pxListasPreciosFormat";
-import { parsePrecio } from "@/lib/parsearImport";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -106,7 +108,7 @@ function CeldaPxLista({
       return;
     }
 
-    const num = parsePrecio(trimmed);
+    const num = roundPxListaEntero(parsePrecio(trimmed));
     if (!Number.isFinite(num) || num <= 0) {
       toast.error("Precio inválido.");
       setDraft(display);
@@ -114,7 +116,9 @@ function CeldaPxLista({
       return;
     }
 
-    if (celda.pxEfectivo != null && Math.abs(num - celda.pxEfectivo) < 0.0001) {
+    const pxActual =
+      celda.pxEfectivo != null ? roundPxListaEntero(celda.pxEfectivo) : null;
+    if (pxActual != null && num === pxActual) {
       setEditando(false);
       return;
     }
@@ -151,7 +155,7 @@ function CeldaPxLista({
     <input
       ref={inputRef}
       type="text"
-      inputMode="decimal"
+      inputMode="numeric"
       autoComplete="off"
       readOnly={!editando}
       value={editando ? draft : display}
@@ -199,11 +203,11 @@ function CeldaMargenLista({
   const [saving, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const margenDisplay =
-    celda.margenPct != null ? formatPorcentaje0a100Input(celda.margenPct) : "";
+    celda.margenPct != null ? formatMargenPxListaInput(celda.margenPct) : "";
   const margenEditable = costoCompra > 0;
 
   const margenVista =
-    margenDisplay !== "" ? `${margenDisplay}%` : "";
+    celda.margenPct != null ? fmtMargenPxListaTabla(celda.margenPct) : "";
 
   function iniciarEdicion() {
     setDraft(margenDisplay);
@@ -228,7 +232,7 @@ function CeldaMargenLista({
       return;
     }
 
-    const margen = parsePorcentaje0a100Input(trimmed);
+    const margen = parseMargenPxListaInput(trimmed);
     if (margen === undefined) {
       toast.error("Margen inválido.");
       setDraft(margenDisplay);
@@ -238,7 +242,7 @@ function CeldaMargenLista({
 
     if (
       celda.margenPct != null &&
-      Math.abs(margen - celda.margenPct) < 0.005
+      Math.abs(margen - celda.margenPct) < 0.00005
     ) {
       setEditando(false);
       return;

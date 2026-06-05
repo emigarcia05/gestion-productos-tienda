@@ -215,6 +215,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 |--------|----------------|-----------|
 | Global | `Proveedor` | `global_proveedores` |
 | Global | `Sucursal` | `global_sucursales` |
+| Global | `GlobalPersonal` | `global_personal` |
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual` |
@@ -411,6 +412,17 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - **No** asumir un default cuando `iva = PREGUNTA` y falta `decisionFiscal`: la única respuesta correcta es el marker `REQUIERE_DECISION_FISCAL` (la decisión es responsabilidad del operador en UI).
   - Si una nueva integración (p. ej. PDF, otra API) necesita un mapeo análogo, agregar un helper hermano (`resolverTipoXxxPorIva`) y documentarlo aquí — **no** reusar el helper de Excel para semánticas distintas.
   - `RecepcionPedidoExcelRow["PRECIO INCLUYE IVA"]` sigue siendo el literal `"SI"` (no se modificó en este cambio); si el negocio decide acoplarlo también a `proveedor.iva`, agregarlo como subsección `1.11d.2` y mantener el helper aislado.
+
+### 1.11e Catálogo personal DUX (`global_personal`)
+
+- **Tabla:** `global_personal` — Prisma `GlobalPersonal`.
+  - `id_personal` (`INTEGER`, PK): ID numérico del personal en DUX (mismo valor que `id_personal` en POST v2/compras).
+  - `nombre_personal` (`TEXT`, NOT NULL): nombre para mostrar en selector UI.
+- **Migración:** `20260605100000_add_global_personal`.
+- **Carga de datos:** manual (`INSERT`) o sync futuro desde API DUX *Consultar Personales*; no hay UI de alta en v1. Seed inicial (migración `20260605110000_seed_global_personal`): `14242873` FERNANDO PANAIA, `14045740` WALTER GARCIA, `1930206` EMILIANO GARCIA, `1930207` JUAN PABLOCHANTA.
+- **Lectura:** `listGlobalPersonal()` en `src/services/globalPersonal.service.ts`; Action `listGlobalPersonalAction` (`src/actions/globalPersonal.ts`) con gate `PERMISOS.pedidos.acceso`.
+- **Uso en recepción:** antes de `registrarRecepcionCompraDuxAction`, la UI debe pedir al operador qué personal registra la compra; el `idPersonal` elegido se envía en el payload y se mapea a `id_personal` del POST. Validación Zod: `z.coerce.number().int().positive()` (campo `idPersonal` en la Action).
+- **Pendiente frontend:** modal selector en `PedidoHistoriaDetalleModal` (listar con `listGlobalPersonalAction`, confirmar, pasar `idPersonal` a **Metodo Post** / flujo definitivo).
 
 ### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
 
@@ -1020,7 +1032,7 @@ Función:
   - `ID PROVEEDOR` → `id_proveedor`; `global_sucursales.id_dux` → `id_sucursal`; depósito por `getIdDepositoPorSucursalCodigo` → `id_deposito`.
   - `FECHA` (+1 día) → `fecha` ISO `YYYY-MM-DD`; `FECHA IMPUTACION CONTABLE` → `fecha_imputacion_contable`.
   - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (`porc_descuento: 0`).
-- **Opcionales omitidos en v1:** `id_personal`, `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI).
+- **Opcionales omitidos en v1:** `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI). **`id_personal`**: requerido en negocio; se envía desde `global_personal.id_personal` tras selector en UI (§1.11e).
 - **UI:** botón **Metodo Post** en `PedidoHistoriaDetalleModal` (prueba POST sin cerrar modal ni marcar `RECEPCIONADO`). Convive con **Registrar En Dux** (Excel + marcar local). Cuando el POST sea estable, retirar generación Excel del flujo principal.
 - **Doc DUX:** [Registrar comprobante de compra](https://duxsoftware.readme.io/reference/crear_compra).
 
@@ -1338,6 +1350,7 @@ Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` 
 | `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
 | `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
 | `exportRecepcionPedidoExcel.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
+| `globalPersonal.ts` | pedidos | n/a | ✓ | ✓ | ✅ |
 | `registrarRecepcionCompraDux.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |

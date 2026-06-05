@@ -64,7 +64,7 @@ export function calcPxListaDesdeMargenSinIvaPct(
   const neto = costoCompra * (1 + margenPct / 100);
   const px = neto * factorIva;
   if (!Number.isFinite(px) || px <= 0) return null;
-  return Math.round(px * 10000) / 10000;
+  return Math.round(px);
 }
 
 /** Redondeo estándar de precio lista tienda (4 decimales, alineado a Prisma DECIMAL(14,4)). */

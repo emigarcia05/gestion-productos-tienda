@@ -147,6 +147,17 @@ model Sucursal {
   @@map("global_sucursales")
 }
 
+/**
+ * Catálogo de personal DUX para recepción de compras (`id_personal` en POST v2/compras).
+ * Filas cargadas manualmente o por sync futuro; PK = ID numérico DUX.
+ */
+model GlobalPersonal {
+  idPersonal     Int    @id @map("id_personal")
+  nombrePersonal String @map("nombre_personal")
+
+  @@map("global_personal")
+}
+
 /** Catálogo de entidades de caja (`nombre` único en MAYÚSCULAS). */
 model FinTesoreriaEntidad {
   id        String   @id @default(cuid())

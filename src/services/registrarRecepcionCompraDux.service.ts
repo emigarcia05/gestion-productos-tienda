@@ -16,7 +16,8 @@ function logServiceError(scope: string, err: unknown): void {
 }
 
 export function mapRecepcionCompraDatosToV2PostBody(
-  datos: RecepcionCompraDatosPreparados
+  datos: RecepcionCompraDatosPreparados,
+  idPersonal?: number
 ): V2CrearCompraRequest {
   return {
     id_empresa: datos.idEmpresa,
@@ -27,6 +28,7 @@ export function mapRecepcionCompraDatosToV2PostBody(
     nro_comprobante: datos.nroComprobante,
     fecha_imputacion_contable: datos.fechaImputacionContableIso,
     id_deposito: datos.idDeposito,
+    ...(idPersonal != null ? { id_personal: idPersonal } : {}),
     productos: datos.productos.map((p) => ({
       cod_item: p.codItem,
       ctd: p.ctd,
@@ -42,12 +44,13 @@ export async function registrarRecepcionCompraDux(params: {
   fechaFacturaIso: string;
   totalPedidoIngreso?: number;
   decisionFiscal?: boolean;
+  idPersonal?: number;
 }): Promise<ServiceResult<{ idCompra: number | null; nroComprobante: string }>> {
   try {
     const prep = await prepararRecepcionCompraDatos(params);
     if (!prep.success) return prep;
 
-    const body = mapRecepcionCompraDatosToV2PostBody(prep.data);
+    const body = mapRecepcionCompraDatosToV2PostBody(prep.data, params.idPersonal);
     const res = await postCompraV2(body);
 
     const idCompra =

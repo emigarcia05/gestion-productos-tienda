@@ -29,6 +29,7 @@ export interface V2CrearCompraRequest {
   nro_comprobante: string;
   fecha_imputacion_contable?: string;
   id_deposito?: number;
+  id_personal?: number;
   productos?: V2CompraProductoRequest[];
 }
 

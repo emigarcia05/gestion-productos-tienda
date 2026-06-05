@@ -29,6 +29,9 @@ import { exportarExcelRecepcionPedidoAction } from "@/actions/exportRecepcionPed
 import { registrarRecepcionCompraDuxAction } from "@/actions/registrarRecepcionCompraDux";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
+import ElegirPersonalRecepcionModal, {
+  type PersonalRecepcionSeleccion,
+} from "@/components/pedidos/ElegirPersonalRecepcionModal";
 import MontoArInput from "@/components/shared/MontoArInput";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
@@ -226,6 +229,11 @@ export default function PedidoHistoriaDetalleModal({
         decisionFiscalResolverRef.current = null;
       }
       setConfirmarFiscalOpen(false);
+      if (personalRecepcionResolverRef.current) {
+        personalRecepcionResolverRef.current("cancelado");
+        personalRecepcionResolverRef.current = null;
+      }
+      setElegirPersonalOpen(false);
     });
 
     void (async () => {
@@ -447,6 +455,30 @@ export default function PedidoHistoriaDetalleModal({
     setConfirmarFiscalOpen(next);
   }
 
+  /**
+   * Abre el selector de personal DUX antes de **Metodo Post**.
+   * Devuelve la fila elegida o `"cancelado"` si el operador cierra sin elegir.
+   */
+  async function pedirPersonalRecepcionSiAplica(): Promise<PersonalRecepcionResult> {
+    return await new Promise<PersonalRecepcionResult>((resolve) => {
+      personalRecepcionResolverRef.current = resolve;
+      setElegirPersonalOpen(true);
+    });
+  }
+
+  function onSeleccionarPersonal(item: PersonalRecepcionSeleccion) {
+    personalRecepcionResolverRef.current?.(item);
+    personalRecepcionResolverRef.current = null;
+  }
+
+  function onOpenChangeElegirPersonal(next: boolean) {
+    if (!next) {
+      personalRecepcionResolverRef.current?.("cancelado");
+      personalRecepcionResolverRef.current = null;
+    }
+    setElegirPersonalOpen(next);
+  }
+
   async function persistirRecepcionActual(): Promise<boolean> {
     if (!pedidoHistoriaId || !detalle) return false;
     try {
@@ -568,16 +600,23 @@ export default function PedidoHistoriaDetalleModal({
                     const decisionFiscal: boolean | undefined =
                       typeof decision === "boolean" ? decision : undefined;
 
+                    const personal = await pedirPersonalRecepcionSiAplica();
+                    if (personal === "cancelado") return;
+
                     setGuardando("post");
                     try {
                       const guardadoOk = await persistirRecepcionActual();
-                      if (!guardadoOk) return;
+                      if (!guardadoOk) {
+                        setElegirPersonalOpen(false);
+                        return;
+                      }
 
                       const res = await registrarRecepcionCompraDuxAction({
                         pedidoHistoriaId,
                         fechaFacturaIso: fechaRecepcion,
                         totalPedidoIngreso: Number(totalPedido),
                         decisionFiscal,
+                        idPersonal: personal.idPersonal,
                       });
                       if (!res.ok) {
                         const line = res.error ?? "Error al registrar la compra en DUX.";
@@ -595,6 +634,7 @@ export default function PedidoHistoriaDetalleModal({
                       toast.error("Error inesperado al registrar la compra en DUX.");
                     } finally {
                       setGuardando(null);
+                      setElegirPersonalOpen(false);
                     }
                   }}
                   disabled={
@@ -1174,6 +1214,12 @@ export default function PedidoHistoriaDetalleModal({
         onOpenChange={onOpenChangeConfirmarFiscal}
         onSeleccionar={onSeleccionarDecisionFiscal}
         pending={guardando != null}
+      />
+      <ElegirPersonalRecepcionModal
+        open={elegirPersonalOpen}
+        onOpenChange={onOpenChangeElegirPersonal}
+        onSeleccionar={onSeleccionarPersonal}
+        pending={guardando === "post"}
       />
     </>
   );

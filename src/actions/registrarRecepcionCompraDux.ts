@@ -15,6 +15,7 @@ const registrarRecepcionCompraDuxSchema = z.object({
   fechaFacturaIso: fechaFacturaIsoSchema,
   totalPedidoIngreso: z.coerce.number().positive().optional(),
   decisionFiscal: z.boolean().optional(),
+  idPersonal: z.coerce.number().int().positive().optional(),
 });
 
 export async function registrarRecepcionCompraDuxAction(
@@ -36,6 +37,7 @@ export async function registrarRecepcionCompraDuxAction(
       fechaFacturaIso: parsed.data.fechaFacturaIso,
       totalPedidoIngreso: parsed.data.totalPedidoIngreso,
       decisionFiscal: parsed.data.decisionFiscal,
+      idPersonal: parsed.data.idPersonal,
     });
 
     if (!res.success) {

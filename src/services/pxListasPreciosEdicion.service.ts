@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { calcMargenSinIvaPct, roundPrecioListaTienda } from "@/lib/calculos";
+import { calcMargenSinIvaPct } from "@/lib/calculos";
+import { roundPxListaEntero } from "@/lib/pxListasPreciosFormat";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 
@@ -40,7 +41,7 @@ export async function guardarPrecioListaEdicion(
     return { success: true, data: { precio: null, margenPct } };
   }
 
-  const redondeado = roundPrecioListaTienda(precio);
+  const redondeado = roundPxListaEntero(precio);
   await prisma.prodTiendaPrecioEdicion.upsert({
     where: { codTienda_idLista: { codTienda, idLista } },
     create: {
