@@ -12,7 +12,10 @@ import {
   limpiarCodExtCostoLista,
 } from "@/services/costoListaTienda.service";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
-import { actualizarCostoCxEnDux } from "@/services/actualizarCostoCxDux.service";
+import {
+  consultarEstadoEnvioCostoCxDux,
+  enviarCostosCxADux,
+} from "@/services/actualizarCostoCxDux.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 
 const guardarCostoCxProdSchema = z.object({
@@ -71,12 +74,12 @@ export async function exportarCostoCxDiffAction(): Promise<
   }
 }
 
-/** POST DUX `/item/nuevoItem`: actualiza costo donde DUX ≠ px proveedor vinculado (BASE). */
-export async function actualizarCostoCxDuxAction(): Promise<
+/** POST DUX: envía lotes (sin esperar estado). El cliente hace polling con `consultarEstadoCostoCxDuxAction`. */
+export async function enviarCostoCxDuxAction(): Promise<
   ActionResult<{
     cantidadEnviada: number;
     lotes: number;
-    idProcesoUltimo: number | null;
+    idsProceso: number[];
   }>
 > {
   const rol = await getRol();
@@ -87,15 +90,74 @@ export async function actualizarCostoCxDuxAction(): Promise<
     return { ok: false, error: "Sin permisos de editor." };
   }
 
-  const res = await actualizarCostoCxEnDux();
+  const res = await enviarCostosCxADux();
   if (!res.success) return { ok: false, error: res.error };
+
+  return { ok: true, data: res.data };
+}
+
+const consultarEstadoCostoCxSchema = z.object({
+  idProceso: z.coerce.number().int().positive(),
+});
+
+/** Una consulta de estado DUX (polling desde UI, ≥ 5 s entre llamadas). */
+export async function consultarEstadoCostoCxDuxAction(
+  raw: unknown
+): Promise<
+  ActionResult<{
+    estado: string;
+    errores: string[];
+    finalizado: boolean;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = consultarEstadoCostoCxSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "ID de proceso inválido." };
+  }
+
+  const res = await consultarEstadoEnvioCostoCxDux(parsed.data.idProceso);
+  if (!res.success) return { ok: false, error: res.error };
+  return { ok: true, data: res.data };
+}
+
+/** @deprecated Usar enviarCostoCxDuxAction + consultarEstadoCostoCxDuxAction desde UI. */
+export async function actualizarCostoCxDuxAction(): Promise<
+  ActionResult<{
+    cantidadEnviada: number;
+    lotes: number;
+    idProcesoUltimo: number | null;
+  }>
+> {
+  const envio = await enviarCostoCxDuxAction();
+  if (!envio.ok) return envio;
+
+  let idProcesoUltimo: number | null = null;
+  for (const idProceso of envio.data.idsProceso) {
+    idProcesoUltimo = idProceso;
+    const poll = await consultarEstadoCostoCxDuxAction({ idProceso });
+    if (!poll.ok) return poll;
+    if (!poll.data.finalizado) {
+      return {
+        ok: false,
+        error: `El proceso DUX ${idProceso} no está finalizado (estado: ${poll.data.estado || "desconocido"}).`,
+      };
+    }
+  }
 
   return {
     ok: true,
     data: {
-      cantidadEnviada: res.data.cantidadEnviada,
-      lotes: res.data.lotes,
-      idProcesoUltimo: res.data.idProcesoUltimo,
+      cantidadEnviada: envio.data.cantidadEnviada,
+      lotes: envio.data.lotes,
+      idProcesoUltimo,
     },
   };
 }

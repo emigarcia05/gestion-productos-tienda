@@ -12,10 +12,7 @@ const LOG_TAG = "[actualizarCostoCxDux]";
 /** Ítems por POST (mismo criterio de diff que export Excel). */
 const BATCH_SIZE = 100;
 
-/** Reintentos de polling hasta estado terminal (1 consulta cada ≥ 5 s vía throttle API). */
-const POLL_MAX_ATTEMPTS = 24;
-
-const ESTADO_FINALIZADO = "FINALIZADO";
+export const ESTADO_PROCESO_COSTO_CX_FINALIZADO = "FINALIZADO";
 
 function logServiceError(scope: string, err: unknown): void {
   const msg = err instanceof Error ? err.message : String(err);
@@ -28,32 +25,18 @@ function filasToProductosDux(
   return filas.map((f) => buildDuxModificarItemCostoBody(f.codigo, f.costo));
 }
 
-async function esperarProcesoItemsDux(
-  idProceso: number
-): Promise<{ estado: string; errores: string[] }> {
-  let ultimo = { estado: "", errores: [] as string[] };
-
-  for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-    ultimo = await obtenerEstadoModificacionItemsDux(idProceso);
-    if (ultimo.estado.toUpperCase() === ESTADO_FINALIZADO) {
-      return ultimo;
-    }
-  }
-
-  return ultimo;
+export function esEstadoProcesoCostoCxFinalizado(estado: string): boolean {
+  return estado.trim().toUpperCase() === ESTADO_PROCESO_COSTO_CX_FINALIZADO;
 }
 
 /**
- * Envía a DUX ítems donde `costo_compra` ≠ `px_compra_final_sin_iva` del proveedor
- * vinculado por `costo_compra_cod_ext`. Por ítem: `cod_item`, `costo`, `precios: []`.
+ * POST a DUX (sin polling). Devuelve los `idProceso` de cada lote enviado.
  */
-export async function actualizarCostoCxEnDux(): Promise<
+export async function enviarCostosCxADux(): Promise<
   ServiceResult<{
     cantidadEnviada: number;
     lotes: number;
-    idProcesoUltimo: number | null;
-    estado: string;
-    errores: string[];
+    idsProceso: number[];
   }>
 > {
   try {
@@ -71,14 +54,10 @@ export async function actualizarCostoCxEnDux(): Promise<
       lotes.push(productos.slice(i, i + BATCH_SIZE));
     }
 
-    let idProcesoUltimo: number | null = null;
-    let estado = "";
-    const erroresAcum: string[] = [];
+    const idsProceso: number[] = [];
 
-    for (let i = 0; i < lotes.length; i++) {
-      const postRes = await postModificarItemsDux({ productos: lotes[i] });
-      idProcesoUltimo = postRes.idProceso;
-
+    for (const lote of lotes) {
+      const postRes = await postModificarItemsDux({ productos: lote });
       if (postRes.idProceso == null) {
         return {
           success: false,
@@ -87,26 +66,7 @@ export async function actualizarCostoCxEnDux(): Promise<
             "DUX aceptó la petición pero no devolvió ID de proceso.",
         };
       }
-
-      const poll = await esperarProcesoItemsDux(postRes.idProceso);
-      estado = poll.estado;
-      if (poll.errores.length > 0) {
-        erroresAcum.push(...poll.errores);
-      }
-
-      if (poll.estado.toUpperCase() !== ESTADO_FINALIZADO) {
-        return {
-          success: false,
-          error: `El proceso DUX ${postRes.idProceso} no finalizó a tiempo (estado: ${poll.estado || "desconocido"}).`,
-        };
-      }
-    }
-
-    if (erroresAcum.length > 0) {
-      return {
-        success: false,
-        error: erroresAcum.slice(0, 5).join(" · "),
-      };
+      idsProceso.push(postRes.idProceso);
     }
 
     return {
@@ -114,14 +74,88 @@ export async function actualizarCostoCxEnDux(): Promise<
       data: {
         cantidadEnviada: productos.length,
         lotes: lotes.length,
-        idProcesoUltimo,
-        estado,
-        errores: [],
+        idsProceso,
       },
     };
   } catch (e) {
-    logServiceError("actualizarCostoCxEnDux", e);
-    const msg = e instanceof Error ? e.message : "Error al actualizar costos en DUX.";
+    logServiceError("enviarCostosCxADux", e);
+    const msg = e instanceof Error ? e.message : "Error al enviar costos a DUX.";
     return { success: false, error: msg };
   }
+}
+
+/** Una consulta de estado del proceso DUX (para polling desde el cliente). */
+export async function consultarEstadoEnvioCostoCxDux(
+  idProceso: number
+): Promise<
+  ServiceResult<{
+    estado: string;
+    errores: string[];
+    finalizado: boolean;
+  }>
+> {
+  if (!Number.isFinite(idProceso) || idProceso <= 0) {
+    return { success: false, error: "ID de proceso DUX inválido." };
+  }
+
+  try {
+    const poll = await obtenerEstadoModificacionItemsDux(idProceso);
+    return {
+      success: true,
+      data: {
+        estado: poll.estado,
+        errores: poll.errores,
+        finalizado: esEstadoProcesoCostoCxFinalizado(poll.estado),
+      },
+    };
+  } catch (e) {
+    logServiceError("consultarEstadoEnvioCostoCxDux", e);
+    const msg = e instanceof Error ? e.message : "Error al consultar estado en DUX.";
+    return { success: false, error: msg };
+  }
+}
+
+/** Flujo bloqueante legacy (polling en servidor). Preferir enviar + consultar desde UI. */
+export async function actualizarCostoCxEnDux(): Promise<
+  ServiceResult<{
+    cantidadEnviada: number;
+    lotes: number;
+    idProcesoUltimo: number | null;
+    estado: string;
+    errores: string[];
+  }>
+> {
+  const envio = await enviarCostosCxADux();
+  if (!envio.success) return envio;
+
+  const erroresAcum: string[] = [];
+  let estado = "";
+  let idProcesoUltimo: number | null = null;
+
+  for (const idProceso of envio.data.idsProceso) {
+    idProcesoUltimo = idProceso;
+    const poll = await consultarEstadoEnvioCostoCxDux(idProceso);
+    if (!poll.success) return poll;
+    estado = poll.data.estado;
+    if (poll.data.errores.length > 0) {
+      erroresAcum.push(...poll.data.errores);
+    }
+    if (!poll.data.finalizado) {
+      return {
+        success: false,
+        error: `El proceso DUX ${idProceso} no está finalizado (estado: ${estado || "desconocido"}).`,
+      };
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      cantidadEnviada: envio.data.cantidadEnviada,
+      lotes: envio.data.lotes,
+      idProcesoUltimo,
+      estado,
+      errores: erroresAcum,
+    },
+  };
 }
