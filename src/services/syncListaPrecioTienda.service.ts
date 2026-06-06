@@ -68,7 +68,7 @@ export interface SyncListaPrecioTiendaResult {
   errores: string[];
 }
 
-/** Mapea ítem DUX a la fila de upsert prod_tienda. `cod_ext` y `proveedor` quedan fuera del sync (§1.4.2). */
+/** Mapea ítem DUX a la fila de upsert prod_tienda. `proveedor` queda fuera del sync (§1.4.2). */
 function itemDuxToProdTiendaRecord(item: ItemDux) {
   const codTienda = (item.codItem ?? "").trim() || COD_TIENDA;
   return {

@@ -52,7 +52,7 @@ export async function guardarCostoCxProdTiendaAction(
   return { ok: true, data: undefined };
 }
 
-/** Excel CODIGO + COSTO: `costo_compra` (DUX) ≠ costo CX PROD. de la grilla. */
+/** Excel CODIGO + COSTO: diff `costo_compra` (DUX) vs `px_compra_final_sin_iva` vía `costo_compra_cod_ext`. */
 export async function exportarCostoCxDiffAction(): Promise<
   ActionResult<{ filas: FilaExportCostoCx[] }>
 > {
@@ -71,7 +71,7 @@ export async function exportarCostoCxDiffAction(): Promise<
   }
 }
 
-/** POST DUX `/item/nuevoItem`: actualiza solo `cod_item` + `costo` (CX PROD. con diff). */
+/** POST DUX `/item/nuevoItem`: actualiza costo donde DUX ≠ px proveedor vinculado (BASE). */
 export async function actualizarCostoCxDuxAction(): Promise<
   ActionResult<{
     cantidadEnviada: number;

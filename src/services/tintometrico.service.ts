@@ -55,8 +55,6 @@ export async function getSucursalesTintometricas(): Promise<SucursalTintometrica
 export type BaseTintometricaRow = {
   id: string;
   codTienda: string;
-  /** Histórico DUX: puede ser `null` para ítems creados luego del 2026-05-28. */
-  codExt: string | null;
   descripcionTienda: string;
   marca: string | null;
   rubro: string | null;
@@ -79,7 +77,6 @@ export async function buscarBasesTintometricas(
           OR: [
             { descripcionTienda: { contains: t, mode: "insensitive" as const } },
             { codTienda: { contains: t, mode: "insensitive" as const } },
-            { codExt: { contains: t, mode: "insensitive" as const } },
             { marca: { contains: t, mode: "insensitive" as const } },
           ],
         })),
@@ -94,7 +91,6 @@ export async function buscarBasesTintometricas(
       where,
       select: {
         codTienda: true,
-        codExt: true,
         descripcionTienda: true,
         marca: true,
         rubro: true,
@@ -109,7 +105,6 @@ export async function buscarBasesTintometricas(
     items: rows.map((r) => ({
       id: r.codTienda,
       codTienda: r.codTienda,
-      codExt: r.codExt,
       descripcionTienda: (r.descripcionTienda ?? "").trim(),
       marca: r.marca ?? null,
       rubro: r.rubro ?? null,

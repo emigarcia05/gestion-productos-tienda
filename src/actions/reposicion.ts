@@ -310,7 +310,7 @@ export async function getReposicionData(
     });
     return {
       idListaTienda: codTienda,
-      codExt: provResuelto?.codExt ?? r.codExt ?? "",
+      codExt: provResuelto?.codExt ?? "",
       codTienda,
       descripcionTienda: r.descripcionTienda,
       stock,
@@ -377,7 +377,7 @@ export async function getProductosReposicionSelector(
 
   return rows.map((r) => ({
       idListaTienda: r.codTienda,
-      codExt: r.codExt ?? "",
+      codExt: "",
       codTienda: r.codTienda,
       descripcionTienda: r.descripcionTienda,
     }));

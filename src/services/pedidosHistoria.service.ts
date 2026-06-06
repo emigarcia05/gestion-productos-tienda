@@ -300,8 +300,8 @@ export async function getPedidoHistoriaDetalle(params: {
     const codTiendaSet = Array.from(new Set(pedido.items.map((i) => i.codTienda)));
     const descRows = await prisma.prodTienda.findMany({
       where: { codTienda: { in: codTiendaSet } },
-      select: { codTienda: true, descripcionTienda: true, codExt: true },
-      orderBy: [{ codTienda: "asc" }, { codExt: "asc" }],
+      select: { codTienda: true, descripcionTienda: true },
+      orderBy: [{ codTienda: "asc" }],
     });
 
     const descripcionPorCodTienda = new Map<string, string>();

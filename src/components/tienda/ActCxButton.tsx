@@ -157,8 +157,9 @@ export default function ActCxButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          POST DUX: actualiza costos donde CX PROD. difiere del costo DUX. Tras
-          el éxito, opción de descargar el PDF Resumen de Aumentos
+          POST DUX: actualiza costos donde `costo_compra` difiere de
+          `px_compra_final_sin_iva` del proveedor BASE (`costo_compra_cod_ext`).
+          Tras el éxito, opción de descargar el PDF Resumen de Aumentos
         </TooltipContent>
       </Tooltip>
     </>

@@ -617,8 +617,6 @@ model ProdTiendaStock {
 // Alimentada solo por API externa (tabla prod_tienda). Frontend solo lectura; no usar create/update/delete desde UI.
 model ProdTienda {
   codTienda       String   @id @map("cod_tienda") // clave de negocio estable (PK); sync upsert por cod_tienda
-  /** Histórico DUX: a partir de 2026-05-28 ya no se sincroniza (vinculación 100 % manual vía `prod_precios_provee.cod_tienda`). Se preservan valores legacy para trazabilidad. */
-  codExt          String?  @map("cod_ext")
   rubro           String?
   subRubro        String?  @map("sub_rubro")
   marca           String?  // texto tal cual viene de la API DUX (se mantiene para trazabilidad)

@@ -1,16 +1,12 @@
-import { CX_PROD_SELECCION_PROM, costoCxProdMostrado } from "@/lib/cxPxTienda";
 import { prisma } from "@/lib/prisma";
-import { buildCxProdMapDesdeFilas } from "@/services/cxPxTiendaRows.service";
 
 export interface FilaExportCostoCx {
   codigo: string;
   costo: number;
 }
 
-/** Compara `costo_compra` (DUX) vs costo CX PROD. en pesos enteros (sin decimales). */
-export function costosCompraDifieren(costoCompra: number, costoCxProd: number): boolean {
-  return Math.round(costoCompra) !== Math.round(costoCxProd);
-}
+/** Precisión de `costo_compra` y `px_compra_final_sin_iva` (4 decimales). */
+const COMPARACION_COSTO_FACTOR = 10_000;
 
 function toNum(n: unknown): number {
   if (n == null) return 0;
@@ -19,51 +15,53 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Control de costos: compara `costo_compra` (DUX) con el valor mostrado en **CX PROD.**
- * Excel: CODIGO = `cod_tienda`, COSTO = ese costo CX PROD. (entero redondeado).
+ * Difieren `prod_tienda.costo_compra` vs `prod_precios_provee.px_compra_final_sin_iva`
+ * (vinculados por `costo_compra_cod_ext` → `cod_ext`).
+ */
+export function costosCompraDifieren(costoCompra: number, pxProveedorSinIva: number): boolean {
+  return (
+    Math.round(costoCompra * COMPARACION_COSTO_FACTOR) !==
+    Math.round(pxProveedorSinIva * COMPARACION_COSTO_FACTOR)
+  );
+}
+
+/**
+ * Ítems a exportar / POST DUX: tienen `costo_compra_cod_ext` y el costo DUX
+ * (`costo_compra`) difiere de `px_compra_final_sin_iva` del proveedor vinculado.
+ * CODIGO = `cod_tienda`, COSTO = `px_compra_final_sin_iva` redondeado al peso entero.
  */
 export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
   const rows = await prisma.prodTienda.findMany({
     where: {
-      listaPreciosProveedores: {
-        some: { habilitado: true },
-      },
+      costoCompraCodExt: { not: null },
     },
     select: {
       codTienda: true,
       costoCompra: true,
-      costoCompraCodExt: true,
+      costoListaProveedor: {
+        select: {
+          pxCompraFinalSinIva: true,
+          habilitado: true,
+        },
+      },
     },
     orderBy: { codTienda: "asc" },
   });
 
-  const cxProdMap = await buildCxProdMapDesdeFilas(
-    rows.map((r) => ({
-      codTienda: r.codTienda,
-      costoCompra: r.costoCompra,
-      costoCompraCodExt: r.costoCompraCodExt,
-    }))
-  );
-
   const filas: FilaExportCostoCx[] = [];
   for (const row of rows) {
-    const item = cxProdMap.get(row.codTienda);
-    if (!item || item.opcionesProveedor.length === 0) continue;
+    const proveedor = row.costoListaProveedor;
+    if (!proveedor?.habilitado) continue;
 
-    if (item.seleccion === CX_PROD_SELECCION_PROM) {
-      if (item.costoPromedio == null || item.costoPromedio <= 0) continue;
-    } else {
-      const op = item.opcionesProveedor.find((o) => o.codExt === item.seleccion);
-      if (!op || op.costo <= 0) continue;
-    }
+    const pxFinal = toNum(proveedor.pxCompraFinalSinIva);
+    if (pxFinal <= 0) continue;
 
-    const costoCxProd = costoCxProdMostrado(item);
     const costoDux = toNum(row.costoCompra);
-    if (!costosCompraDifieren(costoDux, costoCxProd)) continue;
+    if (!costosCompraDifieren(costoDux, pxFinal)) continue;
 
     filas.push({
       codigo: row.codTienda,
-      costo: Math.round(costoCxProd),
+      costo: Math.round(pxFinal),
     });
   }
   return filas;

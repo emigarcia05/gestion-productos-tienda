@@ -38,7 +38,7 @@ export interface SobreStockReposicionResult {
   tieneSobreStock: boolean;
 }
 
-function normCodExt(c: string): string {
+function normCodTienda(c: string): string {
   return (c ?? "").trim();
 }
 
@@ -105,7 +105,6 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
   const tiendas = await prisma.prodTienda.findMany({
     where: { codTienda: { in: codTiendas } },
     select: {
-      codExt: true,
       codTienda: true,
       descripcionTienda: true,
     },
@@ -190,7 +189,7 @@ export async function getSobreStockOtraSucursalParaPedidoEnviar(params: {
     if (!tienda) continue;
     if (!getStockeableFromMap(stockeableMap, codTienda)) continue;
 
-    const cx = normCodExt(tienda.codExt ?? "");
+    const cx = normCodTienda(codTienda);
 
     const topePedidoRow =
       fila.tipoPedido === "REPOSICION" ? fila.reposicionCantConf : null;

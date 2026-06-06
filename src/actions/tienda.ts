@@ -330,7 +330,7 @@ export async function getTiendaPageData(params: {
       subRubro: r.subRubro,
       marca: r.marca,
       proveedorDux: prefijo,
-      codigoExterno: r.codExt,
+      codigoExterno: null,
       costo: Number(r.costoCompra),
       porcIva: 21,
       precioLista: pxListaMap.get(r.codTienda) ?? 0,

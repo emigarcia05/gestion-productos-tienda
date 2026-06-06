@@ -48,8 +48,8 @@ async function esperarProcesoItemsDux(
 }
 
 /**
- * Envía a DUX los costos CX PROD. donde difieren de `costo_compra` (misma lógica que Excel).
- * Por ítem: `cod_item`, `costo`, `precios: []`.
+ * Envía a DUX ítems donde `costo_compra` ≠ `px_compra_final_sin_iva` del proveedor
+ * vinculado por `costo_compra_cod_ext`. Por ítem: `cod_item`, `costo`, `precios: []`.
  */
 export async function actualizarCostoCxEnDux(): Promise<
   ServiceResult<{
@@ -65,7 +65,7 @@ export async function actualizarCostoCxEnDux(): Promise<
     if (filas.length === 0) {
       return {
         success: false,
-        error: "No hay productos con diferencia entre costo DUX y CX PROD.",
+        error: "No hay productos con diferencia entre costo DUX y precio del proveedor BASE.",
       };
     }
 

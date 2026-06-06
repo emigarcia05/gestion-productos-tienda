@@ -59,49 +59,44 @@ export interface ListaPreciosFiltradoOpciones {
  * Una sola función para la página lista-precios: evita repetir la lógica de join.
  */
 export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCliente[]> {
-  const [filas, tiendaRows] = await Promise.all([
-    prisma.listaPrecioProveedor.findMany({
-      include: { proveedor: true },
-      orderBy: { codExt: "asc" },
-    }),
-    prisma.prodTienda.findMany({
-      select: { codExt: true, descripcionTienda: true },
-    }),
-  ]);
+  const filas = await prisma.listaPrecioProveedor.findMany({
+    include: {
+      proveedor: true,
+      prodTienda: { select: { descripcionTienda: true } },
+    },
+    orderBy: { codExt: "asc" },
+  });
 
-  const descripcionPorCodExt = new Map(
-    tiendaRows
-      .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
-      .map((t) => [t.codExt, t.descripcionTienda as string])
-  );
-
-  return filas.map((f) => ({
-    id: f.codExt,
-    codExt: f.codExt,
-    codProdProveedor: f.codProdProveedor,
-    habilitado: f.habilitado,
-    descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
-    descripcionProveedor: f.descripcionProveedor,
-    descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
-    marca: f.marca ?? null,
-    rubro: f.rubro ?? null,
-    pxListaProveedor: Number(f.pxListaProveedor),
-    dtoProveedor: Number(f.dtoProveedor),
-    dtoMarca: Number(f.dtoMarca),
-    dtoRubro: Number(f.dtoRubro),
-    dtoCantidad: Number(f.dtoCantidad),
-    dtoFinanciero: Number(f.dtoFinanciero),
-    cxTransporte: Number(f.cxTransporte),
-    pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
-    proveedor: f.proveedor
-      ? {
-          id: f.proveedor.id,
-          prefijo: f.proveedor.prefijo ?? "",
-          nombre: f.proveedor.nombre,
-          codigoUnico: f.proveedor.codigoUnico,
-        }
-      : null,
-  }));
+  return filas.map((f) => {
+    const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
+    return {
+      id: f.codExt,
+      codExt: f.codExt,
+      codProdProveedor: f.codProdProveedor,
+      habilitado: f.habilitado,
+      descripcion: descTienda ?? f.descripcionProveedor,
+      descripcionProveedor: f.descripcionProveedor,
+      descripcionTienda: descTienda,
+      marca: f.marca ?? null,
+      rubro: f.rubro ?? null,
+      pxListaProveedor: Number(f.pxListaProveedor),
+      dtoProveedor: Number(f.dtoProveedor),
+      dtoMarca: Number(f.dtoMarca),
+      dtoRubro: Number(f.dtoRubro),
+      dtoCantidad: Number(f.dtoCantidad),
+      dtoFinanciero: Number(f.dtoFinanciero),
+      cxTransporte: Number(f.cxTransporte),
+      pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
+      proveedor: f.proveedor
+        ? {
+            id: f.proveedor.id,
+            prefijo: f.proveedor.prefijo ?? "",
+            nombre: f.proveedor.nombre,
+            codigoUnico: f.proveedor.codigoUnico,
+          }
+        : null,
+    };
+  });
 }
 
 /**
@@ -165,7 +160,10 @@ export async function getListaPreciosConTiendaFiltrada(
   const [filasRaw, total] = await Promise.all([
     prisma.listaPrecioProveedor.findMany({
       where,
-      include: { proveedor: true },
+      include: {
+        proveedor: true,
+        prodTienda: { select: { descripcionTienda: true } },
+      },
       orderBy: { codExt: "asc" },
       skip,
       take,
@@ -173,51 +171,39 @@ export async function getListaPreciosConTiendaFiltrada(
     prisma.listaPrecioProveedor.count({ where }),
   ]);
 
-  const codExts = [...new Set(filasRaw.map((r) => r.codExt))];
-  const tiendaRows =
-    codExts.length > 0
-      ? await prisma.prodTienda.findMany({
-          where: { codExt: { in: codExts } },
-          select: { codExt: true, descripcionTienda: true },
-        })
-      : [];
-
-  const descripcionPorCodExt = new Map(
-    tiendaRows
-      .filter((t) => t.descripcionTienda != null && t.descripcionTienda !== "")
-      .map((t) => [t.codExt, t.descripcionTienda as string])
-  );
-
-  let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => ({
-    id: f.codExt,
-    codExt: f.codExt,
-    codProdProveedor: f.codProdProveedor,
-    habilitado: f.habilitado,
-    descripcion: descripcionPorCodExt.get(f.codExt) ?? f.descripcionProveedor,
-    descripcionProveedor: f.descripcionProveedor,
-    descripcionTienda: descripcionPorCodExt.get(f.codExt) ?? null,
-    marca: f.marca ?? null,
-    rubro: f.rubro ?? null,
-    pxListaProveedor: Number(f.pxListaProveedor),
-    // Siempre exponer el campo para que módulos como "Px. Vta. Sugeridos"
-    // puedan renderizar la columna aunque no filtren por soloPxSugerido.
-    pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null,
-    dtoProveedor: Number(f.dtoProveedor),
-    dtoMarca: Number(f.dtoMarca),
-    dtoRubro: Number(f.dtoRubro),
-    dtoCantidad: Number(f.dtoCantidad),
-    dtoFinanciero: Number(f.dtoFinanciero),
-    cxTransporte: Number(f.cxTransporte),
-    pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
-    proveedor: f.proveedor
-      ? {
-          id: f.proveedor.id,
-          prefijo: f.proveedor.prefijo ?? "",
-          nombre: f.proveedor.nombre,
-          codigoUnico: f.proveedor.codigoUnico,
-        }
-      : null,
-  }));
+  let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => {
+    const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
+    return {
+      id: f.codExt,
+      codExt: f.codExt,
+      codProdProveedor: f.codProdProveedor,
+      habilitado: f.habilitado,
+      descripcion: descTienda ?? f.descripcionProveedor,
+      descripcionProveedor: f.descripcionProveedor,
+      descripcionTienda: descTienda,
+      marca: f.marca ?? null,
+      rubro: f.rubro ?? null,
+      pxListaProveedor: Number(f.pxListaProveedor),
+      // Siempre exponer el campo para que módulos como "Px. Vta. Sugeridos"
+      // puedan renderizar la columna aunque no filtren por soloPxSugerido.
+      pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null,
+      dtoProveedor: Number(f.dtoProveedor),
+      dtoMarca: Number(f.dtoMarca),
+      dtoRubro: Number(f.dtoRubro),
+      dtoCantidad: Number(f.dtoCantidad),
+      dtoFinanciero: Number(f.dtoFinanciero),
+      cxTransporte: Number(f.cxTransporte),
+      pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
+      proveedor: f.proveedor
+        ? {
+            id: f.proveedor.id,
+            prefijo: f.proveedor.prefijo ?? "",
+            nombre: f.proveedor.nombre,
+            codigoUnico: f.proveedor.codigoUnico,
+          }
+        : null,
+    };
+  });
 
   if (q.length >= 3) {
     result = result.filter((f) =>
@@ -813,23 +799,19 @@ async function mercaderiaMapsDesdeMerc2(
 
 /**
  * Una sola descripción de **tienda** para la fila agrupada: toma `descripcion_tienda` de la relación
- * y del mapa por `cod_ext`; si hay textos distintos, se usa el **más largo** (suele ser la ficha completa).
+ * `prodTienda` vía `cod_tienda_vinculo`; si hay textos distintos, se usa el **más largo** (suele ser la ficha completa).
  * Solo si no hay ninguna descripción de tienda se recurre a `descripcion_proveedor`.
  */
 function descripcionTiendaUnificadaParaGrupoPedidoUrgente(
   memberFilas: Array<{
-    codExt: string;
     descripcionProveedor: string;
     prodTienda: { descripcionTienda: string | null } | null;
-  }>,
-  descripcionTiendaPorCodExt: Map<string, string>
+  }>
 ): string {
   const candidates: string[] = [];
   for (const f of memberFilas) {
     const rel = f.prodTienda?.descripcionTienda?.trim();
-    const mapped = descripcionTiendaPorCodExt.get(f.codExt)?.trim();
     if (rel) candidates.push(rel);
-    if (mapped) candidates.push(mapped);
   }
   const uniqTienda = [...new Set(candidates.filter((c) => c.length > 0))];
   if (uniqTienda.length > 0) {
@@ -957,26 +939,6 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     return { items: [], total, totalPaginas: totalPaginasLista };
   }
 
-  const codExtsRes = [...new Set(filas.map((f) => f.codExt))];
-  const tiendaRows =
-    codExtsRes.length > 0
-      ? await prisma.prodTienda.findMany({
-          where: { codExt: { in: codExtsRes } },
-          select: { codExt: true, descripcionTienda: true },
-        })
-      : [];
-
-  const descripcionTiendaPorCodExt = new Map<string, string>(
-    tiendaRows
-      .filter(
-        (t): t is { codExt: string; descripcionTienda: string } =>
-          t.codExt != null &&
-          t.descripcionTienda != null &&
-          t.descripcionTienda.trim() !== ""
-      )
-      .map((t) => [t.codExt, t.descripcionTienda])
-  );
-
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
   const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
     pairs.length > 0
@@ -996,9 +958,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
 
   function itemDesdeFila(f: FilaU): PedidoUrgenteItem {
     const key = `${f.idProveedor}:${f.codExt}`;
-    const descRel = f.prodTienda?.descripcionTienda?.trim();
-    const descTiendaMap = descripcionTiendaPorCodExt.get(f.codExt)?.trim();
-    const descTienda = descRel || descTiendaMap || null;
+    const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
     const cantUrgenteUi = mercaderiaMapUrgente.get(key) ?? 0;
     const tiendaListaId = f.codTiendaVinculo ?? null;
 
@@ -1035,10 +995,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       continue;
     }
     const memberItems = memberFilas.map(itemDesdeFila);
-    const descripcionGrupo = descripcionTiendaUnificadaParaGrupoPedidoUrgente(
-      memberFilas,
-      descripcionTiendaPorCodExt
-    );
+    const descripcionGrupo = descripcionTiendaUnificadaParaGrupoPedidoUrgente(memberFilas);
     items.push({
       id: `agrup-tienda:${codTienda}`,
       codExt: memberItems[0]!.codExt,
@@ -1155,7 +1112,7 @@ export async function getListaPreciosParaPedidoUrgente(
       where,
       include: {
         proveedor: { select: { id: true, nombre: true, prefijo: true } },
-        prodTienda: { select: { codTienda: true } },
+        prodTienda: { select: { codTienda: true, descripcionTienda: true } },
       },
       orderBy: { codExt: "asc" },
       skip,
@@ -1168,26 +1125,6 @@ export async function getListaPreciosParaPedidoUrgente(
   if (filas.length === 0) {
     return { items: [], total, totalPaginas: totalPaginasListaGeneral };
   }
-
-  const codExts = [...new Set(filas.map((f) => f.codExt))];
-  const tiendaRows =
-    codExts.length > 0
-      ? await prisma.prodTienda.findMany({
-          where: { codExt: { in: codExts } },
-          select: { codExt: true, descripcionTienda: true },
-        })
-      : [];
-
-  const descripcionTiendaPorCodExt = new Map<string, string>(
-    tiendaRows
-      .filter(
-        (t): t is { codExt: string; descripcionTienda: string } =>
-          t.codExt != null &&
-          t.descripcionTienda != null &&
-          t.descripcionTienda.trim() !== ""
-      )
-      .map((t) => [t.codExt, t.descripcionTienda])
-  );
 
   const pairs = filas.map((f) => ({ idProveedor: f.idProveedor, codExt: f.codExt }));
   const { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo } =
@@ -1207,7 +1144,7 @@ export async function getListaPreciosParaPedidoUrgente(
 
   const items: PedidoUrgenteItem[] = filas.map((f) => {
     const key = `${f.idProveedor}:${f.codExt}`;
-    const descTienda = descripcionTiendaPorCodExt.get(f.codExt) ?? null;
+    const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
     const cantUrgente = mercaderiaMapUrgente.get(key) ?? 0;
     const tiendaListaId = f.codTiendaVinculo ?? null;
 

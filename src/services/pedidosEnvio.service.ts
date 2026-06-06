@@ -103,9 +103,7 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
     const tienda = await prisma.prodTienda.findFirst({
       where: { codTienda: codTienda.trim() },
       select: {
-        codExt: true,
         codTienda: true,
-        proveedor: true,
         descripcionTienda: true,
       },
     });
@@ -626,8 +624,6 @@ export async function getItemsTablaEnviarPedido(params: {
           where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
             codTienda: true,
-            codExt: true,
-            proveedor: true,
             descripcionTienda: true,
           },
         })
@@ -638,8 +634,6 @@ export async function getItemsTablaEnviarPedido(params: {
     const ct = (t.codTienda ?? "").trim();
     if (!ct) continue;
     if (!tiendaByCodTienda.has(ct)) tiendaByCodTienda.set(ct, t);
-    const ce = (t.codExt ?? "").trim();
-    if (ce) codExts.add(ce);
   }
 
   const codTiendasArr = [...codTiendasLookup];
@@ -895,8 +889,6 @@ export async function getItemsYProveedorParaEnviar(
           where: { codTienda: { in: Array.from(codTiendasLookup) } },
           select: {
             codTienda: true,
-            codExt: true,
-            proveedor: true,
             descripcionTienda: true,
           },
         })
@@ -907,8 +899,6 @@ export async function getItemsYProveedorParaEnviar(
     const ct = (t.codTienda ?? "").trim();
     if (!ct) continue;
     if (!tiendaByCodTienda.has(ct)) tiendaByCodTienda.set(ct, t);
-    const ce = (t.codExt ?? "").trim();
-    if (ce) codExts.add(ce);
   }
 
   const codTiendasArrPdf = [...codTiendasLookup];
