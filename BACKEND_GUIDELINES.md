@@ -203,7 +203,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Stock por depósito** (origen de verdad): **`prod_tienda_stock`** — PK `(cod_tienda, id_deposito)`, `stock_real INTEGER`, `ctd_disponible DECIMAL(14,4) NULL`, FK → `prod_tienda` ON DELETE CASCADE. Modelo **`ProdTiendaStock`**.
 - **Catálogo depósitos DUX**: **`prod_depositos_dux`** — PK `id_deposito` (entero API `stock[].id`), `nombre`, `activa`, `ultima_sync`. Modelo **`ProdDepositoDux`**. Se alimenta en sync desde cada `stock[]` del ítem; al cerrar la corrida, depósitos no vistos → `activa = false`.
 - **API / parseo** (`duxApi.ts`): `mapItem` arma `ItemDux.stocks[]` (`idDeposito`, `nombre`, `stockReal`, `ctdDisponible`) desde `stock[]` del JSON. Maipú / Guaymallén para UI: `getIdDepositoMaipu()` / `getIdDepositoGuaymallen()` (defaults **16923** / **4565**).
-- **Sync** (`syncListaPrecioTienda.service.ts`): en la misma transacción por chunk — upsert `prod_tienda` + `syncStocksEnTransaccion` + `syncListasPreciosEnTransaccion`; por ítem se borran filas de `prod_tienda_stock` cuyo `id_deposito` ya no vino en el array; fase final marca depósitos DUX inactivos fuera del set visto.
+- **Sync** (`syncListaPrecioTienda.service.ts`): en la misma transacción por chunk — upsert `prod_tienda` + `syncStocksEnTransaccion` + `syncListasPreciosEnTransaccion`; por ítem se borran filas de `prod_tienda_stock` cuyo `id_deposito` ya no vino en el array; fase final marca depósitos DUX inactivos fuera del set visto. **Sin** trigger SQL en `prod_tienda` para reposición (retirado `20260606130000`).
 - **Lecturas**: **`prodTiendaStock.service.ts`** — `getStockReal`, `buildMapStockPorDeposito`, `buildMapsStockSucursalesPrincipales`, `getStockSucursalPrincipal`. Control Stock filtra negativos con `stocks: { some: { idDeposito, stockReal: { lt: 0 } } }`.
 - **Migración**: `20260604150000_prod_tienda_stock` (tablas nuevas + backfill Maipú/Guaymallén + DROP columnas legacy).
 
@@ -238,6 +238,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | `prod_tienda.stock_maipu`, `prod_tienda.stock_guaymallen` | Stock por depósito en `prod_tienda_stock` (`20260604150000`) |
 | `prod_tienda.stockeable` | Derivado en runtime desde `prod_tienda_stock.ctd_disponible` (`20260604170000`) |
 | `prod_tienda.cod_ext` | Eliminada; vinculación y descripciones vía `prod_precios_provee.cod_tienda` (`20260606120000`) |
+| `trg_sync_reposicion_on_prod_tienda_stock` (+ función `sync_reposicion_on_precios_tienda_stock_change`) | Legacy reposición por stock en `prod_tienda`; tras DROP `stock_*` disparaba en cualquier UPDATE y rompía sin `cod_ext` (`20260606130000`) |
 | `px_lista_cx_px`, `cx_px_px_comp_ref`, `competencia_id_px_lista` | Submódulo Cx/Px legacy retirado (`20260528210000` + reconcile `20260604140000`) |
 | `prod_precios_tienda_marcacion`, `prod_precios_tienda_px_lista_config` | UI Px marcación eliminada (`20260528270000`) |
 | `movimientos_finanzas*`, `finanzas_rubros`, `finanzas_gastos`, `fin_bal_iva_deb` | Reemplazadas por esquema `fin_bal_*` / import IVA |
