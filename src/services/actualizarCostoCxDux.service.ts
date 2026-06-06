@@ -1,10 +1,8 @@
 import type { ServiceResult } from "@/types";
 import {
   buildDuxModificarItemCostoBody,
-  DUX_ITEM_MODIFICAR_MIN_INTERVAL_MS,
   obtenerEstadoModificacionItemsDux,
   postModificarItemsDux,
-  sleepMs,
   type DuxModificarItemProductoRequest,
 } from "@/lib/duxItemModificarApi";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
@@ -14,9 +12,8 @@ const LOG_TAG = "[actualizarCostoCxDux]";
 /** Ítems por POST (mismo criterio de diff que export Excel). */
 const BATCH_SIZE = 100;
 
-/** Reintentos de polling hasta estado terminal. */
-const POLL_MAX_ATTEMPTS = 30;
-const POLL_INTERVAL_MS = 2000;
+/** Reintentos de polling hasta estado terminal (1 consulta cada ≥ 5 s vía throttle API). */
+const POLL_MAX_ATTEMPTS = 24;
 
 const ESTADO_FINALIZADO = "FINALIZADO";
 
@@ -37,7 +34,6 @@ async function esperarProcesoItemsDux(
   let ultimo = { estado: "", errores: [] as string[] };
 
   for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-    if (i > 0) await sleepMs(POLL_INTERVAL_MS);
     ultimo = await obtenerEstadoModificacionItemsDux(idProceso);
     if (ultimo.estado.toUpperCase() === ESTADO_FINALIZADO) {
       return ultimo;
@@ -80,10 +76,6 @@ export async function actualizarCostoCxEnDux(): Promise<
     const erroresAcum: string[] = [];
 
     for (let i = 0; i < lotes.length; i++) {
-      if (i > 0) {
-        await sleepMs(DUX_ITEM_MODIFICAR_MIN_INTERVAL_MS);
-      }
-
       const postRes = await postModificarItemsDux({ productos: lotes[i] });
       idProcesoUltimo = postRes.idProceso;
 
