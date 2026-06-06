@@ -220,53 +220,53 @@ async function syncListasPreciosEnTransaccion(
 }
 
 async function persistProdTiendaChunk(chunk: RecordProdTienda[]): Promise<void> {
-  await prisma.$transaction(
-    async (tx) => {
-      const marcasUnicas = [
-        ...new Set(
-          chunk
-            .map((r) => r.marca?.trim())
-            .filter((n): n is string => Boolean(n && n.length > 0))
-        ),
-      ];
-      const mapaMarca = new Map<string, string>();
-      for (const nombre of marcasUnicas) {
-        const m = await tx.marca.upsert({
-          where: { nombre },
-          create: { nombre },
-          update: {},
-        });
-        mapaMarca.set(nombre, m.id);
-      }
-      for (const row of chunk) {
-        const nombreMarca = row.marca?.trim();
-        const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
+        await prisma.$transaction(
+          async (tx) => {
+            const marcasUnicas = [
+              ...new Set(
+                chunk
+                  .map((r) => r.marca?.trim())
+                  .filter((n): n is string => Boolean(n && n.length > 0))
+              ),
+            ];
+            const mapaMarca = new Map<string, string>();
+            for (const nombre of marcasUnicas) {
+              const m = await tx.marca.upsert({
+                where: { nombre },
+                create: { nombre },
+                update: {},
+              });
+              mapaMarca.set(nombre, m.id);
+            }
+            for (const row of chunk) {
+              const nombreMarca = row.marca?.trim();
+              const idMarca = nombreMarca ? mapaMarca.get(nombreMarca) ?? null : null;
         await tx.prodTienda.upsert({
-          where: { codTienda: row.codTienda },
-          create: {
-            codTienda: row.codTienda,
-            rubro: row.rubro,
-            subRubro: row.subRubro,
-            marca: row.marca,
-            idMarca,
-            descripcionTienda: row.descripcionTienda,
-            costoCompra: new Prisma.Decimal(row.costoCompra),
+                where: { codTienda: row.codTienda },
+                create: {
+                  codTienda: row.codTienda,
+                  rubro: row.rubro,
+                  subRubro: row.subRubro,
+                  marca: row.marca,
+                  idMarca,
+                  descripcionTienda: row.descripcionTienda,
+                  costoCompra: new Prisma.Decimal(row.costoCompra),
+                },
+                update: {
+                  codTienda: row.codTienda,
+                  rubro: row.rubro,
+                  subRubro: row.subRubro,
+                  marca: row.marca,
+                  idMarca,
+                  descripcionTienda: row.descripcionTienda,
+                  costoCompra: new Prisma.Decimal(row.costoCompra),
+                  lastSync: new Date(),
+                },
+              });
+            }
           },
-          update: {
-            codTienda: row.codTienda,
-            rubro: row.rubro,
-            subRubro: row.subRubro,
-            marca: row.marca,
-            idMarca,
-            descripcionTienda: row.descripcionTienda,
-            costoCompra: new Prisma.Decimal(row.costoCompra),
-            lastSync: new Date(),
-          },
-        });
-      }
-    },
-    { timeout: TRANSACTION_TIMEOUT_MS }
-  );
+          { timeout: TRANSACTION_TIMEOUT_MS }
+        );
 }
 
 async function persistStockChunk(
@@ -414,10 +414,10 @@ async function finalizeSyncWorker(
       await prisma.prodTienda.deleteMany({
         where: { lastSync: { lt: worker.startedAt } },
       });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
-      console.error("Error en limpieza de cod_tienda ausentes:", msg);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
+    console.error("Error en limpieza de cod_tienda ausentes:", msg);
     }
   }
 

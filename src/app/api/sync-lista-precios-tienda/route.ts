@@ -11,6 +11,7 @@ import {
   setSyncDuxSuccessInDb,
   startSyncDuxInDb,
 } from "@/lib/syncDuxStatusDb";
+import { isActCxDuxRunningInDb } from "@/lib/actCxDuxStatusDb";
 import { SyncListaPrecioTiendaCancelledError } from "@/services/syncListaPrecioTienda.service";
 
 /** Sync DUX puede demorar varios minutos (rate limit + persistencia por chunks). */
@@ -29,6 +30,16 @@ async function ejecutarPasoSyncListaPrecioTienda() {
 
   syncInProgress = true;
   try {
+    if (await isActCxDuxRunningInDb()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Hay una actualización de costos DUX en curso. Esperá a que finalice.",
+        },
+        { status: 409 }
+      );
+    }
+
     const before = await getSyncDuxWorkerStateFromDb();
     if (!before.running) {
       const countBefore = await prisma.prodTienda.count();

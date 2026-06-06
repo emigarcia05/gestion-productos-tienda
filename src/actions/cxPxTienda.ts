@@ -17,6 +17,14 @@ import {
   enviarCostosCxADux,
 } from "@/services/actualizarCostoCxDux.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
+import {
+  failActCxDuxInDb,
+  finishActCxDuxInDb,
+  getActCxDuxStatusFromDb,
+  isActCxDuxRunningInDb,
+  setActCxDuxProgressInDb,
+  tryStartActCxDuxInDb,
+} from "@/lib/actCxDuxStatusDb";
 
 const guardarCostoCxProdSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
@@ -74,7 +82,25 @@ export async function exportarCostoCxDiffAction(): Promise<
   }
 }
 
-/** POST DUX: envía lotes (sin esperar estado). El cliente hace polling con `consultarEstadoCostoCxDuxAction`. */
+/** Estado global Act. Cx. DUX (polling UI / mutex entre usuarios). */
+export async function getActCxDuxStatusAction(): Promise<
+  ActionResult<{
+    running: boolean;
+    phase: "enviando" | "esperando" | null;
+    processed: number;
+    total: number;
+    error: string | null;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const status = await getActCxDuxStatusFromDb();
+  return { ok: true, data: status };
+}
+
+/** POST DUX: reserva mutex, envía lotes. El cliente hace polling con `consultarEstadoCostoCxDuxAction`. */
 export async function enviarCostoCxDuxAction(): Promise<
   ActionResult<{
     cantidadEnviada: number;
@@ -90,14 +116,44 @@ export async function enviarCostoCxDuxAction(): Promise<
     return { ok: false, error: "Sin permisos de editor." };
   }
 
-  const res = await enviarCostosCxADux();
-  if (!res.success) return { ok: false, error: res.error };
+  const filas = await listarFilasExportCostoCxDiff();
+  if (filas.length === 0) {
+    return {
+      ok: false,
+      error: "No hay productos con diferencia entre costo DUX y precio del proveedor BASE.",
+    };
+  }
 
-  return { ok: true, data: res.data };
+  const lock = await tryStartActCxDuxInDb(filas.length);
+  if (!lock.ok) {
+    return { ok: false, error: lock.error };
+  }
+
+  try {
+    const res = await enviarCostosCxADux();
+    if (!res.success) {
+      await failActCxDuxInDb(res.error);
+      return { ok: false, error: res.error };
+    }
+
+    await setActCxDuxProgressInDb({
+      phase: "esperando",
+      processed: 0,
+      total: res.data.cantidadEnviada,
+    });
+
+    return { ok: true, data: res.data };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al enviar costos a DUX.";
+    await failActCxDuxInDb(msg);
+    return { ok: false, error: msg };
+  }
 }
 
 const consultarEstadoCostoCxSchema = z.object({
   idProceso: z.coerce.number().int().positive(),
+  loteActual: z.coerce.number().int().positive().optional(),
+  lotesTotal: z.coerce.number().int().positive().optional(),
 });
 
 /** Una consulta de estado DUX (polling desde UI, ≥ 5 s entre llamadas). */
@@ -118,14 +174,79 @@ export async function consultarEstadoCostoCxDuxAction(
     return { ok: false, error: "Sin permisos de editor." };
   }
 
+  if (!(await isActCxDuxRunningInDb())) {
+    return {
+      ok: false,
+      error: "No hay una actualización de costos DUX en curso.",
+    };
+  }
+
   const parsed = consultarEstadoCostoCxSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "ID de proceso inválido." };
   }
 
   const res = await consultarEstadoEnvioCostoCxDux(parsed.data.idProceso);
-  if (!res.success) return { ok: false, error: res.error };
+  if (!res.success) {
+    await failActCxDuxInDb(res.error);
+    return { ok: false, error: res.error };
+  }
+
+  const status = await getActCxDuxStatusFromDb();
+  const processed =
+    parsed.data.loteActual != null && parsed.data.lotesTotal != null
+      ? Math.min(
+          status.total,
+          Math.round((status.total * parsed.data.loteActual) / parsed.data.lotesTotal)
+        )
+      : res.data.finalizado
+        ? status.total
+        : status.processed;
+
+  await setActCxDuxProgressInDb({
+    phase: "esperando",
+    processed,
+    total: status.total,
+  });
+
   return { ok: true, data: res.data };
+}
+
+export async function finalizarActCxDuxExitoAction(params: {
+  cantidadEnviada: number;
+}): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  await finishActCxDuxInDb(params.cantidadEnviada, params.cantidadEnviada);
+  revalidatePath("/gestion-productos/tienda/comp-proveedores");
+  return { ok: true, data: undefined };
+}
+
+export async function abortarActCxDuxAction(raw: unknown): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const msg =
+    typeof raw === "object" &&
+    raw != null &&
+    "error" in raw &&
+    typeof (raw as { error?: unknown }).error === "string"
+      ? (raw as { error: string }).error
+      : "Actualización de costos DUX cancelada o fallida.";
+
+  await failActCxDuxInDb(msg);
+  return { ok: true, data: undefined };
 }
 
 /** @deprecated Usar enviarCostoCxDuxAction + consultarEstadoCostoCxDuxAction desde UI. */

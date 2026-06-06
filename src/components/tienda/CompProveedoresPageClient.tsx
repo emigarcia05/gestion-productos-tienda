@@ -3,6 +3,7 @@
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import ActCxButton from "@/components/tienda/ActCxButton";
+import ActCxDuxProgresoBanner from "@/components/tienda/ActCxDuxProgresoBanner";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -74,12 +75,16 @@ export default function CompProveedoresPageClient({
         actions={
           puedeEditarCxProd ? (
             <div className="flex shrink-0 items-center gap-2">
-              <ActCxButton />
+              <ActCxButton pollEnabled={puedeEditarCxProd} />
             </div>
           ) : undefined
         }
       >
-        <div className="flex flex-col h-full min-h-0 gap-0.5">
+        <div className="flex flex-col h-full min-h-0 gap-2">
+          {puedeEditarCxProd ? (
+            <ActCxDuxProgresoBanner pollEnabled={puedeEditarCxProd} />
+          ) : null}
+          <div className="flex flex-col flex-1 min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
             <TablaTienda
               items={items}
@@ -99,6 +104,7 @@ export default function CompProveedoresPageClient({
               />
             </div>
           )}
+          </div>
         </div>
       </ClassicFilteredTableLayout>
     </div>
