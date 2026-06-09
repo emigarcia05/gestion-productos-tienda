@@ -22,6 +22,7 @@ import {
   finishActCxDuxInDb,
   getActCxDuxStatusFromDb,
   isActCxDuxRunningInDb,
+  liberarActCxDuxMutexInDb,
   setActCxDuxProgressInDb,
   tryStartActCxDuxInDb,
 } from "@/lib/actCxDuxStatusDb";
@@ -246,6 +247,25 @@ export async function abortarActCxDuxAction(raw: unknown): Promise<ActionResult>
       : "Actualización de costos DUX cancelada o fallida.";
 
   await failActCxDuxInDb(msg);
+  return { ok: true, data: undefined };
+}
+
+/** Libera mutex Act. Cx. trabado (doble clic en banner o recuperación manual). */
+export async function liberarActCxDuxTrabadoAction(): Promise<ActionResult> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  if (!(await isActCxDuxRunningInDb())) {
+    return { ok: true, data: undefined };
+  }
+
+  await liberarActCxDuxMutexInDb();
+  revalidatePath("/gestion-productos/tienda/comp-proveedores");
   return { ok: true, data: undefined };
 }
 

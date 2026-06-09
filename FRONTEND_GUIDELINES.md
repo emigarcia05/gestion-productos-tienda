@@ -744,7 +744,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
   - Ayuda Vendedor: `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`, `/gestion-productos/procesos`, `/gestion-productos/tienda/control-stock`.
   - Análisis de Precios: `/gestion-productos/tienda/comp-proveedores` (**Cx Compra**), `/gestion-productos/tienda/cx-px-tienda` (**Px Competencia**), `/gestion-productos/proveedores/comparacion-categorias`. `/gestion-productos/precios-competencia` redirige a **Px Competencia**.
   - Procesos: `/gestion-productos/procesos` (guías de importación DUX tras exportar Excel).
-  - **Cx Compra** (…): … **`ActCxDuxProgresoBanner`** (`MensajeProceso`, progreso X de Y mientras mutex Act. Cx. activo) sobre la grilla; **`ActCxButton`**: POST + polling; modal éxito **«Se actualizaron X ítems»** + **Descargar PDF Resumen de Aumentos** / **Cerrar**. …
+  - **Cx Compra** (…): … **`ActCxDuxProgresoBanner`** (`MensajeProceso`, progreso X de Y mientras mutex Act. Cx. activo; **doble clic** → modal liberar bloqueo trabado) sobre la grilla; **`ActCxButton`**: POST + polling; modal éxito **«Se actualizaron X ítems»** + **Descargar PDF Resumen de Aumentos** / **Cerrar**. …
   - Pedidos: `/gestion-productos/pedidos`, `/gestion-productos/pedidos/generar-pedido`, `/gestion-productos/pedidos/urgente`, `/gestion-productos/pedidos/tintometrico`, `/gestion-productos/pedidos/reposicion`, `/gestion-productos/pedidos/historial`.
   - Compatibilidad: mantener redirecciones de rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) hacia las rutas canónicas.
 

@@ -46,6 +46,8 @@ export interface MensajeProcesoProps {
   className?: string;
   /** Doble clic (ej. cancelar sync en sidebar). */
   onDoubleClick?: () => void;
+  /** Tooltip del doble clic; por defecto mensaje de cancelar sync. */
+  doubleClickTitle?: string;
 }
 
 /**
@@ -70,6 +72,7 @@ export default function MensajeProceso({
   variant = "default",
   className,
   onDoubleClick,
+  doubleClickTitle = "Doble Clic Para Cancelar Sincronización",
 }: MensajeProcesoProps) {
   const isSidebar = variant === "sidebar";
   const detailContent =
@@ -86,11 +89,7 @@ export default function MensajeProceso({
       role="status"
       aria-live="polite"
       onDoubleClick={onDoubleClick}
-      title={
-        onDoubleClick
-          ? "Doble Clic Para Cancelar Sincronización"
-          : undefined
-      }
+      title={onDoubleClick ? doubleClickTitle : undefined}
       className={cn(
         mensajeProcesoVariants({ variant }),
         onDoubleClick && "cursor-pointer",

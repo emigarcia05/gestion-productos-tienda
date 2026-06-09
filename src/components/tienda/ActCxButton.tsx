@@ -108,6 +108,9 @@ export default function ActCxButton({ pollEnabled }: Props) {
         cantidadEnviada: envio.data.cantidadEnviada,
       });
       if (!fin.ok) {
+        await abortarActCxDuxAction({
+          error: fin.error ?? "No se pudo cerrar la actualización.",
+        });
         toast.error(fin.error ?? "No se pudo cerrar la actualización.");
         return;
       }

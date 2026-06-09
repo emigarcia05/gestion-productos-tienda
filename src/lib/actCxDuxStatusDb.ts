@@ -3,6 +3,9 @@ import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
 
 export const ACT_CX_DUX_STATUS_ID = "act-cx-costos-dux";
 
+/** Tiempo máximo de una corrida Act. Cx. antes de liberar el mutex automáticamente. */
+export const ACT_CX_DUX_MAX_RUNTIME_MS = 15 * 60 * 1000;
+
 export type ActCxDuxPhase = "enviando" | "esperando";
 
 export interface ActCxDuxStatusState {
@@ -18,7 +21,64 @@ function parsePhase(raw: string | null): ActCxDuxPhase | null {
   return raw === "enviando" || raw === "esperando" ? raw : null;
 }
 
+async function forceClearActCxDuxRunningInDb(reason: string): Promise<void> {
+  await prisma.syncDuxStatus.upsert({
+    where: { id: ACT_CX_DUX_STATUS_ID },
+    create: {
+      id: ACT_CX_DUX_STATUS_ID,
+      running: false,
+      phase: null,
+      processed: 0,
+      total: 0,
+      error: reason,
+      startedAt: null,
+    },
+    update: {
+      running: false,
+      phase: null,
+      startedAt: null,
+      error: reason,
+    },
+  });
+}
+
+/**
+ * Libera mutex si la corrida superó el TTL o quedó huérfana (sin `startedAt` tras cierre de pestaña/error).
+ * @returns true si se liberó el bloqueo.
+ */
+export async function reconcileStaleActCxDuxLockInDb(): Promise<boolean> {
+  const row = await prisma.syncDuxStatus.findUnique({
+    where: { id: ACT_CX_DUX_STATUS_ID },
+    select: { running: true, startedAt: true },
+  });
+  if (!row?.running) return false;
+
+  if (!row.startedAt) {
+    await forceClearActCxDuxRunningInDb(
+      "Bloqueo Act. Cx. huérfano liberado automáticamente."
+    );
+    return true;
+  }
+
+  const ageMs = Date.now() - row.startedAt.getTime();
+  if (ageMs > ACT_CX_DUX_MAX_RUNTIME_MS) {
+    await forceClearActCxDuxRunningInDb(
+      "La actualización de costos DUX expiró por tiempo. Revisá en DUX o reintentá."
+    );
+    return true;
+  }
+
+  return false;
+}
+
+/** Liberación manual del mutex (doble clic en banner o acción explícita). */
+export async function liberarActCxDuxMutexInDb(): Promise<void> {
+  await forceClearActCxDuxRunningInDb("Bloqueo Act. Cx. liberado manualmente.");
+}
+
 export async function getActCxDuxStatusFromDb(): Promise<ActCxDuxStatusState> {
+  await reconcileStaleActCxDuxLockInDb();
+
   const row = await prisma.syncDuxStatus.findUnique({
     where: { id: ACT_CX_DUX_STATUS_ID },
     select: {
@@ -53,6 +113,7 @@ export async function getActCxDuxStatusFromDb(): Promise<ActCxDuxStatusState> {
 }
 
 export async function isActCxDuxRunningInDb(): Promise<boolean> {
+  await reconcileStaleActCxDuxLockInDb();
   const row = await prisma.syncDuxStatus.findUnique({
     where: { id: ACT_CX_DUX_STATUS_ID },
     select: { running: true },
@@ -64,6 +125,8 @@ export async function isActCxDuxRunningInDb(): Promise<boolean> {
 export async function tryStartActCxDuxInDb(
   totalItems: number
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await reconcileStaleActCxDuxLockInDb();
+
   const listaSync = await getSyncDuxStatusFromDb();
   if (listaSync.running) {
     return {
@@ -82,6 +145,8 @@ export async function tryStartActCxDuxInDb(
 
   const total = Math.max(0, Math.floor(totalItems));
 
+  const startedAt = new Date();
+
   await prisma.syncDuxStatus.upsert({
     where: { id: ACT_CX_DUX_STATUS_ID },
     create: {
@@ -91,6 +156,7 @@ export async function tryStartActCxDuxInDb(
       processed: 0,
       total,
       error: null,
+      startedAt,
     },
     update: {
       running: true,
@@ -98,6 +164,7 @@ export async function tryStartActCxDuxInDb(
       processed: 0,
       total,
       error: null,
+      startedAt,
     },
   });
 
@@ -128,6 +195,7 @@ export async function finishActCxDuxInDb(processed: number, total: number): Prom
       processed: Math.max(0, Math.floor(processed)),
       total: Math.max(0, Math.floor(total)),
       error: null,
+      startedAt: null,
       lastCompletedAt: new Date(),
     },
   });
@@ -143,11 +211,13 @@ export async function failActCxDuxInDb(message: string): Promise<void> {
       processed: 0,
       total: 0,
       error: message,
+      startedAt: null,
     },
     update: {
       running: false,
       phase: null,
       error: message,
+      startedAt: null,
     },
   });
 }
