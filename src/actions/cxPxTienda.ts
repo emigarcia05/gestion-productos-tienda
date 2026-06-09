@@ -94,7 +94,7 @@ export async function getActCxDuxStatusAction(): Promise<
   }>
 > {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
     return { ok: false, error: "Sin acceso." };
   }
   const status = await getActCxDuxStatusFromDb();

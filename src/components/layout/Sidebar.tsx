@@ -520,7 +520,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
       </nav>
       <div className="mt-auto flex flex-col px-4 pb-4">
         <div className="flex flex-col gap-2">
-          <SyncStatusIndicator />
+          <SyncStatusIndicator rol={rol} />
           <ImportStatusIndicator pollEnabled={rol === "editor"} />
         </div>
         <div className="flex w-full min-w-0 flex-col gap-3 pt-3">

@@ -35,7 +35,11 @@ export function useActCxDuxStatusPoll(enabled: boolean): ActCxDuxPollState {
 
     function poll() {
       void getActCxDuxStatusAction().then((res) => {
-        if (cancelled || !res.ok) return;
+        if (cancelled) return;
+        if (!res.ok) {
+          setState(IDLE);
+          return;
+        }
         setState({
           running: res.data.running,
           phase: res.data.phase,

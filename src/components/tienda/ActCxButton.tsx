@@ -17,6 +17,7 @@ import { exportarResumenAumentosPxAction } from "@/actions/pxListas";
 import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 import { useActCxDuxStatusPoll } from "@/hooks/useActCxDuxStatusPoll";
+import { useSyncListaPreciosStatusPoll } from "@/hooks/useSyncListaPreciosStatusPoll";
 
 /** Intervalo mínimo DUX entre consultas de estado (cliente). */
 const POLL_INTERVAL_MS = 5000;
@@ -32,12 +33,14 @@ function sleepMs(ms: number): Promise<void> {
 
 export default function ActCxButton({ pollEnabled }: Props) {
   const actCxStatus = useActCxDuxStatusPoll(pollEnabled);
+  const syncListaStatus = useSyncListaPreciosStatusPoll(pollEnabled);
   const [procesandoLocal, setProcesandoLocal] = useState(false);
   const [modalSinProductos, setModalSinProductos] = useState(false);
   const [exitoOpen, setExitoOpen] = useState(false);
   const [cantidadActualizada, setCantidadActualizada] = useState(0);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
 
+  const bloqueadoPorSync = syncListaStatus.running;
   const bloqueadoPorOtro =
     actCxStatus.running && !procesandoLocal;
   const procesando = procesandoLocal || actCxStatus.running;
@@ -73,6 +76,10 @@ export default function ActCxButton({ pollEnabled }: Props) {
   }
 
   async function handleActCx() {
+    if (bloqueadoPorSync) {
+      toast.error("Hay una sincronización de productos DUX en curso. Esperá a que finalice.");
+      return;
+    }
     if (bloqueadoPorOtro) {
       toast.error("Ya hay una actualización de costos DUX en curso.");
       return;
@@ -211,7 +218,7 @@ export default function ActCxButton({ pollEnabled }: Props) {
             variant="default"
             size="default"
             className="btn-primario-gestion gap-2 shrink-0"
-            disabled={procesando || exitoOpen || bloqueadoPorOtro}
+            disabled={procesando || exitoOpen || bloqueadoPorOtro || bloqueadoPorSync}
             onClick={() => void handleActCx()}
           >
             <Upload className="h-4 w-4 shrink-0" />

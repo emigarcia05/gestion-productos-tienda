@@ -81,7 +81,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
     - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → bloque **usuario + área/logo** (una misma sección visual): **regla horizontal** clara arriba del usuario (`flex justify-center` + `h-px w-[80%] bg-sidebar-foreground/85`) → **`SelectorRol` `compact`** (`mt-2` + wrapper `rounded-lg p-2`) → **`SidebarMainAppArea`** (`flex w-full min-w-0 flex-col` **`pt-2 pb-2`** + `className="pt-2"`), sin mezclar usuario y área en el mismo nodo DOM.
-    - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa; su polling a **`GET /api/import-lista-precios/status`** solo si **`pollEnabled`** (`rol === "editor"` en `Sidebar.tsx`) — evita **403** en usuarios simple. `SyncStatusIndicator` en **reposo**: textos según **área** (`getMainAppAreaIdFromPathname`): **Gestión Productos** y **Estadísticas Productos** → **`SINCRONIZACION PROD.`** / hover **`SINCRONIZAR PROD.`**; **Finanzas** → **`SINCRONIZACION COMPRAS`** / hover **`SINCRONIZAR COMPRAS`**. Línea 2 **`Últ. Act.: Hace …`** (regla de tiempo: bloques de **15 min.** bajo 1 h; luego horas/días). En **sync lista precios** (polling API): **`SINCRONIZANDO PROD.`** o **`GUARDANDO PROD.`** (`phase` del status) + detalle X de Y; al finalizar, toast de éxito. En **sync compras** (Finanzas): **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (sucursales ya procesadas / total con `id_dux`), vía polling `GET /api/sync-compras-proveedor-dux/status` y hook **`useSyncComprasProveedorDuxStatusPoll`** (mientras corre la action).
+    - **Progreso import / sync / Act. Cx.** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa; su polling a **`GET /api/import-lista-precios/status`** solo si **`pollEnabled`** (`rol === "editor"` en `Sidebar.tsx`) — evita **403** en usuarios simple. `SyncStatusIndicator` en **reposo**: textos según **área** (`getMainAppAreaIdFromPathname`): **Gestión Productos** y **Estadísticas Productos** → **`SINCRONIZACION PROD.`** / hover **`SINCRONIZAR PROD.`**; **Finanzas** → **`SINCRONIZACION COMPRAS`** / hover **`SINCRONIZAR COMPRAS`**. Línea 2 **`Últ. Act.: Hace …`** (regla de tiempo: bloques de **15 min.** bajo 1 h; luego horas/días). **Act. Cx. DUX** (áreas producto, mutex global): prioridad sobre sync lista — **`ENVIANDO COSTOS DUX`** / **`ACTUALIZANDO COSTOS DUX`** + X de Y; doble clic (editor) libera bloqueo; deshabilita botón sync y **`ActCxButton`**. En **sync lista precios** (polling API): **`SINCRONIZANDO PROD.`** o **`GUARDANDO PROD.`** (`phase` del status) + detalle X de Y; al finalizar, toast de éxito. En **sync compras** (Finanzas): **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (sucursales ya procesadas / total con `id_dux`), vía polling `GET /api/sync-compras-proveedor-dux/status` y hook **`useSyncComprasProveedorDuxStatusPoll`** (mientras corre la action).
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
 **Referencia rápida de tokens (usar en lugar de valores fijos):**
@@ -744,7 +744,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
   - Ayuda Vendedor: `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`, `/gestion-productos/procesos`, `/gestion-productos/tienda/control-stock`.
   - Análisis de Precios: `/gestion-productos/tienda/comp-proveedores` (**Cx Compra**), `/gestion-productos/tienda/cx-px-tienda` (**Px Competencia**), `/gestion-productos/proveedores/comparacion-categorias`. `/gestion-productos/precios-competencia` redirige a **Px Competencia**.
   - Procesos: `/gestion-productos/procesos` (guías de importación DUX tras exportar Excel).
-  - **Cx Compra** (…): … **`ActCxDuxProgresoBanner`** (`MensajeProceso`, progreso X de Y mientras mutex Act. Cx. activo; **doble clic** → modal liberar bloqueo trabado) sobre la grilla; **`ActCxButton`**: POST + polling; modal éxito **«Se actualizaron X ítems»** + **Descargar PDF Resumen de Aumentos** / **Cerrar**. …
+  - **Cx Compra** (…): progreso Act. Cx. en **sidebar** (`SyncStatusIndicator` → `MensajeProceso--sidebar`, mismo slot que **SINCRONIZANDO PROD.**; prioridad sobre sync; **doble clic** editor → liberar bloqueo); **`ActCxButton`** en header (POST + polling; deshabilitado si sync lista activa); modal éxito **«Se actualizaron X ítems»** + **Descargar PDF Resumen de Aumentos** / **Cerrar**. …
   - Pedidos: `/gestion-productos/pedidos`, `/gestion-productos/pedidos/generar-pedido`, `/gestion-productos/pedidos/urgente`, `/gestion-productos/pedidos/tintometrico`, `/gestion-productos/pedidos/reposicion`, `/gestion-productos/pedidos/historial`.
   - Compatibilidad: mantener redirecciones de rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) hacia las rutas canónicas.
 
@@ -772,6 +772,7 @@ Botón/indicador persistente en la parte inferior de la slidenav. El markup del 
 
 - **Estados**
   - **Reposo**: etiquetas por área (ver bullet **Ritmo vertical** arriba). **`Últ. Act.:** en **Gestión Productos** / **Estadísticas Productos** viene del polling (`lastCompletedAt` de lista precios). En **Finanzas** refleja la **última sync de compras exitosa en el cliente** (misma sesión; no es el timestamp de lista precios).
+  - **Act. Cx. en curso** (áreas producto, `useActCxDuxStatusPoll`): **`ENVIANDO COSTOS DUX`** / **`ACTUALIZANDO COSTOS DUX`** + X de Y; **prioridad** sobre sync lista (mutex backend). Doble clic (editor) → liberar bloqueo trabado. Sync lista y **`ActCxButton`** deshabilitados mientras corre.
   - **Sync lista precios en curso** (polling): **`SINCRONIZANDO PROD.`** / **`GUARDANDO PROD.`** (limpieza final). El cliente encadena **`POST /api/sync-lista-precios-tienda`** mientras **`continuing: true`** — **obligatorio** si el catálogo supera ~4 min por invocación Vercel; dentro de cada paso, guardado en paralelo con la espera DUX. Reanuda solo al recargar si quedó `running`. Toast al finalizar; doble clic → cancelar.
   - **Sync compras en curso** (Finanzas, action): **`MensajeProceso`** **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (mismo patrón que productos; ver `useSyncComprasProveedorDuxStatusPoll`).
 - **Feedback visual por estado**
@@ -801,13 +802,36 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **Finanzas — compras DUX:** la consulta/sincronización de **comprobantes de compra** (`sincronizarComprobantesProveedorDesdeDuxAction`) se inicia solo desde **`SyncStatusIndicator`** en slidenav cuando la ruta activa es **Finanzas** (etiquetas **COMPRAS**; solo **editor** en la action). No hay botón duplicado en **`/finanzas/tesoreria`**.
 
+### SSOT — Progreso de consultas API DUX (GET/POST)
+
+**Regla canónica (obligatoria para nuevos flujos DUX ERP):** todo proceso largo que consulte la **API DUX ERP** (`erp.duxsoftware.com.ar`, ítems, compras, modificación de costos, etc.) — ya sea **GET** o **POST** — debe:
+
+1. **Mostrar progreso** en el **mismo slot** de sidebar: **`SyncStatusIndicator`** → **`MensajeProceso` `variant="sidebar"`** (reemplaza el botón **SINCRONIZAR PROD.** / **COMPRAS** mientras corre; **un solo** mensaje activo a la vez en ese componente).
+2. **Exclusión mutua:** mientras un flujo DUX ocupa el slot, **no** debe iniciarse otro que pegue a la misma API (mutex en `sync_dux_status` y/o rechazo **409** en rutas API; deshabilitar acciones en UI).
+3. **No** duplicar banners de progreso en páginas/modales para esos flujos (el botón disparador puede quedar en la página; el avance va al sidebar).
+
+**Prioridad en `SyncStatusIndicator` (un mensaje visible):** Act. Cx. DUX → sync lista precios → sync compras (Finanzas). Solo uno se renderiza.
+
+| Flujo | API | Progreso UI | Mutex |
+|-------|-----|-------------|-------|
+| Sync lista precios tienda | `GET`/`POST` `/api/sync-lista-precios-tienda` | Sidebar ✅ | vs Act. Cx. ✅ |
+| Act. Cx. costos | POST/GET `duxItemModificarApi` | Sidebar ✅ | vs sync lista ✅ |
+| Sync compras (Finanzas) | DUX comprobantes | Sidebar ✅ | área Finanzas |
+| Import lista proveedor | Excel (no DUX ERP) | **`ImportStatusIndicator`** (segundo nodo sidebar) | independiente |
+| Sync competencia (scraping URLs) | HTTP externo, no DUX ERP | **`CompetenciaSyncProgresoBanner`** en página ⚠️ pendiente migrar | independiente |
+| Recepción pedido → DUX | POST `v2/compras` | Estado local en modal ⚠️ pendiente migrar | sin mutex global |
+
+**Excepciones documentadas (no extrapolar sin actualizar esta tabla):** import Excel y scraping competencia no usan la API DUX ERP; hoy tienen UI propia. **Recepción DUX** es POST puntual en modal — aún sin slot sidebar ni mutex con sync/Act. Cx.
+
+**Checklist PR (flujos DUX nuevos):** ¿progreso en `SyncStatusIndicator`? ¿mutex con sync lista y Act. Cx.? ¿sin banner duplicado en la página?
+
 ### Orden y labels — Sidebar Gestión Productos (`Sidebar.tsx`)
 
 **AYUDA VENDEDOR** (rol **simple**): `Px. Vta. Sugeridos`, `Calc. Tintométrico`, `Calc. Litros`, `Procesos`, `Control Stock`.
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
-**ANALISIS DE PRECIOS** (rol **editor**, orden): `Cx Compra` → **Px Listas** (`/gestion-productos/tienda/px-listas`) → **Px Competencia** (`/gestion-productos/tienda/cx-px-tienda`) → `Comp. Por Cat.`. **`Cx Compra`**: grilla con **CX PROD.** + **`ActCxButton`** (POST DUX + PDF aumentos opcional). **`Px Competencia`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado; header **`Gestionar Competidores`** + **`Comparar Precios Competencia`** (`SincronizarCompetenciaModal`; permiso `competenciaPrecios.editar`). **`CompetenciaSyncProgresoBanner`** sobre filtros. Filtros **`FiltrosPxListas`**: **MARCA**, **RUBRO**, **PX PROMEDIO** (DIF TIENDA vs promedio; query `filtroPxPromedio`) + búsqueda. Grilla **`TablaPxListas`**: **DESCRIPCIÓN**, **PX PROMEDIO**, **DIF TIENDA**, **ACCIONES** (detalle expandido por competidor; asociar/relevar URLs). DIF TIENDA compara `px_lista_tienda` (DUX) vs promedio competidores. **Eliminado (2026-05-28, reimplementar):** columna **DET PRECIO**, **PX LISTA**, **MARCACION**, filtros `detPrecio` / `ordenMarcacion`, **`ExportarPxButton`**, `guardarPxListaTiendaAction`. Componentes conservados para la próxima versión (no usados en grilla): `PxListaCxPxCelda`, `MarcacionPxListaCelda`. Permiso `PERMISOS.cxPxTienda.acceso`. `@/components/px-listas/`.
+**ANALISIS DE PRECIOS** (rol **editor**, orden): `Cx Compra` → **Px Listas** (`/gestion-productos/tienda/px-listas`) → **Px Competencia** (`/gestion-productos/tienda/cx-px-tienda`) → `Comp. Por Cat.`. **`Cx Compra`**: grilla con **CX PROD.** + **`ActCxButton`** (POST DUX + PDF aumentos opcional); progreso en **sidebar** (`SyncStatusIndicator`), no banner sobre la grilla. **`Px Competencia`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado; header **`Gestionar Competidores`** + **`Comparar Precios Competencia`** (`SincronizarCompetenciaModal`; permiso `competenciaPrecios.editar`). **`CompetenciaSyncProgresoBanner`** sobre filtros. Filtros **`FiltrosPxListas`**: **MARCA**, **RUBRO**, **PX PROMEDIO** (DIF TIENDA vs promedio; query `filtroPxPromedio`) + búsqueda. Grilla **`TablaPxListas`**: **DESCRIPCIÓN**, **PX PROMEDIO**, **DIF TIENDA**, **ACCIONES** (detalle expandido por competidor; asociar/relevar URLs). DIF TIENDA compara `px_lista_tienda` (DUX) vs promedio competidores. **Eliminado (2026-05-28, reimplementar):** columna **DET PRECIO**, **PX LISTA**, **MARCACION**, filtros `detPrecio` / `ordenMarcacion`, **`ExportarPxButton`**, `guardarPxListaTiendaAction`. Componentes conservados para la próxima versión (no usados en grilla): `PxListaCxPxCelda`, `MarcacionPxListaCelda`. Permiso `PERMISOS.cxPxTienda.acceso`. `@/components/px-listas/`.
 
 ### Stock — No mostrar modal al entrar (`/stock`)
 

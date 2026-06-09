@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { formatLastCompletedAtElapsed } from "@/lib/formatElapsedSince";
 import { getMainAppAreaIdFromPathname, type MainAppAreaId } from "@/lib/main-app-areas";
 import { sincronizarComprobantesProveedorDesdeDuxAction } from "@/actions/comprobantesProveedor";
+import { liberarActCxDuxTrabadoAction } from "@/actions/cxPxTienda";
 import AppModal from "@/components/shared/AppModal";
 import DuxSyncStyleButton from "@/components/shared/DuxSyncStyleButton";
 import MensajeProceso from "@/components/shared/MensajeProceso";
+import { useActCxDuxStatusPoll } from "@/hooks/useActCxDuxStatusPoll";
 import { useSyncComprasProveedorDuxStatusPoll } from "@/hooks/useSyncComprasProveedorDuxStatusPoll";
+import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 
@@ -38,10 +41,17 @@ const SYNC_LABELS: Record<
   },
 };
 
-export default function SyncStatusIndicator() {
+interface Props {
+  rol: Rol;
+}
+
+export default function SyncStatusIndicator({ rol }: Props) {
   const pathname = usePathname();
   const areaId = getMainAppAreaIdFromPathname(pathname);
   const labels = SYNC_LABELS[areaId];
+  const actCxPollEnabled = areaId !== "finanzas";
+  const puedeLiberarActCx = puede(rol, PERMISOS.cxPxTienda.acceso);
+  const actCxStatus = useActCxDuxStatusPoll(actCxPollEnabled);
 
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
@@ -53,6 +63,8 @@ export default function SyncStatusIndicator() {
   const [comprasSyncing, setComprasSyncing] = useState(false);
   const [cancelSyncModalOpen, setCancelSyncModalOpen] = useState(false);
   const [cancelSyncPending, setCancelSyncPending] = useState(false);
+  const [liberarActCxModalOpen, setLiberarActCxModalOpen] = useState(false);
+  const [liberarActCxPending, setLiberarActCxPending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRunningRef = useRef(false);
   const prevLastCompletedAtRef = useRef<string | null>(null);
@@ -137,12 +149,35 @@ export default function SyncStatusIndicator() {
 
   useEffect(() => {
     if (areaId === "finanzas") return;
+    if (actCxStatus.running) return;
     if (!running || requestingStart || syncStepsRunningRef.current) return;
     void runSyncStepsUntilDone();
-  }, [running, requestingStart, areaId]);
+  }, [running, requestingStart, areaId, actCxStatus.running]);
+
+  async function confirmLiberarActCxBloqueo() {
+    setLiberarActCxPending(true);
+    try {
+      const res = await liberarActCxDuxTrabadoAction();
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo liberar el bloqueo.");
+        return;
+      }
+      toast.success("Bloqueo Act. Cx. liberado. Podés reintentar.");
+      setLiberarActCxModalOpen(false);
+    } catch {
+      toast.error("No se pudo liberar el bloqueo.");
+    } finally {
+      setLiberarActCxPending(false);
+    }
+  }
 
   async function handleStartSync() {
-    if (running || requestingStart || comprasSyncing) return;
+    if (running || requestingStart || comprasSyncing || actCxStatus.running) {
+      if (actCxStatus.running) {
+        toast.error("Hay una actualización de costos DUX en curso. Esperá a que finalice.");
+      }
+      return;
+    }
 
     if (areaId === "finanzas") {
       setComprasSyncing(true);
@@ -205,6 +240,70 @@ export default function SyncStatusIndicator() {
   const lastComprasLabel = formatLastCompletedAtElapsed(lastComprasOkAt);
   const ultimaActLabel =
     areaId === "finanzas" ? (lastComprasLabel ?? "—") : (lastCompletedLabel ?? "—");
+
+  const actCxMensaje =
+    actCxStatus.phase === "enviando" ? "ENVIANDO COSTOS DUX" : "ACTUALIZANDO COSTOS DUX";
+
+  if (actCxStatus.running) {
+    return (
+      <>
+        <MensajeProceso
+          variant="sidebar"
+          mensaje={actCxMensaje}
+          detalle={
+            actCxStatus.total > 0
+              ? { procesados: actCxStatus.processed, total: actCxStatus.total }
+              : "…"
+          }
+          onDoubleClick={
+            puedeLiberarActCx ? () => setLiberarActCxModalOpen(true) : undefined
+          }
+          doubleClickTitle="Doble Clic Para Liberar Bloqueo Act. Cx."
+        />
+        {puedeLiberarActCx ? (
+          <Dialog
+            open={liberarActCxModalOpen}
+            onOpenChange={(open) => {
+              if (!open && liberarActCxPending) return;
+              setLiberarActCxModalOpen(open);
+            }}
+          >
+            <AppModal
+              title="Liberar Bloqueo Act. Cx."
+              size="sm"
+              padding="sm"
+              scrollBody={false}
+              actions={
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={liberarActCxPending}
+                    onClick={() => setLiberarActCxModalOpen(false)}
+                  >
+                    No
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={liberarActCxPending}
+                    onClick={() => void confirmLiberarActCxBloqueo()}
+                  >
+                    Sí, Liberar
+                  </Button>
+                </>
+              }
+            >
+              <p className="text-sm text-foreground">
+                ¿Liberar el bloqueo de actualización de costos DUX? Usalo solo si el
+                proceso quedó trabado. Si DUX sigue procesando en segundo plano,
+                revisá allí antes de reenviar.
+              </p>
+            </AppModal>
+          </Dialog>
+        ) : null}
+      </>
+    );
+  }
 
   if (running) {
     return (
@@ -277,7 +376,7 @@ export default function SyncStatusIndicator() {
       secondary={requestingStart ? "…" : `Últ. Act.: ${ultimaActLabel}`}
       aria-label={labels.ariaLabel}
       onClick={handleStartSync}
-      disabled={requestingStart}
+      disabled={requestingStart || actCxStatus.running}
       busy={requestingStart}
       surface="sidebar"
     />
