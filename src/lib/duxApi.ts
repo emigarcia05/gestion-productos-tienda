@@ -183,7 +183,7 @@ export function mapItem(raw: unknown): ItemDux {
 
 const FETCH_LIMIT = 1000;
 
-/** Límite máximo por petición que permite la API DUX (50 ítems). */
+/** Límite máximo por petición que permite la API DUX (50 ítems). Ver `DUX_API_BATCH_SIZE` en `duxApiBatchPolicy.ts`. */
 export const DUX_API_PAGE_LIMIT = 50;
 
 export interface FetchItemsPageResult {

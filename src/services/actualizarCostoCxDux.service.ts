@@ -5,12 +5,10 @@ import {
   postModificarItemsDux,
   type DuxModificarItemProductoRequest,
 } from "@/lib/duxItemModificarApi";
+import { DUX_API_BATCH_SIZE } from "@/lib/duxApiBatchPolicy";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
 
 const LOG_TAG = "[actualizarCostoCxDux]";
-
-/** Ítems por POST (mismo criterio de diff que export Excel). */
-const BATCH_SIZE = 100;
 
 export const ESTADO_PROCESO_COSTO_CX_FINALIZADO = "FINALIZADO";
 
@@ -50,8 +48,8 @@ export async function enviarCostosCxADux(): Promise<
 
     const productos = filasToProductosDux(filas);
     const lotes: DuxModificarItemProductoRequest[][] = [];
-    for (let i = 0; i < productos.length; i += BATCH_SIZE) {
-      lotes.push(productos.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < productos.length; i += DUX_API_BATCH_SIZE) {
+      lotes.push(productos.slice(i, i + DUX_API_BATCH_SIZE));
     }
 
     const idsProceso: number[] = [];

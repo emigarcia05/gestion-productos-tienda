@@ -6,17 +6,16 @@
  * Auth: header `Authorization` con token plano (`DUX_API_TOKEN`), igual que GET items.
  */
 
+import { DUX_API_BATCH_INTERVAL_MS } from "@/lib/duxApiBatchPolicy";
+
 export const DUX_SERVICES_BASE_URL =
   "https://erp.duxsoftware.com.ar/WSERP/rest/services";
 
 const FETCH_TIMEOUT_MS = Number(process.env.DUX_FETCH_TIMEOUT_MS) || 10_000;
 const MAX_RETRIES_429 = 5;
 
-/** Mínimo entre peticiones DUX (rate limit documentado: 1 req / 5 s). */
-export const DUX_ITEM_MODIFICAR_MIN_INTERVAL_MS = Math.max(
-  5000,
-  Number(process.env.DUX_SYNC_DELAY_MS) || 5000
-);
+/** Mínimo entre peticiones DUX (alias de `DUX_API_BATCH_INTERVAL_MS`; §1.10c). */
+export const DUX_ITEM_MODIFICAR_MIN_INTERVAL_MS = DUX_API_BATCH_INTERVAL_MS;
 
 /** Timestamp de la última petición POST/GET de este módulo (misma corrida). */
 let lastDuxItemModificarRequestAt = 0;

@@ -809,6 +809,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 1. **Mostrar progreso** en el **mismo slot** de sidebar: **`SyncStatusIndicator`** → **`MensajeProceso` `variant="sidebar"`** (reemplaza el botón **SINCRONIZAR PROD.** / **COMPRAS** mientras corre; **un solo** mensaje activo a la vez en ese componente).
 2. **Exclusión mutua:** mientras un flujo DUX ocupa el slot, **no** debe iniciarse otro que pegue a la misma API (mutex en `sync_dux_status` y/o rechazo **409** en rutas API; deshabilitar acciones en UI).
 3. **No** duplicar banners de progreso en páginas/modales para esos flujos (el botón disparador puede quedar en la página; el avance va al sidebar).
+4. **Lotes y pausa** (backend, `BACKEND_GUIDELINES` §1.10c): **50 ítems por lote** (`DUX_API_BATCH_SIZE`); **≥ 5 s** entre lote y lote o entre peticiones consecutivas (`DUX_API_BATCH_INTERVAL_MS` / env `DUX_SYNC_DELAY_MS`). Aplica a GET paginados y POST con arrays de ítems.
 
 **Prioridad en `SyncStatusIndicator` (un mensaje visible):** Act. Cx. DUX → sync lista precios → sync compras (Finanzas). Solo uno se renderiza.
 
@@ -823,7 +824,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 **Excepciones documentadas (no extrapolar sin actualizar esta tabla):** import Excel y scraping competencia no usan la API DUX ERP; hoy tienen UI propia. **Recepción DUX** es POST puntual en modal — aún sin slot sidebar ni mutex con sync/Act. Cx.
 
-**Checklist PR (flujos DUX nuevos):** ¿progreso en `SyncStatusIndicator`? ¿mutex con sync lista y Act. Cx.? ¿sin banner duplicado en la página?
+**Checklist PR (flujos DUX nuevos):** ¿progreso en `SyncStatusIndicator`? ¿mutex con sync lista y Act. Cx.? ¿sin banner duplicado en la página? ¿lotes de **50** y pausa **5 s** vía `duxApiBatchPolicy.ts`?
 
 ### Orden y labels — Sidebar Gestión Productos (`Sidebar.tsx`)
 
@@ -1211,6 +1212,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-06-04): **Subfilas expandibles** (`.tabla-fila-detalle-competencia`, Cx Compra, Px Competencia, Lista Px): alto fijo **`--tabla-body-row-min-height`** (2rem), igual que filas principales; eliminado override Cx Compra de 4.25rem y layout apilado con espaciadores; **CX PROD.** en subfila Cx Compra = una línea (base + variación | precio).*
 
 *Última actualización (2026-06-04): **Auditoría frontend código muerto** — 15 componentes huérfanos eliminados; ESLint `src` sin warnings; reglas anti-código muerto ampliadas en § «Revisión anti-código muerto»; §5.1 Px Competencia actualizado.*
+
+*Última actualización (2026-06-04): **API DUX — lotes y pausa** — § SSOT progreso: **50 ítems/lote**, **5 s** entre lotes; ver `BACKEND_GUIDELINES` §1.10c y `duxApiBatchPolicy.ts`.*
 
 *Última actualización (2026-06-04): **Cx Compra — Act. Cx.** — reemplaza **Exportar Cx**, **Metodo Post** y **Exportar Resumen Aumentos**; POST DUX + modal opcional PDF aumentos (`ActCxButton`).*
 
