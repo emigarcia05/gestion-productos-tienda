@@ -10,8 +10,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   abortarActCxDuxAction,
   consultarEstadoCostoCxDuxAction,
-  enviarCostoCxDuxAction,
+  enviarLoteCostoCxDuxAction,
   finalizarActCxDuxExitoAction,
+  iniciarActCxDuxAction,
 } from "@/actions/cxPxTienda";
 import { exportarResumenAumentosPxAction } from "@/actions/pxListas";
 import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
@@ -21,7 +22,8 @@ import { useSyncListaPreciosStatusPoll } from "@/hooks/useSyncListaPreciosStatus
 
 /** Intervalo mínimo DUX entre consultas de estado (cliente). */
 const POLL_INTERVAL_MS = 5000;
-const POLL_MAX_ATTEMPTS = 36;
+/** ~10 min por lote (DUX puede demorar en procesar 50 ítems). */
+const POLL_MAX_ATTEMPTS = 120;
 
 interface Props {
   pollEnabled: boolean;
@@ -47,8 +49,8 @@ export default function ActCxButton({ pollEnabled }: Props) {
 
   async function esperarProcesoEnCliente(
     idProceso: number,
-    loteActual: number,
-    lotesTotal: number
+    itemsCompletadosAntes: number,
+    itemsEnLote: number
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
       if (i > 0) {
@@ -57,8 +59,8 @@ export default function ActCxButton({ pollEnabled }: Props) {
 
       const res = await consultarEstadoCostoCxDuxAction({
         idProceso,
-        loteActual,
-        lotesTotal,
+        itemsCompletadosAntes,
+        itemsEnLote,
       });
       if (!res.ok) {
         return { ok: false, error: res.error ?? "No se pudo consultar el estado en DUX." };
@@ -87,32 +89,46 @@ export default function ActCxButton({ pollEnabled }: Props) {
 
     setProcesandoLocal(true);
     try {
-      const envio = await enviarCostoCxDuxAction();
-      if (!envio.ok) {
-        if (envio.error?.includes("No hay productos")) {
+      const inicio = await iniciarActCxDuxAction();
+      if (!inicio.ok) {
+        if (inicio.error?.includes("No hay productos")) {
           setModalSinProductos(true);
           return;
         }
-        toast.error(envio.error ?? "No se pudo enviar a DUX.");
+        toast.error(inicio.error ?? "No se pudo iniciar la actualización en DUX.");
         return;
       }
 
-      for (let i = 0; i < envio.data.idsProceso.length; i++) {
-        const idProceso = envio.data.idsProceso[i];
+      let itemsCompletados = 0;
+
+      for (let loteIndex = 0; loteIndex < inicio.data.lotes; loteIndex++) {
+        const lote = await enviarLoteCostoCxDuxAction({ loteIndex });
+        if (!lote.ok) {
+          if (!lote.error?.includes("No hay una actualización")) {
+            await abortarActCxDuxAction({
+              error: lote.error ?? "No se pudo enviar un lote a DUX.",
+            });
+          }
+          toast.error(lote.error ?? "No se pudo enviar un lote a DUX.");
+          return;
+        }
+
         const poll = await esperarProcesoEnCliente(
-          idProceso,
-          i + 1,
-          envio.data.idsProceso.length
+          lote.data.idProceso,
+          lote.data.itemsCompletadosAntes,
+          lote.data.itemsEnLote
         );
         if (!poll.ok) {
           await abortarActCxDuxAction({ error: poll.error });
           toast.error(poll.error);
           return;
         }
+
+        itemsCompletados += lote.data.itemsEnLote;
       }
 
       const fin = await finalizarActCxDuxExitoAction({
-        cantidadEnviada: envio.data.cantidadEnviada,
+        cantidadEnviada: inicio.data.cantidadEnviada,
       });
       if (!fin.ok) {
         await abortarActCxDuxAction({
@@ -122,7 +138,7 @@ export default function ActCxButton({ pollEnabled }: Props) {
         return;
       }
 
-      setCantidadActualizada(envio.data.cantidadEnviada);
+      setCantidadActualizada(inicio.data.cantidadEnviada);
       setExitoOpen(true);
     } catch (e) {
       const msg =
@@ -222,7 +238,11 @@ export default function ActCxButton({ pollEnabled }: Props) {
             onClick={() => void handleActCx()}
           >
             <Upload className="h-4 w-4 shrink-0" />
-            {procesando ? "Actualizando..." : "Act. Cx."}
+            {procesando
+              ? actCxStatus.phase === "enviando"
+                ? "Enviando..."
+                : "Actualizando..."
+              : "Act. Cx."}
           </Button>
         </TooltipTrigger>
         <TooltipContent>

@@ -4,7 +4,7 @@ import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
 export const ACT_CX_DUX_STATUS_ID = "act-cx-costos-dux";
 
 /** Tiempo máximo de una corrida Act. Cx. antes de liberar el mutex automáticamente. */
-export const ACT_CX_DUX_MAX_RUNTIME_MS = 15 * 60 * 1000;
+export const ACT_CX_DUX_MAX_RUNTIME_MS = 2 * 60 * 60 * 1000;
 
 export type ActCxDuxPhase = "enviando" | "esperando";
 

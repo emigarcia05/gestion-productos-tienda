@@ -15,6 +15,8 @@ import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.servi
 import {
   consultarEstadoEnvioCostoCxDux,
   enviarCostosCxADux,
+  enviarLoteCostoCxADux,
+  prepararEnvioCostosCxADux,
 } from "@/services/actualizarCostoCxDux.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 import {
@@ -101,7 +103,100 @@ export async function getActCxDuxStatusAction(): Promise<
   return { ok: true, data: status };
 }
 
-/** POST DUX: reserva mutex, envía lotes. El cliente hace polling con `consultarEstadoCostoCxDuxAction`. */
+/** Reserva mutex y devuelve cantidad de lotes (sin POST). */
+export async function iniciarActCxDuxAction(): Promise<
+  ActionResult<{
+    cantidadEnviada: number;
+    lotes: number;
+    loteSize: number;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const prep = await prepararEnvioCostosCxADux();
+  if (!prep.success) {
+    return { ok: false, error: prep.error };
+  }
+
+  const lock = await tryStartActCxDuxInDb(prep.data.cantidadEnviada);
+  if (!lock.ok) {
+    return { ok: false, error: lock.error };
+  }
+
+  return { ok: true, data: prep.data };
+}
+
+const enviarLoteCostoCxSchema = z.object({
+  loteIndex: z.coerce.number().int().min(0),
+});
+
+/** Un POST DUX (≤50 ítems). El cliente encadena lotes y hace polling por `idProceso`. */
+export async function enviarLoteCostoCxDuxAction(raw: unknown): Promise<
+  ActionResult<{
+    idProceso: number;
+    itemsEnLote: number;
+    itemsCompletadosAntes: number;
+    loteIndex: number;
+    lotesTotal: number;
+    cantidadEnviada: number;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  if (!(await isActCxDuxRunningInDb())) {
+    return {
+      ok: false,
+      error: "No hay una actualización de costos DUX en curso.",
+    };
+  }
+
+  const parsed = enviarLoteCostoCxSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Índice de lote inválido." };
+  }
+
+  const status = await getActCxDuxStatusFromDb();
+
+  await setActCxDuxProgressInDb({
+    phase: "enviando",
+    processed: status.processed,
+    total: status.total,
+  });
+
+  try {
+    const res = await enviarLoteCostoCxADux(parsed.data.loteIndex);
+    if (!res.success) {
+      await failActCxDuxInDb(res.error);
+      return { ok: false, error: res.error };
+    }
+
+    await setActCxDuxProgressInDb({
+      phase: "esperando",
+      processed: res.data.itemsCompletadosAntes,
+      total: res.data.cantidadEnviada,
+    });
+
+    return { ok: true, data: res.data };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al enviar lote a DUX.";
+    await failActCxDuxInDb(msg);
+    return { ok: false, error: msg };
+  }
+}
+
+/** @deprecated Usar `iniciarActCxDuxAction` + `enviarLoteCostoCxDuxAction` desde UI. */
 export async function enviarCostoCxDuxAction(): Promise<
   ActionResult<{
     cantidadEnviada: number;
@@ -153,7 +248,11 @@ export async function enviarCostoCxDuxAction(): Promise<
 
 const consultarEstadoCostoCxSchema = z.object({
   idProceso: z.coerce.number().int().positive(),
+  itemsCompletadosAntes: z.coerce.number().int().min(0).optional(),
+  itemsEnLote: z.coerce.number().int().positive().optional(),
+  /** @deprecated Usar itemsCompletadosAntes + itemsEnLote */
   loteActual: z.coerce.number().int().positive().optional(),
+  /** @deprecated */
   lotesTotal: z.coerce.number().int().positive().optional(),
 });
 
@@ -194,15 +293,21 @@ export async function consultarEstadoCostoCxDuxAction(
   }
 
   const status = await getActCxDuxStatusFromDb();
-  const processed =
-    parsed.data.loteActual != null && parsed.data.lotesTotal != null
+  const antes =
+    parsed.data.itemsCompletadosAntes ??
+    (parsed.data.loteActual != null && parsed.data.lotesTotal != null
       ? Math.min(
           status.total,
-          Math.round((status.total * parsed.data.loteActual) / parsed.data.lotesTotal)
+          Math.round(
+            (status.total * (parsed.data.loteActual - 1)) / parsed.data.lotesTotal
+          )
         )
-      : res.data.finalizado
-        ? status.total
-        : status.processed;
+      : status.processed);
+  const enLote = parsed.data.itemsEnLote ?? 0;
+
+  const processed = res.data.finalizado
+    ? Math.min(status.total, antes + (enLote > 0 ? enLote : 0))
+    : Math.min(status.total, Math.max(status.processed, antes));
 
   await setActCxDuxProgressInDb({
     phase: "esperando",

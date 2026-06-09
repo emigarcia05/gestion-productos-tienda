@@ -27,8 +27,114 @@ export function esEstadoProcesoCostoCxFinalizado(estado: string): boolean {
   return estado.trim().toUpperCase() === ESTADO_PROCESO_COSTO_CX_FINALIZADO;
 }
 
+function buildLotesProductosCostoCx(
+  filas: Awaited<ReturnType<typeof listarFilasExportCostoCxDiff>>
+): DuxModificarItemProductoRequest[][] {
+  const productos = filasToProductosDux(filas);
+  const lotes: DuxModificarItemProductoRequest[][] = [];
+  for (let i = 0; i < productos.length; i += DUX_API_BATCH_SIZE) {
+    lotes.push(productos.slice(i, i + DUX_API_BATCH_SIZE));
+  }
+  return lotes;
+}
+
+/** Resumen de lotes a enviar (sin POST). */
+export async function prepararEnvioCostosCxADux(): Promise<
+  ServiceResult<{
+    cantidadEnviada: number;
+    lotes: number;
+    loteSize: number;
+  }>
+> {
+  try {
+    const filas = await listarFilasExportCostoCxDiff();
+    if (filas.length === 0) {
+      return {
+        success: false,
+        error: "No hay productos con diferencia entre costo DUX y precio del proveedor BASE.",
+      };
+    }
+    const lotes = buildLotesProductosCostoCx(filas);
+    return {
+      success: true,
+      data: {
+        cantidadEnviada: filas.length,
+        lotes: lotes.length,
+        loteSize: DUX_API_BATCH_SIZE,
+      },
+    };
+  } catch (e) {
+    logServiceError("prepararEnvioCostosCxADux", e);
+    const msg = e instanceof Error ? e.message : "Error al preparar envío a DUX.";
+    return { success: false, error: msg };
+  }
+}
+
+/** Un POST DUX (un lote). Índice 0-based. */
+export async function enviarLoteCostoCxADux(loteIndex: number): Promise<
+  ServiceResult<{
+    idProceso: number;
+    itemsEnLote: number;
+    itemsCompletadosAntes: number;
+    loteIndex: number;
+    lotesTotal: number;
+    cantidadEnviada: number;
+  }>
+> {
+  if (!Number.isInteger(loteIndex) || loteIndex < 0) {
+    return { success: false, error: "Índice de lote inválido." };
+  }
+
+  try {
+    const filas = await listarFilasExportCostoCxDiff();
+    if (filas.length === 0) {
+      return {
+        success: false,
+        error: "No hay productos con diferencia entre costo DUX y precio del proveedor BASE.",
+      };
+    }
+
+    const lotes = buildLotesProductosCostoCx(filas);
+    const lote = lotes[loteIndex];
+    if (!lote?.length) {
+      return { success: false, error: `Lote ${loteIndex + 1} inexistente o vacío.` };
+    }
+
+    const itemsCompletadosAntes = lotes
+      .slice(0, loteIndex)
+      .reduce((acc, l) => acc + l.length, 0);
+
+    const postRes = await postModificarItemsDux({ productos: lote });
+    if (postRes.idProceso == null) {
+      return {
+        success: false,
+        error:
+          postRes.message ||
+          "DUX aceptó la petición pero no devolvió ID de proceso.",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        idProceso: postRes.idProceso,
+        itemsEnLote: lote.length,
+        itemsCompletadosAntes,
+        loteIndex,
+        lotesTotal: lotes.length,
+        cantidadEnviada: filas.length,
+      },
+    };
+  } catch (e) {
+    logServiceError("enviarLoteCostoCxADux", e);
+    const msg = e instanceof Error ? e.message : "Error al enviar lote a DUX.";
+    return { success: false, error: msg };
+  }
+}
+
 /**
- * POST a DUX (sin polling). Devuelve los `idProceso` de cada lote enviado.
+ * POST a DUX (todos los lotes en una corrida). Preferir `enviarLoteCostoCxADux` desde UI.
+ * @deprecated Bloqueante; puede exceder timeout serverless con muchos ítems.
  */
 export async function enviarCostosCxADux(): Promise<
   ServiceResult<{
@@ -47,10 +153,7 @@ export async function enviarCostosCxADux(): Promise<
     }
 
     const productos = filasToProductosDux(filas);
-    const lotes: DuxModificarItemProductoRequest[][] = [];
-    for (let i = 0; i < productos.length; i += DUX_API_BATCH_SIZE) {
-      lotes.push(productos.slice(i, i + DUX_API_BATCH_SIZE));
-    }
+    const lotes = buildLotesProductosCostoCx(filas);
 
     const idsProceso: number[] = [];
 
