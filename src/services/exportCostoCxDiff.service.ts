@@ -28,7 +28,7 @@ export function costosCompraDifieren(costoCompra: number, pxProveedorSinIva: num
 /**
  * Ítems a exportar: tienen `costo_compra_cod_ext` y el costo DUX
  * (`costo_compra`) difiere de `px_compra_final_sin_iva` del proveedor vinculado.
- * CODIGO = `cod_tienda`, COSTO = `px_compra_final_sin_iva` redondeado al peso entero.
+ * CODIGO = `cod_tienda`, COSTO = `px_compra_final_sin_iva` redondeado a 2 decimales.
  */
 export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
   const rows = await prisma.prodTienda.findMany({
@@ -61,7 +61,7 @@ export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[
 
     filas.push({
       codigo: row.codTienda,
-      costo: Math.round(pxFinal),
+      costo: Math.round(pxFinal * 100) / 100,
     });
   }
   return filas;
