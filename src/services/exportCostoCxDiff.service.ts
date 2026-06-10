@@ -5,6 +5,19 @@ export interface FilaExportCostoCx {
   costo: number;
 }
 
+/** Ítem con diff de costo (Excel + informe PDF). */
+export type ItemCostoCxDiff = {
+  codTienda: string;
+  descripcion: string;
+  marca: string;
+  rubro: string;
+  costoViejo: number;
+  costoNuevo: number;
+};
+
+export const MARCA_COSTO_CX_SIN_INFORMAR = "SIN MARCA";
+export const RUBRO_COSTO_CX_SIN_INFORMAR = "SIN RUBRO";
+
 /** Precisión de `costo_compra` y `px_compra_final_sin_iva` (4 decimales). */
 const COMPARACION_COSTO_FACTOR = 10_000;
 
@@ -25,18 +38,24 @@ export function costosCompraDifieren(costoCompra: number, pxProveedorSinIva: num
   );
 }
 
+export function redondearCostoCxExport(px: number): number {
+  return Math.round(px * 100) / 100;
+}
+
 /**
- * Ítems a exportar: tienen `costo_compra_cod_ext` y el costo DUX
- * (`costo_compra`) difiere de `px_compra_final_sin_iva` del proveedor vinculado.
- * CODIGO = `cod_tienda`, COSTO = `px_compra_final_sin_iva` redondeado a 2 decimales.
+ * SSOT ítems Act. Cx.: `costo_compra_cod_ext`, vínculo habilitado, diff a 4 decimales,
+ * `px_compra_final_sin_iva` > 0. Usado por Excel y PDF de aumentos.
  */
-export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
+export async function listarItemsCostoCxDiff(): Promise<ItemCostoCxDiff[]> {
   const rows = await prisma.prodTienda.findMany({
     where: {
       costoCompraCodExt: { not: null },
     },
     select: {
       codTienda: true,
+      descripcionTienda: true,
+      marca: true,
+      rubro: true,
       costoCompra: true,
       costoListaProveedor: {
         select: {
@@ -48,7 +67,7 @@ export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[
     orderBy: { codTienda: "asc" },
   });
 
-  const filas: FilaExportCostoCx[] = [];
+  const items: ItemCostoCxDiff[] = [];
   for (const row of rows) {
     const proveedor = row.costoListaProveedor;
     if (!proveedor?.habilitado) continue;
@@ -56,13 +75,32 @@ export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[
     const pxFinal = toNum(proveedor.pxCompraFinalSinIva);
     if (pxFinal <= 0) continue;
 
-    const costoDux = toNum(row.costoCompra);
-    if (!costosCompraDifieren(costoDux, pxFinal)) continue;
+    const costoViejo = toNum(row.costoCompra);
+    if (!costosCompraDifieren(costoViejo, pxFinal)) continue;
 
-    filas.push({
-      codigo: row.codTienda,
-      costo: Math.round(pxFinal * 100) / 100,
+    const marca = row.marca?.trim() || MARCA_COSTO_CX_SIN_INFORMAR;
+    const rubro = row.rubro?.trim() || RUBRO_COSTO_CX_SIN_INFORMAR;
+    const descripcion = (row.descripcionTienda?.trim() || "Sin descripción").slice(0, 256);
+
+    items.push({
+      codTienda: row.codTienda,
+      descripcion,
+      marca,
+      rubro,
+      costoViejo,
+      costoNuevo: redondearCostoCxExport(pxFinal),
     });
   }
-  return filas;
+  return items;
+}
+
+/**
+ * Ítems a exportar en Excel: CODIGO = `cod_tienda`, COSTO = `px_compra_final_sin_iva` (2 dec.).
+ */
+export async function listarFilasExportCostoCxDiff(): Promise<FilaExportCostoCx[]> {
+  const items = await listarItemsCostoCxDiff();
+  return items.map((item) => ({
+    codigo: item.codTienda,
+    costo: item.costoNuevo,
+  }));
 }

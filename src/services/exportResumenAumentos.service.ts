@@ -1,15 +1,6 @@
 import type { InformeAumentosPxExport } from "@/lib/exportPxDiffTypes";
-import {
-  calcAumentoPctCostoCompra,
-  costosCompraDifierenParaInforme,
-} from "@/lib/aumentoCostoCompra";
-import { prisma } from "@/lib/prisma";
-
-function toNum(n: unknown): number {
-  if (n == null) return 0;
-  const v = Number(n);
-  return Number.isFinite(v) ? v : 0;
-}
+import { calcAumentoPctCostoCompra } from "@/lib/aumentoCostoCompra";
+import { listarItemsCostoCxDiff } from "@/services/exportCostoCxDiff.service";
 
 type AcumuladorRubro = {
   marca: string;
@@ -84,51 +75,17 @@ function buildInforme(acumulador: Map<string, AcumuladorRubro>): InformeAumentos
 }
 
 /**
- * Informe PDF: cada `prod_precios_tienda` con `costo_compra_cod_ext` vs
- * `prod_precios_provee.px_compra_final_sin_iva` (costo nuevo).
- * Costo viejo = `prod_precios_tienda.costo_compra`.
- * Solo ítems con diferencia de costo y marca/rubro informados.
+ * Informe PDF: mismos ítems que Excel Act. Cx. (`listarItemsCostoCxDiff`),
+ * agrupados por marca/rubro (fallback **SIN MARCA** / **SIN RUBRO** si faltan en catálogo).
  */
 export async function obtenerInformeAumentosCostos(): Promise<InformeAumentosPxExport> {
-  const rows = await prisma.prodTienda.findMany({
-    where: {
-      costoCompraCodExt: { not: null },
-      marca: { not: null },
-      rubro: { not: null },
-    },
-    select: {
-      codTienda: true,
-      descripcionTienda: true,
-      marca: true,
-      rubro: true,
-      costoCompra: true,
-      costoCompraCodExt: true,
-      costoListaProveedor: {
-        select: { pxCompraFinalSinIva: true },
-      },
-    },
-    orderBy: { codTienda: "asc" },
-  });
-
+  const items = await listarItemsCostoCxDiff();
   const acumulador = new Map<string, AcumuladorRubro>();
 
-  for (const row of rows) {
-    const codExt = row.costoCompraCodExt?.trim();
-    if (!codExt || !row.costoListaProveedor) continue;
-
-    const costoViejo = toNum(row.costoCompra);
-    const costoNuevo = toNum(row.costoListaProveedor.pxCompraFinalSinIva);
-    if (!costosCompraDifierenParaInforme(costoViejo, costoNuevo)) continue;
-
-    const pct = calcAumentoPctCostoCompra(costoNuevo, costoViejo);
+  for (const item of items) {
+    const pct = calcAumentoPctCostoCompra(item.costoNuevo, item.costoViejo);
     if (pct == null) continue;
-
-    const marca = row.marca?.trim() ?? "";
-    const rubro = row.rubro?.trim() ?? "";
-    if (!marca || !rubro) continue;
-
-    const descripcion = (row.descripcionTienda?.trim() || "Sin descripción").slice(0, 256);
-    agruparItemInforme(acumulador, marca, rubro, descripcion, pct);
+    agruparItemInforme(acumulador, item.marca, item.rubro, item.descripcion, pct);
   }
 
   return buildInforme(acumulador);

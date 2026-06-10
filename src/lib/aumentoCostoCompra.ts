@@ -11,10 +11,13 @@ export function calcAumentoPctCostoCompra(
   return ((costoNuevo / costoViejo) - 1) * 100;
 }
 
-/** Ítem reportable si el costo en pesos (entero) difiere entre proveedor y tienda. */
+/** @deprecated Usar `costosCompraDifieren` de `@/services/exportCostoCxDiff.service` (4 decimales). */
 export function costosCompraDifierenParaInforme(
   costoViejo: number,
   costoNuevo: number
 ): boolean {
-  return Math.round(costoViejo) !== Math.round(costoNuevo);
+  const factor = 10_000;
+  return (
+    Math.round(costoViejo * factor) !== Math.round(costoNuevo * factor)
+  );
 }
