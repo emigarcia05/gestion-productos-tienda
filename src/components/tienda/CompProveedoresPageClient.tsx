@@ -74,7 +74,7 @@ export default function CompProveedoresPageClient({
         actions={
           puedeEditarCxProd ? (
             <div className="flex shrink-0 items-center gap-2">
-              <ActCxButton pollEnabled={puedeEditarCxProd} />
+              <ActCxButton />
             </div>
           ) : undefined
         }

@@ -26,7 +26,7 @@ export function costosCompraDifieren(costoCompra: number, pxProveedorSinIva: num
 }
 
 /**
- * Ítems a exportar / POST DUX: tienen `costo_compra_cod_ext` y el costo DUX
+ * Ítems a exportar: tienen `costo_compra_cod_ext` y el costo DUX
  * (`costo_compra`) difiere de `px_compra_final_sin_iva` del proveedor vinculado.
  * CODIGO = `cod_tienda`, COSTO = `px_compra_final_sin_iva` redondeado al peso entero.
  */
