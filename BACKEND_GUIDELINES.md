@@ -1534,6 +1534,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-06-04): **Px Listas — export Excel por lista** — `exportarPxListasMargenAction`; un `.xls` por `nombre_lista` con **CODIGO** + **PORC UTILIDAD** (margen desde precio efectivo).*
 
+*Última actualización (2026-06-10): **Px Competencia — catálogo explícito** — `prod_tienda.comparar_competencia`; actions `comparacionCompetencia.ts`; backfill en migración **`20260610120000`** para productos con filas en `prod_precios_competencia`.*
+
 *Última actualización (2026-06-04): **Act. Cx. Excel** — eliminado POST DUX `item/nuevoItem`; **Act. Cx.** exporta `.xls` CODIGO+COSTO (`exportarCostoCxDiffAction`) para import manual en DUX.*
 
 *Última actualización (2026-06-04): **Política lotes API DUX** — §1.10c: **50 ítems/lote**, **≥5 s** entre lotes (`duxApiBatchPolicy.ts`); sync lista precios. SSOT progreso sidebar en `FRONTEND_GUIDELINES`.*
