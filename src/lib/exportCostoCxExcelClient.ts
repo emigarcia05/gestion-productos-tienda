@@ -1,4 +1,4 @@
-import { formatDdMmYyHhMmNombreArchivoArgentina } from "@/lib/fechaArgentina";
+import { formatDdMmHhMmResumenAumentosArgentina } from "@/lib/fechaArgentina";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 
 /** Excel `.xls` (misma convención que Stock). */
@@ -12,7 +12,7 @@ export function descargarExcelCostoCx(filas: FilaExportCostoCx[]): void {
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Costo Cx");
     hoja["!cols"] = [{ wch: 18 }, { wch: 14 }];
-    const nombre = `Exportar Cx ${formatDdMmYyHhMmNombreArchivoArgentina(new Date())}.xls`;
+    const nombre = `Act Cx ${formatDdMmHhMmResumenAumentosArgentina(new Date())}.xls`;
     XLSX.writeFile(libro, nombre, { bookType: "xls" });
   });
 }

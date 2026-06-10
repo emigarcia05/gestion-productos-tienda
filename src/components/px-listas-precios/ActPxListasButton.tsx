@@ -1,0 +1,74 @@
+"use client";
+
+import { useState } from "react";
+import { Upload } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { exportarPxListasMargenAction } from "@/actions/pxListasPrecios";
+import { descargarExcelsPxListasMargen } from "@/lib/exportPxListasMargenExcelClient";
+import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
+
+export default function ActPxListasButton() {
+  const [exportando, setExportando] = useState(false);
+  const [modalSinProductos, setModalSinProductos] = useState(false);
+
+  async function handleExportar() {
+    setExportando(true);
+    try {
+      const res = await exportarPxListasMargenAction();
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo exportar las listas de precios.");
+        return;
+      }
+
+      const gruposConFilas = res.data.grupos.filter((g) => g.filas.length > 0);
+      if (gruposConFilas.length === 0) {
+        setModalSinProductos(true);
+        return;
+      }
+
+      const nArchivos = descargarExcelsPxListasMargen(res.data.grupos);
+      const totalFilas = gruposConFilas.reduce((acc, g) => acc + g.filas.length, 0);
+      toast.success(
+        nArchivos === 1
+          ? `Excel exportado: 1 lista (${totalFilas.toLocaleString("es-AR")} ítems).`
+          : `Excel exportado: ${nArchivos} listas (${totalFilas.toLocaleString("es-AR")} ítems en total).`
+      );
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Error inesperado al exportar listas."
+      );
+    } finally {
+      setExportando(false);
+    }
+  }
+
+  return (
+    <>
+      <ModalSinProductosExportar
+        open={modalSinProductos}
+        onOpenChange={setModalSinProductos}
+      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="default"
+            size="default"
+            className="btn-primario-gestion gap-2 shrink-0"
+            disabled={exportando}
+            onClick={() => void handleExportar()}
+          >
+            <Upload className="h-4 w-4 shrink-0" />
+            {exportando ? "Exportando..." : "Act. Px."}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) para importar
+          en DUX
+        </TooltipContent>
+      </Tooltip>
+    </>
+  );
+}

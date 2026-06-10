@@ -7,6 +7,10 @@ import type { ActionResult } from "@/lib/types";
 import { guardarPxListaPrecioEdicionSchema } from "@/lib/validations/pxListasPrecios";
 import { getPxListasPreciosPageDataFromDb } from "@/services/pxListasPreciosPage.service";
 import { guardarPrecioListaEdicion } from "@/services/pxListasPreciosEdicion.service";
+import {
+  listarExportPxListasMargenPorLista,
+  type ExportPxListaMargenGrupo,
+} from "@/services/exportPxListasMargen.service";
 
 const PX_LISTAS_PATHS = [
   "/gestion-productos/tienda/px-listas",
@@ -70,6 +74,25 @@ export async function guardarPxListaPrecioEdicionAction(
     return {
       ok: false,
       error: e instanceof Error ? e.message : "No se pudo guardar el precio.",
+    };
+  }
+}
+
+/** Excel por `nombre_lista`: CODIGO + PORC UTILIDAD (margen desde precio efectivo). */
+export async function exportarPxListasMargenAction(): Promise<
+  ActionResult<{ grupos: ExportPxListaMargenGrupo[] }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  try {
+    const grupos = await listarExportPxListasMargenPorLista();
+    return { ok: true, data: { grupos } };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
     };
   }
 }

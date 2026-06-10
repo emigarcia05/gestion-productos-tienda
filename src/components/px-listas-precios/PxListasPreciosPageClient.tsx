@@ -4,6 +4,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import FiltrosPxListasPrecios from "@/components/px-listas-precios/FiltrosPxListasPrecios";
 import TablaPxListasPrecios from "@/components/px-listas-precios/TablaPxListasPrecios";
+import ActPxListasButton from "@/components/px-listas-precios/ActPxListasButton";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { ItemPxListasPreciosTabla, ListaPrecioPxListasColumna } from "@/lib/pxListasPrecios";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
@@ -58,6 +59,13 @@ export default function PxListasPreciosPageClient({
             rubroActual={rubro}
             subRubroActual={subRubro}
           />
+        }
+        actions={
+          puedeEditar ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <ActPxListasButton />
+            </div>
+          ) : undefined
         }
       >
         <div className="flex h-full min-h-0 flex-col gap-0.5">
