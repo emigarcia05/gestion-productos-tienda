@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { ChevronDown, ChevronUp, Link2, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, Link2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
   PxListasDetalleVacio,
 } from "@/components/px-listas/PxListasDetalleCompetenciaFilas";
 import { relevarUrlsProductoCompetenciaAction } from "@/actions/competenciaPrecios";
+import { quitarProductoComparacionAction } from "@/actions/comparacionCompetencia";
 import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import { vinculosArrayToRecord, productoTieneVinculosRelevables } from "@/lib/pxListasVinculos";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
@@ -34,26 +35,27 @@ import {
 
 const COL_COUNT = 4;
 const COL_WIDTHS = [46, 18, 18, 18] as const;
-const MENSAJE_SIN_RESULTADOS = "No se encontraron ítems.";
+const MENSAJE_SIN_RESULTADOS =
+  "No hay productos en comparación. Usá Prod. Comparar para agregar ítems.";
 
 function FilaPxListas({
   item,
   puedeEditarEnlaces,
-  isPending,
-  expandido,
-  onToggleDetalle,
-  onAsociarUrls,
-  onRelevarUrls,
-  relevandoCodTienda,
+  puedeQuitarComparacion,
+  onQuitarComparacion,
+  quitandoCodTienda,
 }: {
   item: ItemPxListasParaTabla;
   puedeEditarEnlaces: boolean;
+  puedeQuitarComparacion: boolean;
   isPending: boolean;
   expandido: boolean;
   onToggleDetalle: () => void;
   onAsociarUrls: () => void;
   onRelevarUrls: () => void;
+  onQuitarComparacion: () => void;
   relevandoCodTienda: string | null;
+  quitandoCodTienda: string | null;
 }) {
   const detalle = item.competidoresPrecioDetalle;
   const fallos = item.competidoresFalloDetalle;
@@ -129,6 +131,20 @@ function FilaPxListas({
                 </Button>
               </>
             ) : null}
+            {puedeQuitarComparacion ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={isPending || quitandoCodTienda !== null}
+                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                aria-label="Quitar de comparación"
+                title="Quitar de comparación"
+                onClick={onQuitarComparacion}
+              >
+                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              </Button>
+            ) : null}
           </div>
         </TableCell>
       </TableRow>
@@ -151,16 +167,19 @@ export default function TablaPxListas({
   items,
   competencias,
   puedeEditarEnlaces,
+  puedeQuitarComparacion,
 }: {
   items: ItemPxListasParaTabla[];
   competencias: CompetenciaParaCliente[];
   puedeEditar: boolean;
   puedeEditarEnlaces: boolean;
+  puedeQuitarComparacion: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   const [relevandoCodTienda, setRelevandoCodTienda] = useState<string | null>(null);
+  const [quitandoCodTienda, setQuitandoCodTienda] = useState<string | null>(null);
   const [asociarFila, setAsociarFila] = useState<{
     codTienda: string;
     descripcion: string;
@@ -197,6 +216,23 @@ export default function TablaPxListas({
     });
   }
 
+  function quitarDeComparacion(codTienda: string) {
+    setQuitandoCodTienda(codTienda);
+    startTransition(async () => {
+      try {
+        const res = await quitarProductoComparacionAction({ codTienda });
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        toast.success("Producto quitado de comparación.");
+        router.refresh();
+      } finally {
+        setQuitandoCodTienda(null);
+      }
+    });
+  }
+
   return (
     <>
       <Table variant="compact" scrollX={false} className="tabla-px-listas-listado">
@@ -228,6 +264,7 @@ export default function TablaPxListas({
                 key={item.id}
                 item={item}
                 puedeEditarEnlaces={puedeEditarEnlaces}
+                puedeQuitarComparacion={puedeQuitarComparacion}
                 isPending={isPending}
                 expandido={expandidos.has(item.codItem)}
                 onToggleDetalle={() => toggleDetalle(item.codItem)}
@@ -239,7 +276,9 @@ export default function TablaPxListas({
                   })
                 }
                 onRelevarUrls={() => relevarUrlsProducto(item.codItem)}
+                onQuitarComparacion={() => quitarDeComparacion(item.codItem)}
                 relevandoCodTienda={relevandoCodTienda}
+                quitandoCodTienda={quitandoCodTienda}
               />
             ))
           )}

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, Users } from "lucide-react";
+import { Plus, RefreshCw, Users } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Button } from "@/components/ui/button";
 import FiltrosPxListas from "@/components/px-listas/FiltrosPxListas";
 import TablaPxListas from "@/components/px-listas/TablaPxListas";
+import AgregarProductoComparacionModal from "@/components/px-listas/AgregarProductoComparacionModal";
 import GestionCompetidoresModal from "@/components/precios-competencia/GestionCompetidoresModal";
 import SincronizarCompetenciaModal from "@/components/precios-competencia/SincronizarCompetenciaModal";
 import CompetenciaSyncProgresoBanner from "@/components/precios-competencia/CompetenciaSyncProgresoBanner";
@@ -51,12 +52,22 @@ export default function PxListasPageClient({
   const router = useRouter();
   const [gestionCompetidoresOpen, setGestionCompetidoresOpen] = useState(false);
   const [syncCompetenciaOpen, setSyncCompetenciaOpen] = useState(false);
+  const [agregarProductoOpen, setAgregarProductoOpen] = useState(false);
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
   const puedeEditarEnlaces = puede(rol, PERMISOS.competenciaPrecios.editar);
   const puedeGestionarCompetidores = puede(rol, PERMISOS.competenciaPrecios.editar);
 
   const headerActions = puedeGestionarCompetidores ? (
     <div className="flex flex-wrap items-center justify-end gap-2">
+      <Button
+        type="button"
+        variant="default"
+        className="btn-primario-gestion gap-2 shrink-0"
+        onClick={() => setAgregarProductoOpen(true)}
+      >
+        <Plus className="h-4 w-4 shrink-0" aria-hidden />
+        Prod. Comparar
+      </Button>
       <Button
         type="button"
         variant="default"
@@ -107,6 +118,7 @@ export default function PxListasPageClient({
               competencias={competencias}
               puedeEditar={puedeEditar}
               puedeEditarEnlaces={puedeEditarEnlaces}
+              puedeQuitarComparacion={puedeGestionarCompetidores}
             />
           </div>
           {totalPaginas > 1 && (
@@ -125,6 +137,14 @@ export default function PxListasPageClient({
       </ClassicFilteredTableLayout>
       {puedeGestionarCompetidores ? (
         <>
+          <AgregarProductoComparacionModal
+            open={agregarProductoOpen}
+            onOpenChange={setAgregarProductoOpen}
+            onAgregado={() => {
+              setAgregarProductoOpen(false);
+              router.refresh();
+            }}
+          />
           <GestionCompetidoresModal
             open={gestionCompetidoresOpen}
             onOpenChange={setGestionCompetidoresOpen}

@@ -45,12 +45,12 @@ function buildWherePxListas(params: {
   rubro: string;
   marca: string;
 }): Prisma.ProdTiendaWhereInput {
-  const andParts: Prisma.ProdTiendaWhereInput[] = [];
+  const andParts: Prisma.ProdTiendaWhereInput[] = [{ compararCompetencia: true }];
   const textFilter = filtroTexto(params.q, ["descripcionTienda", "codTienda"]);
   if (textFilter.AND?.length) andParts.push(textFilter);
   if (params.rubro) andParts.push({ rubro: params.rubro });
   if (params.marca) andParts.push({ marca: params.marca });
-  return andParts.length ? { AND: andParts } : {};
+  return { AND: andParts };
 }
 
 const selectBase = {
@@ -71,13 +71,13 @@ async function getPxListasPageEmpty(): Promise<{
     prisma.prodTienda.findMany({
       select: { marca: true },
       distinct: ["marca"],
-      where: { marca: { not: null } },
+      where: { marca: { not: null }, compararCompetencia: true },
       orderBy: { marca: "asc" },
     }),
     prisma.prodTienda.findMany({
       select: { rubro: true },
       distinct: ["rubro"],
-      where: { rubro: { not: null } },
+      where: { rubro: { not: null }, compararCompetencia: true },
       orderBy: { rubro: "asc" },
     }),
     listCompetencias(),
@@ -150,11 +150,11 @@ export async function getPxListasPageDataFromDb(params: {
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
   if (textFilter.AND?.length) andPartsOnlyQ.push(textFilter);
   const whereMarcas: Prisma.ProdTiendaWhereInput = andPartsOnlyQ.length
-    ? { AND: [...andPartsOnlyQ, { marca: { not: null } }] }
-    : { marca: { not: null } };
+    ? { AND: [...andPartsOnlyQ, { marca: { not: null } }, { compararCompetencia: true }] }
+    : { marca: { not: null }, compararCompetencia: true };
   const whereRubros: Prisma.ProdTiendaWhereInput = andPartsOnlyQ.length
-    ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }] }
-    : { rubro: { not: null } };
+    ? { AND: [...andPartsOnlyQ, { rubro: { not: null } }, { compararCompetencia: true }] }
+    : { rubro: { not: null }, compararCompetencia: true };
 
   const [marcasDistinct, rubrosDistinct] = await Promise.all([
     prisma.prodTienda.findMany({
