@@ -314,7 +314,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 **Implementaciones actuales:**
 
 - **Sync lista precios tienda** — GET paginado: **50** ítems/página (`fetchItemsPage`, `DUX_API_PAGE_LIMIT`); **`DELAY_MS`** 5 s entre páginas (`syncListaPrecioTienda.service.ts`). Persistencia Neon en chunks aparte (`DUX_SYNC_CHUNK_SIZE`, no confundir con lote DUX).
-- **Act. Cx. costos** — POST `item/nuevoItem`: hasta **50** productos por body; **`throttleDuxItemModificarRequest()`** antes de cada POST/GET (`duxItemModificarApi.ts`). **Cliente encadena lotes** (`iniciarActCxDuxAction` + `enviarLoteCostoCxDuxAction` por lote); no un solo POST con todos los ítems. Tras cada POST, polling GET `obtenerEstadoItem` con la misma pausa de **5 s** entre consultas.
+- **Act. Cx. costos** — POST `item/nuevoItem`: hasta **50** productos por body; **`throttleDuxItemModificarRequest()`** antes de cada POST/GET (`duxItemModificarApi.ts`). **Cliente en dos fases:** (1) encadena todos los POST (`enviarLoteCostoCxDuxAction`, progreso +50 cada ~5 s, ritmo similar al GET sync); (2) confirma con GET `obtenerEstadoItem` por lote (`comenzarConfirmacionActCxDuxAction` + polling). Tras cada POST exitoso, `processed` sube de inmediato (no esperar FINALIZADO DUX). Caché en memoria de filas (`actCxFilasCache.ts`) durante la corrida para no re-listar ~1800 filas por lote.
 - **Reintentos 429:** esperar otro intervalo de **5 s** (hasta 5 reintentos en `duxItemModificarApi`).
 
 **Nuevos flujos DUX:** usar las constantes de `duxApiBatchPolicy.ts`; no hardcodear 100 ni intervalos menores a 5 s. Progreso UI en sidebar (`FRONTEND_GUIDELINES` § SSOT progreso API DUX).

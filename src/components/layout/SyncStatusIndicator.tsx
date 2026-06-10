@@ -8,8 +8,10 @@ import { getMainAppAreaIdFromPathname, type MainAppAreaId } from "@/lib/main-app
 import { sincronizarComprobantesProveedorDesdeDuxAction } from "@/actions/comprobantesProveedor";
 import { liberarActCxDuxTrabadoAction } from "@/actions/cxPxTienda";
 import AppModal from "@/components/shared/AppModal";
-import DuxSyncStyleButton from "@/components/shared/DuxSyncStyleButton";
-import MensajeProceso from "@/components/shared/MensajeProceso";
+import DuxSyncStyleButton, {
+  type DuxSyncProgresoDetalle,
+} from "@/components/shared/DuxSyncStyleButton";
+import { useActCxClientPending } from "@/hooks/useActCxClientPending";
 import { useActCxDuxStatusPoll } from "@/hooks/useActCxDuxStatusPoll";
 import { useSyncComprasProveedorDuxStatusPoll } from "@/hooks/useSyncComprasProveedorDuxStatusPoll";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
@@ -52,6 +54,9 @@ export default function SyncStatusIndicator({ rol }: Props) {
   const actCxPollEnabled = areaId !== "finanzas";
   const puedeLiberarActCx = puede(rol, PERMISOS.cxPxTienda.acceso);
   const actCxStatus = useActCxDuxStatusPoll(actCxPollEnabled);
+  const actCxClientPending = useActCxClientPending();
+  const actCxVisible =
+    actCxPollEnabled && (actCxClientPending || actCxStatus.running);
 
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
@@ -149,10 +154,10 @@ export default function SyncStatusIndicator({ rol }: Props) {
 
   useEffect(() => {
     if (areaId === "finanzas") return;
-    if (actCxStatus.running) return;
+    if (actCxVisible) return;
     if (!running || requestingStart || syncStepsRunningRef.current) return;
     void runSyncStepsUntilDone();
-  }, [running, requestingStart, areaId, actCxStatus.running]);
+  }, [running, requestingStart, areaId, actCxVisible]);
 
   async function confirmLiberarActCxBloqueo() {
     setLiberarActCxPending(true);
@@ -172,8 +177,8 @@ export default function SyncStatusIndicator({ rol }: Props) {
   }
 
   async function handleStartSync() {
-    if (running || requestingStart || comprasSyncing || actCxStatus.running) {
-      if (actCxStatus.running) {
+    if (running || requestingStart || comprasSyncing || actCxVisible) {
+      if (actCxVisible) {
         toast.error("Hay una actualización de costos DUX en curso. Esperá a que finalice.");
       }
       return;
@@ -244,85 +249,77 @@ export default function SyncStatusIndicator({ rol }: Props) {
   const actCxMensaje =
     actCxStatus.phase === "enviando" ? "ENVIANDO COSTOS DUX" : "ACTUALIZANDO COSTOS DUX";
 
-  if (actCxStatus.running) {
-    return (
-      <>
-        <MensajeProceso
-          variant="sidebar"
-          mensaje={actCxMensaje}
-          detalle={
-            actCxStatus.total > 0
-              ? { procesados: actCxStatus.processed, total: actCxStatus.total }
-              : "…"
-          }
-          onDoubleClick={
-            puedeLiberarActCx ? () => setLiberarActCxModalOpen(true) : undefined
-          }
-          doubleClickTitle="Doble Clic Para Liberar Bloqueo Act. Cx."
-        />
-        {puedeLiberarActCx ? (
-          <Dialog
-            open={liberarActCxModalOpen}
-            onOpenChange={(open) => {
-              if (!open && liberarActCxPending) return;
-              setLiberarActCxModalOpen(open);
-            }}
-          >
-            <AppModal
-              title="Liberar Bloqueo Act. Cx."
-              size="sm"
-              padding="sm"
-              scrollBody={false}
-              actions={
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={liberarActCxPending}
-                    onClick={() => setLiberarActCxModalOpen(false)}
-                  >
-                    No
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={liberarActCxPending}
-                    onClick={() => void confirmLiberarActCxBloqueo()}
-                  >
-                    Sí, Liberar
-                  </Button>
-                </>
-              }
-            >
-              <p className="text-sm text-foreground">
-                ¿Liberar el bloqueo de actualización de costos DUX? Usalo solo si el
-                proceso quedó trabado. Si DUX sigue procesando en segundo plano,
-                revisá allí antes de reenviar.
-              </p>
-            </AppModal>
-          </Dialog>
-        ) : null}
-      </>
-    );
+  let sidebarProgreso:
+    | { mensaje: string; detalle?: DuxSyncProgresoDetalle }
+    | undefined;
+  let onProgresoDoubleClick: (() => void) | undefined;
+  let progresoDoubleClickTitle: string | undefined;
+
+  if (actCxVisible) {
+    if (actCxClientPending && !actCxStatus.running) {
+      sidebarProgreso = { mensaje: "INICIANDO ACT. CX.", detalle: "…" };
+    } else {
+      const detalleActCx =
+        actCxStatus.phase === "esperando" &&
+        actCxStatus.loteActual != null &&
+        actCxStatus.lotesTotal != null
+          ? `Lote ${actCxStatus.loteActual} de ${actCxStatus.lotesTotal} · ${actCxStatus.processed.toLocaleString("es-AR")} de ${actCxStatus.total.toLocaleString("es-AR")}`
+          : actCxStatus.total > 0
+            ? { procesados: actCxStatus.processed, total: actCxStatus.total }
+            : "…";
+      sidebarProgreso = {
+        mensaje: actCxMensaje,
+        detalle: detalleActCx,
+      };
+    }
+    if (puedeLiberarActCx && actCxStatus.running) {
+      onProgresoDoubleClick = () => setLiberarActCxModalOpen(true);
+      progresoDoubleClickTitle = "Doble Clic Para Liberar Bloqueo Act. Cx.";
+    }
+  } else if (running) {
+    sidebarProgreso = {
+      mensaje: phase === "guardando" ? "GUARDANDO PROD." : "SINCRONIZANDO PROD.",
+      detalle: total > 0 ? { procesados: processed, total } : "…",
+    };
+    onProgresoDoubleClick = () => setCancelSyncModalOpen(true);
+    progresoDoubleClickTitle = "Doble Clic Para Cancelar Sincronización";
+  } else if (comprasSyncing) {
+    sidebarProgreso = {
+      mensaje: "SINCRONIZANDO COMPRAS",
+      detalle:
+        comprasProgreso.total > 0
+          ? { procesados: comprasProgreso.processed, total: comprasProgreso.total }
+          : "…",
+    };
+  } else if (requestingStart) {
+    sidebarProgreso = { mensaje: "INICIANDO SYNC. PROD.", detalle: "…" };
   }
 
-  if (running) {
-    return (
-      <>
-        <MensajeProceso
-          variant="sidebar"
-          mensaje={phase === "guardando" ? "GUARDANDO PROD." : "SINCRONIZANDO PROD."}
-          detalle={total > 0 ? { procesados: processed, total } : "…"}
-          onDoubleClick={() => setCancelSyncModalOpen(true)}
-        />
+  return (
+    <>
+      <DuxSyncStyleButton
+        lineIdle={labels.lineIdle}
+        lineHover={labels.lineHover}
+        secondary={`Últ. Act.: ${ultimaActLabel}`}
+        aria-label={labels.ariaLabel}
+        onClick={handleStartSync}
+        disabled={requestingStart || actCxVisible || running || comprasSyncing}
+        busy={requestingStart}
+        surface="sidebar"
+        progreso={sidebarProgreso}
+        onProgresoDoubleClick={onProgresoDoubleClick}
+        progresoDoubleClickTitle={progresoDoubleClickTitle}
+      />
+      {puedeLiberarActCx ? (
         <Dialog
-          open={cancelSyncModalOpen}
+          open={liberarActCxModalOpen}
           onOpenChange={(open) => {
-            if (!open && cancelSyncPending) return;
-            setCancelSyncModalOpen(open);
+            if (!open && liberarActCxPending) return;
+            setLiberarActCxModalOpen(open);
           }}
         >
           <AppModal
-            title="Cancelar Sincronización"
+            title="Liberar Bloqueo Act. Cx."
             size="sm"
             padding="sm"
             scrollBody={false}
@@ -331,54 +328,66 @@ export default function SyncStatusIndicator({ rol }: Props) {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={cancelSyncPending}
-                  onClick={() => setCancelSyncModalOpen(false)}
+                  disabled={liberarActCxPending}
+                  onClick={() => setLiberarActCxModalOpen(false)}
                 >
                   No
                 </Button>
                 <Button
                   type="button"
-                  disabled={cancelSyncPending}
-                  onClick={() => void confirmCancelListaPrecioSync()}
+                  disabled={liberarActCxPending}
+                  onClick={() => void confirmLiberarActCxBloqueo()}
                 >
-                  Sí, Cancelar
+                  Sí, Liberar
                 </Button>
               </>
             }
           >
             <p className="text-sm text-foreground">
-              ¿Está seguro que desea cancelar la sincronización?
+              ¿Liberar el bloqueo de actualización de costos DUX? Usalo solo si el
+              proceso quedó trabado. Si DUX sigue procesando en segundo plano,
+              revisá allí antes de reenviar.
             </p>
           </AppModal>
         </Dialog>
-      </>
-    );
-  }
-
-  if (comprasSyncing) {
-    return (
-      <MensajeProceso
-        variant="sidebar"
-        mensaje="SINCRONIZANDO COMPRAS"
-        detalle={
-          comprasProgreso.total > 0
-            ? { procesados: comprasProgreso.processed, total: comprasProgreso.total }
-            : "…"
-        }
-      />
-    );
-  }
-
-  return (
-    <DuxSyncStyleButton
-      lineIdle={labels.lineIdle}
-      lineHover={labels.lineHover}
-      secondary={requestingStart ? "…" : `Últ. Act.: ${ultimaActLabel}`}
-      aria-label={labels.ariaLabel}
-      onClick={handleStartSync}
-      disabled={requestingStart || actCxStatus.running}
-      busy={requestingStart}
-      surface="sidebar"
-    />
+      ) : null}
+      <Dialog
+        open={cancelSyncModalOpen}
+        onOpenChange={(open) => {
+          if (!open && cancelSyncPending) return;
+          setCancelSyncModalOpen(open);
+        }}
+      >
+        <AppModal
+          title="Cancelar Sincronización"
+          size="sm"
+          padding="sm"
+          scrollBody={false}
+          actions={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={cancelSyncPending}
+                onClick={() => setCancelSyncModalOpen(false)}
+              >
+                No
+              </Button>
+              <Button
+                type="button"
+                disabled={cancelSyncPending}
+                onClick={() => void confirmCancelListaPrecioSync()}
+              >
+                Sí, Cancelar
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-foreground">
+            ¿Está seguro que desea cancelar la sincronización?
+          </p>
+        </AppModal>
+      </Dialog>
+    </>
   );
 }

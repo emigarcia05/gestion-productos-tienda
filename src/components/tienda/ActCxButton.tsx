@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   abortarActCxDuxAction,
+  comenzarConfirmacionActCxDuxAction,
   consultarEstadoCostoCxDuxAction,
   enviarLoteCostoCxDuxAction,
   finalizarActCxDuxExitoAction,
@@ -17,6 +18,7 @@ import {
 import { exportarResumenAumentosPxAction } from "@/actions/pxListas";
 import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
+import { setActCxClientPending } from "@/hooks/useActCxClientPending";
 import { useActCxDuxStatusPoll } from "@/hooks/useActCxDuxStatusPoll";
 import { useSyncListaPreciosStatusPoll } from "@/hooks/useSyncListaPreciosStatusPoll";
 
@@ -50,7 +52,9 @@ export default function ActCxButton({ pollEnabled }: Props) {
   async function esperarProcesoEnCliente(
     idProceso: number,
     itemsCompletadosAntes: number,
-    itemsEnLote: number
+    itemsEnLote: number,
+    loteActual: number,
+    lotesTotal: number
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
       if (i > 0) {
@@ -61,6 +65,8 @@ export default function ActCxButton({ pollEnabled }: Props) {
         idProceso,
         itemsCompletadosAntes,
         itemsEnLote,
+        loteActual,
+        lotesTotal,
       });
       if (!res.ok) {
         return { ok: false, error: res.error ?? "No se pudo consultar el estado en DUX." };
@@ -88,6 +94,7 @@ export default function ActCxButton({ pollEnabled }: Props) {
     }
 
     setProcesandoLocal(true);
+    setActCxClientPending(true);
     try {
       const inicio = await iniciarActCxDuxAction();
       if (!inicio.ok) {
@@ -99,7 +106,12 @@ export default function ActCxButton({ pollEnabled }: Props) {
         return;
       }
 
-      let itemsCompletados = 0;
+      const lotesEnviados: Array<{
+        idProceso: number;
+        itemsCompletadosAntes: number;
+        itemsEnLote: number;
+        loteIndex: number;
+      }> = [];
 
       for (let loteIndex = 0; loteIndex < inicio.data.lotes; loteIndex++) {
         const lote = await enviarLoteCostoCxDuxAction({ loteIndex });
@@ -113,18 +125,33 @@ export default function ActCxButton({ pollEnabled }: Props) {
           return;
         }
 
+        lotesEnviados.push({
+          idProceso: lote.data.idProceso,
+          itemsCompletadosAntes: lote.data.itemsCompletadosAntes,
+          itemsEnLote: lote.data.itemsEnLote,
+          loteIndex: lote.data.loteIndex,
+        });
+      }
+
+      const confirmacion = await comenzarConfirmacionActCxDuxAction();
+      if (!confirmacion.ok) {
+        toast.error(confirmacion.error ?? "No se pudo iniciar la confirmación en DUX.");
+        return;
+      }
+
+      for (const lote of lotesEnviados) {
         const poll = await esperarProcesoEnCliente(
-          lote.data.idProceso,
-          lote.data.itemsCompletadosAntes,
-          lote.data.itemsEnLote
+          lote.idProceso,
+          lote.itemsCompletadosAntes,
+          lote.itemsEnLote,
+          lote.loteIndex + 1,
+          inicio.data.lotes
         );
         if (!poll.ok) {
           await abortarActCxDuxAction({ error: poll.error });
           toast.error(poll.error);
           return;
         }
-
-        itemsCompletados += lote.data.itemsEnLote;
       }
 
       const fin = await finalizarActCxDuxExitoAction({
@@ -146,6 +173,7 @@ export default function ActCxButton({ pollEnabled }: Props) {
       await abortarActCxDuxAction({ error: msg });
       toast.error(msg);
     } finally {
+      setActCxClientPending(false);
       setProcesandoLocal(false);
     }
   }
@@ -238,11 +266,7 @@ export default function ActCxButton({ pollEnabled }: Props) {
             onClick={() => void handleActCx()}
           >
             <Upload className="h-4 w-4 shrink-0" />
-            {procesando
-              ? actCxStatus.phase === "enviando"
-                ? "Enviando..."
-                : "Actualizando..."
-              : "Act. Cx."}
+            Act. Cx.
           </Button>
         </TooltipTrigger>
         <TooltipContent>

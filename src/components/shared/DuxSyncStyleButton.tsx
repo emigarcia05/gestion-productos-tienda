@@ -50,6 +50,12 @@ export type DuxSyncStyleButtonSurface = NonNullable<
   VariantProps<typeof duxSyncStyleButtonVariants>["surface"]
 >;
 
+export type DuxSyncProgresoDetalle =
+  | { procesados: number; total: number }
+  | string
+  | null
+  | undefined;
+
 export interface DuxSyncStyleButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">,
     VariantProps<typeof duxSyncStyleButtonVariants> {
@@ -60,6 +66,26 @@ export interface DuxSyncStyleButtonProps
   /** Segunda línea (ej. Últ. Act.: …). */
   secondary: ReactNode;
   surface?: DuxSyncStyleButtonSurface;
+  /**
+   * Indicador de proceso en el mismo slot que el botón de sync (sidebar).
+   * Reemplaza idle/hover; línea 2 = detalle numérico o texto.
+   */
+  progreso?: {
+    mensaje: string;
+    detalle?: DuxSyncProgresoDetalle;
+  };
+  /** Doble clic en modo progreso (ej. cancelar / liberar bloqueo). */
+  onProgresoDoubleClick?: () => void;
+  progresoDoubleClickTitle?: string;
+}
+
+function formatProgresoDetalle(detalle: DuxSyncProgresoDetalle): string {
+  if (detalle == null) return "…";
+  if (typeof detalle === "string") return detalle;
+  if (detalle.total > 0) {
+    return `${detalle.procesados.toLocaleString("es-AR")} de ${detalle.total.toLocaleString("es-AR")}`;
+  }
+  return "…";
 }
 
 export default function DuxSyncStyleButton({
@@ -71,8 +97,40 @@ export default function DuxSyncStyleButton({
   className,
   disabled,
   type = "button",
+  progreso,
+  onProgresoDoubleClick,
+  progresoDoubleClickTitle,
   ...props
 }: DuxSyncStyleButtonProps) {
+  if (progreso) {
+    const detailLine = formatProgresoDetalle(progreso.detalle);
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        onDoubleClick={onProgresoDoubleClick}
+        title={onProgresoDoubleClick ? progresoDoubleClickTitle : undefined}
+        className={cn(
+          duxSyncStyleButtonVariants({ surface, busy: true }),
+          "bg-accent2 text-sidebar-foreground",
+          onProgresoDoubleClick && "cursor-pointer",
+          className
+        )}
+      >
+        <span className="w-full max-w-full truncate text-sm font-semibold whitespace-nowrap">
+          {progreso.mensaje}
+        </span>
+        <span
+          className={cn(
+            "w-full max-w-full truncate text-xs font-semibold whitespace-nowrap text-sidebar-foreground/90"
+          )}
+        >
+          {detailLine}
+        </span>
+      </div>
+    );
+  }
+
   const isBusy = busy || disabled;
   return (
     <button

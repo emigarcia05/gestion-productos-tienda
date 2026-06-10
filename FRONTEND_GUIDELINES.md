@@ -710,8 +710,9 @@ Botón de **dos líneas** con **swap al hover** en la primera (misma interacció
   - **`secondary`**: `ReactNode` — segunda línea (ej. `Últ. Act.: …`); en hover se colapsa (`max-h-0` + opacidad), igual que en slidenav.
   - **`surface`**: `"sidebar"` (default, `bg-sidebar-accent` + `text-sidebar-foreground`) | `"card"` (`border` + `bg-card` + `text-foreground`, hover `bg-muted/60`) para uso fuera de la slidenav si hiciera falta.
   - **`busy`**: `boolean` — cursor espera y opacidad atenuada; alinea línea 1 sin efecto hover.
+  - **`progreso`**: `{ mensaje, detalle? }` — reemplaza el botón por indicador en el **mismo slot** (`min-h-[3.5rem]`, `bg-accent2`); línea 2 = **X de Y** o texto. Usado para sync lista, Act. Cx., compras (`SyncStatusIndicator`). **`onProgresoDoubleClick`** para cancelar/liberar.
   - Resto: atributos estándar de `<button>` (`onClick`, `disabled`, `aria-label`, `className`, etc.).
-- **Uso**: `SyncStatusIndicator` (lista precios en áreas **Gestión Productos** / **Estadísticas Productos**; compras en **Finanzas**).
+- **Uso**: `SyncStatusIndicator` (lista precios, **Act. Cx.**, compras). El botón **Act. Cx.** en la página **no** cambia su etiqueta durante el envío; el progreso vive solo en la slidenav.
 
 ### `formatLastCompletedAtElapsed` (`src/lib/formatElapsedSince.ts`)
 

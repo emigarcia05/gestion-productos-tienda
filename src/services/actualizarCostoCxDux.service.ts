@@ -5,6 +5,7 @@ import {
   postModificarItemsDux,
   type DuxModificarItemProductoRequest,
 } from "@/lib/duxItemModificarApi";
+import { obtenerFilasActCxParaEnvio } from "@/lib/actCxFilasCache";
 import { DUX_API_BATCH_SIZE } from "@/lib/duxApiBatchPolicy";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
 
@@ -86,7 +87,7 @@ export async function enviarLoteCostoCxADux(loteIndex: number): Promise<
   }
 
   try {
-    const filas = await listarFilasExportCostoCxDiff();
+    const filas = await obtenerFilasActCxParaEnvio();
     if (filas.length === 0) {
       return {
         success: false,

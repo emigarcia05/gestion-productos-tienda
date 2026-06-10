@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+import { limpiarFilasActCxCache } from "@/lib/actCxFilasCache";
 import { prisma } from "@/lib/prisma";
 import { getSyncDuxStatusFromDb } from "@/lib/syncDuxStatusDb";
 
@@ -8,6 +10,11 @@ export const ACT_CX_DUX_MAX_RUNTIME_MS = 2 * 60 * 60 * 1000;
 
 export type ActCxDuxPhase = "enviando" | "esperando";
 
+export interface ActCxDuxMeta {
+  loteActual?: number;
+  lotesTotal?: number;
+}
+
 export interface ActCxDuxStatusState {
   running: boolean;
   phase: ActCxDuxPhase | null;
@@ -15,6 +22,21 @@ export interface ActCxDuxStatusState {
   total: number;
   error: string | null;
   lastCompletedAt: Date | null;
+  meta: ActCxDuxMeta;
+}
+
+function parseActCxMeta(raw: unknown): ActCxDuxMeta {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const loteActual =
+    typeof o.loteActual === "number" && Number.isFinite(o.loteActual)
+      ? Math.max(1, Math.floor(o.loteActual))
+      : undefined;
+  const lotesTotal =
+    typeof o.lotesTotal === "number" && Number.isFinite(o.lotesTotal)
+      ? Math.max(1, Math.floor(o.lotesTotal))
+      : undefined;
+  return { loteActual, lotesTotal };
 }
 
 function parsePhase(raw: string | null): ActCxDuxPhase | null {
@@ -22,6 +44,7 @@ function parsePhase(raw: string | null): ActCxDuxPhase | null {
 }
 
 async function forceClearActCxDuxRunningInDb(reason: string): Promise<void> {
+  limpiarFilasActCxCache();
   await prisma.syncDuxStatus.upsert({
     where: { id: ACT_CX_DUX_STATUS_ID },
     create: {
@@ -88,6 +111,7 @@ export async function getActCxDuxStatusFromDb(): Promise<ActCxDuxStatusState> {
       total: true,
       error: true,
       lastCompletedAt: true,
+      meta: true,
     },
   });
 
@@ -99,6 +123,7 @@ export async function getActCxDuxStatusFromDb(): Promise<ActCxDuxStatusState> {
       total: 0,
       error: null,
       lastCompletedAt: null,
+      meta: {},
     };
   }
 
@@ -109,6 +134,7 @@ export async function getActCxDuxStatusFromDb(): Promise<ActCxDuxStatusState> {
     total: row.total,
     error: row.error,
     lastCompletedAt: row.lastCompletedAt,
+    meta: parseActCxMeta(row.meta),
   };
 }
 
@@ -175,18 +201,28 @@ export async function setActCxDuxProgressInDb(params: {
   processed: number;
   total?: number;
   phase?: ActCxDuxPhase;
+  meta?: ActCxDuxMeta | null;
 }): Promise<void> {
   await prisma.syncDuxStatus.update({
     where: { id: ACT_CX_DUX_STATUS_ID },
     data: {
       ...(params.phase != null ? { phase: params.phase } : {}),
       ...(params.total != null ? { total: Math.max(0, Math.floor(params.total)) } : {}),
+      ...(params.meta !== undefined
+        ? {
+            meta:
+              params.meta == null || Object.keys(params.meta).length === 0
+                ? Prisma.DbNull
+                : (params.meta as Prisma.InputJsonValue),
+          }
+        : {}),
       processed: Math.max(0, Math.floor(params.processed)),
     },
   });
 }
 
 export async function finishActCxDuxInDb(processed: number, total: number): Promise<void> {
+  limpiarFilasActCxCache();
   await prisma.syncDuxStatus.update({
     where: { id: ACT_CX_DUX_STATUS_ID },
     data: {
@@ -202,6 +238,7 @@ export async function finishActCxDuxInDb(processed: number, total: number): Prom
 }
 
 export async function failActCxDuxInDb(message: string): Promise<void> {
+  limpiarFilasActCxCache();
   await prisma.syncDuxStatus.upsert({
     where: { id: ACT_CX_DUX_STATUS_ID },
     create: {
