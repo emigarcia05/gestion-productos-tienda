@@ -11,8 +11,20 @@ export const ACT_CX_DUX_MAX_RUNTIME_MS = 2 * 60 * 60 * 1000;
 export type ActCxDuxPhase = "enviando" | "esperando";
 
 export interface ActCxDuxMeta {
+  /** Lote en curso (1-based, UI). */
   loteActual?: number;
   lotesTotal?: number;
+  cantidadEnviada?: number;
+  /** Lotes ya confirmados FINALIZADO en DUX. */
+  lotesConfirmados?: number;
+  /** Proceso DUX pendiente de confirmar tras POST del lote actual. */
+  idProcesoPendiente?: number | null;
+  itemsEnLotePendiente?: number;
+  itemsCompletadosAntesPendiente?: number;
+  /** Intento de poll del lote pendiente (1-based). */
+  pollIntento?: number;
+  /** Último `estado` devuelto por DUX en el poll. */
+  estadoDux?: string;
 }
 
 export interface ActCxDuxStatusState {
@@ -25,18 +37,50 @@ export interface ActCxDuxStatusState {
   meta: ActCxDuxMeta;
 }
 
+function parseOptionalInt(
+  value: unknown,
+  min: number,
+  max?: number
+): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  const n = Math.floor(value);
+  if (n < min) return undefined;
+  if (max != null && n > max) return undefined;
+  return n;
+}
+
 function parseActCxMeta(raw: unknown): ActCxDuxMeta {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
-  const loteActual =
-    typeof o.loteActual === "number" && Number.isFinite(o.loteActual)
-      ? Math.max(1, Math.floor(o.loteActual))
+  const loteActual = parseOptionalInt(o.loteActual, 1);
+  const lotesTotal = parseOptionalInt(o.lotesTotal, 1);
+  const cantidadEnviada = parseOptionalInt(o.cantidadEnviada, 0);
+  const lotesConfirmados = parseOptionalInt(o.lotesConfirmados, 0);
+  const idProcesoPendiente =
+    o.idProcesoPendiente === null
+      ? null
+      : parseOptionalInt(o.idProcesoPendiente, 1);
+  const itemsEnLotePendiente = parseOptionalInt(o.itemsEnLotePendiente, 1);
+  const itemsCompletadosAntesPendiente = parseOptionalInt(
+    o.itemsCompletadosAntesPendiente,
+    0
+  );
+  const pollIntento = parseOptionalInt(o.pollIntento, 0);
+  const estadoDux =
+    typeof o.estadoDux === "string" && o.estadoDux.trim() !== ""
+      ? o.estadoDux.trim()
       : undefined;
-  const lotesTotal =
-    typeof o.lotesTotal === "number" && Number.isFinite(o.lotesTotal)
-      ? Math.max(1, Math.floor(o.lotesTotal))
-      : undefined;
-  return { loteActual, lotesTotal };
+  return {
+    loteActual,
+    lotesTotal,
+    cantidadEnviada,
+    lotesConfirmados,
+    idProcesoPendiente,
+    itemsEnLotePendiente,
+    itemsCompletadosAntesPendiente,
+    pollIntento,
+    estadoDux,
+  };
 }
 
 function parsePhase(raw: string | null): ActCxDuxPhase | null {

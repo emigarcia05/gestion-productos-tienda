@@ -11,8 +11,11 @@ export interface ActCxDuxPollState {
   processed: number;
   total: number;
   error: string | null;
+  lastCompletedAt: string | null;
   loteActual: number | null;
   lotesTotal: number | null;
+  pollIntento: number | null;
+  estadoDux: string | null;
 }
 
 const IDLE: ActCxDuxPollState = {
@@ -21,8 +24,11 @@ const IDLE: ActCxDuxPollState = {
   processed: 0,
   total: 0,
   error: null,
+  lastCompletedAt: null,
   loteActual: null,
   lotesTotal: null,
+  pollIntento: null,
+  estadoDux: null,
 };
 
 /** Polling del estado global Act. Cx. DUX (`sync_dux_status` id act-cx-costos-dux). */
@@ -50,8 +56,11 @@ export function useActCxDuxStatusPoll(enabled: boolean): ActCxDuxPollState {
           processed: res.data.processed,
           total: res.data.total,
           error: res.data.error,
+          lastCompletedAt: res.data.lastCompletedAt,
           loteActual: res.data.loteActual,
           lotesTotal: res.data.lotesTotal,
+          pollIntento: res.data.pollIntento,
+          estadoDux: res.data.estadoDux,
         });
       });
     }

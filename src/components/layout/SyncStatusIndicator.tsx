@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { formatLastCompletedAtElapsed } from "@/lib/formatElapsedSince";
 import { getMainAppAreaIdFromPathname, type MainAppAreaId } from "@/lib/main-app-areas";
 import { sincronizarComprobantesProveedorDesdeDuxAction } from "@/actions/comprobantesProveedor";
-import { liberarActCxDuxTrabadoAction } from "@/actions/cxPxTienda";
+import { liberarActCxDuxTrabadoAction, avanzarActCxDuxAction } from "@/actions/cxPxTienda";
+import { ACT_CX_DUX_POLL_MAX_ATTEMPTS } from "@/lib/actCxDuxPollPolicy";
+import { registerActCxDuxRunner } from "@/lib/actCxDuxRunner";
 import AppModal from "@/components/shared/AppModal";
 import DuxSyncStyleButton, {
   type DuxSyncProgresoDetalle,
@@ -19,6 +21,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 
 const POLL_INTERVAL_MS = 1500;
+
+function sleepMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 type SyncListaPreciosPhase = "sincronizando" | "guardando";
 
@@ -74,8 +80,37 @@ export default function SyncStatusIndicator({ rol }: Props) {
   const prevRunningRef = useRef(false);
   const prevLastCompletedAtRef = useRef<string | null>(null);
   const syncStepsRunningRef = useRef(false);
+  const actCxStepsRunningRef = useRef(false);
+  const runActCxStepsRef = useRef<() => Promise<void>>(async () => {});
+  const prevActCxRunningRef = useRef(false);
+  const prevActCxCompletedAtRef = useRef<string | null>(null);
 
   const comprasProgreso = useSyncComprasProveedorDuxStatusPoll(comprasSyncing);
+
+  runActCxStepsRef.current = async function runActCxStepsUntilDone() {
+    if (actCxStepsRunningRef.current) return;
+    actCxStepsRunningRef.current = true;
+    try {
+      let continuing = true;
+      while (continuing) {
+        const res = await avanzarActCxDuxAction();
+        if (!res.ok) {
+          toast.error(
+            res.error ?? "No se pudo avanzar la actualización de costos DUX."
+          );
+          break;
+        }
+        continuing = res.data.continuing;
+        if (continuing && res.data.waitMs > 0) {
+          await sleepMs(res.data.waitMs);
+        }
+      }
+    } catch {
+      toast.error("Error de red durante la actualización de costos DUX.");
+    } finally {
+      actCxStepsRunningRef.current = false;
+    }
+  };
 
   async function runSyncStepsUntilDone() {
     if (syncStepsRunningRef.current) return;
@@ -151,6 +186,40 @@ export default function SyncStatusIndicator({ rol }: Props) {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    registerActCxDuxRunner(() => runActCxStepsRef.current());
+    return () => registerActCxDuxRunner(null);
+  }, []);
+
+  useEffect(() => {
+    if (areaId === "finanzas") return;
+    if (!actCxStatus.running || actCxStepsRunningRef.current) return;
+    void runActCxStepsRef.current();
+  }, [actCxStatus.running, areaId]);
+
+  useEffect(() => {
+    if (areaId === "finanzas") return;
+
+    const completedAt = actCxStatus.lastCompletedAt;
+    if (
+      prevActCxRunningRef.current &&
+      !actCxStatus.running &&
+      !actCxStatus.error &&
+      completedAt &&
+      completedAt !== prevActCxCompletedAtRef.current &&
+      actCxStatus.total > 0
+    ) {
+      toast.success(
+        `Costos actualizados en DUX: ${actCxStatus.total.toLocaleString("es-AR")} ítems.`
+      );
+    }
+
+    prevActCxRunningRef.current = actCxStatus.running;
+    if (completedAt != null) {
+      prevActCxCompletedAtRef.current = completedAt;
+    }
+  }, [actCxStatus, areaId]);
 
   useEffect(() => {
     if (areaId === "finanzas") return;
@@ -247,7 +316,35 @@ export default function SyncStatusIndicator({ rol }: Props) {
     areaId === "finanzas" ? (lastComprasLabel ?? "—") : (lastCompletedLabel ?? "—");
 
   const actCxMensaje =
-    actCxStatus.phase === "enviando" ? "ENVIANDO COSTOS DUX" : "ACTUALIZANDO COSTOS DUX";
+    actCxStatus.phase === "enviando"
+      ? "ENVIANDO COSTOS DUX"
+      : "CONFIRMANDO COSTOS DUX";
+
+  function buildActCxDetalle(): DuxSyncProgresoDetalle {
+    const parts: string[] = [];
+    if (actCxStatus.loteActual != null && actCxStatus.lotesTotal != null) {
+      parts.push(`Lote ${actCxStatus.loteActual} de ${actCxStatus.lotesTotal}`);
+    }
+    if (actCxStatus.total > 0) {
+      parts.push(
+        `${actCxStatus.processed.toLocaleString("es-AR")} de ${actCxStatus.total.toLocaleString("es-AR")}`
+      );
+    }
+    if (
+      actCxStatus.phase === "esperando" &&
+      actCxStatus.pollIntento != null &&
+      actCxStatus.pollIntento > 0
+    ) {
+      parts.push(
+        `Consulta ${actCxStatus.pollIntento}/${ACT_CX_DUX_POLL_MAX_ATTEMPTS}`
+      );
+    }
+    if (actCxStatus.estadoDux) {
+      parts.push(actCxStatus.estadoDux);
+    }
+    if (parts.length === 0) return "…";
+    return parts.join(" · ");
+  }
 
   let sidebarProgreso:
     | { mensaje: string; detalle?: DuxSyncProgresoDetalle }
@@ -259,17 +356,9 @@ export default function SyncStatusIndicator({ rol }: Props) {
     if (actCxClientPending && !actCxStatus.running) {
       sidebarProgreso = { mensaje: "INICIANDO ACT. CX.", detalle: "…" };
     } else {
-      const detalleActCx =
-        actCxStatus.phase === "esperando" &&
-        actCxStatus.loteActual != null &&
-        actCxStatus.lotesTotal != null
-          ? `Lote ${actCxStatus.loteActual} de ${actCxStatus.lotesTotal} · ${actCxStatus.processed.toLocaleString("es-AR")} de ${actCxStatus.total.toLocaleString("es-AR")}`
-          : actCxStatus.total > 0
-            ? { procesados: actCxStatus.processed, total: actCxStatus.total }
-            : "…";
       sidebarProgreso = {
         mensaje: actCxMensaje,
-        detalle: detalleActCx,
+        detalle: buildActCxDetalle(),
       };
     }
     if (puedeLiberarActCx && actCxStatus.running) {

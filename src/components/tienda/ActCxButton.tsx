@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
@@ -9,30 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   abortarActCxDuxAction,
-  comenzarConfirmacionActCxDuxAction,
-  consultarEstadoCostoCxDuxAction,
-  enviarLoteCostoCxDuxAction,
-  finalizarActCxDuxExitoAction,
   iniciarActCxDuxAction,
 } from "@/actions/cxPxTienda";
 import { exportarResumenAumentosPxAction } from "@/actions/pxListas";
 import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
+import { triggerActCxDuxRunner } from "@/lib/actCxDuxRunner";
 import { setActCxClientPending } from "@/hooks/useActCxClientPending";
 import { useActCxDuxStatusPoll } from "@/hooks/useActCxDuxStatusPoll";
 import { useSyncListaPreciosStatusPoll } from "@/hooks/useSyncListaPreciosStatusPoll";
 
-/** Intervalo mínimo DUX entre consultas de estado (cliente). */
-const POLL_INTERVAL_MS = 5000;
-/** ~10 min por lote (DUX puede demorar en procesar 50 ítems). */
-const POLL_MAX_ATTEMPTS = 120;
-
 interface Props {
   pollEnabled: boolean;
-}
-
-function sleepMs(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default function ActCxButton({ pollEnabled }: Props) {
@@ -43,45 +31,34 @@ export default function ActCxButton({ pollEnabled }: Props) {
   const [exitoOpen, setExitoOpen] = useState(false);
   const [cantidadActualizada, setCantidadActualizada] = useState(0);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
+  const prevRunningRef = useRef(false);
+  const prevCompletedAtRef = useRef<string | null>(null);
 
   const bloqueadoPorSync = syncListaStatus.running;
-  const bloqueadoPorOtro =
-    actCxStatus.running && !procesandoLocal;
+  const bloqueadoPorOtro = actCxStatus.running && !procesandoLocal;
   const procesando = procesandoLocal || actCxStatus.running;
 
-  async function esperarProcesoEnCliente(
-    idProceso: number,
-    itemsCompletadosAntes: number,
-    itemsEnLote: number,
-    loteActual: number,
-    lotesTotal: number
-  ): Promise<{ ok: true } | { ok: false; error: string }> {
-    for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-      if (i > 0) {
-        await sleepMs(POLL_INTERVAL_MS);
-      }
+  useEffect(() => {
+    const wasRunning = prevRunningRef.current;
+    const completedAt = actCxStatus.lastCompletedAt;
 
-      const res = await consultarEstadoCostoCxDuxAction({
-        idProceso,
-        itemsCompletadosAntes,
-        itemsEnLote,
-        loteActual,
-        lotesTotal,
-      });
-      if (!res.ok) {
-        return { ok: false, error: res.error ?? "No se pudo consultar el estado en DUX." };
-      }
-
-      if (res.data.finalizado) {
-        return { ok: true };
-      }
+    if (
+      wasRunning &&
+      !actCxStatus.running &&
+      !actCxStatus.error &&
+      completedAt &&
+      completedAt !== prevCompletedAtRef.current &&
+      actCxStatus.total > 0
+    ) {
+      setCantidadActualizada(actCxStatus.total);
+      setExitoOpen(true);
     }
 
-    return {
-      ok: false,
-      error: `El proceso DUX ${idProceso} no finalizó a tiempo. Revisá en DUX o reintentá más tarde.`,
-    };
-  }
+    prevRunningRef.current = actCxStatus.running;
+    if (completedAt != null) {
+      prevCompletedAtRef.current = completedAt;
+    }
+  }, [actCxStatus]);
 
   async function handleActCx() {
     if (bloqueadoPorSync) {
@@ -106,67 +83,7 @@ export default function ActCxButton({ pollEnabled }: Props) {
         return;
       }
 
-      const lotesEnviados: Array<{
-        idProceso: number;
-        itemsCompletadosAntes: number;
-        itemsEnLote: number;
-        loteIndex: number;
-      }> = [];
-
-      for (let loteIndex = 0; loteIndex < inicio.data.lotes; loteIndex++) {
-        const lote = await enviarLoteCostoCxDuxAction({ loteIndex });
-        if (!lote.ok) {
-          if (!lote.error?.includes("No hay una actualización")) {
-            await abortarActCxDuxAction({
-              error: lote.error ?? "No se pudo enviar un lote a DUX.",
-            });
-          }
-          toast.error(lote.error ?? "No se pudo enviar un lote a DUX.");
-          return;
-        }
-
-        lotesEnviados.push({
-          idProceso: lote.data.idProceso,
-          itemsCompletadosAntes: lote.data.itemsCompletadosAntes,
-          itemsEnLote: lote.data.itemsEnLote,
-          loteIndex: lote.data.loteIndex,
-        });
-      }
-
-      const confirmacion = await comenzarConfirmacionActCxDuxAction();
-      if (!confirmacion.ok) {
-        toast.error(confirmacion.error ?? "No se pudo iniciar la confirmación en DUX.");
-        return;
-      }
-
-      for (const lote of lotesEnviados) {
-        const poll = await esperarProcesoEnCliente(
-          lote.idProceso,
-          lote.itemsCompletadosAntes,
-          lote.itemsEnLote,
-          lote.loteIndex + 1,
-          inicio.data.lotes
-        );
-        if (!poll.ok) {
-          await abortarActCxDuxAction({ error: poll.error });
-          toast.error(poll.error);
-          return;
-        }
-      }
-
-      const fin = await finalizarActCxDuxExitoAction({
-        cantidadEnviada: inicio.data.cantidadEnviada,
-      });
-      if (!fin.ok) {
-        await abortarActCxDuxAction({
-          error: fin.error ?? "No se pudo cerrar la actualización.",
-        });
-        toast.error(fin.error ?? "No se pudo cerrar la actualización.");
-        return;
-      }
-
-      setCantidadActualizada(inicio.data.cantidadEnviada);
-      setExitoOpen(true);
+      triggerActCxDuxRunner();
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "Error inesperado al actualizar costos en DUX.";

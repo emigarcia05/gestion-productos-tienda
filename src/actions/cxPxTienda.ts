@@ -21,6 +21,10 @@ import {
 } from "@/services/actualizarCostoCxDux.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 import {
+  ACT_CX_DUX_POLL_INTERVAL_MS,
+  ACT_CX_DUX_POLL_MAX_ATTEMPTS,
+} from "@/lib/actCxDuxPollPolicy";
+import {
   failActCxDuxInDb,
   finishActCxDuxInDb,
   getActCxDuxStatusFromDb,
@@ -28,6 +32,7 @@ import {
   liberarActCxDuxMutexInDb,
   setActCxDuxProgressInDb,
   tryStartActCxDuxInDb,
+  type ActCxDuxMeta,
 } from "@/lib/actCxDuxStatusDb";
 
 const guardarCostoCxProdSchema = z.object({
@@ -94,8 +99,11 @@ export async function getActCxDuxStatusAction(): Promise<
     processed: number;
     total: number;
     error: string | null;
+    lastCompletedAt: string | null;
     loteActual: number | null;
     lotesTotal: number | null;
+    pollIntento: number | null;
+    estadoDux: string | null;
   }>
 > {
   const rol = await getRol();
@@ -111,8 +119,11 @@ export async function getActCxDuxStatusAction(): Promise<
       processed: status.processed,
       total: status.total,
       error: status.error,
+      lastCompletedAt: status.lastCompletedAt?.toISOString() ?? null,
       loteActual: status.meta.loteActual ?? null,
       lotesTotal: status.meta.lotesTotal ?? null,
+      pollIntento: status.meta.pollIntento ?? null,
+      estadoDux: status.meta.estadoDux ?? null,
     },
   };
 }
@@ -146,7 +157,175 @@ export async function iniciarActCxDuxAction(): Promise<
     return { ok: false, error: lock.error };
   }
 
+  await setActCxDuxProgressInDb({
+    phase: "enviando",
+    processed: 0,
+    total: prep.data.cantidadEnviada,
+    meta: {
+      loteActual: 1,
+      lotesTotal: prep.data.lotes,
+      cantidadEnviada: prep.data.cantidadEnviada,
+      lotesConfirmados: 0,
+      idProcesoPendiente: null,
+      pollIntento: 0,
+    },
+  });
+
   return { ok: true, data: prep.data };
+}
+
+/** Un paso: POST de un lote o un GET de confirmación (intercalados, estado en BD). */
+export async function avanzarActCxDuxAction(): Promise<
+  ActionResult<{
+    continuing: boolean;
+    waitMs: number;
+    cantidadEnviada?: number;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  if (!(await isActCxDuxRunningInDb())) {
+    return { ok: true, data: { continuing: false, waitMs: 0 } };
+  }
+
+  const status = await getActCxDuxStatusFromDb();
+  const meta = status.meta;
+
+  const corridaLegacyInconsistente =
+    meta.idProcesoPendiente == null &&
+    (meta.lotesConfirmados ?? 0) === 0 &&
+    status.phase === "esperando" &&
+    status.processed > 0;
+  if (corridaLegacyInconsistente) {
+    const msg =
+      "Corrida Act. Cx. en estado inconsistente (flujo anterior). Liberá el bloqueo con doble clic en el sidebar y reintentá.";
+    await failActCxDuxInDb(msg);
+    return { ok: false, error: msg };
+  }
+
+  const lotesTotal = meta.lotesTotal ?? 1;
+  const lotesConfirmados = meta.lotesConfirmados ?? 0;
+  const cantidadEnviada = meta.cantidadEnviada ?? status.total;
+  const idProcesoPendiente = meta.idProcesoPendiente ?? null;
+
+  if (idProcesoPendiente != null && idProcesoPendiente > 0) {
+    const poll = await consultarEstadoEnvioCostoCxDux(idProcesoPendiente);
+    if (!poll.success) {
+      await failActCxDuxInDb(poll.error);
+      return { ok: false, error: poll.error };
+    }
+
+    const pollIntento = (meta.pollIntento ?? 0) + 1;
+
+    if (!poll.data.finalizado) {
+      if (pollIntento >= ACT_CX_DUX_POLL_MAX_ATTEMPTS) {
+        const msg = `El proceso DUX ${idProcesoPendiente} no finalizó a tiempo (estado: ${poll.data.estado || "desconocido"}). Revisá en DUX o reintentá más tarde.`;
+        await failActCxDuxInDb(msg);
+        return { ok: false, error: msg };
+      }
+
+      await setActCxDuxProgressInDb({
+        phase: "esperando",
+        processed: status.processed,
+        total: status.total,
+        meta: {
+          ...meta,
+          pollIntento,
+          estadoDux: poll.data.estado || undefined,
+          loteActual: lotesConfirmados + 1,
+        },
+      });
+
+      return {
+        ok: true,
+        data: { continuing: true, waitMs: ACT_CX_DUX_POLL_INTERVAL_MS },
+      };
+    }
+
+    const itemsEnLote = meta.itemsEnLotePendiente ?? 0;
+    const itemsAntes = meta.itemsCompletadosAntesPendiente ?? status.processed;
+    const newProcessed = Math.min(status.total, itemsAntes + itemsEnLote);
+    const newLotesConfirmados = lotesConfirmados + 1;
+
+    const metaTrasConfirmar: ActCxDuxMeta = {
+      ...meta,
+      lotesConfirmados: newLotesConfirmados,
+      idProcesoPendiente: null,
+      itemsEnLotePendiente: undefined,
+      itemsCompletadosAntesPendiente: undefined,
+      pollIntento: 0,
+      estadoDux: poll.data.estado || undefined,
+      loteActual:
+        newLotesConfirmados >= lotesTotal ? lotesTotal : newLotesConfirmados + 1,
+    };
+
+    if (newLotesConfirmados >= lotesTotal) {
+      await finishActCxDuxInDb(newProcessed, cantidadEnviada);
+      revalidatePath("/gestion-productos/tienda/comp-proveedores");
+      return {
+        ok: true,
+        data: { continuing: false, waitMs: 0, cantidadEnviada },
+      };
+    }
+
+    await setActCxDuxProgressInDb({
+      phase: "enviando",
+      processed: newProcessed,
+      total: status.total,
+      meta: metaTrasConfirmar,
+    });
+
+    return { ok: true, data: { continuing: true, waitMs: 0 } };
+  }
+
+  if (lotesConfirmados >= lotesTotal) {
+    await finishActCxDuxInDb(status.processed, cantidadEnviada);
+    revalidatePath("/gestion-productos/tienda/comp-proveedores");
+    return {
+      ok: true,
+      data: { continuing: false, waitMs: 0, cantidadEnviada },
+    };
+  }
+
+  try {
+    const res = await enviarLoteCostoCxADux(lotesConfirmados);
+    if (!res.success) {
+      await failActCxDuxInDb(res.error);
+      return { ok: false, error: res.error };
+    }
+
+    await setActCxDuxProgressInDb({
+      phase: "esperando",
+      processed: status.processed,
+      total: status.total,
+      meta: {
+        ...meta,
+        lotesTotal: res.data.lotesTotal,
+        cantidadEnviada: res.data.cantidadEnviada,
+        loteActual: lotesConfirmados + 1,
+        idProcesoPendiente: res.data.idProceso,
+        itemsEnLotePendiente: res.data.itemsEnLote,
+        itemsCompletadosAntesPendiente: res.data.itemsCompletadosAntes,
+        pollIntento: 0,
+        estadoDux: undefined,
+      },
+    });
+
+    return {
+      ok: true,
+      data: { continuing: true, waitMs: ACT_CX_DUX_POLL_INTERVAL_MS },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error al enviar lote a DUX.";
+    await failActCxDuxInDb(msg);
+    return { ok: false, error: msg };
+  }
 }
 
 const enviarLoteCostoCxSchema = z.object({
@@ -216,7 +395,7 @@ export async function enviarLoteCostoCxDuxAction(raw: unknown): Promise<
   }
 }
 
-/** Tras enviar todos los POST: fase confirmación DUX (polling GET). */
+/** @deprecated Flujo en dos fases; usar `avanzarActCxDuxAction` (POST + poll intercalados). */
 export async function comenzarConfirmacionActCxDuxAction(): Promise<ActionResult> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
@@ -349,7 +528,7 @@ export async function consultarEstadoCostoCxDuxAction(
 
   const processed = res.data.finalizado
     ? Math.min(status.total, enviadosEnLote)
-    : Math.min(status.total, Math.max(status.processed, enviadosEnLote));
+    : status.processed;
 
   const meta =
     parsed.data.loteActual != null && parsed.data.lotesTotal != null
