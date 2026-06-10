@@ -78,7 +78,7 @@ export async function guardarPxListaPrecioEdicionAction(
   }
 }
 
-/** Excel por `nombre_lista`: CODIGO + PORC UTILIDAD (margen desde precio efectivo). */
+/** Excel por `nombre_lista`: CODIGO + PORC UTILIDAD (solo diff margen vs DUX). */
 export async function exportarPxListasMargenAction(): Promise<
   ActionResult<{ grupos: ExportPxListaMargenGrupo[] }>
 > {

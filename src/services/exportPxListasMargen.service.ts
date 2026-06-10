@@ -13,16 +13,39 @@ export type ExportPxListaMargenGrupo = {
   filas: FilaExportPxListaMargen[];
 };
 
+/** Precisión de comparación de PORC UTILIDAD (4 decimales, igual que la grilla). */
+const COMPARACION_MARGEN_FACTOR = 10_000;
+
 function toNum(n: unknown): number {
   if (n == null) return 0;
   const v = Number(n);
   return Number.isFinite(v) ? v : 0;
 }
 
+/** Difieren dos márgenes % redondeados a 4 decimales. */
+export function margenesPorcUtilidadDifieren(
+  margenA: number,
+  margenB: number
+): boolean {
+  return (
+    Math.round(margenA * COMPARACION_MARGEN_FACTOR) !==
+    Math.round(margenB * COMPARACION_MARGEN_FACTOR)
+  );
+}
+
+function margenDesdePrecio(
+  precio: number | null,
+  costoCompra: number
+): number | null {
+  if (precio == null || !(precio > 0) || !(costoCompra > 0)) return null;
+  const margen = calcMargenSinIvaPct(precio, costoCompra);
+  return margen == null ? null : roundMargenPxListaPct(margen);
+}
+
 /**
- * Por cada `nombre_lista` en catálogo DUX: ítems con precio efectivo
- * (`prod_tienda_precios_edicion` ?? `prod_tienda_precios`) y margen calculado
- * (`calcMargenSinIvaPct` sobre `costo_compra`).
+ * Por cada `nombre_lista`: solo ítems cuyo PORC UTILIDAD efectivo
+ * (precio edición ?? precio DUX) **difiere** del calculado solo con precio DUX.
+ * Si no hay precio DUX pero sí edición manual, se incluye.
  */
 export async function listarExportPxListasMargenPorLista(): Promise<
   ExportPxListaMargenGrupo[]
@@ -77,12 +100,20 @@ export async function listarExportPxListasMargenPorLista(): Promise<
       const pxEfectivo = pxEdicion ?? pxDux;
       if (pxEfectivo == null || !(pxEfectivo > 0)) continue;
 
-      const margen = calcMargenSinIvaPct(pxEfectivo, costoCompra);
-      if (margen == null) continue;
+      const margenEfectivo = margenDesdePrecio(pxEfectivo, costoCompra);
+      if (margenEfectivo == null) continue;
+
+      const margenDux = margenDesdePrecio(pxDux, costoCompra);
+
+      if (margenDux == null) {
+        if (pxEdicion == null) continue;
+      } else if (!margenesPorcUtilidadDifieren(margenEfectivo, margenDux)) {
+        continue;
+      }
 
       filasPorLista.get(lista.idLista)!.push({
         codigo: prod.codTienda,
-        porcUtilidad: roundMargenPxListaPct(margen),
+        porcUtilidad: margenEfectivo,
       });
     }
   }

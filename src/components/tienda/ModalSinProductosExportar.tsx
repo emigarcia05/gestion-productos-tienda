@@ -21,7 +21,7 @@ export default function ModalSinProductosExportar({ open, onOpenChange }: Props)
         <DialogHeader>
           <DialogTitle className="text-base">Exportación</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-foreground py-1">No hay productos para importar</p>
+        <p className="text-sm text-foreground py-1">No hay actualizaciones para mostrar</p>
         <DialogFooter className="sm:justify-end">
           <Button type="button" onClick={() => onOpenChange(false)}>
             Aceptar

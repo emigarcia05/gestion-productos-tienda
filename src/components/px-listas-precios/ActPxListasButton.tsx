@@ -28,12 +28,12 @@ export default function ActPxListasButton() {
         return;
       }
 
-      const nArchivos = descargarExcelsPxListasMargen(res.data.grupos);
+      const nArchivos = descargarExcelsPxListasMargen(gruposConFilas);
       const totalFilas = gruposConFilas.reduce((acc, g) => acc + g.filas.length, 0);
       toast.success(
         nArchivos === 1
-          ? `Excel exportado: 1 lista (${totalFilas.toLocaleString("es-AR")} ítems).`
-          : `Excel exportado: ${nArchivos} listas (${totalFilas.toLocaleString("es-AR")} ítems en total).`
+          ? `Excel exportado: 1 lista (${totalFilas.toLocaleString("es-AR")} ítems con diferencia de margen).`
+          : `Excel exportado: ${nArchivos} listas (${totalFilas.toLocaleString("es-AR")} ítems con diferencia de margen en total).`
       );
     } catch (e) {
       toast.error(
@@ -65,8 +65,8 @@ export default function ActPxListasButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) para importar
-          en DUX
+          Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) solo con
+          diferencias de margen respecto al precio DUX
         </TooltipContent>
       </Tooltip>
     </>
