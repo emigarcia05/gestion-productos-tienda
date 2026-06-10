@@ -1222,6 +1222,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-04): **Act. Cx. — modal PDF aumentos** — Excel **`Act Cx dd-mm hh-mm.xls`**; tras exportar, modal **¿Desea exportar el informe de aumento?**; PDF vía `exportarResumenAumentosPxAction`.*
 
+*Última actualización (2026-06-10): **Act. Cx. — tolerancia de comparación** — solo exporta ítems con `|costo_compra − px_compra_final_sin_iva| ≥ 0,01` (`costosCompraDifieren`); diffs menores a 1 centavo no generan fila (alineado al **COSTO** a 2 decimales del Excel).*
+
 *Última actualización (2026-06-04): **Act. Cx. — export Excel** — eliminado flujo POST DUX + polling en sidebar; **`ActCxButton`** genera `.xls` (**CODIGO**, **COSTO**) vía `exportarCostoCxDiffAction`; sin progreso en `SyncStatusIndicator`.*
 
 *Última actualización (2026-06-04): **Recepción pedidos** — eliminados flujo Excel y **Descargar Recepcion**; botón **Registrar En Dux** (POST DUX + personal + modal éxito); ver § `PedidoHistoriaDetalleModal`.*

@@ -18,8 +18,8 @@ export type ItemCostoCxDiff = {
 export const MARCA_COSTO_CX_SIN_INFORMAR = "SIN MARCA";
 export const RUBRO_COSTO_CX_SIN_INFORMAR = "SIN RUBRO";
 
-/** Precisión de `costo_compra` y `px_compra_final_sin_iva` (4 decimales). */
-const COMPARACION_COSTO_FACTOR = 10_000;
+/** Diferencias menores a 1 centavo no generan fila en Act. Cx. (Excel importa COSTO a 2 dec.). */
+const TOLERANCIA_DIFERENCIA_COSTO_CX = 0.01;
 
 function toNum(n: unknown): number {
   if (n == null) return 0;
@@ -32,10 +32,7 @@ function toNum(n: unknown): number {
  * (vinculados por `costo_compra_cod_ext` → `cod_ext`).
  */
 export function costosCompraDifieren(costoCompra: number, pxProveedorSinIva: number): boolean {
-  return (
-    Math.round(costoCompra * COMPARACION_COSTO_FACTOR) !==
-    Math.round(pxProveedorSinIva * COMPARACION_COSTO_FACTOR)
-  );
+  return Math.abs(costoCompra - pxProveedorSinIva) >= TOLERANCIA_DIFERENCIA_COSTO_CX;
 }
 
 export function redondearCostoCxExport(px: number): number {
@@ -43,7 +40,7 @@ export function redondearCostoCxExport(px: number): number {
 }
 
 /**
- * SSOT ítems Act. Cx.: `costo_compra_cod_ext`, vínculo habilitado, diff a 4 decimales,
+ * SSOT ítems Act. Cx.: `costo_compra_cod_ext`, vínculo habilitado, diff ≥ 0,01,
  * `px_compra_final_sin_iva` > 0. Usado por Excel y PDF de aumentos.
  */
 export async function listarItemsCostoCxDiff(): Promise<ItemCostoCxDiff[]> {

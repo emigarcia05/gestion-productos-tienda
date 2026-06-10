@@ -11,13 +11,10 @@ export function calcAumentoPctCostoCompra(
   return ((costoNuevo / costoViejo) - 1) * 100;
 }
 
-/** @deprecated Usar `costosCompraDifieren` de `@/services/exportCostoCxDiff.service` (4 decimales). */
+/** @deprecated Usar `costosCompraDifieren` de `@/services/exportCostoCxDiff.service` (tolerancia 0,01). */
 export function costosCompraDifierenParaInforme(
   costoViejo: number,
   costoNuevo: number
 ): boolean {
-  const factor = 10_000;
-  return (
-    Math.round(costoViejo * factor) !== Math.round(costoNuevo * factor)
-  );
+  return Math.abs(costoViejo - costoNuevo) >= 0.01;
 }
