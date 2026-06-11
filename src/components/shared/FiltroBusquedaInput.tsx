@@ -43,22 +43,31 @@ export default function FiltroBusquedaInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={cn("pl-9 pr-8 w-full", INPUT_FILTER_CLASS, className)}
+        className={cn(
+          "pl-9 w-full",
+          value && isDebouncing ? "pr-16" : "pr-10",
+          INPUT_FILTER_CLASS,
+          className
+        )}
       />
-      {value && !isDebouncing && (
+      {value ? (
         <Button
           type="button"
           variant="ghost"
           size="icon"
           onClick={() => onChange("")}
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+          aria-label="Limpiar búsqueda"
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground",
+            isDebouncing ? "right-9" : "right-2"
+          )}
         >
           <X className="h-3.5 w-3.5" />
         </Button>
-      )}
-      {isDebouncing && (
+      ) : null}
+      {isDebouncing ? (
         <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
-      )}
+      ) : null}
     </div>
   );
 }

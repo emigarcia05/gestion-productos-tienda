@@ -16,6 +16,9 @@ const EMPTY: { items: ProductoTiendaParaComparacionRow[]; total: number } = {
   total: 0,
 };
 
+/** CHECK + COD. TIENDA + MARCA + DESCRIPCIÓN */
+const COLUMN_WIDTHS_PCT = [5, 10, 20, 65] as const;
+
 export default function AgregarProductoComparacionModal({
   open,
   onOpenChange,
@@ -68,20 +71,24 @@ export default function AgregarProductoComparacionModal({
       {
         key: "codTienda",
         label: "COD. TIENDA",
-        className: "py-2 px-3 text-xs w-[14rem]",
+        className: "py-2 px-3 text-xs",
         render: (r) => r.codTienda,
+      },
+      {
+        key: "marca",
+        label: "MARCA",
+        className: "py-2 px-3 text-xs",
+        render: (r) => r.marca ?? "—",
       },
       {
         key: "descripcionTienda",
         label: "DESCRIPCIÓN",
         className: "py-2 px-3 text-xs",
-        render: (r) => r.descripcionTienda,
-      },
-      {
-        key: "marca",
-        label: "MARCA",
-        className: "py-2 px-3 text-xs w-[12rem]",
-        render: (r) => r.marca ?? "—",
+        render: (r) => (
+          <span className="block truncate" title={r.descripcionTienda}>
+            {r.descripcionTienda}
+          </span>
+        ),
       },
     ],
     []
@@ -109,7 +116,7 @@ export default function AgregarProductoComparacionModal({
         placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
         value={q}
         onChange={handleQChange}
-        isDebouncing={isDebouncing || loading}
+        isDebouncing={isDebouncing}
         inputRef={ref}
       />
       {errorMsg ? <span className="text-xs text-destructive">{errorMsg}</span> : null}
@@ -126,6 +133,7 @@ export default function AgregarProductoComparacionModal({
       confirmSingleLabel="Agregar Producto"
       confirmPending={confirmPending}
       filterContent={filterContent}
+      tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
       columns={columns}
       rows={data.items}
       count={data.total}

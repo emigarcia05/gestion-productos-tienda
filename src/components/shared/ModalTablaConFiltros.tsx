@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import {
   TableEmptyState,
   modalListLoadingVariants,
@@ -94,6 +94,11 @@ interface ModalTablaConFiltrosBase<T> {
   contentClassName?: string;
   /** Maneja doble clic en fila (single o multi). En multi puede usarse como “selección rápida” de un solo ítem. */
   onRowDoubleClick?: (row: T) => void;
+  /**
+   * Anchos de columna en % (incluye columna de selección si aplica).
+   * Ej. `[5, 10, 20, 65]` → CHECK + 3 columnas de datos.
+   */
+  tableColumnWidthsPct?: readonly number[];
 }
 
 interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
@@ -142,6 +147,16 @@ type ModalTablaConFiltrosProps<T> =
 
 type ModalTablaContentProps = VariantProps<typeof modalTablaContentVariants>;
 
+function ModalTablaColGroup({ widthsPct }: { widthsPct: readonly number[] }) {
+  return (
+    <colgroup>
+      {widthsPct.map((pct, i) => (
+        <col key={i} style={{ width: `${pct}%` }} />
+      ))}
+    </colgroup>
+  );
+}
+
 /**
  * Modal reutilizable: título + filtros + tabla.
  * - single: doble clic en fila para seleccionar (ej. vincular producto).
@@ -169,6 +184,7 @@ export default function ModalTablaConFiltros<T>({
   emptyMessage = "SIN RESULTADOS",
   count,
   contentClassName,
+  tableColumnWidthsPct,
   footerRight: footerRightProp,
 }: ModalTablaConFiltrosProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -180,6 +196,38 @@ export default function ModalTablaConFiltros<T>({
   const isMulti = selectionMode === "multi";
   const isSingleConfirm = selectionMode === "singleConfirm";
   const showSelectColumn = isMulti || (isSingleConfirm && showSingleConfirmCheckbox);
+  const selectHeadClass = cn(
+    modalTablaHeadCellVariants({ kind: "select" }),
+    tableColumnWidthsPct && "!w-auto"
+  );
+  const selectBodyClass = cn(
+    modalTablaBodyCellVariants({ kind: "select" }),
+    tableColumnWidthsPct && "!w-auto"
+  );
+
+  function renderSelectHeadCell() {
+    if (isMulti) {
+      return (
+        <TableHead className={selectHeadClass}>
+          <label className="flex items-center justify-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rows.length > 0 && selectedIds.size === rows.length}
+              onChange={toggleSelectAll}
+              className="rounded border-input"
+              aria-label="Seleccionar Todos"
+            />
+          </label>
+        </TableHead>
+      );
+    }
+    return (
+      <TableHead className={selectHeadClass}>
+        <Check className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
+        <span className="sr-only">Seleccionar</span>
+      </TableHead>
+    );
+  }
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -310,25 +358,12 @@ export default function ModalTablaConFiltros<T>({
                 <>
                   <div className="shrink-0 overflow-hidden">
                     <Table variant="compact" className="table-fixed w-full">
+                      {tableColumnWidthsPct ? (
+                        <ModalTablaColGroup widthsPct={tableColumnWidthsPct} />
+                      ) : null}
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          {showSelectColumn && (
-                            <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
-                              {isMulti ? (
-                                <label className="flex items-center justify-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={rows.length > 0 && selectedIds.size === rows.length}
-                                    onChange={toggleSelectAll}
-                                    className="rounded border-input"
-                                    aria-label="Seleccionar Todos"
-                                  />
-                                </label>
-                              ) : (
-                                <span className="sr-only">Seleccionar</span>
-                              )}
-                            </TableHead>
-                          )}
+                          {showSelectColumn ? renderSelectHeadCell() : null}
                           {columns.map((col) => (
                             <TableHead
                               key={col.key}
@@ -363,25 +398,12 @@ export default function ModalTablaConFiltros<T>({
                 <>
                   <div className="shrink-0 overflow-hidden">
                     <Table variant="compact" className="table-fixed w-full">
+                      {tableColumnWidthsPct ? (
+                        <ModalTablaColGroup widthsPct={tableColumnWidthsPct} />
+                      ) : null}
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          {showSelectColumn && (
-                            <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
-                              {isMulti ? (
-                                <label className="flex items-center justify-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={rows.length > 0 && selectedIds.size === rows.length}
-                                    onChange={toggleSelectAll}
-                                    className="rounded border-input"
-                                    aria-label="Seleccionar Todos"
-                                  />
-                                </label>
-                              ) : (
-                                <span className="sr-only">Seleccionar</span>
-                              )}
-                            </TableHead>
-                          )}
+                          {showSelectColumn ? renderSelectHeadCell() : null}
                           {columns.map((col) => (
                             <TableHead
                               key={col.key}
@@ -408,25 +430,12 @@ export default function ModalTablaConFiltros<T>({
                 <>
                   <div className="shrink-0 overflow-hidden">
                     <Table variant="compact" className="table-fixed w-full">
+                      {tableColumnWidthsPct ? (
+                        <ModalTablaColGroup widthsPct={tableColumnWidthsPct} />
+                      ) : null}
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
-                          {showSelectColumn && (
-                            <TableHead className={modalTablaHeadCellVariants({ kind: "select" })}>
-                              {isMulti ? (
-                                <label className="flex items-center justify-center cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={rows.length > 0 && selectedIds.size === rows.length}
-                                    onChange={toggleSelectAll}
-                                    className="rounded border-input"
-                                    aria-label="Seleccionar Todos"
-                                  />
-                                </label>
-                              ) : (
-                                <span className="sr-only">Seleccionar</span>
-                              )}
-                            </TableHead>
-                          )}
+                          {showSelectColumn ? renderSelectHeadCell() : null}
                           {columns.map((col) => (
                             <TableHead
                               key={col.key}
@@ -444,6 +453,9 @@ export default function ModalTablaConFiltros<T>({
                   </div>
                   <div className="flex-1 min-h-0 overflow-y-auto border-b border-border">
                     <Table variant="compact" className="table-fixed w-full">
+                      {tableColumnWidthsPct ? (
+                        <ModalTablaColGroup widthsPct={tableColumnWidthsPct} />
+                      ) : null}
                       <TableBody>
                         {rows.map((row) => {
                           const id = getRowId(row);
@@ -463,8 +475,8 @@ export default function ModalTablaConFiltros<T>({
                                 onRowDoubleClick ? "Doble Clic Para Seleccionar" : undefined
                               }
                             >
-                              {showSelectColumn && (
-                                <TableCell className={modalTablaBodyCellVariants({ kind: "select" })}>
+                              {showSelectColumn ? (
+                                <TableCell className={selectBodyClass}>
                                   {isMulti ? (
                                     <label className="flex items-center justify-center cursor-pointer">
                                       <input
@@ -487,7 +499,7 @@ export default function ModalTablaConFiltros<T>({
                                     </label>
                                   )}
                                 </TableCell>
-                              )}
+                              ) : null}
                               {columns.map((col) => (
                                 <TableCell
                                   key={col.key}
