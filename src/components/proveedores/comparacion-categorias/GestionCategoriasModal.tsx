@@ -38,6 +38,7 @@ import {
 } from "@/lib/ui-classes";
 
 interface Props {
+  variant?: "modal" | "page";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   arbol: CategoriaComparacionTree[];
@@ -46,7 +47,14 @@ interface Props {
 
 type Tab = "categoria" | "subcategoria" | "presentacion";
 
-export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSuccess }: Props) {
+export default function GestionCategoriasModal({
+  variant = "modal",
+  open,
+  onOpenChange,
+  arbol,
+  onSuccess,
+}: Props) {
+  const isPage = variant === "page";
   const [arbolLocal, setArbolLocal] = useState<CategoriaComparacionTree[]>(arbol);
   const [tab, setTab] = useState<Tab>("categoria");
   const [pending, setPending] = useState(false);
@@ -83,11 +91,11 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
   }, [arbol]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!isPage && !open) return;
     setShowCrearSection(false);
     setLoadingTabla(true);
     cargarTabla().finally(() => setLoadingTabla(false));
-  }, [open, cargarTabla]);
+  }, [isPage, open, cargarTabla]);
 
   const handleEliminar = async (presentacionId: string) => {
     if (!confirm("¿Eliminar esta combinación (presentación)? Se quitará la asignación de productos a esta categoría.")) return;
@@ -254,15 +262,14 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
     onSuccess();
   };
 
-  return (
+  const panelBody = (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="modal-app max-w-[108rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
-        <DialogHeader className="modal-app__header shrink-0">
-          <DialogTitle className="modal-app__title">Gestionar Categorías</DialogTitle>
-        </DialogHeader>
-
-        <div className="modal-app__body px-6 py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+          className={cn(
+            "flex-1 min-h-0 flex flex-col overflow-hidden",
+            isPage ? "py-1" : "modal-app__body px-6 py-4"
+          )}
+        >
           {/* Botón Crear Nueva Categoria */}
           {!showCrearSection && (
             <div className="shrink-0 mb-4 flex justify-end">
@@ -320,7 +327,7 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
           </div>
 
           {/* Tabla de combinaciones */}
-          <div className="shrink-0 mb-4">
+          <div className={cn(isPage ? "flex flex-1 min-h-0 flex-col mb-2" : "shrink-0 mb-4")}>
             <h3 className="text-sm font-semibold text-foreground mb-2">COMBINACIONES CREADAS</h3>
             {loadingTabla ? (
               <p className="text-sm text-muted-foreground py-4">CARGANDO…</p>
@@ -329,7 +336,12 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
                 No hay presentaciones. Creá categoría, subcategoría y presentación con el botón de arriba.
               </p>
             ) : (
-              <div className="border rounded-md overflow-x-auto max-h-56 overflow-y-auto">
+              <div
+                className={cn(
+                  "border rounded-md overflow-x-auto overflow-y-auto",
+                  isPage ? "flex-1 min-h-0 max-h-none" : "max-h-56"
+                )}
+              >
                 <Table variant="compact">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -371,11 +383,31 @@ export default function GestionCategoriasModal({ open, onOpenChange, arbol, onSu
           </div>
         </div>
 
-        <p className="px-6 pb-6 text-xs text-muted-foreground shrink-0">
+        <p
+          className={cn(
+            "text-xs text-muted-foreground shrink-0",
+            isPage ? "pt-2" : "px-6 pb-6"
+          )}
+        >
           Filtrá por categoría y subcategoría. Creá categorías, subcategorías y presentaciones con el botón de arriba.
         </p>
-      </DialogContent>
-    </Dialog>
+    </>
+  );
+
+  return (
+    <>
+    {isPage ? (
+      <div className="flex flex-col flex-1 min-h-0">{panelBody}</div>
+    ) : (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="modal-app max-w-[108rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+          <DialogHeader className="modal-app__header shrink-0">
+            <DialogTitle className="modal-app__title">Gestionar Categorías</DialogTitle>
+          </DialogHeader>
+          {panelBody}
+        </DialogContent>
+      </Dialog>
+    )}
 
         {/* Segundo modal: Crear combinación con selects + botones (+) */}
         <Dialog open={showCrearSection} onOpenChange={(v) => !v && setShowCrearSection(false)}>

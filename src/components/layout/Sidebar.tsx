@@ -32,6 +32,7 @@ import {
   LifeBuoy,
   LineChart,
   PackageSearch,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -54,7 +55,8 @@ type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
 interface SubmoduleItem {
-  href: string;
+  /** Omitir en agrupadores solo desplegables (sin página propia). */
+  href?: string;
   label: string;
   icon: React.ReactNode;
   isUrgente?: boolean;
@@ -176,16 +178,22 @@ const MODULES: NavModule[] = [
     icon: <LineChart className={iconClass} />,
     submodules: [
       {
-        href: "/gestion-productos/tienda/comp-proveedores",
-        label: "Cx Compra",
-        icon: <Link2 className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.tienda.acceso,
-      },
-      {
-        href: "/gestion-productos/tienda/px-listas",
-        label: "Px Listas",
-        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.cxPxTienda.acceso,
+        label: "Cx y Px Tienda",
+        icon: <Layers className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: "/gestion-productos/tienda/comp-proveedores",
+            label: "Cx Compra",
+            icon: <Link2 className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.tienda.acceso,
+          },
+          {
+            href: "/gestion-productos/tienda/px-listas",
+            label: "Px Listas",
+            icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.cxPxTienda.acceso,
+          },
+        ],
       },
       {
         href: "/gestion-productos/tienda/cx-px-tienda",
@@ -194,10 +202,22 @@ const MODULES: NavModule[] = [
         permiso: PERMISOS.cxPxTienda.acceso,
       },
       {
-        href: "/gestion-productos/proveedores/comparacion-categorias",
-        label: "Comp. Por Cat.",
-        icon: <GitCompare className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.comparacionCategorias.acceso,
+        label: "Comp. Categorias",
+        icon: <FolderTree className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: "/gestion-productos/proveedores/comparacion-categorias",
+            label: "Comparacion",
+            icon: <GitCompare className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.comparacionCategorias.acceso,
+          },
+          {
+            href: "/gestion-productos/proveedores/comparacion-categorias/categorias",
+            label: "Categorias",
+            icon: <FolderTree className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.comparacionCategorias.editar,
+          },
+        ],
       },
     ],
   },
@@ -333,8 +353,17 @@ function getOpenModule(pathname: string): SidebarModuleId {
 function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores/sugeridos") return pathname === "/gestion-productos/proveedores/sugeridos" || pathname === "/proveedores/sugeridos";
   if (href === "/gestion-productos/proveedores/lista-precios") return pathname === "/gestion-productos/proveedores/lista-precios" || pathname === "/proveedores/lista-precios";
+  if (href === "/gestion-productos/proveedores/comparacion-categorias/categorias")
+    return (
+      pathname === "/gestion-productos/proveedores/comparacion-categorias/categorias" ||
+      pathname === "/proveedores/comparacion-categorias/categorias"
+    );
   if (href === "/gestion-productos/proveedores/comparacion-categorias")
-    return pathname === "/gestion-productos/proveedores/comparacion-categorias" || pathname === "/proveedores/comparacion-categorias";
+    return (
+      (pathname === "/gestion-productos/proveedores/comparacion-categorias" ||
+        pathname === "/proveedores/comparacion-categorias") &&
+      !pathname.endsWith("/categorias")
+    );
   if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
   if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
   if (href === "/gestion-productos/tienda/px-listas")
@@ -370,11 +399,32 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   return pathname === href;
 }
 
+function submoduleVisible(sub: SubmoduleItem, rol: Rol): boolean {
+  if (sub.href) {
+    const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
+    const childAllowed = sub.children?.some((c) => submoduleVisible(c, rol)) ?? false;
+    return selfAllowed || childAllowed;
+  }
+  return sub.children?.some((c) => submoduleVisible(c, rol)) ?? false;
+}
+
+function isSubmoduleGroupActive(sub: SubmoduleItem, pathname: string): boolean {
+  return (
+    sub.children?.some((c) => (c.href ? isSubmoduleActive(pathname, c.href) : false)) ??
+    false
+  );
+}
+
+function submoduleGroupKey(moduleId: SidebarModuleId, label: string): string {
+  return `${moduleId}:${label}`;
+}
+
 export default function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
   const pathModule = getOpenModule(pathname);
   const mainAreaId = getMainAppAreaIdFromPathname(pathname);
   const [openId, setOpenId] = useState<SidebarModuleId | null>(() => pathModule);
+  const [openSubGroups, setOpenSubGroups] = useState<Set<string>>(() => new Set());
 
   const modulesForArea: NavModule[] =
     mainAreaId === "gestion-productos"
@@ -385,17 +435,118 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   const visibleModules: NavModule[] = modulesForArea.filter((module) => {
     if (module.href && module.permiso && puede(rol, module.permiso)) return true;
-    return module.submodules.some((sub) => {
-      const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
-      const childAllowed =
-        sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
-      return selfAllowed || childAllowed;
-    });
+    return module.submodules.some((sub) => submoduleVisible(sub, rol));
   });
 
   useEffect(() => {
     setOpenId(pathModule);
   }, [pathModule]);
+
+  useEffect(() => {
+    const areaModules =
+      mainAreaId === "gestion-productos"
+        ? MODULES
+        : mainAreaId === "finanzas"
+          ? FINANZAS_MODULES
+          : [];
+    const autoOpen = new Set<string>();
+    for (const navModule of areaModules) {
+      for (const sub of navModule.submodules) {
+        if (!sub.href && sub.children?.length && isSubmoduleGroupActive(sub, pathname)) {
+          autoOpen.add(submoduleGroupKey(navModule.id, sub.label));
+        }
+      }
+    }
+    if (autoOpen.size === 0) return;
+    setOpenSubGroups((prev) => new Set([...prev, ...autoOpen]));
+  }, [pathname, mainAreaId]);
+
+  function toggleSubGroup(key: string, open: boolean) {
+    setOpenSubGroups((prev) => {
+      const next = new Set(prev);
+      if (open) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  function renderSubmoduleItems(
+    submodules: SubmoduleItem[],
+    moduleId: SidebarModuleId,
+    depth = 0
+  ) {
+    return submodules
+      .filter((sub) => submoduleVisible(sub, rol))
+      .map((sub) => {
+        if (!sub.href && sub.children?.length) {
+          const groupKey = submoduleGroupKey(moduleId, sub.label);
+          const isSubOpen = openSubGroups.has(groupKey);
+          const groupActive = isSubmoduleGroupActive(sub, pathname);
+          return (
+            <Collapsible
+              key={groupKey}
+              open={isSubOpen}
+              onOpenChange={(open) => toggleSubGroup(groupKey, open)}
+              className="group/subcollapsible"
+            >
+              <CollapsibleTrigger
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                  "border-l-2 -ml-[2px] pl-[10px]",
+                  groupActive
+                    ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
+                    : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground"
+                )}
+                aria-expanded={isSubOpen}
+              >
+                {sub.icon}
+                <span className="min-w-0 flex-1 truncate text-left">{sub.label}</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 text-sidebar-indicator transition-transform duration-200",
+                    isSubOpen && "rotate-180"
+                  )}
+                  aria-hidden
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className={cn("space-y-0.5 py-0.5", depth === 0 ? "ml-4" : "ml-2")}>
+                  {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        }
+
+        if (!sub.href) return null;
+
+        const active = isSubmoduleActive(pathname, sub.href);
+        return (
+          <div key={sub.href} className="space-y-0.5">
+            <Link
+              href={sub.href}
+              className={cn(
+                "group flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
+                "border-l-2 -ml-[2px] pl-[10px]",
+                active
+                  ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
+                  : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
+                sub.isUrgente && "relative"
+              )}
+            >
+              {sub.icon}
+              <span className="min-w-0 truncate">{sub.label}</span>
+            </Link>
+
+            {sub.children && sub.children.length > 0 ? (
+              <div className="ml-4 space-y-0.5">
+                {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
+              </div>
+            ) : null}
+          </div>
+        );
+      });
+  }
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
@@ -452,61 +603,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-indicator space-y-0.5 py-1">
-                    {module.submodules
-                      .filter((sub) => {
-                        const selfAllowed = !sub.permiso || puede(rol, sub.permiso);
-                        const childAllowed =
-                          sub.children?.some((c) => !c.permiso || puede(rol, c.permiso)) ?? false;
-                        return selfAllowed || childAllowed;
-                      })
-                      .map((sub) => {
-                        const active = isSubmoduleActive(pathname, sub.href);
-                        return (
-                          <div key={sub.href} className="space-y-0.5">
-                            <Link
-                              href={sub.href}
-                              className={cn(
-                                "group flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
-                                "border-l-2 -ml-[2px] pl-[10px]",
-                                active
-                                  ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-                                  : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
-                                sub.isUrgente && "relative"
-                              )}
-                            >
-                              {sub.icon}
-                              <span className="min-w-0 truncate">{sub.label}</span>
-                            </Link>
-
-                            {sub.children && sub.children.length > 0 && (
-                              <div className="ml-4 space-y-0.5">
-                                {sub.children
-                                  .filter((c) => !c.permiso || puede(rol, c.permiso))
-                                  .map((c) => {
-                                    const childActive = isSubmoduleActive(pathname, c.href);
-                                    return (
-                                      <Link
-                                        key={c.href}
-                                        href={c.href}
-                                        className={cn(
-                                          "group flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
-                                          "border-l-2 -ml-[2px] pl-[10px]",
-                                          childActive
-                                            ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-                                            : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
-                                          c.isUrgente && "relative"
-                                        )}
-                                      >
-                                        {c.icon}
-                                        <span className="min-w-0 truncate">{c.label}</span>
-                                      </Link>
-                                    );
-                                  })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                    {renderSubmoduleItems(module.submodules, module.id)}
                   </div>
                 </CollapsibleContent>
               </Collapsible>

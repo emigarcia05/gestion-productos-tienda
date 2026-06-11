@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, UserPlus, ArrowUp, ArrowDown, Loader2, Trash2 } from "lucide-react";
+import { UserPlus, ArrowUp, ArrowDown, Loader2, Trash2 } from "lucide-react";
 import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosComparacionCategorias, {
@@ -34,7 +33,6 @@ import {
   actualizarDtoExtraComparacionAction,
   quitarAsignacionPresentacionAction,
 } from "@/actions/comparacionCategorias";
-import GestionCategoriasModal from "@/components/proveedores/comparacion-categorias/GestionCategoriasModal";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
 import { toast } from "sonner";
 
@@ -67,7 +65,6 @@ export default function ComparacionCategoriasClient({
   presentacionIdInicial,
   qInicial,
 }: Props) {
-  const router = useRouter();
   const [arbol, setArbol] = useState(arbolInicial);
   useEffect(() => {
     setArbol(arbolInicial);
@@ -77,7 +74,6 @@ export default function ComparacionCategoriasClient({
   );
   const [productos, setProductos] = useState<ProductoEnCategoria[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
-  const [modalGestion, setModalGestion] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
   const [dtoEspecial, setDtoEspecial] = useState<Record<string, string>>({});
   const [savingDtoExtra, setSavingDtoExtra] = useState<Record<string, boolean>>({});
@@ -219,10 +215,6 @@ export default function ComparacionCategoriasClient({
     }
   }, [presentacionIdInicial, loadProductos]);
 
-  const refreshArbol = useCallback(() => {
-    router.refresh();
-  }, [router]);
-
   const onAsignarSuccess = useCallback(() => {
     setModalAsignar(false);
     if (selectedPresentacionId) loadProductos(selectedPresentacionId);
@@ -258,32 +250,19 @@ export default function ComparacionCategoriasClient({
     );
   }, []);
 
-  const acciones = puedeEditar ? (
-    <div className="flex items-center gap-2">
-      {selectedPresentacionId && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5 h-9"
-          onClick={() => setModalAsignar(true)}
-        >
-          <UserPlus className="h-4 w-4" />
-          Asignar productos
-        </Button>
-      )}
+  const acciones =
+    puedeEditar && selectedPresentacionId ? (
       <Button
         type="button"
-        variant="default"
-        size="default"
-        className="btn-primario-gestion gap-2"
-        onClick={() => setModalGestion(true)}
+        variant="outline"
+        size="sm"
+        className="gap-1.5 h-9"
+        onClick={() => setModalAsignar(true)}
       >
-        <Plus className="h-4 w-4" />
-        Gestionar Categorías
+        <UserPlus className="h-4 w-4" />
+        Asignar productos
       </Button>
-    </div>
-  ) : undefined;
+    ) : undefined;
 
   const totalPresentaciones = useMemo(() => countPresentaciones(arbol), [arbol]);
 
@@ -304,7 +283,7 @@ export default function ComparacionCategoriasClient({
     <>
       <ClassicFilteredTableLayout
         title="Lista Proveedores"
-        subtitle="Comp. Por Cat."
+        subtitle="Comparacion"
         actions={acciones}
         filters={filters}
       >
@@ -466,23 +445,13 @@ export default function ComparacionCategoriasClient({
         </div>
       </ClassicFilteredTableLayout>
 
-      {puedeEditar && (
-        <>
-          <GestionCategoriasModal
-            open={modalGestion}
-            onOpenChange={setModalGestion}
-            arbol={arbol}
-            onSuccess={refreshArbol}
-          />
-          {selectedPresentacionId && (
-            <AsignarProductosModal
-              open={modalAsignar}
-              onOpenChange={setModalAsignar}
-              presentacionId={selectedPresentacionId}
-              onSuccess={onAsignarSuccess}
-            />
-          )}
-        </>
+      {puedeEditar && selectedPresentacionId && (
+        <AsignarProductosModal
+          open={modalAsignar}
+          onOpenChange={setModalAsignar}
+          presentacionId={selectedPresentacionId}
+          onSuccess={onAsignarSuccess}
+        />
       )}
     </>
   );

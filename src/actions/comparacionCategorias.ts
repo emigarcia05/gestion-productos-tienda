@@ -44,7 +44,18 @@ const buscarProductosAsignarSchema = z.object({
   q: z.string().max(500).optional(),
 });
 
-const PATH = "/proveedores/comparacion-categorias";
+const PATHS_COMPARACION_CATEGORIAS = [
+  "/proveedores/comparacion-categorias",
+  "/gestion-productos/proveedores/comparacion-categorias",
+  "/proveedores/comparacion-categorias/categorias",
+  "/gestion-productos/proveedores/comparacion-categorias/categorias",
+] as const;
+
+function revalidateComparacionCategorias() {
+  for (const path of PATHS_COMPARACION_CATEGORIAS) {
+    revalidatePath(path);
+  }
+}
 
 /** Resuelve si el rol vigente tiene permiso de edición de comparación-categorías. */
 async function tienePermisoEditar(): Promise<boolean> {
@@ -144,7 +155,7 @@ export async function createCategoriaAction(nombre: string): Promise<ActionResul
   }
   try {
     await createCategoria(parsed.data.nombre);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al crear categoría." };
@@ -157,7 +168,7 @@ export async function updateCategoriaAction(id: string, data: { nombre?: string 
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
     await updateCategoria(parsed.data.id, parsed.data.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al actualizar." };
@@ -170,7 +181,7 @@ export async function deleteCategoriaAction(id: string): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
     await deleteCategoria(parsed.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al eliminar." };
@@ -187,7 +198,7 @@ export async function createSubcategoriaAction(categoriaId: string, nombre: stri
   }
   try {
     await createSubcategoria(parsed.data.categoriaId, parsed.data.nombre);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al crear subcategoría." };
@@ -203,7 +214,7 @@ export async function updateSubcategoriaAction(
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
     await updateSubcategoria(parsed.data.id, parsed.data.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al actualizar." };
@@ -216,7 +227,7 @@ export async function deleteSubcategoriaAction(id: string): Promise<ActionResult
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
     await deleteSubcategoria(parsed.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al eliminar." };
@@ -237,7 +248,7 @@ export async function createPresentacionAction(
   }
   try {
     await createPresentacion(parsed.data.subcategoriaId, parsed.data.nombre, parsed.data.costoCompraObjetivo);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al crear presentación." };
@@ -258,7 +269,7 @@ export async function updatePresentacionAction(
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
     await updatePresentacion(parsed.data.id, parsed.data.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al actualizar." };
@@ -271,7 +282,7 @@ export async function deletePresentacionAction(id: string): Promise<ActionResult
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
     await deletePresentacion(parsed.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al eliminar." };
@@ -288,7 +299,7 @@ export async function asignarProductosAPresentacionAction(
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
     const { count } = await asignarProductosAPresentacion(parsed.data.presentacionId, parsed.data.idsProductos);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     revalidatePath("/proveedores/lista-precios");
     return { ok: true, data: { count } };
   } catch (e) {
@@ -305,7 +316,7 @@ export async function quitarAsignacionPresentacionAction(
   if (!parsed.success) return { ok: false, error: "IDs inválidos." };
   try {
     const { count } = await quitarAsignacionPresentacion(parsed.data);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     revalidatePath("/proveedores/lista-precios");
     return { ok: true, data: { count } };
   } catch (e) {
@@ -325,7 +336,7 @@ export async function actualizarDtoExtraComparacionAction(
 
   try {
     await actualizarDtoExtraComparacionItem(parsed.data.listaPrecioProveedorId, parsed.data.dtoExtra);
-    revalidatePath(PATH);
+    revalidateComparacionCategorias();
     return { ok: true, data: { dtoExtra: parsed.data.dtoExtra } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al guardar DTO extra." };

@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/proveedores/comparacion-categorias/categorias",
+        destination: "/gestion-productos/proveedores/comparacion-categorias/categorias",
+        permanent: true,
+      },
+      {
         source: "/proveedores/competencia-precios",
         destination: "/gestion-productos/tienda/cx-px-tienda",
         permanent: true,
@@ -132,6 +137,10 @@ const nextConfig: NextConfig = {
       { source: "/gestion-productos/proveedores/lista-precios", destination: "/proveedores/lista-precios" },
       { source: "/gestion-productos/proveedores/sugeridos", destination: "/proveedores/sugeridos" },
       { source: "/gestion-productos/proveedores/comparacion-categorias", destination: "/proveedores/comparacion-categorias" },
+      {
+        source: "/gestion-productos/proveedores/comparacion-categorias/categorias",
+        destination: "/proveedores/comparacion-categorias/categorias",
+      },
       { source: "/gestion-productos/precios-competencia", destination: "/precios-competencia" },
       { source: "/gestion-productos/proveedores/lista", destination: "/proveedores/lista" },
       { source: "/gestion-productos/tienda/cx-px-tienda", destination: "/tienda/cx-px" },
