@@ -784,9 +784,9 @@ Botón/indicador persistente en la parte inferior de la slidenav. El markup del 
 
 Layout compartido en `@/lib/comparacionCategoriasLayout.ts`: **`contentWidth="wide150"`** (ancho completo vs `max-w-7xl` estándar) + **`COMP_CATEGORIAS_PAGE_CONTENT_CLASS`** (padding horizontal reducido); selector Finder **`min-h-[330px]` / `max-h-[420px]`** (+50 % vs base 220/280px). Modal **Asignar Productos**: **`max-w-[126rem]`** (`84rem` × 1,5).
 
-Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`. Arriba, selector en cascada **solo lectura** (`ComparacionCategoriaSelector`, 3 columnas `catalogo-finder`: **CATEGORÍA** → **SUBCATEGORÍA** → **PRESENTACIÓN**); el mantenimiento del catálogo está en **Categorias**. Al elegir una **presentación**, se cargan los productos asignados (`getProductosPorPresentacionAction` → filas de `prod_precios_provee` vía `id_presentacion`).
+Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`. Arriba, selector en cascada **solo lectura** (`ComparacionCategoriaSelector`, **4 columnas** `catalogo-finder`: **CATEGORÍA** → **SUBCATEGORÍA** → **PRESENTACIÓN** → **REFERENCIA COMPETENCIA**); el mantenimiento del catálogo está en **Categorias**. Al elegir una **presentación**, se cargan los productos asignados (`getProductosPorPresentacionAction` → filas de `prod_precios_provee` vía `id_presentacion`).
 
-**Tabla de productos** (debajo del selector): banner **Referencia competencia** (fila de `prod_precios_competencia`; precio vía `resolverPreciosCompetenciaMostrar` = Px Competencia). Editor: **Elegir referencia** (`ElegirReferenciaCompetenciaModal`) / **Quitar**. **VAR**: si hay **tilde** en fila proveedor → base = esa fila; si no hay tilde pero hay referencia → base = precio referencia; tilde anula referencia como base.
+**Columna Referencia competencia** (`ComparacionReferenciaCompetenciaColumn`): muestra la referencia asignada (etiqueta + precio resuelto) o estado vacío; botones **Elegir referencia** / **Cambiar** / **Quitar** abren `ElegirReferenciaCompetenciaModal` o quitan la FK. Catálogo Px Competencia + Px. Vta. Sugerido (mismo criterio que `/gestion-productos/tienda/cx-px-tienda`; precio vía `resolverPreciosCompetenciaMostrar`). **VAR**: si hay **tilde** en fila proveedor → base = esa fila; si no hay tilde pero hay referencia → base = precio referencia; tilde anula referencia como base.
 
 Columnas: **TILDE 5 %** · **PROVEEDOR 10 %** · **DESCRIPCIÓN 52 %** · **COSTO 13 %** · **VAR 12 %** · acciones **8 %** (+ asignar / cesto quitar). Modal **Asignar productos** y modal **Elegir referencia**: `max-w-[126rem]`.
 
@@ -1219,6 +1219,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-06-04): **Act. Cx. — modal PDF aumentos** — Excel **`Act Cx dd-mm hh-mm.xls`**; tras exportar, modal **¿Desea exportar el informe de aumento?**; PDF vía `exportarResumenAumentosPxAction`.*
 
 *Última actualización (2026-06-10): **Sidebar — `Cx y Px Tienda`** — agrupador colapsable en **ANALISIS DE PRECIOS** (sin `href`; hijos **Cx Compra** y **Px Listas**); patrón `SubmoduleItem` sin ruta + `children` en `Sidebar.tsx`.*
+
+*Última actualización (2026-06-11): **Comp. Categorias — referencia en 4.ª columna Finder** — `ComparacionReferenciaCompetenciaColumn`; grid `grid-cols-4` en Comparacion (Categorias mantiene 3 columnas).*
 
 *Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — banner + `ElegirReferenciaCompetenciaModal`; VAR con tilde manual o precio referencia (Px Competencia).*
 

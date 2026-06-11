@@ -196,72 +196,16 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
             selectedCategoriaId={selectedCategoriaId}
             selectedSubcategoriaId={selectedSubcategoriaId}
             selectedPresentacionId={selectedPresentacionId}
+            loadingReferencia={loadingProductos}
+            referenciaCompetencia={referenciaCompetencia}
+            puedeEditarReferencia={puedeEditar}
+            quitarReferenciaPending={quitarReferenciaPending}
             onSelectCategoria={handleSelectCategoria}
             onSelectSubcategoria={handleSelectSubcategoria}
             onSelectPresentacion={handleSelectPresentacion}
+            onElegirReferencia={() => setModalReferencia(true)}
+            onQuitarReferencia={() => void handleQuitarReferencia()}
           />
-
-          {selectedPresentacionId && !loadingProductos && (
-            <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5">
-              <span className="text-xs font-semibold uppercase text-muted-foreground">
-                Referencia competencia
-              </span>
-              {referenciaCompetencia ? (
-                <>
-                  <span className="text-sm text-foreground min-w-0 truncate">
-                    {referenciaCompetencia.etiqueta}
-                    {referenciaCompetencia.pxMostrar != null
-                      ? ` · $${fmtPrecio(referenciaCompetencia.pxMostrar)}`
-                      : " · —"}
-                  </span>
-                  {puedeEditar && (
-                    <div className="ml-auto flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => setModalReferencia(true)}
-                      >
-                        Cambiar
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => void handleQuitarReferencia()}
-                        disabled={quitarReferenciaPending}
-                      >
-                        {quitarReferenciaPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                        ) : (
-                          "Quitar"
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    Sin referencia (VAR usa tilde manual o queda vacía)
-                  </span>
-                  {puedeEditar && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="ml-auto h-8"
-                      onClick={() => setModalReferencia(true)}
-                    >
-                      Elegir referencia
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-          )}
 
           <Card className="flex min-h-0 flex-1 flex-col gap-0 pt-0 min-w-0">
             <CardContent className="flex-1 min-h-0 overflow-hidden py-0 pb-3 px-0">

@@ -1,14 +1,16 @@
 /**
  * Servicio Comparación por categorías.
  * Jerarquía: Categoria → Subcategoria → Presentacion.
- * Referente: fila de prod_precios_competencia (precio vía `resolverPreciosCompetenciaMostrar`, igual Px Competencia).
+ * Referente: `prod_precios_competencia` (scrape o Px. Vta. Sugerido; precio vía `resolverPreciosCompetenciaMostrar`, igual `/cx-px-tienda`).
  */
 
 import { prisma } from "@/lib/prisma";
 import {
+  buildMapPxVtaSugerido,
   resolverPrecioCompetenciaMostrar,
   resolverPreciosCompetenciaMostrar,
 } from "@/services/competenciaPxSugerido.service";
+import { ensureVinculoCompetenciaParaReferencia } from "@/services/competenciaVinculo.service";
 
 const normalizeNombreCategoria = (nombre: string): string =>
   nombre.trim().toUpperCase();
@@ -342,58 +344,179 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
   );
 }
 
-/** Opciones para elegir referente desde prod_precios_competencia (catálogo Px Competencia). */
+function claveOpcionReferenciaCompetencia(codTienda: string, competenciaId: string): string {
+  return `${codTienda}:${competenciaId}`;
+}
+
+/** Opciones para elegir referente: catálogo Px Competencia (scrape + Px. Vta. Sugerido, igual `/cx-px-tienda`). */
 export async function buscarOpcionesReferenciaCompetencia(params: {
   q?: string;
   take?: number;
 }): Promise<OpcionReferenciaCompetencia[]> {
-  const q = params.q?.trim().toUpperCase() ?? "";
+  const q = params.q?.trim() ?? "";
   const take = params.take ?? 100;
 
-  const rows = await prisma.prodPrecioCompetencia.findMany({
-    where: {
-      prodTienda: { compararCompetencia: true },
-      ...(q
-        ? {
-            OR: [
-              { codTienda: { contains: q, mode: "insensitive" } },
-              { prodTienda: { descripcionTienda: { contains: q, mode: "insensitive" } } },
-              { competencia: { nombre: { contains: q, mode: "insensitive" } } },
-            ],
-          }
-        : {}),
-    },
-    take,
-    orderBy: [{ prodTienda: { descripcionTienda: "asc" } }, { competencia: { nombre: "asc" } }],
-    select: {
-      codTienda: true,
-      competenciaId: true,
-      urlProducto: true,
-      tipoPagina: true,
-      pxCompetencia: true,
-      estado: true,
-      errorMensaje: true,
-      relevadoAt: true,
-      competencia: { select: { nombre: true } },
-      prodTienda: { select: { descripcionTienda: true } },
-    },
-  });
+  const textoVinculoWhere = q
+    ? {
+        OR: [
+          { codTienda: { contains: q, mode: "insensitive" as const } },
+          { prodTienda: { descripcionTienda: { contains: q, mode: "insensitive" as const } } },
+          { competencia: { nombre: { contains: q, mode: "insensitive" as const } } },
+        ],
+      }
+    : {};
+
+  const textoSugeridoWhere = q
+    ? {
+        OR: [
+          { codTiendaVinculo: { contains: q, mode: "insensitive" as const } },
+          { prodTienda: { descripcionTienda: { contains: q, mode: "insensitive" as const } } },
+          {
+            proveedor: {
+              competenciasPrecios: {
+                some: { nombre: { contains: q, mode: "insensitive" as const } },
+              },
+            },
+          },
+        ],
+      }
+    : {};
+
+  const [preciosRows, sugeridoRows] = await Promise.all([
+    prisma.prodPrecioCompetencia.findMany({
+      where: {
+        prodTienda: { compararCompetencia: true },
+        ...textoVinculoWhere,
+      },
+      take: take * 2,
+      orderBy: [{ prodTienda: { descripcionTienda: "asc" } }, { competencia: { nombre: "asc" } }],
+      select: {
+        codTienda: true,
+        competenciaId: true,
+        competencia: { select: { nombre: true } },
+        prodTienda: { select: { descripcionTienda: true } },
+      },
+    }),
+    prisma.listaPrecioProveedor.findMany({
+      where: {
+        habilitado: true,
+        pxVtaSugerido: { not: null, gt: 0 },
+        codTiendaVinculo: { not: null },
+        prodTienda: { compararCompetencia: true },
+        proveedor: { competenciasPrecios: { some: {} } },
+        ...textoSugeridoWhere,
+      },
+      take: take * 2,
+      orderBy: { prodTienda: { descripcionTienda: "asc" } },
+      select: {
+        codTiendaVinculo: true,
+        prodTienda: { select: { descripcionTienda: true } },
+        proveedor: {
+          select: {
+            competenciasPrecios: {
+              select: { id: true, nombre: true },
+              orderBy: { nombre: "asc" },
+              take: 1,
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  type OpcionBase = {
+    codTienda: string;
+    competenciaId: string;
+    competenciaNombre: string;
+    descripcionTienda: string | null;
+  };
+
+  const opcionesMap = new Map<string, OpcionBase>();
+
+  for (const row of preciosRows) {
+    opcionesMap.set(claveOpcionReferenciaCompetencia(row.codTienda, row.competenciaId), {
+      codTienda: row.codTienda,
+      competenciaId: row.competenciaId,
+      competenciaNombre: row.competencia.nombre,
+      descripcionTienda: row.prodTienda.descripcionTienda,
+    });
+  }
+
+  for (const row of sugeridoRows) {
+    const codTienda = row.codTiendaVinculo;
+    const competencia = row.proveedor.competenciasPrecios[0];
+    if (!codTienda || !competencia) continue;
+    const key = claveOpcionReferenciaCompetencia(codTienda, competencia.id);
+    if (opcionesMap.has(key)) continue;
+    opcionesMap.set(key, {
+      codTienda,
+      competenciaId: competencia.id,
+      competenciaNombre: competencia.nombre,
+      descripcionTienda: row.prodTienda?.descripcionTienda ?? null,
+    });
+  }
+
+  const opciones = [...opcionesMap.values()]
+    .sort((a, b) => {
+      const cmpDesc = (a.descripcionTienda ?? a.codTienda).localeCompare(
+        b.descripcionTienda ?? b.codTienda,
+        "es"
+      );
+      if (cmpDesc !== 0) return cmpDesc;
+      return a.competenciaNombre.localeCompare(b.competenciaNombre, "es");
+    })
+    .slice(0, take);
 
   const preciosMap = await resolverPreciosCompetenciaMostrar(
-    rows.map((r) => ({ codTienda: r.codTienda, competenciaId: r.competenciaId }))
+    opciones.map((o) => ({ codTienda: o.codTienda, competenciaId: o.competenciaId }))
   );
 
-  return rows.map((r) => {
-    const resuelto = preciosMap.get(`${r.codTienda}:${r.competenciaId}`);
-    const competenciaNombre = r.competencia.nombre;
-    const descripcionTienda = r.prodTienda.descripcionTienda;
+  const sinVinculoDb = opciones.filter(
+    (o) => !preciosMap.has(claveOpcionReferenciaCompetencia(o.codTienda, o.competenciaId))
+  );
+
+  const competenciaIds = [...new Set(opciones.map((o) => o.competenciaId))];
+  const competencias = await prisma.prodCompetencia.findMany({
+    where: { id: { in: competenciaIds } },
+    select: { id: true, idProveedor: true },
+  });
+  const proveedorPorCompetencia = new Map(
+    competencias
+      .filter((c) => c.idProveedor)
+      .map((c) => [c.id, c.idProveedor as string])
+  );
+
+  const pxSugeridoMap =
+    sinVinculoDb.length > 0
+      ? await buildMapPxVtaSugerido(
+          [...new Set(sinVinculoDb.map((o) => o.codTienda))],
+          [
+            ...new Set(
+              sinVinculoDb
+                .map((o) => proveedorPorCompetencia.get(o.competenciaId))
+                .filter((id): id is string => Boolean(id))
+            ),
+          ]
+        )
+      : new Map<string, number>();
+
+  return opciones.map((o) => {
+    const key = claveOpcionReferenciaCompetencia(o.codTienda, o.competenciaId);
+    const resuelto = preciosMap.get(key);
+    let pxMostrar = resuelto?.pxMostrar ?? null;
+    if (pxMostrar == null) {
+      const idProveedor = proveedorPorCompetencia.get(o.competenciaId);
+      if (idProveedor) {
+        pxMostrar = pxSugeridoMap.get(`${o.codTienda}:${idProveedor}`) ?? null;
+      }
+    }
     return {
-      codTienda: r.codTienda,
-      competenciaId: r.competenciaId,
-      competenciaNombre,
-      descripcionTienda,
-      pxMostrar: resuelto?.pxMostrar ?? null,
-      etiqueta: `${competenciaNombre} — ${descripcionTienda ?? r.codTienda}`,
+      codTienda: o.codTienda,
+      competenciaId: o.competenciaId,
+      competenciaNombre: o.competenciaNombre,
+      descripcionTienda: o.descripcionTienda,
+      pxMostrar,
+      etiqueta: `${o.competenciaNombre} — ${o.descripcionTienda ?? o.codTienda}`,
     };
   });
 }
@@ -403,12 +526,19 @@ export async function asignarReferenciaCompetenciaPresentacion(
   codTienda: string,
   competenciaId: string
 ): Promise<void> {
-  const vinculo = await prisma.prodPrecioCompetencia.findUnique({
-    where: { codTienda_competenciaId: { codTienda, competenciaId } },
-    select: { prodTienda: { select: { compararCompetencia: true } } },
+  const prodTienda = await prisma.prodTienda.findUnique({
+    where: { codTienda },
+    select: { compararCompetencia: true },
   });
-  if (!vinculo?.prodTienda.compararCompetencia) {
+  if (!prodTienda?.compararCompetencia) {
     throw new Error("El producto no está en el catálogo de Px Competencia.");
+  }
+
+  await ensureVinculoCompetenciaParaReferencia(codTienda, competenciaId);
+
+  const resuelto = await resolverPrecioCompetenciaMostrar(codTienda, competenciaId);
+  if (resuelto?.pxMostrar == null || resuelto.pxMostrar <= 0) {
+    throw new Error("No hay precio de competencia disponible para esta referencia.");
   }
 
   await prisma.presentacionComparacion.update({

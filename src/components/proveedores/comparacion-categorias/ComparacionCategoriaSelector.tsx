@@ -4,17 +4,27 @@ import { useMemo } from "react";
 import CatalogoFinderColumn from "@/components/shared/catalogo-finder/CatalogoFinderColumn";
 import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinderRow";
 import CatalogoFinderEmpty from "@/components/shared/catalogo-finder/CatalogoFinderEmpty";
-import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
+import type {
+  CategoriaComparacionTree,
+  ReferenciaCompetenciaPresentacion,
+} from "@/services/categoriasComparacion.service";
 import { COMP_CATEGORIAS_SELECTOR_GRID_CLASS } from "@/lib/comparacionCategoriasLayout";
+import ComparacionReferenciaCompetenciaColumn from "@/components/proveedores/comparacion-categorias/ComparacionReferenciaCompetenciaColumn";
 
 interface Props {
   arbol: CategoriaComparacionTree[];
   selectedCategoriaId: string | null;
   selectedSubcategoriaId: string | null;
   selectedPresentacionId: string | null;
+  loadingReferencia: boolean;
+  referenciaCompetencia: ReferenciaCompetenciaPresentacion | null;
+  puedeEditarReferencia: boolean;
+  quitarReferenciaPending: boolean;
   onSelectCategoria: (id: string) => void;
   onSelectSubcategoria: (id: string) => void;
   onSelectPresentacion: (id: string) => void;
+  onElegirReferencia: () => void;
+  onQuitarReferencia: () => void;
 }
 
 const noop = () => {};
@@ -24,9 +34,15 @@ export default function ComparacionCategoriaSelector({
   selectedCategoriaId,
   selectedSubcategoriaId,
   selectedPresentacionId,
+  loadingReferencia,
+  referenciaCompetencia,
+  puedeEditarReferencia,
+  quitarReferenciaPending,
   onSelectCategoria,
   onSelectSubcategoria,
   onSelectPresentacion,
+  onElegirReferencia,
+  onQuitarReferencia,
 }: Props) {
   const categoriaSeleccionada = useMemo(
     () => arbol.find((c) => c.id === selectedCategoriaId) ?? null,
@@ -125,6 +141,16 @@ export default function ComparacionCategoriaSelector({
           ))
         )}
       </CatalogoFinderColumn>
+
+      <ComparacionReferenciaCompetenciaColumn
+        presentacionSeleccionada={selectedPresentacionId != null}
+        loading={loadingReferencia}
+        referenciaCompetencia={referenciaCompetencia}
+        puedeEditar={puedeEditarReferencia}
+        quitarPending={quitarReferenciaPending}
+        onElegirReferencia={onElegirReferencia}
+        onQuitarReferencia={onQuitarReferencia}
+      />
     </div>
   );
 }

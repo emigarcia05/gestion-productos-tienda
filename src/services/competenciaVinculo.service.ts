@@ -2,6 +2,31 @@ import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import { obtenerPxVtaSugeridoParaCompetencia } from "@/services/competenciaPxSugerido.service";
 
+/** Fila mínima en `prod_precios_competencia` para FK de referente (p. ej. solo Px. Vta. Sugerido). */
+export async function ensureVinculoCompetenciaParaReferencia(
+  codTienda: string,
+  competenciaId: string
+): Promise<void> {
+  const existing = await prisma.prodPrecioCompetencia.findUnique({
+    where: { codTienda_competenciaId: { codTienda, competenciaId } },
+    select: { codTienda: true },
+  });
+  if (existing) return;
+
+  await prisma.prodPrecioCompetencia.create({
+    data: {
+      codTienda,
+      competenciaId,
+      urlProducto: null,
+      tipoPagina: null,
+      estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+      pxCompetencia: null,
+      errorMensaje: null,
+      relevadoAt: null,
+    },
+  });
+}
+
 export interface DatoVinculoCompetenciaCliente {
   urlProducto: string | null;
   tipoPagina: string | null;

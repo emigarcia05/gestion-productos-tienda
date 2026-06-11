@@ -1534,6 +1534,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-06-04): **Px Listas — export Excel por lista** — `exportarPxListasMargenAction`; un `.xls` por `nombre_lista` con **CODIGO** + **PORC UTILIDAD** (margen desde precio efectivo).*
 
+*Última actualización (2026-06-11): **Comp. Categorias — referencia competencia (Px Sugerido)** — `buscarOpcionesReferenciaCompetencia` une `prod_precios_competencia` + `prod_precios_provee.px_vta_sugerido` (catálogo igual cx-px-tienda); `ensureVinculoCompetenciaParaReferencia` crea fila FK si solo hay sugerido.*
+
 *Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — `prod_comp_presentaciones.ref_cod_tienda` + `ref_competencia_id` → FK a `prod_precios_competencia`; precio vía `resolverPreciosCompetenciaMostrar`. Migración **`20260611120000_comp_present_ref_competencia`**. Actions `asignarReferenciaCompetenciaAction`, `buscarReferenciaCompetenciaAction`, `quitarReferenciaCompetenciaAction`.*
 
 *Última actualización (2026-06-10): **Px Competencia — catálogo explícito** — `prod_tienda.comparar_competencia`; actions `comparacionCompetencia.ts`; backfill en migración **`20260610120000`** para productos con filas en `prod_precios_competencia`.*
