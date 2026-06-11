@@ -16,6 +16,7 @@ import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
 import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
+import { fmtPrecio } from "@/lib/format";
 
 interface Props {
   open: boolean;
@@ -123,7 +124,7 @@ export default function AsignarProductosModal({
     {
       key: "prefijo",
       label: "PROVEEDOR",
-      className: "py-2.5 px-3 text-xs w-28 shrink-0 text-center",
+      className: "py-2.5 px-3 text-xs w-24 shrink-0 text-center",
       render: (row: ProductoProveedorParaVincular) => (
         <Badge variant="secondary" className="font-mono text-xs">
           {row.proveedor.prefijo}
@@ -133,10 +134,20 @@ export default function AsignarProductosModal({
     {
       key: "descripcion",
       label: "DESCRIPCIÓN",
-      className: "py-2.5 px-3 text-xs min-w-0 w-full",
+      className: "py-2.5 px-3 text-xs min-w-0 flex-1",
       render: (row: ProductoProveedorParaVincular) => (
         <span className="text-xs block truncate" title={row.descripcionProveedor}>
           {row.descripcionProveedor}
+        </span>
+      ),
+    },
+    {
+      key: "px",
+      label: "PX COMPRA FINAL SIN IVA",
+      className: "py-2.5 px-3 text-xs w-36 shrink-0 text-right tabular-nums",
+      render: (row: ProductoProveedorParaVincular) => (
+        <span className="text-xs">
+          {row.pxCompraFinalSinIva != null ? `$${fmtPrecio(row.pxCompraFinalSinIva)}` : "—"}
         </span>
       ),
     },
