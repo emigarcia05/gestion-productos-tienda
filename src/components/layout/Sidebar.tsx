@@ -15,7 +15,6 @@ import {
   RotateCw,
   Pipette,
   Droplets,
-  History,
   GitCompare,
   Landmark,
   Wallet,
@@ -33,6 +32,7 @@ import {
   LineChart,
   PackageSearch,
   Layers,
+  PackageCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -78,7 +78,7 @@ type NavModule = {
 const MODULES: NavModule[] = [
   {
     id: "pedidos",
-    label: "PEDIDO DE MERCADERÍA",
+    label: "PEDIDO MERCADERIA",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
       {
@@ -86,6 +86,10 @@ const MODULES: NavModule[] = [
         label: "Generar Pedido",
         icon: <Send className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.pedidos.acceso,
+      },
+      {
+        label: "Conf. Pedido",
+        icon: <ListChecks className="h-4 w-4 shrink-0" />,
         children: [
           {
             href: "/gestion-productos/pedidos/urgente",
@@ -110,8 +114,8 @@ const MODULES: NavModule[] = [
       },
       {
         href: "/gestion-productos/pedidos/historial",
-        label: "Historial Pedidos",
-        icon: <History className="h-4 w-4 shrink-0" />,
+        label: "Recepcion Pedido",
+        icon: <PackageCheck className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.pedidos.acceso,
       },
     ],
@@ -122,16 +126,22 @@ const MODULES: NavModule[] = [
     icon: <LifeBuoy className={iconClass} />,
     submodules: [
       {
-        href: "/gestion-productos/proveedores/sugeridos",
-        label: "Px. Vta. Sugeridos",
-        icon: <FileSearch className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.proveedores.sugeridos,
-      },
-      {
-        href: "/gestion-productos/tienda/calc-tintometrico",
-        label: "Calc. Tintométrico",
-        icon: <Pipette className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.tienda.tintoLts,
+        label: "Px Venta",
+        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: "/gestion-productos/proveedores/sugeridos",
+            label: "Px. Vta. Sugerido",
+            icon: <FileSearch className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.proveedores.sugeridos,
+          },
+          {
+            href: "/gestion-productos/tienda/calc-tintometrico",
+            label: "Px Tintométrico",
+            icon: <Pipette className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.tienda.tintoLts,
+          },
+        ],
       },
       {
         href: "/gestion-productos/tienda/calc-litros",
@@ -380,6 +390,30 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
       pathname === "/gestion-productos/proveedores/competencia-precios" ||
       pathname === "/proveedores/competencia-precios"
     );
+  if (href === "/gestion-productos/pedidos/generar-pedido")
+    return (
+      pathname === "/gestion-productos/pedidos/generar-pedido" || pathname === "/pedidos/enviar"
+    );
+  if (href === "/gestion-productos/pedidos/urgente")
+    return pathname === "/gestion-productos/pedidos/urgente" || pathname === "/pedidos/urgente";
+  if (href === "/gestion-productos/pedidos/tintometrico")
+    return (
+      pathname === "/gestion-productos/pedidos/tintometrico" || pathname === "/pedidos/tintometrico"
+    );
+  if (href === "/gestion-productos/pedidos/reposicion")
+    return pathname === "/gestion-productos/pedidos/reposicion" || pathname === "/pedidos/reposicion";
+  if (href === "/gestion-productos/pedidos/historial")
+    return pathname === "/gestion-productos/pedidos/historial" || pathname === "/pedidos/historial";
+  if (href === "/gestion-productos/tienda/calc-tintometrico")
+    return (
+      pathname === "/gestion-productos/tienda/calc-tintometrico" ||
+      pathname === "/tienda/tintometrico" ||
+      pathname === "/tienda/tinto-lts"
+    );
+  if (href === "/gestion-productos/tienda/calc-litros")
+    return pathname === "/gestion-productos/tienda/calc-litros" || pathname === "/tienda/litros";
+  if (href === "/gestion-productos/procesos")
+    return pathname === "/gestion-productos/procesos" || pathname === "/procesos";
   if (href === "/gestion-productos/tienda/comp-proveedores")
     return pathname === "/gestion-productos/tienda/comp-proveedores" || pathname === "/tienda";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";

@@ -23,7 +23,7 @@ const TAB_CONFIG: Record<
     icon: <RotateCw className="h-3.5 w-3.5 text-accent2" />,
   },
   historial: {
-    label: "Historial Pedidos",
+    label: "Recepcion Pedido",
     href: "/gestion-productos/pedidos/historial",
     icon: <History className="h-3.5 w-3.5 text-accent2" />,
   },
