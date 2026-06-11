@@ -42,7 +42,13 @@ function FilaPxListas({
   item,
   puedeEditarEnlaces,
   puedeQuitarComparacion,
+  isPending,
+  expandido,
+  onToggleDetalle,
+  onAsociarUrls,
+  onRelevarUrls,
   onQuitarComparacion,
+  relevandoCodTienda,
   quitandoCodTienda,
 }: {
   item: ItemPxListasParaTabla;
