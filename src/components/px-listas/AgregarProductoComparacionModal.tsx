@@ -19,6 +19,9 @@ const EMPTY: { items: ProductoTiendaParaComparacionRow[]; total: number } = {
 /** CHECK + COD. TIENDA + MARCA + DESCRIPCIÓN */
 const COLUMN_WIDTHS_PCT = [5, 10, 20, 65] as const;
 
+/** `ModalTablaConFiltros` base `max-w-[84rem]` × 1,3 */
+const MODAL_AGREGAR_PRODUCTO_COMPARACION_MAX_WIDTH = "max-w-[109.2rem]";
+
 export default function AgregarProductoComparacionModal({
   open,
   onOpenChange,
@@ -128,6 +131,7 @@ export default function AgregarProductoComparacionModal({
       open={open}
       onClose={() => onOpenChange(false)}
       title="Agregar Producto A Comparación"
+      contentClassName={MODAL_AGREGAR_PRODUCTO_COMPARACION_MAX_WIDTH}
       selectionMode="singleConfirm"
       showSingleConfirmCheckbox
       confirmSingleLabel="Agregar Producto"

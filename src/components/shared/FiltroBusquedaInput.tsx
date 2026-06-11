@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Loader2, X } from "lucide-react";
+import { Search, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { INPUT_FILTER_CLASS } from "@/components/FilterBar";
@@ -20,7 +20,7 @@ export interface FiltroBusquedaInputProps {
 
 /**
  * Input de búsqueda unificado para filtros: icono Search, input con estilo de filtro,
- * botón limpiar (X) cuando hay valor y no está debouncing, y Loader cuando está debouncing.
+ * tacho #0072BB (`primaryIcon` + `filtro-individual-clear-btn`) cuando hay valor, y Loader al debouncear.
  * Usar con useFiltrosConBusqueda para la lógica.
  */
 export default function FiltroBusquedaInput({
@@ -34,8 +34,8 @@ export default function FiltroBusquedaInput({
   disabled = false,
 }: FiltroBusquedaInputProps) {
   return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
+    <div className="filtro-individual-container relative min-w-0">
+      <Search className="absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-primary pointer-events-none" />
       <Input
         ref={inputRef}
         id={id}
@@ -45,7 +45,7 @@ export default function FiltroBusquedaInput({
         disabled={disabled}
         className={cn(
           "pl-9 w-full",
-          value && isDebouncing ? "pr-16" : "pr-10",
+          value && isDebouncing && "pr-14",
           INPUT_FILTER_CLASS,
           className
         )}
@@ -53,20 +53,23 @@ export default function FiltroBusquedaInput({
       {value ? (
         <Button
           type="button"
-          variant="ghost"
-          size="icon"
+          variant="primaryIcon"
+          size="icon-lg"
           onClick={() => onChange("")}
+          className="filtro-individual-clear-btn"
           aria-label="Limpiar búsqueda"
-          className={cn(
-            "absolute top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground",
-            isDebouncing ? "right-9" : "right-2"
-          )}
+          title="Limpiar búsqueda"
         >
-          <X className="h-3.5 w-3.5" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       ) : null}
       {isDebouncing ? (
-        <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin pointer-events-none" />
+        <Loader2
+          className={cn(
+            "absolute top-1/2 z-[1] h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground animate-spin pointer-events-none",
+            value ? "right-[2.65rem]" : "right-3"
+          )}
+        />
       ) : null}
     </div>
   );
