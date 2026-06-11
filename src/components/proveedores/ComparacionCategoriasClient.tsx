@@ -15,11 +15,18 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Trash2 } from "lucide-react";
 import { fmtPrecio } from "@/lib/format";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import {
+  COMP_CATEGORIAS_CONTENT_WIDTH,
+  COMP_CATEGORIAS_PAGE_CONTENT_CLASS,
+} from "@/lib/comparacionCategoriasLayout";
 import ComparacionCategoriaSelector from "@/components/proveedores/comparacion-categorias/ComparacionCategoriaSelector";
 import CeldaDifPct from "@/components/shared/CeldaDifPct";
 import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
-import type { ProductoEnCategoria } from "@/services/categoriasComparacion.service";
+import type {
+  ProductoEnCategoria,
+  ReferenciaCompetenciaPresentacion,
+} from "@/services/categoriasComparacion.service";
 import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
@@ -31,8 +38,10 @@ import {
 import {
   getProductosPorPresentacionAction,
   quitarAsignacionPresentacionAction,
+  quitarReferenciaCompetenciaAction,
 } from "@/actions/comparacionCategorias";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
+import ElegirReferenciaCompetenciaModal from "@/components/proveedores/comparacion-categorias/ElegirReferenciaCompetenciaModal";
 import { toast } from "sonner";
 
 interface Props {
@@ -50,19 +59,29 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   const [selectedSubcategoriaId, setSelectedSubcategoriaId] = useState<string | null>(null);
   const [selectedPresentacionId, setSelectedPresentacionId] = useState<string | null>(null);
   const [productos, setProductos] = useState<ProductoEnCategoria[]>([]);
+  const [referenciaCompetencia, setReferenciaCompetencia] =
+    useState<ReferenciaCompetenciaPresentacion | null>(null);
+  const [labelCompleto, setLabelCompleto] = useState("");
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
+  const [modalReferencia, setModalReferencia] = useState(false);
+  const [quitarReferenciaPending, setQuitarReferenciaPending] = useState(false);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [baseItemId, setBaseItemId] = useState<string | null>(null);
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
-  const costoBase = useMemo(() => {
-    if (!baseItemId) return null;
-    const base = productos.find((p) => p.id === baseItemId);
-    const px = base?.pxCompraFinalSinIva;
-    return px != null && px > 0 ? px : null;
-  }, [baseItemId, productos]);
+  const precioBaseVar = useMemo(() => {
+    if (baseItemId) {
+      const base = productos.find((p) => p.id === baseItemId);
+      const px = base?.pxCompraFinalSinIva;
+      return px != null && px > 0 ? px : null;
+    }
+    const pxRef = referenciaCompetencia?.pxMostrar;
+    return pxRef != null && pxRef > 0 ? pxRef : null;
+  }, [baseItemId, productos, referenciaCompetencia]);
+
+  const hayBaseVar = baseItemId != null || referenciaCompetencia?.pxMostrar != null;
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setLoadingProductos(true);
@@ -70,9 +89,13 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
       const res = await getProductosPorPresentacionAction(presentacionId);
       if (res.ok && res.data) {
         setProductos(res.data.productos);
+        setReferenciaCompetencia(res.data.referenciaCompetencia);
+        setLabelCompleto(res.data.labelCompleto);
         setBaseItemId(null);
       } else {
         setProductos([]);
+        setReferenciaCompetencia(null);
+        setLabelCompleto("");
         setBaseItemId(null);
       }
     } finally {
@@ -85,6 +108,8 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setSelectedSubcategoriaId(null);
     setSelectedPresentacionId(null);
     setProductos([]);
+    setReferenciaCompetencia(null);
+    setLabelCompleto("");
     setBaseItemId(null);
   }, []);
 
@@ -92,6 +117,8 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setSelectedSubcategoriaId(id);
     setSelectedPresentacionId(null);
     setProductos([]);
+    setReferenciaCompetencia(null);
+    setLabelCompleto("");
     setBaseItemId(null);
   }, []);
 
@@ -112,6 +139,27 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setModalAsignar(false);
     if (selectedPresentacionId) void loadProductos(selectedPresentacionId);
   }, [selectedPresentacionId, loadProductos]);
+
+  const onReferenciaSuccess = useCallback(() => {
+    setModalReferencia(false);
+    if (selectedPresentacionId) void loadProductos(selectedPresentacionId);
+  }, [selectedPresentacionId, loadProductos]);
+
+  const handleQuitarReferencia = useCallback(async () => {
+    if (!selectedPresentacionId || quitarReferenciaPending) return;
+    setQuitarReferenciaPending(true);
+    try {
+      const res = await quitarReferenciaCompetenciaAction(selectedPresentacionId);
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al quitar la referencia.");
+        return;
+      }
+      setReferenciaCompetencia(null);
+      toast.success("Referencia de competencia quitada.");
+    } finally {
+      setQuitarReferenciaPending(false);
+    }
+  }, [quitarReferenciaPending, selectedPresentacionId]);
 
   const handleQuitarFila = useCallback(
     async (itemId: string) => {
@@ -139,7 +187,8 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
       <ClassicFilteredTableLayout
         title="Lista Proveedores"
         subtitle="Comparacion"
-        contentWidth="full"
+        contentWidth={COMP_CATEGORIAS_CONTENT_WIDTH}
+        contentClassName={COMP_CATEGORIAS_PAGE_CONTENT_CLASS}
       >
         <div className="flex flex-1 min-h-0 flex-col gap-3 py-3">
           <ComparacionCategoriaSelector
@@ -151,6 +200,68 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
             onSelectSubcategoria={handleSelectSubcategoria}
             onSelectPresentacion={handleSelectPresentacion}
           />
+
+          {selectedPresentacionId && !loadingProductos && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5">
+              <span className="text-xs font-semibold uppercase text-muted-foreground">
+                Referencia competencia
+              </span>
+              {referenciaCompetencia ? (
+                <>
+                  <span className="text-sm text-foreground min-w-0 truncate">
+                    {referenciaCompetencia.etiqueta}
+                    {referenciaCompetencia.pxMostrar != null
+                      ? ` · $${fmtPrecio(referenciaCompetencia.pxMostrar)}`
+                      : " · —"}
+                  </span>
+                  {puedeEditar && (
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setModalReferencia(true)}
+                      >
+                        Cambiar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => void handleQuitarReferencia()}
+                        disabled={quitarReferenciaPending}
+                      >
+                        {quitarReferenciaPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                        ) : (
+                          "Quitar"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    Sin referencia (VAR usa tilde manual o queda vacía)
+                  </span>
+                  {puedeEditar && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto h-8"
+                      onClick={() => setModalReferencia(true)}
+                    >
+                      Elegir referencia
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <Card className="flex min-h-0 flex-1 flex-col gap-0 pt-0 min-w-0">
             <CardContent className="flex-1 min-h-0 overflow-hidden py-0 pb-3 px-0">
@@ -212,13 +323,12 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                         </TableRow>
                       ) : (
                         productos.map((p) => {
-                          const esBase = baseItemId === p.id;
-                          const variacionPct =
-                            baseItemId == null
-                              ? null
-                              : esBase
-                                ? 0
-                                : calcVariacionPct(p.pxCompraFinalSinIva, costoBase);
+                          const esBaseTilde = baseItemId === p.id;
+                          const variacionPct = !hayBaseVar
+                            ? null
+                            : esBaseTilde
+                              ? 0
+                              : calcVariacionPct(p.pxCompraFinalSinIva, precioBaseVar);
 
                           return (
                             <TableRow key={p.id} className="hover:bg-transparent">
@@ -226,7 +336,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                                 <label className="inline-flex cursor-pointer items-center justify-center">
                                   <input
                                     type="checkbox"
-                                    checked={esBase}
+                                    checked={esBaseTilde}
                                     onChange={() => toggleBaseItem(p.id)}
                                     className="h-4 w-4 rounded border-input accent-primary"
                                     aria-label={`Usar ${p.descripcionProveedor} como base de comparación`}
@@ -295,12 +405,21 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
       </ClassicFilteredTableLayout>
 
       {puedeEditar && selectedPresentacionId && (
-        <AsignarProductosModal
-          open={modalAsignar}
-          onOpenChange={setModalAsignar}
-          presentacionId={selectedPresentacionId}
-          onSuccess={onAsignarSuccess}
-        />
+        <>
+          <AsignarProductosModal
+            open={modalAsignar}
+            onOpenChange={setModalAsignar}
+            presentacionId={selectedPresentacionId}
+            onSuccess={onAsignarSuccess}
+          />
+          <ElegirReferenciaCompetenciaModal
+            open={modalReferencia}
+            onOpenChange={setModalReferencia}
+            presentacionId={selectedPresentacionId}
+            labelCompleto={labelCompleto}
+            onSuccess={onReferenciaSuccess}
+          />
+        </>
       )}
     </>
   );

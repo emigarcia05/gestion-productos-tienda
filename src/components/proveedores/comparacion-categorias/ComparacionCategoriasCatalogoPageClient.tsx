@@ -12,6 +12,10 @@ import CrearEditarComparacionCategoriaModal, {
 import EliminarComparacionCategoriaModal from "@/components/proveedores/comparacion-categorias/EliminarComparacionCategoriaModal";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
 import { fmtPrecio } from "@/lib/format";
+import {
+  COMP_CATEGORIAS_CONTENT_WIDTH,
+  COMP_CATEGORIAS_PAGE_CONTENT_CLASS,
+} from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   arbolInicial: CategoriaComparacionTree[];
@@ -83,7 +87,8 @@ export default function ComparacionCategoriasCatalogoPageClient({
     <ClassicFilteredTableLayout
       title="Lista Proveedores"
       subtitle="Categorias"
-      contentWidth="full"
+      contentWidth={COMP_CATEGORIAS_CONTENT_WIDTH}
+      contentClassName={COMP_CATEGORIAS_PAGE_CONTENT_CLASS}
     >
       <div className="flex-1 min-h-0 w-full overflow-hidden py-4">
         <div className="grid h-full min-h-0 grid-cols-3 gap-3">
@@ -219,9 +224,15 @@ export default function ComparacionCategoriasCatalogoPageClient({
                   key={presentacion.id}
                   nombre={presentacion.nombre}
                   meta={
-                    presentacion.costoCompraObjetivo != null
-                      ? `Objetivo ${fmtPrecio(presentacion.costoCompraObjetivo)}`
-                      : undefined
+                    presentacion.referenciaCompetencia
+                      ? `Ref. ${presentacion.referenciaCompetencia.competenciaNombre}${
+                          presentacion.referenciaCompetencia.pxMostrar != null
+                            ? ` · $${fmtPrecio(presentacion.referenciaCompetencia.pxMostrar)}`
+                            : ""
+                        }`
+                      : presentacion.costoCompraObjetivo != null
+                        ? `Objetivo ${fmtPrecio(presentacion.costoCompraObjetivo)}`
+                        : undefined
                   }
                   selected={presentacion.id === selectedPresentacionId}
                   onClick={() => handleSelectPresentacion(presentacion.id)}

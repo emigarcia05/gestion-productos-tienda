@@ -5,6 +5,7 @@ import CatalogoFinderColumn from "@/components/shared/catalogo-finder/CatalogoFi
 import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinderRow";
 import CatalogoFinderEmpty from "@/components/shared/catalogo-finder/CatalogoFinderEmpty";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
+import { COMP_CATEGORIAS_SELECTOR_GRID_CLASS } from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   arbol: CategoriaComparacionTree[];
@@ -38,7 +39,7 @@ export default function ComparacionCategoriaSelector({
   );
 
   return (
-    <div className="grid shrink-0 grid-cols-3 gap-3 min-h-[220px] max-h-[280px]">
+    <div className={COMP_CATEGORIAS_SELECTOR_GRID_CLASS}>
       <CatalogoFinderColumn
         titulo="CATEGORÍA"
         subtitulo={`${arbol.length} registro${arbol.length === 1 ? "" : "s"}`}

@@ -208,3 +208,101 @@ export function aplicarPrioridadPrecioMostrar(
 
   return { ...vinculo, urlBloqueadaPorPxSugerido: false };
 }
+
+export type PrecioCompetenciaRowDb = {
+  codTienda: string;
+  competenciaId: string;
+  urlProducto: string | null;
+  tipoPagina: string | null;
+  pxCompetencia: { toString(): string } | null;
+  estado: string;
+  errorMensaje: string | null;
+  relevadoAt: Date | null;
+};
+
+export function mapPrecioCompetenciaRowToVinculo(
+  row: Omit<PrecioCompetenciaRowDb, "codTienda" | "competenciaId">
+): DatoVinculoCompetenciaCliente {
+  return {
+    urlProducto: row.urlProducto,
+    tipoPagina: row.tipoPagina,
+    pxCompetencia: row.pxCompetencia != null ? Number(row.pxCompetencia) : null,
+    estado: row.urlProducto ? row.estado : ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+    errorMensaje: row.errorMensaje,
+    relevadoAt: row.relevadoAt?.toISOString() ?? null,
+    urlBloqueadaPorPxSugerido: false,
+  };
+}
+
+export type PrecioCompetenciaMostrarResuelto = {
+  codTienda: string;
+  competenciaId: string;
+  pxMostrar: number | null;
+  vinculo: DatoVinculoCompetenciaCliente;
+};
+
+/** SSOT: mismo precio que Px Competencia (`aplicarPrioridadPrecioMostrar`). */
+export async function resolverPreciosCompetenciaMostrar(
+  items: ReadonlyArray<{ codTienda: string; competenciaId: string }>
+): Promise<Map<string, PrecioCompetenciaMostrarResuelto>> {
+  const map = new Map<string, PrecioCompetenciaMostrarResuelto>();
+  if (items.length === 0) return map;
+
+  const codTiendas = [...new Set(items.map((i) => i.codTienda))];
+  const competenciaIds = [...new Set(items.map((i) => i.competenciaId))];
+
+  const [rows, competencias] = await Promise.all([
+    prisma.prodPrecioCompetencia.findMany({
+      where: {
+        codTienda: { in: codTiendas },
+        competenciaId: { in: competenciaIds },
+      },
+      select: {
+        codTienda: true,
+        competenciaId: true,
+        urlProducto: true,
+        tipoPagina: true,
+        pxCompetencia: true,
+        estado: true,
+        errorMensaje: true,
+        relevadoAt: true,
+      },
+    }),
+    prisma.prodCompetencia.findMany({
+      where: { id: { in: competenciaIds } },
+      select: { id: true, idProveedor: true },
+    }),
+  ]);
+
+  const idProveedores = [
+    ...new Set(competencias.map((c) => c.idProveedor).filter((id): id is string => Boolean(id))),
+  ];
+  const pxSugeridoMap = await buildMapPxVtaSugerido(codTiendas, idProveedores);
+  const proveedorPorCompetencia = new Map(
+    competencias.filter((c) => c.idProveedor).map((c) => [c.id, c.idProveedor as string])
+  );
+
+  for (const row of rows) {
+    const key = `${row.codTienda}:${row.competenciaId}`;
+    const idProveedor = proveedorPorCompetencia.get(row.competenciaId);
+    const pxSugerido =
+      idProveedor != null ? (pxSugeridoMap.get(`${row.codTienda}:${idProveedor}`) ?? null) : null;
+    const vinculo = aplicarPrioridadPrecioMostrar(mapPrecioCompetenciaRowToVinculo(row), pxSugerido);
+    map.set(key, {
+      codTienda: row.codTienda,
+      competenciaId: row.competenciaId,
+      pxMostrar: vinculo.pxCompetencia,
+      vinculo,
+    });
+  }
+
+  return map;
+}
+
+export async function resolverPrecioCompetenciaMostrar(
+  codTienda: string,
+  competenciaId: string
+): Promise<PrecioCompetenciaMostrarResuelto | null> {
+  const map = await resolverPreciosCompetenciaMostrar([{ codTienda, competenciaId }]);
+  return map.get(`${codTienda}:${competenciaId}`) ?? null;
+}

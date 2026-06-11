@@ -45,6 +45,8 @@ const contentVariants = cva(
     variants: {
       contentWidth: {
         default: "max-w-7xl mx-auto",
+        /** Ancho completo con padding reducido típico en Comp. Categorias (+50 % útil vs `default` `max-w-7xl`). */
+        wide150: "max-w-none w-full",
         full: "max-w-none",
       },
       density: {

@@ -634,7 +634,7 @@ Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza e
   - **`filters`**: `ReactNode?` (bloque de filtros).
   - **`children`**: `ReactNode` (contenido principal; normalmente tabla).
   - **`tone`**: `"gray" | "card"` (default `"gray"`).
-  - **`contentWidth`**: `"default" | "full"` (default `"default"`).
+  - **`contentWidth`**: `"default" | "wide150" | "full"` (default `"default"`). **`wide150`**: ancho completo (`max-w-none`) + padding horizontal reducido en el módulo (Comp. Categorias).
   - **`density`**: `"default" | "compact"` (default `"default"`).
   - **`filtersAriaLabel`**: `string` (default `"Filtros"`), para accesibilidad del bloque `role="search"`.
   - **`className`** / **`contentClassName`**: overrides puntuales.
@@ -782,9 +782,13 @@ Botón/indicador persistente en la parte inferior de la slidenav. El markup del 
 
 ### Comp. Categorias — Comparacion
 
+Layout compartido en `@/lib/comparacionCategoriasLayout.ts`: **`contentWidth="wide150"`** (ancho completo vs `max-w-7xl` estándar) + **`COMP_CATEGORIAS_PAGE_CONTENT_CLASS`** (padding horizontal reducido); selector Finder **`min-h-[330px]` / `max-h-[420px]`** (+50 % vs base 220/280px). Modal **Asignar Productos**: **`max-w-[126rem]`** (`84rem` × 1,5).
+
 Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`. Arriba, selector en cascada **solo lectura** (`ComparacionCategoriaSelector`, 3 columnas `catalogo-finder`: **CATEGORÍA** → **SUBCATEGORÍA** → **PRESENTACIÓN**); el mantenimiento del catálogo está en **Categorias**. Al elegir una **presentación**, se cargan los productos asignados (`getProductosPorPresentacionAction` → filas de `prod_precios_provee` vía `id_presentacion`).
 
-**Tabla de productos** (debajo del selector): **TILDE 5 %** (una sola fila como base) · **PROVEEDOR 10 %** · **DESCRIPCIÓN 52 %** (60 % sin columna acciones) · **COSTO 13 %** · **VAR 12 %** · columna acciones **8 %** (solo editor): encabezado con botón **`+`** (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`, abre **`AsignarProductosModal`** para la presentación elegida); filas con cesto para quitar. Sin botón «Asignar productos» en el header de página. Modal de asignación: ancho `max-w-[126rem]`; columnas **TILDE 5 % · PROVEEDOR 10 % · DESCRIPCIÓN 75 % · PX COMPRA FINAL SIN IVA 10 %**.
+**Tabla de productos** (debajo del selector): banner **Referencia competencia** (fila de `prod_precios_competencia`; precio vía `resolverPreciosCompetenciaMostrar` = Px Competencia). Editor: **Elegir referencia** (`ElegirReferenciaCompetenciaModal`) / **Quitar**. **VAR**: si hay **tilde** en fila proveedor → base = esa fila; si no hay tilde pero hay referencia → base = precio referencia; tilde anula referencia como base.
+
+Columnas: **TILDE 5 %** · **PROVEEDOR 10 %** · **DESCRIPCIÓN 52 %** · **COSTO 13 %** · **VAR 12 %** · acciones **8 %** (+ asignar / cesto quitar). Modal **Asignar productos** y modal **Elegir referencia**: `max-w-[126rem]`.
 
 Persistencia de **DTO. EXTRA** (`actualizarDtoExtraComparacionAction`) sigue en backend; la UI de DTO se reintroducirá en pasos posteriores de la reforma.
 
@@ -1215,6 +1219,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-06-04): **Act. Cx. — modal PDF aumentos** — Excel **`Act Cx dd-mm hh-mm.xls`**; tras exportar, modal **¿Desea exportar el informe de aumento?**; PDF vía `exportarResumenAumentosPxAction`.*
 
 *Última actualización (2026-06-10): **Sidebar — `Cx y Px Tienda`** — agrupador colapsable en **ANALISIS DE PRECIOS** (sin `href`; hijos **Cx Compra** y **Px Listas**); patrón `SubmoduleItem` sin ruta + `children` en `Sidebar.tsx`.*
+
+*Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — banner + `ElegirReferenciaCompetenciaModal`; VAR con tilde manual o precio referencia (Px Competencia).*
 
 *Última actualización (2026-06-10): **`AgregarProductoComparacionModal`** — ancho **`max-w-[109.2rem]`** (+30 % sobre `ModalTablaConFiltros` `84rem`); columnas CHECK 5 % / COD. TIENDA 10 % / MARCA 20 % / DESCRIPCIÓN 65 %.*
 

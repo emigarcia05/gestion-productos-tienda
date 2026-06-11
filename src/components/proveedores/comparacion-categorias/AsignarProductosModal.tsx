@@ -17,6 +17,7 @@ import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { fmtPrecio } from "@/lib/format";
+import { MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   open: boolean;
@@ -27,11 +28,8 @@ interface Props {
 
 type ProveedorOption = { id: string; nombre: string; prefijo: string };
 
-/** TILDE + PROVEEDOR + DESCRIPCIÓN + PX COMPRA FINAL SIN IVA */
+/** TILDE + PROVEEDOR + DESCRIPCIÓN + COSTO */
 const COLUMN_WIDTHS_PCT = [5, 10, 75, 10] as const;
-
-/** `ModalTablaConFiltros` base `max-w-[84rem]` × 1,5 */
-const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH = "max-w-[126rem]";
 
 export default function AsignarProductosModal({
   open,
@@ -149,7 +147,7 @@ export default function AsignarProductosModal({
     },
     {
       key: "px",
-      label: "PX COMPRA FINAL SIN IVA",
+      label: "COSTO",
       className: "py-2.5 px-3 text-xs text-right tabular-nums",
       render: (row) => (
         <span>
@@ -176,7 +174,7 @@ export default function AsignarProductosModal({
       loading={loading}
       emptyMessage="NO HAY PRODUCTOS O NO COINCIDEN LOS FILTROS."
       count={rows.length}
-      contentClassName={MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH}
+      contentClassName={MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS}
       tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
     />
   );

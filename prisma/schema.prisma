@@ -519,14 +519,20 @@ model PresentacionComparacion {
   subcategoriaId        String    @map("subcategoria_id")
   nombre               String
   costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
+  /** @deprecated Legacy: referente en prod_precios_provee. Usar referenciaCompetencia. */
   productoReferenciaCodExt String? @unique @map("prod_ref_cod_ext")
+  /** Referente Px Competencia: fila en prod_precios_competencia (cod_tienda + competencia_id). */
+  refCodTienda         String?   @map("ref_cod_tienda")
+  refCompetenciaId     String?   @map("ref_competencia_id")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
   listaPrecios  ListaPrecioProveedor[] @relation("PresentacionItems")
   productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [productoReferenciaCodExt], references: [codExt], onDelete: SetNull)
+  referenciaCompetencia ProdPrecioCompetencia? @relation("PresentacionReferenciaCompetencia", fields: [refCodTienda, refCompetenciaId], references: [codTienda, competenciaId], onDelete: SetNull)
 
+  @@unique([refCodTienda, refCompetenciaId])
   @@map("prod_comp_presentaciones")
 }
 
@@ -686,6 +692,7 @@ model ProdPrecioCompetencia {
 
   prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
   competencia       ProdCompetencia   @relation(fields: [competenciaId], references: [id], onDelete: Cascade)
+  presentacionesReferencia PresentacionComparacion[] @relation("PresentacionReferenciaCompetencia")
 
   @@id([codTienda, competenciaId])
   @@index([competenciaId], map: "prod_precios_competencia_competencia_id_idx")
