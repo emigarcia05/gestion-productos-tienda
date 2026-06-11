@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { FiltroIndividualContainer } from "@/components/FilterBar";
-import ModalTablaConFiltros from "@/components/shared/ModalTablaConFiltros";
+import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/shared/ModalTablaConFiltros";
 import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
@@ -26,6 +26,12 @@ interface Props {
 }
 
 type ProveedorOption = { id: string; nombre: string; prefijo: string };
+
+/** TILDE + PROVEEDOR + DESCRIPCIÓN + PX COMPRA FINAL SIN IVA */
+const COLUMN_WIDTHS_PCT = [5, 10, 75, 10] as const;
+
+/** `ModalTablaConFiltros` base `max-w-[84rem]` × 1,5 */
+const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH = "max-w-[126rem]";
 
 export default function AsignarProductosModal({
   open,
@@ -120,12 +126,12 @@ export default function AsignarProductosModal({
     </div>
   );
 
-  const columns = [
+  const columns: ColumnaModalTabla<ProductoProveedorParaVincular>[] = [
     {
       key: "prefijo",
       label: "PROVEEDOR",
-      className: "py-2.5 px-3 text-xs w-24 shrink-0 text-center",
-      render: (row: ProductoProveedorParaVincular) => (
+      className: "py-2.5 px-3 text-xs text-center",
+      render: (row) => (
         <Badge variant="secondary" className="font-mono text-xs">
           {row.proveedor.prefijo}
         </Badge>
@@ -134,9 +140,9 @@ export default function AsignarProductosModal({
     {
       key: "descripcion",
       label: "DESCRIPCIÓN",
-      className: "py-2.5 px-3 text-xs min-w-0 flex-1",
-      render: (row: ProductoProveedorParaVincular) => (
-        <span className="text-xs block truncate" title={row.descripcionProveedor}>
+      className: "py-2.5 px-3 text-xs",
+      render: (row) => (
+        <span className="block truncate" title={row.descripcionProveedor}>
           {row.descripcionProveedor}
         </span>
       ),
@@ -144,9 +150,9 @@ export default function AsignarProductosModal({
     {
       key: "px",
       label: "PX COMPRA FINAL SIN IVA",
-      className: "py-2.5 px-3 text-xs w-36 shrink-0 text-right tabular-nums",
-      render: (row: ProductoProveedorParaVincular) => (
-        <span className="text-xs">
+      className: "py-2.5 px-3 text-xs text-right tabular-nums",
+      render: (row) => (
+        <span>
           {row.pxCompraFinalSinIva != null ? `$${fmtPrecio(row.pxCompraFinalSinIva)}` : "—"}
         </span>
       ),
@@ -170,7 +176,8 @@ export default function AsignarProductosModal({
       loading={loading}
       emptyMessage="NO HAY PRODUCTOS O NO COINCIDEN LOS FILTROS."
       count={rows.length}
-      contentClassName="max-w-[84rem]"
+      contentClassName={MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH}
+      tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
     />
   );
 }

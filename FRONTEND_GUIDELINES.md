@@ -784,14 +784,9 @@ Botón/indicador persistente en la parte inferior de la slidenav. El markup del 
 
 Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`. Arriba, selector en cascada **solo lectura** (`ComparacionCategoriaSelector`, 3 columnas `catalogo-finder`: **CATEGORÍA** → **SUBCATEGORÍA** → **PRESENTACIÓN**); el mantenimiento del catálogo está en **Categorias**. Al elegir una **presentación**, se cargan los productos asignados (`getProductosPorPresentacionAction` → filas de `prod_precios_provee` vía `id_presentacion`).
 
-**Tabla de productos** (debajo del selector): **DESCRIPCIÓN** (`descripcion_proveedor`) y **PX COMPRA FINAL SIN IVA** (`px_compra_final_sin_iva`). Editor: **Asignar productos** (`AsignarProductosModal`, búsqueda en `prod_precios_provee`) y quitar fila (`quitarAsignacionPresentacionAction`). El modal de asignación muestra también **PX COMPRA FINAL SIN IVA** por ítem.
+**Tabla de productos** (debajo del selector): **TILDE 5 %** (una sola fila como base) · **PROVEEDOR 10 %** · **DESCRIPCIÓN 52 %** (60 % sin columna acciones) · **COSTO 13 %** · **VAR 12 %** · columna acciones **8 %** (solo editor): encabezado con botón **`+`** (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`, abre **`AsignarProductosModal`** para la presentación elegida); filas con cesto para quitar. Sin botón «Asignar productos» en el header de página. Modal de asignación: ancho `max-w-[126rem]`; columnas **TILDE 5 % · PROVEEDOR 10 % · DESCRIPCIÓN 75 % · PX COMPRA FINAL SIN IVA 10 %**.
 
-Persistencia de **DTO. EXTRA** (`actualizarDtoExtraComparacionAction`) sigue en backend; la UI de comparación con variación/DTO se reintroducirá en pasos posteriores de la reforma.
-
-Comparación con casillas `SEL.` (solo front):
-- Columna `SEL.` con casilla por fila; se pueden marcar **varias** a la vez.
-- **Sin casillas**: `VARIACIÓN` en **todas** las filas vs el **menor precio** de la tabla visible.
-- **Con casillas**: solo las filas marcadas muestran `VARIACIÓN`, cada una vs el **menor precio entre las marcadas**; filas sin tilde quedan en blanco.
+Persistencia de **DTO. EXTRA** (`actualizarDtoExtraComparacionAction`) sigue en backend; la UI de DTO se reintroducirá en pasos posteriores de la reforma.
 
 ### Sincronización DUX — Slidenav y excepción Finanzas
 
