@@ -16,7 +16,7 @@ export default async function CategoriasComparacionPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <GestionCategoriasPageClient arbolInicial={arbol} />
+      <GestionCategoriasPageClient arbolInicial={arbol} esEditor={rol === "editor"} />
     </div>
   );
 }
